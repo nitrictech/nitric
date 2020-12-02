@@ -279,11 +279,14 @@ func (s *Membrane) Start() {
 			Status:      response.StatusCode,
 		}
 	})
-
 	// The gateway process has exited
 }
 
 // Create a new Membrane server
-func New() (*Membrane, error) {
-	return &Membrane{}, nil
+func New(serviceAddress, childAddress, childCommand) (*Membrane, error) {
+	return &Membrane{
+		serviceAddress: serviceAddress,
+		childAddress:   childAddress,
+		childCommand:   childCommand,
+	}, nil
 }
