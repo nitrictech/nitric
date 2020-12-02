@@ -193,7 +193,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, *eventingServer)
 	} else {
-		fmt.Printf("Failed to load eventing plugin %v", error)
+		fmt.Println("Failed to load eventing plugin %v", error)
 	}
 
 	documentsServer, error := s.createDocumentsServer()
@@ -201,7 +201,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, *documentsServer)
 	} else {
-		fmt.Printf("Failed to load documents plugin %v", error)
+		fmt.Println("Failed to load documents plugin %v", error)
 	}
 
 	storageServer, error := s.createStorageServer()
@@ -209,7 +209,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, *storageServer)
 	} else {
-		fmt.Printf("Failed to load storage plugin %v", error)
+		fmt.Println("Failed to load storage plugin %v", error)
 	}
 
 	lis, error := net.Listen("tcp", s.serviceAddress)
