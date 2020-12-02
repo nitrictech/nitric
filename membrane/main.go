@@ -247,6 +247,11 @@ func (s *Membrane) Start() {
 		// There was an error creating the HTTP request
 		if error != nil {
 			// return an error to the Gateway
+			return &gw.NitricResponse{
+				ContentType: "text/plain",
+				Payload:     []byte(error.Error()),
+				Status:      503,
+			}
 		}
 
 		// Encode NitricContext into HTTP headers
@@ -264,12 +269,22 @@ func (s *Membrane) Start() {
 
 		if error != nil {
 			// there was an error calling the HTTP service
+			return &gw.NitricResponse{
+				ContentType: "text/plain",
+				Payload:     []byte(error.Error()),
+				Status:      503,
+			}
 		}
 
 		responseBody, error := ioutil.ReadAll(response.Body)
 
 		if error != nil {
 			// There was an error reading the http response
+			return &gw.NitricResponse{
+				ContentType: "text/plain",
+				Payload:     []byte(error.Error()),
+				Status:      503,
+			}
 		}
 
 		// Pass the response back to the gateway
