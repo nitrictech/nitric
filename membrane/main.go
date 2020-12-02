@@ -283,7 +283,7 @@ func (s *Membrane) Start() {
 }
 
 // Create a new Membrane server
-func New(serviceAddress, childAddress, childCommand) (*Membrane, error) {
+func New(serviceAddress string, childAddress string, childCommand string) (*Membrane, error) {
 	return &Membrane{
 		serviceAddress: serviceAddress,
 		childAddress:   childAddress,

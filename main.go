@@ -14,16 +14,16 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	membrane, error := membrane.New()
+	serviceAddress := getEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
+	childAddress := getEnv("CHILD_ADDRESS", "127.0.0.1:8080")
+	childCommand := getEnv("INVOKE", "")
+
+	membrane, error := membrane.New(serviceAddress, childAddress, childCommand)
 
 	if error != nil {
 		panic(error)
 	}
 
-	serviceAddress := getEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
-	childAddress := getEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	childCommand := getEnv("INVOKE", "")
-
 	// Start the Membrane server
-	membrane.Start(serviceAddress, childAddress, childCommand)
+	membrane.Start()
 }
