@@ -149,7 +149,7 @@ func (s *Membrane) startChildProcess() {
 
 	// Actual panic here, we don't want to start if our userland code cannot successfully start
 	if applicationError != nil {
-		panic(applicationError)
+		log.Fatalf("Function failed to start in time: %v", applicationError)
 	}
 
 	// Dial the child port to see if it's open and ready...
@@ -169,7 +169,7 @@ func (s *Membrane) startChildProcess() {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				panic(fmt.Errorf("Function failed to start in time"))
+				log.Fatalf("Function failed to start in time")
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, *eventingServer)
 	} else {
-		log.Fatalf("Failed to load eventing plugin %v", error)
+		fmt.Printf("Failed to load eventing plugin %v", error)
 	}
 
 	documentsServer, error := s.createDocumentsServer()
@@ -201,7 +201,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, *documentsServer)
 	} else {
-		log.Fatalf("Failed to load documents plugin %v", error)
+		fmt.Printf("Failed to load documents plugin %v", error)
 	}
 
 	storageServer, error := s.createStorageServer()
@@ -209,7 +209,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, *storageServer)
 	} else {
-		log.Fatalf("Failed to load storage plugin %v", error)
+		fmt.Printf("Failed to load storage plugin %v", error)
 	}
 
 	lis, error := net.Listen("tcp", s.serviceAddress)
