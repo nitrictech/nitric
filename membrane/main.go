@@ -7,7 +7,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/exec"
 	"plugin"
+	"strings"
+	"time"
 
 	gw "github.com/nitric-dev/gateway"
 	"google.golang.org/grpc"
@@ -133,7 +137,42 @@ func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
 }
 
 func (s *Membrane) startChildProcess() {
+	// TODO: This is a detached process
+	// so it will continue to run until even after the director dies
+	commandArgs := strings.Fields(s.childCommand)
 
+	fmt.Println(fmt.Sprintf("Starting Function"))
+	childProcess := exec.Command(commandArgs[0], commandArgs[1:len(commandArgs)]...)
+	childProcess.Stdout = os.Stdout
+	childProcess.Stderr = os.Stderr
+	applicationError := childProcess.Start()
+
+	// Actual panic here, we don't want to start if our userland code cannot successfully start
+	if applicationError != nil {
+		panic(applicationError)
+	}
+
+	// Dial the child port to see if it's open and ready...
+	// Only wait for 10s, if we timeout that will be it
+	// TODO: make app startup time configurable
+	maxWaitTime := time.Duration(5) * time.Second
+	pollInterval := time.Duration(200) * time.Millisecond
+
+	var waitedTime = time.Duration(0)
+	for {
+		conn, _ := net.Dial("tcp", s.childAddress)
+		if conn != nil {
+			conn.Close()
+			break
+		} else {
+			if waitedTime < maxWaitTime {
+				time.Sleep(pollInterval)
+				waitedTime += pollInterval
+			} else {
+				panic(fmt.Errorf("Function failed to start in time"))
+			}
+		}
+	}
 }
 
 // Start the membrane
@@ -201,7 +240,9 @@ func (s *Membrane) Start() {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
-		httpRequest, error := http.NewRequest("POST", "http://localhost:8080/", bytes.NewReader(request.Payload))
+		childUrl := fmt.Sprintf("http://%s", s.childAddress)
+
+		httpRequest, error := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
 
 		// There was an error creating the HTTP request
 		if error != nil {
