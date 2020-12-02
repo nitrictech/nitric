@@ -16,7 +16,7 @@ func getEnv(key, fallback string) string {
 func main() {
 	serviceAddress := getEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	childAddress := getEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	childCommand := getEnv("INVOKE", "")
+	childCommand := getEnv("INVOKE", "echo No function configured")
 
 	membrane, error := membrane.New(serviceAddress, childAddress, childCommand)
 
