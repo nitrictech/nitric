@@ -36,11 +36,13 @@ type Membrane struct {
 	childAddress string
 	// The command that will be used to invoke the child process
 	childCommand string
+	// The plugin directory for loading membrane plugins
+	pluginDir string
 }
 
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
-	eventingPlugin, error := plugin.Open("./plugins/eventing.so")
+	eventingPlugin, error := plugin.Open(fmt.Sprintf("%s/eventing.so", s.pluginDir))
 	if error != nil {
 		// There was an error loading the eventing plugin
 		return nil, fmt.Errorf("There was an issue loading the Nitric eventing plugin: %v", error)
@@ -63,7 +65,7 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
-	storagePlugin, error := plugin.Open("./plugins/storage.so")
+	storagePlugin, error := plugin.Open(fmt.Sprintf("%s/storage.so", s.pluginDir))
 	if error != nil {
 		// There was an error loading the eventing plugin
 		return nil, fmt.Errorf("There was an issue loading the Nitric storage plugin: %v", error)
@@ -85,7 +87,7 @@ func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
-	documentsPlugin, err := plugin.Open("./plugins/documents.so")
+	documentsPlugin, err := plugin.Open(fmt.Sprintf("%s/documents.so", s.pluginDir))
 	if err != nil {
 		// There was an error loading the eventing plugin
 		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", err)
@@ -117,7 +119,7 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
 	// We expect that the gateway plugin will block the primary thread while it is processing
 	// userland input
-	gatewayPlugin, error := plugin.Open("./plugins/gateway.so")
+	gatewayPlugin, error := plugin.Open(fmt.Sprintf("%s/gateway.so", s.pluginDir))
 	if error != nil {
 		// There was an error loading the eventing plugin
 		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", error)
@@ -300,10 +302,11 @@ func (s *Membrane) Start() {
 }
 
 // Create a new Membrane server
-func New(serviceAddress string, childAddress string, childCommand string) (*Membrane, error) {
+func New(serviceAddress string, childAddress string, childCommand string, pluginDir string) (*Membrane, error) {
 	return &Membrane{
 		serviceAddress: serviceAddress,
 		childAddress:   childAddress,
 		childCommand:   childCommand,
+		pluginDir:      pluginDir,
 	}, nil
 }
