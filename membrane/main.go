@@ -13,17 +13,17 @@ import (
 	"strings"
 	"time"
 
-	gw "github.com/nitric-dev/gateway"
+	gw "github.com/nitric-dev/membrane-plugin-sdk"
+	documentsPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/documents"
+	eventingPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/eventing"
+	storagePb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/storage"
 	"google.golang.org/grpc"
-	documentsPb "nitric.io/membrane/interfaces/nitric/v1/documents"
-	eventingPb "nitric.io/membrane/interfaces/nitric/v1/eventing"
-	storagePb "nitric.io/membrane/interfaces/nitric/v1/storage"
 )
 
 // TODO: return eventing server
-type NewEventingServer func() (*eventingPb.EventingServer, error)
-type NewStorageServer func() (*storagePb.StorageServer, error)
-type NewDocumentsServer func() (*documentsPb.DocumentsServer, error)
+type NewEventingServer func() (eventingPb.EventingServer, error)
+type NewStorageServer func() (storagePb.StorageServer, error)
+type NewDocumentsServer func() (documentsPb.DocumentsServer, error)
 type NewGateway func() (gw.Gateway, error)
 
 type Membrane struct {
@@ -39,7 +39,7 @@ type Membrane struct {
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() (*eventingPb.EventingServer, error) {
+func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 	eventingPlugin, error := plugin.Open("./plugins/eventing.so")
 	if error != nil {
 		// There was an error loading the eventing plugin
@@ -62,7 +62,7 @@ func (s *Membrane) createEventingServer() (*eventingPb.EventingServer, error) {
 }
 
 // Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() (*storagePb.StorageServer, error) {
+func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 	storagePlugin, error := plugin.Open("./plugins/storage.so")
 	if error != nil {
 		// There was an error loading the eventing plugin
@@ -84,26 +84,28 @@ func (s *Membrane) createStorageServer() (*storagePb.StorageServer, error) {
 	return newServerFunc()
 }
 
-func (s *Membrane) createDocumentsServer() (*documentsPb.DocumentsServer, error) {
-	documentsPlugin, error := plugin.Open("./plugins/documents.so")
-	if error != nil {
+func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
+	documentsPlugin, err := plugin.Open("./plugins/documents.so")
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", error)
+		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", err)
 	}
 
 	// Lookup the New method for the eventing server
-	newDocumentsServer, error := documentsPlugin.Lookup("New")
+	newDocumentsServer, err := documentsPlugin.Lookup("New")
 
-	if error != nil {
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Documents Server was incorrect: %v", error)
+		return nil, fmt.Errorf("Interface for Documents Server was incorrect: %v", err)
 	}
 
 	// Cast to the new documents server function
-	newServerFunc := newDocumentsServer.(NewDocumentsServer)
+	newServerFunc := newDocumentsServer.(func() (documentsPb.DocumentsServer, error))
 
 	// Return the new documents server
-	return newServerFunc()
+	documentsServer, error := newServerFunc()
+
+	return documentsServer.(documentsPb.DocumentsServer), error
 }
 
 // Provides a means for the nitric membrane to accept and normalize input/output for a given interface
@@ -191,7 +193,7 @@ func (s *Membrane) Start() {
 	// for a given function
 	if error == nil {
 		// Register the service
-		eventingPb.RegisterEventingServer(grpcServer, *eventingServer)
+		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
 	} else {
 		fmt.Println("Failed to load eventing plugin %v", error)
 	}
@@ -199,7 +201,7 @@ func (s *Membrane) Start() {
 	documentsServer, error := s.createDocumentsServer()
 	if error == nil {
 		// Register the service
-		documentsPb.RegisterDocumentsServer(grpcServer, *documentsServer)
+		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
 	} else {
 		fmt.Println("Failed to load documents plugin %v", error)
 	}
@@ -207,7 +209,7 @@ func (s *Membrane) Start() {
 	storageServer, error := s.createStorageServer()
 	if error == nil {
 		// Register the service
-		storagePb.RegisterStorageServer(grpcServer, *storageServer)
+		storagePb.RegisterStorageServer(grpcServer, storageServer)
 	} else {
 		fmt.Println("Failed to load storage plugin %v", error)
 	}
