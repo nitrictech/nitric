@@ -37,6 +37,8 @@ github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203021154-d94a46799c4f h1:
 github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203021154-d94a46799c4f/go.mod h1:WsGYXGMYeoOgw4HOkM5a5DiI1U2s89ewcD7281ymNVs=
 github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203073937-a66ae53565f1 h1:KFqzKXqqFhtBQ5Z5jIu9ewX5vRXjlzDPKmhnKwFIuLE=
 github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203073937-a66ae53565f1/go.mod h1:WsGYXGMYeoOgw4HOkM5a5DiI1U2s89ewcD7281ymNVs=
+github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203211256-c0260bb38f1d h1:uv3gnLQSwZTmqXhNxNst+AaHzkdhRgpG5s7BWpVqGWk=
+github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203211256-c0260bb38f1d/go.mod h1:WsGYXGMYeoOgw4HOkM5a5DiI1U2s89ewcD7281ymNVs=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

@@ -1,23 +1,15 @@
 package main
 
 import (
-	"os"
-
+	"github.com/nitric-dev/membrane-plugin-sdk/utils"
 	"nitric.io/membrane/membrane"
 )
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 func main() {
-	serviceAddress := getEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
-	childAddress := getEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	pluginDir := getEnv("PLUGIN_DIR", "./plugins")
-	childCommand := getEnv("INVOKE", "echo No function configured")
+	serviceAddress := utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
+	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
+	pluginDir := utils.GetEnv("PLUGIN_DIR", "./plugins")
+	childCommand := utils.GetEnv("INVOKE", "echo No function configured")
 
 	membrane, error := membrane.New(serviceAddress, childAddress, childCommand, pluginDir)
 
