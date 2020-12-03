@@ -197,7 +197,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
 	} else {
-		fmt.Println("Failed to load eventing plugin %v", error)
+		fmt.Println("Failed to load eventing plugin", error)
 	}
 
 	documentsServer, error := s.createDocumentsServer()
@@ -205,7 +205,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
 	} else {
-		fmt.Println("Failed to load documents plugin %v", error)
+		fmt.Println("Failed to load documents plugin", error)
 	}
 
 	storageServer, error := s.createStorageServer()
@@ -213,7 +213,7 @@ func (s *Membrane) Start() {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, storageServer)
 	} else {
-		fmt.Println("Failed to load storage plugin %v", error)
+		fmt.Println("Failed to load storage plugin", error)
 	}
 
 	lis, error := net.Listen("tcp", s.serviceAddress)
@@ -252,9 +252,9 @@ func (s *Membrane) Start() {
 		if error != nil {
 			// return an error to the Gateway
 			return &gw.NitricResponse{
-				ContentType: "text/plain",
-				Payload:     []byte(error.Error()),
-				Status:      503,
+				Headers: map[string]string{"Content-Type": "text/plain"},
+				Body:    []byte(error.Error()),
+				Status:  503,
 			}
 		}
 
@@ -274,9 +274,9 @@ func (s *Membrane) Start() {
 		if error != nil {
 			// there was an error calling the HTTP service
 			return &gw.NitricResponse{
-				ContentType: "text/plain",
-				Payload:     []byte(error.Error()),
-				Status:      503,
+				Headers: map[string]string{"Content-Type": "text/plain"},
+				Body:    []byte(error.Error()),
+				Status:  503,
 			}
 		}
 
@@ -285,17 +285,22 @@ func (s *Membrane) Start() {
 		if error != nil {
 			// There was an error reading the http response
 			return &gw.NitricResponse{
-				ContentType: "text/plain",
-				Payload:     []byte(error.Error()),
-				Status:      503,
+				Headers: map[string]string{"Content-Type": "text/plain"},
+				Body:    []byte(error.Error()),
+				Status:  503,
 			}
+		}
+
+		headers := map[string]string{}
+		for name, value := range response.Header {
+			headers[name] = value[0]
 		}
 
 		// Pass the response back to the gateway
 		return &gw.NitricResponse{
-			ContentType: response.Header.Get("Content-Type"),
-			Payload:     responseBody,
-			Status:      response.StatusCode,
+			Headers: headers,
+			Body:    responseBody,
+			Status:  response.StatusCode,
 		}
 	})
 	// The gateway process has exited
