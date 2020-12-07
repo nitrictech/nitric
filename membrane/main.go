@@ -254,7 +254,7 @@ func (s *Membrane) Start() {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	fmt.Println("Starting Gateway")
-	gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
+	err := gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
 		childUrl := fmt.Sprintf("http://%s", s.childAddress)
 
 		httpRequest, error := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
@@ -315,6 +315,8 @@ func (s *Membrane) Start() {
 		}
 	})
 	// The gateway process has exited
+
+	panic(err)
 }
 
 // Create a new Membrane server
