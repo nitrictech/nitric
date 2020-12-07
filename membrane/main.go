@@ -42,22 +42,23 @@ type Membrane struct {
 
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
-	eventingPlugin, error := plugin.Open(fmt.Sprintf("%s/eventing.so", s.pluginDir))
-	if error != nil {
+	pluginLocation := fmt.Sprintf("%s/eventing.so", s.pluginDir)
+	eventingPlugin, err := plugin.Open(pluginLocation)
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric eventing plugin: %v", error)
+		return nil, fmt.Errorf("There was an issue loading the Nitric eventing plugin from %s: %v", pluginLocation, err)
 	}
 
 	// Lookup the New method for the eventing server
-	newEventingServer, error := eventingPlugin.Lookup("New")
+	newEventingServer, err := eventingPlugin.Lookup("New")
 
-	if error != nil {
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Eventing Server was incorrect: %v", error)
+		return nil, fmt.Errorf("Interface for Eventing Server was incorrect: %v", err)
 	}
 
 	// Cast to the new eventing server function
-	newServerFunc := newEventingServer.(NewEventingServer)
+	newServerFunc := newEventingServer.(func() (eventingPb.EventingServer, error))
 
 	// Return the new eventing server
 	return newServerFunc()
@@ -65,32 +66,34 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
-	storagePlugin, error := plugin.Open(fmt.Sprintf("%s/storage.so", s.pluginDir))
-	if error != nil {
+	pluginLocation := fmt.Sprintf("%s/storage.so", s.pluginDir)
+	storagePlugin, err := plugin.Open(pluginLocation)
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric storage plugin: %v", error)
+		return nil, fmt.Errorf("There was an issue loading the Nitric storage plugin from %s: %v", pluginLocation, err)
 	}
 
 	// Lookup the New method for the eventing server
-	newEventingServer, error := storagePlugin.Lookup("New")
+	newEventingServer, err := storagePlugin.Lookup("New")
 
-	if error != nil {
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Storage Server was incorrect: %v", error)
+		return nil, fmt.Errorf("Interface for Storage Server was incorrect: %v", err)
 	}
 
 	// Cast to the new storage server function
-	newServerFunc := newEventingServer.(NewStorageServer)
+	newServerFunc := newEventingServer.(func() (storagePb.StorageServer, error))
 
 	// Return the new storage server
 	return newServerFunc()
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
-	documentsPlugin, err := plugin.Open(fmt.Sprintf("%s/documents.so", s.pluginDir))
+	pluginLocation := fmt.Sprintf("%s/documents.so", s.pluginDir)
+	documentsPlugin, err := plugin.Open(pluginLocation)
 	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", err)
+		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin from %s: %v", pluginLocation, err)
 	}
 
 	// Lookup the New method for the eventing server
@@ -117,24 +120,25 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 // - AWS Lambda plugin (for querying the AWS lambda service and directing/normalizing input to user land code)
 // - Kafka Plugin (for providing a streaming server)
 func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
+	pluginLocation := fmt.Sprintf("%s/gateway.so", s.pluginDir)
 	// We expect that the gateway plugin will block the primary thread while it is processing
 	// userland input
-	gatewayPlugin, error := plugin.Open(fmt.Sprintf("%s/gateway.so", s.pluginDir))
-	if error != nil {
+	gatewayPlugin, err := plugin.Open(pluginLocation)
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin: %v", error)
+		return nil, fmt.Errorf("There was an issue loading the Nitric gateway plugin from %s: %v", pluginLocation, err)
 	}
 
 	// Lookup the New method for the eventing server
-	newGatewayPlugin, error := gatewayPlugin.Lookup("New")
+	newGatewayPlugin, err := gatewayPlugin.Lookup("New")
 
-	if error != nil {
+	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Documents Server was incorrect: %v", error)
+		return nil, fmt.Errorf("Interface for Gateway Server was incorrect: %v", err)
 	}
 
 	// Cast to the new documents server function
-	newServerFunc := newGatewayPlugin.(NewGateway)
+	newServerFunc := newGatewayPlugin.(func() (gw.Gateway, error))
 
 	// Return the new documents server
 	return newServerFunc()
@@ -196,6 +200,7 @@ func (s *Membrane) Start() {
 	if error == nil {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
+		fmt.Println("Registered Eventing Plugin")
 	} else {
 		fmt.Println("Failed to load eventing plugin", error)
 	}
@@ -204,6 +209,7 @@ func (s *Membrane) Start() {
 	if error == nil {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
+		fmt.Println("Registered Documents Plugin")
 	} else {
 		fmt.Println("Failed to load documents plugin", error)
 	}
@@ -212,6 +218,7 @@ func (s *Membrane) Start() {
 	if error == nil {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, storageServer)
+		fmt.Println("Registered Storage Plugin")
 	} else {
 		fmt.Println("Failed to load storage plugin", error)
 	}
@@ -220,6 +227,13 @@ func (s *Membrane) Start() {
 	if error != nil {
 		log.Fatalf("failed to listen: %v", error)
 	}
+
+	gateway, error := s.loadGatewayPlugin()
+	if error != nil {
+		panic(error)
+	}
+
+	fmt.Println("Registered Gateway Plugin")
 
 	// Start the gRPC server
 	go (func() {
@@ -234,15 +248,12 @@ func (s *Membrane) Start() {
 	// FIXME: Only do this in Gateway mode...
 	// Otherwise always pass through to the provided child address
 	// Start the Gateway Server
-	gateway, error := s.loadGatewayPlugin()
-	if error != nil {
-		panic(error)
-	}
 
 	// Start the gateway, this will provide us an entrypoint for
 	// data ingress/egress to our userland code
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
+	fmt.Println("Starting Gateway")
 	gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
 		childUrl := fmt.Sprintf("http://%s", s.childAddress)
 

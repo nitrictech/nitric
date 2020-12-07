@@ -1,3 +1,1 @@
-./build.sh
-
-docker build . -t nitric:membrane
+docker build . -t nitric:membrane --build-arg NITRIC_GITHUB_TOKEN=$NITRIC_GITHUB_TOKEN
