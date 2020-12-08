@@ -38,11 +38,17 @@ type Membrane struct {
 	childCommand string
 	// The plugin directory for loading membrane plugins
 	pluginDir string
+
+	// Plugin file names
+	eventingPluginFile  string
+	documentsPluginFile string
+	storagePluginFile   string
+	gatewayPluginFile   string
 }
 
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
-	pluginLocation := fmt.Sprintf("%s/eventing.so", s.pluginDir)
+	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.eventingPluginFile)
 	eventingPlugin, err := plugin.Open(pluginLocation)
 	if err != nil {
 		// There was an error loading the eventing plugin
@@ -66,7 +72,7 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
-	pluginLocation := fmt.Sprintf("%s/storage.so", s.pluginDir)
+	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.storagePluginFile)
 	storagePlugin, err := plugin.Open(pluginLocation)
 	if err != nil {
 		// There was an error loading the eventing plugin
@@ -89,7 +95,7 @@ func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
-	pluginLocation := fmt.Sprintf("%s/documents.so", s.pluginDir)
+	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.documentsPluginFile)
 	documentsPlugin, err := plugin.Open(pluginLocation)
 	if err != nil {
 		// There was an error loading the eventing plugin
@@ -120,7 +126,7 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 // - AWS Lambda plugin (for querying the AWS lambda service and directing/normalizing input to user land code)
 // - Kafka Plugin (for providing a streaming server)
 func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
-	pluginLocation := fmt.Sprintf("%s/gateway.so", s.pluginDir)
+	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.gatewayPluginFile)
 	// We expect that the gateway plugin will block the primary thread while it is processing
 	// userland input
 	gatewayPlugin, err := plugin.Open(pluginLocation)
@@ -243,7 +249,11 @@ func (s *Membrane) Start() {
 
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections
-	s.startChildProcess()
+	if s.childCommand != "" {
+		s.startChildProcess()
+	} else {
+		fmt.Println("No Child Configured Specified, Skipping...")
+	}
 
 	// FIXME: Only do this in Gateway mode...
 	// Otherwise always pass through to the provided child address
@@ -320,11 +330,15 @@ func (s *Membrane) Start() {
 }
 
 // Create a new Membrane server
-func New(serviceAddress string, childAddress string, childCommand string, pluginDir string) (*Membrane, error) {
+func New(serviceAddress string, childAddress string, childCommand string, pluginDir string, eventingPlugin string, documentsPlugin string, storagePlugin string, gatewayPlugin string) (*Membrane, error) {
 	return &Membrane{
-		serviceAddress: serviceAddress,
-		childAddress:   childAddress,
-		childCommand:   childCommand,
-		pluginDir:      pluginDir,
+		serviceAddress:      serviceAddress,
+		childAddress:        childAddress,
+		childCommand:        childCommand,
+		pluginDir:           pluginDir,
+		eventingPluginFile:  eventingPlugin,
+		storagePluginFile:   storagePlugin,
+		documentsPluginFile: documentsPlugin,
+		gatewayPluginFile:   gatewayPlugin,
 	}, nil
 }
