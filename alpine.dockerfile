@@ -12,11 +12,15 @@ RUN apk add --no-cache git gcc g++
 
 WORKDIR /
 
-COPY . .
-
 # XXX: Setup private github repo access
 RUN go env -w GOPRIVATE="github.com/nitric-dev"
 RUN git config --global url.https://$NITRIC_GITHUB_TOKEN:x-oauth-basic@github.com/.insteadOf https://github.com/
+
+# Cache dependencies in seperate layer
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
 
 RUN ./build.sh
 

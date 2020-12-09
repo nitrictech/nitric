@@ -1,1 +1,2 @@
-docker build . -t nitric:membrane --build-arg NITRIC_GITHUB_TOKEN=$NITRIC_GITHUB_TOKEN
+docker build . -f alpine.dockerfile -t nitric:membrane-alpine --build-arg NITRIC_GITHUB_TOKEN=$NITRIC_GITHUB_TOKEN
+docker build . -f debian.dockerfile -t nitric:membrane-debian --build-arg NITRIC_GITHUB_TOKEN=$NITRIC_GITHUB_TOKEN
