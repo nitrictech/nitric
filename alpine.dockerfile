@@ -8,7 +8,7 @@ RUN apk update
 RUN apk upgrade
 
 # RUN apk add --update go=1.8.3-r0 gcc=6.3.0-r4 g++=6.3.0-r4
-RUN apk add --no-cache git gcc g++
+RUN apk add --no-cache git gcc g++ make
 
 WORKDIR /
 
@@ -22,7 +22,7 @@ RUN go mod download
 
 COPY . .
 
-RUN ./build.sh
+RUN make build
 
 FROM alpine
 

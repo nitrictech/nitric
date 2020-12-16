@@ -16,7 +16,7 @@ RUN go mod download
 
 COPY . .
 
-RUN ./build.sh
+RUN make build
 
 FROM debian:buster-slim
 

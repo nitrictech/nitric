@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/nitric-dev/membrane-plugin-sdk/utils"
 	"nitric.io/membrane/membrane"
 )
@@ -15,19 +17,19 @@ func main() {
 	storagePluginFile := utils.GetEnv("STORAGE_PLUGIN", "storage.so")
 	gatewayPluginFile := utils.GetEnv("GATEWAY_PLUGIN", "gateway.so")
 
-	membrane, error := membrane.New(
-		serviceAddress,
-		childAddress,
-		childCommand,
-		pluginDir,
-		eventingPluginFile,
-		documentsPluginFile,
-		storagePluginFile,
-		gatewayPluginFile,
-	)
+	membrane, err := membrane.New(&membrane.MembraneOptions{
+		ServiceAddress:      serviceAddress,
+		ChildAddress:        childAddress,
+		ChildCommand:        childCommand,
+		PluginDir:           pluginDir,
+		EventingPluginFile:  eventingPluginFile,
+		DocumentsPluginFile: documentsPluginFile,
+		StoragePluginFile:   storagePluginFile,
+		GatewayPluginFile:   gatewayPluginFile,
+	})
 
-	if error != nil {
-		panic(error)
+	if err != nil {
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
 	// Start the Membrane server
