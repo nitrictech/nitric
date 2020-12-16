@@ -1,0 +1,23 @@
+name: Tests
+
+on: pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2-beta
+    - name: Setup Golang Private Packages
+      env:
+        TOKEN: ${{secrets.GOLANG_TOKEN}}
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        go env -w GOPRIVATE=github.com/nitric-dev
+        git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+    - name: Install modules
+      run: make install-tools
+    - name: Run Tests
+      run: make test
