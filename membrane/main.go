@@ -43,6 +43,8 @@ type MembraneOptions struct {
 	DocumentsPluginFile string
 	StoragePluginFile   string
 	GatewayPluginFile   string
+
+	TolerateMissingServices bool
 }
 
 type Membrane struct {
@@ -63,6 +65,10 @@ type Membrane struct {
 	documentsPluginFile string
 	storagePluginFile   string
 	gatewayPluginFile   string
+
+	// Tolerate if services are not available
+	// Not this does not include the gateway service
+	tolerateMissingServices bool
 
 	// Suppress println statements in the membrane server
 	supressLogs bool
@@ -225,46 +231,52 @@ func (s *Membrane) Start() {
 	grpcServer := grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
-	eventingServer, error := s.createEventingServer()
+	eventingServer, err := s.createEventingServer()
 
 	// There was a failure loading the eventing server
 	// XXX: For now we will gracefully continue
 	// However we will likely want to use env variables to determine required services
 	// for a given function
-	if error == nil {
+	if err == nil {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
 		s.log("Registered Eventing Plugin")
+	} else if s.tolerateMissingServices {
+		s.log(fmt.Sprintf("Failed to load eventing plugin %v", err))
 	} else {
-		s.log(fmt.Sprintf("Failed to load eventing plugin %v", error))
+		panic(fmt.Errorf("Fatal error loading eventing plugin"))
 	}
 
-	documentsServer, error := s.createDocumentsServer()
-	if error == nil {
+	documentsServer, err := s.createDocumentsServer()
+	if err == nil {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
 		s.log("Registered Documents Plugin")
+	} else if s.tolerateMissingServices {
+		s.log(fmt.Sprintf("Failed to load documents plugin %v", err))
 	} else {
-		s.log(fmt.Sprintf("Failed to load documents plugin %v", error))
+		panic(fmt.Errorf("Fatal error loading documents plugin"))
 	}
 
-	storageServer, error := s.createStorageServer()
-	if error == nil {
+	storageServer, err := s.createStorageServer()
+	if err == nil {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, storageServer)
 		s.log("Registered Storage Plugin")
+	} else if s.tolerateMissingServices {
+		s.log(fmt.Sprintf("Failed to load storage plugin %v", err))
 	} else {
-		s.log(fmt.Sprintf("Failed to load storage plugin %v", error))
+		panic(fmt.Errorf("Fatal error loading storage plugin"))
 	}
 
-	lis, error := net.Listen("tcp", s.serviceAddress)
-	if error != nil {
-		log.Fatalf("failed to listen: %v", error)
+	lis, err := net.Listen("tcp", s.serviceAddress)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
 	}
 
-	gateway, error := s.loadGatewayPlugin()
-	if error != nil {
-		panic(error)
+	gateway, err := s.loadGatewayPlugin()
+	if err != nil {
+		panic(err)
 	}
 
 	s.log("Registered Gateway Plugin")
@@ -292,17 +304,17 @@ func (s *Membrane) Start() {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
-	err := gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
+	err = gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
 		childUrl := fmt.Sprintf("http://%s", s.childAddress)
 
-		httpRequest, error := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
+		httpRequest, err := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
 
 		// There was an error creating the HTTP request
-		if error != nil {
+		if err != nil {
 			// return an error to the Gateway
 			return &gw.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(error.Error()),
+				Body:    []byte(err.Error()),
 				Status:  503,
 			}
 		}
@@ -318,24 +330,24 @@ func (s *Membrane) Start() {
 		// Here we'll be making a normal http request to the function server
 		// From here we will return the response from the server
 		// Always do a post request to the local function???
-		response, error := http.DefaultClient.Do(httpRequest)
+		response, err := http.DefaultClient.Do(httpRequest)
 
-		if error != nil {
+		if err != nil {
 			// there was an error calling the HTTP service
 			return &gw.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(error.Error()),
+				Body:    []byte(err.Error()),
 				Status:  503,
 			}
 		}
 
-		responseBody, error := ioutil.ReadAll(response.Body)
+		responseBody, err := ioutil.ReadAll(response.Body)
 
-		if error != nil {
+		if err != nil {
 			// There was an error reading the http response
 			return &gw.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(error.Error()),
+				Body:    []byte(err.Error()),
 				Status:  503,
 			}
 		}
@@ -365,16 +377,17 @@ func loadPluginDefault(location string) (PluginIface, error) {
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
 	return &Membrane{
-		serviceAddress:      options.ServiceAddress,
-		childAddress:        options.ChildAddress,
-		childCommand:        options.ChildCommand,
-		pluginDir:           options.PluginDir,
-		eventingPluginFile:  options.EventingPluginFile,
-		storagePluginFile:   options.StoragePluginFile,
-		documentsPluginFile: options.DocumentsPluginFile,
-		gatewayPluginFile:   options.GatewayPluginFile,
-		loadPlugin:          loadPluginDefault,
-		supressLogs:         false,
+		serviceAddress:          options.ServiceAddress,
+		childAddress:            options.ChildAddress,
+		childCommand:            options.ChildCommand,
+		pluginDir:               options.PluginDir,
+		eventingPluginFile:      options.EventingPluginFile,
+		storagePluginFile:       options.StoragePluginFile,
+		documentsPluginFile:     options.DocumentsPluginFile,
+		gatewayPluginFile:       options.GatewayPluginFile,
+		loadPlugin:              loadPluginDefault,
+		supressLogs:             false,
+		tolerateMissingServices: options.TolerateMissingServices,
 	}, nil
 }
 
@@ -383,15 +396,16 @@ func New(options *MembraneOptions) (*Membrane, error) {
 // By representing them as a symbol map
 func NewWithPluginLoader(options *MembraneOptions, loader PluginLoader) (*Membrane, error) {
 	return &Membrane{
-		serviceAddress:      options.ServiceAddress,
-		childAddress:        options.ChildAddress,
-		childCommand:        options.ChildCommand,
-		pluginDir:           options.PluginDir,
-		eventingPluginFile:  options.EventingPluginFile,
-		storagePluginFile:   options.StoragePluginFile,
-		documentsPluginFile: options.DocumentsPluginFile,
-		gatewayPluginFile:   options.GatewayPluginFile,
-		loadPlugin:          loader,
-		supressLogs:         true,
+		serviceAddress:          options.ServiceAddress,
+		childAddress:            options.ChildAddress,
+		childCommand:            options.ChildCommand,
+		pluginDir:               options.PluginDir,
+		eventingPluginFile:      options.EventingPluginFile,
+		storagePluginFile:       options.StoragePluginFile,
+		documentsPluginFile:     options.DocumentsPluginFile,
+		gatewayPluginFile:       options.GatewayPluginFile,
+		tolerateMissingServices: options.TolerateMissingServices,
+		loadPlugin:              loader,
+		supressLogs:             true,
 	}, nil
 }

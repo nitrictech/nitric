@@ -17,4 +17,4 @@
 plugins/
 bin/
 
-*.coverage
+*.coverprofile
