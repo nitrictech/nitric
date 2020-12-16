@@ -25,7 +25,10 @@ type NewStorageServer func() (storagePb.StorageServer, error)
 type NewDocumentsServer func() (documentsPb.DocumentsServer, error)
 type NewGateway func() (gw.Gateway, error)
 
-type PluginLoader func(location string) (*plugin.Plugin, error)
+type PluginIface interface {
+	Lookup(name string) (plugin.Symbol, error)
+}
+type PluginLoader func(location string) (PluginIface, error)
 
 type MembraneOptions struct {
 	ServiceAddress string
@@ -60,6 +63,15 @@ type Membrane struct {
 	documentsPluginFile string
 	storagePluginFile   string
 	gatewayPluginFile   string
+
+	// Suppress println statements in the membrane server
+	supressLogs bool
+}
+
+func (s *Membrane) log(log string) {
+	if !s.supressLogs {
+		fmt.Println(log)
+	}
 }
 
 // Create a new Nitric Eventing Server
@@ -222,27 +234,27 @@ func (s *Membrane) Start() {
 	if error == nil {
 		// Register the service
 		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
-		fmt.Println("Registered Eventing Plugin")
+		s.log("Registered Eventing Plugin")
 	} else {
-		fmt.Println("Failed to load eventing plugin", error)
+		s.log(fmt.Sprintf("Failed to load eventing plugin %v", error))
 	}
 
 	documentsServer, error := s.createDocumentsServer()
 	if error == nil {
 		// Register the service
 		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
-		fmt.Println("Registered Documents Plugin")
+		s.log("Registered Documents Plugin")
 	} else {
-		fmt.Println("Failed to load documents plugin", error)
+		s.log(fmt.Sprintf("Failed to load documents plugin %v", error))
 	}
 
 	storageServer, error := s.createStorageServer()
 	if error == nil {
 		// Register the service
 		storagePb.RegisterStorageServer(grpcServer, storageServer)
-		fmt.Println("Registered Storage Plugin")
+		s.log("Registered Storage Plugin")
 	} else {
-		fmt.Println("Failed to load storage plugin", error)
+		s.log(fmt.Sprintf("Failed to load storage plugin %v", error))
 	}
 
 	lis, error := net.Listen("tcp", s.serviceAddress)
@@ -255,11 +267,11 @@ func (s *Membrane) Start() {
 		panic(error)
 	}
 
-	fmt.Println("Registered Gateway Plugin")
+	s.log("Registered Gateway Plugin")
 
 	// Start the gRPC server
 	go (func() {
-		fmt.Println(fmt.Sprintf("Services listening on: %s", s.serviceAddress))
+		s.log(fmt.Sprintf("Services listening on: %s", s.serviceAddress))
 		grpcServer.Serve(lis)
 	})()
 
@@ -268,7 +280,7 @@ func (s *Membrane) Start() {
 	if s.childCommand != "" {
 		s.startChildProcess()
 	} else {
-		fmt.Println("No Child Configured Specified, Skipping...")
+		s.log("No Child Configured Specified, Skipping...")
 	}
 
 	// FIXME: Only do this in Gateway mode...
@@ -279,7 +291,7 @@ func (s *Membrane) Start() {
 	// data ingress/egress to our userland code
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
-	fmt.Println("Starting Gateway")
+	s.log("Starting Gateway")
 	err := gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
 		childUrl := fmt.Sprintf("http://%s", s.childAddress)
 
@@ -345,6 +357,11 @@ func (s *Membrane) Start() {
 	panic(err)
 }
 
+// Wrap default plugin loading to ensure mock plugin interface conformance...
+func loadPluginDefault(location string) (PluginIface, error) {
+	return plugin.Open(location)
+}
+
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
 	return &Membrane{
@@ -356,7 +373,8 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		storagePluginFile:   options.StoragePluginFile,
 		documentsPluginFile: options.DocumentsPluginFile,
 		gatewayPluginFile:   options.GatewayPluginFile,
-		loadPlugin:          plugin.Open,
+		loadPlugin:          loadPluginDefault,
+		supressLogs:         false,
 	}, nil
 }
 
@@ -374,5 +392,6 @@ func NewWithPluginLoader(options *MembraneOptions, loader PluginLoader) (*Membra
 		documentsPluginFile: options.DocumentsPluginFile,
 		gatewayPluginFile:   options.GatewayPluginFile,
 		loadPlugin:          loader,
+		supressLogs:         true,
 	}, nil
 }
