@@ -244,7 +244,7 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load eventing plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading eventing plugin"))
+		panic(fmt.Errorf("Fatal error loading eventing plugin %v", err))
 	}
 
 	documentsServer, err := s.createDocumentsServer()
@@ -255,7 +255,7 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load documents plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading documents plugin"))
+		panic(fmt.Errorf("Fatal error loading documents plugin %v", err))
 	}
 
 	storageServer, err := s.createStorageServer()
@@ -266,7 +266,7 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load storage plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading storage plugin"))
+		panic(fmt.Errorf("Fatal error loading storage plugin %v", err))
 	}
 
 	lis, err := net.Listen("tcp", s.serviceAddress)

@@ -19,17 +19,22 @@ func main() {
 	storagePluginFile := utils.GetEnv("STORAGE_PLUGIN", "storage.so")
 	gatewayPluginFile := utils.GetEnv("GATEWAY_PLUGIN", "gateway.so")
 
-	tolerateMissing := strconv.ParseBool(tolerateMissingServices)
+	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
+
+	if err != nil {
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
+	}
 
 	membrane, err := membrane.New(&membrane.MembraneOptions{
-		ServiceAddress:      serviceAddress,
-		ChildAddress:        childAddress,
-		ChildCommand:        childCommand,
-		PluginDir:           pluginDir,
-		EventingPluginFile:  eventingPluginFile,
-		DocumentsPluginFile: documentsPluginFile,
-		StoragePluginFile:   storagePluginFile,
-		GatewayPluginFile:   gatewayPluginFile,
+		ServiceAddress:          serviceAddress,
+		ChildAddress:            childAddress,
+		ChildCommand:            childCommand,
+		PluginDir:               pluginDir,
+		EventingPluginFile:      eventingPluginFile,
+		DocumentsPluginFile:     documentsPluginFile,
+		StoragePluginFile:       storagePluginFile,
+		GatewayPluginFile:       gatewayPluginFile,
+		TolerateMissingServices: tolerateMissing,
 	})
 
 	if err != nil {
