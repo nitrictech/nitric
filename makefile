@@ -40,7 +40,7 @@ aws-docker: generate-proto aws-docker-alpine aws-docker-debian
 	@echo Built AWS Docker Images
 # END AWS Plugins
 
-# BEGIN GCP Plugin
+# BEGIN GCP Plugins
 gcp-plugins:
 	@echo Building GCP plugins
 	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/documents/firestore.go
@@ -48,14 +48,31 @@ gcp-plugins:
 	@go build -buildmode=plugin -o lib/gateway/http.so ./plugins/gcp/gateway/http.go
 	@go build -buildmode=plugin -o lib/storage/storage.so ./plugins/gcp/storage/storage.go
 
-gcp-docker-alpine: generate-proto
+gcp-docker-alpine:
 	@docker build . -f ./plugins/gcp/alpine.dockerfile -t nitric:membrane-alpine-gcp
-gcp-docker-debian: generate-proto
+gcp-docker-debian:
 	@docker build . -f ./plugins/gcp/debian.dockerfile -t nitric:membrane-debian-gcp
 
 gcp-docker: generate-proto gcp-docker-alpine gcp-docker-debian
 	@echo Built GCP Docker Images
 # END GCP Plugins
+
+# BEGIN Local Plugins
+local-plugins:
+	@echo Building Local plugins
+	@go build -buildmode=plugin -o lib/documents.so ./plugins/dev/documents/documents.go
+	@go build -buildmode=plugin -o lib/eventing.so ./plugins/dev/eventing/eventing.go
+	@go build -buildmode=plugin -o lib/gateway.so ./plugins/dev/gateway/gateway.go
+	@go build -buildmode=plugin -o lib/storage.so ./plugins/dev/storage/storage.go
+
+local-docker-alpine:
+	@docker build . -f ./plugins/dev/alpine.dockerfile -t nitric:membrane-alpine-local
+local-docker-debian:
+	@docker build . -f ./plugins/dev/debian.dockerfile -t nitric:membrane-debian-local
+
+local-docker: local-docker-alpine local-docker-debian
+	@echo Built Local Docker Images
+# END Local Plugins
 
 membrane-docker-alpine: generate-proto
 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine

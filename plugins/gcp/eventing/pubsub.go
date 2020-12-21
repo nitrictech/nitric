@@ -37,7 +37,6 @@ func (s *PubsubPlugin) GetTopics() ([]string, error) {
 }
 
 func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
-	// event := request.GetEvent() //.GetMessage().MarshalJSON()
 	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
