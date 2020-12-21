@@ -1,4 +1,4 @@
-package membrane
+package services
 
 import (
 	"context"
@@ -56,7 +56,7 @@ func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopics
 	}
 }
 
-func NewEventingGrpcServer(eventingPlugin sdk.EventingPlugin) {
+func NewEventingServer(eventingPlugin sdk.EventingPlugin) {
 	return &EventingServer{
 		eventingPlugin: eventingPlugin,
 	}

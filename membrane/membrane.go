@@ -17,6 +17,7 @@ import (
 	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
 	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
 	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/services"
 	"google.golang.org/grpc"
 )
 
@@ -96,7 +97,7 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 	if newPluginFunc, ok := newEventingPlugin.(func() (sdk.EventingPlugin, error)); ok {
 		// Return the new eventing server, with the eventing plugin registered
 		if evtPlugin, err := newPluginFunc(); err == nil {
-			return NewEventingGrpcServer(evtPlugin), nil
+			return services.NewEventingServer(evtPlugin), nil
 		} else {
 			return nil, err
 		}
@@ -126,7 +127,7 @@ func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 	if newPluginFunc, ok := newStoragePlugin.(func() (sdk.StoragePlugin, error)); ok {
 		// Return the new eventing server, with the eventing plugin registered
 		if storagePlugin, err := newPluginFunc(); err == nil {
-			return NewStorageGrpcServer(storagePlugin), nil
+			return services.NewStorageServer(storagePlugin), nil
 		} else {
 			return nil, err
 		}
@@ -154,7 +155,7 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 	// Cast to the new documents server function
 	if newPluginFunc, ok := newDocumentsPlugin.(func() (sdk.DocumentsPlugin, error)); ok {
 		if documentsPlugin, err = newPluginFunc(); err == nil {
-			return NewGrpcDocumentsServer(documentsPlugin)
+			return services.NewDocumentsServer(documentsPlugin)
 		} else {
 			return nil, err
 		}

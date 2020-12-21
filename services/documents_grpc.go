@@ -1,4 +1,4 @@
-package membrane
+package services
 
 import (
 	"context"
@@ -96,7 +96,7 @@ func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocu
 	}
 }
 
-func NewGrpcDocumentsServer(documentsPlugin sdk.DocumentsPlugin) pb.DocumentsServer {
+func NewDocumentsServer(documentsPlugin sdk.DocumentsPlugin) pb.DocumentsServer {
 	return &DocumentsServer{
 		documentsPlugin: documentsPlugin,
 	}

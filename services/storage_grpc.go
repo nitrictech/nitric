@@ -1,4 +1,4 @@
-package membrane
+package services
 
 import (
 	"context"
@@ -51,7 +51,7 @@ func (s *StorageServer) Get(context.Context, *pb.GetRequest) (*pb.GetReply, erro
 	}
 }
 
-func NewStorageGrpcServer(storagePlugin sdk.StoragePlugin) {
+func NewStorageServer(storagePlugin sdk.StoragePlugin) {
 	return &StorageServer{
 		storagePlugin: storagePlugin,
 	}
