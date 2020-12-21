@@ -11,7 +11,7 @@ RUN go mod download
 
 COPY . .
 
-RUN make membrane
+RUN make
 
 FROM debian:buster-slim
 

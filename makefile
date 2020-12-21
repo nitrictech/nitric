@@ -12,6 +12,7 @@ install-tools: install
 
 clean:
 	@rm -rf ./bin/
+	@rm -rf ./lib/
 
 test: install-tools
 	@echo Running tests...
@@ -29,13 +30,20 @@ aws-plugins:
 	@go build -buildmode=plugin -o lib/gateway/lambda.so ./plugins/aws/gateway/lambda.go
 	@go build -buildmode=plugin -o lib/storage/s3.so ./plugins/aws/storage/s3.go
 
-aws-docker-debian:
+aws-docker-alpine: generate-proto
+	@docker build . -f ./plugins/aws/alpine.dockerfile -t nitric:membrane-alpine-aws
+aws-docker-debian: generate-proto
 	@docker build . -f ./plugins/aws/debian.dockerfile -t nitric:membrane-debian-aws
 
-build-docker-alpine:
+aws-docker: generate-proto aws-docker-alpine aws-docker-debian
+	@echo Built AWS Docker Images
+
+membrane-docker-alpine: generate-proto
 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
-build-docker-debian:
+membrane-docker-debian: generate-proto
 	@docker build . -f debian.dockerfile -t nitric:membrane-debian
 
-membrane-docker: generate-proto build-docker-alpine build-docker-debian
+# Generate proto files locally before building docker images
+# TODO: Get alpine image generating its own sources
+membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
 	@echo Built Docker Images
