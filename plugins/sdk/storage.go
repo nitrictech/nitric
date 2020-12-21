@@ -3,7 +3,7 @@ package sdk
 import "fmt"
 
 type StoragePlugin interface {
-	Get(bucket string, key string) []byte, error
+	Get(bucket string, key string) ([]byte, error)
 	Put(bucket string, key string, object []byte) error
 }
 
