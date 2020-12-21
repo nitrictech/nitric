@@ -13,17 +13,12 @@ import (
 	"strings"
 	"time"
 
-	gw "github.com/nitric-dev/membrane-plugin-sdk"
 	documentsPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/documents"
 	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
 	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
+	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc"
 )
-
-type NewEventingServer func() (eventingPb.EventingServer, error)
-type NewStorageServer func() (storagePb.StorageServer, error)
-type NewDocumentsServer func() (documentsPb.DocumentsServer, error)
-type NewGateway func() (gw.Gateway, error)
 
 type PluginIface interface {
 	Lookup(name string) (plugin.Symbol, error)
@@ -90,18 +85,24 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 	}
 
 	// Lookup the New method for the eventing server
-	newEventingServer, err := eventingPlugin.Lookup("New")
+	newEventingPlugin, err := eventingPlugin.Lookup("New")
 
 	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Eventing Server was incorrect: %v", err)
+		return nil, fmt.Errorf("Plugin did not expose expected Symbol New: %v", err)
 	}
 
 	// Cast to the new eventing server function
-	newServerFunc := newEventingServer.(func() (eventingPb.EventingServer, error))
-
-	// Return the new eventing server
-	return newServerFunc()
+	if newPluginFunc, ok := newEventingPlugin.(func() (sdk.EventingPlugin, error)); ok {
+		// Return the new eventing server, with the eventing plugin registered
+		if evtPlugin, err := newPluginFunc(); err == nil {
+			return NewEventingGrpcServer(evtPlugin), nil
+		} else {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("Interface for Symbol New in eventing plugin was incorrect")
+	}
 }
 
 // Create a new Nitric Storage Server
@@ -114,18 +115,24 @@ func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 	}
 
 	// Lookup the New method for the eventing server
-	newEventingServer, err := storagePlugin.Lookup("New")
+	newStoragePlugin, err := storagePlugin.Lookup("New")
 
 	if err != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Storage Server was incorrect: %v", err)
+		return nil, fmt.Errorf("Plugin did not expose expected Symbol New: %v", err)
 	}
 
 	// Cast to the new storage server function
-	newServerFunc := newEventingServer.(func() (storagePb.StorageServer, error))
-
-	// Return the new storage server
-	return newServerFunc()
+	if newPluginFunc, ok := newStoragePlugin.(func() (sdk.StoragePlugin, error)); ok {
+		// Return the new eventing server, with the eventing plugin registered
+		if storagePlugin, err := newPluginFunc(); err == nil {
+			return NewStorageGrpcServer(storagePlugin), nil
+		} else {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("Interface for Symbol New in storage plugin was incorrect")
+	}
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
@@ -137,7 +144,7 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 	}
 
 	// Lookup the New method for the eventing server
-	newDocumentsServer, err := documentsPlugin.Lookup("New")
+	newDocumentsPlugin, err := documentsPlugin.Lookup("New")
 
 	if err != nil {
 		// There was an error loading the eventing plugin
@@ -145,12 +152,15 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 	}
 
 	// Cast to the new documents server function
-	newServerFunc := newDocumentsServer.(func() (documentsPb.DocumentsServer, error))
-
-	// Return the new documents server
-	documentsServer, error := newServerFunc()
-
-	return documentsServer.(documentsPb.DocumentsServer), error
+	if newPluginFunc, ok := newDocumentsPlugin.(func() (sdk.DocumentsPlugin, error)); ok {
+		if documentsPlugin, err = newPluginFunc(); err == nil {
+			return NewGrpcDocumentsServer(documentsPlugin)
+		} else {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("Interface for Symbol New in documents plugin was incorrect")
+	}
 }
 
 // Provides a means for the nitric membrane to accept and normalize input/output for a given interface
@@ -159,7 +169,7 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 // - HTTP Proxy plugin (for providing a HTTP proxy down to user land code/applications)
 // - AWS Lambda plugin (for querying the AWS lambda service and directing/normalizing input to user land code)
 // - Kafka Plugin (for providing a streaming server)
-func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
+func (s *Membrane) loadGatewayPlugin() (sdk.GatewayPlugin, error) {
 	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.gatewayPluginFile)
 	// We expect that the gateway plugin will block the primary thread while it is processing
 	// userland input
@@ -178,7 +188,7 @@ func (s *Membrane) loadGatewayPlugin() (gw.Gateway, error) {
 	}
 
 	// Cast to the new documents server function
-	newServerFunc := newGatewayPlugin.(func() (gw.Gateway, error))
+	newServerFunc := newGatewayPlugin.(func() (sdk.GatewayPlugin, error))
 
 	// Return the new documents server
 	return newServerFunc()
@@ -304,7 +314,7 @@ func (s *Membrane) Start() {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
-	err = gateway.Start(func(request *gw.NitricRequest) *gw.NitricResponse {
+	err = gateway.Start(func(request *sdk.NitricRequest) *sdk.NitricResponse {
 		childUrl := fmt.Sprintf("http://%s", s.childAddress)
 
 		httpRequest, err := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
@@ -312,7 +322,7 @@ func (s *Membrane) Start() {
 		// There was an error creating the HTTP request
 		if err != nil {
 			// return an error to the Gateway
-			return &gw.NitricResponse{
+			return &sdk.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
 				Body:    []byte(err.Error()),
 				Status:  503,
@@ -334,7 +344,7 @@ func (s *Membrane) Start() {
 
 		if err != nil {
 			// there was an error calling the HTTP service
-			return &gw.NitricResponse{
+			return &sdk.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
 				Body:    []byte(err.Error()),
 				Status:  503,
@@ -345,7 +355,7 @@ func (s *Membrane) Start() {
 
 		if err != nil {
 			// There was an error reading the http response
-			return &gw.NitricResponse{
+			return &sdk.NitricResponse{
 				Headers: map[string]string{"Content-Type": "text/plain"},
 				Body:    []byte(err.Error()),
 				Status:  503,
@@ -358,7 +368,7 @@ func (s *Membrane) Start() {
 		}
 
 		// Pass the response back to the gateway
-		return &gw.NitricResponse{
+		return &sdk.NitricResponse{
 			Headers: headers,
 			Body:    responseBody,
 			Status:  response.StatusCode,
