@@ -55,3 +55,9 @@ func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopics
 		return nil, err
 	}
 }
+
+func NewEventingGrpcServer(eventingPlugin sdk.EventingPlugin) {
+	return &EventingServer{
+		eventingPlugin: eventingPlugin,
+	}
+}
