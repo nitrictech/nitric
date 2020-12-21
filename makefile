@@ -23,6 +23,10 @@ generate-proto:
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
 
+test-aws-plugins:
+	@echo Testing AWS Plugins
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/aws/...
+
 # BEGIN AWS Plugins
 aws-plugins:
 	@echo Building AWS plugins
