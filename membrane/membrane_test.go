@@ -5,33 +5,30 @@ import (
 	"plugin"
 	"strings"
 
-	gateway "github.com/nitric-dev/membrane-plugin-sdk"
-	documentsPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/documents"
-	eventingPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/eventing"
-	storagePb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/storage"
+	"github.com/nitric-dev/membrane/membrane"
+	"github.com/nitric-dev/membrane/plugins/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"nitric.io/membrane/membrane"
 )
 
 type MockEventingServer struct {
-	eventingPb.UnimplementedEventingServer
+	sdk.UnimplementedEventingPlugin
 }
 
 type MockStorageServer struct {
-	storagePb.UnimplementedStorageServer
+	sdk.UnimplementedStoragePlugin
 }
 
 type MockDocumentsServer struct {
-	documentsPb.UnimplementedDocumentsServer
+	sdk.UnimplementedDocumentsPlugin
 }
 
 type MockGateway struct {
-	gateway.Gateway
+	sdk.UnimplementedGatewayPlugin
 	started bool
 }
 
-func (gw *MockGateway) Start(handler gateway.GatewayHandler) error {
+func (gw *MockGateway) Start(handler sdk.GatewayHandler) error {
 	// Spy on the mock gateway
 	gw.started = true
 	return nil
@@ -72,7 +69,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"FakeMethod": func() (gateway.Gateway, error) {
+							"FakeMethod": func() (sdk.GatewayPlugin, error) {
 								return nil, fmt.Errorf("There was an error creating the gateway")
 							},
 						},
@@ -122,7 +119,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"New": func() (gateway.Gateway, error) {
+							"New": func() (sdk.GatewayPlugin, error) {
 								return nil, fmt.Errorf("There was an error creating the gateway")
 							},
 						},
@@ -148,7 +145,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"New": func() (gateway.Gateway, error) {
+							"New": func() (sdk.GatewayPlugin, error) {
 								return mockGateway, nil
 							},
 						},
@@ -182,7 +179,7 @@ var _ = Describe("Membrane", func() {
 				TolerateMissingServices: false,
 			}, mockPluginLoader)
 			It("Start should Panic", func() {
-				Expect(membrane.Start).To(PanicWith(fmt.Errorf("Fatal error loading eventing plugin")))
+				Expect(membrane.Start).To(Panic())
 			})
 		})
 
@@ -193,7 +190,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"New": func() (eventingPb.EventingServer, error) {
+							"New": func() (sdk.EventingPlugin, error) {
 								return mockEventingServer, nil
 							},
 						},
@@ -209,7 +206,7 @@ var _ = Describe("Membrane", func() {
 			}, mockPluginLoader)
 
 			It("Start should Panic", func() {
-				Expect(membrane.Start).To(PanicWith(fmt.Errorf("Fatal error loading documents plugin")))
+				Expect(membrane.Start).To(Panic())
 			})
 		})
 
@@ -221,7 +218,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"New": func() (eventingPb.EventingServer, error) {
+							"New": func() (sdk.EventingPlugin, error) {
 								return mockEventingServer, nil
 							},
 						},
@@ -232,7 +229,7 @@ var _ = Describe("Membrane", func() {
 					return &MockPlugin{
 						SymbolMap: map[string]interface{}{
 							// Create a new Gateway
-							"New": func() (documentsPb.DocumentsServer, error) {
+							"New": func() (sdk.DocumentsPlugin, error) {
 								return mockDocumentsServer, nil
 							},
 						},
@@ -249,7 +246,7 @@ var _ = Describe("Membrane", func() {
 			}, mockPluginLoader)
 
 			It("Start should Panic", func() {
-				Expect(membrane.Start).To(PanicWith(fmt.Errorf("Fatal error loading storage plugin")))
+				Expect(membrane.Start).To(Panic())
 			})
 		})
 	})
