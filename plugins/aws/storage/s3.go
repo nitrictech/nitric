@@ -40,7 +40,7 @@ func New() (sdk.StoragePlugin, error) {
 
 	s3Client := s3.New(sess)
 
-	return &S3Server{
+	return &S3Plugin{
 		client: s3Client,
 	}, nil
 }

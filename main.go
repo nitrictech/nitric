@@ -4,8 +4,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/nitric-dev/membrane-plugin-sdk/utils"
-	"nitric.io/membrane/membrane"
+	"github.com/nitric-dev/membrane/membrane"
+	"github.com/nitric-dev/membrane/utils"
 )
 
 func main() {

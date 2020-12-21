@@ -16,7 +16,7 @@ type StorageServer struct {
 }
 
 func (s *StorageServer) checkPluginRegistered() (bool, error) {
-	if s.eventingPlugin == nil {
+	if s.storagePlugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Eventing plugin not registered")
 	}
 
@@ -28,7 +28,7 @@ func (s *StorageServer) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutRep
 		if err := s.storagePlugin.Put(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
 			return &pb.PutReply{
 				Success: true,
-			}
+			}, nil
 		} else {
 			return nil, err
 		}
@@ -37,12 +37,12 @@ func (s *StorageServer) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutRep
 	}
 }
 
-func (s *StorageServer) Get(context.Context, *pb.GetRequest) (*pb.GetReply, error) {
+func (s *StorageServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetReply, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if object, err := s.storagePlugin.Get(req.GetBucketName(), req.GetKey()); err == nil {
 			return &pb.GetReply{
 				Body: object,
-			}
+			}, nil
 		} else {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func (s *StorageServer) Get(context.Context, *pb.GetRequest) (*pb.GetReply, erro
 	}
 }
 
-func NewStorageServer(storagePlugin sdk.StoragePlugin) {
+func NewStorageServer(storagePlugin sdk.StoragePlugin) pb.StorageServer {
 	return &StorageServer{
 		storagePlugin: storagePlugin,
 	}

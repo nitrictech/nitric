@@ -42,6 +42,7 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
+github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203020315-b1163dfd8dcf h1:E/MQFe8GOqDZ+2LFq11MZery0YnzikiL4Ig1rBcleU4=
 github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203211256-c0260bb38f1d h1:uv3gnLQSwZTmqXhNxNst+AaHzkdhRgpG5s7BWpVqGWk=
 github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203211256-c0260bb38f1d/go.mod h1:WsGYXGMYeoOgw4HOkM5a5DiI1U2s89ewcD7281ymNVs=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=

@@ -56,7 +56,7 @@ func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopics
 	}
 }
 
-func NewEventingServer(eventingPlugin sdk.EventingPlugin) {
+func NewEventingServer(eventingPlugin sdk.EventingPlugin) pb.EventingServer {
 	return &EventingServer{
 		eventingPlugin: eventingPlugin,
 	}

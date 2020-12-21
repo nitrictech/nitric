@@ -11,10 +11,10 @@ type UnimplementedStoragePlugin struct {
 	StoragePlugin
 }
 
-func(*UnimplementedStoragePlugin) Get(bucket string, key string) []byte, error {
+func (*UnimplementedStoragePlugin) Get(bucket string, key string) ([]byte, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func(*UnimplementedStoragePlugin) Put(bucket string, key string, object []byte) error {
+func (*UnimplementedStoragePlugin) Put(bucket string, key string, object []byte) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }

@@ -6,7 +6,6 @@ require (
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/golang/protobuf v1.4.3
-	github.com/nitric-dev/membrane-plugin-sdk v0.0.0-20201203211256-c0260bb38f1d
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb // indirect

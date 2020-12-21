@@ -154,8 +154,8 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 
 	// Cast to the new documents server function
 	if newPluginFunc, ok := newDocumentsPlugin.(func() (sdk.DocumentsPlugin, error)); ok {
-		if documentsPlugin, err = newPluginFunc(); err == nil {
-			return services.NewDocumentsServer(documentsPlugin)
+		if docsPlugin, err := newPluginFunc(); err == nil {
+			return services.NewDocumentsServer(docsPlugin), nil
 		} else {
 			return nil, err
 		}
