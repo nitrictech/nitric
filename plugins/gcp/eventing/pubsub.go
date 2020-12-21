@@ -17,7 +17,7 @@ type PubsubPlugin struct {
 }
 
 func (s *PubsubPlugin) GetTopics() ([]string, error) {
-	iter := s.client.Topics(ctx)
+	iter := s.client.Topics(context.TODO())
 
 	var topics []string
 	for {
@@ -36,8 +36,9 @@ func (s *PubsubPlugin) GetTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *PubsubPlugin) Publish(topic string, event *NitricEvent) error {
+func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
 	// event := request.GetEvent() //.GetMessage().MarshalJSON()
+	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
 
@@ -45,13 +46,13 @@ func (s *PubsubPlugin) Publish(topic string, event *NitricEvent) error {
 		return fmt.Errorf("Payload marshalling error: %v", err)
 	}
 
-	topic := s.client.Topic(request.GetTopicName())
+	pubsubTopic := s.client.Topic(topic)
 
 	msg := &pubsub.Message{
 		Data: eventBytes,
 	}
 
-	if _, err := topic.Publish(ctx, msg).Get(ctx); err != nil {
+	if _, err := pubsubTopic.Publish(ctx, msg).Get(ctx); err != nil {
 		return fmt.Errorf("Payload marshalling error: %v", err)
 	}
 
@@ -71,7 +72,7 @@ func New() (sdk.EventingPlugin, error) {
 		return nil, fmt.Errorf("pubsub client error: %v", clientError)
 	}
 
-	return &PubsubServer{
+	return &PubsubPlugin{
 		client: client,
 	}, nil
 }

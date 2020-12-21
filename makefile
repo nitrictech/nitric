@@ -23,6 +23,7 @@ generate-proto:
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
 
+# BEGIN AWS Plugins
 aws-plugins:
 	@echo Building AWS plugins
 	@go build -buildmode=plugin -o lib/documents/dynamodb.so ./plugins/aws/documents/dynamodb.go
@@ -37,6 +38,24 @@ aws-docker-debian: generate-proto
 
 aws-docker: generate-proto aws-docker-alpine aws-docker-debian
 	@echo Built AWS Docker Images
+# END AWS Plugins
+
+# BEGIN GCP Plugin
+gcp-plugins:
+	@echo Building GCP plugins
+	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/documents/firestore.go
+	@go build -buildmode=plugin -o lib/eventing/pubsub.so ./plugins/gcp/eventing/pubsub.go
+	@go build -buildmode=plugin -o lib/gateway/http.so ./plugins/gcp/gateway/http.go
+	@go build -buildmode=plugin -o lib/storage/storage.so ./plugins/gcp/storage/storage.go
+
+gcp-docker-alpine: generate-proto
+	@docker build . -f ./plugins/gcp/alpine.dockerfile -t nitric:membrane-alpine-gcp
+gcp-docker-debian: generate-proto
+	@docker build . -f ./plugins/gcp/debian.dockerfile -t nitric:membrane-debian-gcp
+
+gcp-docker: generate-proto gcp-docker-alpine gcp-docker-debian
+	@echo Built GCP Docker Images
+# END GCP Plugins
 
 membrane-docker-alpine: generate-proto
 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine

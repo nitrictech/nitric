@@ -41,7 +41,7 @@ func (s *FirestorePlugin) GetDocument(collection string, key string) (map[string
 }
 
 func (s *FirestorePlugin) UpdateDocument(collection string, key string, document map[string]interface{}) error {
-	_, error := s.client.Collection(collection).Doc(key).Set(context.TODO(), request.GetDocument().AsMap())
+	_, error := s.client.Collection(collection).Doc(key).Set(context.TODO(), document)
 
 	if error != nil {
 		return fmt.Errorf("Error creating retrieving document: %v", error)

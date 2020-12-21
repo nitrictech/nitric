@@ -23,7 +23,7 @@ func (s *StoragePlugin) Put(bucket string, key string, object []byte) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func New() (pb.StorageServer, error) {
+func New() (sdk.StoragePlugin, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, storage.ScopeReadWrite)
