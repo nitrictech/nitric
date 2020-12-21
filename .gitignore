@@ -13,8 +13,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-
-plugins/
 bin/
 
 *.coverprofile
+
+# Ignore proto generated interfaces
+interfaces/

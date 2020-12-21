@@ -1,3 +1,7 @@
+membrane: install generate-proto
+	@echo Building Go Project...
+	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane main.go
+
 install:
 	@echo installing go dependencies
 	@go mod download
@@ -9,13 +13,21 @@ install-tools: install
 clean:
 	@rm -rf ./bin/
 
-build:
-	@echo Building Go Project...
-	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane main.go
-
-test:
+test: install-tools
 	@echo Running tests...
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./membrane/...
+
+generate-proto:
+	@echo Generating Proto Sources
+	@mkdir ./interfaces/
+	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+
+aws-plugins:
+	@echo Building AWS plugins
+	@go build -buildmode=plugin -o lib/documents/dynamo-db.so ./plugins/aws/documents/dynamodb.go
+	@go build -buildmode=plugin -o lib/eventing/sns.so ./plugins/aws/eventing/sns.go
+	@go build -buildmode=plugin -o lib/gateway/lambda.so ./plugins/aws/gateway/lambda.go
+	@go build -buildmode=plugin -o lib/storage/s3.so ./plugins/aws/storage/s3.go
 
 build-docker-alpine:
 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine --build-arg NITRIC_GITHUB_TOKEN=${NITRIC_GITHUB_TOKEN}

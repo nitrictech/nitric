@@ -1,0 +1,3 @@
+[submodule "contracts"]
+	path = contracts
+	url = git@github.com:nitric-dev/ambassador-contracts.git

@@ -14,9 +14,9 @@ import (
 	"time"
 
 	gw "github.com/nitric-dev/membrane-plugin-sdk"
-	documentsPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/documents"
-	eventingPb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/eventing"
-	storagePb "github.com/nitric-dev/membrane-plugin-sdk/nitric/v1/storage"
+	documentsPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/documents"
+	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
+	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
 	"google.golang.org/grpc"
 )
 
