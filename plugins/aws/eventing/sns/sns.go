@@ -1,4 +1,4 @@
-package main
+package sns_plugin
 
 import (
 	"encoding/json"

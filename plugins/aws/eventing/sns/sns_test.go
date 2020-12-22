@@ -1,4 +1,4 @@
-package main_test
+package sns_plugin_test
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	plugin "github.com/nitric-dev/membrane/plugins/aws/eventing"
+	plugin "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 )
 

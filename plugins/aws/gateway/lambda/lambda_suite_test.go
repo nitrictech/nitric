@@ -1,4 +1,4 @@
-package main_test
+package lambda_plugin_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDynamoDb(t *testing.T) {
+func TestLambda(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "DynamoDb Suite")
+	RunSpecs(t, "Lambda Suite")
 }

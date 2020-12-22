@@ -1,4 +1,4 @@
-package main
+package s3_plugin
 
 import (
 	"fmt"

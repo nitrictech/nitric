@@ -1,4 +1,4 @@
-package main_test
+package sns_plugin_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestLambda(t *testing.T) {
+func TestSns(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Lambda Suite")
+	RunSpecs(t, "Sns Suite")
 }

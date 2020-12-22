@@ -1,4 +1,4 @@
-package main
+package documents_plugin
 
 import (
 	"fmt"

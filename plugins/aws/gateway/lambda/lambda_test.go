@@ -1,4 +1,4 @@
-package main_test
+package lambda_plugin_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	plugin "github.com/nitric-dev/membrane/plugins/aws/gateway"
+	plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 )
 
 type MockLambdaRuntime struct {

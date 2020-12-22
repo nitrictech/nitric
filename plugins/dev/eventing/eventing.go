@@ -1,4 +1,4 @@
-package main
+package eventing_plugin
 
 import (
 	"bytes"

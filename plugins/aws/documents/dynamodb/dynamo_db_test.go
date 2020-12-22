@@ -1,4 +1,4 @@
-package main_test
+package dynamodb_plugin_test
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	plugin "github.com/nitric-dev/membrane/plugins/aws/documents"
+	plugin "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

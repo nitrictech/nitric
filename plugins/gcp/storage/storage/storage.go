@@ -1,4 +1,4 @@
-package main
+package storage_plugin
 
 import (
 	"context"

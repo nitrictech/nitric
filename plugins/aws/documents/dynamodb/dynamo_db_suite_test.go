@@ -1,4 +1,4 @@
-package main_test
+package dynamodb_plugin_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestSns(t *testing.T) {
+func TestDynamoDb(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Sns Suite")
+	RunSpecs(t, "DynamoDb Suite")
 }

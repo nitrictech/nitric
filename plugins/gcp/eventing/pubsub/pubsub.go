@@ -1,4 +1,4 @@
-package main
+package pubsub_plugin
 
 import (
 	"context"

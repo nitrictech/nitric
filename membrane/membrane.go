@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"plugin"
 	"strings"
 	"time"
 
@@ -21,30 +20,23 @@ import (
 	"google.golang.org/grpc"
 )
 
-type PluginIface interface {
-	Lookup(name string) (plugin.Symbol, error)
-}
-type PluginLoader func(location string) (PluginIface, error)
-
 type MembraneOptions struct {
 	ServiceAddress string
 	// The address the child will be listening on
 	ChildAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand string
-	// The plugin directory for loading membrane plugins
-	PluginDir string
-	// Plugin file names
-	EventingPluginFile  string
-	DocumentsPluginFile string
-	StoragePluginFile   string
-	GatewayPluginFile   string
 
+	EventingPlugin  sdk.EventingPlugin
+	DocumentsPlugin sdk.DocumentsPlugin
+	StoragePlugin   sdk.StoragePlugin
+	GatewayPlugin   sdk.GatewayPlugin
+
+	SuppressLogs            bool
 	TolerateMissingServices bool
 }
 
 type Membrane struct {
-	loadPlugin PluginLoader
 	// Address & port to bind the membrane i/o proxy to
 	// This will still be bound even in pass through mode
 	// proxyAddress string
@@ -54,13 +46,12 @@ type Membrane struct {
 	childAddress string
 	// The command that will be used to invoke the child process
 	childCommand string
-	// The plugin directory for loading membrane plugins
-	pluginDir string
-	// Plugin file names
-	eventingPluginFile  string
-	documentsPluginFile string
-	storagePluginFile   string
-	gatewayPluginFile   string
+
+	// Configured plugins
+	eventingPlugin  sdk.EventingPlugin
+	documentsPlugin sdk.DocumentsPlugin
+	storagePlugin   sdk.StoragePlugin
+	gatewayPlugin   sdk.GatewayPlugin
 
 	// Tolerate if services are not available
 	// Not this does not include the gateway service
@@ -78,89 +69,30 @@ func (s *Membrane) log(log string) {
 
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
-	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.eventingPluginFile)
-	eventingPlugin, err := s.loadPlugin(pluginLocation)
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric eventing plugin from %s: %v", pluginLocation, err)
-	}
-
-	// Lookup the New method for the eventing server
-	newEventingPlugin, err := eventingPlugin.Lookup("New")
-
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Plugin did not expose expected Symbol New: %v", err)
-	}
-
 	// Cast to the new eventing server function
-	if newPluginFunc, ok := newEventingPlugin.(func() (sdk.EventingPlugin, error)); ok {
-		// Return the new eventing server, with the eventing plugin registered
-		if evtPlugin, err := newPluginFunc(); err == nil {
-			return services.NewEventingServer(evtPlugin), nil
-		} else {
-			return nil, err
-		}
+	if s.eventingPlugin != nil {
+		return services.NewEventingServer(s.eventingPlugin), nil
 	} else {
-		return nil, fmt.Errorf("Interface for Symbol New in eventing plugin was incorrect")
+		return nil, fmt.Errorf("Eventing plugin not configured")
 	}
 }
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
-	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.storagePluginFile)
-	storagePlugin, err := s.loadPlugin(pluginLocation)
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric storage plugin from %s: %v", pluginLocation, err)
-	}
-
-	// Lookup the New method for the eventing server
-	newStoragePlugin, err := storagePlugin.Lookup("New")
-
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Plugin did not expose expected Symbol New: %v", err)
-	}
-
 	// Cast to the new storage server function
-	if newPluginFunc, ok := newStoragePlugin.(func() (sdk.StoragePlugin, error)); ok {
-		// Return the new eventing server, with the eventing plugin registered
-		if storagePlugin, err := newPluginFunc(); err == nil {
-			return services.NewStorageServer(storagePlugin), nil
-		} else {
-			return nil, err
-		}
+	if s.storagePlugin != nil {
+		return services.NewStorageServer(s.storagePlugin), nil
 	} else {
-		return nil, fmt.Errorf("Interface for Symbol New in storage plugin was incorrect")
+		return nil, fmt.Errorf("Storage plugin not configured")
 	}
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
-	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.documentsPluginFile)
-	documentsPlugin, err := s.loadPlugin(pluginLocation)
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric documents plugin from %s: %v", pluginLocation, err)
-	}
-
-	// Lookup the New method for the eventing server
-	newDocumentsPlugin, err := documentsPlugin.Lookup("New")
-
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Documents Server was incorrect: %v", err)
-	}
-
 	// Cast to the new documents server function
-	if newPluginFunc, ok := newDocumentsPlugin.(func() (sdk.DocumentsPlugin, error)); ok {
-		if docsPlugin, err := newPluginFunc(); err == nil {
-			return services.NewDocumentsServer(docsPlugin), nil
-		} else {
-			return nil, err
-		}
+	if s.documentsPlugin != nil {
+		return services.NewDocumentsServer(s.documentsPlugin), nil
 	} else {
-		return nil, fmt.Errorf("Interface for Symbol New in documents plugin was incorrect")
+		return nil, fmt.Errorf("Documents plugin not configured")
 	}
 }
 
@@ -171,28 +103,12 @@ func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) 
 // - AWS Lambda plugin (for querying the AWS lambda service and directing/normalizing input to user land code)
 // - Kafka Plugin (for providing a streaming server)
 func (s *Membrane) loadGatewayPlugin() (sdk.GatewayPlugin, error) {
-	pluginLocation := fmt.Sprintf("%s/%s", s.pluginDir, s.gatewayPluginFile)
-	// We expect that the gateway plugin will block the primary thread while it is processing
-	// userland input
-	gatewayPlugin, err := s.loadPlugin(pluginLocation)
-	if err != nil {
+	if s.gatewayPlugin != nil {
 		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("There was an issue loading the Nitric gateway plugin from %s: %v", pluginLocation, err)
+		return s.gatewayPlugin, nil
 	}
 
-	// Lookup the New method for the eventing server
-	newGatewayPlugin, err := gatewayPlugin.Lookup("New")
-
-	if err != nil {
-		// There was an error loading the eventing plugin
-		return nil, fmt.Errorf("Interface for Gateway Server was incorrect: %v", err)
-	}
-
-	// Cast to the new documents server function
-	newServerFunc := newGatewayPlugin.(func() (sdk.GatewayPlugin, error))
-
-	// Return the new documents server
-	return newServerFunc()
+	return nil, fmt.Errorf("Gateway plugin not configured")
 }
 
 func (s *Membrane) startChildProcess() {
@@ -380,43 +296,17 @@ func (s *Membrane) Start() {
 	panic(err)
 }
 
-// Wrap default plugin loading to ensure mock plugin interface conformance...
-func loadPluginDefault(location string) (PluginIface, error) {
-	return plugin.Open(location)
-}
-
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
 		childAddress:            options.ChildAddress,
 		childCommand:            options.ChildCommand,
-		pluginDir:               options.PluginDir,
-		eventingPluginFile:      options.EventingPluginFile,
-		storagePluginFile:       options.StoragePluginFile,
-		documentsPluginFile:     options.DocumentsPluginFile,
-		gatewayPluginFile:       options.GatewayPluginFile,
-		loadPlugin:              loadPluginDefault,
-		supressLogs:             false,
+		eventingPlugin:          options.EventingPlugin,
+		storagePlugin:           options.StoragePlugin,
+		documentsPlugin:         options.DocumentsPlugin,
+		gatewayPlugin:           options.GatewayPlugin,
+		supressLogs:             options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
-	}, nil
-}
-
-// Ability to mock plugins for the Membrane server
-// or apply plugin implementations that exist in memory already
-// By representing them as a symbol map
-func NewWithPluginLoader(options *MembraneOptions, loader PluginLoader) (*Membrane, error) {
-	return &Membrane{
-		serviceAddress:          options.ServiceAddress,
-		childAddress:            options.ChildAddress,
-		childCommand:            options.ChildCommand,
-		pluginDir:               options.PluginDir,
-		eventingPluginFile:      options.EventingPluginFile,
-		storagePluginFile:       options.StoragePluginFile,
-		documentsPluginFile:     options.DocumentsPluginFile,
-		gatewayPluginFile:       options.GatewayPluginFile,
-		tolerateMissingServices: options.TolerateMissingServices,
-		loadPlugin:              loader,
-		supressLogs:             true,
 	}, nil
 }

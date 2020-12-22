@@ -1,5 +1,5 @@
-// The AWS HTTP gateway plugin
-package main
+// The GCP HTTP gateway plugin
+package http_plugin
 
 import (
 	"encoding/base64"

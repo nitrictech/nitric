@@ -5,19 +5,18 @@ import (
 	"strconv"
 
 	"github.com/nitric-dev/membrane/membrane"
+	documents "github.com/nitric-dev/membrane/plugins/gcp/documents/firestore"
+	eventing "github.com/nitric-dev/membrane/plugins/gcp/eventing/pubsub"
+	gateway "github.com/nitric-dev/membrane/plugins/gcp/gateway/http"
+	storage "github.com/nitric-dev/membrane/plugins/gcp/storage/storage"
 	"github.com/nitric-dev/membrane/utils"
 )
 
 func main() {
 	serviceAddress := utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	pluginDir := utils.GetEnv("PLUGIN_DIR", "./plugins")
 	childCommand := utils.GetEnv("INVOKE", "")
 	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
-	eventingPluginFile := utils.GetEnv("EVENTING_PLUGIN", "eventing.so")
-	documentsPluginFile := utils.GetEnv("DOCUMENTS_PLUGIN", "documents.so")
-	storagePluginFile := utils.GetEnv("STORAGE_PLUGIN", "storage.so")
-	gatewayPluginFile := utils.GetEnv("GATEWAY_PLUGIN", "gateway.so")
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
 
@@ -25,15 +24,19 @@ func main() {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
+	eventingPlugin, _ := eventing.New()
+	documentsPlugin, _ := documents.New()
+	storagePlugin, _ := storage.New()
+	gatewayPlugin, _ := gateway.New()
+
 	membrane, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
-		PluginDir:               pluginDir,
-		EventingPluginFile:      eventingPluginFile,
-		DocumentsPluginFile:     documentsPluginFile,
-		StoragePluginFile:       storagePluginFile,
-		GatewayPluginFile:       gatewayPluginFile,
+		EventingPlugin:          eventingPlugin,
+		DocumentsPlugin:         documentsPlugin,
+		StoragePlugin:           storagePlugin,
+		GatewayPlugin:           gatewayPlugin,
 		TolerateMissingServices: tolerateMissing,
 	})
 

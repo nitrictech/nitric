@@ -1,5 +1,5 @@
 // The AWS HTTP gateway plugin
-package main
+package gateway_plugin
 
 import (
 	"fmt"
