@@ -9,7 +9,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        token: ${{secrets.SUBMOD_PAT}}
+        token: ${{secrets.GOLANG_TOKEN}}
         submodules: recursive
     - name: Setup Go
       uses: actions/setup-go@v2
