@@ -12,10 +12,13 @@ jobs:
         token: ${{secrets.GOLANG_TOKEN}}
         submodules: recursive
     - name: Setup Go
-      uses: actions/setup-go@v2-beta
+      uses: actions/setup-go@v2-beta      
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
     - name: Install modules
-      run: make install-tools
+      run: |
+        make install-tools
+        echo "$GOPATH/bin" >> $GITHUB_PATH
+        echo "$GITHUB_PATH"
     - name: Run Tests
       run: make test
