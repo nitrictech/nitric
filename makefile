@@ -14,14 +14,20 @@ clean:
 	@rm -rf ./bin/
 	@rm -rf ./lib/
 
-test: install-tools generate-proto
-	@echo Running tests...
-	@go run github.com/onsi/ginkgo/ginkgo -cover ./membrane/...
+# Run all tests
+test: test-membrane test-aws-plugins
+	@echo Done.
 
+# Generate interfaces
 generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+
+# Test the membrane
+test-membrane: install-tools generate-proto 
+	@echo Testing Membrane
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./membrane/...
 
 # BEGIN AWS Plugins
 test-aws-plugins:
@@ -46,7 +52,7 @@ aws-docker-debian:
 aws-docker-static: generate-proto
 	@docker build . -f ./plugins/aws/aws.dockerfile -t nitric:membrane-aws
 
-aws-docker: generate-proto aws-docker-alpine aws-docker-debian
+aws-docker: aws-docker-static aws-docker-alpine aws-docker-debian 
 	@echo Built AWS Docker Images
 # END AWS Plugins
 
