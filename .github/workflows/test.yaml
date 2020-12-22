@@ -13,6 +13,8 @@ jobs:
         submodules: recursive
     - name: Setup Go
       uses: actions/setup-go@v2
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
     - name: Install modules
       run: make install-tools
     - name: Run Tests
