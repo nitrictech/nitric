@@ -14,7 +14,7 @@ clean:
 	@rm -rf ./bin/
 	@rm -rf ./lib/
 
-test: install-tools
+test: install-tools generate-proto
 	@echo Running tests...
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./membrane/...
 
