@@ -16,9 +16,6 @@ jobs:
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
     - name: Install modules
-      run: |
-        make install-tools
-        echo "$GOPATH/bin" >> $GITHUB_PATH
-        echo "$GITHUB_PATH"
+      run: make install-tools
     - name: Run Tests
       run: make test
