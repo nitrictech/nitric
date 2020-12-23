@@ -23,7 +23,7 @@ type MockHandler struct {
 	respondsWith *sdk.NitricResponse
 }
 
-const GATEWAY_ADDRESS = "127.0.0.1:8080"
+const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 func (m *MockHandler) handle(request *sdk.NitricRequest) *sdk.NitricResponse {
 	if m.handledRequests == nil {
@@ -82,7 +82,9 @@ var _ = Describe("Http", func() {
 				var responseBody = make([]byte, 0)
 
 				if err == nil {
-					responseBody, _ := ioutil.ReadAll(resp.Body)
+					if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
+						responseBody = bytes
+					}
 				}
 
 				By("Not returning an error")
