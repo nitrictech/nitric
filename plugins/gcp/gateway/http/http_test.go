@@ -56,14 +56,13 @@ var _ = Describe("Http", func() {
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	mockHandler := &MockHandler{}
-
 	httpPlugin, _ := http_plugin.New()
 	// Run on a non-blocking thread
 	go (httpPlugin.Start)(mockHandler.handle)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
-	time.Sleep(10)
+	time.Sleep(100)
 
 	AfterEach(func() {
 		mockHandler.resetRequests()
