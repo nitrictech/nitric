@@ -10,6 +10,20 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// type FirestoreClientIface interface {
+// 	Collection(string) FirestoreCollectionIface
+// }
+
+// type FirestoreCollectionIface interface {
+// 	Doc(string) FirestoreDocumentIface
+// }
+
+// type FirestoreDocumentIface interface {
+// 	Create(context.Context, interface{}) (*firestore.WriteResult, error)
+// 	Get(context.Context) (*firestore.DocumentSnapshot, error)
+// 	Set(context.Context, interface{}) (*firestore.WriteResult, error)
+// }
+
 type FirestorePlugin struct {
 	client *firestore.Client
 	sdk.UnimplementedDocumentsPlugin
@@ -41,10 +55,18 @@ func (s *FirestorePlugin) GetDocument(collection string, key string) (map[string
 }
 
 func (s *FirestorePlugin) UpdateDocument(collection string, key string, document map[string]interface{}) error {
-	_, error := s.client.Collection(collection).Doc(key).Set(context.TODO(), document)
+	docRef := s.client.Collection(collection).Doc(key)
 
-	if error != nil {
-		return fmt.Errorf("Error creating retrieving document: %v", error)
+	_, err := docRef.Get(context.TODO())
+
+	if err == nil {
+		_, err := s.client.Collection(collection).Doc(key).Set(context.TODO(), document)
+
+		if err != nil {
+			return fmt.Errorf("Error updating document: %v", err)
+		}
+	} else {
+		return fmt.Errorf("Document does not exist: %v", err)
 	}
 
 	return nil
@@ -73,6 +95,12 @@ func New() (sdk.DocumentsPlugin, error) {
 		return nil, fmt.Errorf("firestore client error: %v", clientError)
 	}
 
+	return &FirestorePlugin{
+		client: client,
+	}, nil
+}
+
+func NewWithClient(client *firestore.Client) (sdk.DocumentsPlugin, error) {
 	return &FirestorePlugin{
 		client: client,
 	}, nil

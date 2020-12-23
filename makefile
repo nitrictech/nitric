@@ -15,7 +15,7 @@ clean:
 	@rm -rf ./lib/
 
 # Run all tests
-test: test-membrane test-aws-plugins
+test: test-membrane test-aws-plugins test-gcp-plugins
 	@echo Done.
 
 # Generate interfaces
@@ -57,6 +57,10 @@ aws-docker: aws-docker-static aws-docker-alpine aws-docker-debian
 # END AWS Plugins
 
 # BEGIN GCP Plugins
+test-gcp-plugins:
+	@echo Testing GCP Plugins
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/gcp/...
+
 gcp-static:
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
