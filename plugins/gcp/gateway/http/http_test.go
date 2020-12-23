@@ -79,7 +79,11 @@ var _ = Describe("Http", func() {
 				request.Header.Add("User-Agent", "Test")
 				resp, err := http.DefaultClient.Do(request)
 
-				responseBody, _ := ioutil.ReadAll(resp.Body)
+				var responseBody = make([]byte, 0)
+
+				if err == nil {
+					responseBody, _ := ioutil.ReadAll(resp.Body)
+				}
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())
