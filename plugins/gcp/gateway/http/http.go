@@ -34,7 +34,10 @@ func (s *HttpProxyGateway) Start(handler sdk.GatewayHandler) error {
 		bytes, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			// Return a http error here...
-			return
+			resp.Header().Add("Content-Type", "text/plain")
+			resp.WriteHeader(500)
+			// TODO: Remove this unless in debug mode...
+			resp.Write([]byte(err.Error()))
 		}
 
 		var payload = bytes

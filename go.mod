@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/storage v1.10.0
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
+	github.com/docker/docker v20.10.1+incompatible // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/googleapis/gax-go v1.0.3 // indirect
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
@@ -23,4 +24,5 @@ require (
 	google.golang.org/grpc v1.34.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.0.1
 	google.golang.org/protobuf v1.25.0
+	gotest.tools/v3 v3.0.3 // indirect
 )
