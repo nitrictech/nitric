@@ -111,8 +111,6 @@ func (m *MockFirestoreServer) BeginTransaction(context.Context, *pb.BeginTransac
 
 func (m *MockFirestoreServer) Commit(ctx context.Context, req *pb.CommitRequest) (*pb.CommitResponse, error) {
 	// Return a fake commit response...
-	fmt.Println(fmt.Sprintf("Commit Called, Store Contains: %v", m.Store))
-	req.GetWrites()
 	for _, write := range req.GetWrites() {
 		if op, ok := write.GetOperation().(*pb.Write_Update); ok {
 			document := op.Update
