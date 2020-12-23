@@ -75,3 +75,9 @@ func New() (sdk.EventingPlugin, error) {
 		client: client,
 	}, nil
 }
+
+func NewWithClient(client *pubsub.Client) (sdk.EventingPlugin, error) {
+	return &PubsubPlugin{
+		client: client,
+	}, nil
+}

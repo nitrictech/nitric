@@ -1,4 +1,4 @@
-package mock_firestore
+package mocks
 
 import (
 	"context"

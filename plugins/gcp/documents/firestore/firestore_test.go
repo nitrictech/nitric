@@ -7,7 +7,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firestore_plugin "github.com/nitric-dev/membrane/plugins/gcp/documents/firestore"
-	mock_firestore "github.com/nitric-dev/membrane/plugins/gcp/mocks"
+	mocks "github.com/nitric-dev/membrane/plugins/gcp/mocks"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,7 +21,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 	var firestoreClient *firestore.Client
 	var firestorePlugin sdk.DocumentsPlugin
 	grpcServer := grpc.NewServer(opts...)
-	mockFirestoreServer := &mock_firestore.MockFirestoreServer{
+	mockFirestoreServer := &mocks.MockFirestoreServer{
 		Store: make(map[string]map[string]map[string]*pb.Value),
 	}
 	// Set the emulator host...
