@@ -49,7 +49,11 @@ func (m *MockHandler) resetRequests() {
 const GATEWAY_ADDRESS = "127.0.0.1:9002"
 
 var _ = Describe("Gateway", func() {
-	os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
+
+	BeforeSuite(func() {
+		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
+	})
+
 	handler := &MockHandler{}
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	gateway, _ := gateway_plugin.New()
@@ -61,7 +65,7 @@ var _ = Describe("Gateway", func() {
 	// Start the gatewat on a seperate thread so it doesn't block the tests...
 	go (gateway.Start)(handler.handle)
 	// FIXME: Update gateway to block on channel...
-	time.Sleep(100)
+	time.Sleep(200 * time.Millisecond)
 
 	When("Recieving standard HTTP requests", func() {
 		When("The request contains standard nitric headers", func() {

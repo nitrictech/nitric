@@ -54,7 +54,10 @@ func (m *MockHandler) resetRequests() {
 var _ = Describe("Http", func() {
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
-	os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
+	BeforeSuite(func() {
+		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
+	})
+
 	mockHandler := &MockHandler{}
 	httpPlugin, _ := http_plugin.New()
 	// Run on a non-blocking thread
@@ -62,7 +65,7 @@ var _ = Describe("Http", func() {
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
-	time.Sleep(100)
+	time.Sleep(200 * time.Millisecond)
 
 	AfterEach(func() {
 		mockHandler.resetRequests()
