@@ -46,7 +46,7 @@ func (m *MockHandler) resetRequests() {
 	m.handledRequests = make([]*sdk.NitricRequest, 0)
 }
 
-const GATEWAY_ADDRESS = "127.0.0.1:9002"
+const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Gateway", func() {
 
