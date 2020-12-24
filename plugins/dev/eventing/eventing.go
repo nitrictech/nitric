@@ -14,6 +14,13 @@ import (
 type LocalPubSubPlugin struct {
 	sdk.UnimplementedEventingPlugin
 	subscriptions map[string][]string
+	client        LocalHttpEventingClient
+}
+
+// Interface for methods utilised by
+// The local pubsub plugin for http eventing
+type LocalHttpEventingClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Publish a message to a given topic
@@ -40,7 +47,7 @@ func (s *LocalPubSubPlugin) Publish(topic string, event *sdk.NitricEvent) error 
 			httpRequest.Header.Add("x-nitric-payload-type", payloadType)
 
 			// Call the target
-			http.DefaultClient.Do(httpRequest)
+			s.client.Do(httpRequest)
 		}
 	} else {
 		return fmt.Errorf("No subscription found for %s in %v", topic, s.subscriptions)
@@ -76,5 +83,13 @@ func New() (sdk.EventingPlugin, error) {
 
 	return &LocalPubSubPlugin{
 		subscriptions: subs,
+		client:        http.DefaultClient,
+	}, nil
+}
+
+func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventingPlugin, error) {
+	return &LocalPubSubPlugin{
+		subscriptions: subs,
+		client:        client,
 	}, nil
 }
