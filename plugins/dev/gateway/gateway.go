@@ -22,11 +22,10 @@ func (s *HttpGateway) Start(handler sdk.GatewayHandler) error {
 		// Handle the HTTP response...
 		headers := req.Header
 
-		// var source = strings.Join(headers["User-Agent"], "")
-		var requestId = strings.Join(headers["x-nitric-request-id"], "")
-		var payloadType = strings.Join(headers["x-nitric-payload-type"], "")
-		var sourceTypeString = strings.Join(headers["x-nitric-source-type"], "")
-		var source = strings.Join(headers["x-nitric-source"], "")
+		var requestId = headers.Get("x-nitric-request-id")
+		var payloadType = headers.Get("x-nitric-payload-type")
+		var sourceTypeString = headers.Get("x-nitric-source-type")
+		var source = headers.Get("User-Agent")
 		// var contentType = strings.Join(headers["Content-Type"], "")
 		// var timestamp = &timestamp.Timestamp{}
 		var payload, _ = ioutil.ReadAll(req.Body)
@@ -36,6 +35,7 @@ func (s *HttpGateway) Start(handler sdk.GatewayHandler) error {
 
 		if strings.ToLower(sourceTypeString) == "subscription" {
 			sourceType = sdk.Subscription
+			source = headers.Get("x-nitric-source")
 		}
 
 		nitricContext := &sdk.NitricContext{
