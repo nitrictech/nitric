@@ -10,12 +10,19 @@ import (
 
 type LocalDocumentPlugin struct {
 	sdk.UnimplementedDocumentsPlugin
-	db *scribble.Driver
+	db ScribbleIface
 }
 
 type NitricDocument struct {
 	Key   string
 	Value map[string]interface{}
+}
+
+// Interface for the database driver we're using for this document store...
+type ScribbleIface interface {
+	Read(string, string, interface{}) error
+	Write(string, string, interface{}) error
+	Delete(string, string) error
 }
 
 func (s *LocalDocumentPlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {
@@ -38,11 +45,13 @@ func (s *LocalDocumentPlugin) CreateDocument(collection string, key string, docu
 
 func (s *LocalDocumentPlugin) GetDocument(collection string, key string) (map[string]interface{}, error) {
 	document := make(map[string]interface{})
-	err := s.db.Read(collection, key, document)
+	err := s.db.Read(collection, key, &document)
 
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(fmt.Sprintf("Document: %v", document))
 
 	return document, nil
 }
@@ -85,6 +94,12 @@ func New() (sdk.DocumentsPlugin, error) {
 		return nil, err
 	}
 
+	return &LocalDocumentPlugin{
+		db: db,
+	}, nil
+}
+
+func NewWithDB(db ScribbleIface) (sdk.DocumentsPlugin, error) {
 	return &LocalDocumentPlugin{
 		db: db,
 	}, nil

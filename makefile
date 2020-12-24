@@ -15,7 +15,7 @@ clean:
 	@rm -rf ./lib/
 
 # Run all tests
-test: test-membrane test-aws-plugins test-gcp-plugins
+test: test-membrane test-aws-plugins test-gcp-plugins test-local-plugins
 	@echo Done.
 
 # Generate interfaces
@@ -104,6 +104,10 @@ local-docker-static: generate-proto
 
 local-docker: local-docker-static local-docker-alpine local-docker-debian
 	@echo Built Local Docker Images
+
+test-local-plugins:
+	@echo Testing Local Plugins
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
 # END Local Plugins
 
 membrane-docker-alpine: generate-proto
