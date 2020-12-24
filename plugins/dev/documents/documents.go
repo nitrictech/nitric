@@ -51,8 +51,6 @@ func (s *LocalDocumentPlugin) GetDocument(collection string, key string) (map[st
 		return nil, err
 	}
 
-	fmt.Println(fmt.Sprintf("Document: %v", document))
-
 	return document, nil
 }
 
