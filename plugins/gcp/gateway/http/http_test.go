@@ -65,7 +65,7 @@ var _ = Describe("Http", func() {
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	AfterEach(func() {
 		mockHandler.resetRequests()

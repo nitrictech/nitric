@@ -65,7 +65,7 @@ var _ = Describe("Gateway", func() {
 	// Start the gatewat on a seperate thread so it doesn't block the tests...
 	go (gateway.Start)(handler.handle)
 	// FIXME: Update gateway to block on channel...
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	When("Recieving standard HTTP requests", func() {
 		When("The request contains standard nitric headers", func() {
