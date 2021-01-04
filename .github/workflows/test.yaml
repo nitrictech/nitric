@@ -8,15 +8,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        token: ${{secrets.GOLANG_TOKEN}}
+        submodules: recursive
     - name: Setup Go
-      uses: actions/setup-go@v2-beta
-    - name: Setup Golang Private Packages
-      env:
-        TOKEN: ${{secrets.GOLANG_TOKEN}}
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        go env -w GOPRIVATE=github.com/nitric-dev
-        git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+      uses: actions/setup-go@v2-beta      
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
     - name: Install modules
       run: make install-tools
     - name: Run Tests

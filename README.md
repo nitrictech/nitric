@@ -22,12 +22,12 @@ make install-tools
 make tests
 ```
 
-#### Build locally (images are used)
+#### Build Pluggable Membrane (images are used)
 ```bash
-make build
+make
 ```
 
-### Building Images
+### Building Pluggable Membrane Images
 Alpine Linux
 ```bash
 make build-docker-alpine
@@ -42,3 +42,9 @@ Or both
 ```bash
 make build-docker
 ```
+
+### For building statically compiled provider specific membranes see plugin README(s)
+
+ - [AWS](./plugins/aws/README.md)
+ - [GCP](./plugins/gcp/README.md)
+ - [Dev](./plugins/dev/README.md)
