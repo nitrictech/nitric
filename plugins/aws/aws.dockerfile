@@ -4,6 +4,10 @@ FROM golang:alpine as build
 
 WORKDIR /
 
+RUN apk update
+RUN apk upgrade
+RUN apk add --no-cache git gcc g++ make
+
 # Cache dependencies in seperate layer
 COPY go.mod go.sum ./
 RUN go mod download
