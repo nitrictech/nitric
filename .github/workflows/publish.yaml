@@ -12,6 +12,9 @@ jobs:
         with:
           token: ${{secrets.GOLANG_TOKEN}}
           submodules: recursive
+      - name: Get Tag
+        id: tag
+        run: echo ::set-output name=TAG::$(echo $GITHUB_REF | cut -d / -f 3)
       # Setup docker build image
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -28,7 +31,9 @@ jobs:
           context: .
           file: ./plugins/dev/dev.dockerfile
           push: true
-          tags: nitricimages/membrane-local
+          tags: |
+            nitricimages/membrane-local:latest
+            nitricimages/membrane-local:${{ steps.tag.outputs.TAG }}
       # Push AWS image
       - name: Push AWS Static image to Docker Hub
         uses: docker/build-push-action@v2
@@ -36,7 +41,9 @@ jobs:
           context: .
           file: ./plugins/aws/aws.dockerfile
           push: true
-          tags: nitricimages/membrane-aws
+          tags: |
+            nitricimages/membrane-aws:latest
+            nitricimages/membrane-aws:${{ steps.tag.outputs.TAG }}
       # Push GCP image
       - name: Push GCP Static image to Docker Hub
         uses: docker/build-push-action@v2
@@ -44,4 +51,6 @@ jobs:
           context: .
           file: ./plugins/gcp/gcp.dockerfile
           push: true
-          tags: nitricimages/membrane-gcp
+          tags: |
+            nitricimages/membrane-gcp:latest
+            nitricimages/membrane-gcp:${{ steps.tag.outputs.TAG }}
