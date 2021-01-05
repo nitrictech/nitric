@@ -1,0 +1,47 @@
+name: Publish Docker images
+on:
+  release:
+    types: [published]
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{secrets.GOLANG_TOKEN}}
+          submodules: recursive
+      # Setup docker build image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      # Login to dockerhub
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Push development image
+      - name: Push Local Static image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./plugins/dev/dev.dockerfile
+          push: true
+          tags: nitricimages/membrane-local
+      # Push AWS image
+      - name: Push AWS Static image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./plugins/aws/aws.dockerfile
+          push: true
+          tags: nitricimages/membrane-aws
+      # Push GCP image
+      - name: Push GCP Static image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./plugins/gcp/gcp.dockerfile
+          push: true
+          tags: nitricimages/membrane-gcp
