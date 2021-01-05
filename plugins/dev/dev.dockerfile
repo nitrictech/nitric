@@ -1,16 +1,14 @@
-# FIXME: Build with docker context in future
-# Once the plugin SDK is visible for building
-FROM golang:alpine as build
+FROM golang as build
 
 WORKDIR /
 
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache git gcc g++ make
+RUN apt-get update && apt-get install -y protobuf-compiler
 
 # Cache dependencies in seperate layer
 COPY go.mod go.sum ./
-RUN go mod download
+COPY makefile makefile
+COPY tools/tools.go tools/tools.go
+RUN make install-tools
 
 COPY . .
 

@@ -34,7 +34,7 @@ test-aws-plugins:
 	@echo Testing AWS Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/aws/...
 
-aws-static:
+aws-static: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/aws/static_membrane.go
 
@@ -49,7 +49,7 @@ aws-plugins:
 # 	@docker build . -f ./plugins/aws/alpine.dockerfile -t nitric:membrane-alpine-aws
 # aws-docker-debian:
 # 	@docker build . -f ./plugins/aws/debian.dockerfile -t nitric:membrane-debian-aws
-aws-docker-static: generate-proto
+aws-docker-static:
 	@docker build . -f ./plugins/aws/aws.dockerfile -t nitricimages/membrane-aws
 
 aws-docker: aws-docker-static # aws-docker-alpine aws-docker-debian 
@@ -61,7 +61,7 @@ test-gcp-plugins:
 	@echo Testing GCP Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/gcp/...
 
-gcp-static:
+gcp-static: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
 
@@ -76,7 +76,7 @@ gcp-plugins:
 # 	@docker build . -f ./plugins/gcp/alpine.dockerfile -t nitric:membrane-alpine-gcp
 # gcp-docker-debian:
 # 	@docker build . -f ./plugins/gcp/debian.dockerfile -t nitric:membrane-debian-gcp
-gcp-docker-static: generate-proto
+gcp-docker-static:
 	@docker build . -f ./plugins/gcp/gcp.dockerfile -t nitricimages/membrane-gcp
 
 gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
@@ -84,7 +84,7 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 # END GCP Plugins
 
 # BEGIN Local Plugins
-local-static:
+local-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
 
@@ -100,7 +100,7 @@ local-plugins:
 # local-docker-debian:
 # 	@docker build . -f ./plugins/dev/debian.dockerfile -t nitric:membrane-debian-local
 
-local-docker-static: generate-proto
+local-docker-static:
 	@docker build . -f ./plugins/dev/dev.dockerfile -t nitricimages/membrane-local
 
 local-docker: local-docker-static # local-docker-alpine local-docker-debian
