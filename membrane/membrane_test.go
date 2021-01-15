@@ -157,6 +157,62 @@ var _ = Describe("Membrane", func() {
 		})
 	})
 
+	Context("Starting the child process", func() {
+		var mockGateway *MockGateway
+		var mb *membrane.Membrane
+		When("The configured command exists", func() {
+			BeforeEach(func() {
+				mockGateway = &MockGateway{}
+
+				mb, _ = membrane.New(&membrane.MembraneOptions{
+					ChildAddress:            "localhost:8081",
+					ChildCommand:            "echo",
+					GatewayPlugin:           mockGateway,
+					ChildTimeoutSeconds:     1,
+					TolerateMissingServices: true,
+					SuppressLogs:            true,
+				})
+			})
+
+			When("There is nothing listening on ChildAddress", func() {
+				It("Should panic", func() {
+					Expect(mb.Start).To(Panic())
+				})
+			})
+
+			When("There is something listening on childAddress", func() {
+				BeforeEach(func() {
+					go (func() {
+						http.ListenAndServe(fmt.Sprintf("localhost:8081"), nil)
+					})()
+				})
+
+				It("Should wait for the service to start", func() {
+					Expect(mb.Start).ToNot(Panic())
+				})
+			})
+		})
+
+		When("The configured command does not exist", func() {
+			BeforeEach(func() {
+				mockGateway = &MockGateway{}
+
+				mb, _ = membrane.New(&membrane.MembraneOptions{
+					ChildAddress:            "localhost:808",
+					ChildCommand:            "fakecommand",
+					GatewayPlugin:           mockGateway,
+					TolerateMissingServices: true,
+					SuppressLogs:            true,
+				})
+			})
+
+			It("Should panic", func() {
+				Expect(mb.Start).To(Panic())
+			})
+		})
+
+	})
+
 	Context("Handling A Single Gateway Request", func() {
 		var mockGateway *MockGateway
 		var mb *membrane.Membrane

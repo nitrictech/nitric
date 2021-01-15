@@ -26,6 +26,8 @@ type MembraneOptions struct {
 	ChildAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand string
+	// The total time to wait for the child process to be available in seconds
+	ChildTimeoutSeconds int
 
 	EventingPlugin  sdk.EventingPlugin
 	DocumentsPlugin sdk.DocumentsPlugin
@@ -46,6 +48,8 @@ type Membrane struct {
 	childAddress string
 	// The command that will be used to invoke the child process
 	childCommand string
+
+	childTimeoutSeconds int
 
 	// Configured plugins
 	eventingPlugin  sdk.EventingPlugin
@@ -124,13 +128,13 @@ func (s *Membrane) startChildProcess() {
 
 	// Actual panic here, we don't want to start if our userland code cannot successfully start
 	if applicationError != nil {
-		log.Fatalf("Function failed to start in time: %v", applicationError)
+		panic(fmt.Errorf("Function failed to start in time: %v", applicationError))
 	}
 
 	// Dial the child port to see if it's open and ready...
 	// Only wait for 10s, if we timeout that will be it
 	// TODO: make app startup time configurable
-	maxWaitTime := time.Duration(5) * time.Second
+	maxWaitTime := time.Duration(s.childTimeoutSeconds) * time.Second
 	pollInterval := time.Duration(200) * time.Millisecond
 
 	var waitedTime = time.Duration(0)
@@ -144,7 +148,7 @@ func (s *Membrane) startChildProcess() {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				log.Fatalf("Function failed to start in time")
+				panic(fmt.Errorf("Function failed to start in time"))
 			}
 		}
 	}
@@ -298,10 +302,16 @@ func (s *Membrane) Start() {
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
+	var childTimeout = 5
+	if options.ChildTimeoutSeconds > 0 {
+		childTimeout = options.ChildTimeoutSeconds
+	}
+
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
 		childAddress:            options.ChildAddress,
 		childCommand:            options.ChildCommand,
+		childTimeoutSeconds:     childTimeout,
 		eventingPlugin:          options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		documentsPlugin:         options.DocumentsPlugin,
