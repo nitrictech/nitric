@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -86,8 +87,10 @@ var _ = Describe("Membrane", func() {
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
 				})
-				It("Start should Panic", func() {
-					Expect(membrane.Start).To(Panic())
+				It("Start should error", func() {
+					err := membrane.Start()
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Fatal error loading gateway"))
 				})
 			})
 
@@ -100,13 +103,40 @@ var _ = Describe("Membrane", func() {
 					TolerateMissingServices: true,
 				})
 
-				It("Start should not Panic", func() {
-					Expect(membrane.Start).ToNot(Panic())
+				It("Start should not error", func() {
+					err := membrane.Start()
+					Expect(err).ShouldNot(HaveOccurred())
 				})
 
 				It("Mock Gateways start method should have been called", func() {
 					Expect(mockGateway.started).To(BeTrue())
 				})
+			})
+		})
+
+		When("The configured service port is already consumed", func() {
+			mockGateway := &MockGateway{}
+			var lis net.Listener
+
+			membrane, _ := membrane.New(&membrane.MembraneOptions{
+				GatewayPlugin:           mockGateway,
+				SuppressLogs:            true,
+				TolerateMissingServices: true,
+				ServiceAddress:          "localhost:9005",
+			})
+
+			BeforeEach(func() {
+				lis, _ = net.Listen("tcp", "localhost:9005")
+			})
+
+			AfterEach(func() {
+				lis.Close()
+			})
+
+			It("Should return an error", func() {
+				err := membrane.Start()
+				Expect(err).Should(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Could not listen"))
 			})
 		})
 
@@ -118,8 +148,10 @@ var _ = Describe("Membrane", func() {
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
 				})
-				It("Start should Panic", func() {
-					Expect(membrane.Start).To(Panic())
+				It("Start should return an error", func() {
+					err := membrane.Start()
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Fatal error loading eventing"))
 				})
 			})
 
@@ -133,8 +165,10 @@ var _ = Describe("Membrane", func() {
 					TolerateMissingServices: false,
 				})
 
-				It("Start should Panic", func() {
-					Expect(membrane.Start).To(Panic())
+				It("Start should return an error", func() {
+					err := membrane.Start()
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Fatal error loading documents"))
 				})
 			})
 
@@ -150,8 +184,34 @@ var _ = Describe("Membrane", func() {
 					TolerateMissingServices: false,
 				})
 
-				It("Start should Panic", func() {
-					Expect(membrane.Start).To(Panic())
+				It("Start should return an error", func() {
+					err := membrane.Start()
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Fatal error loading storage"))
+				})
+			})
+
+			When("It is missing no plugins", func() {
+				mockEventingServer := &MockEventingServer{}
+				mockDocumentsServer := &MockDocumentsServer{}
+				mockStorageServer := &MockStorageServer{}
+
+				membrane, _ := membrane.New(&membrane.MembraneOptions{
+					EventingPlugin:          mockEventingServer,
+					DocumentsPlugin:         mockDocumentsServer,
+					GatewayPlugin:           mockGateway,
+					StoragePlugin:           mockStorageServer,
+					SuppressLogs:            true,
+					TolerateMissingServices: false,
+				})
+
+				It("Should not error", func() {
+					err := membrane.Start()
+					Expect(err).ShouldNot(HaveOccurred())
+				})
+
+				It("Should start the gateway", func() {
+					Expect(mockGateway.started).To(BeTrue())
 				})
 			})
 		})
@@ -175,8 +235,9 @@ var _ = Describe("Membrane", func() {
 			})
 
 			When("There is nothing listening on ChildAddress", func() {
-				It("Should panic", func() {
-					Expect(mb.Start).To(Panic())
+				It("Should return an error", func() {
+					err := mb.Start()
+					Expect(err).Should(HaveOccurred())
 				})
 			})
 
@@ -187,8 +248,13 @@ var _ = Describe("Membrane", func() {
 					})()
 				})
 
+				AfterEach(func() {
+
+				})
+
 				It("Should wait for the service to start", func() {
-					Expect(mb.Start).ToNot(Panic())
+					err := mb.Start()
+					Expect(err).ShouldNot(HaveOccurred())
 				})
 			})
 		})
@@ -206,8 +272,9 @@ var _ = Describe("Membrane", func() {
 				})
 			})
 
-			It("Should panic", func() {
-				Expect(mb.Start).To(Panic())
+			It("Should return an error", func() {
+				err := mb.Start()
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 
@@ -242,7 +309,8 @@ var _ = Describe("Membrane", func() {
 
 		When("There is no function available", func() {
 			It("Should recieve a single error response", func() {
-				Expect(mb.Start).ToNot(Panic())
+				err := mb.Start()
+				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mockGateway.responses).To(HaveLen(1))
 
 				response := mockGateway.responses[0]
@@ -282,7 +350,8 @@ var _ = Describe("Membrane", func() {
 			})
 
 			It("The request should be successfully handled", func() {
-				Expect(mb.Start).ToNot(Panic())
+				err := mb.Start()
+				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mockGateway.responses).To(HaveLen(1))
 
 				response := mockGateway.responses[0]
@@ -298,7 +367,8 @@ var _ = Describe("Membrane", func() {
 				Expect(request.Header.Get("x-nitric-source")).To(Equal("test"))
 				Expect(request.Header.Get("x-nitric-source-type")).To(Equal("REQUEST"))
 
-				// body, _ := ioutil.ReadAll(request.Body)
+				// reader, _ := request.GetBody()
+				// body, _ := ioutil.ReadAll(reader)
 
 				// By("Passing through the given body")
 				// Expect(string(body)).To(Equal("Test Payload"))
