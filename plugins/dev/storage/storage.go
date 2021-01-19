@@ -15,7 +15,7 @@ type LocalStoragePlugin struct {
 }
 
 func ensureDirExists(dir string) error {
-	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
 		}
