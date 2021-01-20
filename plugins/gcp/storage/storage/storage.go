@@ -3,7 +3,6 @@ package storage_plugin
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -13,11 +12,11 @@ import (
 
 type StoragePlugin struct {
 	sdk.UnimplementedStoragePlugin
-	client    *storage.Client
+	client    Client
 	projectID string
 }
 
-func (s *StoragePlugin) getBucketByName(bucket string) (*storage.BucketHandle, error) {
+func (s *StoragePlugin) getBucketByName(bucket string) (BucketHandle, error) {
 	buckets := s.client.Buckets(context.Background(), s.projectID)
 
 	for {
@@ -52,7 +51,6 @@ func (s *StoragePlugin) Put(bucket string, key string, object []byte) error {
 	}
 
 	writer := bucketHandle.Object(key).NewWriter(context.Background())
-	writer.ContentType = http.DetectContentType(object)
 
 	if _, err := writer.Write(object); err != nil {
 		return err
@@ -82,6 +80,12 @@ func New() (sdk.StoragePlugin, error) {
 		return nil, fmt.Errorf("storage client error: %v", err)
 	}
 
+	return &StoragePlugin{
+		client: AdaptClient(client),
+	}, nil
+}
+
+func NewWithClient(client Client) (sdk.StoragePlugin, error) {
 	return &StoragePlugin{
 		client: client,
 	}, nil
