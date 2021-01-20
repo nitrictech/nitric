@@ -2,10 +2,14 @@ package sdk
 
 import "fmt"
 
+type PushResponse struct {
+	FailedMessages []*NitricEvent
+}
+
 // QueuePlugin - The Nitric plugin interface for cloud native queue services
 type QueuePlugin interface {
 	// Push - The push method for the Nitric Queue Service
-	Push(queue string, events []*NitricEvent) error
+	Push(queue string, events []*NitricEvent) (*PushResponse, error)
 }
 
 // UnimplementedQueuePlugin - A Default interface, that provide implementations of QueuePlugin methods that

@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/utils"
 )
 
 type SQSPlugin struct {
@@ -35,28 +36,48 @@ func (s *SQSPlugin) getUrlForQueueName(queue string) (*string, error) {
 	return nil, fmt.Errorf("Could not find Queue: %s", queue)
 }
 
-func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) error {
+func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
 	if url, err := s.getUrlForQueueName(queue); err == nil {
 		evts := make([]*sqs.SendMessageBatchRequestEntry, 0)
-	
+
 		for _, evt := range events {
 			if bytes, err := json.Marshal(evt); err == nil {
 				evts = append(evts, &sqs.SendMessageBatchRequestEntry{
 					// Share the request ID here...
-					Id: &evt.RequestId,
+					Id:          &evt.RequestId,
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
-				return err
-			}			
-		} 
+				// TODO: Do we want to just mark this one as having errored?
+				return nil, err
+			}
+		}
 
-		out, err := s.client.SendMessageBatch(&sqs.SendMessageBatchInput{
-			Entries: evts,
-			QueueUrl: url
-		})
+		// TODO: Get Succeeded/Failed Messages
+		if out, err := s.client.SendMessageBatch(&sqs.SendMessageBatchInput{
+			Entries:  evts,
+			QueueUrl: url,
+		}); err == nil {
+			// process out Failed messages to return to the user...
+			failedEvents := make([]*sdk.NitricEvent, 0)
+			for _, failed := range out.Failed {
+				for _, e := range events {
+					if e.RequestId == *failed.Id {
+						failedEvents = append(failedEvents, e)
+						// continue outer loop
+						break
+					}
+				}
+			}
+
+			return &sdk.PushResponse{
+				FailedMessages: failedEvents,
+			}, nil
+		} else {
+			return nil, err
+		}
 	} else {
-		return err
+		return nil, err
 	}
 }
 
