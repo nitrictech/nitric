@@ -9,13 +9,21 @@
  - Golang
  - Make
  - Docker
+ - Google Protocol Buffers Compiler
 
 ### Getting Started
 
-#### Install depdencies
+#### Install dependencies
 ```bash
 make install-tools
 ```
+
+##### Protocol Buffers
+Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
+
+> On Mac OS with Homebrew, you can run `brew install protobuf`
+
+ 
 
 #### Run tests
 ```bash
