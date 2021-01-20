@@ -61,7 +61,17 @@ func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) error {
 }
 
 func New() (sdk.QueuePlugin, error) {
-	client := sqs.New()
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+
+	sess, sessionError := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+
+	if sessionError != nil {
+		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+	}
+
+	client := sqs.New(sess)
 
 	return &SQSPlugin{
 		client: client,
