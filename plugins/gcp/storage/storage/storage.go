@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/storage"
+	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
@@ -12,11 +14,11 @@ import (
 
 type StoragePlugin struct {
 	sdk.UnimplementedStoragePlugin
-	client    Client
+	client    ifaces.StorageClient
 	projectID string
 }
 
-func (s *StoragePlugin) getBucketByName(bucket string) (BucketHandle, error) {
+func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, error) {
 	buckets := s.client.Buckets(context.Background(), s.projectID)
 
 	for {
@@ -81,11 +83,11 @@ func New() (sdk.StoragePlugin, error) {
 	}
 
 	return &StoragePlugin{
-		client: AdaptClient(client),
+		client: adapters.AdaptStorageClient(client),
 	}, nil
 }
 
-func NewWithClient(client Client) (sdk.StoragePlugin, error) {
+func NewWithClient(client ifaces.StorageClient) (sdk.StoragePlugin, error) {
 	return &StoragePlugin{
 		client: client,
 	}, nil

@@ -1,4 +1,4 @@
-package storage_plugin
+package ifaces
 
 import (
 	"context"
@@ -31,7 +31,7 @@ type BucketHandle interface {
 	// embedToIncludeNewMethods()
 }
 
-type Client interface {
+type StorageClient interface {
 	Bucket(string) BucketHandle
 	Buckets(context.Context, string) BucketIterator
 

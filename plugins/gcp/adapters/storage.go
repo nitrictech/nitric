@@ -1,14 +1,14 @@
-package storage_plugin
+package adapters
 
 import (
 	"context"
 
 	"cloud.google.com/go/storage"
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 )
 
-// AdaptClient wraps a storage.Client so that it satisfies the Client
-// interface.
-func AdaptClient(c *storage.Client) Client {
+// AdaptClientStorageClient wraps a storage.Client so that it satisfies the Client
+func AdaptStorageClient(c *storage.Client) ifaces.StorageClient {
 	return client{c}
 }
 
@@ -26,22 +26,22 @@ type (
 // func (bucketIterator) embedToIncludeNewMethods() {}
 // func (writer) embedToIncludeNewMethods()         {}
 
-func (c client) Bucket(name string) BucketHandle {
+func (c client) Bucket(name string) ifaces.BucketHandle {
 	return bucketHandle{c.Client.Bucket(name)}
 }
 
-func (c client) Buckets(ctx context.Context, projectID string) BucketIterator {
+func (c client) Buckets(ctx context.Context, projectID string) ifaces.BucketIterator {
 	return bucketIterator{c.Client.Buckets(ctx, projectID)}
 }
 
-func (b bucketHandle) Object(name string) ObjectHandle {
+func (b bucketHandle) Object(name string) ifaces.ObjectHandle {
 	return objectHandle{b.BucketHandle.Object(name)}
 }
 
-func (o objectHandle) Key(encryptionKey []byte) ObjectHandle {
+func (o objectHandle) Key(encryptionKey []byte) ifaces.ObjectHandle {
 	return objectHandle{o.ObjectHandle.Key(encryptionKey)}
 }
 
-func (o objectHandle) NewWriter(ctx context.Context) Writer {
+func (o objectHandle) NewWriter(ctx context.Context) ifaces.Writer {
 	return writer{o.ObjectHandle.NewWriter(ctx)}
 }

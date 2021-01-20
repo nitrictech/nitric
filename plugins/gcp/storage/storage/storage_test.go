@@ -26,6 +26,20 @@ var _ = Describe("Storage", func() {
 					Expect(storage["my-bucket"]["test-file"]).To(BeEquivalentTo(testPayload))
 				})
 			})
+
+			When("Writing to a Bucket that does not exist", func() {
+				storage := make(map[string]map[string][]byte)
+				mockStorageClient := mocks.NewStorageClient([]string{}, &storage)
+				mockStorageServer, _ := storage_plugin.NewWithClient(mockStorageClient)
+				testPayload := []byte("Test")
+
+				It("Should fail to store the item", func() {
+					err := mockStorageServer.Put("my-bucket", "test-file", testPayload)
+
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+				})
+			})
 		})
 	})
 })

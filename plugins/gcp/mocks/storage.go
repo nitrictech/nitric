@@ -5,23 +5,23 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/storage"
-	storage_plugin "github.com/nitric-dev/membrane/plugins/gcp/storage/storage"
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 )
 
 type MockStorageClient struct {
-	storage_plugin.Client
+	ifaces.StorageClient
 	buckets []string
 	storage *map[string]map[string][]byte
 }
 
-func (s *MockStorageClient) Bucket(name string) storage_plugin.BucketHandle {
+func (s *MockStorageClient) Bucket(name string) ifaces.BucketHandle {
 	return &MockBucketHandle{
 		name:   name,
 		client: s,
 	}
 }
 
-func (s *MockStorageClient) Buckets(ctx context.Context, projectID string) storage_plugin.BucketIterator {
+func (s *MockStorageClient) Buckets(ctx context.Context, projectID string) ifaces.BucketIterator {
 	return &MockBucketIterator{
 		idx:    0,
 		client: s,
@@ -29,7 +29,7 @@ func (s *MockStorageClient) Buckets(ctx context.Context, projectID string) stora
 }
 
 type MockBucketIterator struct {
-	storage_plugin.BucketIterator
+	ifaces.BucketIterator
 	client *MockStorageClient
 	idx    int
 }
@@ -49,12 +49,12 @@ func (s *MockBucketIterator) Next() (*storage.BucketAttrs, error) {
 }
 
 type MockBucketHandle struct {
-	storage_plugin.BucketHandle
+	ifaces.BucketHandle
 	name   string
 	client *MockStorageClient
 }
 
-func (s *MockBucketHandle) Object(name string) storage_plugin.ObjectHandle {
+func (s *MockBucketHandle) Object(name string) ifaces.ObjectHandle {
 	return &MockObjectHandle{
 		name:   name,
 		bucket: s.name,
@@ -63,13 +63,13 @@ func (s *MockBucketHandle) Object(name string) storage_plugin.ObjectHandle {
 }
 
 type MockObjectHandle struct {
-	storage_plugin.ObjectHandle
+	ifaces.ObjectHandle
 	bucket string
 	name   string
 	client *MockStorageClient
 }
 
-func (s *MockObjectHandle) NewWriter(ctx context.Context) storage_plugin.Writer {
+func (s *MockObjectHandle) NewWriter(ctx context.Context) ifaces.Writer {
 	return &MockWriter{
 		bucket: s.bucket,
 		key:    s.name,
@@ -109,7 +109,7 @@ func (s *MockWriter) Close() error {
 	return nil
 }
 
-func NewStorageClient(buckets []string, storage *map[string]map[string][]byte) storage_plugin.Client {
+func NewStorageClient(buckets []string, storage *map[string]map[string][]byte) ifaces.StorageClient {
 	return &MockStorageClient{
 		buckets: buckets,
 		storage: storage,
