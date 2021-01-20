@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -26,6 +25,8 @@ type MembraneOptions struct {
 	ChildAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand string
+	// The total time to wait for the child process to be available in seconds
+	ChildTimeoutSeconds int
 
 	EventingPlugin  sdk.EventingPlugin
 	DocumentsPlugin sdk.DocumentsPlugin
@@ -44,8 +45,14 @@ type Membrane struct {
 	serviceAddress string
 	// The address the child will be listening on
 	childAddress string
+
+	// The URL (including protocol, the child process can be reached on)
+	childUrl string
+
 	// The command that will be used to invoke the child process
 	childCommand string
+
+	childTimeoutSeconds int
 
 	// Configured plugins
 	eventingPlugin  sdk.EventingPlugin
@@ -72,9 +79,9 @@ func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
 	// Cast to the new eventing server function
 	if s.eventingPlugin != nil {
 		return services.NewEventingServer(s.eventingPlugin), nil
-	} else {
-		return nil, fmt.Errorf("Eventing plugin not configured")
 	}
+
+	return nil, fmt.Errorf("Eventing plugin not configured")
 }
 
 // Create a new Nitric Storage Server
@@ -82,18 +89,18 @@ func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
 	// Cast to the new storage server function
 	if s.storagePlugin != nil {
 		return services.NewStorageServer(s.storagePlugin), nil
-	} else {
-		return nil, fmt.Errorf("Storage plugin not configured")
 	}
+
+	return nil, fmt.Errorf("Storage plugin not configured")
 }
 
 func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
 	// Cast to the new documents server function
 	if s.documentsPlugin != nil {
 		return services.NewDocumentsServer(s.documentsPlugin), nil
-	} else {
-		return nil, fmt.Errorf("Documents plugin not configured")
 	}
+
+	return nil, fmt.Errorf("Documents plugin not configured")
 }
 
 // Provides a means for the nitric membrane to accept and normalize input/output for a given interface
@@ -111,7 +118,7 @@ func (s *Membrane) loadGatewayPlugin() (sdk.GatewayPlugin, error) {
 	return nil, fmt.Errorf("Gateway plugin not configured")
 }
 
-func (s *Membrane) startChildProcess() {
+func (s *Membrane) startChildProcess() error {
 	// TODO: This is a detached process
 	// so it will continue to run until even after the director dies
 	commandArgs := strings.Fields(s.childCommand)
@@ -124,13 +131,13 @@ func (s *Membrane) startChildProcess() {
 
 	// Actual panic here, we don't want to start if our userland code cannot successfully start
 	if applicationError != nil {
-		log.Fatalf("Function failed to start in time: %v", applicationError)
+		return fmt.Errorf("There was an error starting the child process: %v", applicationError)
 	}
 
 	// Dial the child port to see if it's open and ready...
 	// Only wait for 10s, if we timeout that will be it
 	// TODO: make app startup time configurable
-	maxWaitTime := time.Duration(5) * time.Second
+	maxWaitTime := time.Duration(s.childTimeoutSeconds) * time.Second
 	pollInterval := time.Duration(200) * time.Millisecond
 
 	var waitedTime = time.Duration(0)
@@ -144,14 +151,69 @@ func (s *Membrane) startChildProcess() {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				log.Fatalf("Function failed to start in time")
+				return fmt.Errorf("Unable to dial child server, does it expose a http server at: %s?", s.childAddress)
 			}
 		}
+	}
+
+	return nil
+}
+
+func (s *Membrane) nitricResponseFromError(err error) *sdk.NitricResponse {
+	return &sdk.NitricResponse{
+		Headers: map[string]string{"Content-Type": "text/plain"},
+		Body:    []byte(err.Error()),
+		Status:  503,
+	}
+}
+
+func (s *Membrane) httpHandler(request *sdk.NitricRequest) *sdk.NitricResponse {
+	httpRequest, err := http.NewRequest("POST", s.childUrl, bytes.NewReader(request.Payload))
+
+	// There was an error creating the HTTP request
+	if err != nil {
+		// return an error to the Gateway
+		return s.nitricResponseFromError(err)
+	}
+
+	// Encode NitricContext into HTTP headers
+	httpRequest.Header.Add("Content-Type", http.DetectContentType(request.Payload))
+	httpRequest.Header.Add("x-nitric-payload-type", request.Context.PayloadType)
+	httpRequest.Header.Add("x-nitric-request-id", request.Context.RequestId)
+	httpRequest.Header.Add("x-nitric-source-type", request.Context.SourceType.String())
+	httpRequest.Header.Add("x-nitric-source", request.Context.Source)
+
+	// Send the request down to our function
+	// Here we'll be making a normal http request to the function server
+	// From here we will return the response from the server
+	// Always do a post request to the local function???
+	response, err := http.DefaultClient.Do(httpRequest)
+
+	if err != nil {
+		return s.nitricResponseFromError(err)
+	}
+
+	responseBody, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		return s.nitricResponseFromError(err)
+	}
+
+	headers := map[string]string{}
+	for name, value := range response.Header {
+		headers[name] = value[0]
+	}
+
+	// Pass the response back to the gateway
+	return &sdk.NitricResponse{
+		Headers: headers,
+		Body:    responseBody,
+		Status:  response.StatusCode,
 	}
 }
 
 // Start the membrane
-func (s *Membrane) Start() {
+func (s *Membrane) Start() error {
 	// Search for known plugins
 
 	var opts []grpc.ServerOption
@@ -171,7 +233,7 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load eventing plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading eventing plugin %v", err))
+		return fmt.Errorf("Fatal error loading eventing plugin %v", err)
 	}
 
 	documentsServer, err := s.createDocumentsServer()
@@ -182,7 +244,7 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load documents plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading documents plugin %v", err))
+		return fmt.Errorf("Fatal error loading documents plugin %v", err)
 	}
 
 	storageServer, err := s.createStorageServer()
@@ -193,17 +255,17 @@ func (s *Membrane) Start() {
 	} else if s.tolerateMissingServices {
 		s.log(fmt.Sprintf("Failed to load storage plugin %v", err))
 	} else {
-		panic(fmt.Errorf("Fatal error loading storage plugin %v", err))
+		return fmt.Errorf("Fatal error loading storage plugin %v", err)
 	}
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return fmt.Errorf("Could not listen on configured service address: %v", err)
 	}
 
 	gateway, err := s.loadGatewayPlugin()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("Fatal error loading gateway plugin %v", err)
 	}
 
 	s.log("Registered Gateway Plugin")
@@ -217,7 +279,10 @@ func (s *Membrane) Start() {
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections
 	if s.childCommand != "" {
-		s.startChildProcess()
+		if err := s.startChildProcess(); err != nil {
+			// Return the error
+			return err
+		}
 	} else {
 		s.log("No Child Configured Specified, Skipping...")
 	}
@@ -231,77 +296,30 @@ func (s *Membrane) Start() {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
-	err = gateway.Start(func(request *sdk.NitricRequest) *sdk.NitricResponse {
-		childUrl := fmt.Sprintf("http://%s", s.childAddress)
-
-		httpRequest, err := http.NewRequest("POST", childUrl, bytes.NewReader(request.Payload))
-
-		// There was an error creating the HTTP request
-		if err != nil {
-			// return an error to the Gateway
-			return &sdk.NitricResponse{
-				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(err.Error()),
-				Status:  503,
-			}
-		}
-
-		// Encode NitricContext into HTTP headers
-		httpRequest.Header.Add("Content-Type", http.DetectContentType(request.Payload))
-		httpRequest.Header.Add("x-nitric-payload-type", request.Context.PayloadType)
-		httpRequest.Header.Add("x-nitric-request-id", request.Context.RequestId)
-		httpRequest.Header.Add("x-nitric-source-type", request.Context.SourceType.String())
-		httpRequest.Header.Add("x-nitric-source", request.Context.Source)
-
-		// Send the request down to our function
-		// Here we'll be making a normal http request to the function server
-		// From here we will return the response from the server
-		// Always do a post request to the local function???
-		response, err := http.DefaultClient.Do(httpRequest)
-
-		if err != nil {
-			// there was an error calling the HTTP service
-			return &sdk.NitricResponse{
-				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(err.Error()),
-				Status:  503,
-			}
-		}
-
-		responseBody, err := ioutil.ReadAll(response.Body)
-
-		if err != nil {
-			// There was an error reading the http response
-			return &sdk.NitricResponse{
-				Headers: map[string]string{"Content-Type": "text/plain"},
-				Body:    []byte(err.Error()),
-				Status:  503,
-			}
-		}
-
-		headers := map[string]string{}
-		for name, value := range response.Header {
-			headers[name] = value[0]
-		}
-
-		// Pass the response back to the gateway
-		return &sdk.NitricResponse{
-			Headers: headers,
-			Body:    responseBody,
-			Status:  response.StatusCode,
-		}
-	})
+	err = gateway.Start(s.httpHandler)
 	// The gateway process has exited
 
-	panic(err)
+	return err
 }
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
+	var childTimeout = 5
+	if options.ChildTimeoutSeconds > 0 {
+		childTimeout = options.ChildTimeoutSeconds
+	}
+
+	var childAddress = "localhost:8080"
+	if options.ChildAddress != "" {
+		childAddress = options.ChildAddress
+	}
+
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
-		childAddress:            options.ChildAddress,
+		childAddress:            childAddress,
+		childUrl:                fmt.Sprintf("http://%s", childAddress),
 		childCommand:            options.ChildCommand,
+		childTimeoutSeconds:     childTimeout,
 		eventingPlugin:          options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		documentsPlugin:         options.DocumentsPlugin,
