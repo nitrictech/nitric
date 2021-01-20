@@ -87,10 +87,6 @@ func (s *MockWriter) Write(p []byte) (n int, err error) {
 	for _, b := range s.client.buckets {
 		if s.bucket == b {
 			store := *s.client.storage
-			// Continue
-			// if s.client.storage == nil {
-			// 	s.client.storage = make(map[string]map[string][]byte)
-			// }
 
 			if store[s.bucket] == nil {
 				store[s.bucket] = make(map[string][]byte)
