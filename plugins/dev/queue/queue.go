@@ -31,6 +31,14 @@ func (s *DefaultQueueDriver) WriteFile(file string, contents []byte, fileMode os
 	return ioutil.WriteFile(file, contents, fileMode)
 }
 
+func (s *DefaultQueueDriver) ExistsOrFail(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
+
 func (s *DefaultQueueDriver) ReadFile(file string) ([]byte, error) {
 	return ioutil.ReadFile(file)
 }
@@ -42,15 +50,15 @@ type LocalQueuePlugin struct {
 }
 
 func (s *LocalQueuePlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
-	if err := s.storageDriver.EnsureDirExists(s.queueDir); err == nil {
+	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
 		var existingQueue []sdk.NitricEvent
 		// See if the queue exists first...
-		if os.Stat(fileName); !os.IsNotExist(err) {
+		if err := s.driver.ExistsOrFail(fileName); err == nil {
 			// Read the file first
 			if b, err := s.driver.ReadFile(fileName); err == nil {
-				if err := json.Unmarshal(b, &existingQueue); err {
+				if err := json.Unmarshal(b, &existingQueue); err != nil {
 					return nil, err
 				}
 			} else {
@@ -63,12 +71,12 @@ func (s *LocalQueuePlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.P
 		newQueue := existingQueue
 		for _, evt := range events {
 			// Add indirected event references to the new queue...
-			newQueue := append(newQueue, *evt)
+			newQueue = append(newQueue, *evt)
 		}
 
 		if queueByte, err := json.Marshal(&newQueue); err == nil {
 			// Write the new queue, to a file named after the queue
-			if err := s.storageDriver.WriteFile(fileName, payload, os.ModePerm); err != nil {
+			if err := s.driver.WriteFile(fileName, queueByte, os.ModePerm); err != nil {
 				return nil, err
 			}
 		}
@@ -87,5 +95,14 @@ func New() (sdk.QueuePlugin, error) {
 	return &LocalQueuePlugin{
 		driver:   &DefaultQueueDriver{},
 		queueDir: queueDir,
-	}
+	}, nil
+}
+
+func NewWithStorageDriver(driver ifaces.StorageDriver) (sdk.QueuePlugin, error) {
+	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
+
+	return &LocalQueuePlugin{
+		driver:   driver,
+		queueDir: queueDir,
+	}, nil
 }
