@@ -96,5 +96,11 @@ func New() (sdk.QueuePlugin, error) {
 
 	return &SQSPlugin{
 		client: client,
+	}, nil
+}
+
+func NewWithClient(client sqsiface.SQSAPI) sdk.QueuePlugin {
+	return &SQSPlugin{
+		client: client,
 	}
 }
