@@ -9,12 +9,16 @@ import (
 
 type Writer interface {
 	io.WriteCloser
-
 	// embedToIncludeNewMethods()
+}
+
+type Reader interface {
+	io.ReadCloser
 }
 
 type ObjectHandle interface {
 	NewWriter(context.Context) Writer
+	NewReader(context.Context) (Reader, error)
 
 	// embedToIncludeNewMethods()
 }

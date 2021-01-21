@@ -42,4 +42,60 @@ var _ = Describe("Storage", func() {
 			})
 		})
 	})
+
+	Context("Get", func() {
+		When("The Google Cloud Storage Backend is available", func() {
+			When("The bucket exists", func() {
+				When("The item exists", func() {
+					storage := make(map[string]map[string][]byte)
+					storage["test-bucket"] = make(map[string][]byte)
+					storage["test-bucket"]["test-key"] = []byte("Test")
+					mockStorageClient := mocks.NewStorageClient([]string{"test-bucket"}, &storage)
+					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+					
+					It("Should retrieve the item", func() {
+						item, err := storagePlugin.Get("test-bucket", "test-key")
+
+						By("Not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("Returning the item")
+						Expect(item).To(Equal([]byte("Test")))
+					})
+				})
+
+				When("The item doesn't exist", func() {
+					storage := make(map[string]map[string][]byte)
+					mockStorageClient := mocks.NewStorageClient([]string{"test-bucket"}, &storage)
+					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+
+					It("Should return an error", func() {
+						item, err := storagePlugin.Get("test-bucket", "test-key")
+
+						By("Returning an error")
+						Expect(err).Should(HaveOccurred())
+
+						By("Not returning the item")
+						Expect(item).To(BeNil())
+					})
+				})
+			})
+
+			When("The bucket doesn't exist", func() {
+				storage := make(map[string]map[string][]byte)
+				mockStorageClient := mocks.NewStorageClient([]string{}, &storage)
+				storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+
+				It("Should return an error", func() {
+					item, err := storagePlugin.Get("test-bucket", "test-key")
+
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+
+					By("Not returning the item")
+					Expect(item).To(BeNil())
+				})
+			})
+		})
+	})
 })

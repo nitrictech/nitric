@@ -18,6 +18,7 @@ type (
 	objectHandle   struct{ *storage.ObjectHandle }
 	bucketIterator struct{ *storage.BucketIterator }
 	writer         struct{ *storage.Writer }
+	reader         struct{ *storage.Reader }
 )
 
 // func (client) embedToIncludeNewMethods()         {}
@@ -44,4 +45,9 @@ func (o objectHandle) Key(encryptionKey []byte) ifaces.ObjectHandle {
 
 func (o objectHandle) NewWriter(ctx context.Context) ifaces.Writer {
 	return writer{o.ObjectHandle.NewWriter(ctx)}
+}
+
+func (o objectHandle) NewReader(ctx context.Context) (ifaces.Reader, error) {
+	newReader, err := o.ObjectHandle.NewReader(ctx)
+	return reader{newReader}, err
 }
