@@ -1,8 +1,10 @@
 package mocks
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -16,6 +18,7 @@ type MockBucket struct {
 
 // MockS3Client - Provides and S3API complient mock interface
 type MockS3Client struct {
+	sync.RWMutex
 	s3iface.S3API
 	buckets []*MockBucket
 	storage *map[string]map[string][]byte
@@ -59,12 +62,14 @@ func (s *MockS3Client) GetBucketTagging(in *s3.GetBucketTaggingInput) (*s3.GetBu
 }
 
 func (s *MockS3Client) PutObject(in *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+	s.Lock()
+	defer s.Unlock()
 	bucket := in.Bucket
 	key := in.Key
 	reader := in.Body
 
 	for _, b := range s.buckets {
-		// We found out bucket
+		// We found the bucket
 		if *bucket == b.Name {
 			store := *s.storage
 			if store[b.Name] == nil {
@@ -79,7 +84,33 @@ func (s *MockS3Client) PutObject(in *s3.PutObjectInput) (*s3.PutObjectOutput, er
 		}
 	}
 
-	return nil, fmt.Errorf("Bucket does not exist")
+	return nil, fmt.Errorf("bucket does not exist")
+}
+
+func (s *MockS3Client) GetObject(in *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+	s.RLock()
+	defer s.RUnlock()
+	bucketName := in.Bucket
+	key := in.Key
+
+	for _, b := range s.buckets {
+		// We found the bucketName
+		if *bucketName == b.Name {
+			bucket := (*s.storage)[b.Name]
+			// We found the object, by key
+			if object, ok := bucket[*key]; ok {
+				body := ioutil.NopCloser(bytes.NewReader(object))
+				output := s3.GetObjectOutput{
+					Body: body,
+				}
+				return &output, nil
+			} else {
+				return nil, fmt.Errorf("key does not exists in bucket %s", *bucketName)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("bucket does not exist")
 }
 
 func NewStorageClient(buckets []*MockBucket, storage *map[string]map[string][]byte) s3iface.S3API {

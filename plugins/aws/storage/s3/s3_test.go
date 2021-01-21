@@ -45,4 +45,40 @@ var _ = Describe("S3", func() {
 			})
 		})
 	})
+	When("Get", func() {
+		When("The S3 backend is available", func() {
+			When("The bucket exists", func() {
+				When("The item exists", func () {
+					// Setup a mock bucket, with a single item
+					storage := make(map[string]map[string][]byte)
+					storage["test-bucket"] = make(map[string][]byte)
+					storage["test-bucket"]["test-key"] = []byte("Test")
+					mockStorageClient := mocks.NewStorageClient([]*mocks.MockBucket{
+						&mocks.MockBucket{
+							Name: "test-bucket",
+							Tags: map[string]string{
+								"x-nitric-name": "test-bucket",
+							},
+						},
+					}, &storage)
+					storagePlugin, _ := s3_plugin.NewWithClient(mockStorageClient)
+
+					It("Should successfully retrieve the object", func() {
+						object, err := storagePlugin.Get("test-bucket", "test-key")
+						By("Not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("Returning the item")
+						Expect(object).To(Equal([]byte("Test")))
+					})
+				})
+				When("The item doesn't exist", func () {
+
+				})
+			})
+			When("The bucket doesn't exist", func() {
+
+			})
+		})
+	})
 })

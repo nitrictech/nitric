@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"io/ioutil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -19,6 +20,7 @@ type S3Plugin struct {
 	client s3iface.S3API
 }
 
+// getBucketByName - Finds and returns a bucket by it's Nitric name
 func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
 	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
 
@@ -72,7 +74,22 @@ func (s *S3Plugin) Put(bucket string, key string, object []byte) error {
 
 // Get - Retrieves an item from a bucket
 func (s *S3Plugin) Get(bucket string, key string) ([]byte, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+	if b, err := s.getBucketByName(bucket); err == nil {
+		resp, err := s.client.GetObject(&s3.GetObjectInput{
+			Bucket: b.Name,
+			Key: aws.String(key),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer resp.Body.Close()
+		//TODO: Wrap the possible error from ReadAll
+		return ioutil.ReadAll(resp.Body)
+	} else {
+		return nil, err
+	}
 }
 
 // New creates a new default S3 storage plugin
