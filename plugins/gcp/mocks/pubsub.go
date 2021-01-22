@@ -7,84 +7,7 @@ import (
 
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"google.golang.org/api/iterator"
-	pb "google.golang.org/genproto/googleapis/pubsub/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
-
-type MockPubSubPublisherServer struct {
-	pb.UnimplementedPublisherServer
-	topics            []string
-	publishedMessages map[string][]*pb.PubsubMessage
-}
-
-func (m *MockPubSubPublisherServer) SetTopics(topics []string) {
-	m.topics = topics
-	m.ClearMessages()
-}
-
-func (m *MockPubSubPublisherServer) ClearMessages() {
-	m.publishedMessages = make(map[string][]*pb.PubsubMessage)
-}
-
-func (m *MockPubSubPublisherServer) GetMessages() map[string][]*pb.PubsubMessage {
-	return m.publishedMessages
-}
-
-// Adds one or more messages to the topic. Returns `NOT_FOUND` if the topic
-// does not exist.
-func (m *MockPubSubPublisherServer) Publish(ctx context.Context, req *pb.PublishRequest) (*pb.PublishResponse, error) {
-	topic := req.GetTopic()
-
-	var discoveredTopic string = ""
-	for _, t := range m.topics {
-		if topic == t {
-			discoveredTopic = t
-			break
-		}
-	}
-
-	if discoveredTopic == "" {
-		return nil, status.Errorf(codes.NotFound, "Topic does not exist")
-	}
-
-	var messageIds = make([]string, 0)
-	for _, message := range req.GetMessages() {
-		if _, ok := m.publishedMessages[discoveredTopic]; !ok {
-			m.publishedMessages[discoveredTopic] = make([]*pb.PubsubMessage, 0)
-		}
-
-		messageIds = append(messageIds, strconv.FormatInt(int64(len(m.publishedMessages[discoveredTopic])), 10))
-		m.publishedMessages[discoveredTopic] = append(m.publishedMessages[discoveredTopic], message)
-	}
-
-	return &pb.PublishResponse{
-		MessageIds: messageIds,
-	}, nil
-}
-
-// Lists matching topics.
-func (m *MockPubSubPublisherServer) ListTopics(ctx context.Context, req *pb.ListTopicsRequest) (*pb.ListTopicsResponse, error) {
-	topics := make([]*pb.Topic, 0)
-
-	for _, topic := range m.topics {
-		topics = append(topics, &pb.Topic{
-			Name: topic,
-		})
-	}
-
-	// List the available topics
-	return &pb.ListTopicsResponse{
-		Topics: topics,
-	}, nil
-}
-
-func NewPubsubPublisherServer(topics []string) *MockPubSubPublisherServer {
-	return &MockPubSubPublisherServer{
-		topics:            topics,
-		publishedMessages: make(map[string][]*pb.PubsubMessage),
-	}
-}
 
 type MockPubsubClient struct {
 	ifaces.PubsubClient
@@ -123,9 +46,10 @@ type MockTopicIterator struct {
 
 func (s *MockTopicIterator) Next() (ifaces.Topic, error) {
 	if s.idx < len(s.c.topics) {
+		s.idx++
 		return &MockPubsubTopic{
 			c:    s.c,
-			name: s.c.topics[s.idx],
+			name: s.c.topics[s.idx-1],
 		}, nil
 	}
 
@@ -171,6 +95,10 @@ func (s *MockPubsubTopic) Exists(ctx context.Context) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (s *MockPubsubTopic) ID() string {
+	return s.name
 }
 
 type MockPublishResult struct {

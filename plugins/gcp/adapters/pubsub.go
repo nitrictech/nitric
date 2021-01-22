@@ -62,6 +62,10 @@ func (t topic) Exists(ctx context.Context) (bool, error) {
 	return t.Topic.Exists(ctx)
 }
 
+func (t topic) ID() string {
+	return t.Topic.ID()
+}
+
 // func (s subscription) Exists(ctx context.Context) (bool, error) {
 // 	return s.Subscription.Exists(ctx)
 // }

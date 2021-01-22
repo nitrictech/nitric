@@ -21,6 +21,7 @@ type Topic interface {
 	String() string
 	Publish(ctx context.Context, msg Message) PublishResult
 	Exists(ctx context.Context) (bool, error)
+	ID() string
 }
 
 type Message interface {
