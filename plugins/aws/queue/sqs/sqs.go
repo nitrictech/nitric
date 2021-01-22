@@ -59,11 +59,14 @@ func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResp
 			QueueUrl: url,
 		}); err == nil {
 			// process out Failed messages to return to the user...
-			failedEvents := make([]*sdk.NitricEvent, 0)
+			failedEvents := make([]*sdk.FailedMessage, 0)
 			for _, failed := range out.Failed {
 				for _, e := range events {
 					if e.RequestId == *failed.Id {
-						failedEvents = append(failedEvents, e)
+						failedEvents = append(failedEvents, &sdk.FailedMessage{
+							Event:   e,
+							Message: *failed.Message,
+						})
 						// continue outer loop
 						break
 					}

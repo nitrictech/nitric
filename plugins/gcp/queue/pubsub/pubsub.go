@@ -30,7 +30,7 @@ func (s *PubsubPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushR
 	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more
 	// sense...
 	results := make([]ifaces.PublishResult, 0)
-	failedMessages := make([]*sdk.NitricEvent, 0)
+	failedMessages := make([]*sdk.FailedMessage, 0)
 	publishedMessages := make([]*sdk.NitricEvent, 0)
 
 	for _, evt := range events {
@@ -42,7 +42,10 @@ func (s *PubsubPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushR
 			results = append(results, topic.Publish(ctx, msg))
 			publishedMessages = append(publishedMessages, evt)
 		} else {
-			failedMessages = append(failedMessages, evt)
+			failedMessages = append(failedMessages, &sdk.FailedMessage{
+				Event:   evt,
+				Message: "Error unmarshalling message for queue",
+			})
 		}
 	}
 
@@ -50,7 +53,10 @@ func (s *PubsubPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushR
 		// Iterate over the results to check for successful publishing...
 		if _, err := result.Get(ctx); err != nil {
 			// Add this to our failures list in our results...
-			failedMessages = append(failedMessages, publishedMessages[idx])
+			failedMessages = append(failedMessages, &sdk.FailedMessage{
+				Event:   publishedMessages[idx],
+				Message: err.Error(),
+			})
 		}
 	}
 

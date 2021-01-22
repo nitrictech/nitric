@@ -85,7 +85,7 @@ func (s *LocalQueuePlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.P
 	}
 
 	return &sdk.PushResponse{
-		FailedMessages: make([]*sdk.NitricEvent, 0),
+		FailedMessages: make([]*sdk.FailedMessage, 0),
 	}, nil
 }
 

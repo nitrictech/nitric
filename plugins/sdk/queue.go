@@ -4,8 +4,13 @@ import (
 	"fmt"
 )
 
+type FailedMessage struct {
+	Event   *NitricEvent
+	Message string
+}
+
 type PushResponse struct {
-	FailedMessages []*NitricEvent
+	FailedMessages []*FailedMessage
 }
 
 // QueuePlugin - The Nitric plugin interface for cloud native queue services
@@ -21,6 +26,6 @@ type UnimplementedQueuePlugin struct {
 }
 
 // Push - Unimplemented Stuv for the UnimplementedQueuePlugin
-func (*UnimplementedQueuePlugin) Push(queue string, events []*NitricEvent) error {
-	return fmt.Errorf("UNIMPLEMENTED")
+func (*UnimplementedQueuePlugin) Push(queue string, events []*NitricEvent) (*PushResponse, error) {
+	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
