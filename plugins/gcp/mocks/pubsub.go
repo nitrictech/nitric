@@ -2,12 +2,14 @@ package mocks
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
+	"google.golang.org/api/iterator"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type MockPubSubPublisherServer struct {
@@ -27,18 +29,6 @@ func (m *MockPubSubPublisherServer) ClearMessages() {
 
 func (m *MockPubSubPublisherServer) GetMessages() map[string][]*pb.PubsubMessage {
 	return m.publishedMessages
-}
-
-// Creates the given topic with the given name. See the [resource name rules](
-// https://cloud.google.com/pubsub/docs/admin#resource_names).
-func (m *MockPubSubPublisherServer) CreateTopic(context.Context, *pb.Topic) (*pb.Topic, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateTopic not implemented")
-}
-
-// Updates an existing topic. Note that certain properties of a
-// topic are not modifiable.
-func (m *MockPubSubPublisherServer) UpdateTopic(context.Context, *pb.UpdateTopicRequest) (*pb.Topic, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateTopic not implemented")
 }
 
 // Adds one or more messages to the topic. Returns `NOT_FOUND` if the topic
@@ -73,11 +63,6 @@ func (m *MockPubSubPublisherServer) Publish(ctx context.Context, req *pb.Publish
 	}, nil
 }
 
-// Gets the configuration of a topic.
-func (m *MockPubSubPublisherServer) GetTopic(context.Context, *pb.GetTopicRequest) (*pb.Topic, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTopic not implemented")
-}
-
 // Lists matching topics.
 func (m *MockPubSubPublisherServer) ListTopics(ctx context.Context, req *pb.ListTopicsRequest) (*pb.ListTopicsResponse, error) {
 	topics := make([]*pb.Topic, 0)
@@ -94,42 +79,111 @@ func (m *MockPubSubPublisherServer) ListTopics(ctx context.Context, req *pb.List
 	}, nil
 }
 
-// Lists the names of the attached subscriptions on this topic.
-func (m *MockPubSubPublisherServer) ListTopicSubscriptions(context.Context, *pb.ListTopicSubscriptionsRequest) (*pb.ListTopicSubscriptionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTopicSubscriptions not implemented")
-}
-
-// Lists the names of the snapshots on this topic. Snapshots are used in
-// [Seek](https://cloud.google.com/pubsub/docs/replay-overview) operations,
-// which allow you to manage message acknowledgments in bulk. That is, you can
-// set the acknowledgment state of messages in an existing subscription to the
-// state captured by a snapshot.
-func (m *MockPubSubPublisherServer) ListTopicSnapshots(context.Context, *pb.ListTopicSnapshotsRequest) (*pb.ListTopicSnapshotsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTopicSnapshots not implemented")
-}
-
-// Deletes the topic with the given name. Returns `NOT_FOUND` if the topic
-// does not exist. After a topic is deleted, a new topic may be created with
-// the same name; this is an entirely new topic with none of the old
-// configuration or subscriptions. Existing subscriptions to this topic are
-// not deleted, but their `topic` field is set to `_deleted-topic_`.
-func (m *MockPubSubPublisherServer) DeleteTopic(context.Context, *pb.DeleteTopicRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteTopic not implemented")
-}
-
-// Detaches a subscription from this topic. All messages retained in the
-// subscription are dropped. Subsequent `Pull` and `StreamingPull` requests
-// will return FAILED_PRECONDITION. If the subscription is a push
-// subscription, pushes to the endpoint will stop.
-func (m *MockPubSubPublisherServer) DetachSubscription(context.Context, *pb.DetachSubscriptionRequest) (*pb.DetachSubscriptionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DetachSubscription not implemented")
-}
-
 func NewPubsubPublisherServer(topics []string) *MockPubSubPublisherServer {
 	return &MockPubSubPublisherServer{
 		topics:            topics,
 		publishedMessages: make(map[string][]*pb.PubsubMessage),
 	}
+}
+
+type MockPubsubClient struct {
+	ifaces.PubsubClient
+	topics                []string
+	PublishedMessages     map[string][]ifaces.Message
+	publishedMessageCount int64
+}
+
+func NewMockPubsubClient(topics []string) *MockPubsubClient {
+	return &MockPubsubClient{
+		topics:                topics,
+		PublishedMessages:     make(map[string][]ifaces.Message),
+		publishedMessageCount: 0,
+	}
+}
+
+func (s *MockPubsubClient) Topic(name string) ifaces.Topic {
+	return &MockPubsubTopic{
+		name: name,
+		c:    s,
+	}
+}
+
+func (s *MockPubsubClient) Topics(context.Context) ifaces.TopicIterator {
+	return &MockTopicIterator{
+		c:   s,
+		idx: 0,
+	}
+}
+
+type MockTopicIterator struct {
+	ifaces.TopicIterator
+	c   *MockPubsubClient
+	idx int
+}
+
+func (s *MockTopicIterator) Next() (ifaces.Topic, error) {
+	if s.idx < len(s.c.topics) {
+		return &MockPubsubTopic{
+			c:    s.c,
+			name: s.c.topics[s.idx],
+		}, nil
+	}
+
+	return nil, iterator.Done
+}
+
+type MockPubsubTopic struct {
+	ifaces.Topic
+	c    *MockPubsubClient
+	name string
+}
+
+func (s *MockPubsubTopic) Publish(ctx context.Context, msg ifaces.Message) ifaces.PublishResult {
+	for _, t := range s.c.topics {
+		if t == s.name {
+			if s.c.PublishedMessages[t] == nil {
+				s.c.PublishedMessages[t] = make([]ifaces.Message, 0)
+			}
+
+			s.c.PublishedMessages[t] = append(s.c.PublishedMessages[t], msg)
+			s.c.publishedMessageCount++
+
+			return &MockPublishResult{
+				id:  strconv.FormatInt(s.c.publishedMessageCount, 10),
+				err: nil,
+			}
+		}
+	}
+
+	return &MockPublishResult{
+		id:  "",
+		err: fmt.Errorf("Topic %s does not exist", s.name),
+	}
+}
+
+func (s *MockPubsubTopic) Exists(ctx context.Context) (bool, error) {
+	// TODO: Add handle for a backend (non-NotFound error)
+
+	for _, t := range s.c.topics {
+		if t == s.name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+type MockPublishResult struct {
+	id  string
+	err error
+}
+
+func (s *MockPublishResult) Get(context.Context) (string, error) {
+	if s.err != nil {
+		return "", s.err
+	}
+
+	return s.id, nil
 }
 
 // We likely will not need this for now

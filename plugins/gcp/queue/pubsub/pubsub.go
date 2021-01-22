@@ -3,43 +3,46 @@ package pubsub_queue_plugin
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
+	"golang.org/x/oauth2/google"
 )
 
-type TasksPlugin struct {
+type PubsubPlugin struct {
 	sdk.UnimplementedQueuePlugin
-	client *pubsub.Client
+	client ifaces.PubsubClient
 }
 
-func (s *TasksPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *PubsubPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic := s.client.Topic(queue)
 	ctx := context.TODO()
+	topic := s.client.Topic(queue)
+
+	if exists, err := topic.Exists(ctx); !exists || err != nil {
+		return nil, fmt.Errorf("Queue: %s does not exist", queue)
+	}
 
 	// Push once we've published all messages to the client
 	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more
 	// sense...
-	topic.PublishSettings.CountThreshold = len(events)
-	results := make([]*pubsub.PublishResult, 0)
+	results := make([]ifaces.PublishResult, 0)
 	failedMessages := make([]*sdk.NitricEvent, 0)
 	publishedMessages := make([]*sdk.NitricEvent, 0)
 
 	for _, evt := range events {
 		if eventBytes, err := json.Marshal(evt); err == nil {
-			msg := &pubsub.Message{
+			msg := adapters.AdaptPubsubMessage(&pubsub.Message{
 				Data: eventBytes,
-			}
+			})
 
 			results = append(results, topic.Publish(ctx, msg))
 			publishedMessages = append(publishedMessages, evt)
 		} else {
-			// TODO: Append a publishing error to the error results here...
 			failedMessages = append(failedMessages, evt)
-			// Reduce the publish threshold by one
-			// as the client will never see this message
-			topic.PublishSettings.CountThreshold--
 		}
 	}
 
@@ -54,4 +57,29 @@ func (s *TasksPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushRe
 	return &sdk.PushResponse{
 		FailedMessages: failedMessages,
 	}, nil
+}
+
+// New - Constructs a new GCP pubsub client with defaults
+func New() (sdk.QueuePlugin, error) {
+	ctx := context.Background()
+
+	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
+	if credentialsError != nil {
+		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+	}
+
+	client, clientError := pubsub.NewClient(ctx, credentials.ProjectID)
+	if clientError != nil {
+		return nil, fmt.Errorf("pubsub client error: %v", clientError)
+	}
+
+	return &PubsubPlugin{
+		client: adapters.AdaptPubsubClient(client),
+	}, nil
+}
+
+func NewWithClient(client ifaces.PubsubClient) sdk.QueuePlugin {
+	return &PubsubPlugin{
+		client: client,
+	}
 }
