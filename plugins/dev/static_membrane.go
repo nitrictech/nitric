@@ -8,6 +8,7 @@ import (
 	documents "github.com/nitric-dev/membrane/plugins/dev/documents"
 	eventing "github.com/nitric-dev/membrane/plugins/dev/eventing"
 	gateway "github.com/nitric-dev/membrane/plugins/dev/gateway"
+	queue "github.com/nitric-dev/membrane/plugins/dev/queue"
 	storage "github.com/nitric-dev/membrane/plugins/dev/storage"
 	"github.com/nitric-dev/membrane/utils"
 )
@@ -28,6 +29,7 @@ func main() {
 	documentsPlugin, _ := documents.New()
 	storagePlugin, _ := storage.New()
 	gatewayPlugin, _ := gateway.New()
+	queuePlugin, _ := queue.New()
 
 	membrane, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
@@ -36,6 +38,7 @@ func main() {
 		EventingPlugin:          eventingPlugin,
 		DocumentsPlugin:         documentsPlugin,
 		StoragePlugin:           storagePlugin,
+		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,
 		TolerateMissingServices: tolerateMissing,
 	})

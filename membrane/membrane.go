@@ -13,6 +13,7 @@ import (
 
 	documentsPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/documents"
 	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
+	queuePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/queue"
 	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/services"
@@ -31,6 +32,7 @@ type MembraneOptions struct {
 	EventingPlugin  sdk.EventingPlugin
 	DocumentsPlugin sdk.DocumentsPlugin
 	StoragePlugin   sdk.StoragePlugin
+	QueuePlugin     sdk.QueuePlugin
 	GatewayPlugin   sdk.GatewayPlugin
 
 	SuppressLogs            bool
@@ -59,6 +61,7 @@ type Membrane struct {
 	documentsPlugin sdk.DocumentsPlugin
 	storagePlugin   sdk.StoragePlugin
 	gatewayPlugin   sdk.GatewayPlugin
+	queuePlugin     sdk.QueuePlugin
 
 	// Tolerate if services are not available
 	// Not this does not include the gateway service
@@ -75,47 +78,21 @@ func (s *Membrane) log(log string) {
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() (eventingPb.EventingServer, error) {
-	// Cast to the new eventing server function
-	if s.eventingPlugin != nil {
-		return services.NewEventingServer(s.eventingPlugin), nil
-	}
-
-	return nil, fmt.Errorf("Eventing plugin not configured")
+func (s *Membrane) createEventingServer() eventingPb.EventingServer {
+	return services.NewEventingServer(s.eventingPlugin)
 }
 
 // Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() (storagePb.StorageServer, error) {
-	// Cast to the new storage server function
-	if s.storagePlugin != nil {
-		return services.NewStorageServer(s.storagePlugin), nil
-	}
-
-	return nil, fmt.Errorf("Storage plugin not configured")
+func (s *Membrane) createStorageServer() storagePb.StorageServer {
+	return services.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() (documentsPb.DocumentsServer, error) {
-	// Cast to the new documents server function
-	if s.documentsPlugin != nil {
-		return services.NewDocumentsServer(s.documentsPlugin), nil
-	}
-
-	return nil, fmt.Errorf("Documents plugin not configured")
+func (s *Membrane) createDocumentsServer() documentsPb.DocumentsServer {
+	return services.NewDocumentsServer(s.documentsPlugin)
 }
 
-// Provides a means for the nitric membrane to accept and normalize input/output for a given interface
-// TODO: Create a entrypoint plugin for different styles of membrane
-// data ingress/egress, this could include
-// - HTTP Proxy plugin (for providing a HTTP proxy down to user land code/applications)
-// - AWS Lambda plugin (for querying the AWS lambda service and directing/normalizing input to user land code)
-// - Kafka Plugin (for providing a streaming server)
-func (s *Membrane) loadGatewayPlugin() (sdk.GatewayPlugin, error) {
-	if s.gatewayPlugin != nil {
-		// There was an error loading the eventing plugin
-		return s.gatewayPlugin, nil
-	}
-
-	return nil, fmt.Errorf("Gateway plugin not configured")
+func (s *Membrane) createQueueServer() queuePb.QueueServer {
+	return services.NewQueueServer(s.queuePlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -220,52 +197,21 @@ func (s *Membrane) Start() error {
 	grpcServer := grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
-	eventingServer, err := s.createEventingServer()
+	eventingServer := s.createEventingServer()
+	eventingPb.RegisterEventingServer(grpcServer, eventingServer)
 
-	// There was a failure loading the eventing server
-	// XXX: For now we will gracefully continue
-	// However we will likely want to use env variables to determine required services
-	// for a given function
-	if err == nil {
-		// Register the service
-		eventingPb.RegisterEventingServer(grpcServer, eventingServer)
-		s.log("Registered Eventing Plugin")
-	} else if s.tolerateMissingServices {
-		s.log(fmt.Sprintf("Failed to load eventing plugin %v", err))
-	} else {
-		return fmt.Errorf("Fatal error loading eventing plugin %v", err)
-	}
+	documentsServer := s.createDocumentsServer()
+	documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
 
-	documentsServer, err := s.createDocumentsServer()
-	if err == nil {
-		// Register the service
-		documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
-		s.log("Registered Documents Plugin")
-	} else if s.tolerateMissingServices {
-		s.log(fmt.Sprintf("Failed to load documents plugin %v", err))
-	} else {
-		return fmt.Errorf("Fatal error loading documents plugin %v", err)
-	}
+	storageServer := s.createStorageServer()
+	storagePb.RegisterStorageServer(grpcServer, storageServer)
 
-	storageServer, err := s.createStorageServer()
-	if err == nil {
-		// Register the service
-		storagePb.RegisterStorageServer(grpcServer, storageServer)
-		s.log("Registered Storage Plugin")
-	} else if s.tolerateMissingServices {
-		s.log(fmt.Sprintf("Failed to load storage plugin %v", err))
-	} else {
-		return fmt.Errorf("Fatal error loading storage plugin %v", err)
-	}
+	queueServer := s.createQueueServer()
+	queuePb.RegisterQueueServer(grpcServer, queueServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
 		return fmt.Errorf("Could not listen on configured service address: %v", err)
-	}
-
-	gateway, err := s.loadGatewayPlugin()
-	if err != nil {
-		return fmt.Errorf("Fatal error loading gateway plugin %v", err)
 	}
 
 	s.log("Registered Gateway Plugin")
@@ -296,7 +242,7 @@ func (s *Membrane) Start() error {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
-	err = gateway.Start(s.httpHandler)
+	err = s.gatewayPlugin.Start(s.httpHandler)
 	// The gateway process has exited
 
 	return err
@@ -314,6 +260,16 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childAddress = options.ChildAddress
 	}
 
+	if options.GatewayPlugin == nil {
+		return nil, fmt.Errorf("Missing gateway plugin, Gateway plugin must not be nil")
+	}
+
+	if !options.TolerateMissingServices {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentsPlugin == nil || options.QueuePlugin == nil {
+			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
+		}
+	}
+
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
 		childAddress:            childAddress,
@@ -323,6 +279,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		eventingPlugin:          options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		documentsPlugin:         options.DocumentsPlugin,
+		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		supressLogs:             options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
