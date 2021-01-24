@@ -17,7 +17,7 @@ var _ = Describe("Sqs", func() {
 			})
 			plugin := sqs_plugin.NewWithClient(sqsMock)
 
-			It("Should fail to publish the message", func() {
+			It("Should publish the message", func() {
 				_, err := plugin.Push("test", []*sdk.NitricEvent{
 					&sdk.NitricEvent{
 						RequestId:   "1234",
