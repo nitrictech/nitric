@@ -22,6 +22,7 @@ func main() {
 	documentsPluginFile := utils.GetEnv("DOCUMENTS_PLUGIN", "documents.so")
 	storagePluginFile := utils.GetEnv("STORAGE_PLUGIN", "storage.so")
 	gatewayPluginFile := utils.GetEnv("GATEWAY_PLUGIN", "gateway.so")
+	queuePluginFile := utils.GetEnv("QUEUE_PLUGIN", "queue.so")
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
 
@@ -33,6 +34,7 @@ func main() {
 	var storagePlugin sdk.StoragePlugin = nil
 	var documentsPlugin sdk.DocumentsPlugin = nil
 	var gatewayPlugin sdk.GatewayPlugin = nil
+	var queuePlugin sdk.QueuePlugin = nil
 
 	// Load the Eventing Plugin
 	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, eventingPluginFile)); err == nil {
@@ -40,6 +42,17 @@ func main() {
 			if newFunc, ok := symbol.(func() (sdk.EventingPlugin, error)); ok {
 				if plugin, err := newFunc(); err == nil {
 					eventingPlugin = plugin
+				}
+			}
+		}
+	}
+
+	// Load the queue plugin
+	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, queuePluginFile)); err == nil {
+		if symbol, err := plug.Lookup("New"); err == nil {
+			if newFunc, ok := symbol.(func() (sdk.QueuePlugin, error)); ok {
+				if plugin, err := newFunc(); err == nil {
+					queuePlugin = plugin
 				}
 			}
 		}
@@ -86,6 +99,7 @@ func main() {
 		DocumentsPlugin:         documentsPlugin,
 		StoragePlugin:           storagePlugin,
 		GatewayPlugin:           gatewayPlugin,
+		QueuePlugin:             queuePlugin,
 		TolerateMissingServices: tolerateMissing,
 	})
 

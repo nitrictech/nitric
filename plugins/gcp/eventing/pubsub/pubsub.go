@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
+	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
@@ -13,7 +15,7 @@ import (
 
 type PubsubPlugin struct {
 	sdk.UnimplementedEventingPlugin
-	client *pubsub.Client
+	client ifaces.PubsubClient
 }
 
 func (s *PubsubPlugin) GetTopics() ([]string, error) {
@@ -21,6 +23,7 @@ func (s *PubsubPlugin) GetTopics() ([]string, error) {
 
 	var topics []string
 	for {
+
 		topic, err := iter.Next()
 		if err == iterator.Done {
 			break
@@ -47,9 +50,9 @@ func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
 
 	pubsubTopic := s.client.Topic(topic)
 
-	msg := &pubsub.Message{
+	msg := adapters.AdaptPubsubMessage(&pubsub.Message{
 		Data: eventBytes,
-	}
+	})
 
 	if _, err := pubsubTopic.Publish(ctx, msg).Get(ctx); err != nil {
 		return fmt.Errorf("Payload marshalling error: %v", err)
@@ -72,11 +75,11 @@ func New() (sdk.EventingPlugin, error) {
 	}
 
 	return &PubsubPlugin{
-		client: client,
+		client: adapters.AdaptPubsubClient(client),
 	}, nil
 }
 
-func NewWithClient(client *pubsub.Client) (sdk.EventingPlugin, error) {
+func NewWithClient(client ifaces.PubsubClient) (sdk.EventingPlugin, error) {
 	return &PubsubPlugin{
 		client: client,
 	}, nil

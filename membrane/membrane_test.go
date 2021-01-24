@@ -27,6 +27,10 @@ type MockDocumentsServer struct {
 	sdk.UnimplementedDocumentsPlugin
 }
 
+type MockQueueServer struct {
+	sdk.UnimplementedQueuePlugin
+}
+
 type MockFunction struct {
 	// Records the requests that its recieved for later inspection
 	requests []*http.Request
@@ -80,20 +84,77 @@ func (gw *MockGateway) Start(handler sdk.GatewayHandler) error {
 }
 
 var _ = Describe("Membrane", func() {
-	Context("Starting the server", func() {
-		Context("That tolerates missing services", func() {
-			When("It is missing the gateway plugin", func() {
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					TolerateMissingServices: true,
-					SuppressLogs:            true,
-				})
-				It("Start should error", func() {
-					err := membrane.Start()
+	Context("New", func() {
+		Context("Tolerate Missing Services is enabled", func() {
+			When("The gateway plugin is missing", func() {
+				It("Should still fail to create", func() {
+					m, err := membrane.New(&membrane.MembraneOptions{
+						SuppressLogs:            true,
+						TolerateMissingServices: true,
+					})
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Fatal error loading gateway"))
+					Expect(m).To(BeNil())
 				})
 			})
 
+			When("The gateway plugin is present", func() {
+				mockGateway := &MockGateway{}
+				mbraneOpts := membrane.MembraneOptions{
+					SuppressLogs:            true,
+					GatewayPlugin:           mockGateway,
+					TolerateMissingServices: true,
+				}
+				It("Should successfully create the membrane server", func() {
+					m, err := membrane.New(&mbraneOpts)
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(m).ToNot(BeNil())
+				})
+			})
+		})
+
+		Context("Tolerate Missing Services is disabled", func() {
+			When("Only the gateway plugin is present", func() {
+				mockGateway := &MockGateway{}
+				mbraneOpts := membrane.MembraneOptions{
+					TolerateMissingServices: false,
+					SuppressLogs:            true,
+					GatewayPlugin:           mockGateway,
+				}
+				It("Should fail to create", func() {
+					m, err := membrane.New(&mbraneOpts)
+					Expect(err).Should(HaveOccurred())
+					Expect(m).To(BeNil())
+				})
+			})
+
+			When("All plugins are present", func() {
+				mockEventingServer := &MockEventingServer{}
+				mockDocumentsServer := &MockDocumentsServer{}
+				mockStorageServer := &MockStorageServer{}
+				mockQueueServer := &MockQueueServer{}
+
+				mockGateway := &MockGateway{}
+				mbraneOpts := membrane.MembraneOptions{
+					TolerateMissingServices: false,
+					SuppressLogs:            true,
+					GatewayPlugin:           mockGateway,
+					EventingPlugin:          mockEventingServer,
+					DocumentsPlugin:         mockDocumentsServer,
+					StoragePlugin:           mockStorageServer,
+					QueuePlugin:             mockQueueServer,
+				}
+
+				It("Should successfully create the membrane server", func() {
+					m, err := membrane.New(&mbraneOpts)
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(m).ToNot(BeNil())
+				})
+			})
+		})
+	})
+
+	Context("Starting the server", func() {
+		Context("That tolerates missing services", func() {
 			When("The Gateway plugin is available and working", func() {
 				mockGateway := &MockGateway{}
 
@@ -137,82 +198,6 @@ var _ = Describe("Membrane", func() {
 				err := membrane.Start()
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Could not listen"))
-			})
-		})
-
-		Context("That does not tolerate missing services", func() {
-			mockGateway := &MockGateway{}
-			When("It is missing the eventing plugin", func() {
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					TolerateMissingServices: false,
-					SuppressLogs:            true,
-					GatewayPlugin:           mockGateway,
-				})
-				It("Start should return an error", func() {
-					err := membrane.Start()
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Fatal error loading eventing"))
-				})
-			})
-
-			When("It is missing the documents plugin", func() {
-				mockEventingServer := &MockEventingServer{}
-
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					EventingPlugin:          mockEventingServer,
-					GatewayPlugin:           mockGateway,
-					SuppressLogs:            true,
-					TolerateMissingServices: false,
-				})
-
-				It("Start should return an error", func() {
-					err := membrane.Start()
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Fatal error loading documents"))
-				})
-			})
-
-			When("It is missing the storage plugin", func() {
-				mockEventingServer := &MockEventingServer{}
-				mockDocumentsServer := &MockDocumentsServer{}
-
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					EventingPlugin:          mockEventingServer,
-					DocumentsPlugin:         mockDocumentsServer,
-					GatewayPlugin:           mockGateway,
-					SuppressLogs:            true,
-					TolerateMissingServices: false,
-				})
-
-				It("Start should return an error", func() {
-					err := membrane.Start()
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Fatal error loading storage"))
-				})
-			})
-
-			When("It is missing no plugins", func() {
-				mockEventingServer := &MockEventingServer{}
-				mockDocumentsServer := &MockDocumentsServer{}
-				mockStorageServer := &MockStorageServer{}
-
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					EventingPlugin:          mockEventingServer,
-					DocumentsPlugin:         mockDocumentsServer,
-					GatewayPlugin:           mockGateway,
-					StoragePlugin:           mockStorageServer,
-					SuppressLogs:            true,
-					TolerateMissingServices: false,
-				})
-
-				It("Should not error", func() {
-					err := membrane.Start()
-					Expect(err).ShouldNot(HaveOccurred())
-				})
-
-				It("Should start the gateway", func() {
-					Expect(mockGateway.started).To(BeTrue())
-				})
 			})
 		})
 	})
