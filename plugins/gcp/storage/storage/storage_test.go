@@ -52,7 +52,7 @@ var _ = Describe("Storage", func() {
 					storage["test-bucket"]["test-key"] = []byte("Test")
 					mockStorageClient := mocks.NewStorageClient([]string{"test-bucket"}, &storage)
 					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
-					
+
 					It("Should retrieve the item", func() {
 						item, err := storagePlugin.Get("test-bucket", "test-key")
 
