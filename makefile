@@ -72,8 +72,8 @@ gcp-static: generate-proto
 
 # Cross-platform Build
 gcp-static-xp: generate-proto
-    @echo Building static GCP membrane
-    @CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
+	@echo Building static GCP membrane
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
 
 gcp-plugins:
 	@echo Building GCP plugins
