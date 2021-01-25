@@ -56,3 +56,27 @@ make build-docker
  - [AWS](./plugins/aws/README.md)
  - [GCP](./plugins/gcp/README.md)
  - [Dev](./plugins/dev/README.md)
+ 
+## Running Locally
+
+To run the membrane server locally, perform a local build of the membrane binary for the platform you're targeting, then run the resulting binary.
+
+```bash
+# Make the GCP Static Cross-platform binary
+make gcp-static-xp
+
+# Run the membrane binary
+./bin/membrane
+```
+
+> Note: for the AWS membrane, the Lambda Gateway (default) will fail to start. Instead, set the `GATEWAY_ENVIRONMENT` environment variable so that the HTTP gateway is launched instead.
+
+```bash
+# Make the AWS Static Cross-platform binary
+make aws-static-xp
+
+# Set Env, then Run the membrane binary
+GATEWAY_ENVIRONMENT=http; ./bin/membrane
+```
+
+ 
