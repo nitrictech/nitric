@@ -3,15 +3,21 @@ package s3_plugin
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
+)
+
+const (
+	// AWS API neglects to include a constant for this error code.
+	ErrCodeNoSuchTagSet = "NoSuchTagSet"
 )
 
 // S3Plugin - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
@@ -35,6 +41,14 @@ func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
 		})
 
 		if err != nil {
+			if awsErr, ok := err.(awserr.Error); ok {
+				// Table not found,  try to create and put again
+				if awsErr.Code() == ErrCodeNoSuchTagSet {
+					// Ignore buckets with no tags, check the next bucket
+					continue
+				}
+				return nil, err
+			}
 			return nil, err
 		}
 
