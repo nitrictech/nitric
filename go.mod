@@ -17,8 +17,8 @@ require (
 	github.com/onsi/gomega v1.10.1
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb // indirect
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
-	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
-	golang.org/x/text v0.3.4
+	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3 // indirect
+	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201203001206-6486ece9c497
 	google.golang.org/grpc v1.34.0

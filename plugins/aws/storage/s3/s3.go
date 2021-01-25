@@ -3,14 +3,21 @@ package s3_plugin
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
+)
+
+const (
+	// AWS API neglects to include a constant for this error code.
+	ErrCodeNoSuchTagSet = "NoSuchTagSet"
 )
 
 // S3Plugin - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
@@ -19,6 +26,7 @@ type S3Plugin struct {
 	client s3iface.S3API
 }
 
+// getBucketByName - Finds and returns a bucket by it's Nitric name
 func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
 	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
 
@@ -33,6 +41,14 @@ func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
 		})
 
 		if err != nil {
+			if awsErr, ok := err.(awserr.Error); ok {
+				// Table not found,  try to create and put again
+				if awsErr.Code() == ErrCodeNoSuchTagSet {
+					// Ignore buckets with no tags, check the next bucket
+					continue
+				}
+				return nil, err
+			}
 			return nil, err
 		}
 
@@ -72,7 +88,22 @@ func (s *S3Plugin) Put(bucket string, key string, object []byte) error {
 
 // Get - Retrieves an item from a bucket
 func (s *S3Plugin) Get(bucket string, key string) ([]byte, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+	if b, err := s.getBucketByName(bucket); err == nil {
+		resp, err := s.client.GetObject(&s3.GetObjectInput{
+			Bucket: b.Name,
+			Key: aws.String(key),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer resp.Body.Close()
+		//TODO: Wrap the possible error from ReadAll
+		return ioutil.ReadAll(resp.Body)
+	} else {
+		return nil, err
+	}
 }
 
 // New creates a new default S3 storage plugin

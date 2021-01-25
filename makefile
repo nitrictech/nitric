@@ -38,6 +38,11 @@ aws-static: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/aws/static_membrane.go
 
+# Cross-platform Build
+aws-static-xp: generate-proto
+	@echo Building static AWS membrane
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/aws/static_membrane.go
+
 aws-plugins:
 	@echo Building AWS plugins
 	@go build -buildmode=plugin -o lib/documents/dynamodb.so ./plugins/aws/plugins/dynamodb.go
@@ -65,6 +70,11 @@ gcp-static: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
 
+# Cross-platform Build
+gcp-static-xp: generate-proto
+	@echo Building static GCP membrane
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
+
 gcp-plugins:
 	@echo Building GCP plugins
 	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/plugins/firestore.go
@@ -87,6 +97,11 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 local-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
+
+# Cross-platform Build
+local-static-xp: generate-proto
+	@echo Building static Local membrane
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
 
 local-plugins:
 	@echo Building Local plugins

@@ -1,8 +1,10 @@
 package mocks
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
@@ -75,6 +77,23 @@ func (s *MockObjectHandle) NewWriter(ctx context.Context) ifaces.Writer {
 		key:    s.name,
 		client: s.client,
 	}
+}
+
+func (s *MockObjectHandle) NewReader(ctx context.Context) (ifaces.Reader, error) {
+	for _, b := range s.client.buckets {
+		if s.bucket == b {
+			store := *s.client.storage
+
+			if data, ok := store[s.bucket][s.name]; ok {
+				return ioutil.NopCloser(bytes.NewReader(data)), nil
+			} else {
+				return nil, fmt.Errorf("cannot read object with key %s from bucket %s, not found in storage %v", s.bucket, s.name, store)
+			}
+
+		}
+	}
+
+	return nil, fmt.Errorf("cannot not read from bucket that does not exist")
 }
 
 type MockWriter struct {

@@ -3,6 +3,7 @@ package storage_plugin
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
@@ -36,10 +37,26 @@ func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, err
 }
 
 /**
- *
+ * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
 func (s *StoragePlugin) Get(bucket string, key string) ([]byte, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+	bucketHandle, err := s.getBucketByName(bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	reader, err := bucketHandle.Object(key).NewReader(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
 
 /**
