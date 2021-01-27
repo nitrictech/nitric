@@ -28,15 +28,17 @@ func (s *IdentityPlatformPlugin) findOrCreateTenant(tenant string) (*string, err
 	tIter := s.admin.TenantManager.Tenants(ctx, "")
 
 	for {
-		if t, err := tIter.Next(); err != iterator.Done {
+		if t, err := tIter.Next(); err == iterator.Done {
 			// Break the loop
 			// Could not find our tenant
 			// So we will attempt to create one...
 			break
 		} else if err != nil {
-
+			return nil, err
 		} else if t.DisplayName == tenant {
 			return &t.ID, nil
+		} else {
+			fmt.Println("Comparing %s -> %s", tenant, t.DisplayName)
 		}
 	}
 

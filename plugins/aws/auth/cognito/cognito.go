@@ -16,10 +16,10 @@ type CognitoPlugin struct {
 	client *cognitoidentityprovider.CognitoIdentityProvider
 }
 
-const DEFAULT_USER_POOL_CLIENT_NAME = "Nitric"
+const DefaultUserPoolClientName = "Nitric"
 
 // Get the client id for a given user pool
-func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, error) {
+func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, *string, error) {
 	// TODO: Need to list over UserPools first, and then use the default NitricClient from that pool
 
 	out, err := s.client.ListUserPools(&cognitoidentityprovider.ListUserPoolsInput{
@@ -28,13 +28,11 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, e
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Unable to search existing user pools: %v", err)
+		return nil, nil, fmt.Errorf("Unable to search existing user pools: %v", err)
 	}
 
 	var poolID *string
-	fmt.Println(fmt.Sprintf("Enumerating %d user pools", len(out.UserPools)))
 	for _, pool := range out.UserPools {
-		fmt.Println(fmt.Sprintf("Comparing %s -> %s", *pool.Name, tenant))
 		if *pool.Name == tenant {
 			poolID = pool.Id
 			break
@@ -46,11 +44,12 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, e
 		out, err := s.client.CreateUserPool(&cognitoidentityprovider.CreateUserPoolInput{
 			// TODO: Setup a user verification workflow via the Nitric SDK
 			// AutoVerifiedAttributes: []*string{aws.String("email")},
-			PoolName: &tenant,
+			AliasAttributes: []*string{aws.String("email")},
+			PoolName:        &tenant,
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("Could not create new user pool for tenant: %v", err)
+			return nil, nil, fmt.Errorf("Could not create new user pool for tenant: %v", err)
 		}
 
 		poolID = out.UserPool.Id
@@ -62,12 +61,12 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, e
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving existing user pool clients: %v", err)
+		return nil, nil, fmt.Errorf("Error retrieving existing user pool clients: %v", err)
 	}
 	// Attempt to find the Nitric SDK client for this tenant...
 	var pClientID *string
 	for _, pClient := range upOut.UserPoolClients {
-		if *pClient.ClientName == DEFAULT_USER_POOL_CLIENT_NAME {
+		if *pClient.ClientName == DefaultUserPoolClientName {
 			pClientID = pClient.ClientId
 		}
 	}
@@ -75,28 +74,41 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, e
 	if pClientID == nil {
 		upClient, err := s.client.CreateUserPoolClient(&cognitoidentityprovider.CreateUserPoolClientInput{
 			UserPoolId:        poolID,
-			ClientName:        aws.String(DEFAULT_USER_POOL_CLIENT_NAME),
+			ClientName:        aws.String(DefaultUserPoolClientName),
 			ExplicitAuthFlows: []*string{aws.String("ALLOW_USER_PASSWORD_AUTH"), aws.String("ALLOW_REFRESH_TOKEN_AUTH")},
 			GenerateSecret:    aws.Bool(false),
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("Error creating new UserPoolClient for Nitric %v", err)
+			return nil, nil, fmt.Errorf("Error creating new UserPoolClient for Nitric %v", err)
 		}
 
 		pClientID = upClient.UserPoolClient.ClientId
 	}
 
-	return pClientID, nil
+	return poolID, pClientID, nil
 }
 
 // CreateUser - Creates a new user in AWS cognito
 func (s *CognitoPlugin) CreateUser(tenant string, id string, email string, password string) error {
 	// Attempt to sign up the user...
-	upClient, err := s.findOrCreateUserPoolForTenant(tenant)
+	pID, upClient, err := s.findOrCreateUserPoolForTenant(tenant)
 
 	if err != nil {
 		return fmt.Errorf("Could not SignUp user: %v", err)
+	}
+
+	ulist, err := s.client.ListUsers(&cognitoidentityprovider.ListUsersInput{
+		UserPoolId: pID,
+		Filter:     aws.String(fmt.Sprintf("email = \"%s\"", email)),
+	})
+
+	if err != nil {
+		return fmt.Errorf("Unable to create new user: %v", err)
+	}
+
+	if len(ulist.Users) > 0 {
+		return fmt.Errorf("A user with %s email, already exists", email)
 	}
 
 	_, err = s.client.SignUp(&cognitoidentityprovider.SignUpInput{
