@@ -54,6 +54,7 @@ func main() {
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,
+		AuthPlugin:              authPlugin,
 		TolerateMissingServices: tolerateMissing,
 	})
 
