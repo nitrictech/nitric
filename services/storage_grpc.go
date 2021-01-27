@@ -15,9 +15,10 @@ type StorageServer struct {
 	storagePlugin sdk.StoragePlugin
 }
 
+// Checks that the storage server is registered and returns gRPC Unimplemented error if not.
 func (s *StorageServer) checkPluginRegistered() (bool, error) {
 	if s.storagePlugin == nil {
-		return false, status.Errorf(codes.Unimplemented, "Eventing plugin not registered")
+		return false, status.Errorf(codes.Unimplemented, "Storage plugin not registered")
 	}
 
 	return true, nil
@@ -44,6 +45,21 @@ func (s *StorageServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetRep
 				Body: object,
 			}, nil
 		} else {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+}
+
+func (s *StorageServer) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteReply, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {
+			return &pb.DeleteReply{
+				Success: true,
+			}, nil
+		} else {
+			// TODO: handle specific error codes.
 			return nil, err
 		}
 	} else {
