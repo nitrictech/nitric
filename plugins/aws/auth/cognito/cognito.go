@@ -44,6 +44,8 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, e
 	if poolID == nil {
 		// Create a New UserPool for this tenant
 		out, err := s.client.CreateUserPool(&cognitoidentityprovider.CreateUserPoolInput{
+			// TODO: Setup a user verification workflow via the Nitric SDK
+			// AutoVerifiedAttributes: []*string{aws.String("email")},
 			PoolName: &tenant,
 		})
 
