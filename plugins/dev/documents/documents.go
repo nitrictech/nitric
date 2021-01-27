@@ -91,7 +91,7 @@ func New() (sdk.DocumentsPlugin, error) {
 	}, nil
 }
 
-func NewWithDB(db ScribbleIface) (sdk.DocumentsPlugin, error) {
+func NewWithDB(db ifaces.ScribbleIface) (sdk.DocumentsPlugin, error) {
 	return &LocalDocumentPlugin{
 		db: db,
 	}, nil

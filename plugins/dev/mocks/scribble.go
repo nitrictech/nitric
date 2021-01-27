@@ -2,7 +2,6 @@ package mocks
 
 import (
 	"encoding/json"
-	"internal/oserror"
 	"os"
 )
 
@@ -19,19 +18,43 @@ type MockScribble struct {
 	deleteErr  error
 }
 
-func (m *MockScribbleDriver) ensureCollectionExists(collection string) {
+func (m *MockScribble) ensureCollectionExists(collection string) {
 	if _, ok := m.store[collection]; !ok {
 		m.store[collection] = make(map[string][]byte)
 	}
 }
 
-func (m *MockScribbleDriver) clearStore() {
+func (m *MockScribble) SetCollection(collection string, items map[string]interface{}) {
+	m.ensureCollectionExists(collection)
+
+	for key, value := range items {
+		itemBytes, _ := json.Marshal(value)
+		m.store[collection][key] = itemBytes
+	}
+}
+
+func (m *MockScribble) GetCollection(collection string) map[string]interface{} {
+	if m.store[collection] == nil {
+		return nil
+	}
+
+	tmpMap := make(map[string]interface{})
+	for key, value := range m.store[collection] {
+		var item interface{}
+		_ = json.Unmarshal(value, &item)
+		tmpMap[key] = item
+	}
+
+	return tmpMap
+}
+
+func (m *MockScribble) ClearStore() {
 	m.store = make(map[string]map[string][]byte)
 }
 
-func (m *MockScribbleDriver) Read(collection string, key string, v interface{}) error {
-	if m[collection] == nil {
-		return oserror.ErrNotExist
+func (m *MockScribble) Read(collection string, key string, v interface{}) error {
+	if m.store[collection] == nil {
+		return os.ErrNotExist
 	}
 
 	if item, ok := m.store[collection][key]; ok {
@@ -42,13 +65,11 @@ func (m *MockScribbleDriver) Read(collection string, key string, v interface{}) 
 
 	// TODO: This should produce the same error as stat()
 	// in the case of a file not existing
-	return oserror.ErrNotExist
+	return os.ErrNotExist
 }
 
-func (m *MockScribbleDriver) Write(collection string, key string, v interface{}) error {
+func (m *MockScribble) Write(collection string, key string, v interface{}) error {
 	m.ensureCollectionExists(collection)
-
-	os.IsNotExist()
 
 	bytes, _ := json.Marshal(v)
 
@@ -58,11 +79,11 @@ func (m *MockScribbleDriver) Write(collection string, key string, v interface{})
 }
 
 // Delete
-func (m *MockScribbleDriver) Delete(collection string, key string) error {
+func (m *MockScribble) Delete(collection string, key string) error {
 	// m.ensureCollectionExists(collection)
 
 	if m.store[collection] == nil {
-		return oserror.ErrNotExist
+		return os.ErrNotExist
 	}
 
 	if _, ok := m.store[collection][key]; ok {
@@ -70,13 +91,13 @@ func (m *MockScribbleDriver) Delete(collection string, key string) error {
 		return nil
 	}
 
-	return oserror.ErrNotExist
+	return os.ErrNotExist
 }
 
 // ReadAll
 func (m *MockScribble) ReadAll(collection string) ([]string, error) {
 	if m.store[collection] == nil {
-		return nil, oserror.ErrNotExist
+		return nil, os.ErrNotExist
 	}
 
 	vals := make([]string, 0)
@@ -85,4 +106,10 @@ func (m *MockScribble) ReadAll(collection string) ([]string, error) {
 	}
 
 	return vals, nil
+}
+
+func NewMockScribble() *MockScribble {
+	return &MockScribble{
+		store: make(map[string]map[string][]byte),
+	}
 }

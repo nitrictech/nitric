@@ -19,24 +19,24 @@ type AuthPlugin struct {
 
 // User - The local user entity representation
 type User struct {
-	id             string `json:id`
-	email          string `json:email`
-	pwdHashAndSalt string `json:pwdHashAndSalt`
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	PwdHashAndSalt string `json:"pwdHashAndSalt"`
 }
 
 // CreateUser - Create a new user using scribble as the DB
 func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password string) error {
-	collection := fmt.Sprint("auth_%s", tenant)
+	collection := fmt.Sprintf("auth_%s", tenant)
 	// tmpUsers := make([]User, 0)
 	if usersStrs, err := s.db.ReadAll(collection); err == nil {
 		var tmpUsr User
 		for _, usrStr := range usersStrs {
 			if err := json.Unmarshal([]byte(usrStr), &tmpUsr); err == nil {
-				if tmpUsr.id == id {
+				if tmpUsr.ID == id {
 					return fmt.Errorf("User with id %s, already exists", email)
 				}
 
-				if tmpUsr.email == email {
+				if tmpUsr.Email == email {
 					return fmt.Errorf("User with email %s, already exists", email)
 				}
 			} else {
@@ -51,9 +51,9 @@ func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password
 	bHash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	s.db.Write(collection, id, &User{
-		id:             id,
-		email:          email,
-		pwdHashAndSalt: string(bHash),
+		ID:             id,
+		Email:          email,
+		PwdHashAndSalt: string(bHash),
 	})
 
 	return nil
@@ -72,4 +72,10 @@ func New() (sdk.AuthPlugin, error) {
 	return &AuthPlugin{
 		db: db,
 	}, nil
+}
+
+func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthPlugin {
+	return &AuthPlugin{
+		db: driver,
+	}
 }
