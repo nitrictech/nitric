@@ -24,6 +24,27 @@ type MockS3Client struct {
 	storage *map[string]map[string][]byte
 }
 
+func (s *MockS3Client) DeleteObject(in *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error)  {
+	s.RLock()
+	defer s.RUnlock()
+	bucketName := in.Bucket
+	key := in.Key
+
+	for _, b := range s.buckets {
+		// We found the bucketName
+		if *bucketName == b.Name {
+			bucket := (*s.storage)[b.Name]
+			// We found the object, delete it
+			if _, ok := bucket[*key]; ok {
+				delete(bucket, *key)
+			}
+			return &s3.DeleteObjectOutput{} , nil
+		}
+	}
+
+	return nil, fmt.Errorf("bucket does not exist")
+}
+
 func (s *MockS3Client) ListBuckets(*s3.ListBucketsInput) (*s3.ListBucketsOutput, error) {
 	buckets := make([]*s3.Bucket, 0)
 
