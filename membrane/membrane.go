@@ -271,7 +271,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentsPlugin == nil || options.QueuePlugin == nil {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentsPlugin == nil || options.QueuePlugin == nil || options.AuthPlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}

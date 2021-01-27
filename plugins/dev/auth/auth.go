@@ -1,17 +1,19 @@
 package auth_plugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	scribble "github.com/nanobox-io/golang-scribble"
+	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthPlugin - The dev implementation for the Nitric Auth Plugin
 type AuthPlugin struct {
-	db scribble.Driver
+	db *scribble.Driver
 }
 
 // User - The local user entity representation
@@ -24,31 +26,45 @@ type User struct {
 // CreateUser - Create a new user using scribble as the DB
 func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password string) error {
 	collection := fmt.Sprint("auth_%s", tenant)
-	var tmpUser User
-	err := s.db.Read(collection, id, &tmpUser)
-	if os.IsNotExist(err) {
-		// We can create the user
-		bHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// tmpUsers := make([]User, 0)
+	if usersStrs, err := s.db.ReadAll(collection); err == nil {
+		var tmpUsr User
+		for _, usrStr := range usersStrs {
+			if err := json.Unmarshal([]byte(usrStr), &tmpUsr); err == nil {
+				if tmpUsr.id == id {
+					return fmt.Errorf("User with id %s, already exists", email)
+				}
 
-		s.db.Write(collection, id, &User{
-			id:             id,
-			email:          email,
-			pwdHashAndSalt: bHash,
-		})
-		return nil
-	} else if err == nil {
-		return fmt.Errorf("User %s already exists")
+				if tmpUsr.email == email {
+					return fmt.Errorf("User with email %s, already exists", email)
+				}
+			} else {
+				return err
+			}
+		}
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 
-	return err
+	// We can create the user
+	bHash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	s.db.Write(collection, id, &User{
+		id:             id,
+		email:          email,
+		pwdHashAndSalt: string(bHash),
+	})
+
+	return nil
 }
 
 // New - Instansiate a New concrete dev auth plugin
-func New() {
+func New() (sdk.AuthPlugin, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
 
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
