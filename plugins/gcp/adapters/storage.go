@@ -51,3 +51,7 @@ func (o objectHandle) NewReader(ctx context.Context) (ifaces.Reader, error) {
 	newReader, err := o.ObjectHandle.NewReader(ctx)
 	return reader{newReader}, err
 }
+
+func (o objectHandle) Delete(ctx context.Context) error {
+	return o.ObjectHandle.Delete(ctx)
+}

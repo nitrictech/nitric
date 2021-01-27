@@ -65,7 +65,7 @@ func (s *MockBucketHandle) Object(name string) ifaces.ObjectHandle {
 }
 
 type MockObjectHandle struct {
-	ifaces.ObjectHandle
+	//ifaces.ObjectHandle
 	bucket string
 	name   string
 	client *MockStorageClient
@@ -94,6 +94,24 @@ func (s *MockObjectHandle) NewReader(ctx context.Context) (ifaces.Reader, error)
 	}
 
 	return nil, fmt.Errorf("cannot not read from bucket that does not exist")
+}
+
+func (s *MockObjectHandle) Delete(ctx context.Context) error {
+	for _, b := range s.client.buckets {
+		if s.bucket == b {
+			store := *s.client.storage
+
+			if _, ok := store[s.bucket][s.name]; ok {
+				delete(store[s.bucket], s.name)
+			} else {
+				// We specifically eat this error, need to test it's caught.
+				return storage.ErrObjectNotExist
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("bucket not found, cannot delete item")
 }
 
 type MockWriter struct {

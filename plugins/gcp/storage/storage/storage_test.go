@@ -98,4 +98,55 @@ var _ = Describe("Storage", func() {
 			})
 		})
 	})
+
+	Context("Delete", func() {
+		When("The Google Cloud Storage Backend is available", func() {
+			When("The bucket exists", func() {
+				When("The item exists", func() {
+					storage := make(map[string]map[string][]byte)
+					storage["test-bucket"] = make(map[string][]byte)
+					storage["test-bucket"]["test-key"] = []byte("Test")
+					mockStorageClient := mocks.NewStorageClient([]string{"test-bucket"}, &storage)
+					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+
+					It("Should delete the item", func() {
+						err := storagePlugin.Delete("test-bucket", "test-key")
+
+						By("Not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("Deleting the item")
+						Expect(storage["test-bucket"]["test-key"]).To(BeNil())
+					})
+				})
+
+				When("The item doesn't exist", func() {
+					storage := make(map[string]map[string][]byte)
+					mockStorageClient := mocks.NewStorageClient([]string{"test-bucket"}, &storage)
+					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+
+					// Since no item existed to begin with, no error is thrown deleting it.
+					It("Should not return an error", func() {
+						err := storagePlugin.Delete("test-bucket", "test-key")
+
+						By("Not returning an error")
+						Expect(err).Should(BeNil())
+					})
+				})
+			})
+
+			When("The bucket doesn't exist", func() {
+				storage := make(map[string]map[string][]byte)
+				mockStorageClient := mocks.NewStorageClient([]string{}, &storage)
+				storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
+
+				It("Should return an error", func() {
+					err := storagePlugin.Delete("test-bucket", "test-key")
+
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+				})
+			})
+		})
+	})
 })
