@@ -3,6 +3,7 @@ package cognito_plugin
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
@@ -80,5 +81,21 @@ func (s *CognitoPlugin) CreateUser(tenant string, id string, email string, passw
 
 // New - Creates a new instance of the Cognito auth plugin
 func New() (sdk.AuthPlugin, error) {
-	cognitoidentityprovider.New()
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+
+	// Create a new AWS session
+	sess, sessionError := session.NewSession(&aws.Config{
+		// FIXME: Use env config
+		Region: aws.String(awsRegion),
+	})
+
+	if sessionError != nil {
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+	}
+
+	client := cognitoidentityprovider.New(sess)
+
+	return &CognitoPlugin{
+		client: client,
+	}, nil
 }

@@ -31,6 +31,7 @@ type MembraneOptions struct {
 	StoragePlugin   sdk.StoragePlugin
 	QueuePlugin     sdk.QueuePlugin
 	GatewayPlugin   sdk.GatewayPlugin
+	AuthPlugin      sdk.AuthPlugin
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -59,6 +60,7 @@ type Membrane struct {
 	storagePlugin   sdk.StoragePlugin
 	gatewayPlugin   sdk.GatewayPlugin
 	queuePlugin     sdk.QueuePlugin
+	authPlugin      sdk.AuthPlugin
 
 	// Tolerate if services are not available
 	// Not this does not include the gateway service
@@ -90,6 +92,10 @@ func (s *Membrane) createDocumentsServer() v1.DocumentsServer {
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
 	return services.NewQueueServer(s.queuePlugin)
+}
+
+func (s *Membrane) createAuthServer() authPb.AuthServer {
+	return services.NewAuthServer(s.authPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -206,6 +212,9 @@ func (s *Membrane) Start() error {
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServer(grpcServer, queueServer)
 
+	authServer := s.createAuthServer()
+	authPb.RegisterAuthServer(grpcServer, authServer)
+
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
 		return fmt.Errorf("Could not listen on configured service address: %v", err)
@@ -273,6 +282,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childUrl:                fmt.Sprintf("http://%s", childAddress),
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     childTimeout,
+		authPlugin:              options.AuthPlugin,
 		eventingPlugin:          options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		documentsPlugin:         options.DocumentsPlugin,
