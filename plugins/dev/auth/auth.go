@@ -6,6 +6,7 @@ import (
 	"os"
 
 	scribble "github.com/nanobox-io/golang-scribble"
+	"github.com/nitric-dev/membrane/plugins/dev/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +14,7 @@ import (
 
 // AuthPlugin - The dev implementation for the Nitric Auth Plugin
 type AuthPlugin struct {
-	db *scribble.Driver
+	db ifaces.ScribbleIface
 }
 
 // User - The local user entity representation
