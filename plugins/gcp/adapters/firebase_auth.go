@@ -18,14 +18,16 @@ func AdaptTenantManager(client *auth.TenantManager) ifaces.FirebaseTenantManager
 type (
 	firebaseAuth  struct{ client *auth.Client }
 	tenantManager struct{ client *auth.TenantManager }
+	tenantClient  struct{ client *auth.TenantClient }
 )
 
 func (s firebaseAuth) TenantManager() ifaces.FirebaseTenantManager {
 	return AdaptTenantManager(s.client.TenantManager)
 }
 
-func (s tenantManager) CreateTenant(ctx context.Context, t *auth.TenantToCreate) (*auth.Tenant, error) {
-	return s.client.CreateTenant(ctx, t)
+func (s tenantManager) CreateTenant(ctx context.Context, t *ifaces.TenantToCreate) (*auth.Tenant, error) {
+	ttc := (&auth.TenantToCreate{}).DisplayName(t.DisplayName).AllowPasswordSignUp(t.AllowPasswordSignUp).EnableEmailLinkSignIn(t.EnableEmailLinkSignIn)
+	return s.client.CreateTenant(ctx, ttc)
 }
 
 func (s tenantManager) Tenants(ctx context.Context, nextPageToken string) ifaces.TenantIterator {
@@ -33,5 +35,26 @@ func (s tenantManager) Tenants(ctx context.Context, nextPageToken string) ifaces
 }
 
 func (s tenantManager) AuthForTenant(tenantId string) (ifaces.FirebaseTenantClient, error) {
-	return s.client.AuthForTenant(tenantId)
+	c, err := s.client.AuthForTenant(tenantId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tenantClient{client: c}, nil
+}
+
+func (s tenantClient) CreateUser(ctx context.Context, u *ifaces.UserToCreate) (*auth.UserRecord, error) {
+	utc := &auth.UserToCreate{}
+
+	utc.DisplayName(u.DisplayName)
+	utc.Disabled(u.Disabled)
+	utc.Email(u.Email)
+	utc.EmailVerified(u.EmailVerified)
+	utc.Password(u.Password)
+	utc.PhoneNumber(u.PhoneNumber)
+	utc.PhotoURL(u.PhotoURL)
+	utc.UID(u.UID)
+
+	return s.client.CreateUser(ctx, utc)
 }

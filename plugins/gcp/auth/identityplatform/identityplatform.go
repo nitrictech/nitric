@@ -6,7 +6,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	firebase "firebase.google.com/go"
-	"firebase.google.com/go/auth"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -39,14 +38,13 @@ func (s *IdentityPlatformPlugin) findOrCreateTenant(tenant string) (*string, err
 			return nil, err
 		} else if t.DisplayName == tenant {
 			return &t.ID, nil
-		} else {
-			fmt.Println("Comparing %s -> %s", tenant, t.DisplayName)
 		}
 	}
 
-	tCreate := (&auth.TenantToCreate{}).DisplayName(tenant).AllowPasswordSignUp(true)
-
-	t, err := s.admin.TenantManager().CreateTenant(context.Background(), tCreate)
+	t, err := s.admin.TenantManager().CreateTenant(context.Background(), &ifaces.TenantToCreate{
+		DisplayName:         tenant,
+		AllowPasswordSignUp: true,
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create new tenant, %v", err)
@@ -70,9 +68,12 @@ func (s *IdentityPlatformPlugin) CreateUser(tenant string, id string, email stri
 		return fmt.Errorf("There was an error authorizing the requested tenant %v", err)
 	}
 
-	uCreate := (&auth.UserToCreate{}).Email(email).DisplayName(email).UID(id).Password(password)
-
-	_, err = tClient.CreateUser(ctx, uCreate)
+	_, err = tClient.CreateUser(ctx, &ifaces.UserToCreate{
+		Email:       email,
+		DisplayName: email,
+		UID:         id,
+		Password:    password,
+	})
 
 	if err != nil {
 		return fmt.Errorf("There was an error creating the new user: %v", err)
@@ -109,4 +110,10 @@ func New() (sdk.AuthPlugin, error) {
 	return &IdentityPlatformPlugin{
 		admin: adapters.AdaptFirebaseAuth(authClient),
 	}, nil
+}
+
+func NewWithClient(client ifaces.FirebaseAuth) sdk.AuthPlugin {
+	return &IdentityPlatformPlugin{
+		admin: client,
+	}
 }
