@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
+	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
@@ -13,7 +14,7 @@ import (
 // CognitoPlugin - Cognito implementation of the Nitric Auth plugin interface
 type CognitoPlugin struct {
 	sdk.UnimplementedAuthPlugin
-	client *cognitoidentityprovider.CognitoIdentityProvider
+	client cognitoidentityprovideriface.CognitoIdentityProviderAPI
 }
 
 const DefaultUserPoolClientName = "Nitric"
@@ -151,4 +152,11 @@ func New() (sdk.AuthPlugin, error) {
 	return &CognitoPlugin{
 		client: client,
 	}, nil
+}
+
+// NewWithClient - Creates a new instance of the Cognito auth plugin with given Cognito Client
+func NewWithClient(client cognitoidentityprovideriface.CognitoIdentityProviderAPI) sdk.AuthPlugin {
+	return &CognitoPlugin{
+		client: client,
+	}
 }
