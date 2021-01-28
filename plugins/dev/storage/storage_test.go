@@ -12,11 +12,11 @@ import (
 )
 
 type MockStorageDriver struct {
-	storage_plugin.StorageDriver
 	ensureDirExistsError error
 	existsOrFailError error
 	writeFileError       error
 	readFileError       error
+	deleteFileError       error
 	directories          []string
 	storedItems          map[string][]byte
 }
@@ -86,6 +86,26 @@ func (m *MockStorageDriver) ReadFile(file string) ([]byte, error) {
 	return nil, fmt.Errorf("unable to retrieve file, directory %s does not exist", directory)
 }
 
+func (m *MockStorageDriver) DeleteFile(file string) error {
+	if m.deleteFileError != nil {
+		return m.deleteFileError
+	}
+
+	pathParts := strings.Split(file, "/")
+
+	directory := strings.Join(pathParts[:len(pathParts)-1], "/") + "/"
+	for _, dir := range m.directories {
+		if dir == directory {
+			if _, ok := m.storedItems[file]; ok {
+				delete(m.storedItems, file)
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("failed to delete item, bucket directory [%s] no found", directory)
+}
+
 var _ = Describe("Storage", func() {
 	Context("Put", func() {
 		// Test Put methods...
@@ -141,7 +161,7 @@ var _ = Describe("Storage", func() {
 			When("The bucket directory exists", func() {
 				When("The object file exists", func() {
 					workingDriver := &MockStorageDriver{
-						directories: []string{"/nitric/buckets/test"},
+						directories: []string{"/nitric/buckets/test-bucket/"},
 						storedItems: map[string][]byte{ "/nitric/buckets/test-bucket/test-key": []byte("Test") },
 					}
 					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
@@ -157,7 +177,7 @@ var _ = Describe("Storage", func() {
 				})
 				When("The object file doesn't exist", func() {
 					workingDriver := &MockStorageDriver{
-						directories: []string{"/nitric/buckets/test"},
+						directories: []string{"/nitric/buckets/test-bucket/"},
 					}
 					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 
@@ -218,4 +238,49 @@ var _ = Describe("Storage", func() {
 			})
 		})
 	})
+
+	Context("Delete", func() {
+		When("The storage driver is functioning without error", func() {
+			When("The bucket directory exists", func() {
+				When("The object file exists", func() {
+					workingDriver := &MockStorageDriver{
+						directories: []string{"/nitric/buckets/test-bucket/"},
+						storedItems: map[string][]byte{ "/nitric/buckets/test-bucket/test-key": []byte("Test") },
+					}
+					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
+
+					It("Should delete the object", func() {
+						err := mockStoragePlugin.Delete("test-bucket", "test-key")
+						By("Not returning an error")
+						Expect(err).To(BeNil())
+					})
+				})
+				When("The object file doesn't exist", func() {
+					workingDriver := &MockStorageDriver{
+						directories: []string{"/nitric/buckets/test-bucket/"},
+					}
+					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
+
+					It("Should skip deleting the file", func() {
+						err := mockStoragePlugin.Delete("test-bucket", "test-key")
+						By("Not returning an error")
+						Expect(err).To(BeNil())
+					})
+				})
+			})
+			When("The bucket directory doesn't exist", func() {
+				workingDriver := &MockStorageDriver{
+					directories: []string{},
+				}
+				mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
+
+				It("Should return an error", func() {
+					err := mockStoragePlugin.Delete("test-bucket", "test-key")
+					By("Returning an error")
+					Expect(err).ToNot(BeNil())
+				})
+			})
+		})
+	})
+
 })

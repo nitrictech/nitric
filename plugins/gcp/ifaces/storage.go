@@ -19,6 +19,7 @@ type Reader interface {
 type ObjectHandle interface {
 	NewWriter(context.Context) Writer
 	NewReader(context.Context) (Reader, error)
+	Delete(ctx context.Context) error
 
 	// embedToIncludeNewMethods()
 }

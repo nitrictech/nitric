@@ -74,16 +74,10 @@ func (s *S3Plugin) Put(bucket string, key string, object []byte) error {
 			ContentType: &contentType,
 			Key:         aws.String(key),
 		})
-
-		if err != nil {
-			return err
-		}
-
+		return err
 	} else {
 		return err
 	}
-
-	return nil
 }
 
 // Get - Retrieves an item from a bucket
@@ -103,6 +97,21 @@ func (s *S3Plugin) Get(bucket string, key string) ([]byte, error) {
 		return ioutil.ReadAll(resp.Body)
 	} else {
 		return nil, err
+	}
+}
+
+// Delete - Deletes an item from a bucket
+func (s *S3Plugin) Delete(bucket string, key string) error {
+	if b, err := s.getBucketByName(bucket); err == nil {
+		// TODO: should we handle delete markers, etc.?
+		_, err := s.client.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: b.Name,
+			Key: aws.String(key),
+		})
+
+		return err
+	} else {
+		return err
 	}
 }
 

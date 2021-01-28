@@ -81,4 +81,40 @@ var _ = Describe("S3", func() {
 			})
 		})
 	})
+	When("Delete", func() {
+		When("The S3 backend is available", func() {
+			When("The bucket exists", func() {
+				When("The item exists", func () {
+					// Setup a mock bucket, with a single item
+					storage := make(map[string]map[string][]byte)
+					storage["test-bucket"] = make(map[string][]byte)
+					storage["test-bucket"]["test-key"] = []byte("Test")
+					mockStorageClient := mocks.NewStorageClient([]*mocks.MockBucket{
+						{
+							Name: "test-bucket",
+							Tags: map[string]string{
+								"x-nitric-name": "test-bucket",
+							},
+						},
+					}, &storage)
+					storagePlugin, _ := s3Plugin.NewWithClient(mockStorageClient)
+
+					It("Should successfully delete the object", func() {
+						err := storagePlugin.Delete("test-bucket", "test-key")
+						By("Not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("Deleting the item")
+						Expect(storage["test-bucket"]["test-key"]).To(BeNil())
+					})
+				})
+				When("The item doesn't exist", func () {
+
+				})
+			})
+			When("The bucket doesn't exist", func() {
+
+			})
+		})
+	})
 })

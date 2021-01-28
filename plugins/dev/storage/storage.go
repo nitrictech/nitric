@@ -16,13 +16,16 @@ type StorageDriver interface {
 	ExistsOrFail(string) error
 	WriteFile(string, []byte, os.FileMode) error
 	ReadFile(string) ([]byte, error)
+	DeleteFile(string) error
 }
 
 // DefaultStorageDriver - The Storage Driver to be used when creating
 // a new Local Storage Plugin using the New() method
 type DefaultStorageDriver struct {
-	StorageDriver
 }
+
+// Ensure interface methods are implemented.
+var _ StorageDriver = (*DefaultStorageDriver)(nil)
 
 // EnsureDirExists - Recursively creates directories for the given path
 func (s *DefaultStorageDriver) EnsureDirExists(dir string) error {
@@ -54,20 +57,32 @@ func (s *DefaultStorageDriver) ReadFile(file string) ([]byte, error) {
 	return ioutil.ReadFile(file)
 }
 
+// DeleteFile - Deletes the file at the given path
+func (s *DefaultStorageDriver) DeleteFile(file string) error {
+	return os.Remove(file)
+}
+
 // LocalStoragePlugin - The Nitric Storage Plugin for local development work
 // Primarily used as part of the nitric run CLI function
 type LocalStoragePlugin struct {
-	sdk.UnimplementedStoragePlugin
 	storageDriver StorageDriver
 	storeDir      string
 }
 
+func (s *LocalStoragePlugin) getBucketName(bucket string) string {
+	return fmt.Sprintf("%s%s/", s.storeDir, bucket)
+}
+
+func (s *LocalStoragePlugin) getFilename(bucket string, key string) string {
+	return fmt.Sprintf("%s%s", s.getBucketName(bucket), key)
+}
+
 // Put will create a new item or overwrite an existing item in storage
 func (s *LocalStoragePlugin) Put(bucket string, key string, payload []byte) error {
-	bucketName := fmt.Sprintf("%s%s/", s.storeDir, bucket)
+	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
-		fileName := fmt.Sprintf("%s%s", bucketName, key)
+		fileName := s.getFilename(bucket, key)
 
 		if err := s.storageDriver.WriteFile(fileName, payload, os.ModePerm); err != nil {
 			return err
@@ -81,10 +96,10 @@ func (s *LocalStoragePlugin) Put(bucket string, key string, payload []byte) erro
 
 // Get will retrieve an item from Storage
 func (s *LocalStoragePlugin) Get(bucket string, key string) ([]byte, error) {
-	bucketName := fmt.Sprintf("%s%s/", s.storeDir, bucket)
+	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
-		fileName := fmt.Sprintf("%s%s", bucketName, key)
+		fileName := s.getFilename(bucket, key)
 
 		if err := s.storageDriver.ExistsOrFail(fileName); err != nil {
 			return nil, fmt.Errorf("object not found %s", fileName)
@@ -94,6 +109,11 @@ func (s *LocalStoragePlugin) Get(bucket string, key string) ([]byte, error) {
 	} else {
 		return nil, err
 	}
+}
+
+// Delete will delete an item from Storage
+func (s *LocalStoragePlugin) Delete(bucket string, key string) error {
+	return s.storageDriver.DeleteFile(s.getFilename(bucket, key))
 }
 
 // New creates a new default StoragePlugin

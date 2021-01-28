@@ -1,32 +1,34 @@
 package storage_plugin
 
 import (
+	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
-	"io/ioutil"
-
-	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"io/ioutil"
 )
 
 type StoragePlugin struct {
-	sdk.UnimplementedStoragePlugin
+	//sdk.UnimplementedStoragePlugin
 	client    ifaces.StorageClient
 	projectID string
 }
 
 func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, error) {
 	buckets := s.client.Buckets(context.Background(), s.projectID)
-
 	for {
 		b, err := buckets.Next()
-
+		if err == iterator.Done {
+			break
+		}
 		if err != nil {
-			return nil, fmt.Errorf("Unable to find bucket: %s; %v", bucket, err)
+			fmt.Println(err.Error())
+			return nil, fmt.Errorf("an error occurred finding bucket: %s; %v", bucket, err)
 		}
 		// We'll label the buckets by their name in the nitric.yaml file and use this...
 		if b.Labels["x-nitric-name"] == bucket {
@@ -34,6 +36,7 @@ func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, err
 			return bucketHandle, nil
 		}
 	}
+	return nil, fmt.Errorf("bucket not found")
 }
 
 /**
@@ -83,6 +86,29 @@ func (s *StoragePlugin) Put(bucket string, key string, object []byte) error {
 }
 
 /**
+ * Delete an Item in a Google Cloud Storage Bucket
+ */
+func (s *StoragePlugin) Delete(bucket string, key string) error {
+	bucketHandle, err := s.getBucketByName(bucket)
+
+	if err != nil {
+		return err
+	}
+
+	if err := bucketHandle.Object(key).Delete(context.Background()); err != nil {
+		// ignore errors caused by the Object not existing.
+		// This is to unify delete behavior between providers.
+		if err != storage.ErrObjectNotExist {
+			return err
+		}
+	}
+
+	storage.ErrObjectNotExist.Error()
+
+	return nil
+}
+
+/**
  * Creates a new Storage Plugin for use in GCP
  */
 func New() (sdk.StoragePlugin, error) {
@@ -101,6 +127,7 @@ func New() (sdk.StoragePlugin, error) {
 
 	return &StoragePlugin{
 		client: adapters.AdaptStorageClient(client),
+		projectID: credentials.ProjectID,
 	}, nil
 }
 
