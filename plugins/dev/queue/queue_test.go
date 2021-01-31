@@ -23,7 +23,7 @@ var _ = Describe("Queue", func() {
 					"Test": "Test",
 				},
 			}
-			evts := []*sdk.NitricEvent{&evt}
+			evts := []sdk.NitricEvent{evt}
 			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{evt})
 			It("Should store the events in the queue", func() {
 				resp, err := queuePlugin.Push("test", evts)
@@ -49,7 +49,7 @@ var _ = Describe("Queue", func() {
 					"Test": "Test",
 				},
 			}
-			evts := []*sdk.NitricEvent{&evt}
+			evts := []sdk.NitricEvent{evt}
 			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{evt})
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
 				StoredItems: map[string][]byte{

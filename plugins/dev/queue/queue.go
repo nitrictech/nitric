@@ -49,7 +49,7 @@ type LocalQueuePlugin struct {
 	queueDir string
 }
 
-func (s *LocalQueuePlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *LocalQueuePlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
@@ -71,7 +71,7 @@ func (s *LocalQueuePlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.P
 		newQueue := existingQueue
 		for _, evt := range events {
 			// Add indirected event references to the new queue...
-			newQueue = append(newQueue, *evt)
+			newQueue = append(newQueue, evt)
 		}
 
 		if queueByte, err := json.Marshal(&newQueue); err == nil {
