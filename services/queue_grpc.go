@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1/queue"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc/codes"
@@ -27,9 +26,9 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Translate events
-		evts := make([]*sdk.NitricEvent, len(req.GetEvents()))
+		evts := make([]sdk.NitricEvent, len(req.GetEvents()))
 		for i, evt := range req.GetEvents() {
-			evts[i] = &sdk.NitricEvent{
+			evts[i] = sdk.NitricEvent{
 				RequestId:   evt.GetRequestId(),
 				PayloadType: evt.GetPayloadType(),
 				Payload:     evt.GetPayload().AsMap(),
@@ -55,6 +54,45 @@ func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushRe
 		} else {
 			return nil, err
 		}
+	} else {
+		return nil, err
+	}
+}
+
+func (s *QueueServer) Pop(ctx context.Context, req *pb.PopRequest) (*pb.PopResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		// Convert gRPC request to plugin params
+		depth := uint32(req.GetDepth())
+		popOptions := sdk.PopOptions{
+			QueueName: req.GetQueue(),
+			Depth:     &depth,
+		}
+
+		// Perform the Queue Pop operation
+		queueItems, err := s.plugin.Pop(popOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert the NitricEvents to the gRPC type
+		grpcQueueItems := []*pb.NitricQueueItem{}
+		for _, queueItem := range queueItems {
+			st, _ := structpb.NewStruct(queueItem.Event.Payload)
+			grpcQueueItems = append(grpcQueueItems, &pb.NitricQueueItem{
+				Event: &pb.NitricEvent{
+					RequestId:   queueItem.Event.RequestId,
+					PayloadType: queueItem.Event.PayloadType,
+					Payload:     st,
+				},
+				LeaseId: queueItem.LeaseId,
+			})
+		}
+
+		// Return the queue items
+		res := pb.PopResponse{
+			Items: grpcQueueItems,
+		}
+		return &res, nil
 	} else {
 		return nil, err
 	}

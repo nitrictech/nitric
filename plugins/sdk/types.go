@@ -5,3 +5,8 @@ type NitricEvent struct {
 	PayloadType string                 `json:"payloadType,omitempty"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
 }
+
+type NitricQueueItem struct {
+	Event NitricEvent					`json:"event,omitempty"`
+	LeaseId string						`json:"leaseId,omitempty"`
+}
