@@ -1,14 +1,13 @@
 package mocks
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
-	"github.com/googleapis/gax-go/v2"
-	"golang.org/x/oauth2/google"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"strconv"
 	"time"
+
+	"github.com/googleapis/gax-go/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"google.golang.org/api/iterator"
@@ -22,10 +21,12 @@ type MockPubsubClient struct {
 }
 
 type MockPubsubMessage struct {
-	Id string
-	AckId string
-	DataBytes          []byte
+	Id        string
+	AckId     string
+	DataBytes []byte
 }
+
+const MockProjectID = "mock-project"
 
 var _ ifaces.Message = (*MockPubsubMessage)(nil)
 
@@ -150,7 +151,7 @@ func (s *MockPubsubTopic) Exists(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (s *MockPubsubTopic) Subscriptions(ctx context.Context) ifaces.SubscriptionIterator   {
+func (s *MockPubsubTopic) Subscriptions(ctx context.Context) ifaces.SubscriptionIterator {
 	return &MockSubscriptionIterator{
 		Subscriptions: []ifaces.Subscription{
 			// Just setup a single subscription, which is mocked to behave like the default pull subscription.
@@ -170,6 +171,7 @@ func (s *MockPubsubTopic) String() string {
 type MockSubscription struct {
 	topic ifaces.Topic
 }
+
 var _ ifaces.Subscription = (*MockSubscription)(nil)
 
 func (m MockSubscription) ID() string {
@@ -179,14 +181,11 @@ func (m MockSubscription) ID() string {
 
 // Return the full unique name for the subscription, in the format "projects/{project}/subscriptions/{subscription}"
 func (m MockSubscription) String() string {
-	credentials, _ := google.FindDefaultCredentials(context.Background(), pubsub.ScopeCloudPlatform)
-	projectId := credentials.ProjectID
-	return fmt.Sprintf("projects/%s/subscriptions/%s", projectId, m.ID())
+	return fmt.Sprintf("projects/%s/subscriptions/%s", MockProjectID, m.ID())
 }
 
-
 type MockSubscriptionIterator struct {
-	i int
+	i             int
 	Subscriptions []ifaces.Subscription
 }
 
@@ -224,9 +223,7 @@ func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opt
 	sub := req.Subscription
 
 	for topicName, _ := range m.Messages {
-		credentials, _ := google.FindDefaultCredentials(context.Background(), pubsub.ScopeCloudPlatform)
-		projectId := credentials.ProjectID
-		topicSubName := fmt.Sprintf("projects/%s/subscriptions/%s-nitricqueue", projectId, topicName)
+		topicSubName := fmt.Sprintf("projects/%s/subscriptions/%s-nitricqueue", MockProjectID, topicName)
 		fmt.Println(fmt.Sprintf("Topic: %s, Sub: %s", topicSubName, sub))
 		if topicSubName == sub {
 			fmt.Println("FOUND QUEUE, ATTEMPTING TO POP MESSAGES")
@@ -234,7 +231,7 @@ func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opt
 
 			if mockMessages == nil || len(mockMessages) < 1 {
 				fmt.Println("NO MESSAGES TO POP")
-				return  &pubsubpb.PullResponse{}, nil
+				return &pubsubpb.PullResponse{}, nil
 			}
 			fmt.Println(fmt.Sprintf("%d MESSAGES TO POP", len(mockMessages)))
 
@@ -250,9 +247,9 @@ func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opt
 				messages = append(messages, &pubsubpb.ReceivedMessage{
 					AckId: m.ID(),
 					Message: &pubsubpb.PubsubMessage{
-						MessageId:              m.ID(),
-						Data:            m.Data(),
-						Attributes:      m.Attributes(),
+						MessageId:  m.ID(),
+						Data:       m.Data(),
+						Attributes: m.Attributes(),
 					},
 				})
 				mockMessages[i] = nil
