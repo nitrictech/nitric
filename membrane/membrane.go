@@ -94,7 +94,7 @@ func (s *Membrane) createQueueServer() v1.QueueServer {
 	return services.NewQueueServer(s.queuePlugin)
 }
 
-func (s *Membrane) createAuthServer() authPb.AuthServer {
+func (s *Membrane) createAuthServer() v1.AuthServer {
 	return services.NewAuthServer(s.authPlugin)
 }
 
