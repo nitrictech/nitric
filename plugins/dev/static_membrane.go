@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/nitric-dev/membrane/membrane"
+	auth "github.com/nitric-dev/membrane/plugins/dev/auth"
 	documents "github.com/nitric-dev/membrane/plugins/dev/documents"
 	eventing "github.com/nitric-dev/membrane/plugins/dev/eventing"
 	gateway "github.com/nitric-dev/membrane/plugins/dev/gateway"
@@ -30,6 +31,7 @@ func main() {
 	storagePlugin, _ := storage.New()
 	gatewayPlugin, _ := gateway.New()
 	queuePlugin, _ := queue.New()
+	authPlugin, _ := auth.New()
 
 	membrane, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
@@ -39,6 +41,7 @@ func main() {
 		DocumentsPlugin:         documentsPlugin,
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
+		AuthPlugin:              authPlugin,
 		GatewayPlugin:           gatewayPlugin,
 		TolerateMissingServices: tolerateMissing,
 	})

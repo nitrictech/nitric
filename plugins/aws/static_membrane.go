@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/nitric-dev/membrane/membrane"
+	auth "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
 	documents "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
@@ -32,6 +33,7 @@ func main() {
 	documentsPlugin, _ := documents.New()
 	storagePlugin, _ := storage.New()
 	queuePlugin, _ := queue.New()
+	authPlugin, _ := auth.New()
 
 	// Load the appropriate gateway based on the environment.
 	var gatewayPlugin sdk.GatewayPlugin
@@ -52,6 +54,7 @@ func main() {
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,
+		AuthPlugin:              authPlugin,
 		TolerateMissingServices: tolerateMissing,
 	})
 

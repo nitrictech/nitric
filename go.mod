@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/firestore v1.4.0
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
+	firebase.google.com/go v3.13.0+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/golang/protobuf v1.4.3
@@ -14,6 +15,7 @@ require (
 	github.com/nanobox-io/golang-scribble v0.0.0-20190309225732-aa3e7c118975
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
 	google.golang.org/api v0.36.0

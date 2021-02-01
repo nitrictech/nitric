@@ -4,25 +4,19 @@ import (
 	"fmt"
 
 	scribble "github.com/nanobox-io/golang-scribble"
+	"github.com/nitric-dev/membrane/plugins/dev/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 
 type LocalDocumentPlugin struct {
 	sdk.UnimplementedDocumentsPlugin
-	db ScribbleIface
+	db ifaces.ScribbleIface
 }
 
 type NitricDocument struct {
 	Key   string
 	Value map[string]interface{}
-}
-
-// Interface for the database driver we're using for this document store...
-type ScribbleIface interface {
-	Read(string, string, interface{}) error
-	Write(string, string, interface{}) error
-	Delete(string, string) error
 }
 
 func (s *LocalDocumentPlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {
@@ -97,7 +91,7 @@ func New() (sdk.DocumentsPlugin, error) {
 	}, nil
 }
 
-func NewWithDB(db ScribbleIface) (sdk.DocumentsPlugin, error) {
+func NewWithDB(db ifaces.ScribbleIface) (sdk.DocumentsPlugin, error) {
 	return &LocalDocumentPlugin{
 		db: db,
 	}, nil
