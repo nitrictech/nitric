@@ -82,7 +82,7 @@ func (s *IdentityPlatformPlugin) CreateUser(tenant string, id string, email stri
 	return nil
 }
 
-// New - Creates a new instance of the Cognito auth plugin
+// New - Creates a new instance of the Identity Platform auth plugin
 func New() (sdk.AuthPlugin, error) {
 	ctx := context.Background()
 
