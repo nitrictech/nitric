@@ -75,20 +75,20 @@ func (s *Membrane) log(log string) {
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() eventingPb.EventingServer {
+func (s *Membrane) createEventingServer() v1.EventingServer {
 	return services.NewEventingServer(s.eventingPlugin)
 }
 
 // Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() storagePb.StorageServer {
+func (s *Membrane) createStorageServer() v1.StorageServer {
 	return services.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() documentsPb.DocumentsServer {
+func (s *Membrane) createDocumentsServer() v1.DocumentsServer {
 	return services.NewDocumentsServer(s.documentsPlugin)
 }
 
-func (s *Membrane) createQueueServer() queuePb.QueueServer {
+func (s *Membrane) createQueueServer() v1.QueueServer {
 	return services.NewQueueServer(s.queuePlugin)
 }
 
