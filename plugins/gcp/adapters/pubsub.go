@@ -27,7 +27,9 @@ type (
 	message       struct{ *pubsub.Message }
 	publishResult struct{ *pubsub.PublishResult }
 	topicIterator struct{ *pubsub.TopicIterator }
+	subscriptionIterator struct{ *pubsub.SubscriptionIterator }
 )
+
 
 func (c pubsubClient) Topic(id string) ifaces.Topic {
 	return topic{c.Client.Topic(id)}
@@ -40,6 +42,11 @@ func (c pubsubClient) Topics(ctx context.Context) ifaces.TopicIterator {
 func (c topicIterator) Next() (ifaces.Topic, error) {
 	t, err := c.TopicIterator.Next()
 	return topic{t}, err
+}
+
+func (c subscriptionIterator) Next() (ifaces.Subscription, error) {
+	s, err := c.SubscriptionIterator.Next()
+	return subscription{s}, err
 }
 
 // func (c client) CreateSubscription(ctx context.Context, id string, cfg SubscriptionConfig) (Subscription, error) {
@@ -58,6 +65,10 @@ func (t topic) Publish(ctx context.Context, msg ifaces.Message) ifaces.PublishRe
 	return publishResult{t.Topic.Publish(ctx, msg.(message).Message)}
 }
 
+func (t topic) Subscriptions(ctx context.Context) ifaces.SubscriptionIterator {
+	return subscriptionIterator{t.Topic.Subscriptions(ctx)}
+}
+
 func (t topic) Exists(ctx context.Context) (bool, error) {
 	return t.Topic.Exists(ctx)
 }
@@ -66,19 +77,13 @@ func (t topic) ID() string {
 	return t.Topic.ID()
 }
 
-// func (s subscription) Exists(ctx context.Context) (bool, error) {
-// 	return s.Subscription.Exists(ctx)
-// }
+func (s subscription) ID() string {
+	return s.Subscription.ID()
+}
 
-// func (s subscription) Receive(ctx context.Context, f func(ctx context.Context, msg Message)) error {
-// 	return s.Subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-// 		f(ctx, AdaptMessage(msg))
-// 	})
-// }
-
-// func (s subscription) Delete(ctx context.Context) error {
-// 	return s.Subscription.Delete(ctx)
-// }
+func (s subscription) String() string {
+	return s.Subscription.String()
+}
 
 func (m message) ID() string {
 	return m.Message.ID
@@ -99,14 +104,3 @@ func (m message) PublishTime() time.Time {
 func (r publishResult) Get(ctx context.Context) (serverID string, err error) {
 	return r.PublishResult.Get(ctx)
 }
-
-// func (cfg SubscriptionConfig) toPS() pubsub.SubscriptionConfig {
-// 	return pubsub.SubscriptionConfig{
-// 		Topic:               cfg.Topic.(topic).Topic,
-// 		PushConfig:          cfg.PushConfig,
-// 		AckDeadline:         cfg.AckDeadline,
-// 		RetainAckedMessages: cfg.RetainAckedMessages,
-// 		RetentionDuration:   cfg.RetentionDuration,
-// 		Labels:              cfg.Labels,
-// 	}
-// }

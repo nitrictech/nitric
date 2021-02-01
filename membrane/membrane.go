@@ -11,10 +11,7 @@ import (
 	"strings"
 	"time"
 
-	documentsPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/documents"
-	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
-	queuePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/queue"
-	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
+	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/services"
 	"google.golang.org/grpc"
@@ -78,20 +75,20 @@ func (s *Membrane) log(log string) {
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() eventingPb.EventingServer {
+func (s *Membrane) createEventingServer() v1.EventingServer {
 	return services.NewEventingServer(s.eventingPlugin)
 }
 
 // Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() storagePb.StorageServer {
+func (s *Membrane) createStorageServer() v1.StorageServer {
 	return services.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() documentsPb.DocumentsServer {
+func (s *Membrane) createDocumentsServer() v1.DocumentsServer {
 	return services.NewDocumentsServer(s.documentsPlugin)
 }
 
-func (s *Membrane) createQueueServer() queuePb.QueueServer {
+func (s *Membrane) createQueueServer() v1.QueueServer {
 	return services.NewQueueServer(s.queuePlugin)
 }
 
@@ -198,16 +195,16 @@ func (s *Membrane) Start() error {
 
 	// Load & Register the GRPC service plugins
 	eventingServer := s.createEventingServer()
-	eventingPb.RegisterEventingServer(grpcServer, eventingServer)
+	v1.RegisterEventingServer(grpcServer, eventingServer)
 
 	documentsServer := s.createDocumentsServer()
-	documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
+	v1.RegisterDocumentsServer(grpcServer, documentsServer)
 
 	storageServer := s.createStorageServer()
-	storagePb.RegisterStorageServer(grpcServer, storageServer)
+	v1.RegisterStorageServer(grpcServer, storageServer)
 
 	queueServer := s.createQueueServer()
-	queuePb.RegisterQueueServer(grpcServer, queueServer)
+	v1.RegisterQueueServer(grpcServer, queueServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {

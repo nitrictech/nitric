@@ -36,7 +36,7 @@ func (s *SQSPlugin) getUrlForQueueName(queue string) (*string, error) {
 	return nil, fmt.Errorf("Could not find Queue: %s", queue)
 }
 
-func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *SQSPlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
 	if url, err := s.getUrlForQueueName(queue); err == nil {
 		evts := make([]*sqs.SendMessageBatchRequestEntry, 0)
 
@@ -64,7 +64,7 @@ func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResp
 				for _, e := range events {
 					if e.RequestId == *failed.Id {
 						failedEvents = append(failedEvents, &sdk.FailedMessage{
-							Event:   e,
+							Event:   &e,
 							Message: *failed.Message,
 						})
 						// continue outer loop
@@ -79,6 +79,54 @@ func (s *SQSPlugin) Push(queue string, events []*sdk.NitricEvent) (*sdk.PushResp
 		} else {
 			return nil, err
 		}
+	} else {
+		return nil, err
+	}
+}
+
+func (s *SQSPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+	err := options.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	if url, err := s.getUrlForQueueName(options.QueueName); err == nil {
+		req := sqs.ReceiveMessageInput{
+			MaxNumberOfMessages:     aws.Int64(int64(*options.Depth)),
+			MessageAttributeNames:   []*string{
+				aws.String(sqs.QueueAttributeNameAll),
+			},
+			QueueUrl:                url,
+			// TODO: Consider explicit timeout values
+			//VisibilityTimeout:       nil,
+			//WaitTimeSeconds:         nil,
+		}
+
+		res, err := s.client.ReceiveMessage(&req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve messages: %s", err)
+		}
+
+		if len(res.Messages) == 0 {
+			return []sdk.NitricQueueItem{}, nil
+		}
+
+		var events []sdk.NitricQueueItem
+		for _, m := range res.Messages {
+			var nitricEvt sdk.NitricEvent
+			bodyBytes := []byte(*m.Body)
+			err := json.Unmarshal(bodyBytes, &nitricEvt)
+			if err != nil {
+				// TODO: append error to error list and Nack the message.
+			}
+			events = append(events, sdk.NitricQueueItem{
+				Event:   nitricEvt,
+				LeaseId: *m.ReceiptHandle,
+			})
+		}
+
+		return events, nil
+
 	} else {
 		return nil, err
 	}

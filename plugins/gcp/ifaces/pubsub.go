@@ -2,6 +2,8 @@ package ifaces
 
 import (
 	"context"
+	"github.com/googleapis/gax-go/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"time"
 )
 
@@ -21,7 +23,17 @@ type Topic interface {
 	String() string
 	Publish(ctx context.Context, msg Message) PublishResult
 	Exists(ctx context.Context) (bool, error)
+	Subscriptions(ctx context.Context) SubscriptionIterator
 	ID() string
+}
+
+type SubscriptionIterator interface {
+	Next() (Subscription, error)
+}
+
+type Subscription interface {
+	ID() string
+	String() string
 }
 
 type Message interface {
@@ -35,4 +47,9 @@ type Message interface {
 
 type PublishResult interface {
 	Get(ctx context.Context) (serverID string, err error)
+}
+
+type SubscriberClient interface {
+	Close() error
+	Pull(ctx context.Context, req *pubsubpb.PullRequest, opts ...gax.CallOption) (*pubsubpb.PullResponse, error)
 }

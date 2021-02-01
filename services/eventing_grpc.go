@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
+	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

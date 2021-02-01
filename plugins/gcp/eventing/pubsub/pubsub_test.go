@@ -11,7 +11,9 @@ import (
 var _ = Describe("Pubsub Plugin", func() {
 	When("Listing Available Topics", func() {
 		When("There are no topics available", func() {
-			pubsubClient := mocks.NewMockPubsubClient([]string{})
+			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics:   []string{},
+			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("Should return an empty list of topics", func() {
@@ -22,7 +24,9 @@ var _ = Describe("Pubsub Plugin", func() {
 		})
 
 		When("There are topics available", func() {
-			pubsubClient := mocks.NewMockPubsubClient([]string{"Test"})
+			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics:   []string{"Test"},
+			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("Should return all available topics", func() {
@@ -43,7 +47,9 @@ var _ = Describe("Pubsub Plugin", func() {
 		}
 
 		When("To a topic that does not exist", func() {
-			pubsubClient := mocks.NewMockPubsubClient([]string{})
+			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics:   []string{},
+			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("should return an error", func() {
@@ -53,7 +59,9 @@ var _ = Describe("Pubsub Plugin", func() {
 		})
 
 		When("To a topic that does exist", func() {
-			pubsubClient := mocks.NewMockPubsubClient([]string{"Test"})
+			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics:   []string{"Test"},
+			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("should successfully publish the message", func() {
