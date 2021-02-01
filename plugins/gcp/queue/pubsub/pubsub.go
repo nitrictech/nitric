@@ -165,6 +165,14 @@ func (s *PubsubPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error
 	return events, nil
 }
 
+// adaptNewClient - Adapts the pubsubbase.NewSubscriberClient func to one that implements the ifaces.SubscriberClient
+// interface. This is used to enable substitution of the base pubsub client, primarily for mocking support.
+func adaptNewClient(f func(context.Context, ...option.ClientOption) (*pubsubbase.SubscriberClient, error)) func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {
+	return func(c context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {
+		return f(c, opts...)
+	}
+}
+
 // New - Constructs a new GCP pubsub client with defaults
 func New() (sdk.QueuePlugin, error) {
 	ctx := context.Background()
@@ -181,13 +189,7 @@ func New() (sdk.QueuePlugin, error) {
 	return &PubsubPlugin{
 		client:              adapters.AdaptPubsubClient(client),
 		// TODO: replace this with a better mechanism for mocking the client.
-		newSubscriberClient: func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {
-			c, err := pubsubbase.NewSubscriberClient(ctx, opts...)
-			if err != nil {
-				return nil, err
-			}
-			return (ifaces.SubscriberClient)(c), err
-		},
+		newSubscriberClient: adaptNewClient(pubsubbase.NewSubscriberClient),
 		projectId:           credentials.ProjectID,
 	}, nil
 }
