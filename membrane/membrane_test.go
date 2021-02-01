@@ -31,6 +31,10 @@ type MockQueueServer struct {
 	sdk.UnimplementedQueuePlugin
 }
 
+type MockAuthServer struct {
+	sdk.UnimplementedAuthPlugin
+}
+
 type MockFunction struct {
 	// Records the requests that its recieved for later inspection
 	requests []*http.Request
@@ -132,6 +136,7 @@ var _ = Describe("Membrane", func() {
 				mockDocumentsServer := &MockDocumentsServer{}
 				mockStorageServer := &MockStorageServer{}
 				mockQueueServer := &MockQueueServer{}
+				mockAuthServer := &MockAuthServer{}
 
 				mockGateway := &MockGateway{}
 				mbraneOpts := membrane.MembraneOptions{
@@ -142,6 +147,7 @@ var _ = Describe("Membrane", func() {
 					DocumentsPlugin:         mockDocumentsServer,
 					StoragePlugin:           mockStorageServer,
 					QueuePlugin:             mockQueueServer,
+					AuthPlugin:              mockAuthServer,
 				}
 
 				It("Should successfully create the membrane server", func() {
