@@ -1,7 +1,7 @@
 package main
 
 import (
-	storage_plugin "github.com/nitric-dev/membrane/plugins/gcp/storage"
+	storage_plugin "github.com/nitric-dev/membrane/plugins/gcp/storage/storage"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 )
 
