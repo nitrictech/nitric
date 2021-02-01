@@ -2,7 +2,8 @@ package services
 
 import (
 	"context"
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1/queue"
+
+	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
