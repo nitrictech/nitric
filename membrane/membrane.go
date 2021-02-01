@@ -213,7 +213,7 @@ func (s *Membrane) Start() error {
 	v1.RegisterQueueServer(grpcServer, queueServer)
 
 	authServer := s.createAuthServer()
-	authPb.RegisterAuthServer(grpcServer, authServer)
+	v1.RegisterAuthServer(grpcServer, authServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
