@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	firebase.google.com/go v3.13.0+incompatible
-	firebase.google.com/go/v4 v4.1.0
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/golang/protobuf v1.4.3
