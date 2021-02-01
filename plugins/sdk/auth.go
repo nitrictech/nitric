@@ -8,9 +8,11 @@ type AuthPlugin interface {
 }
 
 // UnimplementedAuthPlugin - Unimplemented stub struct for extension for partial implementation of the AuthPlugin
-type UnimplementedAuthPlugin struct{}
+type UnimplementedAuthPlugin struct {
+	AuthPlugin
+}
 
 // CreateUser - Stub user creation method returning default UNIMPLEMENTED error message
-func (s *UnimplementedAuthPlugin) SignUp(tenant string, id string, email string, password string) error {
+func (s *UnimplementedAuthPlugin) CreateUser(tenant string, id string, email string, password string) error {
 	return fmt.Errorf("Unimplemented")
 }
