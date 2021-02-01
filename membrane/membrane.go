@@ -11,10 +11,7 @@ import (
 	"strings"
 	"time"
 
-	documentsPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/documents"
-	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1/eventing"
-	queuePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/queue"
-	storagePb "github.com/nitric-dev/membrane/interfaces/nitric/v1/storage"
+	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/services"
 	"google.golang.org/grpc"
@@ -198,16 +195,16 @@ func (s *Membrane) Start() error {
 
 	// Load & Register the GRPC service plugins
 	eventingServer := s.createEventingServer()
-	eventingPb.RegisterEventingServer(grpcServer, eventingServer)
+	v1.RegisterEventingServer(grpcServer, eventingServer)
 
 	documentsServer := s.createDocumentsServer()
-	documentsPb.RegisterDocumentsServer(grpcServer, documentsServer)
+	v1.RegisterDocumentsServer(grpcServer, documentsServer)
 
 	storageServer := s.createStorageServer()
-	storagePb.RegisterStorageServer(grpcServer, storageServer)
+	v1.RegisterStorageServer(grpcServer, storageServer)
 
 	queueServer := s.createQueueServer()
-	queuePb.RegisterQueueServer(grpcServer, queueServer)
+	v1.RegisterQueueServer(grpcServer, queueServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
