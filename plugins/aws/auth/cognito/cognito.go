@@ -17,6 +17,8 @@ type CognitoPlugin struct {
 	client cognitoidentityprovideriface.CognitoIdentityProviderAPI
 }
 
+// For each User Pool (tenant), a "Sign-Up Client" is used to sign up users with self-assigned password.
+// this refers to the default Nitric Sign-Up Client for each User Pool.
 const DefaultUserPoolClientName = "Nitric"
 
 // Get the client id for a given user pool
@@ -56,7 +58,7 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, *
 		poolID = out.UserPool.Id
 	}
 
-	// Attempt to find the default NitricClient for this tenant
+	// Attempt to find the default Nitric Sign-Up Client for this tenant
 	upOut, err := s.client.ListUserPoolClients(&cognitoidentityprovider.ListUserPoolClientsInput{
 		UserPoolId: poolID,
 	})
@@ -72,11 +74,13 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, *
 		}
 	}
 
+	// If default Sign-Up Client not found, create it
 	if pClientID == nil {
 		upClient, err := s.client.CreateUserPoolClient(&cognitoidentityprovider.CreateUserPoolClientInput{
 			UserPoolId:        poolID,
 			ClientName:        aws.String(DefaultUserPoolClientName),
 			ExplicitAuthFlows: []*string{aws.String("ALLOW_USER_PASSWORD_AUTH"), aws.String("ALLOW_REFRESH_TOKEN_AUTH")},
+			// TODO: Investigate need for secret
 			GenerateSecret:    aws.Bool(false),
 		})
 
