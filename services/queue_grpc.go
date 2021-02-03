@@ -99,6 +99,25 @@ func (s *QueueServer) Pop(ctx context.Context, req *pb.PopRequest) (*pb.PopRespo
 	}
 }
 
+func (s *QueueServer) Complete(ctx context.Context, req *pb.CompleteRequest) (*pb.CompleteResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		// Convert gRPC request to plugin params
+		queueName := req.GetQueue()
+		leaseId := req.GetLeaseId()
+
+		// Perform the Queue Complete operation
+		err := s.plugin.Complete(queueName, leaseId)
+		if err != nil {
+			return nil, err
+		}
+
+		// Return a successful response
+		return &pb.CompleteResponse{}, nil
+	} else {
+		return nil, err
+	}
+}
+
 func NewQueueServer(plugin sdk.QueuePlugin) pb.QueueServer {
 	return &QueueServer{
 		plugin: plugin,
