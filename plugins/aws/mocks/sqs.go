@@ -11,6 +11,7 @@ import (
 type MockSqsOptions struct {
 	Queues   []string
 	Messages map[string][]*Message
+	CompleteError error
 }
 
 type Message struct {
@@ -23,6 +24,7 @@ type MockSqs struct {
 	sqsiface.SQSAPI
 	queues   []string
 	messages map[string][]*Message
+	completeError error
 }
 
 func (s *MockSqs) ListQueues(in *sqs.ListQueuesInput) (*sqs.ListQueuesOutput, error) {
@@ -35,6 +37,14 @@ func (s *MockSqs) ListQueues(in *sqs.ListQueuesInput) (*sqs.ListQueuesOutput, er
 	return &sqs.ListQueuesOutput{
 		QueueUrls: queueUrls,
 	}, nil
+}
+
+func (s *MockSqs) DeleteMessage (req *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	// If an error has been set on the mock, return it.
+	if s.completeError != nil {
+		return nil, s.completeError
+	}
+	return &sqs.DeleteMessageOutput{}, nil
 }
 
 func (s *MockSqs) ReceiveMessage(in *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
@@ -112,5 +122,6 @@ func NewMockSqs(opts *MockSqsOptions) *MockSqs {
 	return &MockSqs{
 		queues:   opts.Queues,
 		messages: opts.Messages,
+		completeError: opts.CompleteError,
 	}
 }
