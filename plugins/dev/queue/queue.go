@@ -138,6 +138,11 @@ func (s *LocalQueuePlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, e
 	}
 }
 
+// Completes a previously popped queue item
+func (s *LocalQueuePlugin) Complete(queue string, leaseId string) error {
+	return nil
+}
+
 func New() (sdk.QueuePlugin, error) {
 	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
 

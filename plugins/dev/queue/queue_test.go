@@ -184,4 +184,19 @@ var _ = Describe("Queue", func() {
 			})
 		})
 	})
+
+	Context("Complete", func() {
+		// Currently the local queue complete method is a stub that always returns successfully.
+		// We may consider adding more realistic behavior if that is useful in future.
+		When("it always returns successfully", func() {
+			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{})
+			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
+
+			It("Should retnot return an error", func() {
+				err := queuePlugin.Complete("test-queue", "test-id")
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+		})
+	})
 })
