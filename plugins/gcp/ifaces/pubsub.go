@@ -52,4 +52,5 @@ type PublishResult interface {
 type SubscriberClient interface {
 	Close() error
 	Pull(ctx context.Context, req *pubsubpb.PullRequest, opts ...gax.CallOption) (*pubsubpb.PullResponse, error)
+	Acknowledge(ctx context.Context, req *pubsubpb.AcknowledgeRequest, opts ...gax.CallOption) error
 }

@@ -165,6 +165,39 @@ func (s *PubsubPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error
 	return events, nil
 }
 
+// Completes a previously popped queue item
+func (s *PubsubPlugin) Complete(queue string, leaseId string) error {
+	ctx := context.Background()
+
+	// Find the generic pull subscription for the provided topic (queue)
+	queueSubscription, err := s.getQueueSubscription(queue)
+	if err != nil {
+		return err
+	}
+
+	// Using base client, so that asynchronous message acknowledgement can take place without needing to keep messages
+	// in a stateful service. Standard PubSub go library is stateful and don't provide access to the acknowledge ID of
+	// the messages or an independent acknowledge function. It's only provided as a method on message objects.
+	client, err := s.newSubscriberClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create pubsub client.\n%s", err)
+	}
+	defer client.Close()
+
+	// Acknowledge the queue item so it's removed from the queue
+	req := pubsubpb.AcknowledgeRequest{
+		Subscription: queueSubscription.String(),
+		AckIds: []string{ leaseId },
+	}
+	err = client.Acknowledge(ctx, &req)
+	if err != nil {
+		// TODO: catch standard grpc errors, like NotFound.
+		return fmt.Errorf("failed to complete queue item.\n%s", err)
+	}
+
+	return nil
+}
+
 // adaptNewClient - Adapts the pubsubbase.NewSubscriberClient func to one that implements the ifaces.SubscriberClient
 // interface. This is used to enable substitution of the base pubsub client, primarily for mocking support.
 func adaptNewClient(f func(context.Context, ...option.ClientOption) (*pubsubbase.SubscriberClient, error)) func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {

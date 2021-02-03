@@ -132,6 +132,7 @@ func (s *SQSPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 	}
 }
 
+// Completes a previously popped queue item
 func (s *SQSPlugin) Complete(queue string, leaseId string) error {
 	if url, err := s.getUrlForQueueName(queue); err == nil {
 		req := sqs.DeleteMessageInput{
