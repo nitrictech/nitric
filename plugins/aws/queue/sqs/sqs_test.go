@@ -2,6 +2,7 @@ package sqs_plugin_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nitric-dev/membrane/plugins/aws/mocks"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -138,4 +139,31 @@ var _ = Describe("Sqs", func() {
 		})
 	})
 
+	// Tests for the Complete method
+	Context("Complete", func() {
+		When("The message is successfully deleted from SQS", func() {
+				// No errors set on mock, 'complete' won't return an error.
+				sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
+					Queues: []string{"test-queue"},
+				})
+				plugin := sqs_plugin.NewWithClient(sqsMock)
+
+				It("Should not return an error", func() {
+					err := plugin.Complete("test-queue", "test-id")
+					Expect(err).ShouldNot(HaveOccurred())
+				})
+		})
+		When("The message fails to delete from SQS", func() {
+			// No errors set on mock, 'complete' won't return an error.
+			sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
+				CompleteError: fmt.Errorf("mock complete error"),
+			})
+			plugin := sqs_plugin.NewWithClient(sqsMock)
+
+			It("Should return an error", func() {
+				err := plugin.Complete("test-queue", "test-id")
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+	})
 })

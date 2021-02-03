@@ -2,6 +2,7 @@ package pubsub_queue_plugin_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/gcp/mocks"
 	pubsub_queue_plugin "github.com/nitric-dev/membrane/plugins/gcp/queue/pubsub"
@@ -135,6 +136,41 @@ var _ = Describe("Pubsub", func() {
 			//	By("Returning an error")
 			//	Expect(err).Should(HaveOccurred())
 			//})
+		})
+	})
+
+	Context("Complete", func() {
+		When("Pubsub acknowledge request succeeds", func() {
+			mockPubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics: []string{"mock-queue"},
+			})
+			queuePlugin := pubsub_queue_plugin.NewWithClients(mockPubsubClient, func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {
+				return mocks.MockBaseClient{}, nil
+			})
+
+			It("Should not return an error", func() {
+				err := queuePlugin.Complete("mock-queue", "test-id")
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+		})
+		When("Pubsub acknowledge request errors", func() {
+			mockPubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics: []string{"mock-queue"},
+			})
+			queuePlugin := pubsub_queue_plugin.NewWithClients(mockPubsubClient, func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error) {
+				return mocks.MockBaseClient{
+					CompleteError: fmt.Errorf("mock complete error"),
+				}, nil
+			})
+
+			It("Should return an error", func() {
+				err := queuePlugin.Complete("mock-queue", "test-id")
+
+				By("Not returning an error")
+				Expect(err).Should(HaveOccurred())
+			})
 		})
 	})
 })

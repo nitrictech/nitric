@@ -132,6 +132,26 @@ func (s *SQSPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 	}
 }
 
+// Completes a previously popped queue item
+func (s *SQSPlugin) Complete(queue string, leaseId string) error {
+	if url, err := s.getUrlForQueueName(queue); err == nil {
+		req := sqs.DeleteMessageInput{
+			QueueUrl:      url,
+			ReceiptHandle: aws.String(leaseId),
+		}
+
+		_, err := s.client.DeleteMessage(&req)
+		if err != nil {
+			return fmt.Errorf("failed to complete item: %s", err)
+		}
+
+		return nil
+
+	} else {
+		return err
+	}
+}
+
 func New() (sdk.QueuePlugin, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 

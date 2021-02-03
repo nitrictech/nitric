@@ -212,10 +212,18 @@ func (s *MockPublishResult) Get(context.Context) (string, error) {
 
 type MockBaseClient struct {
 	Messages map[string][]ifaces.Message
+	CompleteError error
 }
 
 func (m MockBaseClient) Close() error {
 	// do nothing, no need to close a mock.
+	return nil
+}
+
+func (m MockBaseClient) Acknowledge(ctx context.Context, req *pubsubpb.AcknowledgeRequest, opts ...gax.CallOption) error {
+	if m.CompleteError != nil {
+		return m.CompleteError
+	}
 	return nil
 }
 
@@ -264,9 +272,3 @@ func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opt
 	}
 	return nil, fmt.Errorf("queue not found")
 }
-
-// We likely will not need this for now
-// as we aren't supplying a mechanism for using it
-// type MockPubSubSubscriberServer struct {
-// 	pb.UnimplementedSubscriberServer
-// }

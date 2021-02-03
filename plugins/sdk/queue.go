@@ -19,6 +19,8 @@ type QueuePlugin interface {
 	// Push - The push method for the Nitric Queue Service
 	Push(queue string, events []NitricEvent) (*PushResponse, error)
 	Pop(options PopOptions) ([]NitricQueueItem, error)
+	Complete(queue string, leaseId string) error
+	//Release(leaseId string) error
 }
 
 type PopOptions struct {
