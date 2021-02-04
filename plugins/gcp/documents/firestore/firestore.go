@@ -82,7 +82,7 @@ func (s *FirestorePlugin) DeleteDocument(collection string, key string) error {
 	return nil
 }
 
-func New() (sdk.DocumentsPlugin, error) {
+func New() (sdk.DocumentService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -100,7 +100,7 @@ func New() (sdk.DocumentsPlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client) (sdk.DocumentsPlugin, error) {
+func NewWithClient(client *firestore.Client) (sdk.DocumentService, error) {
 	return &FirestorePlugin{
 		client: client,
 	}, nil

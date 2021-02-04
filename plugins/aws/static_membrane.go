@@ -36,7 +36,7 @@ func main() {
 	authPlugin, _ := auth.New()
 
 	// Load the appropriate gateway based on the environment.
-	var gatewayPlugin sdk.GatewayPlugin
+	var gatewayPlugin sdk.GatewayService
 	switch gatewayEnv {
 	case "lambda":
 		gatewayPlugin, _ = lambdaGateway.New()

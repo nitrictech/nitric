@@ -116,7 +116,7 @@ func (s *S3Plugin) Delete(bucket string, key string) error {
 }
 
 // New creates a new default S3 storage plugin
-func New() (sdk.StoragePlugin, error) {
+func New() (sdk.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -136,7 +136,7 @@ func New() (sdk.StoragePlugin, error) {
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(client s3iface.S3API) (sdk.StoragePlugin, error) {
+func NewWithClient(client s3iface.S3API) (sdk.StorageService, error) {
 	return &S3Plugin{
 		client: client,
 	}, nil

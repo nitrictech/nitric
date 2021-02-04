@@ -1,4 +1,4 @@
-package services
+package grpc
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 // GRPC Interface for registered Nitric Storage Plugins
 type QueueServer struct {
 	pb.UnimplementedQueueServer
-	plugin sdk.QueuePlugin
+	plugin sdk.QueueService
 }
 
 func (s *QueueServer) checkPluginRegistered() (bool, error) {
@@ -118,7 +118,7 @@ func (s *QueueServer) Complete(ctx context.Context, req *pb.CompleteRequest) (*p
 	}
 }
 
-func NewQueueServer(plugin sdk.QueuePlugin) pb.QueueServer {
+func NewQueueServer(plugin sdk.QueueService) pb.QueueServer {
 	return &QueueServer{
 		plugin: plugin,
 	}

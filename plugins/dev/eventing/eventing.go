@@ -69,7 +69,7 @@ func (s *LocalPubSubPlugin) GetTopics() ([]string, error) {
 
 // Create new DynamoDB documents server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (sdk.EventingPlugin, error) {
+func New() (sdk.EventService, error) {
 	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 
 	tmpSubs := make(map[string][]string)
@@ -87,7 +87,7 @@ func New() (sdk.EventingPlugin, error) {
 	}, nil
 }
 
-func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventingPlugin, error) {
+func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventService, error) {
 	return &LocalPubSubPlugin{
 		subscriptions: subs,
 		client:        client,

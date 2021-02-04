@@ -19,7 +19,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 	// Setup mock environment...
 	var opts []grpc.ServerOption
 	var firestoreClient *firestore.Client
-	var firestorePlugin sdk.DocumentsPlugin
+	var firestorePlugin sdk.DocumentService
 	grpcServer := grpc.NewServer(opts...)
 	mockFirestoreServer := &mocks.MockFirestoreServer{
 		Store: make(map[string]map[string]map[string]*pb.Value),

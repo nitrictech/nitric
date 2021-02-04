@@ -14,36 +14,36 @@ type AWSPluginFactory struct {
 
 }
 
-func New() sdk.ProviderPluginFactory  {
+func New() sdk.ServiceFactory {
 	return &AWSPluginFactory{}
 }
 
 // NewAuthPlugin - Returns AWS Cognito based auth plugin
-func (p *AWSPluginFactory) NewAuthPlugin() (sdk.AuthPlugin, error) {
+func (p *AWSPluginFactory) NewAuthService() (sdk.AuthService, error) {
 	return cognito_plugin.New()
 }
 
 // NewDocumentPlugin - Returns AWS DynamoDB based document plugin
-func (p *AWSPluginFactory) NewDocumentPlugin() (sdk.DocumentsPlugin, error) {
+func (p *AWSPluginFactory) NewDocumentService() (sdk.DocumentService, error) {
 	return dynamodb_plugin.New()
 }
 
 // NewEventingPlugin - Returns AWS SNS based eventing plugin
-func (p *AWSPluginFactory) NewEventingPlugin() (sdk.EventingPlugin, error) {
+func (p *AWSPluginFactory) NewEventService() (sdk.EventService, error) {
 	return sns_plugin.New()
 }
 
 // NewGatewayPlugin - Returns AWS Lambda Gateway plugin
-func (p *AWSPluginFactory) NewGatewayPlugin() (sdk.GatewayPlugin, error) {
+func (p *AWSPluginFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return lambda_plugin.New()
 }
 
 // NewQueuePlugin - Returns AWS SQS based queue plugin
-func (p *AWSPluginFactory) NewQueuePlugin() (sdk.QueuePlugin, error) {
+func (p *AWSPluginFactory) NewQueueService() (sdk.QueueService, error) {
 	return sqs_plugin.New()
 }
 
 // NewStoragePlugin - Returns AWS S3 based storage plugin
-func (p *AWSPluginFactory) NewStoragePlugin() (sdk.StoragePlugin, error) {
+func (p *AWSPluginFactory) NewStorageService() (sdk.StorageService, error) {
 	return s3_plugin.New()
 }

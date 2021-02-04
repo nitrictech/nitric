@@ -5,7 +5,7 @@ import "fmt"
 // The base Documents Plugin interface
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
-type DocumentsPlugin interface {
+type DocumentService interface {
 	CreateDocument(collection string, key string, document map[string]interface{}) error
 	GetDocument(collection string, key string) (map[string]interface{}, error)
 	UpdateDocument(collection string, key string, document map[string]interface{}) error
@@ -13,7 +13,7 @@ type DocumentsPlugin interface {
 }
 
 type UnimplementedDocumentsPlugin struct {
-	DocumentsPlugin
+	DocumentService
 }
 
 func (p *UnimplementedDocumentsPlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {

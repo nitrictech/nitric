@@ -2,13 +2,13 @@ package sdk
 
 import "fmt"
 
-type EventingPlugin interface {
+type EventService interface {
 	GetTopics() ([]string, error)
 	Publish(topic string, event *NitricEvent) error
 }
 
 type UnimplementedEventingPlugin struct {
-	EventingPlugin
+	EventService
 }
 
 func (*UnimplementedEventingPlugin) GetTopics() ([]string, error) {

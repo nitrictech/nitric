@@ -2,14 +2,14 @@ package sdk
 
 import "fmt"
 
-// AuthPlugin - Pure Golang interface
-type AuthPlugin interface {
+// AuthService - Pure Golang interface
+type AuthService interface {
 	CreateUser(tenant string, id string, email string, password string) error
 }
 
-// UnimplementedAuthPlugin - Unimplemented stub struct for extension for partial implementation of the AuthPlugin
+// UnimplementedAuthPlugin - Unimplemented stub struct for extension for partial implementation of the AuthService
 type UnimplementedAuthPlugin struct {
-	AuthPlugin
+	AuthService
 }
 
 // CreateUser - Stub user creation method returning default UNIMPLEMENTED error message

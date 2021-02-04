@@ -207,7 +207,7 @@ func adaptNewClient(f func(context.Context, ...option.ClientOption) (*pubsubbase
 }
 
 // New - Constructs a new GCP pubsub client with defaults
-func New() (sdk.QueuePlugin, error) {
+func New() (sdk.QueueService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -227,7 +227,7 @@ func New() (sdk.QueuePlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces.PubsubClient) sdk.QueuePlugin {
+func NewWithClient(client ifaces.PubsubClient) sdk.QueueService {
 	return &PubsubPlugin{
 		client:              client,
 		newSubscriberClient: nil,
@@ -235,7 +235,7 @@ func NewWithClient(client ifaces.PubsubClient) sdk.QueuePlugin {
 }
 
 //*pubsubbase.SubscriberClient
-func NewWithClients(client ifaces.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error)) sdk.QueuePlugin {
+func NewWithClients(client ifaces.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error)) sdk.QueueService {
 	return &PubsubPlugin{
 		client:              client,
 		newSubscriberClient: subscriberClientGenerator,

@@ -14,36 +14,36 @@ type GCPPluginFactory struct {
 
 }
 
-func New() sdk.ProviderPluginFactory  {
+func New() sdk.ServiceFactory {
 	return &GCPPluginFactory{}
 }
 
 // NewAuthPlugin - Returns Google Cloud Identity Platform based auth plugin
-func (p *GCPPluginFactory) NewAuthPlugin() (sdk.AuthPlugin, error) {
+func (p *GCPPluginFactory) NewAuthService() (sdk.AuthService, error) {
 	return identity_platform_plugin.New()
 }
 
 // NewDocumentPlugin - Returns Google Cloud Firestore based document plugin
-func (p *GCPPluginFactory) NewDocumentPlugin() (sdk.DocumentsPlugin, error) {
+func (p *GCPPluginFactory) NewDocumentService() (sdk.DocumentService, error) {
 	return firestore_plugin.New()
 }
 
 // NewEventingPlugin - Returns Google Cloud Pubsub based eventing plugin
-func (p *GCPPluginFactory) NewEventingPlugin() (sdk.EventingPlugin, error) {
+func (p *GCPPluginFactory) NewEventService() (sdk.EventService, error) {
 	return pubsub_plugin.New()
 }
 
 // NewGatewayPlugin - Google Cloud Http Gateway plugin
-func (p *GCPPluginFactory) NewGatewayPlugin() (sdk.GatewayPlugin, error) {
+func (p *GCPPluginFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return http_plugin.New()
 }
 
 // NewQueuePlugin - Returns Google Cloud Pubsub based queue plugin
-func (p *GCPPluginFactory) NewQueuePlugin() (sdk.QueuePlugin, error) {
+func (p *GCPPluginFactory) NewQueueService() (sdk.QueueService, error) {
 	return pubsub_queue_plugin.New()
 }
 
 // NewStoragePlugin - Returns Google Cloud Storage based storage plugin
-func (p *GCPPluginFactory) NewStoragePlugin() (sdk.StoragePlugin, error) {
+func (p *GCPPluginFactory) NewStorageService() (sdk.StorageService, error) {
 	return storage_plugin.New()
 }

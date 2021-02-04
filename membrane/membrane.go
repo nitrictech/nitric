@@ -3,6 +3,7 @@ package membrane
 import (
 	"bytes"
 	"fmt"
+	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
-	"github.com/nitric-dev/membrane/services"
 	"google.golang.org/grpc"
 )
 
@@ -26,12 +26,12 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	EventingPlugin  sdk.EventingPlugin
-	DocumentsPlugin sdk.DocumentsPlugin
-	StoragePlugin   sdk.StoragePlugin
-	QueuePlugin     sdk.QueuePlugin
-	GatewayPlugin   sdk.GatewayPlugin
-	AuthPlugin      sdk.AuthPlugin
+	EventingPlugin  sdk.EventService
+	DocumentsPlugin sdk.DocumentService
+	StoragePlugin   sdk.StorageService
+	QueuePlugin     sdk.QueueService
+	GatewayPlugin   sdk.GatewayService
+	AuthPlugin      sdk.AuthService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -55,14 +55,14 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	eventingPlugin  sdk.EventingPlugin
-	documentsPlugin sdk.DocumentsPlugin
-	storagePlugin   sdk.StoragePlugin
-	gatewayPlugin   sdk.GatewayPlugin
-	queuePlugin     sdk.QueuePlugin
-	authPlugin      sdk.AuthPlugin
+	eventingPlugin  sdk.EventService
+	documentsPlugin sdk.DocumentService
+	storagePlugin   sdk.StorageService
+	gatewayPlugin   sdk.GatewayService
+	queuePlugin     sdk.QueueService
+	authPlugin      sdk.AuthService
 
-	// Tolerate if services are not available
+	// Tolerate if adapters are not available
 	// Not this does not include the gateway service
 	tolerateMissingServices bool
 
@@ -78,24 +78,24 @@ func (s *Membrane) log(log string) {
 
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() v1.EventingServer {
-	return services.NewEventingServer(s.eventingPlugin)
+	return grpc2.NewEventingServer(s.eventingPlugin)
 }
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() v1.StorageServer {
-	return services.NewStorageServer(s.storagePlugin)
+	return grpc2.NewStorageServer(s.storagePlugin)
 }
 
 func (s *Membrane) createDocumentsServer() v1.DocumentsServer {
-	return services.NewDocumentsServer(s.documentsPlugin)
+	return grpc2.NewDocumentsServer(s.documentsPlugin)
 }
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
-	return services.NewQueueServer(s.queuePlugin)
+	return grpc2.NewQueueServer(s.queuePlugin)
 }
 
 func (s *Membrane) createAuthServer() v1.AuthServer {
-	return services.NewAuthServer(s.authPlugin)
+	return grpc2.NewAuthServer(s.authPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {

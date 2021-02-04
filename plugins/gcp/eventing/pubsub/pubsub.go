@@ -61,7 +61,7 @@ func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
 	return nil
 }
 
-func New() (sdk.EventingPlugin, error) {
+func New() (sdk.EventService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -79,7 +79,7 @@ func New() (sdk.EventingPlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces.PubsubClient) (sdk.EventingPlugin, error) {
+func NewWithClient(client ifaces.PubsubClient) (sdk.EventService, error) {
 	return &PubsubPlugin{
 		client: client,
 	}, nil

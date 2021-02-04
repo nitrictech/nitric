@@ -152,7 +152,7 @@ func (s *SQSPlugin) Complete(queue string, leaseId string) error {
 	}
 }
 
-func New() (sdk.QueuePlugin, error) {
+func New() (sdk.QueueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -170,7 +170,7 @@ func New() (sdk.QueuePlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client sqsiface.SQSAPI) sdk.QueuePlugin {
+func NewWithClient(client sqsiface.SQSAPI) sdk.QueueService {
 	return &SQSPlugin{
 		client: client,
 	}

@@ -37,14 +37,14 @@ type NitricResponse struct {
 
 type GatewayHandler func(*NitricRequest) *NitricResponse
 
-type GatewayPlugin interface {
+type GatewayService interface {
 	// Start the Gateway
 	// This method should block
 	Start(handler GatewayHandler) error
 }
 
 type UnimplementedGatewayPlugin struct {
-	GatewayPlugin
+	GatewayService
 }
 
 func (*UnimplementedGatewayPlugin) Start(_ GatewayHandler) error {

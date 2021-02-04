@@ -212,7 +212,7 @@ func (s *DynamoDbPlugin) DeleteDocument(collection string, key string) error {
 }
 
 // Create a New DynamoDB document plugin implementation
-func New() (sdk.DocumentsPlugin, error) {
+func New() (sdk.DocumentService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -233,7 +233,7 @@ func New() (sdk.DocumentsPlugin, error) {
 }
 
 // Mainly used for mock testing to inject a mock client into this plugin
-func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.DocumentsPlugin, error) {
+func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.DocumentService, error) {
 	return &DynamoDbPlugin{
 		client: client,
 	}, nil

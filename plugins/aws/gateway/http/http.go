@@ -104,7 +104,7 @@ func (s *HttpProxyGateway) Start(handler gw.GatewayHandler) error {
 
 // Create new DynamoDB documents server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (gw.GatewayPlugin, error) {
+func New() (gw.GatewayService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 

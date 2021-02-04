@@ -111,7 +111,7 @@ func (s *StoragePlugin) Delete(bucket string, key string) error {
 /**
  * Creates a new Storage Plugin for use in GCP
  */
-func New() (sdk.StoragePlugin, error) {
+func New() (sdk.StorageService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, storage.ScopeReadWrite)
@@ -131,7 +131,7 @@ func New() (sdk.StoragePlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces.StorageClient) (sdk.StoragePlugin, error) {
+func NewWithClient(client ifaces.StorageClient) (sdk.StorageService, error) {
 	return &StoragePlugin{
 		client: client,
 	}, nil

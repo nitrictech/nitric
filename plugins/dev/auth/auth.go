@@ -60,7 +60,7 @@ func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password
 }
 
 // New - Instansiate a New concrete dev auth plugin
-func New() (sdk.AuthPlugin, error) {
+func New() (sdk.AuthService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
 
@@ -74,7 +74,7 @@ func New() (sdk.AuthPlugin, error) {
 	}, nil
 }
 
-func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthPlugin {
+func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthService {
 	return &AuthPlugin{
 		db: driver,
 	}

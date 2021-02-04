@@ -78,7 +78,7 @@ func (s *LocalDocumentPlugin) DeleteDocument(collection string, key string) erro
 
 // Create new DynamoDB documents server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (sdk.DocumentsPlugin, error) {
+func New() (sdk.DocumentService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
 
@@ -91,7 +91,7 @@ func New() (sdk.DocumentsPlugin, error) {
 	}, nil
 }
 
-func NewWithDB(db ifaces.ScribbleIface) (sdk.DocumentsPlugin, error) {
+func NewWithDB(db ifaces.ScribbleIface) (sdk.DocumentService, error) {
 	return &LocalDocumentPlugin{
 		db: db,
 	}, nil

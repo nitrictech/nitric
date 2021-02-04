@@ -1,4 +1,4 @@
-package services
+package grpc
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 // GRPC Interface for registered Nitric Eventing Plugins
 type EventingServer struct {
 	pb.UnimplementedEventingServer
-	eventingPlugin sdk.EventingPlugin
+	eventingPlugin sdk.EventService
 }
 
 func (s *EventingServer) checkPluginRegistered() (bool, error) {
@@ -56,7 +56,7 @@ func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopics
 	}
 }
 
-func NewEventingServer(eventingPlugin sdk.EventingPlugin) pb.EventingServer {
+func NewEventingServer(eventingPlugin sdk.EventService) pb.EventingServer {
 	return &EventingServer{
 		eventingPlugin: eventingPlugin,
 	}

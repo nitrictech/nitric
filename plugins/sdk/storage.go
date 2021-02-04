@@ -2,7 +2,7 @@ package sdk
 
 import "fmt"
 
-type StoragePlugin interface {
+type StorageService interface {
 	Get(bucket string, key string) ([]byte, error)
 	Put(bucket string, key string, object []byte) error
 	Delete(bucket string, key string) error
@@ -11,7 +11,7 @@ type StoragePlugin interface {
 type UnimplementedStoragePlugin struct {
 }
 
-var _ StoragePlugin = (*UnimplementedStoragePlugin)(nil)
+var _ StorageService = (*UnimplementedStoragePlugin)(nil)
 
 func (*UnimplementedStoragePlugin) Get(bucket string, key string) ([]byte, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")

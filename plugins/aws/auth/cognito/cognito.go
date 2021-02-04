@@ -138,7 +138,7 @@ func (s *CognitoPlugin) CreateUser(tenant string, id string, email string, passw
 }
 
 // New - Creates a new instance of the Cognito auth plugin
-func New() (sdk.AuthPlugin, error) {
+func New() (sdk.AuthService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -159,7 +159,7 @@ func New() (sdk.AuthPlugin, error) {
 }
 
 // NewWithClient - Creates a new instance of the Cognito auth plugin with given Cognito Client
-func NewWithClient(client cognitoidentityprovideriface.CognitoIdentityProviderAPI) sdk.AuthPlugin {
+func NewWithClient(client cognitoidentityprovideriface.CognitoIdentityProviderAPI) sdk.AuthService {
 	return &CognitoPlugin{
 		client: client,
 	}

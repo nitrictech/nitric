@@ -1,4 +1,4 @@
-package services
+package grpc
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type DocumentsServer struct {
 	pb.UnimplementedDocumentsServer
 	// TODO: Support multiple plugin registerations
 	// Just need to settle on a way of addressing them on calls
-	documentsPlugin sdk.DocumentsPlugin
+	documentsPlugin sdk.DocumentService
 }
 
 func (s *DocumentsServer) checkPluginRegistered() (bool, error) {
@@ -96,7 +96,7 @@ func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocu
 	}
 }
 
-func NewDocumentsServer(documentsPlugin sdk.DocumentsPlugin) pb.DocumentsServer {
+func NewDocumentsServer(documentsPlugin sdk.DocumentService) pb.DocumentsServer {
 	return &DocumentsServer{
 		documentsPlugin: documentsPlugin,
 	}

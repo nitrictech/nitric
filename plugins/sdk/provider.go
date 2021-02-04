@@ -1,52 +1,55 @@
 package sdk
 
-import "fmt"
-
-// ProviderPluginFactory - interface for Provider Plugin Factories, which
-// create provider specific plugin implementations of services.
-type ProviderPluginFactory interface {
-	NewAuthPlugin() (AuthPlugin, error)
-	NewDocumentPlugin() (DocumentsPlugin, error)
-	NewEventingPlugin() (EventingPlugin, error)
-	NewGatewayPlugin() (GatewayPlugin, error)
-	NewQueuePlugin() (QueuePlugin, error)
-	NewStoragePlugin() (StoragePlugin, error)
+// ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
+type ServiceFactory interface {
+	NewAuthService() (AuthService, error)
+	NewDocumentService() (DocumentService, error)
+	NewEventService() (EventService, error)
+	NewGatewayService() (GatewayService, error)
+	NewQueueService() (QueueService, error)
+	NewStorageService() (StorageService, error)
 }
 
-// UnimplementedProviderPluginFactory - provides stub methods for a ProviderPluginFactory which return Unimplemented Methods.
-type UnimplementedProviderPluginFactory struct {
+// UnimplementedServiceFactory - provides stub methods for a ServiceFactory which return Unimplemented Methods.
+//
+// Returning nil from a New service method is a valid response. Without an accompanying error, this will be
+// interpreted as the method being explicitly unimplemented.
+//
+// Plugin Factories with unimplemented New methods are only supported when the TOLERATE_MISSING_SERVICE option is
+// set to true when executing the pluggable membrane.
+type UnimplementedServiceFactory struct {
 
 }
 
-// Ensure UnimplementedProviderPluginFactory implement all methods of the interface
-var _ ProviderPluginFactory = (*UnimplementedProviderPluginFactory)(nil)
+// Ensure UnimplementedServiceFactory implement all methods of the interface
+var _ ServiceFactory = (*UnimplementedServiceFactory)(nil)
 
 // NewAuthPlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewAuthPlugin() (AuthPlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewAuthService() (AuthService, error) {
+	return nil, nil
 }
 
 // NewDocumentPlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewDocumentPlugin() (DocumentsPlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewDocumentService() (DocumentService, error) {
+	return nil, nil
 }
 
 // NewEventingPlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewEventingPlugin() (EventingPlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewEventService() (EventService, error) {
+	return nil, nil
 }
 
 // NewGatewayPlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewGatewayPlugin() (GatewayPlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewGatewayService() (GatewayService, error) {
+	return nil, nil
 }
 
 // NewQueuePlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewQueuePlugin() (QueuePlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewQueueService() (QueueService, error) {
+	return nil, nil
 }
 
 // NewStoragePlugin - Unimplemented
-func (p *UnimplementedProviderPluginFactory) NewStoragePlugin() (StoragePlugin, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func (p *UnimplementedServiceFactory) NewStorageService() (StorageService, error) {
+	return nil, nil
 }

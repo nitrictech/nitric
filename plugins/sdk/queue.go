@@ -14,8 +14,8 @@ type PushResponse struct {
 	FailedMessages []*FailedMessage
 }
 
-// QueuePlugin - The Nitric plugin interface for cloud native queue services
-type QueuePlugin interface {
+// QueueService - The Nitric plugin interface for cloud native queue adapters
+type QueueService interface {
 	// Push - The push method for the Nitric Queue Service
 	Push(queue string, events []NitricEvent) (*PushResponse, error)
 	Pop(options PopOptions) ([]NitricQueueItem, error)
@@ -58,14 +58,14 @@ func (p *PopOptions) Validate() error  {
 	return nil
 }
 
-// UnimplementedQueuePlugin - A Default interface, that provide implementations of QueuePlugin methods that
+// UnimplementedQueuePlugin - A Default interface, that provide implementations of QueueService methods that
 // Flag the method as unimplemented
 type UnimplementedQueuePlugin struct {
-	QueuePlugin
+	QueueService
 }
 
-// Ensure UnimplementedQueuePlugin conforms to QueuePlugin interface
-var _ QueuePlugin = (*UnimplementedQueuePlugin)(nil)
+// Ensure UnimplementedQueuePlugin conforms to QueueService interface
+var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
 func (*UnimplementedQueuePlugin) Push(queue string, events []NitricEvent) (*PushResponse, error) {

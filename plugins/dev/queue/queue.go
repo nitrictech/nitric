@@ -143,7 +143,7 @@ func (s *LocalQueuePlugin) Complete(queue string, leaseId string) error {
 	return nil
 }
 
-func New() (sdk.QueuePlugin, error) {
+func New() (sdk.QueueService, error) {
 	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
 
 	return &LocalQueuePlugin{
@@ -152,7 +152,7 @@ func New() (sdk.QueuePlugin, error) {
 	}, nil
 }
 
-func NewWithStorageDriver(driver ifaces.StorageDriver) (sdk.QueuePlugin, error) {
+func NewWithStorageDriver(driver ifaces.StorageDriver) (sdk.QueueService, error) {
 	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
 
 	return &LocalQueuePlugin{

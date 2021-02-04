@@ -86,7 +86,7 @@ func (s *SnsPlugin) GetTopics() ([]string, error) {
 
 // Create new DynamoDB documents server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (sdk.EventingPlugin, error) {
+func New() (sdk.EventService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -104,7 +104,7 @@ func New() (sdk.EventingPlugin, error) {
 	}, nil
 }
 
-func NewWithClient(client snsiface.SNSAPI) (sdk.EventingPlugin, error) {
+func NewWithClient(client snsiface.SNSAPI) (sdk.EventService, error) {
 	return &SnsPlugin{
 		client: client,
 	}, nil
