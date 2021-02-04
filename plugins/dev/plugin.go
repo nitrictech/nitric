@@ -20,7 +20,7 @@ func New() sdk.ServiceFactory {
 
 // NewAuthPlugin - Returns AWS Cognito based auth plugin
 func (p *DevServiceFactory) NewAuthService() (sdk.AuthService, error) {
-	return auth_plugin.New()
+	return auth_service.New()
 }
 
 // NewDocumentPlugin - Returns AWS DynamoDB based document plugin

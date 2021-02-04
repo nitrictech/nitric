@@ -1,5 +1,5 @@
 // The AWS HTTP gateway plugin
-package http_plugin
+package http_service
 
 import (
 	"encoding/json"

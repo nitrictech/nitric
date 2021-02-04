@@ -1,4 +1,4 @@
-package documents_plugin_test
+package documents_service_test
 
 import (
 	documents_plugin "github.com/nitric-dev/membrane/plugins/dev/documents"

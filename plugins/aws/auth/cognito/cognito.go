@@ -1,4 +1,4 @@
-package cognito_plugin
+package cognito_service
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-// CognitoPlugin - Cognito implementation of the Nitric Auth plugin interface
-type CognitoPlugin struct {
+// CognitoAuthService - Cognito implementation of the Nitric Auth plugin interface
+type CognitoAuthService struct {
 	sdk.UnimplementedAuthPlugin
 	client cognitoidentityprovideriface.CognitoIdentityProviderAPI
 }
@@ -22,7 +22,7 @@ type CognitoPlugin struct {
 const DefaultUserPoolClientName = "Nitric"
 
 // Get the client id for a given user pool
-func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, *string, error) {
+func (s *CognitoAuthService) findOrCreateUserPoolForTenant(tenant string) (*string, *string, error) {
 	// TODO: Need to list over UserPools first, and then use the default NitricClient from that pool
 
 	out, err := s.client.ListUserPools(&cognitoidentityprovider.ListUserPoolsInput{
@@ -95,7 +95,7 @@ func (s *CognitoPlugin) findOrCreateUserPoolForTenant(tenant string) (*string, *
 }
 
 // CreateUser - Creates a new user in AWS cognito
-func (s *CognitoPlugin) CreateUser(tenant string, id string, email string, password string) error {
+func (s *CognitoAuthService) CreateUser(tenant string, id string, email string, password string) error {
 	// Attempt to sign up the user...
 	pID, upClient, err := s.findOrCreateUserPoolForTenant(tenant)
 
@@ -153,14 +153,14 @@ func New() (sdk.AuthService, error) {
 
 	client := cognitoidentityprovider.New(sess)
 
-	return &CognitoPlugin{
+	return &CognitoAuthService{
 		client: client,
 	}, nil
 }
 
 // NewWithClient - Creates a new instance of the Cognito auth plugin with given Cognito Client
 func NewWithClient(client cognitoidentityprovideriface.CognitoIdentityProviderAPI) sdk.AuthService {
-	return &CognitoPlugin{
+	return &CognitoAuthService{
 		client: client,
 	}
 }

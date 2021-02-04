@@ -1,4 +1,4 @@
-package sqs_plugin
+package sqs_service
 
 import (
 	"encoding/json"
@@ -13,13 +13,13 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-type SQSPlugin struct {
+type SQSQueueService struct {
 	sdk.UnimplementedQueuePlugin
 	client sqsiface.SQSAPI
 }
 
 // Get the URL for a given queue name
-func (s *SQSPlugin) getUrlForQueueName(queue string) (*string, error) {
+func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 	// TODO: Need to be able to guarantee same accound deployment in this case
 	// In this case it would be preferred to use this method
 	// s.client.GetQueueUrl(&sqs.GetQueueUrlInput{})
@@ -36,7 +36,7 @@ func (s *SQSPlugin) getUrlForQueueName(queue string) (*string, error) {
 	return nil, fmt.Errorf("Could not find Queue: %s", queue)
 }
 
-func (s *SQSPlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *SQSQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
 	if url, err := s.getUrlForQueueName(queue); err == nil {
 		evts := make([]*sqs.SendMessageBatchRequestEntry, 0)
 
@@ -84,7 +84,7 @@ func (s *SQSPlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushRespo
 	}
 }
 
-func (s *SQSPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+func (s *SQSQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 	err := options.Validate()
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (s *SQSPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 }
 
 // Completes a previously popped queue item
-func (s *SQSPlugin) Complete(queue string, leaseId string) error {
+func (s *SQSQueueService) Complete(queue string, leaseId string) error {
 	if url, err := s.getUrlForQueueName(queue); err == nil {
 		req := sqs.DeleteMessageInput{
 			QueueUrl:      url,
@@ -165,13 +165,13 @@ func New() (sdk.QueueService, error) {
 
 	client := sqs.New(sess)
 
-	return &SQSPlugin{
+	return &SQSQueueService{
 		client: client,
 	}, nil
 }
 
 func NewWithClient(client sqsiface.SQSAPI) sdk.QueueService {
-	return &SQSPlugin{
+	return &SQSQueueService{
 		client: client,
 	}
 }

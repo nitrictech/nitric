@@ -1,4 +1,4 @@
-package storage_plugin
+package storage_service
 
 import (
 	"cloud.google.com/go/storage"
@@ -13,13 +13,13 @@ import (
 	"io/ioutil"
 )
 
-type StoragePlugin struct {
+type StorageStorageService struct {
 	//sdk.UnimplementedStoragePlugin
 	client    ifaces.StorageClient
 	projectID string
 }
 
-func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, error) {
+func (s *StorageStorageService) getBucketByName(bucket string) (ifaces.BucketHandle, error) {
 	buckets := s.client.Buckets(context.Background(), s.projectID)
 	for {
 		b, err := buckets.Next()
@@ -42,7 +42,7 @@ func (s *StoragePlugin) getBucketByName(bucket string) (ifaces.BucketHandle, err
 /**
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
-func (s *StoragePlugin) Get(bucket string, key string) ([]byte, error) {
+func (s *StorageStorageService) Get(bucket string, key string) ([]byte, error) {
 	bucketHandle, err := s.getBucketByName(bucket)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (s *StoragePlugin) Get(bucket string, key string) ([]byte, error) {
 /**
  * Stores a new Item in a Google Cloud Storage Bucket
  */
-func (s *StoragePlugin) Put(bucket string, key string, object []byte) error {
+func (s *StorageStorageService) Put(bucket string, key string, object []byte) error {
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *StoragePlugin) Put(bucket string, key string, object []byte) error {
 /**
  * Delete an Item in a Google Cloud Storage Bucket
  */
-func (s *StoragePlugin) Delete(bucket string, key string) error {
+func (s *StorageStorageService) Delete(bucket string, key string) error {
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {
@@ -125,14 +125,14 @@ func New() (sdk.StorageService, error) {
 		return nil, fmt.Errorf("storage client error: %v", err)
 	}
 
-	return &StoragePlugin{
+	return &StorageStorageService{
 		client: adapters.AdaptStorageClient(client),
 		projectID: credentials.ProjectID,
 	}, nil
 }
 
 func NewWithClient(client ifaces.StorageClient) (sdk.StorageService, error) {
-	return &StoragePlugin{
+	return &StorageStorageService{
 		client: client,
 	}, nil
 }

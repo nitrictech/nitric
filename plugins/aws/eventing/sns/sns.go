@@ -1,4 +1,4 @@
-package sns_plugin
+package sns_service
 
 import (
 	"encoding/json"
@@ -13,13 +13,13 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-type SnsPlugin struct {
+type SnsEventService struct {
 	sdk.UnimplementedEventingPlugin
 	client snsiface.SNSAPI
 }
 
 // Retrieve the topicArn for a given named nitric topic
-func (s *SnsPlugin) getTopicArnFromName(name *string) (*string, error) {
+func (s *SnsEventService) getTopicArnFromName(name *string) (*string, error) {
 	topicsOutput, error := s.client.ListTopics(&sns.ListTopicsInput{})
 
 	if error != nil {
@@ -36,7 +36,7 @@ func (s *SnsPlugin) getTopicArnFromName(name *string) (*string, error) {
 }
 
 // Publish to a given topic
-func (s *SnsPlugin) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *SnsEventService) Publish(topic string, event *sdk.NitricEvent) error {
 	data, err := json.Marshal(event)
 
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *SnsPlugin) Publish(topic string, event *sdk.NitricEvent) error {
 	return nil
 }
 
-func (s *SnsPlugin) GetTopics() ([]string, error) {
+func (s *SnsEventService) GetTopics() ([]string, error) {
 	topicsOutput, error := s.client.ListTopics(&sns.ListTopicsInput{})
 
 	if error != nil {
@@ -99,13 +99,13 @@ func New() (sdk.EventService, error) {
 
 	snsClient := sns.New(sess)
 
-	return &SnsPlugin{
+	return &SnsEventService{
 		client: snsClient,
 	}, nil
 }
 
 func NewWithClient(client snsiface.SNSAPI) (sdk.EventService, error) {
-	return &SnsPlugin{
+	return &SnsEventService{
 		client: client,
 	}, nil
 }

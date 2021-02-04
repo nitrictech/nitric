@@ -1,4 +1,4 @@
-package queue_plugin
+package queue_service
 
 import (
 	"encoding/json"
@@ -43,13 +43,13 @@ func (s *DefaultQueueDriver) ReadFile(file string) ([]byte, error) {
 	return ioutil.ReadFile(file)
 }
 
-type LocalQueuePlugin struct {
+type LocalQueueService struct {
 	sdk.UnimplementedQueuePlugin
 	driver   ifaces.StorageDriver
 	queueDir string
 }
 
-func (s *LocalQueuePlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *LocalQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
@@ -89,7 +89,7 @@ func (s *LocalQueuePlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.Pu
 	}, nil
 }
 
-func (s *LocalQueuePlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+func (s *LocalQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, options.QueueName)
 
@@ -139,14 +139,14 @@ func (s *LocalQueuePlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, e
 }
 
 // Completes a previously popped queue item
-func (s *LocalQueuePlugin) Complete(queue string, leaseId string) error {
+func (s *LocalQueueService) Complete(queue string, leaseId string) error {
 	return nil
 }
 
 func New() (sdk.QueueService, error) {
 	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
 
-	return &LocalQueuePlugin{
+	return &LocalQueueService{
 		driver:   &DefaultQueueDriver{},
 		queueDir: queueDir,
 	}, nil
@@ -155,7 +155,7 @@ func New() (sdk.QueueService, error) {
 func NewWithStorageDriver(driver ifaces.StorageDriver) (sdk.QueueService, error) {
 	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
 
-	return &LocalQueuePlugin{
+	return &LocalQueueService{
 		driver:   driver,
 		queueDir: queueDir,
 	}, nil

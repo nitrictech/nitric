@@ -1,4 +1,4 @@
-package eventing_plugin_test
+package eventing_service_test
 
 import (
 	"encoding/json"

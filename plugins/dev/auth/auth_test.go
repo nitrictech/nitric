@@ -1,4 +1,4 @@
-package auth_plugin_test
+package auth_service_test
 
 import (
 	auth_plugin "github.com/nitric-dev/membrane/plugins/dev/auth"

@@ -1,4 +1,4 @@
-package queue_plugin_test
+package queue_service_test
 
 import (
 	"encoding/json"

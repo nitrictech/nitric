@@ -1,4 +1,4 @@
-package identity_platform_plugin
+package identity_platform_service
 
 import (
 	"context"
@@ -15,14 +15,14 @@ import (
 	"github.com/nitric-dev/membrane/plugins/sdk"
 )
 
-// IdentityPlatformPlugin - GCP Identity Platform implementation of the Nitric Auth plugin interface
-type IdentityPlatformPlugin struct {
+// IdentityPlatformAuthService - GCP Identity Platform implementation of the Nitric Auth plugin interface
+type IdentityPlatformAuthService struct {
 	sdk.UnimplementedAuthPlugin
 	admin ifaces.FirebaseAuth
 }
 
 // Get the tenant id for a given tenant
-func (s *IdentityPlatformPlugin) findOrCreateTenant(tenant string) (*string, error) {
+func (s *IdentityPlatformAuthService) findOrCreateTenant(tenant string) (*string, error) {
 	ctx := context.Background()
 
 	// Search for Tenant by display name first...
@@ -54,7 +54,7 @@ func (s *IdentityPlatformPlugin) findOrCreateTenant(tenant string) (*string, err
 }
 
 // CreateUser - Creates a new user in GCP Identity Platform (using Firebase Auth)
-func (s *IdentityPlatformPlugin) CreateUser(tenant string, id string, email string, password string) error {
+func (s *IdentityPlatformAuthService) CreateUser(tenant string, id string, email string, password string) error {
 	ctx := context.Background()
 	tID, err := s.findOrCreateTenant(tenant)
 
@@ -107,13 +107,13 @@ func New() (sdk.AuthService, error) {
 		return nil, fmt.Errorf("Error instansiating firebase auth client")
 	}
 
-	return &IdentityPlatformPlugin{
+	return &IdentityPlatformAuthService{
 		admin: adapters.AdaptFirebaseAuth(authClient),
 	}, nil
 }
 
 func NewWithClient(client ifaces.FirebaseAuth) sdk.AuthService {
-	return &IdentityPlatformPlugin{
+	return &IdentityPlatformAuthService{
 		admin: client,
 	}
 }

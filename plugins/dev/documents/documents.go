@@ -1,4 +1,4 @@
-package documents_plugin
+package documents_service
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-type LocalDocumentPlugin struct {
+type LocalDocumentService struct {
 	sdk.UnimplementedDocumentsPlugin
 	db ifaces.ScribbleIface
 }
@@ -19,7 +19,7 @@ type NitricDocument struct {
 	Value map[string]interface{}
 }
 
-func (s *LocalDocumentPlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *LocalDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
 	existingDocument := make(map[string]interface{})
 	err := s.db.Read(collection, key, &existingDocument)
 
@@ -37,7 +37,7 @@ func (s *LocalDocumentPlugin) CreateDocument(collection string, key string, docu
 	return fmt.Errorf("Document already exists!")
 }
 
-func (s *LocalDocumentPlugin) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *LocalDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
 	document := make(map[string]interface{})
 	err := s.db.Read(collection, key, &document)
 
@@ -48,7 +48,7 @@ func (s *LocalDocumentPlugin) GetDocument(collection string, key string) (map[st
 	return document, nil
 }
 
-func (s *LocalDocumentPlugin) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *LocalDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
 	existingDocument := make(map[string]interface{})
 	err := s.db.Read(collection, key, &existingDocument)
 
@@ -66,7 +66,7 @@ func (s *LocalDocumentPlugin) UpdateDocument(collection string, key string, docu
 	return fmt.Errorf("Document does not exist!")
 }
 
-func (s *LocalDocumentPlugin) DeleteDocument(collection string, key string) error {
+func (s *LocalDocumentService) DeleteDocument(collection string, key string) error {
 	error := s.db.Delete(collection, key)
 
 	if error != nil {
@@ -86,13 +86,13 @@ func New() (sdk.DocumentService, error) {
 		return nil, err
 	}
 
-	return &LocalDocumentPlugin{
+	return &LocalDocumentService{
 		db: db,
 	}, nil
 }
 
 func NewWithDB(db ifaces.ScribbleIface) (sdk.DocumentService, error) {
-	return &LocalDocumentPlugin{
+	return &LocalDocumentService{
 		db: db,
 	}, nil
 }

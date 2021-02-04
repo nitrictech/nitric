@@ -1,4 +1,4 @@
-package sqs_plugin_test
+package sqs_service_test
 
 import (
 	"encoding/json"

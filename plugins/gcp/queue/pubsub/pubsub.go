@@ -1,4 +1,4 @@
-package pubsub_queue_plugin
+package pubsub_queue_service
 
 import (
 	"cloud.google.com/go/pubsub"
@@ -15,7 +15,7 @@ import (
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
-type PubsubPlugin struct {
+type PubsubQueueService struct {
 	sdk.UnimplementedQueuePlugin
 	client              ifaces.PubsubClient
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error)
@@ -29,7 +29,7 @@ func generateQueueSubscription(queue string) string {
 	return fmt.Sprintf("%s-nitricqueue", queue)
 }
 
-func (s *PubsubPlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *PubsubQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
 	topic := s.client.Topic(queue)
@@ -82,7 +82,7 @@ func (s *PubsubPlugin) Push(queue string, events []sdk.NitricEvent) (*sdk.PushRe
 // we use this behavior to emulate a queue.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubPlugin) getQueueSubscription(queue string) (ifaces.Subscription, error) {
+func (s *PubsubQueueService) getQueueSubscription(queue string) (ifaces.Subscription, error) {
 	ctx := context.Background()
 
 	topic := s.client.Topic(queue)
@@ -106,7 +106,7 @@ func (s *PubsubPlugin) getQueueSubscription(queue string) (ifaces.Subscription, 
 }
 
 // Pops a collection of queue items off a given queue.
-func (s *PubsubPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+func (s *PubsubQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
 	err := options.Validate()
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (s *PubsubPlugin) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error
 }
 
 // Completes a previously popped queue item
-func (s *PubsubPlugin) Complete(queue string, leaseId string) error {
+func (s *PubsubQueueService) Complete(queue string, leaseId string) error {
 	ctx := context.Background()
 
 	// Find the generic pull subscription for the provided topic (queue)
@@ -219,7 +219,7 @@ func New() (sdk.QueueService, error) {
 		return nil, fmt.Errorf("pubsub client error: %v", clientError)
 	}
 
-	return &PubsubPlugin{
+	return &PubsubQueueService{
 		client:              adapters.AdaptPubsubClient(client),
 		// TODO: replace this with a better mechanism for mocking the client.
 		newSubscriberClient: adaptNewClient(pubsubbase.NewSubscriberClient),
@@ -228,7 +228,7 @@ func New() (sdk.QueueService, error) {
 }
 
 func NewWithClient(client ifaces.PubsubClient) sdk.QueueService {
-	return &PubsubPlugin{
+	return &PubsubQueueService{
 		client:              client,
 		newSubscriberClient: nil,
 	}
@@ -236,7 +236,7 @@ func NewWithClient(client ifaces.PubsubClient) sdk.QueueService {
 
 //*pubsubbase.SubscriberClient
 func NewWithClients(client ifaces.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces.SubscriberClient, error)) sdk.QueueService {
-	return &PubsubPlugin{
+	return &PubsubQueueService{
 		client:              client,
 		newSubscriberClient: subscriberClientGenerator,
 	}

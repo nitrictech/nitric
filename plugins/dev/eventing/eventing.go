@@ -1,4 +1,4 @@
-package eventing_plugin
+package eventing_service
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-type LocalPubSubPlugin struct {
+type LocalEventService struct {
 	sdk.UnimplementedEventingPlugin
 	subscriptions map[string][]string
 	client        LocalHttpEventingClient
@@ -24,7 +24,7 @@ type LocalHttpEventingClient interface {
 }
 
 // Publish a message to a given topic
-func (s *LocalPubSubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error {
 	requestId := event.RequestId
 	payloadType := event.PayloadType
 	payload := event.Payload
@@ -57,7 +57,7 @@ func (s *LocalPubSubPlugin) Publish(topic string, event *sdk.NitricEvent) error 
 }
 
 // Get a list of available topics
-func (s *LocalPubSubPlugin) GetTopics() ([]string, error) {
+func (s *LocalEventService) GetTopics() ([]string, error) {
 	keys := []string{}
 
 	for key, _ := range s.subscriptions {
@@ -81,14 +81,14 @@ func New() (sdk.EventService, error) {
 		subs[strings.ToLower(key)] = val
 	}
 
-	return &LocalPubSubPlugin{
+	return &LocalEventService{
 		subscriptions: subs,
 		client:        http.DefaultClient,
 	}, nil
 }
 
 func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventService, error) {
-	return &LocalPubSubPlugin{
+	return &LocalEventService{
 		subscriptions: subs,
 		client:        client,
 	}, nil

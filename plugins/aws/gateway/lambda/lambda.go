@@ -1,4 +1,4 @@
-package lambda_plugin
+package lambda_service
 
 import (
 	"context"
