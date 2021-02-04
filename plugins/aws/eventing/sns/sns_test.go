@@ -1,4 +1,4 @@
-package sns_plugin_test
+package sns_service_test
 
 import (
 	"fmt"

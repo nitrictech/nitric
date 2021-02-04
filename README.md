@@ -2,6 +2,22 @@
 
 ## Architecture
 
+## Membrane Build Options
+The Nitric Membrane comes in two variants `Pluggable` or `Static`.
+
+### Static
+For each supported provider (e.g. AWS or GCP) we provide a static binary which includes all the supported services for that provider.
+The static membrane binaries are far smaller overall than using a pluggable binary with separate plugin files. This is the most efficient option
+when running Nitric on a single provider or when custom service implementations aren't required.
+
+### Pluggable
+In cases where provider or service implementation flexibility is needed use the pluggable membrane. The pluggable 
+membrane loads service implementations (e.g. S3 implementation of the Storage service for AWS) via Go Plugin Service
+Factories. This enables runtime loading of service implementations, as well as custom service implementations within a
+provider instead of the defaults from the static membrane.
+
+> Service implementation customization and multiplexing is currently unimplemented.
+
 ## Development
 
 ### Requirements
@@ -23,43 +39,112 @@ Download the Google Protobuf Compiler (standalone binary called `protoc`) from h
 
 > On Mac OS with Homebrew, you can run `brew install protobuf`
 
- 
-
 #### Run tests
 ```bash
 make tests
 ```
 
-#### Build Pluggable Membrane (images are used)
+### Build Pluggable Membrane
 ```bash
-make
+# Build all of the Service Factory plugins
+make plugins
 ```
 
-### Building Pluggable Membrane Images
-Alpine Linux
+#### Building Pluggable Membrane Images
+
+##### Alpine Linux
+
 ```bash
-make build-docker-alpine
+make membrane-docker-alpine
 ```
 
-Debian
+##### Debian
+
 ```bash
-make build-docker-debian
+make membrane-docker-debian
 ```
 
-Or both
+##### Both
 ```bash
-make build-docker
+make membrane-docker
 ```
 
-### For building statically compiled provider specific membranes see plugin README(s)
+### Build Static Membranes
 
- - [AWS](./plugins/aws/README.md)
- - [GCP](./plugins/gcp/README.md)
- - [Dev](./plugins/dev/README.md)
+#### Building Static Membrane
+
+##### AWS
+
+###### Standard Binary
+
+> Linux support only - used in container images and for production.
+
+```bash
+make aws-static
+```
+
+###### Cross-platform Binary
+
+Useful for local testing
+
+```bash 
+make aws-static-xp
+```
+
+###### Container Images
+
+```bash
+make aws-docker
+```
+
+##### Google Cloud Platform
+
+###### Standard Binary
+
+> Linux support only - used in container images and for production.
+
+```bash
+make gcp-static
+```
+
+###### Cross-platform Binary
+
+Useful for local testing
+
+```bash 
+make gcp-static-xp
+```
+
+###### Container Images
+
+```bash
+make gcp-docker
+```
+
+##### Dev Membrane
+
+> Note: the Dev Membrane should only be used for local development and testing.
+
+###### Standard Binary
+
+The dev binary is always cross-platform, since it doesn't need to be optimized for production deployments.
+
+```bash
+make dev-static
+```
+
+###### Container Images
+
+```bash
+make dev-docker
+```
+
  
-## Running Locally
+### Run Locally
 
 To run the membrane server locally, perform a local build of the membrane binary for the platform you're targeting, then run the resulting binary.
+
+##### Example building and running the static Google Cloud Membrane locally
 
 ```bash
 # Make the GCP Static Cross-platform binary
@@ -75,8 +160,8 @@ make gcp-static-xp
 # Make the AWS Static Cross-platform binary
 make aws-static-xp
 
-# Set Env, then Run the membrane binary
-GATEWAY_ENVIRONMENT=http; ./bin/membrane
+# Set environment variable in subshell, then run the membrane binary
+(export GATEWAY_ENVIRONMENT=http; ./bin/membrane)
 ```
 
  

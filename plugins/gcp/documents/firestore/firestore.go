@@ -1,4 +1,4 @@
-package firestore_plugin
+package firestore_service
 
 import (
 	"context"
@@ -24,12 +24,12 @@ import (
 // 	Set(context.Context, interface{}) (*firestore.WriteResult, error)
 // }
 
-type FirestorePlugin struct {
+type FirestoreDocumentService struct {
 	client *firestore.Client
 	sdk.UnimplementedDocumentsPlugin
 }
 
-func (s *FirestorePlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *FirestoreDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
 	// Create a new document is firestore
 	if key == "" {
 		return fmt.Errorf("Key autogeneration unimplemented, please provide non-blank key")
@@ -44,7 +44,7 @@ func (s *FirestorePlugin) CreateDocument(collection string, key string, document
 	return nil
 }
 
-func (s *FirestorePlugin) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *FirestoreDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
 	document, error := s.client.Collection(collection).Doc(key).Get(context.TODO())
 
 	if error != nil {
@@ -54,7 +54,7 @@ func (s *FirestorePlugin) GetDocument(collection string, key string) (map[string
 	return document.Data(), nil
 }
 
-func (s *FirestorePlugin) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *FirestoreDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
 	docRef := s.client.Collection(collection).Doc(key)
 
 	_, err := docRef.Get(context.TODO())
@@ -72,7 +72,7 @@ func (s *FirestorePlugin) UpdateDocument(collection string, key string, document
 	return nil
 }
 
-func (s *FirestorePlugin) DeleteDocument(collection string, key string) error {
+func (s *FirestoreDocumentService) DeleteDocument(collection string, key string) error {
 	_, error := s.client.Collection(collection).Doc(key).Delete(context.TODO())
 
 	if error != nil {
@@ -82,7 +82,7 @@ func (s *FirestorePlugin) DeleteDocument(collection string, key string) error {
 	return nil
 }
 
-func New() (sdk.DocumentsPlugin, error) {
+func New() (sdk.DocumentService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -95,13 +95,13 @@ func New() (sdk.DocumentsPlugin, error) {
 		return nil, fmt.Errorf("firestore client error: %v", clientError)
 	}
 
-	return &FirestorePlugin{
+	return &FirestoreDocumentService{
 		client: client,
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client) (sdk.DocumentsPlugin, error) {
-	return &FirestorePlugin{
+func NewWithClient(client *firestore.Client) (sdk.DocumentService, error) {
+	return &FirestoreDocumentService{
 		client: client,
 	}, nil
 }

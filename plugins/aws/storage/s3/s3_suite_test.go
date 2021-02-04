@@ -1,4 +1,4 @@
-package s3_plugin_test
+package s3_service_test
 
 import (
 	"testing"

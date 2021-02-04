@@ -160,7 +160,7 @@ var _ = Describe("Membrane", func() {
 	})
 
 	Context("Starting the server", func() {
-		Context("That tolerates missing services", func() {
+		Context("That tolerates missing adapters", func() {
 			When("The Gateway plugin is available and working", func() {
 				mockGateway := &MockGateway{}
 

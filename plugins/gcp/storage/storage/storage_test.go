@@ -1,4 +1,4 @@
-package storage_plugin_test
+package storage_service_test
 
 import (
 	"github.com/nitric-dev/membrane/plugins/gcp/mocks"

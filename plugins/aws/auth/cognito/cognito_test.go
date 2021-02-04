@@ -1,4 +1,4 @@
-package cognito_plugin_test
+package cognito_service_test
 
 import (
 	"github.com/aws/aws-sdk-go/aws"

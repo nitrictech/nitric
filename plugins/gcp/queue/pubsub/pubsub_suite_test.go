@@ -1,4 +1,4 @@
-package pubsub_queue_plugin_test
+package pubsub_queue_service_test
 
 import (
 	"testing"

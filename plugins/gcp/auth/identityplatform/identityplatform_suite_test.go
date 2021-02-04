@@ -1,4 +1,4 @@
-package identity_platform_plugin_test
+package identity_platform_service_test
 
 import (
 	"testing"

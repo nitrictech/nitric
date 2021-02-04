@@ -16,97 +16,83 @@ func main() {
 	serviceAddress := utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
 	pluginDir := utils.GetEnv("PLUGIN_DIR", "./plugins")
+	serviceFactoryPluginFile := utils.GetEnv("SERVICE_FACTORY_PLUGIN", "default.so")
 	childCommand := utils.GetEnv("INVOKE", "")
 	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
-	eventingPluginFile := utils.GetEnv("EVENTING_PLUGIN", "eventing.so")
-	documentsPluginFile := utils.GetEnv("DOCUMENTS_PLUGIN", "documents.so")
-	storagePluginFile := utils.GetEnv("STORAGE_PLUGIN", "storage.so")
-	gatewayPluginFile := utils.GetEnv("GATEWAY_PLUGIN", "gateway.so")
-	queuePluginFile := utils.GetEnv("QUEUE_PLUGIN", "queue.so")
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
-
+	// Set tolerate missing to false by default so missing plugins will cause a fatal error for safety.
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		log.Println(fmt.Sprintf("failed to parse TOLERATE_MISSING_SERVICES environment variable with value [%s], defaulting to false", tolerateMissingServices))
+		tolerateMissing = false
 	}
+	var serviceFactory sdk.ServiceFactory = nil
 
-	var eventingPlugin sdk.EventingPlugin = nil
-	var storagePlugin sdk.StoragePlugin = nil
-	var documentsPlugin sdk.DocumentsPlugin = nil
-	var gatewayPlugin sdk.GatewayPlugin = nil
-	var queuePlugin sdk.QueuePlugin = nil
-
-	// Load the Eventing Plugin
-	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, eventingPluginFile)); err == nil {
+	// Load the Plugin Factory
+	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, serviceFactoryPluginFile)); err == nil {
 		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.EventingPlugin, error)); ok {
-				if plugin, err := newFunc(); err == nil {
-					eventingPlugin = plugin
+			if newFunc, ok := symbol.(func() (sdk.ServiceFactory, error)); ok {
+				if serviceFactoryPlugin, err := newFunc(); err == nil {
+					serviceFactory = serviceFactoryPlugin
 				}
 			}
 		}
 	}
-
-	// Load the queue plugin
-	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, queuePluginFile)); err == nil {
-		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.QueuePlugin, error)); ok {
-				if plugin, err := newFunc(); err == nil {
-					queuePlugin = plugin
-				}
-			}
-		}
+	if serviceFactory == nil {
+		log.Fatalf("failed to load Provider Factory Plugin: %s", serviceFactoryPluginFile)
 	}
 
-	// Load the Storage Plugin
-	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, storagePluginFile)); err == nil {
-		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.StoragePlugin, error)); ok {
-				if plugin, err := newFunc(); err == nil {
-					storagePlugin = plugin
-				}
-			}
-		}
+	// Load the concrete service implementations
+	var authService sdk.AuthService = nil
+	var documentsService sdk.DocumentService = nil
+	var eventingService sdk.EventService = nil
+	var gatewayService sdk.GatewayService = nil
+	var queueService sdk.QueueService = nil
+	var storageService sdk.StorageService = nil
+
+	// Load the auth service
+	if authService, err = serviceFactory.NewAuthService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the document service
+	if documentsService, err = serviceFactory.NewDocumentService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the eventing service
+	if eventingService, err = serviceFactory.NewEventService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the gateway service
+	if gatewayService, err = serviceFactory.NewGatewayService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the queue service
+	if queueService, err = serviceFactory.NewQueueService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the storage service
+	if storageService, err = serviceFactory.NewStorageService(); err != nil {
+		log.Fatal(err)
 	}
 
-	// Load the Documents Plugin
-	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, documentsPluginFile)); err == nil {
-		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.DocumentsPlugin, error)); ok {
-				if plugin, err := newFunc(); err == nil {
-					documentsPlugin = plugin
-				}
-			}
-		}
-	}
-
-	// Load the Gateway Plugin
-	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, gatewayPluginFile)); err == nil {
-		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.GatewayPlugin, error)); ok {
-				if plugin, err := newFunc(); err == nil {
-					gatewayPlugin = plugin
-				}
-			}
-		}
-	}
-
-	membrane, err := membrane.New(&membrane.MembraneOptions{
+	// Construct and validate the membrane server
+	membraneServer, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
-		EventingPlugin:          eventingPlugin,
-		DocumentsPlugin:         documentsPlugin,
-		StoragePlugin:           storagePlugin,
-		GatewayPlugin:           gatewayPlugin,
-		QueuePlugin:             queuePlugin,
+		AuthPlugin:              authService,
+		EventingPlugin:          eventingService,
+		DocumentsPlugin:         documentsService,
+		StoragePlugin:           storageService,
+		GatewayPlugin:           gatewayService,
+		QueuePlugin:             queueService,
 		TolerateMissingServices: tolerateMissing,
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		log.Fatalf("There was an error initialising the membraneServer server: %v", err)
 	}
 
 	// Start the Membrane server
-	membrane.Start()
+	membraneServer.Start()
 }

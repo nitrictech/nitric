@@ -1,4 +1,4 @@
-package storage_plugin
+package storage_service
 
 import (
 	"fmt"
@@ -62,23 +62,23 @@ func (s *DefaultStorageDriver) DeleteFile(file string) error {
 	return os.Remove(file)
 }
 
-// LocalStoragePlugin - The Nitric Storage Plugin for local development work
+// LocalStorageService - The Nitric Storage Plugin for local development work
 // Primarily used as part of the nitric run CLI function
-type LocalStoragePlugin struct {
+type LocalStorageService struct {
 	storageDriver StorageDriver
 	storeDir      string
 }
 
-func (s *LocalStoragePlugin) getBucketName(bucket string) string {
+func (s *LocalStorageService) getBucketName(bucket string) string {
 	return fmt.Sprintf("%s%s/", s.storeDir, bucket)
 }
 
-func (s *LocalStoragePlugin) getFilename(bucket string, key string) string {
+func (s *LocalStorageService) getFilename(bucket string, key string) string {
 	return fmt.Sprintf("%s%s", s.getBucketName(bucket), key)
 }
 
 // Put will create a new item or overwrite an existing item in storage
-func (s *LocalStoragePlugin) Put(bucket string, key string, payload []byte) error {
+func (s *LocalStorageService) Put(bucket string, key string, payload []byte) error {
 	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
@@ -95,7 +95,7 @@ func (s *LocalStoragePlugin) Put(bucket string, key string, payload []byte) erro
 }
 
 // Get will retrieve an item from Storage
-func (s *LocalStoragePlugin) Get(bucket string, key string) ([]byte, error) {
+func (s *LocalStorageService) Get(bucket string, key string) ([]byte, error) {
 	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
@@ -112,27 +112,27 @@ func (s *LocalStoragePlugin) Get(bucket string, key string) ([]byte, error) {
 }
 
 // Delete will delete an item from Storage
-func (s *LocalStoragePlugin) Delete(bucket string, key string) error {
+func (s *LocalStorageService) Delete(bucket string, key string) error {
 	return s.storageDriver.DeleteFile(s.getFilename(bucket, key))
 }
 
-// New creates a new default StoragePlugin
-func New() (sdk.StoragePlugin, error) {
+// New creates a new default StorageService
+func New() (sdk.StorageService, error) {
 	storeDir := utils.GetEnv("LOCAL_BLOB_DIR", "/nitric/buckets/")
 	defaultDriver := &DefaultStorageDriver{}
 
-	return &LocalStoragePlugin{
+	return &LocalStorageService{
 		storeDir:      storeDir,
 		storageDriver: defaultDriver,
 	}, nil
 }
 
-// NewWithStorageDriver creates a new StoragePlugin with the given StorageDriver
+// NewWithStorageDriver creates a new StorageService with the given StorageDriver
 // primarily used for mock testing
-func NewWithStorageDriver(driver StorageDriver) (sdk.StoragePlugin, error) {
+func NewWithStorageDriver(driver StorageDriver) (sdk.StorageService, error) {
 	storeDir := utils.GetEnv("LOCAL_BLOB_DIR", "/nitric/buckets/")
 
-	return &LocalStoragePlugin{
+	return &LocalStorageService{
 		storeDir:      storeDir,
 		storageDriver: driver,
 	}, nil

@@ -1,4 +1,4 @@
-package lambda_plugin_test
+package lambda_service_test
 
 import (
 	"context"

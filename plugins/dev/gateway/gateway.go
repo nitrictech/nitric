@@ -68,7 +68,7 @@ func (s *HttpGateway) Start(handler sdk.GatewayHandler) error {
 
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (sdk.GatewayPlugin, error) {
+func New() (sdk.GatewayService, error) {
 	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
 	return &HttpGateway{

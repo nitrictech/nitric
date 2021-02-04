@@ -1,4 +1,4 @@
-package lambda_plugin
+package lambda_service
 
 import (
 	"context"
@@ -178,13 +178,13 @@ func (s *LambdaGateway) Start(handler sdk.GatewayHandler) error {
 	return fmt.Errorf("Something went wrong causing the lambda runtime to stop")
 }
 
-func New() (sdk.GatewayPlugin, error) {
+func New() (sdk.GatewayService, error) {
 	return &LambdaGateway{
 		runtime: lambda.Start,
 	}, nil
 }
 
-func NewWithRuntime(runtime LambdaRuntimeHandler) (sdk.GatewayPlugin, error) {
+func NewWithRuntime(runtime LambdaRuntimeHandler) (sdk.GatewayService, error) {
 	return &LambdaGateway{
 		runtime: runtime,
 	}, nil

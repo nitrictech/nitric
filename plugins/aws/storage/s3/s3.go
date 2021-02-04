@@ -1,4 +1,4 @@
-package s3_plugin
+package s3_service
 
 import (
 	"bytes"
@@ -20,14 +20,14 @@ const (
 	ErrCodeNoSuchTagSet = "NoSuchTagSet"
 )
 
-// S3Plugin - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
-type S3Plugin struct {
+// S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
+type S3StorageService struct {
 	sdk.UnimplementedStoragePlugin
 	client s3iface.S3API
 }
 
 // getBucketByName - Finds and returns a bucket by it's Nitric name
-func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
+func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
 
 	if err != nil {
@@ -64,7 +64,7 @@ func (s *S3Plugin) getBucketByName(bucket string) (*s3.Bucket, error) {
 }
 
 // Put - Writes a new item to a bucket
-func (s *S3Plugin) Put(bucket string, key string, object []byte) error {
+func (s *S3StorageService) Put(bucket string, key string, object []byte) error {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
@@ -81,7 +81,7 @@ func (s *S3Plugin) Put(bucket string, key string, object []byte) error {
 }
 
 // Get - Retrieves an item from a bucket
-func (s *S3Plugin) Get(bucket string, key string) ([]byte, error) {
+func (s *S3StorageService) Get(bucket string, key string) ([]byte, error) {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		resp, err := s.client.GetObject(&s3.GetObjectInput{
 			Bucket: b.Name,
@@ -101,7 +101,7 @@ func (s *S3Plugin) Get(bucket string, key string) ([]byte, error) {
 }
 
 // Delete - Deletes an item from a bucket
-func (s *S3Plugin) Delete(bucket string, key string) error {
+func (s *S3StorageService) Delete(bucket string, key string) error {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
 		_, err := s.client.DeleteObject(&s3.DeleteObjectInput{
@@ -116,7 +116,7 @@ func (s *S3Plugin) Delete(bucket string, key string) error {
 }
 
 // New creates a new default S3 storage plugin
-func New() (sdk.StoragePlugin, error) {
+func New() (sdk.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -130,14 +130,14 @@ func New() (sdk.StoragePlugin, error) {
 
 	s3Client := s3.New(sess)
 
-	return &S3Plugin{
+	return &S3StorageService{
 		client: s3Client,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(client s3iface.S3API) (sdk.StoragePlugin, error) {
-	return &S3Plugin{
+func NewWithClient(client s3iface.S3API) (sdk.StorageService, error) {
+	return &S3StorageService{
 		client: client,
 	}, nil
 }

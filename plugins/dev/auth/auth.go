@@ -1,4 +1,4 @@
-package auth_plugin
+package auth_service
 
 import (
 	"encoding/json"
@@ -12,8 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthPlugin - The dev implementation for the Nitric Auth Plugin
-type AuthPlugin struct {
+// LocalAuthService - The dev implementation for the Nitric Auth Plugin
+type LocalAuthService struct {
 	db ifaces.ScribbleIface
 }
 
@@ -25,7 +25,7 @@ type User struct {
 }
 
 // CreateUser - Create a new user using scribble as the DB
-func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password string) error {
+func (s *LocalAuthService) CreateUser(tenant string, id string, email string, password string) error {
 	collection := fmt.Sprintf("auth_%s", tenant)
 	// tmpUsers := make([]User, 0)
 	if usersStrs, err := s.db.ReadAll(collection); err == nil {
@@ -60,7 +60,7 @@ func (s *AuthPlugin) CreateUser(tenant string, id string, email string, password
 }
 
 // New - Instansiate a New concrete dev auth plugin
-func New() (sdk.AuthPlugin, error) {
+func New() (sdk.AuthService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
 
@@ -69,13 +69,13 @@ func New() (sdk.AuthPlugin, error) {
 		return nil, err
 	}
 
-	return &AuthPlugin{
+	return &LocalAuthService{
 		db: db,
 	}, nil
 }
 
-func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthPlugin {
-	return &AuthPlugin{
+func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthService {
+	return &LocalAuthService{
 		db: driver,
 	}
 }

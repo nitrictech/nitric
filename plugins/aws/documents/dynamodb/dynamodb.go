@@ -1,4 +1,4 @@
-package dynamodb_plugin
+package dynamodb_service
 
 import (
 	"fmt"
@@ -21,12 +21,12 @@ type NitricDocument struct {
 }
 
 // AWS DynamoDB AWS nitric plugin
-type DynamoDbPlugin struct {
+type DynamoDbDocumentService struct {
 	sdk.UnimplementedDocumentsPlugin
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDbPlugin) createStandardDocumentTable(name string) error {
+func (s *DynamoDbDocumentService) createStandardDocumentTable(name string) error {
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
@@ -55,7 +55,7 @@ func (s *DynamoDbPlugin) createStandardDocumentTable(name string) error {
 	return nil
 }
 
-func (s *DynamoDbPlugin) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
@@ -109,7 +109,7 @@ func (s *DynamoDbPlugin) CreateDocument(collection string, key string, document 
 	return nil
 }
 
-func (s *DynamoDbPlugin) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *DynamoDbDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
 	tableName := collection
 
 	input := &dynamodb.GetItemInput{
@@ -139,7 +139,7 @@ func (s *DynamoDbPlugin) GetDocument(collection string, key string) (map[string]
 	return document.Value, nil
 }
 
-func (s *DynamoDbPlugin) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
@@ -193,7 +193,7 @@ func (s *DynamoDbPlugin) UpdateDocument(collection string, key string, document 
 	return nil
 }
 
-func (s *DynamoDbPlugin) DeleteDocument(collection string, key string) error {
+func (s *DynamoDbDocumentService) DeleteDocument(collection string, key string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(collection),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -212,7 +212,7 @@ func (s *DynamoDbPlugin) DeleteDocument(collection string, key string) error {
 }
 
 // Create a New DynamoDB document plugin implementation
-func New() (sdk.DocumentsPlugin, error) {
+func New() (sdk.DocumentService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -227,14 +227,14 @@ func New() (sdk.DocumentsPlugin, error) {
 
 	dynamoClient := dynamodb.New(sess)
 
-	return &DynamoDbPlugin{
+	return &DynamoDbDocumentService{
 		client: dynamoClient,
 	}, nil
 }
 
 // Mainly used for mock testing to inject a mock client into this plugin
-func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.DocumentsPlugin, error) {
-	return &DynamoDbPlugin{
+func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.DocumentService, error) {
+	return &DynamoDbDocumentService{
 		client: client,
 	}, nil
 }

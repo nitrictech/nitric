@@ -1,4 +1,4 @@
-package pubsub_plugin_test
+package pubsub_service_test
 
 import (
 	"testing"

@@ -15,7 +15,7 @@ clean:
 	@rm -rf ./lib/
 
 # Run all tests
-test: test-membrane test-aws-plugins test-gcp-plugins test-local-plugins
+test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
 	@echo Done.
 
 # Generate interfaces
@@ -23,6 +23,10 @@ generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+
+# Build all service factory plugins
+plugins: aws-plugin gcp-plugin dev-plugin
+	@echo Done.
 
 # Test the membrane
 test-membrane: install-tools generate-proto 
@@ -43,21 +47,15 @@ aws-static-xp: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/aws/static_membrane.go
 
-aws-plugins:
-	@echo Building AWS plugins
-	@go build -buildmode=plugin -o lib/documents/dynamodb.so ./plugins/aws/plugins/dynamodb.go
-	@go build -buildmode=plugin -o lib/eventing/sns.so ./plugins/aws/plugins/sns.go
-	@go build -buildmode=plugin -o lib/gateway/lambda.so ./plugins/aws/plugins/lambda.go
-	@go build -buildmode=plugin -o lib/storage/s3.so ./plugins/aws/plugins/s3.go
+# Service Factory Plugin for Pluggable Membrane
+aws-plugin:
+	@echo Building AWS Service Factory Plugin
+	@go build -buildmode=plugin -o lib/plugins/aws.so ./plugins/aws/plugin.go
 
-# aws-docker-alpine:
-# 	@docker build . -f ./plugins/aws/alpine.dockerfile -t nitric:membrane-alpine-aws
-# aws-docker-debian:
-# 	@docker build . -f ./plugins/aws/debian.dockerfile -t nitric:membrane-debian-aws
 aws-docker-static:
 	@docker build . -f ./plugins/aws/aws.dockerfile -t nitricimages/membrane-aws
 
-aws-docker: aws-docker-static # aws-docker-alpine aws-docker-debian 
+aws-docker: aws-docker-static
 	@echo Built AWS Docker Images
 # END AWS Plugins
 
@@ -75,17 +73,11 @@ gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
 
-gcp-plugins:
-	@echo Building GCP plugins
-	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/plugins/firestore.go
-	@go build -buildmode=plugin -o lib/eventing/pubsub.so ./plugins/gcp/plugins/pubsub.go
-	@go build -buildmode=plugin -o lib/gateway/http.so ./plugins/gcp/plugins/http.go
-	@go build -buildmode=plugin -o lib/storage/storage.so ./plugins/gcp/plugins/storage.go
+# Service Factory Plugin for Pluggable Membrane
+gcp-plugin:
+	@echo Building GCP Service Factory Plugin
+	@go build -buildmode=plugin -o lib/plugins/gcp.so ./plugins/gcp/plugin.go
 
-# gcp-docker-alpine:
-# 	@docker build . -f ./plugins/gcp/alpine.dockerfile -t nitric:membrane-alpine-gcp
-# gcp-docker-debian:
-# 	@docker build . -f ./plugins/gcp/debian.dockerfile -t nitric:membrane-debian-gcp
 gcp-docker-static:
 	@docker build . -f ./plugins/gcp/gcp.dockerfile -t nitricimages/membrane-gcp
 
@@ -94,34 +86,23 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 # END GCP Plugins
 
 # BEGIN Local Plugins
-local-static: generate-proto
-	@echo Building static Local membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
-
-# Cross-platform Build
-local-static-xp: generate-proto
+# Cross-platform build only, this membrane is not for production use.
+dev-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
 
-local-plugins:
-	@echo Building Local plugins
-	@go build -buildmode=plugin -o lib/documents.so ./plugins/dev/plugins/documents.go
-	@go build -buildmode=plugin -o lib/eventing.so ./plugins/dev/plugins/eventing.go
-	@go build -buildmode=plugin -o lib/gateway.so ./plugins/dev/plugins/gateway.go
-	@go build -buildmode=plugin -o lib/storage.so ./plugins/dev/plugins/storage.go
+# Service Factory Plugin for Pluggable Membrane
+dev-plugin:
+	@echo Building Dev Service Factory Plugin
+	@go build -buildmode=plugin -o lib/plugins/dev.so ./plugins/dev/plugin.go
 
-# local-docker-alpine:
-# 	@docker build . -f ./plugins/dev/alpine.dockerfile -t nitric:membrane-alpine-local
-# local-docker-debian:
-# 	@docker build . -f ./plugins/dev/debian.dockerfile -t nitric:membrane-debian-local
-
-local-docker-static:
+dev-docker-static:
 	@docker build . -f ./plugins/dev/dev.dockerfile -t nitricimages/membrane-local
 
-local-docker: local-docker-static # local-docker-alpine local-docker-debian
+dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
-test-local-plugins:
+test-dev-plugins:
 	@echo Testing Local Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
 # END Local Plugins

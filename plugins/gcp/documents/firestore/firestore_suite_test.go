@@ -1,4 +1,4 @@
-package firestore_plugin_test
+package firestore_service_test
 
 import (
 	"testing"

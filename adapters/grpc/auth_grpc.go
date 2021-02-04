@@ -1,4 +1,4 @@
-package services
+package grpc
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type AuthServer struct {
 	pb.UnimplementedAuthServer
 	// TODO: Support multiple plugin registerations
 	// Just need to settle on a way of addressing them on calls
-	plugin sdk.AuthPlugin
+	plugin sdk.AuthService
 }
 
 func (s *AuthServer) checkPluginRegistered() (bool, error) {
@@ -41,7 +41,7 @@ func (s *AuthServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) 
 }
 
 // NewAuthServer - Returns a new concrete instance of the GRCP implementation for the Nitric Auth plugin
-func NewAuthServer(plugin sdk.AuthPlugin) pb.AuthServer {
+func NewAuthServer(plugin sdk.AuthService) pb.AuthServer {
 	return &AuthServer{
 		plugin: plugin,
 	}

@@ -1,4 +1,4 @@
-package services
+package grpc
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // GRPC Interface for registered Nitric Storage Plugins
 type StorageServer struct {
 	pb.UnimplementedStorageServer
-	storagePlugin sdk.StoragePlugin
+	storagePlugin sdk.StorageService
 }
 
 // Checks that the storage server is registered and returns gRPC Unimplemented error if not.
@@ -67,7 +67,7 @@ func (s *StorageServer) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.
 	}
 }
 
-func NewStorageServer(storagePlugin sdk.StoragePlugin) pb.StorageServer {
+func NewStorageServer(storagePlugin sdk.StorageService) pb.StorageServer {
 	return &StorageServer{
 		storagePlugin: storagePlugin,
 	}

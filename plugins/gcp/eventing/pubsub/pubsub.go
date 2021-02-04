@@ -1,4 +1,4 @@
-package pubsub_plugin
+package pubsub_service
 
 import (
 	"context"
@@ -13,12 +13,12 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-type PubsubPlugin struct {
+type PubsubEventService struct {
 	sdk.UnimplementedEventingPlugin
 	client ifaces.PubsubClient
 }
 
-func (s *PubsubPlugin) GetTopics() ([]string, error) {
+func (s *PubsubEventService) GetTopics() ([]string, error) {
 	iter := s.client.Topics(context.TODO())
 
 	var topics []string
@@ -39,7 +39,7 @@ func (s *PubsubPlugin) GetTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *PubsubEventService) Publish(topic string, event *sdk.NitricEvent) error {
 	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
@@ -61,7 +61,7 @@ func (s *PubsubPlugin) Publish(topic string, event *sdk.NitricEvent) error {
 	return nil
 }
 
-func New() (sdk.EventingPlugin, error) {
+func New() (sdk.EventService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -74,13 +74,13 @@ func New() (sdk.EventingPlugin, error) {
 		return nil, fmt.Errorf("pubsub client error: %v", clientError)
 	}
 
-	return &PubsubPlugin{
+	return &PubsubEventService{
 		client: adapters.AdaptPubsubClient(client),
 	}, nil
 }
 
-func NewWithClient(client ifaces.PubsubClient) (sdk.EventingPlugin, error) {
-	return &PubsubPlugin{
+func NewWithClient(client ifaces.PubsubClient) (sdk.EventService, error) {
+	return &PubsubEventService{
 		client: client,
 	}, nil
 }

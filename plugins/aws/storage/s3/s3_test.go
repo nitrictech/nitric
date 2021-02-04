@@ -1,4 +1,4 @@
-package s3_plugin_test
+package s3_service_test
 
 import (
 	"github.com/nitric-dev/membrane/plugins/aws/mocks"
