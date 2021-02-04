@@ -43,12 +43,16 @@ aws-static-xp: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/aws/static_membrane.go
 
-aws-plugins:
-	@echo Building AWS plugins
-	@go build -buildmode=plugin -o lib/documents/dynamodb.so ./plugins/aws/plugins/dynamodb.go
-	@go build -buildmode=plugin -o lib/eventing/sns.so ./plugins/aws/plugins/sns.go
-	@go build -buildmode=plugin -o lib/gateway/lambda.so ./plugins/aws/plugins/lambda.go
-	@go build -buildmode=plugin -o lib/storage/s3.so ./plugins/aws/plugins/s3.go
+# aws-plugins:
+# 	@echo Building AWS plugins
+# 	@go build -buildmode=plugin -o lib/documents/dynamodb.so ./plugins/aws/plugins/dynamodb.go
+# 	@go build -buildmode=plugin -o lib/eventing/sns.so ./plugins/aws/plugins/sns.go
+# 	@go build -buildmode=plugin -o lib/gateway/lambda.so ./plugins/aws/plugins/lambda.go
+# 	@go build -buildmode=plugin -o lib/storage/s3.so ./plugins/aws/plugins/s3.go
+
+aws-plugin:
+	@echo Building AWS plugin
+	@go build -buildmode=plugin -o lib/plugins/aws.so ./plugins/aws/plugin.go
 
 # aws-docker-alpine:
 # 	@docker build . -f ./plugins/aws/alpine.dockerfile -t nitric:membrane-alpine-aws
@@ -75,12 +79,16 @@ gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/gcp/static_membrane.go
 
-gcp-plugins:
+# gcp-plugins:
+# 	@echo Building GCP plugins
+# 	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/plugins/firestore.go
+# 	@go build -buildmode=plugin -o lib/eventing/pubsub.so ./plugins/gcp/plugins/pubsub.go
+# 	@go build -buildmode=plugin -o lib/gateway/http.so ./plugins/gcp/plugins/http.go
+# 	@go build -buildmode=plugin -o lib/storage/storage.so ./plugins/gcp/plugins/storage.go
+
+gcp-plugin:
 	@echo Building GCP plugins
-	@go build -buildmode=plugin -o lib/documents/firestore.so ./plugins/gcp/plugins/firestore.go
-	@go build -buildmode=plugin -o lib/eventing/pubsub.so ./plugins/gcp/plugins/pubsub.go
-	@go build -buildmode=plugin -o lib/gateway/http.so ./plugins/gcp/plugins/http.go
-	@go build -buildmode=plugin -o lib/storage/storage.so ./plugins/gcp/plugins/storage.go
+	@go build -buildmode=plugin -o lib/plugins/gcp.so ./plugins/gcp/plugin.go
 
 # gcp-docker-alpine:
 # 	@docker build . -f ./plugins/gcp/alpine.dockerfile -t nitric:membrane-alpine-gcp
