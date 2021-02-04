@@ -160,8 +160,8 @@ make gcp-static-xp
 # Make the AWS Static Cross-platform binary
 make aws-static-xp
 
-# Set Env, then Run the membrane binary
-GATEWAY_ENVIRONMENT=http; ./bin/membrane
+# Set environment variable in subshell, then run the membrane binary
+(export GATEWAY_ENVIRONMENT=http; ./bin/membrane)
 ```
 
  
