@@ -15,7 +15,7 @@ clean:
 	@rm -rf ./lib/
 
 # Run all tests
-test: test-membrane test-aws-plugins test-gcp-plugins test-local-plugins
+test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
 	@echo Done.
 
 # Generate interfaces
@@ -23,6 +23,10 @@ generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+
+# Build all service factory plugins
+plugins: aws-plugin gcp-plugin dev-plugin
+	@echo Done.
 
 # Test the membrane
 test-membrane: install-tools generate-proto 
@@ -51,7 +55,7 @@ aws-plugin:
 aws-docker-static:
 	@docker build . -f ./plugins/aws/aws.dockerfile -t nitricimages/membrane-aws
 
-aws-docker: aws-docker-static # aws-docker-alpine aws-docker-debian 
+aws-docker: aws-docker-static
 	@echo Built AWS Docker Images
 # END AWS Plugins
 
@@ -82,27 +86,23 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 # END GCP Plugins
 
 # BEGIN Local Plugins
-local-static: generate-proto
-	@echo Building static Local membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
-
-# Cross-platform Build
-local-static-xp: generate-proto
+# Cross-platform build only, this membrane is not for production use.
+dev-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/dev/static_membrane.go
 
 # Service Factory Plugin for Pluggable Membrane
 dev-plugin:
-	@echo Building Development Service Factory Plugin
+	@echo Building Dev Service Factory Plugin
 	@go build -buildmode=plugin -o lib/plugins/dev.so ./plugins/dev/plugin.go
 
-local-docker-static:
+dev-docker-static:
 	@docker build . -f ./plugins/dev/dev.dockerfile -t nitricimages/membrane-local
 
-local-docker: local-docker-static # local-docker-alpine local-docker-debian
+dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
-test-local-plugins:
+test-dev-plugins:
 	@echo Testing Local Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
 # END Local Plugins
