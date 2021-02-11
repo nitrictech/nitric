@@ -14,7 +14,7 @@ Example providers:
 
 Gateway plugins are used to abstract implementation detail for application input/output. This usually involves presenting some kind of external interface (for example a HTTP server), normalizing incoming data from this interface to pass to the hosted application (over HTTP) and then denormalizing output to be returned back to the hosted environment. 
 
-Offical Gateway Plugins:
+Official Gateway Plugins:
 
 * [AWS Lambda](../aws/gateway/lambda/README.md)
 * [AWS HTTP](../aws/gateway/http/README.md) (typically used with ECS)
@@ -32,9 +32,9 @@ Official Eventing Plugins:
 
 ## Documents Plugin
 
-Documents plugins are used to provde a simple document store interface, that allows users to store simple object data under a given collection and key value.
+Documents plugins are used to provide a simple document store interface, that allows users to store simple object data under a given collection and key value.
 
-Offical Documents Plugins:
+Official Documents Plugins:
 * [AWS Dynamodb](../aws/documents/dynamodb/README.md)
 * [GCP Firestore](../gcp/documents/firestore/README.md)
 * [Dev Documents](../dev/documents/README.md)
@@ -52,7 +52,7 @@ Official Queue Plugins:
 
 Storage plugins provide access to provide blob stores, allowing storage of files using a simple bucket/key interface for storage and retrieval.
 
-Offical Storage Plugins:
+Official Storage Plugins:
 * [AWS S3](../aws/storage/s3/README.md)
 * [GCP Cloud Storage](../gcp/storage/storage/README.md)
 * [Dev Storage](../dev/storage/README.md)
@@ -62,7 +62,7 @@ Offical Storage Plugins:
 
 Auth plugins allow for the creation and management of users and tenants as well as login/verification of users and their tokens.
 
-Offical Auth Plugins:
+Official Auth Plugins:
 * [AWS Cognito](../aws/auth/cognito/README.md)
 * [GCP Identity Platform](../gcp/auth/identityplatform/README.md)
 * [Dev Auth](../dev/auth/README.md)

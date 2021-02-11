@@ -2,10 +2,10 @@
 
 ## Architecture
 
-The Nitric membrane is designed to seperate application code from the non-functional concerns of an application's hosting environment.
+The Nitric membrane is designed to separate application code from the non-functional concerns of an application's hosting environment.
 
 <p align="center">
-  <img src="./docs/assets/architecture.png" alt="Sublime's custom image"/>
+  <img src="docs/assets/architecture.png" alt="nitric membrane architecture diagram"/>
 </p>
 
 Documenation on key components is availabe in the [Membrane SDK](./plugins/sdk/README.md).
