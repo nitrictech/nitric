@@ -118,7 +118,8 @@ func (s *Membrane) startChildProcess() error {
 	// Only wait for 10s, if we timeout that will be it
 	// TODO: make app startup time configurable
 	maxWaitTime := time.Duration(s.childTimeoutSeconds) * time.Second
-	pollInterval := time.Duration(200) * time.Millisecond
+	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
+	pollInterval := time.Duration(15) * time.Millisecond
 
 	var waitedTime = time.Duration(0)
 	for {
