@@ -59,6 +59,32 @@ aws-docker: aws-docker-static
 	@echo Built AWS Docker Images
 # END AWS Plugins
 
+# BEGIN Azure Plugins
+test-azure-plugins:
+	@echo Testing Azure Plugins
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/azure/...
+
+azure-static: generate-proto
+	@echo Building static Azure membrane
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/azure/static_membrane.go
+
+# Cross-platform Build
+azure-static-xp: generate-proto
+	@echo Building static Azure membrane
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/azure/static_membrane.go
+
+# Service Factory Plugin for Pluggable Membrane
+azure-plugin:
+	@echo Building Azure Service Factory Plugin
+	@go build -buildmode=plugin -o lib/plugins/azure.so ./plugins/azure/plugin.go
+
+azure-docker-static:
+	@docker build . -f ./plugins/azure/azure.dockerfile -t nitricimages/membrane-azure
+
+azure-docker: azure-docker-static # azure-docker-alpine azure-docker-debian
+	@echo Built Azure Docker Images
+# END Azure Plugins
+
 # BEGIN GCP Plugins
 test-gcp-plugins:
 	@echo Testing GCP Plugins

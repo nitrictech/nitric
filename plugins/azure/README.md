@@ -1,4 +1,4 @@
-# Nitric plugins for AWS
+# Nitric plugins for Microsoft Azure
 
 ## Development
 
@@ -14,7 +14,7 @@
 ### Building Static Membrane Image
 From the repository root run
 ```bash
-make aws-docker-static
+make azure-docker-static
 ```
 
 ### Building Plugin Images
@@ -24,12 +24,12 @@ make aws-docker-static
 
 Alpine Linux
 ```bash
-make aws-docker-alpine
+make azure-docker-alpine
 ```
 
 Debian
 ```bash
-make aws-docker-debian
+make azure-docker-debian
 ```
 
 > __Note:__ Separate distributions required between glibc/musl as dynamic linker is used for golang plugin support
