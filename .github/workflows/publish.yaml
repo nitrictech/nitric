@@ -54,3 +54,13 @@ jobs:
           tags: |
             nitricimages/membrane-gcp:latest
             nitricimages/membrane-gcp:${{ steps.tag.outputs.TAG }}
+      # Push Azure image
+      - name: Push Azure Static image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./plugins/azure/azure.dockerfile
+          push: true
+          tags: |
+            nitricimages/membrane-azure:latest
+            nitricimages/membrane-azure:${{ steps.tag.outputs.TAG }}
