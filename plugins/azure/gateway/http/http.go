@@ -1,16 +1,20 @@
 package http_service
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/utils"
 )
 
 // HttpService - The HTTP gateway plugin for Azure
 type HttpService struct {
 	address string
 }
- 
+
 func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
@@ -22,7 +26,6 @@ func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 		var contentType = headers.Get("Content-Type")
 		requestId := headers.Get("x-nitric-request-id")
 		payloadType := headers.Get("x-nitric-payload-type")
-		var payload = bytes
 
 		// TODO: We need to acknowledge event grid messages sent to us as being valid
 
@@ -34,6 +37,8 @@ func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 			// TODO: Remove this unless in debug mode...
 			resp.Write([]byte(err.Error()))
 		}
+
+		var payload = bytes
 
 		// Example eventgrid handshake
 		//[
@@ -54,7 +59,7 @@ func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 
 		// Validate subscription path
 		if headers.Get("aeg-event-type") == "SubscriptionValidation" {
-			var payload = bytes
+
 			jsonBody := make([]map[string]interface{}, 0)
 			// TODO: verify topic for validity
 			if err = json.Unmarshal(bytes, &jsonBody); err == nil {
@@ -66,7 +71,7 @@ func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 					resp.Header().Add("Content-Type", "application/json")
 					resp.WriteHeader(200)
 					// TODO: Remove this unless in debug mode...
-					resp.Write([]byte(fmt.Sprintf("{\"validationResponse\":\"%s\"}", validationCode))
+					resp.Write([]byte(fmt.Sprintf("{\"validationResponse\":\"%s\"}", validationCode)))
 					return
 				}
 			}
@@ -74,7 +79,7 @@ func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 			resp.Header().Add("Content-Type", "text/plain")
 			resp.WriteHeader(200)
 			// TODO: Remove this unless in debug mode...
-			resp.Write([]byte("There was an error validating eventgrid subscription")
+			resp.Write([]byte("There was an error validating eventgrid subscription"))
 			return
 		}
 
