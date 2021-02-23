@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/plugins/sdk"
 	"log"
 	"strconv"
+
+	http_service "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
+	"github.com/nitric-dev/membrane/plugins/sdk"
 
 	"github.com/nitric-dev/membrane/membrane"
 	"github.com/nitric-dev/membrane/utils"
@@ -21,20 +23,12 @@ func main() {
 		log.Fatalf("There was an error initialising the m server: %v", err)
 	}
 
-	//eventingPlugin, _ := eventing.New()
-	//documentsPlugin, _ := documents.New()
-	//storagePlugin, _ := storage.New()
-	//queuePlugin, _ := queue.New()
-	//authPlugin, _ := auth.New()
-	//gatewayPlugin, _ := httpGateway.New()
 	authPlugin := &sdk.UnimplementedAuthPlugin{}
 	documentsPlugin := &sdk.UnimplementedDocumentsPlugin{}
 	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
-	gatewayPlugin := &sdk.UnimplementedGatewayPlugin{}
+	gatewayPlugin, _ := http_service.New()
 	storagePlugin := &sdk.UnimplementedStoragePlugin{}
 	queuePlugin := &sdk.UnimplementedQueuePlugin{}
-
-
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,

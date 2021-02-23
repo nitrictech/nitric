@@ -1,11 +1,11 @@
 package main
 
 import (
+	http_service "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 )
 
 type AzureServiceFactory struct {
-
 }
 
 func New() sdk.ServiceFactory {
@@ -29,7 +29,7 @@ func (p *AzureServiceFactory) NewEventService() (sdk.EventService, error) {
 
 // NewGatewayPlugin - Returns Azure _ Gateway plugin
 func (p *AzureServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
-	return &sdk.UnimplementedGatewayPlugin{}, nil
+	return http_service.New()
 }
 
 // NewQueuePlugin - Returns Azure _ based queue plugin
