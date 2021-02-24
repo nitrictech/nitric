@@ -2,7 +2,7 @@ package sdk
 
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
-	NewAuthService() (AuthService, error)
+	NewAuthService() (UserService, error)
 	NewDocumentService() (DocumentService, error)
 	NewEventService() (EventService, error)
 	NewGatewayService() (GatewayService, error)
@@ -25,7 +25,7 @@ type UnimplementedServiceFactory struct {
 var _ ServiceFactory = (*UnimplementedServiceFactory)(nil)
 
 // NewAuthPlugin - Unimplemented
-func (p *UnimplementedServiceFactory) NewAuthService() (AuthService, error) {
+func (p *UnimplementedServiceFactory) NewAuthService() (UserService, error) {
 	return nil, nil
 }
 

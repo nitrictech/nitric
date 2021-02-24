@@ -83,7 +83,7 @@ func (s *IdentityPlatformAuthService) CreateUser(tenant string, id string, email
 }
 
 // New - Creates a new instance of the Identity Platform auth plugin
-func New() (sdk.AuthService, error) {
+func New() (sdk.UserService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -112,7 +112,7 @@ func New() (sdk.AuthService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces.FirebaseAuth) sdk.AuthService {
+func NewWithClient(client ifaces.FirebaseAuth) sdk.UserService {
 	return &IdentityPlatformAuthService{
 		admin: client,
 	}

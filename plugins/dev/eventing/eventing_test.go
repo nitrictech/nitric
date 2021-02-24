@@ -53,7 +53,7 @@ var _ = Describe("Eventing", func() {
 			pubsubClient, _ := eventing_plugin.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the available topics", func() {
-				topics, err := pubsubClient.GetTopics()
+				topics, err := pubsubClient.ListTopics()
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("test"))
 			})
@@ -64,7 +64,7 @@ var _ = Describe("Eventing", func() {
 			pubsubClient, _ := eventing_plugin.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the no topics", func() {
-				topics, err := pubsubClient.GetTopics()
+				topics, err := pubsubClient.ListTopics()
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(HaveLen(0))

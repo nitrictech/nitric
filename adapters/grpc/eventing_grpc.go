@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc/codes"
@@ -11,28 +10,28 @@ import (
 )
 
 // GRPC Interface for registered Nitric Eventing Plugins
-type EventingServer struct {
-	pb.UnimplementedEventingServer
-	eventingPlugin sdk.EventService
+type EventServer struct {
+	pb.UnimplementedEventServer
+	eventPlugin sdk.EventService
 }
 
-func (s *EventingServer) checkPluginRegistered() (bool, error) {
-	if s.eventingPlugin == nil {
-		return false, status.Errorf(codes.Unimplemented, "Eventing plugin not registered")
+func (s *EventServer) checkPluginRegistered() (bool, error) {
+	if s.eventPlugin == nil {
+		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
 	}
 
 	return true, nil
 }
 
-func (s *EventingServer) Publish(ctx context.Context, req *pb.PublishRequest) (*empty.Empty, error) {
+func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		event := &sdk.NitricEvent{
 			RequestId:   req.GetEvent().GetRequestId(),
 			PayloadType: req.GetEvent().GetPayloadType(),
 			Payload:     req.GetEvent().GetPayload().AsMap(),
 		}
-		if err := s.eventingPlugin.Publish(req.GetTopicName(), event); err == nil {
-			return &empty.Empty{}, nil
+		if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
+			return &pb.EventPublishResponse{}, nil
 		} else {
 			return nil, err
 		}
@@ -41,12 +40,38 @@ func (s *EventingServer) Publish(ctx context.Context, req *pb.PublishRequest) (*
 	}
 }
 
-func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopicsReply, error) {
+func NewEventServer(eventingPlugin sdk.EventService) pb.EventServer {
+	return &EventServer{
+		eventPlugin: eventingPlugin,
+	}
+}
+
+type TopicServer struct {
+	pb.UnimplementedTopicServer
+	eventPlugin sdk.EventService
+}
+
+func (s *TopicServer) checkPluginRegistered() (bool, error) {
+	if s.eventPlugin == nil {
+		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
+	}
+
+	return true, nil
+}
+
+func (s *TopicServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 
-		if res, err := s.eventingPlugin.GetTopics(); err == nil {
-			return &pb.GetTopicsReply{
-				Topics: res,
+		if res, err := s.eventPlugin.ListTopics(); err == nil {
+			topics := make([]*pb.NitricTopic, len(res))
+			for i, topicName := range res {
+				topics[i] = &pb.NitricTopic{
+					Name: topicName,
+				}
+			}
+
+			return &pb.TopicListResponse{
+				Topics: topics,
 			}, nil
 		} else {
 			return nil, err
@@ -56,8 +81,10 @@ func (s *EventingServer) GetTopics(context.Context, *empty.Empty) (*pb.GetTopics
 	}
 }
 
-func NewEventingServer(eventingPlugin sdk.EventService) pb.EventingServer {
-	return &EventingServer{
-		eventingPlugin: eventingPlugin,
+func NewTopicServer(eventService sdk.EventService) pb.TopicServer {
+	// The external topic/event interfaces are separate. Internally, they're fulfilled together,
+	// so the event plugin is all that's needed for both the Event and Topic servers currently.
+	return &TopicServer{
+		eventPlugin: eventService,
 	}
 }

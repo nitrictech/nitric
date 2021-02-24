@@ -14,7 +14,7 @@ import (
 )
 
 var _ = Describe("Pubsub", func() {
-	Context("Push", func() {
+	Context("BatchPush", func() {
 
 		When("Publishing to a queue that exists", func() {
 			mockPubsubClient := mocks.NewMockPubsubClient(
@@ -124,7 +124,7 @@ var _ = Describe("Pubsub", func() {
 			//mockPubsubClient := mocks.NewMockPubsubClient([]string{})
 			//queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 			//It("Should return the messages that failed to publish", func() {
-			//	_, err := queuePlugin.Push("test", []sdk.NitricEvent{{
+			//	_, err := queuePlugin.BatchPush("test", []sdk.NitricEvent{{
 			//		RequestId:   "1234",
 			//		PayloadType: "test-payload",
 			//		Payload: map[string]interface{}{

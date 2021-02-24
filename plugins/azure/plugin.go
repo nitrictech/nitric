@@ -13,7 +13,7 @@ func New() sdk.ServiceFactory {
 }
 
 // NewAuthPlugin - Returns Azure _ based auth plugin
-func (p *AzureServiceFactory) NewAuthService() (sdk.AuthService, error) {
+func (p *AzureServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return &sdk.UnimplementedAuthPlugin{}, nil
 }
 

@@ -19,7 +19,7 @@ func New() sdk.ServiceFactory {
 }
 
 // NewAuthPlugin - Returns AWS Cognito based auth plugin
-func (p *AWSServiceFactory) NewAuthService() (sdk.AuthService, error) {
+func (p *AWSServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return cognito_plugin.New()
 }
 

@@ -2,7 +2,6 @@ package sns_service_test
 
 import (
 	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -53,7 +52,7 @@ var _ = Describe("Sns", func() {
 			})
 
 			It("Should return the available topics", func() {
-				topics, err := eventingClient.GetTopics()
+				topics, err := eventingClient.ListTopics()
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElements("test"))

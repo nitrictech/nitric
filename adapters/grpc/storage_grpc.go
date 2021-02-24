@@ -24,12 +24,10 @@ func (s *StorageServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *StorageServer) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutReply, error) {
+func (s *StorageServer) Put(ctx context.Context, req *pb.StoragePutRequest) (*pb.StoragePutResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.storagePlugin.Put(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
-			return &pb.PutReply{
-				Success: true,
-			}, nil
+			return &pb.StoragePutResponse{}, nil
 		} else {
 			return nil, err
 		}
@@ -38,10 +36,10 @@ func (s *StorageServer) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutRep
 	}
 }
 
-func (s *StorageServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetReply, error) {
+func (s *StorageServer) Get(ctx context.Context, req *pb.StorageGetRequest) (*pb.StorageGetResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if object, err := s.storagePlugin.Get(req.GetBucketName(), req.GetKey()); err == nil {
-			return &pb.GetReply{
+			return &pb.StorageGetResponse{
 				Body: object,
 			}, nil
 		} else {
@@ -52,12 +50,10 @@ func (s *StorageServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetRep
 	}
 }
 
-func (s *StorageServer) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteReply, error) {
+func (s *StorageServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest) (*pb.StorageDeleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {
-			return &pb.DeleteReply{
-				Success: true,
-			}, nil
+			return &pb.StorageDeleteResponse{}, nil
 		} else {
 			// TODO: handle specific error codes.
 			return nil, err

@@ -18,7 +18,7 @@ type PubsubEventService struct {
 	client ifaces.PubsubClient
 }
 
-func (s *PubsubEventService) GetTopics() ([]string, error) {
+func (s *PubsubEventService) ListTopics() ([]string, error) {
 	iter := s.client.Topics(context.TODO())
 
 	var topics []string

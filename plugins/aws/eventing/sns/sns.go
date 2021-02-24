@@ -68,7 +68,7 @@ func (s *SnsEventService) Publish(topic string, event *sdk.NitricEvent) error {
 	return nil
 }
 
-func (s *SnsEventService) GetTopics() ([]string, error) {
+func (s *SnsEventService) ListTopics() ([]string, error) {
 	topicsOutput, error := s.client.ListTopics(&sns.ListTopicsInput{})
 
 	if error != nil {
