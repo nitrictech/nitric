@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Load the concrete service implementations
-	var authService sdk.AuthService = nil
+	var authService sdk.UserService = nil
 	var documentsService sdk.DocumentService = nil
 	var eventingService sdk.EventService = nil
 	var gatewayService sdk.GatewayService = nil

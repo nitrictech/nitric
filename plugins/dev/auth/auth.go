@@ -60,7 +60,7 @@ func (s *LocalAuthService) CreateUser(tenant string, id string, email string, pa
 }
 
 // New - Instansiate a New concrete dev auth plugin
-func New() (sdk.AuthService, error) {
+func New() (sdk.UserService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
 
@@ -74,7 +74,7 @@ func New() (sdk.AuthService, error) {
 	}, nil
 }
 
-func NewWithDriver(driver ifaces.ScribbleIface) sdk.AuthService {
+func NewWithDriver(driver ifaces.ScribbleIface) sdk.UserService {
 	return &LocalAuthService{
 		db: driver,
 	}

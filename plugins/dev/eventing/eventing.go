@@ -57,7 +57,7 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 }
 
 // Get a list of available topics
-func (s *LocalEventService) GetTopics() ([]string, error) {
+func (s *LocalEventService) ListTopics() ([]string, error) {
 	keys := []string{}
 
 	for key, _ := range s.subscriptions {

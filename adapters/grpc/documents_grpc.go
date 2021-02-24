@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"google.golang.org/grpc/codes"
@@ -13,7 +12,7 @@ import (
 
 // GRPC Interface for registered Nitric Documents Plugins
 type DocumentsServer struct {
-	pb.UnimplementedDocumentsServer
+	pb.UnimplementedDocumentServer
 	// TODO: Support multiple plugin registerations
 	// Just need to settle on a way of addressing them on calls
 	documentsPlugin sdk.DocumentService
@@ -27,10 +26,10 @@ func (s *DocumentsServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *DocumentsServer) CreateDocument(ctx context.Context, req *pb.CreateDocumentRequest) (*empty.Empty, error) {
+func (s *DocumentsServer) CreateDocument(ctx context.Context, req *pb.DocumentCreateRequest) (*pb.DocumentCreateResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.documentsPlugin.CreateDocument(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
-			return &empty.Empty{}, nil
+			return &pb.DocumentCreateResponse{}, nil
 		} else {
 			// Case: Failed to create the document
 			// TODO: Translate from internal Documents Plugin Error
@@ -42,11 +41,11 @@ func (s *DocumentsServer) CreateDocument(ctx context.Context, req *pb.CreateDocu
 	}
 }
 
-func (s *DocumentsServer) GetDocument(ctx context.Context, req *pb.GetDocumentRequest) (*pb.GetDocumentReply, error) {
+func (s *DocumentsServer) GetDocument(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if document, err := s.documentsPlugin.GetDocument(req.GetCollection(), req.GetKey()); err == nil {
 			if doc, err := structpb.NewStruct(document); err == nil {
-				return &pb.GetDocumentReply{
+				return &pb.DocumentGetResponse{
 					Document: doc,
 				}, nil
 			} else {
@@ -66,10 +65,10 @@ func (s *DocumentsServer) GetDocument(ctx context.Context, req *pb.GetDocumentRe
 	}
 }
 
-func (s *DocumentsServer) UpdateDocument(ctx context.Context, req *pb.UpdateDocumentRequest) (*empty.Empty, error) {
+func (s *DocumentsServer) UpdateDocument(ctx context.Context, req *pb.DocumentUpdateRequest) (*pb.DocumentUpdateResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.documentsPlugin.CreateDocument(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
-			return &empty.Empty{}, nil
+			return &pb.DocumentUpdateResponse{}, nil
 		} else {
 			// Case: Failed to create the document
 			// TODO: Translate from internal Documents Plugin Error
@@ -81,10 +80,10 @@ func (s *DocumentsServer) UpdateDocument(ctx context.Context, req *pb.UpdateDocu
 	}
 }
 
-func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*empty.Empty, error) {
+func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.documentsPlugin.DeleteDocument(req.GetCollection(), req.GetKey()); err == nil {
-			return &empty.Empty{}, nil
+			return &pb.DocumentDeleteResponse{}, nil
 		} else {
 			// Case: Failed to create the document
 			// TODO: Translate from internal Documents Plugin Error
@@ -96,7 +95,7 @@ func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocu
 	}
 }
 
-func NewDocumentsServer(documentsPlugin sdk.DocumentService) pb.DocumentsServer {
+func NewDocumentsServer(documentsPlugin sdk.DocumentService) pb.DocumentServer {
 	return &DocumentsServer{
 		documentsPlugin: documentsPlugin,
 	}

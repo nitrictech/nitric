@@ -24,7 +24,7 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushResponse, error) {
+func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushRequest) (*pb.QueueBatchPushResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Translate events
 		evts := make([]sdk.NitricEvent, len(req.GetEvents()))
@@ -37,10 +37,10 @@ func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushRe
 		}
 
 		if resp, err := s.plugin.Push(req.GetQueue(), evts); err == nil {
-			failedMessages := make([]*pb.FailedMessage, len(resp.FailedMessages))
+			failedEvents := make([]*pb.FailedEvent, len(resp.FailedMessages))
 			for i, fmsg := range resp.FailedMessages {
 				st, _ := structpb.NewStruct(fmsg.Event.Payload)
-				failedMessages[i] = &pb.FailedMessage{
+				failedEvents[i] = &pb.FailedEvent{
 					Message: fmsg.Message,
 					Event: &pb.NitricEvent{
 						RequestId:   fmsg.Event.RequestId,
@@ -49,8 +49,8 @@ func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushRe
 					},
 				}
 			}
-			return &pb.PushResponse{
-				FailedMessages: failedMessages,
+			return &pb.QueueBatchPushResponse{
+				FailedEvents: failedEvents,
 			}, nil
 		} else {
 			return nil, err
@@ -60,7 +60,7 @@ func (s *QueueServer) Push(ctx context.Context, req *pb.PushRequest) (*pb.PushRe
 	}
 }
 
-func (s *QueueServer) Pop(ctx context.Context, req *pb.PopRequest) (*pb.PopResponse, error) {
+func (s *QueueServer) Pop(ctx context.Context, req *pb.QueuePopRequest) (*pb.QueuePopResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		depth := uint32(req.GetDepth())
@@ -90,7 +90,7 @@ func (s *QueueServer) Pop(ctx context.Context, req *pb.PopRequest) (*pb.PopRespo
 		}
 
 		// Return the queue items
-		res := pb.PopResponse{
+		res := pb.QueuePopResponse{
 			Items: grpcQueueItems,
 		}
 		return &res, nil
@@ -99,7 +99,7 @@ func (s *QueueServer) Pop(ctx context.Context, req *pb.PopRequest) (*pb.PopRespo
 	}
 }
 
-func (s *QueueServer) Complete(ctx context.Context, req *pb.CompleteRequest) (*pb.CompleteResponse, error) {
+func (s *QueueServer) Complete(ctx context.Context, req *pb.QueueCompleteRequest) (*pb.QueueCompleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		queueName := req.GetQueue()
@@ -112,7 +112,7 @@ func (s *QueueServer) Complete(ctx context.Context, req *pb.CompleteRequest) (*p
 		}
 
 		// Return a successful response
-		return &pb.CompleteResponse{}, nil
+		return &pb.QueueCompleteResponse{}, nil
 	} else {
 		return nil, err
 	}

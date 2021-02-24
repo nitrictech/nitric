@@ -12,7 +12,7 @@ import (
 )
 
 var _ = Describe("Queue", func() {
-	Context("Push", func() {
+	Context("BatchPush", func() {
 		When("The queue is empty", func() {
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)

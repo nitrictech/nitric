@@ -31,7 +31,7 @@ type MembraneOptions struct {
 	StoragePlugin   sdk.StorageService
 	QueuePlugin     sdk.QueueService
 	GatewayPlugin   sdk.GatewayService
-	AuthPlugin      sdk.AuthService
+	AuthPlugin      sdk.UserService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -55,12 +55,12 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	eventingPlugin  sdk.EventService
+	eventPlugin     sdk.EventService
 	documentsPlugin sdk.DocumentService
 	storagePlugin   sdk.StorageService
 	gatewayPlugin   sdk.GatewayService
 	queuePlugin     sdk.QueueService
-	authPlugin      sdk.AuthService
+	authPlugin      sdk.UserService
 
 	// Tolerate if adapters are not available
 	// Not this does not include the gateway service
@@ -77,8 +77,12 @@ func (s *Membrane) log(log string) {
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() v1.EventingServer {
-	return grpc2.NewEventingServer(s.eventingPlugin)
+func (s *Membrane) createEventingServer() v1.EventServer {
+	return grpc2.NewEventServer(s.eventPlugin)
+}
+
+func (s *Membrane) createTopicServer() v1.TopicServer {
+	return grpc2.NewTopicServer(s.eventPlugin)
 }
 
 // Create a new Nitric Storage Server
@@ -86,7 +90,7 @@ func (s *Membrane) createStorageServer() v1.StorageServer {
 	return grpc2.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() v1.DocumentsServer {
+func (s *Membrane) createDocumentsServer() v1.DocumentServer {
 	return grpc2.NewDocumentsServer(s.documentsPlugin)
 }
 
@@ -94,8 +98,8 @@ func (s *Membrane) createQueueServer() v1.QueueServer {
 	return grpc2.NewQueueServer(s.queuePlugin)
 }
 
-func (s *Membrane) createAuthServer() v1.AuthServer {
-	return grpc2.NewAuthServer(s.authPlugin)
+func (s *Membrane) createUserServer() v1.UserServer {
+	return grpc2.NewUserServer(s.authPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -202,10 +206,13 @@ func (s *Membrane) Start() error {
 
 	// Load & Register the GRPC service plugins
 	eventingServer := s.createEventingServer()
-	v1.RegisterEventingServer(grpcServer, eventingServer)
+	v1.RegisterEventServer(grpcServer, eventingServer)
+
+	topicServer := s.createTopicServer()
+	v1.RegisterTopicServer(grpcServer, topicServer)
 
 	documentsServer := s.createDocumentsServer()
-	v1.RegisterDocumentsServer(grpcServer, documentsServer)
+	v1.RegisterDocumentServer(grpcServer, documentsServer)
 
 	storageServer := s.createStorageServer()
 	v1.RegisterStorageServer(grpcServer, storageServer)
@@ -213,8 +220,8 @@ func (s *Membrane) Start() error {
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServer(grpcServer, queueServer)
 
-	authServer := s.createAuthServer()
-	v1.RegisterAuthServer(grpcServer, authServer)
+	authServer := s.createUserServer()
+	v1.RegisterUserServer(grpcServer, authServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
@@ -284,7 +291,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     childTimeout,
 		authPlugin:              options.AuthPlugin,
-		eventingPlugin:          options.EventingPlugin,
+		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		documentsPlugin:         options.DocumentsPlugin,
 		queuePlugin:             options.QueuePlugin,

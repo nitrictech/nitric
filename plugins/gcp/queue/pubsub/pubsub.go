@@ -38,7 +38,7 @@ func (s *PubsubQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.
 		return nil, fmt.Errorf("Queue: %s does not exist", queue)
 	}
 
-	// Push once we've published all messages to the client
+	// BatchPush once we've published all messages to the client
 	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more sense...
 	results := make([]ifaces.PublishResult, 0)
 	failedMessages := make([]*sdk.FailedMessage, 0)

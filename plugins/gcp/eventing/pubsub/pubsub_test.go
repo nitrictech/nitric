@@ -17,7 +17,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("Should return an empty list of topics", func() {
-				topics, err := pubsubPlugin.GetTopics()
+				topics, err := pubsubPlugin.ListTopics()
 				Expect(err).To(BeNil())
 				Expect(topics).To(BeEmpty())
 			})
@@ -30,7 +30,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
 			It("Should return all available topics", func() {
-				topics, err := pubsubPlugin.GetTopics()
+				topics, err := pubsubPlugin.ListTopics()
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("Test"))
 			})

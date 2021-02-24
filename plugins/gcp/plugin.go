@@ -19,7 +19,7 @@ func New() sdk.ServiceFactory {
 }
 
 // NewAuthService - Returns Google Cloud Identity Platform based auth service
-func (p *GCPServiceFactory) NewAuthService() (sdk.AuthService, error) {
+func (p *GCPServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return identity_platform_service.New()
 }
 

@@ -11,8 +11,8 @@ import (
 )
 
 var _ = Describe("Sqs", func() {
-	// Tests for the Push method
-	Context("Push", func() {
+	// Tests for the BatchPush method
+	Context("BatchPush", func() {
 		When("Publishing to a queue that exists", func() {
 			sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
 				Queues: []string{"test"},
