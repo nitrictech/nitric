@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
@@ -15,96 +17,135 @@ type HttpService struct {
 	address string
 }
 
+func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events []eventgrid.Event) {
+	subPayload := events[0]
+	var validateData eventgrid.SubscriptionValidationEventData
+	if err := mapstructure.Decode(subPayload.Data, &validateData); err == nil {
+		// Some error here...
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(400)
+		w.Write([]byte("Invalid subscription event data"))
+		return
+	}
+
+	response := eventgrid.SubscriptionValidationResponse{
+		ValidationResponse: validateData.ValidationCode,
+	}
+
+	responseBody, _ := json.Marshal(response)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	// TODO: Remove this unless in debug mode...
+	w.Write(responseBody)
+}
+
+func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler sdk.GatewayHandler) {
+	for _, event := range events {
+		// XXX: Assume we have a nitric event for now
+		nitricEvt := sdk.NitricEvent{}
+		if err := mapstructure.Decode(event.Data, &nitricEvt); err == nil {
+			// We have a valid nitric event
+			// Decode and pass to our function
+			//requestId = nitricEvt.RequestId
+			//payload, _ = json.Marshal(nitricEvt.Payload)
+			//payloadType = nitricEvt.PayloadType
+			// Carry on if our data isn't formatted in json anyway...
+			nitricContext := &sdk.NitricContext{
+				RequestId:   nitricEvt.RequestId,
+				PayloadType: nitricEvt.PayloadType,
+				Source:      *event.Topic,
+				SourceType:  sdk.Subscription,
+			}
+
+			bytes, _ := json.Marshal(nitricEvt.Payload)
+			// Call the membrane function handler
+			// TODO: Handle response
+			handler(&sdk.NitricRequest{
+				Context:     nitricContext,
+				Payload:     bytes,
+				ContentType: "application/json",
+			})
+		}
+	}
+
+	// Return 200 OK (TODO: Determine how we could mark individual events for failure)
+	// Or potentially requeue them here internally...
+	w.WriteHeader(200)
+	w.Write([]byte(""))
+}
+
+func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler sdk.GatewayHandler) {
+	source := r.Header.Get("User-Agent")
+	contentType := r.Header.Get("Content-Type")
+	requestId := r.Header.Get("x-nitric-request-id")
+	payloadType := r.Header.Get("x-nitric-payload-type")
+
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		// Return a http error here...
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(500)
+		// TODO: Remove this unless in debug mode...
+		w.Write([]byte(err.Error()))
+
+		return
+	}
+
+	// Carry on if our data isn't formatted in json anyway...
+	nitricContext := &sdk.NitricContext{
+		RequestId:   requestId,
+		PayloadType: payloadType,
+		Source:      source,
+		SourceType:  sdk.Request,
+	}
+
+	// Call the membrane function handler
+	response := handler(&sdk.NitricRequest{
+		Context:     nitricContext,
+		Payload:     bytes,
+		ContentType: contentType,
+	})
+
+	for name, value := range response.Headers {
+		w.Header().Add(name, value)
+	}
+
+	// Pass through the function response
+	w.WriteHeader(response.Status)
+	w.Write(response.Body)
+}
+
 func (s *HttpService) Start(handler sdk.GatewayHandler) error {
 
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		headers := req.Header
+		eventType := req.Header.Get("aeg-event-type")
 
-		var sourceType = sdk.Request
-
-		var source = headers.Get("User-Agent")
-		var contentType = headers.Get("Content-Type")
-		requestId := headers.Get("x-nitric-request-id")
-		payloadType := headers.Get("x-nitric-payload-type")
-
-		// TODO: We need to acknowledge event grid messages sent to us as being valid
-
-		bytes, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			// Return a http error here...
-			resp.Header().Add("Content-Type", "text/plain")
-			resp.WriteHeader(500)
-			// TODO: Remove this unless in debug mode...
-			resp.Write([]byte(err.Error()))
-		}
-
-		var payload = bytes
-
-		// Example eventgrid handshake
-		//[
-		//	{
-		//		"id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
-		//		"topic": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-		//		"subject": "",
-		//		"data": {
-		//			"validationCode": "512d38b6-c7b8-40c8-89fe-f46f9e9622b6",
-		//			"validationUrl": "https://rp-eastus2.eventgrid.azure.net:553/eventsubscriptions/estest/validate?id=512d38b6-c7b8-40c8-89fe-f46f9e9622b6&t=2018-04-26T20:30:54.4538837Z&apiVersion=2018-05-01-preview&token=1A1A1A1A"
-		//		},
-		//		"eventType": "Microsoft.EventGrid.SubscriptionValidationEvent",
-		//		"eventTime": "2018-01-25T22:12:19.4556811Z",
-		//		"metadataVersion": "1",
-		//		"dataVersion": "1"
-		//	}
-		//]
-
-		// Validate subscription path
-		if headers.Get("aeg-event-type") == "SubscriptionValidation" {
-
-			jsonBody := make([]map[string]interface{}, 0)
+		// Handle an eventgrid webhook event
+		if eventType != "" {
+			var eventgridEvents []eventgrid.Event
+			bytes, _ := ioutil.ReadAll(req.Body)
 			// TODO: verify topic for validity
-			if err = json.Unmarshal(bytes, &jsonBody); err == nil {
-				subPayload := jsonBody[0]
-				// We just need to get the data and echo it
-				if data, ok := subPayload["data"]; ok {
-					validatationData := data.(map[string]string)
-					validationCode := validatationData["validationCode"]
-					resp.Header().Add("Content-Type", "application/json")
-					resp.WriteHeader(200)
-					// TODO: Remove this unless in debug mode...
-					resp.Write([]byte(fmt.Sprintf("{\"validationResponse\":\"%s\"}", validationCode)))
-					return
-				}
+			if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
+				resp.Header().Add("Content-Type", "text/plain")
+				resp.WriteHeader(400)
+				resp.Write([]byte(fmt.Sprintf("Invalid event grid types")))
+				return
 			}
 
-			resp.Header().Add("Content-Type", "text/plain")
-			resp.WriteHeader(200)
-			// TODO: Remove this unless in debug mode...
-			resp.Write([]byte("There was an error validating eventgrid subscription"))
-			return
+			// Handle Eventgrid event
+			if eventType == "SubscriptionValidation" {
+				// Validate a subscription
+				s.handleSubscriptionValidation(resp, eventgridEvents)
+				return
+			} else if eventType == "Notification" {
+				// Handle notifications
+				s.handleNotifications(resp, eventgridEvents, handler)
+				return
+			}
 		}
 
-		// Carry on if our data isn't formatted in json anyway...
-		nitricContext := &sdk.NitricContext{
-			RequestId:   requestId,
-			PayloadType: payloadType,
-			Source:      source,
-			SourceType:  sourceType,
-		}
-
-		// Call the membrane function handler
-		response := handler(&sdk.NitricRequest{
-			Context:     nitricContext,
-			Payload:     payload,
-			ContentType: contentType,
-		})
-
-		for name, value := range response.Headers {
-			resp.Header().Add(name, value)
-		}
-
-		// Pass through the function response
-		resp.WriteHeader(response.Status)
-		resp.Write(response.Body)
+		// Handle a standard HTTP request
+		s.handleRequest(resp, req, handler)
 	})
 
 	// Start a HTTP server here...
