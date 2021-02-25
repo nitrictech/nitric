@@ -2,12 +2,14 @@ package http_service_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	http_plugin "github.com/nitric-dev/membrane/plugins/azure/gateway/http"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	. "github.com/onsi/ginkgo"
@@ -112,6 +114,78 @@ var _ = Describe("Http", func() {
 
 				By("Returning the expected output")
 				Expect(string(responseBody)).To(Equal("Test"))
+			})
+		})
+
+		When("With a SubscriptionValidation event", func() {
+			It("Should return the provided validation code", func() {
+				validationCode := "test"
+				evt := []eventgrid.Event{
+					eventgrid.Event{
+						Data: eventgrid.SubscriptionValidationEventData{
+							ValidationCode: &validationCode,
+						},
+					},
+				}
+
+				requestBody, _ := json.Marshal(evt)
+				request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte(requestBody)))
+				request.Header.Add("aeg-event-type", "SubscriptionValidation")
+				resp, _ := http.DefaultClient.Do(request)
+
+				By("Not invoking the nitric application")
+				Expect(mockHandler.handledRequests).To(BeEmpty())
+
+				By("Returning a 200 response")
+				Expect(resp.StatusCode).To(Equal(200))
+
+				By("Containing the provided validation code")
+				var respEvt eventgrid.SubscriptionValidationResponse
+				bytes, _ := ioutil.ReadAll(resp.Body)
+				json.Unmarshal(bytes, &respEvt)
+				Expect(*respEvt.ValidationResponse).To(BeEquivalentTo(validationCode))
+			})
+		})
+
+		When("With a Notification event", func() {
+			It("Should successfully handle the notification", func() {
+				testPayload := map[string]interface{}{
+					"Test": "Test",
+				}
+
+				testPayloadBytes, _ := json.Marshal(testPayload)
+				testTopic := "test"
+				evt := []eventgrid.Event{
+					eventgrid.Event{
+						Topic: &testTopic,
+						Data: sdk.NitricEvent{
+							RequestId:   "1234",
+							PayloadType: "test-payload",
+							Payload:     testPayload,
+						},
+					},
+				}
+
+				requestBody, _ := json.Marshal(evt)
+				request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte(requestBody)))
+				request.Header.Add("aeg-event-type", "Notification")
+				resp, _ := http.DefaultClient.Do(request)
+
+				By("Passing the event to the Nitric Application")
+				Expect(mockHandler.handledRequests).To(HaveLen(1))
+
+				handledRequest := mockHandler.handledRequests[0]
+				By("Having the provided requestId")
+				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
+
+				By("Having the provided payload type")
+				Expect(handledRequest.Context.PayloadType).To(Equal("test-payload"))
+
+				By("Having the provided payload")
+				Expect(handledRequest.Payload).To(BeEquivalentTo(testPayloadBytes))
+
+				By("Sending back a 200 OK status")
+				Expect(resp.StatusCode).To(Equal(200))
 			})
 		})
 	})

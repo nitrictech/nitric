@@ -20,7 +20,7 @@ type HttpService struct {
 func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events []eventgrid.Event) {
 	subPayload := events[0]
 	var validateData eventgrid.SubscriptionValidationEventData
-	if err := mapstructure.Decode(subPayload.Data, &validateData); err == nil {
+	if err := mapstructure.Decode(subPayload.Data, &validateData); err != nil {
 		// Some error here...
 		w.Header().Add("Content-Type", "text/plain")
 		w.WriteHeader(400)
