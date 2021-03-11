@@ -17,7 +17,7 @@ type HttpHandler struct {
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *HttpHandler) HandleEvent(source *sources.Event) error {
-	address := fmt.Sprint("http://%s/subscriptions/%s", h.host, source.Topic)
+	address := fmt.Sprintf("http://%s/subscriptions/%s", h.host, source.Topic)
 	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
 	httpRequest.Header.Add("x-nitric-request-id", source.ID)
 	httpRequest.Header.Add("x-nitric-source-type", sources.SourceType_Subscription.String())
@@ -39,7 +39,7 @@ func (h *HttpHandler) HandleEvent(source *sources.Event) error {
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
 func (h *HttpHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
-	address := fmt.Sprint("http://%s%s", h.host, source.Path)
+	address := fmt.Sprintf("http://%s%s", h.host, source.Path)
 	httpRequest, err := http.NewRequest(source.Method, address, source.Body)
 	httpRequest.Header = source.Header
 	defaultErr := &http.Response{
