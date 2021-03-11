@@ -6,3 +6,7 @@ type Event struct {
 	Topic   string
 	Payload []byte
 }
+
+func (*Event) GetSourceType() SourceType {
+	return SourceType_Subscription
+}

@@ -17,6 +17,10 @@ type HttpRequest struct {
 	Path string
 }
 
+func (*HttpRequest) GetSourceType() SourceType {
+	return SourceType_Request
+}
+
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
 func FromHttpRequest(r *http.Request) *HttpRequest {
 	return &HttpRequest{
