@@ -7,11 +7,10 @@ import (
 	lambda_plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
 	s3_plugin "github.com/nitric-dev/membrane/plugins/aws/storage/s3"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 type AWSServiceFactory struct {
-
 }
 
 func New() sdk.ServiceFactory {

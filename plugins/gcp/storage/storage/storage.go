@@ -1,16 +1,17 @@
 package storage_service
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
+	"io/ioutil"
+
+	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"io/ioutil"
 )
 
 type StorageStorageService struct {
@@ -126,7 +127,7 @@ func New() (sdk.StorageService, error) {
 	}
 
 	return &StorageStorageService{
-		client: adapters.AdaptStorageClient(client),
+		client:    adapters.AdaptStorageClient(client),
 		projectID: credentials.ProjectID,
 	}, nil
 }

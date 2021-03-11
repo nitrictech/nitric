@@ -1,17 +1,16 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/plugins/dev/auth"
+	auth_service "github.com/nitric-dev/membrane/plugins/dev/auth"
 	documents_plugin "github.com/nitric-dev/membrane/plugins/dev/documents"
 	eventing_plugin "github.com/nitric-dev/membrane/plugins/dev/eventing"
 	gateway_plugin "github.com/nitric-dev/membrane/plugins/dev/gateway"
 	queue_plugin "github.com/nitric-dev/membrane/plugins/dev/queue"
 	storage_plugin "github.com/nitric-dev/membrane/plugins/dev/storage"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 type DevServiceFactory struct {
-
 }
 
 func New() sdk.ServiceFactory {

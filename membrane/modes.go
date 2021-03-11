@@ -1,5 +1,10 @@
 package membrane
 
+import (
+	"fmt"
+	"strings"
+)
+
 // SourceType enum
 type Mode int
 
@@ -9,6 +14,17 @@ const (
 	Mode_HttpProxy
 )
 
+var modes = [...]string{"FAAS", "HTTP_PROXY"}
+
 func (m Mode) String() string {
-	return []string{"FAAS", "HTTP_PROXY"}[m]
+	return modes[m]
+}
+
+func ModeFromString(modeString string) (Mode, error) {
+	for i, mode := range modes {
+		if mode == modeString {
+			return i
+		}
+	}
+	return -1, fmt.Errorf("Invalid mode %s, supported modes are: %s", modeString, strings.Join(modes[:], ", "))
 }

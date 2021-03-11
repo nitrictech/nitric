@@ -9,10 +9,10 @@ import (
 	"time"
 
 	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
-	"github.com/nitric-dev/membrane/membrane/handler"
+	"github.com/nitric-dev/membrane/handler"
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"google.golang.org/grpc"
 )
 

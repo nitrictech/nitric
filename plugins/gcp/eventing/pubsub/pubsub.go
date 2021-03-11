@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )

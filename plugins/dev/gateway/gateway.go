@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/membrane/handler"
-	"github.com/nitric-dev/membrane/plugins/sdk"
-	"github.com/nitric-dev/membrane/plugins/sdk/sources"
+	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	"github.com/nitric-dev/membrane/utils"
 )
 

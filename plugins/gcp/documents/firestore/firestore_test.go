@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firestore_plugin "github.com/nitric-dev/membrane/plugins/gcp/documents/firestore"
 	mocks "github.com/nitric-dev/membrane/plugins/gcp/mocks"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	pb "google.golang.org/genproto/googleapis/firestore/v1"

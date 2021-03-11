@@ -8,7 +8,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 

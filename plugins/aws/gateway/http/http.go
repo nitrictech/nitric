@@ -4,15 +4,16 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/utils"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/nitric-dev/membrane/utils"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
-	gw "github.com/nitric-dev/membrane/plugins/sdk"
+	gw "github.com/nitric-dev/membrane/sdk"
 )
 
 type HttpProxyGateway struct {

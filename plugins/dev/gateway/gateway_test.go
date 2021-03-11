@@ -8,7 +8,7 @@ import (
 	"time"
 
 	gateway_plugin "github.com/nitric-dev/membrane/plugins/dev/gateway"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

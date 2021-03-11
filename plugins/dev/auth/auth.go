@@ -7,7 +7,7 @@ import (
 
 	scribble "github.com/nanobox-io/golang-scribble"
 	"github.com/nitric-dev/membrane/plugins/dev/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 	"golang.org/x/crypto/bcrypt"
 )

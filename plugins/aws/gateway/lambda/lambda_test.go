@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	events "github.com/aws/aws-lambda-go/events"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 

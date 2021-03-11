@@ -3,7 +3,7 @@ package sdk
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/membrane/handler"
+	"github.com/nitric-dev/membrane/handler"
 )
 
 // SourceType enum

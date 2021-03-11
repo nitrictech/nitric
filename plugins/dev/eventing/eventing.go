@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 

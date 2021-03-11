@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 

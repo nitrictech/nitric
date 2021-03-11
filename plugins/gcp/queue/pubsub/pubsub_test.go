@@ -3,10 +3,11 @@ package pubsub_queue_service_test
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/gcp/mocks"
 	pubsub_queue_plugin "github.com/nitric-dev/membrane/plugins/gcp/queue/pubsub"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
@@ -45,7 +46,7 @@ var _ = Describe("Pubsub", func() {
 
 		When("Publishing to a queue that does not exist", func() {
 			mockPubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
-				Topics:   []string{},
+				Topics: []string{},
 			})
 			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 			It("Should return the messages that failed to publish", func() {

@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/plugins/sdk"
-	"github.com/nitric-dev/membrane/plugins/sdk/sources"
+	"github.com/nitric-dev/membrane/sources"
 )
 
 // HttpHandler - The http handler for the membrane when operating in HTTP_PROXY mode
@@ -21,7 +20,7 @@ func (h *HttpHandler) HandleEvent(source *sources.Event) error {
 	address := fmt.Sprint("http://%s/subscriptions/%s", h.host, source.Topic)
 	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
 	httpRequest.Header.Add("x-nitric-request-id", source.ID)
-	httpRequest.Header.Add("x-nitric-source-type", sdk.Subscription.String())
+	httpRequest.Header.Add("x-nitric-source-type", "SUBSCRIPTION")
 	httpRequest.Header.Add("x-nitric-source", source.Topic)
 
 	// TODO: Handle response or error and response appropriately

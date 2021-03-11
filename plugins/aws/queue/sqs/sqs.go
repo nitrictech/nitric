@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -92,11 +92,11 @@ func (s *SQSQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, er
 
 	if url, err := s.getUrlForQueueName(options.QueueName); err == nil {
 		req := sqs.ReceiveMessageInput{
-			MaxNumberOfMessages:     aws.Int64(int64(*options.Depth)),
-			MessageAttributeNames:   []*string{
+			MaxNumberOfMessages: aws.Int64(int64(*options.Depth)),
+			MessageAttributeNames: []*string{
 				aws.String(sqs.QueueAttributeNameAll),
 			},
-			QueueUrl:                url,
+			QueueUrl: url,
 			// TODO: Consider explicit timeout values
 			//VisibilityTimeout:       nil,
 			//WaitTimeSeconds:         nil,

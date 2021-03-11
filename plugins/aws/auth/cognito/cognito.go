@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider/cognitoidentityprovideriface"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -81,7 +81,7 @@ func (s *CognitoAuthService) findOrCreateUserPoolForTenant(tenant string) (*stri
 			ClientName:        aws.String(DefaultUserPoolClientName),
 			ExplicitAuthFlows: []*string{aws.String("ALLOW_USER_PASSWORD_AUTH"), aws.String("ALLOW_REFRESH_TOKEN_AUTH")},
 			// TODO: Investigate need for secret
-			GenerateSecret:    aws.Bool(false),
+			GenerateSecret: aws.Bool(false),
 		})
 
 		if err != nil {

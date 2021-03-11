@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/plugins/sdk/sources"
+	"github.com/nitric-dev/membrane/sources"
 )
 
 type SourceHandler interface {

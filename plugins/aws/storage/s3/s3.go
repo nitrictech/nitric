@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -85,7 +85,7 @@ func (s *S3StorageService) Get(bucket string, key string) ([]byte, error) {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		resp, err := s.client.GetObject(&s3.GetObjectInput{
 			Bucket: b.Name,
-			Key: aws.String(key),
+			Key:    aws.String(key),
 		})
 
 		if err != nil {
@@ -106,7 +106,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 		// TODO: should we handle delete markers, etc.?
 		_, err := s.client.DeleteObject(&s3.DeleteObjectInput{
 			Bucket: b.Name,
-			Key: aws.String(key),
+			Key:    aws.String(key),
 		})
 
 		return err

@@ -11,7 +11,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	http_plugin "github.com/nitric-dev/membrane/plugins/azure/gateway/http"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

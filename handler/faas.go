@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/plugins/sdk"
-	"github.com/nitric-dev/membrane/plugins/sdk/sources"
+	"github.com/nitric-dev/membrane/sources"
 )
 
 // FaaSHandler - source handler for the membrane when operating in FaaS mode
@@ -30,7 +29,7 @@ func (h *FaasHandler) HandleEvent(source *sources.Event) error {
 	address := fmt.Sprint("http://%s", h.host)
 	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
 	httpRequest.Header.Add("x-nitric-request-id", source.ID)
-	httpRequest.Header.Add("x-nitric-source-type", sdk.Subscription.String())
+	httpRequest.Header.Add("x-nitric-source-type", "SUBSCRIPTION")
 	httpRequest.Header.Add("x-nitric-source", source.Topic)
 
 	// TODO: Handle response or error and response appropriately
@@ -52,7 +51,7 @@ func (h *FaasHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Respo
 	address := fmt.Sprint("http://%s", h.host)
 	httpRequest, err := http.NewRequest("POST", address, source.Body)
 	httpRequest.Header = source.Header
-	httpRequest.Header.Add("x-nitric-source-type", sdk.Request.String())
+	httpRequest.Header.Add("x-nitric-source-type", "REQUEST")
 	httpRequest.Header.Add("x-nitric-source", fmt.sprintf("%s:%s", source.Method, source.Path)
 
 	if err != nil {

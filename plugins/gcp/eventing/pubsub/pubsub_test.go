@@ -3,7 +3,7 @@ package pubsub_service_test
 import (
 	pubsub_plugin "github.com/nitric-dev/membrane/plugins/gcp/eventing/pubsub"
 	mocks "github.com/nitric-dev/membrane/plugins/gcp/mocks"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -12,7 +12,7 @@ var _ = Describe("Pubsub Plugin", func() {
 	When("Listing Available Topics", func() {
 		When("There are no topics available", func() {
 			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
-				Topics:   []string{},
+				Topics: []string{},
 			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
@@ -25,7 +25,7 @@ var _ = Describe("Pubsub Plugin", func() {
 
 		When("There are topics available", func() {
 			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
-				Topics:   []string{"Test"},
+				Topics: []string{"Test"},
 			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
@@ -48,7 +48,7 @@ var _ = Describe("Pubsub Plugin", func() {
 
 		When("To a topic that does not exist", func() {
 			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
-				Topics:   []string{},
+				Topics: []string{},
 			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 
@@ -60,7 +60,7 @@ var _ = Describe("Pubsub Plugin", func() {
 
 		When("To a topic that does exist", func() {
 			pubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
-				Topics:   []string{"Test"},
+				Topics: []string{"Test"},
 			})
 			pubsubPlugin, _ := pubsub_plugin.NewWithClient(pubsubClient)
 

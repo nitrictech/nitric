@@ -6,7 +6,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"golang.org/x/oauth2/google"
 )
 

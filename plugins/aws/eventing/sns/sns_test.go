@@ -2,6 +2,7 @@ package sns_service_test
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -10,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	plugin "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 type MockSNSClient struct {

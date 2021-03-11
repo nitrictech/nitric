@@ -3,9 +3,10 @@ package sqs_service_test
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/plugins/aws/mocks"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,8 +27,8 @@ var _ = Describe("Sqs", func() {
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
-											},
-										},
+						},
+					},
 				})
 
 				Expect(err).ShouldNot(HaveOccurred())
@@ -45,8 +46,8 @@ var _ = Describe("Sqs", func() {
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
-											},
-										},
+						},
+					},
 				})
 
 				Expect(err).Should(HaveOccurred())
@@ -142,16 +143,16 @@ var _ = Describe("Sqs", func() {
 	// Tests for the Complete method
 	Context("Complete", func() {
 		When("The message is successfully deleted from SQS", func() {
-				// No errors set on mock, 'complete' won't return an error.
-				sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
-					Queues: []string{"test-queue"},
-				})
-				plugin := sqs_plugin.NewWithClient(sqsMock)
+			// No errors set on mock, 'complete' won't return an error.
+			sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
+				Queues: []string{"test-queue"},
+			})
+			plugin := sqs_plugin.NewWithClient(sqsMock)
 
-				It("Should not return an error", func() {
-					err := plugin.Complete("test-queue", "test-id")
-					Expect(err).ShouldNot(HaveOccurred())
-				})
+			It("Should not return an error", func() {
+				err := plugin.Complete("test-queue", "test-id")
+				Expect(err).ShouldNot(HaveOccurred())
+			})
 		})
 		When("The message fails to delete from SQS", func() {
 			// No errors set on mock, 'complete' won't return an error.
