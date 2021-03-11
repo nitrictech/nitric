@@ -1,6 +1,10 @@
 package sdk
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nitric-dev/membrane/membrane/handler"
+)
 
 // SourceType enum
 type SourceType int
@@ -35,18 +39,16 @@ type NitricResponse struct {
 	Body    []byte
 }
 
-type GatewayHandler func(*NitricRequest) *NitricResponse
-
 type GatewayService interface {
 	// Start the Gateway
 	// This method should block
-	Start(handler GatewayHandler) error
+	Start(handler handler.SourceHandler) error
 }
 
 type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ GatewayHandler) error {
+func (*UnimplementedGatewayPlugin) Start(_ handler.SourceHandler) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
