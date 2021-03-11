@@ -26,7 +26,7 @@ func errorToInternalServerError(err error) *http.Response {
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *FaasHandler) HandleEvent(source *sources.Event) error {
-	address := fmt.Sprint("http://%s", h.host)
+	address := fmt.Sprintf("http://%s", h.host)
 	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
 	httpRequest.Header.Add("x-nitric-request-id", source.ID)
 	httpRequest.Header.Add("x-nitric-source-type", sources.SourceType_Subscription.String())
