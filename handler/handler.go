@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/nitric-dev/membrane/sources"
@@ -21,6 +23,8 @@ func (*UnimplementedSourceHandler) HandleEvent(source *sources.Event) error {
 
 func (*UnimplementedSourceHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
 	return &http.Response{
-		Body: ioutils.,
+		Status:     "Internal Server Error",
+		StatusCode: 500,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("HTTP Handler Unimplemented"))),
 	}
 }

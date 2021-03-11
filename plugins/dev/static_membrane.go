@@ -49,7 +49,7 @@ func main() {
 		AuthPlugin:              authPlugin,
 		GatewayPlugin:           gatewayPlugin,
 		TolerateMissingServices: tolerateMissing,
-		Mode:                    0,
+		Mode:                    mode,
 	})
 
 	if err != nil {

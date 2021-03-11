@@ -221,7 +221,7 @@ func (s *Membrane) Start() error {
 	case Mode_Faas:
 		hndlr = handler.NewFaasHandler(s.childAddress)
 		break
-	case Mode_Http:
+	case Mode_HttpProxy:
 		hndlr = handler.NewHttpHandler(s.childAddress)
 		break
 	}

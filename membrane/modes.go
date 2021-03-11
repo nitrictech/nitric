@@ -23,7 +23,7 @@ func (m Mode) String() string {
 func ModeFromString(modeString string) (Mode, error) {
 	for i, mode := range modes {
 		if mode == modeString {
-			return i
+			return Mode(i), nil
 		}
 	}
 	return -1, fmt.Errorf("Invalid mode %s, supported modes are: %s", modeString, strings.Join(modes[:], ", "))

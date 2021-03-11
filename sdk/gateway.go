@@ -4,26 +4,14 @@ import (
 	"fmt"
 
 	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/sources"
 )
-
-// SourceType enum
-type SourceType int
-
-const (
-	Subscription SourceType = iota
-	Request
-	Custom
-)
-
-func (e SourceType) String() string {
-	return []string{"SUBSCRIPTION", "REQUEST", "CUSTOM"}[e]
-}
 
 type NitricContext struct {
 	RequestId   string
 	PayloadType string
 	Source      string
-	SourceType  SourceType
+	SourceType  sources.SourceType
 }
 
 // Normalized NitricRequest

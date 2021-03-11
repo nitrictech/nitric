@@ -27,33 +27,39 @@ func (s *HttpGateway) Start(handler handler.SourceHandler) error {
 		var sourceTypeString = headers.Get("x-nitric-source-type")
 
 		// Handle Event/Subscription Request Types
-		if strings.ToLower(sourceTypeString) == "subscription" {
-			sourceType = sdk.Subscription
-			source = headers.Get("x-nitric-source")
-			requestId = headers.Get("x-nitric-request-id")
+		if strings.ToUpper(sourceTypeString) == sources.SourceType_Subscription.String() {
+			source := headers.Get("x-nitric-source")
+			requestId := headers.Get("x-nitric-request-id")
 			payload, _ := ioutil.ReadAll(req.Body)
 
-			handler.HandleEvent(&sources.Event{
-				ID: requestId,
-				Topic: source,
-				Payload: payload
+			err := handler.HandleEvent(&sources.Event{
+				ID:      requestId,
+				Topic:   source,
+				Payload: payload,
 			})
 
-			resp.WriteHeader(response.Status)
-			resp.Write(response.Body)
+			if err != nil {
+				// TODO: Make this more informative
+				resp.WriteHeader(500)
+				resp.Write([]byte("There was an error processing the event"))
+			} else {
+				resp.WriteHeader(200)
+				resp.Write([]byte("Successfully Handled the Event"))
+			}
+
 			// return here...
 			return
 		}
 
 		// Handle HTTP Request Types
-		response := handler.HandleHttpRequest(&sources.FromHttpRequest(req))
+		response := handler.HandleHttpRequest(sources.FromHttpRequest(req))
 
 		responsePayload, _ := ioutil.ReadAll(response.Body)
 
-		for key, val := range response.Header {
-			resp.Header().Add(key, val)
+		for key := range response.Header {
+			resp.Header().Add(key, response.Header.Get(key))
 		}
-		
+
 		resp.WriteHeader(response.StatusCode)
 		resp.Write(responsePayload)
 	})
