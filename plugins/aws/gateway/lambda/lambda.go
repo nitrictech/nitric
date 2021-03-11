@@ -1,6 +1,7 @@
 package lambda_service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,8 +9,9 @@ import (
 
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
+	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 )
 
 type eventType int
@@ -24,7 +26,7 @@ type LambdaRuntimeHandler func(handler interface{})
 
 //Event incoming event
 type Event struct {
-	Requests []sdk.NitricRequest
+	Requests []sources.Source
 }
 
 func (event *Event) getEventType(data []byte) eventType {
@@ -85,22 +87,14 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 				if err == nil {
 					// Decode the message to see if it's a Nitric message
-					context := sdk.NitricContext{
-						SourceType:  sdk.Subscription,
-						Source:      source,
-						PayloadType: messageJson.PayloadType,
-						RequestId:   messageJson.RequestId,
-					}
-
 					payloadMap := messageJson.Payload
-
 					payloadBytes, err := json.Marshal(&payloadMap)
 
 					if err == nil {
-						event.Requests = append(event.Requests, sdk.NitricRequest{
-							Context:     &context,
-							Payload:     payloadBytes,
-							ContentType: *aws.String("application/json"),
+						event.Requests = append(event.Requests, &sources.Event{
+							ID:      messageJson.RequestId,
+							Topic:   source,
+							Payload: payloadBytes,
 						})
 					}
 				}
@@ -113,17 +107,12 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		err = json.Unmarshal(data, httpEvent)
 
 		if err == nil {
-			nitricContext := sdk.NitricContext{
-				SourceType:  sdk.Request,
-				Source:      httpEvent.Headers["User-Agent"],
-				PayloadType: httpEvent.Headers["x-nitric-payload-type"],
-				RequestId:   httpEvent.Headers["x-nitric-request-id"],
-			}
-
-			event.Requests = append(event.Requests, sdk.NitricRequest{
-				Context:     &nitricContext,
-				ContentType: httpEvent.Headers["Content-Type"],
-				Payload:     []byte(httpEvent.Body),
+			event.Requests = append(event.Requests, &sources.HttpRequest{
+				// FIXME: Translate to http.Header
+				Header: httpEvent.Headers,
+				Body:   ioutil.NoopCloser(bytes.NewReader([]byte(httpEvent.Body))),
+				Method: httpEvent.RequestContext.HTTP.Method,
+				Path:   httpEvent.RawPath,
 			})
 		}
 
@@ -144,7 +133,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 }
 
 type LambdaGateway struct {
-	handler sdk.GatewayHandler
+	handler handler.SourceHandler
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
 }
@@ -153,23 +142,46 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 	for _, request := range event.Requests {
 		// TODO: Build up an array of responses?
 		//in some cases we won't need to send a response as well...
-		resp := s.handler(&request)
-		// There should only be one request if it was for a http request/response
-		// So we'll just return here...
-		if request.Context.SourceType == sdk.Request {
-			return events.APIGatewayProxyResponse{
-				StatusCode:      resp.Status,
-				Headers:         resp.Headers,
-				Body:            string(resp.Body),
-				IsBase64Encoded: false,
-			}, nil
+		// resp := s.handler(&request)
+
+		switch request.GetSourceType() {
+		case sources.SourceType_Request:
+			if httpEvent, ok := request.(*sources.HttpRequest); ok {
+				response := s.handler.HandleHttpRequest(httpEvent)
+
+				lambdaHTTPHeaders := make(map[string]string)
+
+				for key := range response.Header {
+					lambdaHTTPHeaders[key] = response.Header.Get(key)
+				}
+
+				return events.APIGatewayProxyResponse{
+					StatusCode: response.StatusCode,
+					Headers:    lambdaHTTPHeaders,
+					Body:       string(resp.Body),
+					// TODO: Need to determine best case when to use this...
+					IsBase64Encoded: false,
+				}, nil
+			} else {
+				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with source type: %s", sources.SourceType_Request.String())
+			}
+			break
+		case sources.SourceType_Subscription:
+			if event, ok := request.(*sources.Event); ok {
+				if err := s.handler.HandleEvent(event); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, fmt.Errorf("Error!: Found non Event in event with source type: %s", sources.SourceType_Subscription.String())
+			}
+			break
 		}
 	}
 	return nil, nil
 }
 
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(handler sdk.GatewayHandler) error {
+func (s *LambdaGateway) Start(handler handler.SourceHandler) error {
 	s.handler = handler
 	// Here we want to begin polling lambda for incoming requests...
 	// Assuming that this is blocking
