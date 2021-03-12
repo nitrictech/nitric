@@ -110,14 +110,19 @@ var _ = Describe("Lambda", func() {
 			It("The gateway should translate into a standard NitricRequest", func() {
 				client.Start(mockHandler)
 
+				By("Handling a single HTTP request")
 				Expect(len(mockHandler.httpRequests)).To(Equal(1))
 
 				request := mockHandler.httpRequests[0]
 
 				By("Retaining the body")
-				//
+				bodyBytes, _ := ioutil.ReadAll(request.Body)
+				Expect(string(bodyBytes)).To(BeEquivalentTo("Test Payload"))
 				By("Retaining the Headers")
-				//
+				Expect(request.Header.Get("User-Agent")).To(Equal("Test"))
+				Expect(request.Header.Get("x-nitric-payload-type")).To(Equal("TestPayload"))
+				Expect(request.Header.Get("x-nitric-request-id")).To(Equal("test-request-id"))
+				Expect(request.Header.Get("Content-Type")).To(Equal("text/plain"))
 				By("Retaining the method")
 				Expect(request.Method).To(Equal("GET"))
 				By("Retaining the path")
@@ -167,19 +172,13 @@ var _ = Describe("Lambda", func() {
 				// handler only looping once over each request
 				client.Start(mockHandler)
 
+				By("Handling a single event")
 				Expect(len(mockHandler.events)).To(Equal(1))
 
 				request := mockHandler.events[0]
 
 				By("Containing the Source Topic")
 				Expect(request.Topic).To(Equal("MyTopic"))
-
-				//Expect(request.ContentType).To(Equal("application/json"))
-				//Expect(eventBytes).To(BeEquivalentTo(request.Payload))
-				//Expect(context.PayloadType).To(Equal("test-payload"))
-				//Expect(context.RequestId).To(Equal("test-request-id"))
-				//Expect(context.SourceType).To(Equal(sdk.Subscription))
-				//Expect(context.Source).To(Equal(topicName))
 			})
 		})
 	})
