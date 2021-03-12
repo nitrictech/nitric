@@ -1,17 +1,53 @@
 package lambda_service_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 )
+
+type MockSourceHandler struct {
+	httpRequests []*sources.HttpRequest
+	events       []*sources.Event
+}
+
+func (m *MockSourceHandler) HandleEvent(source *sources.Event) error {
+	if m.events == nil {
+		m.events = make([]*sources.Event, 0)
+	}
+	m.events = append(m.events, source)
+
+	return nil
+}
+
+func (m *MockSourceHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
+	if m.httpRequests == nil {
+		m.httpRequests = make([]*sources.HttpRequest, 0)
+	}
+	m.httpRequests = append(m.httpRequests, source)
+
+	return &http.Response{
+		Status:     "OK",
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("Mock Handled!"))),
+	}
+}
+
+func (m *MockSourceHandler) reset() {
+	m.httpRequests = make([]*sources.HttpRequest, 0)
+	m.events = make([]*sources.Event, 0)
+}
 
 type MockLambdaRuntime struct {
 	plugin.LambdaRuntimeHandler
@@ -39,8 +75,14 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 }
 
 var _ = Describe("Lambda", func() {
+	mockHandler := &MockSourceHandler{}
+	AfterEach(func() {
+		mockHandler.reset()
+	})
+
 	Context("Http Events", func() {
 		When("Sending a compliant HTTP Event", func() {
+
 			runtime := MockLambdaRuntime{
 				// Setup mock events for our runtime to process...
 				eventQueue: []interface{}{&events.APIGatewayV2HTTPRequest{
@@ -52,40 +94,34 @@ var _ = Describe("Lambda", func() {
 					},
 					RawPath: "/test/test",
 					Body:    "Test Payload",
+					RequestContext: events.APIGatewayV2HTTPRequestContext{
+						HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+							Method: "GET",
+						},
+					},
 				}},
 			}
 
 			client, _ := plugin.NewWithRuntime(runtime.Start)
 
-			capturedRequests := make([]*sdk.NitricRequest, 0)
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
-
 			It("The gateway should translate into a standard NitricRequest", func() {
-				client.Start(func(request *sdk.NitricRequest) *sdk.NitricResponse {
-					capturedRequests = append(capturedRequests, request)
-					// store the Nitric requests and prepare them for comparison with our expectations
-					return &sdk.NitricResponse{
-						Headers: map[string]string{
-							"Content-Type": "text/plain",
-						},
-						Status: 200,
-						Body:   []byte("Test Response"),
-					}
-				})
+				client.Start(mockHandler)
 
-				Expect(len(capturedRequests)).To(Equal(1))
+				Expect(len(mockHandler.httpRequests)).To(Equal(1))
 
-				request := capturedRequests[0]
-				ctx := request.Context
+				request := mockHandler.httpRequests[0]
 
-				Expect(request.Payload).To(BeEquivalentTo([]byte("Test Payload")))
-				Expect(request.ContentType).To(Equal("text/plain"))
-				Expect(ctx.RequestId).To(Equal("test-request-id"))
-				Expect(ctx.PayloadType).To(Equal("TestPayload"))
-				Expect(ctx.SourceType).To(Equal(sdk.Request))
-				Expect(ctx.Source).To(Equal("Test"))
+				By("Retaining the body")
+				//
+				By("Retaining the Headers")
+				//
+				By("Retaining the method")
+				Expect(request.Method).To(Equal("GET"))
+				By("Retaining the path")
+				Expect(request.Path).To(Equal("/test/test"))
 			})
 		})
 	})
@@ -96,7 +132,7 @@ var _ = Describe("Lambda", func() {
 			eventPayload := map[string]interface{}{
 				"test": "test",
 			}
-			eventBytes, _ := json.Marshal(&eventPayload)
+			// eventBytes, _ := json.Marshal(&eventPayload)
 
 			event := sdk.NitricEvent{
 				RequestId:   "test-request-id",
@@ -126,33 +162,24 @@ var _ = Describe("Lambda", func() {
 			client, _ := plugin.NewWithRuntime(runtime.Start)
 
 			It("The gateway should translate into a standard NitricRequest", func() {
-				capturedRequests := make([]*sdk.NitricRequest, 0)
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request
-				client.Start(func(request *sdk.NitricRequest) *sdk.NitricResponse {
-					capturedRequests = append(capturedRequests, request)
-					// store the Nitric requests and prepare them for comparison with our expectations
-					return &sdk.NitricResponse{
-						Headers: map[string]string{
-							"Content-Type": "text/plain",
-						},
-						Status: 200,
-						Body:   []byte("Test Response"),
-					}
-				})
+				client.Start(mockHandler)
 
-				Expect(len(capturedRequests)).To(Equal(1))
+				Expect(len(mockHandler.events)).To(Equal(1))
 
-				request := capturedRequests[0]
-				context := request.Context
+				request := mockHandler.events[0]
 
-				Expect(request.ContentType).To(Equal("application/json"))
-				Expect(eventBytes).To(BeEquivalentTo(request.Payload))
-				Expect(context.PayloadType).To(Equal("test-payload"))
-				Expect(context.RequestId).To(Equal("test-request-id"))
-				Expect(context.SourceType).To(Equal(sdk.Subscription))
-				Expect(context.Source).To(Equal(topicName))
+				By("Containing the Source Topic")
+				Expect(request.Topic).To(Equal("MyTopic"))
+
+				//Expect(request.ContentType).To(Equal("application/json"))
+				//Expect(eventBytes).To(BeEquivalentTo(request.Payload))
+				//Expect(context.PayloadType).To(Equal("test-payload"))
+				//Expect(context.RequestId).To(Equal("test-request-id"))
+				//Expect(context.SourceType).To(Equal(sdk.Subscription))
+				//Expect(context.Source).To(Equal(topicName))
 			})
 		})
 	})

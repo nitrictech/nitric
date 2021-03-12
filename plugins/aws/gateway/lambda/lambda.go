@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	events "github.com/aws/aws-lambda-go/events"
@@ -19,7 +21,7 @@ type eventType int
 const (
 	unknown eventType = iota
 	sns
-	http
+	httpEvent
 )
 
 type LambdaRuntimeHandler func(handler interface{})
@@ -36,7 +38,7 @@ func (event *Event) getEventType(data []byte) eventType {
 
 	// If our event is a HTTP request
 	if _, ok := tmp["rawPath"]; ok {
-		return http
+		return httpEvent
 	} else if records, ok := tmp["Records"]; ok {
 		recordsList, _ := records.([]interface{})
 		record, _ := recordsList[0].(map[string]interface{})
@@ -62,7 +64,7 @@ func (event *Event) getEventType(data []byte) eventType {
 func (event *Event) UnmarshalJSON(data []byte) error {
 	var err error
 
-	event.Requests = make([]sdk.NitricRequest, 0)
+	event.Requests = make([]sources.Source, 0)
 
 	switch event.getEventType(data) {
 	case sns:
@@ -101,18 +103,24 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 			}
 		}
 		break
-	case http:
-		httpEvent := &events.APIGatewayV2HTTPRequest{}
+	case httpEvent:
+		evt := &events.APIGatewayV2HTTPRequest{}
 
-		err = json.Unmarshal(data, httpEvent)
+		err = json.Unmarshal(data, evt)
 
 		if err == nil {
+			httpHeader := make(http.Header)
+
+			for key, val := range evt.Headers {
+				httpHeader.Add(key, val)
+			}
+
 			event.Requests = append(event.Requests, &sources.HttpRequest{
 				// FIXME: Translate to http.Header
-				Header: httpEvent.Headers,
-				Body:   ioutil.NoopCloser(bytes.NewReader([]byte(httpEvent.Body))),
-				Method: httpEvent.RequestContext.HTTP.Method,
-				Path:   httpEvent.RawPath,
+				Header: httpHeader,
+				Body:   ioutil.NopCloser(bytes.NewReader([]byte(evt.Body))),
+				Method: evt.RequestContext.HTTP.Method,
+				Path:   evt.RawPath,
 			})
 		}
 
@@ -155,10 +163,12 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 					lambdaHTTPHeaders[key] = response.Header.Get(key)
 				}
 
+				responsePayload, _ := ioutil.ReadAll(response.Body)
+
 				return events.APIGatewayProxyResponse{
 					StatusCode: response.StatusCode,
 					Headers:    lambdaHTTPHeaders,
-					Body:       string(resp.Body),
+					Body:       string(responsePayload),
 					// TODO: Need to determine best case when to use this...
 					IsBase64Encoded: false,
 				}, nil
