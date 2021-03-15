@@ -9,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/membrane"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -65,21 +67,24 @@ func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
 
 type MockGateway struct {
 	sdk.UnimplementedGatewayPlugin
-	// The nitric requests to process
-	requests []*sdk.NitricRequest
+	sources []sources.Source
 	// store responses for inspection
-	responses []*sdk.NitricResponse
+	responses []*http.Response
 	started   bool
 }
 
-func (gw *MockGateway) Start(handler sdk.GatewayHandler) error {
+func (gw *MockGateway) Start(handler handler.SourceHandler) error {
 	// Spy on the mock gateway
-	gw.responses = make([]*sdk.NitricResponse, 0)
+	gw.responses = make([]*http.Response, 0)
 
 	gw.started = true
-	if gw.requests != nil {
-		for _, request := range gw.requests {
-			gw.responses = append(gw.responses, handler(request))
+	if gw.sources != nil {
+		for _, source := range gw.sources {
+			if s, ok := source.(*sources.HttpRequest); ok {
+				gw.responses = append(gw.responses, handler.HandleHttpRequest(s))
+			} else if s, ok := source.(*sources.Event); ok {
+				handler.HandleEvent(s)
+			}
 		}
 	}
 
@@ -271,21 +276,16 @@ var _ = Describe("Membrane", func() {
 
 	})
 
-	Context("Handling A Single Gateway Request", func() {
+	Context("Handling A Single HttpRequest", func() {
 		var mockGateway *MockGateway
 		var mb *membrane.Membrane
 		BeforeEach(func() {
 			mockGateway = &MockGateway{
-				requests: []*sdk.NitricRequest{
-					&sdk.NitricRequest{
-						Context: &sdk.NitricContext{
-							RequestId:   "1234",
-							PayloadType: "test-payload",
-							Source:      "test",
-							SourceType:  sdk.Request,
-						},
-						ContentType: "text/plain",
-						Payload:     []byte("Test Payload"),
+				sources: []sources.Source{
+					&sources.HttpRequest{
+						Body:   ioutil.NopCloser(bytes.NewReader([]byte("Test Payload"))),
+						Path:   "/test/",
+						Header: make(http.Header),
 					},
 				},
 			}
@@ -306,14 +306,13 @@ var _ = Describe("Membrane", func() {
 
 				response := mockGateway.responses[0]
 
-				By("Having the 503 HTTP error code")
-				Expect(response.Status).To(Equal(503))
-
-				By("Having a Content-Type of text/plain")
-				Expect(response.Headers["Content-Type"]).To(Equal("text/plain"))
+				By("Having the 500 HTTP error code")
+				Expect(response.StatusCode).To(Equal(500))
 
 				By("Containing a Body with the encountered error message")
-				Expect(string(response.Body)).To(ContainSubstring("connection refused"))
+				bytes, _ := ioutil.ReadAll(response.Body)
+
+				Expect(string(bytes)).To(ContainSubstring("connection refused"))
 			})
 		})
 
@@ -352,29 +351,18 @@ var _ = Describe("Membrane", func() {
 
 				request := handlerFunction.requests[0]
 
-				By("The NitricRequest being translated to a HTTP request")
-				Expect(request.Header.Get("x-nitric-request-id")).To(Equal("1234"))
-				Expect(request.Header.Get("x-nitric-payload-type")).To(Equal("test-payload"))
-				Expect(request.Header.Get("x-nitric-source")).To(Equal("test"))
-				Expect(request.Header.Get("x-nitric-source-type")).To(Equal("REQUEST"))
-
-				// reader, _ := request.GetBody()
-				// body, _ := ioutil.ReadAll(reader)
-
-				// By("Passing through the given body")
-				// Expect(string(body)).To(Equal("Test Payload"))
-
-				By("Passing through the computed content-type")
-				Expect(request.Header.Get("Content-Type")).To(ContainSubstring("text/plain"))
+				By("By consuming the path of the request")
+				Expect(request.URL.String()).To(ContainSubstring("/"))
 
 				By("Having the 200 HTTP status code")
-				Expect(response.Status).To(Equal(200))
+				Expect(response.StatusCode).To(Equal(200))
 
 				By("Having a Content-Type returned by the handler")
-				Expect(response.Headers["Content-Type"]).To(ContainSubstring("text/plain"))
+				Expect(response.Header.Get("Content-Type")).To(ContainSubstring("text/plain"))
 
 				By("Containing a Body with handler response")
-				Expect(string(response.Body)).To(ContainSubstring("Hello World!"))
+				responseBytes, _ := ioutil.ReadAll(response.Body)
+				Expect(string(responseBytes)).To(ContainSubstring("Hello World!"))
 			})
 		})
 	})
