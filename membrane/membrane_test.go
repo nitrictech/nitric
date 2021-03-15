@@ -273,96 +273,97 @@ var _ = Describe("Membrane", func() {
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 	})
 
-	Context("Handling A Single HttpRequest", func() {
-		var mockGateway *MockGateway
-		var mb *membrane.Membrane
-		BeforeEach(func() {
-			mockGateway = &MockGateway{
-				sources: []sources.Source{
-					&sources.HttpRequest{
-						Body:   ioutil.NopCloser(bytes.NewReader([]byte("Test Payload"))),
-						Path:   "/test/",
-						Header: make(http.Header),
-					},
-				},
-			}
-
-			mb, _ = membrane.New(&membrane.MembraneOptions{
-				ChildAddress:            "localhost:8080",
-				GatewayPlugin:           mockGateway,
-				TolerateMissingServices: true,
-				SuppressLogs:            true,
-			})
-		})
-
-		When("There is no function available", func() {
-			It("Should recieve a single error response", func() {
-				err := mb.Start()
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(mockGateway.responses).To(HaveLen(1))
-
-				response := mockGateway.responses[0]
-
-				By("Having the 500 HTTP error code")
-				Expect(response.StatusCode).To(Equal(500))
-
-				By("Containing a Body with the encountered error message")
-				bytes, _ := ioutil.ReadAll(response.Body)
-
-				Expect(string(bytes)).To(ContainSubstring("connection refused"))
-			})
-		})
-
-		When("There is a function available to recieve", func() {
-			var handlerFunction *MockFunction
+	Context("Operating in FaaS Mode", func() {
+		Context("Handling A Single HttpRequest", func() {
+			var mockGateway *MockGateway
+			var mb *membrane.Membrane
 			BeforeEach(func() {
-				handlerFunction = &MockFunction{
-					response: &http.Response{
-						StatusCode: 200,
-						Header: http.Header{
-							"Content-Type": []string{"text/plain"},
+				mockGateway = &MockGateway{
+					sources: []sources.Source{
+						&sources.HttpRequest{
+							Body:   ioutil.NopCloser(bytes.NewReader([]byte("Test Payload"))),
+							Path:   "/test/",
+							Header: make(http.Header),
 						},
-						// Note: This can only be read once!
-						Body: ioutil.NopCloser(bytes.NewReader([]byte("Hello World!"))),
 					},
 				}
-				// Setup the function handler here...
-				http.HandleFunc("/", handlerFunction.handler)
-				go (func() {
-					http.ListenAndServe(fmt.Sprintf("localhost:8080"), nil)
-				})()
 
-				// FIXME: This is expensive! Need to wait for the server to start...
-				time.Sleep(200 * time.Millisecond)
+				mb, _ = membrane.New(&membrane.MembraneOptions{
+					ChildAddress:            "localhost:8080",
+					GatewayPlugin:           mockGateway,
+					TolerateMissingServices: true,
+					SuppressLogs:            true,
+				})
 			})
 
-			It("The request should be successfully handled", func() {
-				err := mb.Start()
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(mockGateway.responses).To(HaveLen(1))
+			When("There is no function available", func() {
+				It("Should recieve a single error response", func() {
+					err := mb.Start()
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(mockGateway.responses).To(HaveLen(1))
 
-				response := mockGateway.responses[0]
+					response := mockGateway.responses[0]
 
-				By("The handler recieving exactly one request")
-				Expect(handlerFunction.requests).To(HaveLen(1))
+					By("Having the 500 HTTP error code")
+					Expect(response.StatusCode).To(Equal(500))
 
-				request := handlerFunction.requests[0]
+					By("Containing a Body with the encountered error message")
+					bytes, _ := ioutil.ReadAll(response.Body)
 
-				By("By consuming the path of the request")
-				Expect(request.URL.String()).To(ContainSubstring("/"))
+					Expect(string(bytes)).To(ContainSubstring("connection refused"))
+				})
+			})
 
-				By("Having the 200 HTTP status code")
-				Expect(response.StatusCode).To(Equal(200))
+			When("There is a function available to recieve", func() {
+				var handlerFunction *MockFunction
+				BeforeEach(func() {
+					handlerFunction = &MockFunction{
+						response: &http.Response{
+							StatusCode: 200,
+							Header: http.Header{
+								"Content-Type": []string{"text/plain"},
+							},
+							// Note: This can only be read once!
+							Body: ioutil.NopCloser(bytes.NewReader([]byte("Hello World!"))),
+						},
+					}
+					// Setup the function handler here...
+					http.HandleFunc("/", handlerFunction.handler)
+					go (func() {
+						http.ListenAndServe(fmt.Sprintf("localhost:8080"), nil)
+					})()
 
-				By("Having a Content-Type returned by the handler")
-				Expect(response.Header.Get("Content-Type")).To(ContainSubstring("text/plain"))
+					// FIXME: This is expensive! Need to wait for the server to start...
+					time.Sleep(200 * time.Millisecond)
+				})
 
-				By("Containing a Body with handler response")
-				responseBytes, _ := ioutil.ReadAll(response.Body)
-				Expect(string(responseBytes)).To(ContainSubstring("Hello World!"))
+				It("The request should be successfully handled", func() {
+					err := mb.Start()
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(mockGateway.responses).To(HaveLen(1))
+
+					response := mockGateway.responses[0]
+
+					By("The handler recieving exactly one request")
+					Expect(handlerFunction.requests).To(HaveLen(1))
+
+					request := handlerFunction.requests[0]
+
+					By("By consuming the path of the request")
+					Expect(request.URL.String()).To(ContainSubstring("/"))
+
+					By("Having the 200 HTTP status code")
+					Expect(response.StatusCode).To(Equal(200))
+
+					By("Having a Content-Type returned by the handler")
+					Expect(response.Header.Get("Content-Type")).To(ContainSubstring("text/plain"))
+
+					By("Containing a Body with handler response")
+					responseBytes, _ := ioutil.ReadAll(response.Body)
+					Expect(string(responseBytes)).To(ContainSubstring("Hello World!"))
+				})
 			})
 		})
 	})
