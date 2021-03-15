@@ -16,7 +16,7 @@ RUN go mod download
 
 COPY . .
 
-RUN make local-plugins
+RUN make dev-plugin
 
 # Build the default development membrane server
 FROM nitric:membrane-alpine

@@ -12,7 +12,7 @@ RUN make install-tools
 
 COPY . .
 
-RUN make local-static
+RUN make dev-static
 
 # Build the default development membrane server
 FROM alpine
