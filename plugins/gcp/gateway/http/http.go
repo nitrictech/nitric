@@ -2,14 +2,14 @@
 package http_plugin
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	eventingPb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
+	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -17,20 +17,18 @@ type HttpProxyGateway struct {
 	address string
 }
 
-func (s *HttpProxyGateway) Start(handler sdk.GatewayHandler) error {
+type PubSubMessage struct {
+	Message struct {
+		Data []byte `json:"data,omitempty"`
+		ID   string `json:"id"`
+	} `json:"message"`
+	Subscription string `json:"subscription"`
+}
+
+func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		// Handle the HTTP response...
-		headers := req.Header
-
-		var sourceType = sdk.Request
-
-		var source = headers.Get("User-Agent")
-		var contentType = headers.Get("Content-Type")
-		requestId := headers.Get("x-nitric-request-id")
-		payloadType := headers.Get("x-nitric-payload-type")
-
 		bytes, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			// Return a http error here...
@@ -40,64 +38,47 @@ func (s *HttpProxyGateway) Start(handler sdk.GatewayHandler) error {
 			resp.Write([]byte(err.Error()))
 		}
 
-		var payload = bytes
-
-		jsonBody := make(map[string]interface{})
-		if err = json.Unmarshal(bytes, &jsonBody); err == nil {
-			if sub, ok := jsonBody["subscription"]; ok {
-				// We have a pubsub request here...
-				sourceType = sdk.Subscription
-				// TODO: Normalize the topic name from the subscription
-				source = sub.(string)
-				if message, ok := jsonBody["message"].(map[string]interface{}); ok {
-					if bytes, err := base64.StdEncoding.DecodeString(message["data"].(string)); err == nil {
-						nitricEvent := eventingPb.NitricEvent{}
-						// We'll contine here...
-						if err := json.Unmarshal(bytes, &nitricEvent); err == nil {
-							// We have an offical NitricEvent payload here...
-							requestId = nitricEvent.GetRequestId()
-							payloadType = nitricEvent.GetPayloadType()
-							if payloadBytes, err := nitricEvent.GetPayload().MarshalJSON(); err == nil {
-								payload = payloadBytes
-								contentType = http.DetectContentType(payloadBytes)
-							}
-
-						} else {
-							// We recieved an event with no Nitric related context...
-							// Just jam it into the payload and send it
-							payload = bytes
-							contentType = http.DetectContentType(payload)
-						}
-					} else {
-						// There was a problem capturing the subscription...
-						// For now let's log and continue...
-					}
-				}
+		// Check if the payload contains a pubsub event
+		// TODO: We probably want to use a simpler method than this
+		// like reading off the request origin to ensure it is from pubsub
+		var pubsubEvent PubSubMessage
+		if err = json.Unmarshal(bytes, &pubsubEvent); err == nil {
+			// We have an event from pubsub here...
+			event := &sources.Event{
+				ID: pubsubEvent.Message.ID,
+				// Set the topic
+				Topic: "",
+				// Set the payload
+				Payload: pubsubEvent.Message.Data,
 			}
+
+			if err := handler.HandleEvent(event); err == nil {
+				// return a successful response
+				resp.WriteHeader(200)
+				resp.Write([]byte("Success"))
+			} else {
+				resp.WriteHeader(500)
+				// FIXME: fix operating mode here...
+				resp.Write([]byte(fmt.Sprintf("Error handling event %v", err)))
+			}
+
+			return
+		} else {
+
 		}
 
-		// Carry on if our data isn't formatted in json anyway...
-		nitricContext := &sdk.NitricContext{
-			RequestId:   requestId,
-			PayloadType: payloadType,
-			Source:      source,
-			SourceType:  sourceType,
-		}
+		// We don't have an event, so treat as a HTTP request for now
+		httpSource := sources.FromHttpRequest(req)
+		response := handler.HandleHttpRequest(httpSource)
+		responseBody, _ := ioutil.ReadAll(response.Body)
 
-		// Call the membrane function handler
-		response := handler(&sdk.NitricRequest{
-			Context:     nitricContext,
-			Payload:     payload,
-			ContentType: contentType,
-		})
-
-		for name, value := range response.Headers {
-			resp.Header().Add(name, value)
+		for key, _ := range response.Header {
+			resp.Header().Add(key, response.Header.Get(key))
 		}
 
 		// Pass through the function response
-		resp.WriteHeader(response.Status)
-		resp.Write(response.Body)
+		resp.WriteHeader(response.StatusCode)
+		resp.Write(responseBody)
 	})
 
 	// Start a HTTP Proxy server here...
