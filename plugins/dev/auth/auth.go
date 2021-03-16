@@ -25,7 +25,7 @@ type User struct {
 }
 
 // CreateUser - Create a new user using scribble as the DB
-func (s *LocalAuthService) CreateUser(tenant string, id string, email string, password string) error {
+func (s *LocalAuthService) Create(tenant string, id string, email string, password string) error {
 	collection := fmt.Sprintf("auth_%s", tenant)
 	// tmpUsers := make([]User, 0)
 	if usersStrs, err := s.db.ReadAll(collection); err == nil {

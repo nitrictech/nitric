@@ -47,7 +47,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 
 	When("Creating a new document", func() {
 		When("And the document does not already exist", func() {
-			err := firestorePlugin.CreateDocument("Test", "Test", map[string]interface{}{
+			err := firestorePlugin.Create("Test", "Test", map[string]interface{}{
 				"Test": "Test",
 			})
 			It("Should create and store the document", func() {
@@ -71,7 +71,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.CreateDocument("Test", "Test", map[string]interface{}{
+				err := firestorePlugin.Create("Test", "Test", map[string]interface{}{
 					"Test": "Test",
 				})
 
@@ -101,7 +101,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 					},
 				}
 
-				doc, err := firestorePlugin.GetDocument("Test", "Test")
+				doc, err := firestorePlugin.Get("Test", "Test")
 
 				Expect(err).To(BeNil())
 				Expect(doc).To(BeEquivalentTo(item))
@@ -112,7 +112,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 			It("A not found error should be returned", func() {
 				mockFirestoreServer.Store = map[string]map[string]map[string]*pb.Value{}
 
-				_, err := firestorePlugin.GetDocument("Test", "Test")
+				_, err := firestorePlugin.Get("Test", "Test")
 
 				Expect(err).ToNot(BeNil())
 			})
@@ -136,7 +136,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.UpdateDocument("Test", "Test", map[string]interface{}{
+				err := firestorePlugin.Update("Test", "Test", map[string]interface{}{
 					"Test": "Test2",
 				})
 
@@ -146,7 +146,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 
 		When("the document doesn't exist", func() {
 			It("should return a not found error", func() {
-				err := firestorePlugin.UpdateDocument("Test", "Test", map[string]interface{}{
+				err := firestorePlugin.Update("Test", "Test", map[string]interface{}{
 					"Test": "Test",
 				})
 
@@ -158,7 +158,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 	When("deleting a document", func() {
 		When("the document does not exist", func() {
 			It("should return an error", func() {
-				err := firestorePlugin.DeleteDocument("Test", "Test")
+				err := firestorePlugin.Delete("Test", "Test")
 
 				Expect(err).ToNot(BeNil())
 			})
@@ -180,7 +180,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.DeleteDocument("Test", "Test")
+				err := firestorePlugin.Delete("Test", "Test")
 
 				Expect(err).To(BeNil())
 			})

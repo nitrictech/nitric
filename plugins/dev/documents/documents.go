@@ -19,7 +19,7 @@ type NitricDocument struct {
 	Value map[string]interface{}
 }
 
-func (s *LocalDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *LocalDocumentService) Create(collection string, key string, document map[string]interface{}) error {
 	existingDocument := make(map[string]interface{})
 	err := s.db.Read(collection, key, &existingDocument)
 
@@ -37,7 +37,7 @@ func (s *LocalDocumentService) CreateDocument(collection string, key string, doc
 	return fmt.Errorf("Document already exists!")
 }
 
-func (s *LocalDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *LocalDocumentService) Get(collection string, key string) (map[string]interface{}, error) {
 	document := make(map[string]interface{})
 	err := s.db.Read(collection, key, &document)
 
@@ -48,7 +48,7 @@ func (s *LocalDocumentService) GetDocument(collection string, key string) (map[s
 	return document, nil
 }
 
-func (s *LocalDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *LocalDocumentService) Update(collection string, key string, document map[string]interface{}) error {
 	existingDocument := make(map[string]interface{})
 	err := s.db.Read(collection, key, &existingDocument)
 
@@ -66,7 +66,7 @@ func (s *LocalDocumentService) UpdateDocument(collection string, key string, doc
 	return fmt.Errorf("Document does not exist!")
 }
 
-func (s *LocalDocumentService) DeleteDocument(collection string, key string) error {
+func (s *LocalDocumentService) Delete(collection string, key string) error {
 	error := s.db.Delete(collection, key)
 
 	if error != nil {

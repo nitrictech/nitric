@@ -10,7 +10,7 @@ import (
 )
 
 var _ = Describe("Cognito", func() {
-	Context("CreateUser", func() {
+	Context("Create", func() {
 		mockCognito := mocks.NewMockCognitoIdentityProvider()
 		authPlugin := cognito_plugin.NewWithClient(mockCognito)
 
@@ -20,7 +20,7 @@ var _ = Describe("Cognito", func() {
 
 		When("the user does not already exist", func() {
 			It("should successfully create the user", func() {
-				err := authPlugin.CreateUser("test", "test", "test@test.com", "test")
+				err := authPlugin.Create("test", "test", "test@test.com", "test")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -65,7 +65,7 @@ var _ = Describe("Cognito", func() {
 			})
 
 			It("Should return an error", func() {
-				err := authPlugin.CreateUser("test", "test", "test2@test.com", "test")
+				err := authPlugin.Create("test", "test", "test2@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("username already exists"))
@@ -98,7 +98,7 @@ var _ = Describe("Cognito", func() {
 			})
 
 			It("Should return an error", func() {
-				err := authPlugin.CreateUser("test", "test2", "test@test.com", "test")
+				err := authPlugin.Create("test", "test2", "test@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("email"))

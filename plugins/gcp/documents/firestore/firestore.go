@@ -29,7 +29,7 @@ type FirestoreDocumentService struct {
 	sdk.UnimplementedDocumentsPlugin
 }
 
-func (s *FirestoreDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *FirestoreDocumentService) Create(collection string, key string, document map[string]interface{}) error {
 	// Create a new document is firestore
 	if key == "" {
 		return fmt.Errorf("Key autogeneration unimplemented, please provide non-blank key")
@@ -44,7 +44,7 @@ func (s *FirestoreDocumentService) CreateDocument(collection string, key string,
 	return nil
 }
 
-func (s *FirestoreDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *FirestoreDocumentService) Get(collection string, key string) (map[string]interface{}, error) {
 	document, error := s.client.Collection(collection).Doc(key).Get(context.TODO())
 
 	if error != nil {
@@ -54,7 +54,7 @@ func (s *FirestoreDocumentService) GetDocument(collection string, key string) (m
 	return document.Data(), nil
 }
 
-func (s *FirestoreDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *FirestoreDocumentService) Update(collection string, key string, document map[string]interface{}) error {
 	docRef := s.client.Collection(collection).Doc(key)
 
 	_, err := docRef.Get(context.TODO())
@@ -72,7 +72,7 @@ func (s *FirestoreDocumentService) UpdateDocument(collection string, key string,
 	return nil
 }
 
-func (s *FirestoreDocumentService) DeleteDocument(collection string, key string) error {
+func (s *FirestoreDocumentService) Delete(collection string, key string) error {
 	_, error := s.client.Collection(collection).Doc(key).Delete(context.TODO())
 
 	if error != nil {
