@@ -55,7 +55,7 @@ func (s *DynamoDbDocumentService) createStandardDocumentTable(name string) error
 	return nil
 }
 
-func (s *DynamoDbDocumentService) CreateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbDocumentService) Create(collection string, key string, document map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
@@ -109,7 +109,7 @@ func (s *DynamoDbDocumentService) CreateDocument(collection string, key string, 
 	return nil
 }
 
-func (s *DynamoDbDocumentService) GetDocument(collection string, key string) (map[string]interface{}, error) {
+func (s *DynamoDbDocumentService) Get(collection string, key string) (map[string]interface{}, error) {
 	tableName := collection
 
 	input := &dynamodb.GetItemInput{
@@ -139,7 +139,7 @@ func (s *DynamoDbDocumentService) GetDocument(collection string, key string) (ma
 	return document.Value, nil
 }
 
-func (s *DynamoDbDocumentService) UpdateDocument(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbDocumentService) Update(collection string, key string, document map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
@@ -193,7 +193,7 @@ func (s *DynamoDbDocumentService) UpdateDocument(collection string, key string, 
 	return nil
 }
 
-func (s *DynamoDbDocumentService) DeleteDocument(collection string, key string) error {
+func (s *DynamoDbDocumentService) Delete(collection string, key string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(collection),
 		Key: map[string]*dynamodb.AttributeValue{

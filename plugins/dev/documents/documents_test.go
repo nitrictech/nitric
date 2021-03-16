@@ -15,13 +15,13 @@ var _ = Describe("Documents", func() {
 		mockDbDriver.ClearStore()
 	})
 
-	Context("CreateDocument", func() {
+	Context("Create", func() {
 		When("the document doesn't yet exist", func() {
 			It("Should successfully store the document", func() {
 				testItem := map[string]interface{}{
 					"Test": "Test",
 				}
-				err := documentsPlugin.CreateDocument("Test", "Test", testItem)
+				err := documentsPlugin.Create("Test", "Test", testItem)
 
 				Expect(err).ShouldNot(HaveOccurred())
 				item := mockDbDriver.GetCollection("Test")["Test"]
@@ -39,7 +39,7 @@ var _ = Describe("Documents", func() {
 			})
 
 			It("Should return an error", func() {
-				err := documentsPlugin.CreateDocument("Test", "Test", map[string]interface{}{
+				err := documentsPlugin.Create("Test", "Test", map[string]interface{}{
 					"Test": "Test",
 				})
 
@@ -48,7 +48,7 @@ var _ = Describe("Documents", func() {
 		})
 	})
 
-	Context("GetDocument", func() {
+	Context("Get", func() {
 		item := map[string]interface{}{
 			"Test": "Test",
 		}
@@ -61,7 +61,7 @@ var _ = Describe("Documents", func() {
 			})
 
 			It("should return the stored item", func() {
-				gotItem, err := documentsPlugin.GetDocument("Test", "Test")
+				gotItem, err := documentsPlugin.Get("Test", "Test")
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(gotItem).To(BeEquivalentTo(item))
@@ -70,7 +70,7 @@ var _ = Describe("Documents", func() {
 
 		When("the document does not exist", func() {
 			It("should return an error", func() {
-				gotItem, err := documentsPlugin.GetDocument("Test", "Test")
+				gotItem, err := documentsPlugin.Get("Test", "Test")
 
 				Expect(err).Should(HaveOccurred())
 				Expect(gotItem).To(BeNil())
@@ -78,7 +78,7 @@ var _ = Describe("Documents", func() {
 		})
 	})
 
-	Context("UpdateDocument", func() {
+	Context("Update", func() {
 		item1 := map[string]interface{}{
 			"Test": "Test",
 		}
@@ -94,7 +94,7 @@ var _ = Describe("Documents", func() {
 			})
 
 			It("should update successfully", func() {
-				err := documentsPlugin.UpdateDocument("Test", "Test", item2)
+				err := documentsPlugin.Update("Test", "Test", item2)
 				Expect(err).ShouldNot(HaveOccurred())
 				item := mockDbDriver.GetCollection("Test")["Test"]
 
@@ -104,13 +104,13 @@ var _ = Describe("Documents", func() {
 
 		When("It does not already exist", func() {
 			It("should return an error", func() {
-				err := documentsPlugin.UpdateDocument("Test", "Test", item2)
+				err := documentsPlugin.Update("Test", "Test", item2)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})
 
-	Context("DeleteDocument", func() {
+	Context("Delete", func() {
 		item1 := map[string]interface{}{
 			"Test": "Test",
 		}
@@ -123,7 +123,7 @@ var _ = Describe("Documents", func() {
 			})
 
 			It("should delete successfully", func() {
-				err := documentsPlugin.DeleteDocument("Test", "Test")
+				err := documentsPlugin.Delete("Test", "Test")
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mockDbDriver.GetCollection("Test")["Test"]).To(BeNil())
 			})
@@ -131,7 +131,7 @@ var _ = Describe("Documents", func() {
 
 		When("it does not exist", func() {
 			It("should cause en error", func() {
-				err := documentsPlugin.DeleteDocument("Test", "Test")
+				err := documentsPlugin.Delete("Test", "Test")
 				Expect(err).Should(HaveOccurred())
 			})
 		})

@@ -95,8 +95,8 @@ var _ = Describe("DynamoDb", func() {
 			// Inject the mock
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
-			It("documentsClient.CreateDocument should store the document without error", func() {
-				err := myMockClient.CreateDocument("Test", "Test", item)
+			It("documentsClient.Create should store the document without error", func() {
+				err := myMockClient.Create("Test", "Test", item)
 				Expect(err).To(BeNil())
 
 				storedItem, ok := mockSvc.store["Test"]["Test"]
@@ -119,7 +119,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("should return an error", func() {
-				err := myMockClient.CreateDocument("Test", "", item)
+				err := myMockClient.Create("Test", "", item)
 
 				Expect(err.Error()).To(ContainSubstring("key auto-generation unimplemented, provide non-blank key"))
 			})
@@ -143,7 +143,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should retrieve the stored document", func() {
-				storedItem, _ := myMockClient.GetDocument("Test", "Test")
+				storedItem, _ := myMockClient.Get("Test", "Test")
 
 				Expect(storedItem).To(BeEquivalentTo(item))
 			})
@@ -158,7 +158,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should fail when attempting to retrieve the document", func() {
-				_, err := myMockClient.GetDocument("Test", "Test")
+				_, err := myMockClient.Get("Test", "Test")
 
 				Expect(err.Error()).To(ContainSubstring("error getting document"))
 			})
@@ -182,7 +182,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should delete the stored document", func() {
-				_ = myMockClient.DeleteDocument("Test", "Test")
+				_ = myMockClient.Delete("Test", "Test")
 				_, ok := mockSvc.store["Test"]["Test"]
 
 				Expect(ok).To(BeFalse())
@@ -198,7 +198,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should delete the stored document", func() {
-				err := myMockClient.DeleteDocument("Test", "Test")
+				err := myMockClient.Delete("Test", "Test")
 
 				Expect(err.Error()).To(ContainSubstring("error deleting document"))
 			})
@@ -217,8 +217,8 @@ var _ = Describe("DynamoDb", func() {
 			// Inject the mock
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
-			It("Should behave as CreateDocument", func() {
-				err := myMockClient.UpdateDocument("Test", "Test", item)
+			It("Should behave as Create", func() {
+				err := myMockClient.Update("Test", "Test", item)
 
 				Expect(err).To(BeNil())
 				storedItem, ok := mockSvc.store["Test"]["Test"]

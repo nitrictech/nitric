@@ -54,7 +54,7 @@ func (s *IdentityPlatformAuthService) findOrCreateTenant(tenant string) (*string
 }
 
 // CreateUser - Creates a new user in GCP Identity Platform (using Firebase Auth)
-func (s *IdentityPlatformAuthService) CreateUser(tenant string, id string, email string, password string) error {
+func (s *IdentityPlatformAuthService) Create(tenant string, id string, email string, password string) error {
 	ctx := context.Background()
 	tID, err := s.findOrCreateTenant(tenant)
 

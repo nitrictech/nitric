@@ -42,7 +42,7 @@ func (m *MockFirestoreServer) ListDocuments(context.Context, *pb.ListDocumentsRe
 }
 
 func (m *MockFirestoreServer) UpdateDocument(context.Context, *pb.UpdateDocumentRequest) (*pb.Document, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateDocument not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 
 func (m *MockFirestoreServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*emptypb.Empty, error) {

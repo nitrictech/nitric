@@ -16,10 +16,10 @@ var _ = Describe("Identityplatform", func() {
 		mockFirebaseAuth.Clear()
 	})
 
-	Context("CreateUser", func() {
+	Context("Create", func() {
 		When("the user does not already exist", func() {
 			It("should successfully create the user", func() {
-				err := authPlugin.CreateUser("test", "test", "test@test.com", "test")
+				err := authPlugin.Create("test", "test", "test@test.com", "test")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -53,7 +53,7 @@ var _ = Describe("Identityplatform", func() {
 			})
 
 			It("should return an error", func() {
-				err := authPlugin.CreateUser("test", "test", "test@test.com", "test")
+				err := authPlugin.Create("test", "test", "test@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 			})
@@ -81,7 +81,7 @@ var _ = Describe("Identityplatform", func() {
 			})
 
 			It("should return an error", func() {
-				err := authPlugin.CreateUser("test", "test", "test@test.com", "test")
+				err := authPlugin.Create("test", "test", "test@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 			})

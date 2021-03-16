@@ -25,13 +25,13 @@ func (s *UserServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-// CreateUser - Creates a new user
-func (s *UserServer) CreateUser(ctx context.Context, req *pb.UserCreateRequest) (*pb.UserCreateResponse, error) {
+// Create - Creates a new user
+func (s *UserServer) Create(ctx context.Context, req *pb.UserCreateRequest) (*pb.UserCreateResponse, error) {
 	if ok, err := s.checkPluginRegistered(); !ok {
 		return nil, err
 	}
 
-	err := s.plugin.CreateUser(req.GetTenant(), req.GetId(), req.GetEmail(), req.GetPassword())
+	err := s.plugin.Create(req.GetTenant(), req.GetId(), req.GetEmail(), req.GetPassword())
 
 	if err != nil {
 		return nil, err

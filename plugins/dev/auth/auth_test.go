@@ -16,10 +16,10 @@ var _ = Describe("Auth", func() {
 		mockScribble.ClearStore()
 	})
 
-	Context("CreateUser", func() {
+	Context("Create", func() {
 		When("The user does not already exist", func() {
 			It("Should successfully create the user", func() {
-				err := authPlugin.CreateUser("test", "test", "test@test.com", "test")
+				err := authPlugin.Create("test", "test", "test@test.com", "test")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -48,7 +48,7 @@ var _ = Describe("Auth", func() {
 			})
 
 			It("Should return an error", func() {
-				err := authPlugin.CreateUser("test", "test", "test2@test.com", "test")
+				err := authPlugin.Create("test", "test", "test2@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("with id"))
@@ -69,7 +69,7 @@ var _ = Describe("Auth", func() {
 			})
 
 			It("Should return an error", func() {
-				err := authPlugin.CreateUser("test", "test", "test2@test.com", "test")
+				err := authPlugin.Create("test", "test", "test2@test.com", "test")
 
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("with email"))

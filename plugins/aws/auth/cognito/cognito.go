@@ -95,7 +95,7 @@ func (s *CognitoAuthService) findOrCreateUserPoolForTenant(tenant string) (*stri
 }
 
 // CreateUser - Creates a new user in AWS cognito
-func (s *CognitoAuthService) CreateUser(tenant string, id string, email string, password string) error {
+func (s *CognitoAuthService) Create(tenant string, id string, email string, password string) error {
 	// Attempt to sign up the user...
 	pID, upClient, err := s.findOrCreateUserPoolForTenant(tenant)
 

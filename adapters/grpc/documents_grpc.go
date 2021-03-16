@@ -26,9 +26,9 @@ func (s *DocumentsServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *DocumentsServer) CreateDocument(ctx context.Context, req *pb.DocumentCreateRequest) (*pb.DocumentCreateResponse, error) {
+func (s *DocumentsServer) Create(ctx context.Context, req *pb.DocumentCreateRequest) (*pb.DocumentCreateResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.documentsPlugin.CreateDocument(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
+		if err := s.documentsPlugin.Create(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
 			return &pb.DocumentCreateResponse{}, nil
 		} else {
 			// Case: Failed to create the document
@@ -41,9 +41,9 @@ func (s *DocumentsServer) CreateDocument(ctx context.Context, req *pb.DocumentCr
 	}
 }
 
-func (s *DocumentsServer) GetDocument(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
+func (s *DocumentsServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if document, err := s.documentsPlugin.GetDocument(req.GetCollection(), req.GetKey()); err == nil {
+		if document, err := s.documentsPlugin.Get(req.GetCollection(), req.GetKey()); err == nil {
 			if doc, err := structpb.NewStruct(document); err == nil {
 				return &pb.DocumentGetResponse{
 					Document: doc,
@@ -65,9 +65,9 @@ func (s *DocumentsServer) GetDocument(ctx context.Context, req *pb.DocumentGetRe
 	}
 }
 
-func (s *DocumentsServer) UpdateDocument(ctx context.Context, req *pb.DocumentUpdateRequest) (*pb.DocumentUpdateResponse, error) {
+func (s *DocumentsServer) Update(ctx context.Context, req *pb.DocumentUpdateRequest) (*pb.DocumentUpdateResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.documentsPlugin.CreateDocument(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
+		if err := s.documentsPlugin.Create(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
 			return &pb.DocumentUpdateResponse{}, nil
 		} else {
 			// Case: Failed to create the document
@@ -80,9 +80,9 @@ func (s *DocumentsServer) UpdateDocument(ctx context.Context, req *pb.DocumentUp
 	}
 }
 
-func (s *DocumentsServer) DeleteDocument(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
+func (s *DocumentsServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.documentsPlugin.DeleteDocument(req.GetCollection(), req.GetKey()); err == nil {
+		if err := s.documentsPlugin.Delete(req.GetCollection(), req.GetKey()); err == nil {
 			return &pb.DocumentDeleteResponse{}, nil
 		} else {
 			// Case: Failed to create the document
