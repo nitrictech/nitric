@@ -12,43 +12,51 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	http_plugin "github.com/nitric-dev/membrane/plugins/azure/gateway/http"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type MockHandler struct {
-	// store the recieved requests for testing
-	handledRequests []*sdk.NitricRequest
-	// provide fixed mock response for testing
-	respondsWith *sdk.NitricResponse
-}
-
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
-func (m *MockHandler) handle(request *sdk.NitricRequest) *sdk.NitricResponse {
-	if m.handledRequests == nil {
-		// Initialize the handled requests array
-		m.handledRequests = make([]*sdk.NitricRequest, 0)
+type MockHandler struct {
+	// store the recieved requests for testing
+	requests []*sources.HttpRequest
+	events   []*sources.Event
+	// provide fixed mock response for testing
+	// respondsWith *sdk.NitricResponse
+}
+
+func (m *MockHandler) HandleEvent(evt *sources.Event) error {
+	if m.events == nil {
+		m.events = make([]*sources.Event, 0)
 	}
 
-	m.handledRequests = append(m.handledRequests, request)
+	m.events = append(m.events, evt)
 
-	if m.respondsWith != nil {
-		return m.respondsWith
+	return nil
+}
+
+func (m *MockHandler) HandleHttpRequest(r *sources.HttpRequest) *http.Response {
+	if m.requests == nil {
+		m.requests = make([]*sources.HttpRequest, 0)
 	}
 
-	// If there is no configured mock response, we'll return a default one
-	return &sdk.NitricResponse{
-		Headers: map[string]string{
-			"Content-Type": "text/plain",
-		},
-		Status: 200,
-		Body:   []byte("Test"),
+	// Read and re-created a new read stream here...
+	body, _ := ioutil.ReadAll(r.Body)
+	r.Body = ioutil.NopCloser(bytes.NewReader(body))
+
+	m.requests = append(m.requests, r)
+
+	return &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("success"))),
 	}
 }
 
 func (m *MockHandler) resetRequests() {
-	m.handledRequests = make([]*sdk.NitricRequest, 0)
+	m.requests = make([]*sources.HttpRequest, 0)
+	m.events = make([]*sources.Event, 0)
 }
 
 var _ = Describe("Http", func() {
@@ -61,7 +69,7 @@ var _ = Describe("Http", func() {
 	mockHandler := &MockHandler{}
 	httpPlugin, _ := http_plugin.New()
 	// Run on a non-blocking thread
-	go (httpPlugin.Start)(mockHandler.handle)
+	go (httpPlugin.Start)(mockHandler)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
@@ -75,45 +83,30 @@ var _ = Describe("Http", func() {
 		When("with a standard Nitric Request", func() {
 
 			It("Should be handled successfully", func() {
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte("Test")))
+				request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test/", gatewayUrl), bytes.NewReader([]byte("Test")))
 				request.Header.Add("x-nitric-request-id", "1234")
 				request.Header.Add("x-nitric-payload-type", "Test Payload")
 				request.Header.Add("User-Agent", "Test")
-				resp, err := http.DefaultClient.Do(request)
+				_, err := http.DefaultClient.Do(request)
 
-				var responseBody = make([]byte, 0)
+				//var responseBody = make([]byte, 0)
 
-				if err == nil {
-					if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
-						responseBody = bytes
-					}
-				}
+				//if err == nil {
+				//	if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
+				//		responseBody = bytes
+				//	}
+				//}
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.handledRequests).To(HaveLen(1))
+				Expect(mockHandler.requests).To(HaveLen(1))
 
-				handledRequest := mockHandler.handledRequests[0]
+				handledRequest := mockHandler.requests[0]
 
-				By("Having the provided RequestId")
-				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
-
-				By("Having the provided payload type")
-				Expect(handledRequest.Context.PayloadType).To(Equal("Test Payload"))
-
-				By("Have the correct source type")
-				Expect(handledRequest.Context.SourceType).To(Equal(sdk.Request))
-
-				By("Have the correct provided source")
-				Expect(handledRequest.Context.Source).To(Equal("Test"))
-
-				By("The request returns a successful status")
-				Expect(resp.StatusCode).To(Equal(200))
-
-				By("Returning the expected output")
-				Expect(string(responseBody)).To(Equal("Test"))
+				By("Having the provided path")
+				Expect(handledRequest.Path).To((Equal("/test/")))
 			})
 		})
 
@@ -134,7 +127,7 @@ var _ = Describe("Http", func() {
 				resp, _ := http.DefaultClient.Do(request)
 
 				By("Not invoking the nitric application")
-				Expect(mockHandler.handledRequests).To(BeEmpty())
+				Expect(mockHandler.requests).To(BeEmpty())
 
 				By("Returning a 200 response")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -153,10 +146,12 @@ var _ = Describe("Http", func() {
 					"Test": "Test",
 				}
 
-				testPayloadBytes, _ := json.Marshal(testPayload)
+				// testPayloadBytes, _ := json.Marshal(testPayload)
 				testTopic := "test"
+				testID := "1234"
 				evt := []eventgrid.Event{
 					eventgrid.Event{
+						ID:    &testID,
 						Topic: &testTopic,
 						Data: sdk.NitricEvent{
 							RequestId:   "1234",
@@ -169,23 +164,14 @@ var _ = Describe("Http", func() {
 				requestBody, _ := json.Marshal(evt)
 				request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte(requestBody)))
 				request.Header.Add("aeg-event-type", "Notification")
-				resp, _ := http.DefaultClient.Do(request)
+				_, _ = http.DefaultClient.Do(request)
 
 				By("Passing the event to the Nitric Application")
-				Expect(mockHandler.handledRequests).To(HaveLen(1))
+				Expect(mockHandler.events).To(HaveLen(1))
 
-				handledRequest := mockHandler.handledRequests[0]
+				event := mockHandler.events[0]
 				By("Having the provided requestId")
-				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
-
-				By("Having the provided payload type")
-				Expect(handledRequest.Context.PayloadType).To(Equal("test-payload"))
-
-				By("Having the provided payload")
-				Expect(handledRequest.Payload).To(BeEquivalentTo(testPayloadBytes))
-
-				By("Sending back a 200 OK status")
-				Expect(resp.StatusCode).To(Equal(200))
+				Expect(event.ID).To(Equal("1234"))
 			})
 		})
 	})

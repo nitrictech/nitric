@@ -8,7 +8,9 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
+	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/sources"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -39,83 +41,53 @@ func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events
 	w.Write(responseBody)
 }
 
-func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler sdk.GatewayHandler) {
+func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler handler.SourceHandler) {
 	for _, event := range events {
 		// XXX: Assume we have a nitric event for now
 		nitricEvt := sdk.NitricEvent{}
 		if err := mapstructure.Decode(event.Data, &nitricEvt); err == nil {
 			// We have a valid nitric event
 			// Decode and pass to our function
-			//requestId = nitricEvt.RequestId
-			//payload, _ = json.Marshal(nitricEvt.Payload)
-			//payloadType = nitricEvt.PayloadType
-			// Carry on if our data isn't formatted in json anyway...
-			nitricContext := &sdk.NitricContext{
-				RequestId:   nitricEvt.RequestId,
-				PayloadType: nitricEvt.PayloadType,
-				Source:      *event.Topic,
-				SourceType:  sdk.Subscription,
-			}
 
 			bytes, _ := json.Marshal(nitricEvt.Payload)
 			// Call the membrane function handler
 			// TODO: Handle response
-			handler(&sdk.NitricRequest{
-				Context:     nitricContext,
-				Payload:     bytes,
-				ContentType: "application/json",
-			})
+			if err := handler.HandleEvent(&sources.Event{
+				// FIXME: Check if ID is nil
+				ID:      *event.ID,
+				Topic:   *event.Topic,
+				Payload: bytes,
+			}); err != nil {
+				w.WriteHeader(500)
+				// TODO: Add a debug mode here for actually printing the error
+				w.Write([]byte("Internal Server Error"))
+			}
+		} else {
+			// fmt.Println(err.Error())
 		}
 	}
 
 	// Return 200 OK (TODO: Determine how we could mark individual events for failure)
 	// Or potentially requeue them here internally...
 	w.WriteHeader(200)
-	w.Write([]byte(""))
+	w.Write([]byte("success"))
 }
 
-func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler sdk.GatewayHandler) {
-	source := r.Header.Get("User-Agent")
-	contentType := r.Header.Get("Content-Type")
-	requestId := r.Header.Get("x-nitric-request-id")
-	payloadType := r.Header.Get("x-nitric-payload-type")
+func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler handler.SourceHandler) {
+	response := handler.HandleHttpRequest(sources.FromHttpRequest(r))
 
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		// Return a http error here...
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(500)
-		// TODO: Remove this unless in debug mode...
-		w.Write([]byte(err.Error()))
-
-		return
+	for name := range response.Header {
+		w.Header().Add(name, response.Header.Get(name))
 	}
 
-	// Carry on if our data isn't formatted in json anyway...
-	nitricContext := &sdk.NitricContext{
-		RequestId:   requestId,
-		PayloadType: payloadType,
-		Source:      source,
-		SourceType:  sdk.Request,
-	}
-
-	// Call the membrane function handler
-	response := handler(&sdk.NitricRequest{
-		Context:     nitricContext,
-		Payload:     bytes,
-		ContentType: contentType,
-	})
-
-	for name, value := range response.Headers {
-		w.Header().Add(name, value)
-	}
+	responseBody, _ := ioutil.ReadAll(response.Body)
 
 	// Pass through the function response
-	w.WriteHeader(response.Status)
-	w.Write(response.Body)
+	w.WriteHeader(response.StatusCode)
+	w.Write(responseBody)
 }
 
-func (s *HttpService) Start(handler sdk.GatewayHandler) error {
+func (s *HttpService) Start(handler handler.SourceHandler) error {
 
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		eventType := req.Header.Get("aeg-event-type")
