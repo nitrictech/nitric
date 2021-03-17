@@ -51,9 +51,9 @@ func (s *HttpGateway) Start(handler handler.SourceHandler) error {
 			return
 		}
 
+		httpReq := sources.FromHttpRequest(req)
 		// Handle HTTP Request Types
-		response := handler.HandleHttpRequest(sources.FromHttpRequest(req))
-
+		response := handler.HandleHttpRequest(httpReq)
 		responsePayload, _ := ioutil.ReadAll(response.Body)
 
 		for key := range response.Header {
