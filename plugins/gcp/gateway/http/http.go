@@ -2,6 +2,7 @@
 package http_plugin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -19,8 +20,9 @@ type HttpProxyGateway struct {
 
 type PubSubMessage struct {
 	Message struct {
-		Data []byte `json:"data,omitempty"`
-		ID   string `json:"id"`
+		Attributes map[string]string `json:"attributes"`
+		Data       []byte            `json:"data,omitempty"`
+		ID         string            `json:"id"`
 	} `json:"message"`
 	Subscription string `json:"subscription"`
 }
@@ -29,7 +31,7 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		bytes, err := ioutil.ReadAll(req.Body)
+		bodyBytes, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			// Return a http error here...
 			resp.Header().Add("Content-Type", "text/plain")
@@ -42,12 +44,12 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 		// TODO: We probably want to use a simpler method than this
 		// like reading off the request origin to ensure it is from pubsub
 		var pubsubEvent PubSubMessage
-		if err = json.Unmarshal(bytes, &pubsubEvent); err == nil {
+		if err = json.Unmarshal(bodyBytes, &pubsubEvent); err == nil {
 			// We have an event from pubsub here...
 			event := &sources.Event{
 				ID: pubsubEvent.Message.ID,
 				// Set the topic
-				Topic: "",
+				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
 				// Set the payload
 				Payload: pubsubEvent.Message.Data,
 			}
@@ -63,11 +65,10 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 			}
 
 			return
-		} else {
-
 		}
-
+		reader := ioutil.NopCloser(bytes.NewReader(bodyBytes))
 		// We don't have an event, so treat as a HTTP request for now
+		req.Body = reader
 		httpSource := sources.FromHttpRequest(req)
 		response := handler.HandleHttpRequest(httpSource)
 		responseBody, _ := ioutil.ReadAll(response.Body)

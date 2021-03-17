@@ -51,6 +51,9 @@ func (s *PubsubEventService) Publish(topic string, event *sdk.NitricEvent) error
 	pubsubTopic := s.client.Topic(topic)
 
 	msg := adapters.AdaptPubsubMessage(&pubsub.Message{
+		Attributes: map[string]string{
+			"x-nitric-topic": topic,
+		},
 		Data: eventBytes,
 	})
 
