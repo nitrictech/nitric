@@ -3,7 +3,6 @@ package gateway_plugin_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -40,7 +39,7 @@ func (m *MockHandler) HandleHttpRequest(r *sources.HttpRequest) *http.Response {
 
 	// Read and re-created a new read stream here...
 	body, _ := ioutil.ReadAll(r.Body)
-	r.Body = io.NopCloser(bytes.NewReader(body))
+	r.Body = ioutil.NopCloser(bytes.NewReader(body))
 
 	m.requests = append(m.requests, r)
 
