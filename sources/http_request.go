@@ -9,7 +9,7 @@ import (
 type HttpRequest struct {
 	// The original Headers
 	Header http.Header
-	// The original body stread
+	// The original body stream
 	Body io.ReadCloser
 	// The original method
 	Method string
