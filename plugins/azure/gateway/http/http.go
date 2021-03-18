@@ -42,29 +42,31 @@ func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events
 }
 
 func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler handler.SourceHandler) {
+	// FIXME: As we are batch handling events in azure
+	// how do we notify of failed event handling?
 	for _, event := range events {
 		// XXX: Assume we have a nitric event for now
-		nitricEvt := sdk.NitricEvent{}
-		if err := mapstructure.Decode(event.Data, &nitricEvt); err == nil {
-			// We have a valid nitric event
-			// Decode and pass to our function
-
-			bytes, _ := json.Marshal(nitricEvt.Payload)
-			// Call the membrane function handler
-			// TODO: Handle response
-			if err := handler.HandleEvent(&sources.Event{
-				// FIXME: Check if ID is nil
-				ID:      *event.ID,
-				Topic:   *event.Topic,
-				Payload: bytes,
-			}); err != nil {
-				w.WriteHeader(500)
-				// TODO: Add a debug mode here for actually printing the error
-				w.Write([]byte("Internal Server Error"))
-			}
+		// We have a valid nitric event
+		// Decode and pass to our function
+		var payloadBytes []byte
+		if stringData, ok := event.Data.(string); ok {
+			payloadBytes = []byte(stringData)
+		} else if byteData, ok := event.Data.([]byte); ok {
+			payloadBytes = byteData
 		} else {
-			// fmt.Println(err.Error())
+			// Assume a json serializable struct for now...
+			payloadBytes, _ = json.Marshal(event.Data)
 		}
+
+		// FIXME: Handle error...
+
+		// FIXME: Handle error
+		handler.HandleEvent(&sources.Event{
+			// FIXME: Check if ID is nil
+			ID:      *event.ID,
+			Topic:   *event.Topic,
+			Payload: payloadBytes,
+		})
 	}
 
 	// Return 200 OK (TODO: Determine how we could mark individual events for failure)

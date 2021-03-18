@@ -11,7 +11,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	http_plugin "github.com/nitric-dev/membrane/plugins/azure/gateway/http"
-	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/sources"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -89,14 +88,6 @@ var _ = Describe("Http", func() {
 				request.Header.Add("User-Agent", "Test")
 				_, err := http.DefaultClient.Do(request)
 
-				//var responseBody = make([]byte, 0)
-
-				//if err == nil {
-				//	if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
-				//		responseBody = bytes
-				//	}
-				//}
-
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
@@ -142,22 +133,17 @@ var _ = Describe("Http", func() {
 
 		When("With a Notification event", func() {
 			It("Should successfully handle the notification", func() {
-				testPayload := map[string]interface{}{
-					"Test": "Test",
+				payload := map[string]string{
+					"testing": "test",
 				}
-
-				// testPayloadBytes, _ := json.Marshal(testPayload)
+				payloadBytes, _ := json.Marshal(payload)
 				testTopic := "test"
 				testID := "1234"
 				evt := []eventgrid.Event{
 					eventgrid.Event{
 						ID:    &testID,
 						Topic: &testTopic,
-						Data: sdk.NitricEvent{
-							RequestId:   "1234",
-							PayloadType: "test-payload",
-							Payload:     testPayload,
-						},
+						Data:  payload,
 					},
 				}
 
@@ -172,6 +158,12 @@ var _ = Describe("Http", func() {
 				event := mockHandler.events[0]
 				By("Having the provided requestId")
 				Expect(event.ID).To(Equal("1234"))
+
+				By("Having the provided topic")
+				Expect(event.Topic).To(Equal("test"))
+
+				By("Having the provided payload")
+				Expect(event.Payload).To(BeEquivalentTo(payloadBytes))
 			})
 		})
 	})
