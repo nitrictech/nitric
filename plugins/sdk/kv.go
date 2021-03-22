@@ -2,7 +2,7 @@ package sdk
 
 import "fmt"
 
-// The base Documents Plugin interface
+// The base KeyValue Plugin interface
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
 type KeyValueService interface {

@@ -24,7 +24,28 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushRequest) (*pb.QueueBatchPushResponse, error) {
+func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		evt := req.GetEvent()
+
+		nitricEvt := sdk.NitricEvent{
+			RequestId:   evt.GetRequestId(),
+			PayloadType: evt.GetPayloadType(),
+			Payload:     evt.GetPayload().AsMap(),
+		}
+
+		if err := s.plugin.Send(req.GetQueue(), nitricEvt); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+
+	// Success
+	return &pb.QueueSendResponse{}, nil
+}
+
+func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Translate events
 		evts := make([]sdk.NitricEvent, len(req.GetEvents()))
@@ -36,7 +57,7 @@ func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushReque
 			}
 		}
 
-		if resp, err := s.plugin.Push(req.GetQueue(), evts); err == nil {
+		if resp, err := s.plugin.SendBatch(req.GetQueue(), evts); err == nil {
 			failedEvents := make([]*pb.FailedEvent, len(resp.FailedMessages))
 			for i, fmsg := range resp.FailedMessages {
 				st, _ := structpb.NewStruct(fmsg.Event.Payload)
@@ -49,7 +70,7 @@ func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushReque
 					},
 				}
 			}
-			return &pb.QueueBatchPushResponse{
+			return &pb.QueueSendBatchResponse{
 				FailedEvents: failedEvents,
 			}, nil
 		} else {
@@ -60,17 +81,17 @@ func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushReque
 	}
 }
 
-func (s *QueueServer) Pop(ctx context.Context, req *pb.QueuePopRequest) (*pb.QueuePopResponse, error) {
+func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		depth := uint32(req.GetDepth())
-		popOptions := sdk.PopOptions{
+		popOptions := sdk.ReceiveOptions{
 			QueueName: req.GetQueue(),
 			Depth:     &depth,
 		}
 
 		// Perform the Queue Pop operation
-		queueItems, err := s.plugin.Pop(popOptions)
+		queueItems, err := s.plugin.Receive(popOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +111,7 @@ func (s *QueueServer) Pop(ctx context.Context, req *pb.QueuePopRequest) (*pb.Que
 		}
 
 		// Return the queue items
-		res := pb.QueuePopResponse{
+		res := pb.QueueReceiveResponse{
 			Items: grpcQueueItems,
 		}
 		return &res, nil

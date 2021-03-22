@@ -24,10 +24,10 @@ func (s *StorageServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *StorageServer) Put(ctx context.Context, req *pb.StoragePutRequest) (*pb.StoragePutResponse, error) {
+func (s *StorageServer) Write(ctx context.Context, req *pb.StorageWriteRequest) (*pb.StorageWriteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.storagePlugin.Put(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
-			return &pb.StoragePutResponse{}, nil
+		if err := s.storagePlugin.Write(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
+			return &pb.StorageWriteResponse{}, nil
 		} else {
 			return nil, err
 		}
@@ -36,10 +36,10 @@ func (s *StorageServer) Put(ctx context.Context, req *pb.StoragePutRequest) (*pb
 	}
 }
 
-func (s *StorageServer) Get(ctx context.Context, req *pb.StorageGetRequest) (*pb.StorageGetResponse, error) {
+func (s *StorageServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*pb.StorageReadResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if object, err := s.storagePlugin.Get(req.GetBucketName(), req.GetKey()); err == nil {
-			return &pb.StorageGetResponse{
+		if object, err := s.storagePlugin.Read(req.GetBucketName(), req.GetKey()); err == nil {
+			return &pb.StorageReadResponse{
 				Body: object,
 			}, nil
 		} else {

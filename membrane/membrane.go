@@ -3,7 +3,6 @@ package membrane
 import (
 	"bytes"
 	"fmt"
-	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -26,12 +27,12 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	EventingPlugin  sdk.EventService
-	DocumentsPlugin sdk.DocumentService
-	StoragePlugin   sdk.StorageService
-	QueuePlugin     sdk.QueueService
-	GatewayPlugin   sdk.GatewayService
-	AuthPlugin      sdk.UserService
+	EventingPlugin sdk.EventService
+	KvPlugin       sdk.KeyValueService
+	StoragePlugin  sdk.StorageService
+	QueuePlugin    sdk.QueueService
+	GatewayPlugin  sdk.GatewayService
+	AuthPlugin     sdk.UserService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -55,12 +56,12 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	eventPlugin     sdk.EventService
-	documentsPlugin sdk.DocumentService
-	storagePlugin   sdk.StorageService
-	gatewayPlugin   sdk.GatewayService
-	queuePlugin     sdk.QueueService
-	authPlugin      sdk.UserService
+	eventPlugin   sdk.EventService
+	kvPlugin      sdk.KeyValueService
+	storagePlugin sdk.StorageService
+	gatewayPlugin sdk.GatewayService
+	queuePlugin   sdk.QueueService
+	authPlugin    sdk.UserService
 
 	// Tolerate if adapters are not available
 	// Not this does not include the gateway service
@@ -90,8 +91,8 @@ func (s *Membrane) createStorageServer() v1.StorageServer {
 	return grpc2.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() v1.DocumentServer {
-	return grpc2.NewDocumentsServer(s.documentsPlugin)
+func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
+	return grpc2.NewKeyValueServer(s.kvPlugin)
 }
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
@@ -293,7 +294,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		authPlugin:              options.AuthPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
-		documentsPlugin:         options.DocumentsPlugin,
+		kvPlugin:                options.KvPlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		supressLogs:             options.SuppressLogs,
