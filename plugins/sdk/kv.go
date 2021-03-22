@@ -12,7 +12,7 @@ type KeyValueService interface {
 }
 
 type UnimplementedKeyValuePlugin struct {
-	DocumentService
+	KeyValueService
 }
 
 func (p *UnimplementedKeyValuePlugin) Put(collection string, key string, value map[string]interface{}) error {
