@@ -18,7 +18,7 @@ type SendBatchResponse struct {
 type QueueService interface {
 	Send(queue string, event NitricEvent) error
 	// Send multiple events to a queue
-	SendBatch(queue String []NitricEvent) (*SendBatchResponse, error)
+	SendBatch(queue string, []NitricEvent) (*SendBatchResponse, error)
 	// Receive event(s) off a queue
 	Receive(options ReceiveOptions) ([]NitricQueueItem, error)
 	// Complete an event previously popped from a queue
