@@ -13,6 +13,7 @@ install-tools: install
 clean:
 	@rm -rf ./bin/
 	@rm -rf ./lib/
+	@rm -rf ./interfaces/
 
 # Run all tests
 test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
@@ -22,7 +23,7 @@ test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
 generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto
 
 # Build all service factory plugins
 plugins: aws-plugin gcp-plugin dev-plugin

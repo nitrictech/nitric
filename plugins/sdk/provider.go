@@ -3,7 +3,7 @@ package sdk
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
 	NewAuthService() (UserService, error)
-	NewDocumentService() (DocumentService, error)
+	NewKeyValueService() (KeyValueService, error)
 	NewEventService() (EventService, error)
 	NewGatewayService() (GatewayService, error)
 	NewQueueService() (QueueService, error)
@@ -18,7 +18,6 @@ type ServiceFactory interface {
 // Plugin Factories with unimplemented New methods are only supported when the TOLERATE_MISSING_SERVICE option is
 // set to true when executing the pluggable membrane.
 type UnimplementedServiceFactory struct {
-
 }
 
 // Ensure UnimplementedServiceFactory implement all methods of the interface
@@ -30,7 +29,7 @@ func (p *UnimplementedServiceFactory) NewAuthService() (UserService, error) {
 }
 
 // NewDocumentPlugin - Unimplemented
-func (p *UnimplementedServiceFactory) NewDocumentService() (DocumentService, error) {
+func (p *UnimplementedServiceFactory) NewKeyValueService() (KeyValueService, error) {
 	return nil, nil
 }
 
