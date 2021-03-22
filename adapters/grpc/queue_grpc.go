@@ -24,6 +24,27 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
+func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		evt := req.GetEvent()
+
+		nitricEvt := sdk.NitricEvent{
+			RequestId:   evt.GetRequestId(),
+			PayloadType: evt.GetPayloadType(),
+			Payload:     evt.GetPayload().AsMap(),
+		}
+
+		if err := s.plugin.Send(req.GetQueue(), nitricEvt); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+
+	// Success
+	return &pb.QueueSendResponse{}, nil
+}
+
 func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Translate events
