@@ -18,7 +18,7 @@ type SendBatchResponse struct {
 type QueueService interface {
 	Send(queue string, event NitricEvent) error
 	// Send multiple events to a queue
-	SendBatch(queue string, []NitricEvent) (*SendBatchResponse, error)
+	SendBatch(queue string, events []NitricEvent) (*SendBatchResponse, error)
 	// Receive event(s) off a queue
 	Receive(options ReceiveOptions) ([]NitricQueueItem, error)
 	// Complete an event previously popped from a queue
@@ -39,7 +39,7 @@ type ReceiveOptions struct {
 	Depth *uint32 `type:"int" required:"false"`
 }
 
-func (p *PopOptions) Validate() error {
+func (p *ReceiveOptions) Validate() error {
 	// Validation
 	var invalidParams []string
 	if p.QueueName == "" {
@@ -71,7 +71,7 @@ var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
 func (*UnimplementedQueuePlugin) Send(queue string, event NitricEvent) error {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+	return fmt.Errorf("UNIMPLEMENTED")
 }
 
 func (*UnimplementedQueuePlugin) SendBatch(queue string, events []NitricEvent) (*SendBatchResponse, error) {
@@ -83,5 +83,5 @@ func (*UnimplementedQueuePlugin) Receive(options ReceiveOptions) ([]NitricQueueI
 }
 
 func (*UnimplementedQueuePlugin) Complete(queue string, leaseId string) error {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+	return fmt.Errorf("UNIMPLEMENTED")
 }
