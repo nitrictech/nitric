@@ -28,7 +28,7 @@ func (s *KeyValueServer) checkPluginRegistered() (bool, error) {
 
 func (s *KeyValueServer) Put(ctx context.Context, req *pb.KeyValuePutRequest) (*pb.KeyValuePutResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.kvPlugin.Put(req.GetCollection(), req.GetKey(), req.GetDocument().AsMap()); err == nil {
+		if err := s.kvPlugin.Put(req.GetCollection(), req.GetKey(), req.GetValue().AsMap()); err == nil {
 			return &pb.KeyValuePutResponse{}, nil
 		} else {
 			// Case: Failed to create the document
@@ -44,9 +44,9 @@ func (s *KeyValueServer) Put(ctx context.Context, req *pb.KeyValuePutRequest) (*
 func (s *KeyValueServer) Get(ctx context.Context, req *pb.KeyValueGetRequest) (*pb.KeyValueGetResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if val, err := s.kvPlugin.Get(req.GetCollection(), req.GetKey()); err == nil {
-			if doc, err := structpb.NewStruct(val); err == nil {
+			if valStruct, err := structpb.NewStruct(val); err == nil {
 				return &pb.KeyValueGetResponse{
-					Document: doc,
+					Value: valStruct,
 				}, nil
 			} else {
 				// Case: Failed to create PB struct from stored document
