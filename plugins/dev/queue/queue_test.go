@@ -12,7 +12,7 @@ import (
 )
 
 var _ = Describe("Queue", func() {
-	Context("BatchPush", func() {
+	Context("SendBatch", func() {
 		When("The queue is empty", func() {
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
@@ -26,7 +26,7 @@ var _ = Describe("Queue", func() {
 			evts := []sdk.NitricEvent{evt}
 			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{evt})
 			It("Should store the events in the queue", func() {
-				resp, err := queuePlugin.Push("test", evts)
+				resp, err := queuePlugin.SendBatch("test", evts)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -59,7 +59,7 @@ var _ = Describe("Queue", func() {
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
 
 			It("Should append to the existing queue", func() {
-				resp, err := queuePlugin.Push("test", evts)
+				resp, err := queuePlugin.SendBatch("test", evts)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -78,7 +78,7 @@ var _ = Describe("Queue", func() {
 		})
 	})
 
-	Context("Pop", func() {
+	Context("Recieve", func() {
 		When("The queue is empty", func() {
 			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{})
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
@@ -90,7 +90,7 @@ var _ = Describe("Queue", func() {
 
 			It("Should return an empty slice of queue items", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Pop(sdk.PopOptions{
+				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -121,7 +121,7 @@ var _ = Describe("Queue", func() {
 
 			It("Should append to the existing queue", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Pop(sdk.PopOptions{
+				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -165,7 +165,7 @@ var _ = Describe("Queue", func() {
 			When("Requested depth is 10", func() {
 				It("Should return 10 items", func() {
 					depth := uint32(10)
-					items, err := queuePlugin.Pop(sdk.PopOptions{
+					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 						QueueName: "test",
 						Depth:     &depth,
 					})

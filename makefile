@@ -130,7 +130,7 @@ dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
 test-dev-plugins:
-	@echo Testing Local Plugins
+	@echo Testing Dev Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
 # END Local Plugins
 
