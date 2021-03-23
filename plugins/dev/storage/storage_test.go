@@ -13,10 +13,10 @@ import (
 
 type MockStorageDriver struct {
 	ensureDirExistsError error
-	existsOrFailError error
+	existsOrFailError    error
 	writeFileError       error
-	readFileError       error
-	deleteFileError       error
+	readFileError        error
+	deleteFileError      error
 	directories          []string
 	storedItems          map[string][]byte
 }
@@ -113,7 +113,7 @@ var _ = Describe("Storage", func() {
 			workingDriver := &MockStorageDriver{}
 			mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 			It("Should store the provided byte array", func() {
-				err := mockStoragePlugin.Put("test", "test", []byte("Test"))
+				err := mockStoragePlugin.Write("test", "test", []byte("Test"))
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
@@ -128,7 +128,7 @@ var _ = Describe("Storage", func() {
 			mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(faultyDriver)
 			It("Should return an error", func() {
 
-				err := mockStoragePlugin.Put("test", "test", []byte("Test"))
+				err := mockStoragePlugin.Write("test", "test", []byte("Test"))
 				By("By returning an error")
 				Expect(err).ToNot(BeNil())
 
@@ -143,7 +143,7 @@ var _ = Describe("Storage", func() {
 			}
 			mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(faultyDriver)
 			It("Should store the provided byte array", func() {
-				err := mockStoragePlugin.Put("test", "test", []byte("Test"))
+				err := mockStoragePlugin.Write("test", "test", []byte("Test"))
 				By("By returning an error")
 				Expect(err).ToNot(BeNil())
 
@@ -162,12 +162,12 @@ var _ = Describe("Storage", func() {
 				When("The object file exists", func() {
 					workingDriver := &MockStorageDriver{
 						directories: []string{"/nitric/buckets/test-bucket/"},
-						storedItems: map[string][]byte{ "/nitric/buckets/test-bucket/test-key": []byte("Test") },
+						storedItems: map[string][]byte{"/nitric/buckets/test-bucket/test-key": []byte("Test")},
 					}
 					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 
 					It("Should retrieve the object", func() {
-						object, err := mockStoragePlugin.Get("test-bucket", "test-key")
+						object, err := mockStoragePlugin.Read("test-bucket", "test-key")
 						By("Not returning an error")
 						Expect(err).To(BeNil())
 
@@ -182,7 +182,7 @@ var _ = Describe("Storage", func() {
 					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 
 					It("Should return an error", func() {
-						object, err := mockStoragePlugin.Get("test-bucket", "test-key")
+						object, err := mockStoragePlugin.Read("test-bucket", "test-key")
 						By("Returning an error")
 						Expect(err).ToNot(BeNil())
 
@@ -196,7 +196,7 @@ var _ = Describe("Storage", func() {
 				mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 
 				It("Should return an error", func() {
-					object, err := mockStoragePlugin.Get("test-bucket", "test-key")
+					object, err := mockStoragePlugin.Read("test-bucket", "test-key")
 					By("Returning an error")
 					Expect(err).ToNot(BeNil())
 
@@ -213,7 +213,7 @@ var _ = Describe("Storage", func() {
 			mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(faultyDriver)
 			It("Should return an error", func() {
 
-				object, err := mockStoragePlugin.Get("test", "test")
+				object, err := mockStoragePlugin.Read("test", "test")
 				By("By returning an error")
 				Expect(err).ToNot(BeNil())
 
@@ -229,7 +229,7 @@ var _ = Describe("Storage", func() {
 			mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(faultyDriver)
 			It("Should return an error", func() {
 
-				object, err := mockStoragePlugin.Get("test", "test")
+				object, err := mockStoragePlugin.Read("test", "test")
 				By("By returning an error")
 				Expect(err).ToNot(BeNil())
 
@@ -245,7 +245,7 @@ var _ = Describe("Storage", func() {
 				When("The object file exists", func() {
 					workingDriver := &MockStorageDriver{
 						directories: []string{"/nitric/buckets/test-bucket/"},
-						storedItems: map[string][]byte{ "/nitric/buckets/test-bucket/test-key": []byte("Test") },
+						storedItems: map[string][]byte{"/nitric/buckets/test-bucket/test-key": []byte("Test")},
 					}
 					mockStoragePlugin, _ := storage_plugin.NewWithStorageDriver(workingDriver)
 
