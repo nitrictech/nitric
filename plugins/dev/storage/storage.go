@@ -78,7 +78,7 @@ func (s *LocalStorageService) getFilename(bucket string, key string) string {
 }
 
 // Put will create a new item or overwrite an existing item in storage
-func (s *LocalStorageService) Put(bucket string, key string, payload []byte) error {
+func (s *LocalStorageService) Write(bucket string, key string, payload []byte) error {
 	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
@@ -95,7 +95,7 @@ func (s *LocalStorageService) Put(bucket string, key string, payload []byte) err
 }
 
 // Get will retrieve an item from Storage
-func (s *LocalStorageService) Get(bucket string, key string) ([]byte, error) {
+func (s *LocalStorageService) Read(bucket string, key string) ([]byte, error) {
 	bucketName := s.getBucketName(bucket)
 
 	if err := s.storageDriver.EnsureDirExists(bucketName); err == nil {
