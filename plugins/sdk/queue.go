@@ -16,12 +16,13 @@ type SendBatchResponse struct {
 
 // QueueService - The Nitric plugin interface for cloud native queue adapters
 type QueueService interface {
+	// Send - Send a single task to a queue
 	Send(queue string, task NitricTask) error
-	// Send multiple events to a queue
+	// SendBatch - sends multiple tasks to a queue
 	SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error)
-	// Receive event(s) off a queue
+	// Receive - Recieves one or more tasks(s) off a queue
 	Receive(options ReceiveOptions) ([]NitricTask, error)
-	// Complete an event previously popped from a queue
+	// Complete - Marks a recieved task as completed
 	Complete(queue string, leaseId string) error
 }
 
@@ -70,11 +71,11 @@ type UnimplementedQueuePlugin struct {
 var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
-func (*UnimplementedQueuePlugin) Send(queue string, event NitricTask) error {
+func (*UnimplementedQueuePlugin) Send(queue string, task NitricTask) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedQueuePlugin) SendBatch(queue string, events []NitricTask) (*SendBatchResponse, error) {
+func (*UnimplementedQueuePlugin) SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
