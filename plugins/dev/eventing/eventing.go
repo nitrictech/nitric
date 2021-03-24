@@ -26,7 +26,7 @@ type LocalHttpEventingClient interface {
 
 // Publish a message to a given topic
 func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error {
-	requestId := event.RequestId
+	requestId := event.ID
 	payloadType := event.PayloadType
 	payload := event.Payload
 
