@@ -6,7 +6,7 @@ import (
 )
 
 type FailedMessage struct {
-	Event   *NitricEvent
+	Task    *NitricTask
 	Message string
 }
 
