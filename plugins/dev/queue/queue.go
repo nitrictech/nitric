@@ -49,11 +49,11 @@ type DevQueueService struct {
 	queueDir string
 }
 
-func (s *DevQueueService) Send(queue string, event sdk.NitricEvent) error {
+func (s *DevQueueService) Send(queue string, event sdk.NitricTask) error {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
-		var existingQueue []sdk.NitricEvent
+		var existingQueue []sdk.NitricTask
 		// See if the queue exists first...
 		if err := s.driver.ExistsOrFail(fileName); err == nil {
 			// Read the file first
@@ -65,7 +65,7 @@ func (s *DevQueueService) Send(queue string, event sdk.NitricEvent) error {
 				return err
 			}
 		} else {
-			existingQueue = make([]sdk.NitricEvent, 0)
+			existingQueue = make([]sdk.NitricTask, 0)
 		}
 
 		newQueue := append(existingQueue, event)
@@ -83,11 +83,11 @@ func (s *DevQueueService) Send(queue string, event sdk.NitricEvent) error {
 	return nil
 }
 
-func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricEvent) (*sdk.SendBatchResponse, error) {
+func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
-		var existingQueue []sdk.NitricEvent
+		var existingQueue []sdk.NitricTask
 		// See if the queue exists first...
 		if err := s.driver.ExistsOrFail(fileName); err == nil {
 			// Read the file first
@@ -99,7 +99,7 @@ func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricEvent) (*sd
 				return nil, err
 			}
 		} else {
-			existingQueue = make([]sdk.NitricEvent, 0)
+			existingQueue = make([]sdk.NitricTask, 0)
 		}
 
 		newQueue := existingQueue
@@ -123,11 +123,11 @@ func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricEvent) (*sd
 	}, nil
 }
 
-func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricQueueItem, error) {
+func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, options.QueueName)
 
-		var existingQueue []sdk.NitricEvent
+		var existingQueue []sdk.NitricTask
 		// See if the queue exists first...
 		if err := s.driver.ExistsOrFail(fileName); err == nil {
 			// Read the file first
@@ -143,19 +143,21 @@ func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricQueue
 		}
 
 		if len(existingQueue) == 0 {
-			return []sdk.NitricQueueItem{}, nil
+			return []sdk.NitricTask{}, nil
 		}
 
-		poppedItems := make([]sdk.NitricQueueItem, 0)
-		remainingItems := make([]sdk.NitricEvent, 0)
-		for i, evt := range existingQueue {
+		poppedItems := make([]sdk.NitricTask, 0)
+		remainingItems := make([]sdk.NitricTask, 0)
+		for i, task := range existingQueue {
 			if uint32(i) < *options.Depth {
-				poppedItems = append(poppedItems, sdk.NitricQueueItem{
-					Event:   evt,
-					LeaseId: evt.RequestId,
+				poppedItems = append(poppedItems, sdk.NitricTask{
+					ID:          task.ID,
+					Payload:     task.Payload,
+					PayloadType: task.PayloadType,
+					LeaseID:     task.LeaseID,
 				})
 			} else {
-				remainingItems = append(remainingItems, evt)
+				remainingItems = append(remainingItems, task)
 			}
 		}
 
