@@ -47,7 +47,7 @@ func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.Q
 
 func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		// Translate events
+		// Translate tasks
 		tasks := make([]sdk.NitricTask, len(req.GetTasks()))
 		for i, task := range req.GetTasks() {
 			tasks[i] = sdk.NitricTask{
@@ -96,7 +96,7 @@ func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) 
 			return nil, err
 		}
 
-		// Convert the NitricEvents to the gRPC type
+		// Convert the NitricTasks to the gRPC type
 		grpcTasks := []*pb.NitricTask{}
 		for _, task := range tasks {
 			st, _ := structpb.NewStruct(task.Payload)
