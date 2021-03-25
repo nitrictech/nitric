@@ -77,7 +77,7 @@ func (s *LocalStorageService) getFilename(bucket string, key string) string {
 	return fmt.Sprintf("%s%s", s.getBucketName(bucket), key)
 }
 
-// Put will create a new item or overwrite an existing item in storage
+// Write - will create a new item or overwrite an existing item in storage
 func (s *LocalStorageService) Write(bucket string, key string, payload []byte) error {
 	bucketName := s.getBucketName(bucket)
 
@@ -94,7 +94,7 @@ func (s *LocalStorageService) Write(bucket string, key string, payload []byte) e
 	return nil
 }
 
-// Get will retrieve an item from Storage
+// Read - reads an item from Storage
 func (s *LocalStorageService) Read(bucket string, key string) ([]byte, error) {
 	bucketName := s.getBucketName(bucket)
 
@@ -111,7 +111,7 @@ func (s *LocalStorageService) Read(bucket string, key string) ([]byte, error) {
 	}
 }
 
-// Delete will delete an item from Storage
+// Delete - deletes an item from Storage
 func (s *LocalStorageService) Delete(bucket string, key string) error {
 	return s.storageDriver.DeleteFile(s.getFilename(bucket, key))
 }
