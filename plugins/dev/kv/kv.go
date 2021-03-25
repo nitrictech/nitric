@@ -12,11 +12,6 @@ type DevKVService struct {
 	db ifaces.ScribbleIface
 }
 
-type NitricDocument struct {
-	Key   string
-	Value map[string]interface{}
-}
-
 func (s *DevKVService) Get(collection string, key string) (map[string]interface{}, error) {
 	value := make(map[string]interface{})
 	err := s.db.Read(collection, key, &value)
@@ -42,8 +37,7 @@ func (s *DevKVService) Delete(collection string, key string) error {
 	return nil
 }
 
-// Create new DynamoDB documents server
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
+// New - Create a new dev KV plugin
 func New() (sdk.KeyValueService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", "/nitric/")
 	db, err := scribble.New(dbDir, nil)
