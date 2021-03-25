@@ -108,7 +108,7 @@ func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) 
 			})
 		}
 
-		// Return the queue items
+		// Return the tasks
 		res := pb.QueueReceiveResponse{
 			Tasks: grpcTasks,
 		}
