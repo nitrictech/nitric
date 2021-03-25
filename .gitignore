@@ -7,6 +7,7 @@
 
 # GoLand / IDEA files
 .idea/
+.vscode/
 
 # Test binary, built with `go test -c`
 *.test
