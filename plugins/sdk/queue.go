@@ -20,9 +20,9 @@ type QueueService interface {
 	Send(queue string, task NitricTask) error
 	// SendBatch - sends multiple tasks to a queue
 	SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error)
-	// Receive - Recieves one or more tasks(s) off a queue
+	// Receive - Receives one or more tasks(s) off a queue
 	Receive(options ReceiveOptions) ([]NitricTask, error)
-	// Complete - Marks a recieved task as completed
+	// Complete - Marks a received task as completed
 	Complete(queue string, leaseId string) error
 }
 
