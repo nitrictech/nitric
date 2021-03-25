@@ -49,7 +49,7 @@ type DevQueueService struct {
 	queueDir string
 }
 
-func (s *DevQueueService) Send(queue string, event sdk.NitricTask) error {
+func (s *DevQueueService) Send(queue string, task sdk.NitricTask) error {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
@@ -68,7 +68,7 @@ func (s *DevQueueService) Send(queue string, event sdk.NitricTask) error {
 			existingQueue = make([]sdk.NitricTask, 0)
 		}
 
-		newQueue := append(existingQueue, event)
+		newQueue := append(existingQueue, task)
 
 		if queueByte, err := json.Marshal(&newQueue); err == nil {
 			// Write the new queue, to a file named after the queue
@@ -83,7 +83,7 @@ func (s *DevQueueService) Send(queue string, event sdk.NitricTask) error {
 	return nil
 }
 
-func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
+func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
 	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
 		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
 
@@ -103,9 +103,9 @@ func (s *DevQueueService) SendBatch(queue string, events []sdk.NitricTask) (*sdk
 		}
 
 		newQueue := existingQueue
-		for _, evt := range events {
-			// Add indirected event references to the new queue...
-			newQueue = append(newQueue, evt)
+		for _, task := range tasks {
+			// Add indirected task references to the new queue...
+			newQueue = append(newQueue, task)
 		}
 
 		if queueByte, err := json.Marshal(&newQueue); err == nil {
