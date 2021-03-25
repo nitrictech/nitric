@@ -146,11 +146,11 @@ func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask,
 			return []sdk.NitricTask{}, nil
 		}
 
-		poppedItems := make([]sdk.NitricTask, 0)
+		poppedTasks := make([]sdk.NitricTask, 0)
 		remainingItems := make([]sdk.NitricTask, 0)
 		for i, task := range existingQueue {
 			if uint32(i) < *options.Depth {
-				poppedItems = append(poppedItems, sdk.NitricTask{
+				poppedTasks = append(poppedTasks, sdk.NitricTask{
 					ID:          task.ID,
 					Payload:     task.Payload,
 					PayloadType: task.PayloadType,
@@ -168,7 +168,7 @@ func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask,
 				return nil, err
 			}
 		}
-		return poppedItems, nil
+		return poppedTasks, nil
 	} else {
 		return nil, err
 	}
