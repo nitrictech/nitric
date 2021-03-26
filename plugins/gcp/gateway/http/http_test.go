@@ -125,11 +125,11 @@ var _ = Describe("Http", func() {
 			})
 		})
 
-		When("From a subcription with a NitricTask", func() {
+		When("From a subcription with a NitricEvent", func() {
 			eventPayload := map[string]interface{}{
 				"Test": "Test",
 			}
-			eventBytes, _ := json.Marshal(&sdk.NitricTask{
+			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
 				ID:   "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,
