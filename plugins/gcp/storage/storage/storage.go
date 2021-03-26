@@ -1,16 +1,17 @@
 package storage_service
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
+	"io/ioutil"
+
+	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"io/ioutil"
 )
 
 type StorageStorageService struct {
@@ -42,7 +43,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces.BucketHan
 /**
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Get(bucket string, key string) ([]byte, error) {
+func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) {
 	bucketHandle, err := s.getBucketByName(bucket)
 	if err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func (s *StorageStorageService) Get(bucket string, key string) ([]byte, error) {
 /**
  * Stores a new Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Put(bucket string, key string, object []byte) error {
+func (s *StorageStorageService) Write(bucket string, key string, object []byte) error {
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("Storage", func() {
-	Context("Put", func() {
+	Context("Write", func() {
 		When("GCloud Storage Backend is available", func() {
 			When("Writing to a bucket that exists", func() {
 				storage := make(map[string]map[string][]byte)
@@ -17,7 +17,7 @@ var _ = Describe("Storage", func() {
 				testPayload := []byte("Test")
 
 				It("Should store the item", func() {
-					err := mockStorageServer.Put("my-bucket", "test-file", testPayload)
+					err := mockStorageServer.Write("my-bucket", "test-file", testPayload)
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -34,7 +34,7 @@ var _ = Describe("Storage", func() {
 				testPayload := []byte("Test")
 
 				It("Should fail to store the item", func() {
-					err := mockStorageServer.Put("my-bucket", "test-file", testPayload)
+					err := mockStorageServer.Write("my-bucket", "test-file", testPayload)
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -43,7 +43,7 @@ var _ = Describe("Storage", func() {
 		})
 	})
 
-	Context("Get", func() {
+	Context("Read", func() {
 		When("The Google Cloud Storage Backend is available", func() {
 			When("The bucket exists", func() {
 				When("The item exists", func() {
@@ -54,7 +54,7 @@ var _ = Describe("Storage", func() {
 					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
 
 					It("Should retrieve the item", func() {
-						item, err := storagePlugin.Get("test-bucket", "test-key")
+						item, err := storagePlugin.Read("test-bucket", "test-key")
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -70,7 +70,7 @@ var _ = Describe("Storage", func() {
 					storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
 
 					It("Should return an error", func() {
-						item, err := storagePlugin.Get("test-bucket", "test-key")
+						item, err := storagePlugin.Read("test-bucket", "test-key")
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
@@ -87,7 +87,7 @@ var _ = Describe("Storage", func() {
 				storagePlugin, _ := storage_plugin.NewWithClient(mockStorageClient)
 
 				It("Should return an error", func() {
-					item, err := storagePlugin.Get("test-bucket", "test-key")
+					item, err := storagePlugin.Read("test-bucket", "test-key")
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
