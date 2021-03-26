@@ -39,7 +39,7 @@ var _ = Describe("Pubsub Plugin", func() {
 
 	When("Publishing Messages", func() {
 		event := &sdk.NitricEvent{
-			RequestId:   "Test",
+			ID:   "Test",
 			PayloadType: "Test",
 			Payload: map[string]interface{}{
 				"Test": "Test",

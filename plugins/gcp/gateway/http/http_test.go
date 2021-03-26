@@ -105,6 +105,8 @@ var _ = Describe("Http", func() {
 
 				By("Preserving the original requests path")
 				Expect(handledRequest.Path).To(Equal("/test"))
+				By("Having the provided ID")
+				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
 
 				streamRead, _ := ioutil.ReadAll(handledRequest.Body)
 				By("Preserving the original requests body")
@@ -123,12 +125,12 @@ var _ = Describe("Http", func() {
 			})
 		})
 
-		When("From a subcription with a NitricEvent", func() {
+		When("From a subcription with a NitricTask", func() {
 			eventPayload := map[string]interface{}{
 				"Test": "Test",
 			}
-			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
-				RequestId:   "1234",
+			eventBytes, _ := json.Marshal(&sdk.NitricTask{
+				ID:   "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,
 			})

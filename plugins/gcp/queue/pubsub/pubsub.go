@@ -30,7 +30,7 @@ func generateQueueSubscription(queue string) string {
 	return fmt.Sprintf("%s-nitricqueue", queue)
 }
 
-func (s *PubsubQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
+func (s *PubsubQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
 	topic := s.client.Topic(queue)
@@ -39,23 +39,23 @@ func (s *PubsubQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.
 		return nil, fmt.Errorf("Queue: %s does not exist", queue)
 	}
 
-	// BatchPush once we've published all messages to the client
+	// SendBatch once we've published all messages to the client
 	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more sense...
 	results := make([]ifaces.PublishResult, 0)
 	failedMessages := make([]*sdk.FailedMessage, 0)
-	publishedMessages := make([]sdk.NitricEvent, 0)
+	publishedMessages := make([]sdk.NitricTask, 0)
 
-	for _, evt := range events {
-		if eventBytes, err := json.Marshal(evt); err == nil {
+	for _, task := range tasks {
+		if taskBytes, err := json.Marshal(task); err == nil {
 			msg := adapters.AdaptPubsubMessage(&pubsub.Message{
-				Data: eventBytes,
+				Data: taskBytes,
 			})
 
 			results = append(results, topic.Publish(ctx, msg))
-			publishedMessages = append(publishedMessages, evt)
+			publishedMessages = append(publishedMessages, task)
 		} else {
 			failedMessages = append(failedMessages, &sdk.FailedMessage{
-				Event:   &evt,
+				Task:   &task,
 				Message: "Error unmarshalling message for queue",
 			})
 		}
@@ -66,13 +66,13 @@ func (s *PubsubQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.
 		if _, err := result.Get(ctx); err != nil {
 			// Add this to our failures list in our results...
 			failedMessages = append(failedMessages, &sdk.FailedMessage{
-				Event:   &publishedMessages[idx],
+				Task:   &publishedMessages[idx],
 				Message: err.Error(),
 			})
 		}
 	}
 
-	return &sdk.PushResponse{
+	return &sdk.SendBatchResponse{
 		FailedMessages: failedMessages,
 	}, nil
 }
@@ -106,8 +106,8 @@ func (s *PubsubQueueService) getQueueSubscription(queue string) (ifaces.Subscrip
 	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
-// Pops a collection of queue items off a given queue.
-func (s *PubsubQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+// Receives a collection of queue items off a given queue.
+func (s *PubsubQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
 	err := options.Validate()
 	if err != nil {
 		return nil, err
@@ -144,26 +144,26 @@ func (s *PubsubQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem,
 	// An empty list is returned from PubSub if no messages are available
 	// we return our own empty list in turn.
 	if len(res.ReceivedMessages) == 0 {
-		return []sdk.NitricQueueItem{}, nil
+		return []sdk.NitricTask{}, nil
 	}
 
 	// Convert the PubSub messages into Nitric Queue Items, containing Nitric Events
-	var events []sdk.NitricQueueItem
+	var tasks []sdk.NitricTask
 	for _, m := range res.ReceivedMessages {
-		var nitricEvt sdk.NitricEvent
-		err := json.Unmarshal(m.Message.Data, &nitricEvt)
+		var nitricTask sdk.NitricTask
+		err := json.Unmarshal(m.Message.Data, &nitricTask)
 		if err != nil {
 			// TODO: append error to error list and Nack the message.
 			continue
 		}
 
-		events = append(events, sdk.NitricQueueItem{
-			Event:   nitricEvt,
-			LeaseId: m.AckId,
+		tasks = append(tasks, sdk.NitricTask{
+			ID:   nitricTask.ID,
+			LeaseID: nitricTask.LeaseID,
 		})
 	}
 
-	return events, nil
+	return tasks, nil
 }
 
 // Completes a previously popped queue item

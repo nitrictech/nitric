@@ -25,8 +25,8 @@ var _ = Describe("Pubsub", func() {
 			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 
 			It("Should queue the Nitric Event", func() {
-				resp, err := queuePlugin.Push("test", []sdk.NitricEvent{{
-					RequestId:   "1234",
+				resp, err := queuePlugin.SendBatch("test", []sdk.NitricTask{{
+					ID:   "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
 						"Test": "Test",
@@ -50,8 +50,8 @@ var _ = Describe("Pubsub", func() {
 			})
 			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 			It("Should return the messages that failed to publish", func() {
-				_, err := queuePlugin.Push("test", []sdk.NitricEvent{{
-					RequestId:   "1234",
+				_, err := queuePlugin.SendBatch("test", []sdk.NitricTask{{
+					ID:   "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
 						"Test": "Test",
@@ -71,8 +71,8 @@ var _ = Describe("Pubsub", func() {
 			When("There is a message on the queue", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
-				jsonBytes, _ := json.Marshal(sdk.NitricEvent{
-					RequestId:   "mockrequestid",
+				jsonBytes, _ := json.Marshal(sdk.NitricTask{
+					ID:   "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},
 				})
@@ -102,7 +102,7 @@ var _ = Describe("Pubsub", func() {
 				})
 
 				It("Should pop the message", func() {
-					items, err := queuePlugin.Pop(sdk.PopOptions{
+					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     nil,
 					})
@@ -125,8 +125,8 @@ var _ = Describe("Pubsub", func() {
 			//mockPubsubClient := mocks.NewMockPubsubClient([]string{})
 			//queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 			//It("Should return the messages that failed to publish", func() {
-			//	_, err := queuePlugin.BatchPush("test", []sdk.NitricEvent{{
-			//		RequestId:   "1234",
+			//	_, err := queuePlugin.BatchPush("test", []sdk.NitricTask{{
+			//		ID:   "1234",
 			//		PayloadType: "test-payload",
 			//		Payload: map[string]interface{}{
 			//			"Test": "Test",
