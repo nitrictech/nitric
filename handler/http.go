@@ -23,7 +23,7 @@ func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	// TODO: Handle response or error and response appropriately
+	// TODO: Handle response or error and respond appropriately
 	resp, err := http.DefaultClient.Do(httpRequest)
 
 	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode <= 299 {

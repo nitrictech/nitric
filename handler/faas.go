@@ -14,6 +14,8 @@ type FaasHandler struct {
 	host string
 }
 
+// errorToInternalServerError
+// Converts a generic golang error to a HTTP(500) response
 func errorToInternalServerError(err error) *http.Response {
 	return &http.Response{
 		Status:     "Internal Server Error",
