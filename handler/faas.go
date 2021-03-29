@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
-// FaaSHandler - source handler for the membrane when operating in FaaS mode
+// FaaSHandler - trigger handler for the membrane when operating in FaaS mode
 type FaasHandler struct {
 	host string
 }
@@ -25,12 +25,12 @@ func errorToInternalServerError(err error) *http.Response {
 }
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *FaasHandler) HandleEvent(source *sources.Event) error {
+func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
-	httpRequest.Header.Add("x-nitric-request-id", source.ID)
-	httpRequest.Header.Add("x-nitric-source-type", sources.SourceType_Subscription.String())
-	httpRequest.Header.Add("x-nitric-source", source.Topic)
+	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(trigger.Payload)))
+	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
+	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
+	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
 	// TODO: Handle response or error and response appropriately
 	resp, err := http.DefaultClient.Do(httpRequest)
@@ -47,17 +47,17 @@ func (h *FaasHandler) HandleEvent(source *sources.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *FaasHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
+func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, err := http.NewRequest("POST", address, source.Body)
+	httpRequest, err := http.NewRequest("POST", address, trigger.Body)
 
 	if err != nil {
 		return errorToInternalServerError(err)
 	}
 
-	httpRequest.Header = source.Header
-	httpRequest.Header.Add("x-nitric-source-type", sources.SourceType_Request.String())
-	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", source.Method, source.Path))
+	httpRequest.Header = trigger.Header
+	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Request.String())
+	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", trigger.Method, trigger.Path))
 
 	resp, err := http.DefaultClient.Do(httpRequest)
 	if err != nil {

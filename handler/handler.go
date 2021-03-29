@@ -6,25 +6,24 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
-type SourceHandler interface {
-	HandleEvent(source *sources.Event) error
-	HandleHttpRequest(source *sources.HttpRequest) *http.Response
+type TriggerHandler interface {
+	HandleEvent(trigger *triggers.Event) error
+	HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response
 }
 
-// UnimplementedSourceHandler
-type UnimplementedSourceHandler struct{}
+type UnimplementedTriggerHandler struct{}
 
-func (*UnimplementedSourceHandler) HandleEvent(source *sources.Event) error {
+func (*UnimplementedTriggerHandler) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedSourceHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
+func (*UnimplementedTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	return &http.Response{
-		Status:     "Internal Server Error",
-		StatusCode: 500,
+		Status:     "Unimplemented",
+		StatusCode: 501,
 		Body:       ioutil.NopCloser(bytes.NewReader([]byte("HTTP Handler Unimplemented"))),
 	}
 }

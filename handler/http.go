@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
 // HttpHandler - The http handler for the membrane when operating in HTTP_PROXY mode
@@ -16,12 +16,12 @@ type HttpHandler struct {
 }
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *HttpHandler) HandleEvent(source *sources.Event) error {
-	address := fmt.Sprintf("http://%s/subscriptions/%s", h.host, source.Topic)
-	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(source.Payload)))
-	httpRequest.Header.Add("x-nitric-request-id", source.ID)
-	httpRequest.Header.Add("x-nitric-source-type", sources.SourceType_Subscription.String())
-	httpRequest.Header.Add("x-nitric-source", source.Topic)
+func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
+	address := fmt.Sprintf("http://%s/subscriptions/%s", h.host, trigger.Topic)
+	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(trigger.Payload)))
+	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
+	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
+	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
 	// TODO: Handle response or error and response appropriately
 	resp, err := http.DefaultClient.Do(httpRequest)
@@ -38,10 +38,10 @@ func (h *HttpHandler) HandleEvent(source *sources.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *HttpHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
-	address := fmt.Sprintf("http://%s%s", h.host, source.Path)
-	httpRequest, err := http.NewRequest(source.Method, address, source.Body)
-	httpRequest.Header = source.Header
+func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
+	address := fmt.Sprintf("http://%s%s", h.host, trigger.Path)
+	httpRequest, err := http.NewRequest(trigger.Method, address, trigger.Body)
+	httpRequest.Header = trigger.Header
 	defaultErr := &http.Response{
 		Status:     "Internal Server Error",
 		StatusCode: 500,

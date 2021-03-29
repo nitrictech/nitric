@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/handler"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,17 +29,16 @@ type HttpProxyGateway struct {
 	address string
 }
 
-func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
+func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		// Handle the HTTP response...
 		headers := req.Header
 
-		// var sourceType = gw.Request
-		var source = strings.Join(headers["User-Agent"], "")
+		var trigger = strings.Join(headers["User-Agent"], "")
 
-		if source == "Amazon Simple Notification Service Agent" {
+		if trigger == "Amazon Simple Notification Service Agent" {
 			// If its a subscribe or unsubscribe notification then we need to handle it
 			amzMessageType := headers.Get(AMZ_MESSAGE_TYPE)
 			topicArn := headers.Get(AMZ_TOPIC_ARN)
@@ -75,7 +74,7 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 				return
 			}
 
-			if err := handler.HandleEvent(&sources.Event{
+			if err := handler.HandleEvent(&triggers.Event{
 				ID: id,
 				// FIXME: Split this to retrive the nitric topic name
 				Topic:   topicArn,
@@ -95,7 +94,7 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 		}
 
 		// Otherwise treat as a normal http request
-		response := handler.HandleHttpRequest(sources.FromHttpRequest(req))
+		response := handler.HandleHttpRequest(triggers.FromHttpRequest(req))
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		for name := range response.Header {

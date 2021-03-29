@@ -1,4 +1,4 @@
-package sources
+package triggers
 
 // Event - A nitric event that has come from a trigger source
 type Event struct {
@@ -7,6 +7,6 @@ type Event struct {
 	Payload []byte
 }
 
-func (*Event) GetSourceType() SourceType {
-	return SourceType_Subscription
+func (*Event) GetTriggerType() TriggerType {
+	return TriggerType_Subscription
 }

@@ -10,32 +10,32 @@ import (
 
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 )
 
-type MockSourceHandler struct {
-	httpRequests []*sources.HttpRequest
-	events       []*sources.Event
+type MockTriggerHandler struct {
+	httpRequests []*triggers.HttpRequest
+	events       []*triggers.Event
 }
 
-func (m *MockSourceHandler) HandleEvent(source *sources.Event) error {
+func (m *MockTriggerHandler) HandleEvent(trigger *triggers.Event) error {
 	if m.events == nil {
-		m.events = make([]*sources.Event, 0)
+		m.events = make([]*triggers.Event, 0)
 	}
-	m.events = append(m.events, source)
+	m.events = append(m.events, trigger)
 
 	return nil
 }
 
-func (m *MockSourceHandler) HandleHttpRequest(source *sources.HttpRequest) *http.Response {
+func (m *MockTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	if m.httpRequests == nil {
-		m.httpRequests = make([]*sources.HttpRequest, 0)
+		m.httpRequests = make([]*triggers.HttpRequest, 0)
 	}
-	m.httpRequests = append(m.httpRequests, source)
+	m.httpRequests = append(m.httpRequests, trigger)
 
 	return &http.Response{
 		Status:     "OK",
@@ -44,9 +44,9 @@ func (m *MockSourceHandler) HandleHttpRequest(source *sources.HttpRequest) *http
 	}
 }
 
-func (m *MockSourceHandler) reset() {
-	m.httpRequests = make([]*sources.HttpRequest, 0)
-	m.events = make([]*sources.Event, 0)
+func (m *MockTriggerHandler) reset() {
+	m.httpRequests = make([]*triggers.HttpRequest, 0)
+	m.events = make([]*triggers.Event, 0)
 }
 
 type MockLambdaRuntime struct {
@@ -75,7 +75,7 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 }
 
 var _ = Describe("Lambda", func() {
-	mockHandler := &MockSourceHandler{}
+	mockHandler := &MockTriggerHandler{}
 	AfterEach(func() {
 		mockHandler.reset()
 	})

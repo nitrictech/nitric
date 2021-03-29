@@ -10,7 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -41,7 +41,7 @@ func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events
 	w.Write(responseBody)
 }
 
-func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler handler.SourceHandler) {
+func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler handler.TriggerHandler) {
 	// FIXME: As we are batch handling events in azure
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -61,7 +61,7 @@ func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventg
 		// FIXME: Handle error...
 
 		// FIXME: Handle error
-		handler.HandleEvent(&sources.Event{
+		handler.HandleEvent(&triggers.Event{
 			// FIXME: Check if ID is nil
 			ID:      *event.ID,
 			Topic:   *event.Topic,
@@ -75,8 +75,8 @@ func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventg
 	w.Write([]byte("success"))
 }
 
-func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler handler.SourceHandler) {
-	response := handler.HandleHttpRequest(sources.FromHttpRequest(r))
+func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler handler.TriggerHandler) {
+	response := handler.HandleHttpRequest(triggers.FromHttpRequest(r))
 
 	for name := range response.Header {
 		w.Header().Add(name, response.Header.Get(name))
@@ -89,7 +89,7 @@ func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, hand
 	w.Write(responseBody)
 }
 
-func (s *HttpService) Start(handler handler.SourceHandler) error {
+func (s *HttpService) Start(handler handler.TriggerHandler) error {
 
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		eventType := req.Header.Get("aeg-event-type")

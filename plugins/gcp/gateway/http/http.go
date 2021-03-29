@@ -10,7 +10,7 @@ import (
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -27,7 +27,7 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
+func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
@@ -46,7 +46,7 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 		var pubsubEvent PubSubMessage
 		if err = json.Unmarshal(bodyBytes, &pubsubEvent); err == nil {
 			// We have an event from pubsub here...
-			event := &sources.Event{
+			event := &triggers.Event{
 				ID: pubsubEvent.Message.ID,
 				// Set the topic
 				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
@@ -69,8 +69,8 @@ func (s *HttpProxyGateway) Start(handler handler.SourceHandler) error {
 		reader := ioutil.NopCloser(bytes.NewReader(bodyBytes))
 		// We don't have an event, so treat as a HTTP request for now
 		req.Body = reader
-		httpSource := sources.FromHttpRequest(req)
-		response := handler.HandleHttpRequest(httpSource)
+		httpTrigger := triggers.FromHttpRequest(req)
+		response := handler.HandleHttpRequest(httpTrigger)
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		for key, _ := range response.Header {

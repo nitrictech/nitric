@@ -9,22 +9,22 @@ import (
 	"time"
 
 	gateway_plugin "github.com/nitric-dev/membrane/plugins/dev/gateway"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type MockHandler struct {
 	// store the recieved requests for testing
-	requests []*sources.HttpRequest
-	events   []*sources.Event
+	requests []*triggers.HttpRequest
+	events   []*triggers.Event
 	// provide fixed mock response for testing
 	// respondsWith *sdk.NitricResponse
 }
 
-func (m *MockHandler) HandleEvent(evt *sources.Event) error {
+func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
 	if m.events == nil {
-		m.events = make([]*sources.Event, 0)
+		m.events = make([]*triggers.Event, 0)
 	}
 
 	m.events = append(m.events, evt)
@@ -32,9 +32,9 @@ func (m *MockHandler) HandleEvent(evt *sources.Event) error {
 	return nil
 }
 
-func (m *MockHandler) HandleHttpRequest(r *sources.HttpRequest) *http.Response {
+func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) *http.Response {
 	if m.requests == nil {
-		m.requests = make([]*sources.HttpRequest, 0)
+		m.requests = make([]*triggers.HttpRequest, 0)
 	}
 
 	// Read and re-created a new read stream here...
@@ -50,8 +50,8 @@ func (m *MockHandler) HandleHttpRequest(r *sources.HttpRequest) *http.Response {
 }
 
 func (m *MockHandler) resetRequests() {
-	m.requests = make([]*sources.HttpRequest, 0)
-	m.events = make([]*sources.Event, 0)
+	m.requests = make([]*triggers.HttpRequest, 0)
+	m.events = make([]*triggers.Event, 0)
 }
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"

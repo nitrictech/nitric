@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/nitric-dev/membrane/handler"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
 type NitricContext struct {
 	RequestId   string
 	PayloadType string
-	Source      string
-	SourceType  sources.SourceType
+	Trigger     string
+	TriggerType triggers.TriggerType
 }
 
 // Normalized NitricRequest
@@ -30,13 +30,13 @@ type NitricResponse struct {
 type GatewayService interface {
 	// Start the Gateway
 	// This method should block
-	Start(handler handler.SourceHandler) error
+	Start(handler handler.TriggerHandler) error
 }
 
 type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ handler.SourceHandler) error {
+func (*UnimplementedGatewayPlugin) Start(_ handler.TriggerHandler) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }

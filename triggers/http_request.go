@@ -1,4 +1,4 @@
-package sources
+package triggers
 
 import (
 	"io"
@@ -17,8 +17,8 @@ type HttpRequest struct {
 	Path string
 }
 
-func (*HttpRequest) GetSourceType() SourceType {
-	return SourceType_Request
+func (*HttpRequest) GetTriggerType() TriggerType {
+	return TriggerType_Request
 }
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)

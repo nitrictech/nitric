@@ -9,7 +9,7 @@ import (
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -18,23 +18,23 @@ type HttpGateway struct {
 	sdk.UnimplementedGatewayPlugin
 }
 
-func (s *HttpGateway) Start(handler handler.SourceHandler) error {
+func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		// Handle the HTTP response...
 		headers := req.Header
 
-		var sourceTypeString = headers.Get("x-nitric-source-type")
+		var triggerTypeString = headers.Get("x-nitric-source-type")
 
 		// Handle Event/Subscription Request Types
-		if strings.ToUpper(sourceTypeString) == sources.SourceType_Subscription.String() {
-			source := headers.Get("x-nitric-source")
+		if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
+			trigger := headers.Get("x-nitric-source")
 			requestId := headers.Get("x-nitric-request-id")
 			payload, _ := ioutil.ReadAll(req.Body)
 
-			err := handler.HandleEvent(&sources.Event{
+			err := handler.HandleEvent(&triggers.Event{
 				ID:      requestId,
-				Topic:   source,
+				Topic:   trigger,
 				Payload: payload,
 			})
 
@@ -51,7 +51,7 @@ func (s *HttpGateway) Start(handler handler.SourceHandler) error {
 			return
 		}
 
-		httpReq := sources.FromHttpRequest(req)
+		httpReq := triggers.FromHttpRequest(req)
 		// Handle HTTP Request Types
 		response := handler.HandleHttpRequest(httpReq)
 		responsePayload, _ := ioutil.ReadAll(response.Body)

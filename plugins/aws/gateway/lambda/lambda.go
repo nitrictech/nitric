@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
 type eventType int
@@ -28,7 +28,7 @@ type LambdaRuntimeHandler func(handler interface{})
 
 //Event incoming event
 type Event struct {
-	Requests []sources.Source
+	Requests []triggers.Trigger
 }
 
 func (event *Event) getEventType(data []byte) eventType {
@@ -64,7 +64,7 @@ func (event *Event) getEventType(data []byte) eventType {
 func (event *Event) UnmarshalJSON(data []byte) error {
 	var err error
 
-	event.Requests = make([]sources.Source, 0)
+	event.Requests = make([]triggers.Trigger, 0)
 
 	switch event.getEventType(data) {
 	case sns:
@@ -83,7 +83,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 				topicArn := snsRecord.SNS.TopicArn
 				topicParts := strings.Split(topicArn, ":")
-				source := topicParts[len(topicParts)-1]
+				trigger := topicParts[len(topicParts)-1]
 				// get the topic name from the full ARN.
 				// Get the topic name from the arn
 
@@ -93,9 +93,9 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 					payloadBytes, err := json.Marshal(&payloadMap)
 
 					if err == nil {
-						event.Requests = append(event.Requests, &sources.Event{
+						event.Requests = append(event.Requests, &triggers.Event{
 							ID:      messageJson.RequestId,
-							Topic:   source,
+							Topic:   trigger,
 							Payload: payloadBytes,
 						})
 					}
@@ -115,7 +115,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 				httpHeader.Add(key, val)
 			}
 
-			event.Requests = append(event.Requests, &sources.HttpRequest{
+			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
 				Header: httpHeader,
 				Body:   ioutil.NopCloser(bytes.NewReader([]byte(evt.Body))),
@@ -141,7 +141,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 }
 
 type LambdaGateway struct {
-	handler handler.SourceHandler
+	handler handler.TriggerHandler
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
 }
@@ -152,9 +152,9 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 		//in some cases we won't need to send a response as well...
 		// resp := s.handler(&request)
 
-		switch request.GetSourceType() {
-		case sources.SourceType_Request:
-			if httpEvent, ok := request.(*sources.HttpRequest); ok {
+		switch request.GetTriggerType() {
+		case triggers.TriggerType_Request:
+			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
 				response := s.handler.HandleHttpRequest(httpEvent)
 
 				lambdaHTTPHeaders := make(map[string]string)
@@ -173,16 +173,16 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 					IsBase64Encoded: false,
 				}, nil
 			} else {
-				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with source type: %s", sources.SourceType_Request.String())
+				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
 			}
 			break
-		case sources.SourceType_Subscription:
-			if event, ok := request.(*sources.Event); ok {
+		case triggers.TriggerType_Subscription:
+			if event, ok := request.(*triggers.Event); ok {
 				if err := s.handler.HandleEvent(event); err != nil {
 					return nil, err
 				}
 			} else {
-				return nil, fmt.Errorf("Error!: Found non Event in event with source type: %s", sources.SourceType_Subscription.String())
+				return nil, fmt.Errorf("Error!: Found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
 			}
 			break
 		}
@@ -191,7 +191,7 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 }
 
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(handler handler.SourceHandler) error {
+func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
 	s.handler = handler
 	// Here we want to begin polling lambda for incoming requests...
 	// Assuming that this is blocking

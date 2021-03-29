@@ -216,7 +216,7 @@ func (s *Membrane) Start() error {
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
 
-	var hndlr handler.SourceHandler
+	var hndlr handler.TriggerHandler
 	switch s.mode {
 	case Mode_Faas:
 		hndlr = handler.NewFaasHandler(s.childAddress)
