@@ -1,12 +1,16 @@
 package sdk
 
+// NitricEvent - An event for asynchronous processing and reactive programming
 type NitricEvent struct {
-	RequestId   string                 `json:"requestId,omitempty"`
+	ID          string                 `json:"id,omitempty"`
 	PayloadType string                 `json:"payloadType,omitempty"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
 }
 
-type NitricQueueItem struct {
-	Event NitricEvent					`json:"event,omitempty"`
-	LeaseId string						`json:"leaseId,omitempty"`
+// NitricTask - A task for asynchronous processing
+type NitricTask struct {
+	ID          string                 `json:"id,omitempty"`
+	LeaseID     string                 `json:"leaseId,omitempty"`
+	PayloadType string                 `json:"payloadType,omitempty"`
+	Payload     map[string]interface{} `json:"payload,omitempty"`
 }

@@ -26,15 +26,15 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 
 func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		evt := req.GetEvent()
+		task := req.GetTask()
 
-		nitricEvt := sdk.NitricEvent{
-			RequestId:   evt.GetRequestId(),
-			PayloadType: evt.GetPayloadType(),
-			Payload:     evt.GetPayload().AsMap(),
+		nitricTask := sdk.NitricTask{
+			ID:          task.GetId(),
+			PayloadType: task.GetPayloadType(),
+			Payload:     task.GetPayload().AsMap(),
 		}
 
-		if err := s.plugin.Send(req.GetQueue(), nitricEvt); err != nil {
+		if err := s.plugin.Send(req.GetQueue(), nitricTask); err != nil {
 			return nil, err
 		}
 	} else {
@@ -47,31 +47,31 @@ func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.Q
 
 func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		// Translate events
-		evts := make([]sdk.NitricEvent, len(req.GetEvents()))
-		for i, evt := range req.GetEvents() {
-			evts[i] = sdk.NitricEvent{
-				RequestId:   evt.GetRequestId(),
-				PayloadType: evt.GetPayloadType(),
-				Payload:     evt.GetPayload().AsMap(),
+		// Translate tasks
+		tasks := make([]sdk.NitricTask, len(req.GetTasks()))
+		for i, task := range req.GetTasks() {
+			tasks[i] = sdk.NitricTask{
+				ID:          task.GetId(),
+				PayloadType: task.GetPayloadType(),
+				Payload:     task.GetPayload().AsMap(),
 			}
 		}
 
-		if resp, err := s.plugin.SendBatch(req.GetQueue(), evts); err == nil {
-			failedEvents := make([]*pb.FailedEvent, len(resp.FailedMessages))
+		if resp, err := s.plugin.SendBatch(req.GetQueue(), tasks); err == nil {
+			failedTasks := make([]*pb.FailedTask, len(resp.FailedMessages))
 			for i, fmsg := range resp.FailedMessages {
-				st, _ := structpb.NewStruct(fmsg.Event.Payload)
-				failedEvents[i] = &pb.FailedEvent{
+				st, _ := structpb.NewStruct(fmsg.Task.Payload)
+				failedTasks[i] = &pb.FailedTask{
 					Message: fmsg.Message,
-					Event: &pb.NitricEvent{
-						RequestId:   fmsg.Event.RequestId,
-						PayloadType: fmsg.Event.PayloadType,
+					Task: &pb.NitricTask{
+						Id:          fmsg.Task.ID,
+						PayloadType: fmsg.Task.PayloadType,
 						Payload:     st,
 					},
 				}
 			}
 			return &pb.QueueSendBatchResponse{
-				FailedEvents: failedEvents,
+				FailedTasks: failedTasks,
 			}, nil
 		} else {
 			return nil, err
@@ -91,28 +91,26 @@ func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) 
 		}
 
 		// Perform the Queue Pop operation
-		queueItems, err := s.plugin.Receive(popOptions)
+		tasks, err := s.plugin.Receive(popOptions)
 		if err != nil {
 			return nil, err
 		}
 
-		// Convert the NitricEvents to the gRPC type
-		grpcQueueItems := []*pb.NitricQueueItem{}
-		for _, queueItem := range queueItems {
-			st, _ := structpb.NewStruct(queueItem.Event.Payload)
-			grpcQueueItems = append(grpcQueueItems, &pb.NitricQueueItem{
-				Event: &pb.NitricEvent{
-					RequestId:   queueItem.Event.RequestId,
-					PayloadType: queueItem.Event.PayloadType,
-					Payload:     st,
-				},
-				LeaseId: queueItem.LeaseId,
+		// Convert the NitricTasks to the gRPC type
+		grpcTasks := []*pb.NitricTask{}
+		for _, task := range tasks {
+			st, _ := structpb.NewStruct(task.Payload)
+			grpcTasks = append(grpcTasks, &pb.NitricTask{
+				Id:          task.ID,
+				Payload:     st,
+				LeaseId:     task.LeaseID,
+				PayloadType: task.PayloadType,
 			})
 		}
 
-		// Return the queue items
+		// Return the tasks
 		res := pb.QueueReceiveResponse{
-			Items: grpcQueueItems,
+			Tasks: grpcTasks,
 		}
 		return &res, nil
 	} else {
