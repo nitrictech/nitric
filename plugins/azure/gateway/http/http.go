@@ -58,8 +58,6 @@ func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventg
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		// FIXME: Handle error...
-
 		// FIXME: Handle error
 		handler.HandleEvent(&triggers.Event{
 			// FIXME: Check if ID is nil
