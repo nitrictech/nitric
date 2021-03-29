@@ -30,6 +30,32 @@ func generateQueueSubscription(queue string) string {
 	return fmt.Sprintf("%s-nitricqueue", queue)
 }
 
+func (s *PubsubQueueService) Send(queue string, task sdk.NitricTask) error {
+	// We'll be using pubsub with pull subscribers to facilitate queue functionality
+	ctx := context.TODO()
+	topic := s.client.Topic(queue)
+
+	if exists, err := topic.Exists(ctx); !exists || err != nil {
+		return fmt.Errorf("Queue: %s does not exist", queue)
+	}
+
+	if taskBytes, err := json.Marshal(task); err == nil {
+			msg := adapters.AdaptPubsubMessage(&pubsub.Message{
+				Data: taskBytes,
+			})
+
+			result := topic.Publish(ctx, msg)
+
+			if _, err := result.Get(ctx); err != nil {
+				return fmt.Errorf("Error getting result: %v", err)
+			}
+	} else {
+		return fmt.Errorf("Error marshalling task: %v", err)
+	}
+
+	return nil
+}
+
 func (s *PubsubQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
@@ -147,7 +173,7 @@ func (s *PubsubQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTa
 		return []sdk.NitricTask{}, nil
 	}
 
-	// Convert the PubSub messages into Nitric Queue Items, containing Nitric Events
+	// Convert the PubSub messages into Nitric tasks
 	var tasks []sdk.NitricTask
 	for _, m := range res.ReceivedMessages {
 		var nitricTask sdk.NitricTask
@@ -159,6 +185,8 @@ func (s *PubsubQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTa
 
 		tasks = append(tasks, sdk.NitricTask{
 			ID:   nitricTask.ID,
+			Payload:     nitricTask.Payload,
+			PayloadType: nitricTask.PayloadType,
 			LeaseID: nitricTask.LeaseID,
 		})
 	}

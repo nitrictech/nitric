@@ -15,6 +15,54 @@ import (
 )
 
 var _ = Describe("Pubsub", func() {
+	Context("Send", func() {
+
+		When("Publishing to a queue that exists", func() {
+			mockPubsubClient := mocks.NewMockPubsubClient(
+				mocks.MockPubsubOptions{
+					Topics: []string{"test"},
+				})
+			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
+
+			It("Should queue the Nitric Task", func() {
+				err := queuePlugin.Send("test", sdk.NitricTask{
+					ID:   "1234",
+					PayloadType: "test-payload",
+					Payload: map[string]interface{}{
+						"Test": "Test",
+					},
+				})
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("The queue containing the published message")
+				Expect(mockPubsubClient.PublishedMessages["test"]).To(HaveLen(1))
+			})
+		})
+
+		When("Publishing to a queue that does not exist", func() {
+			mockPubsubClient := mocks.NewMockPubsubClient(mocks.MockPubsubOptions{
+				Topics:   []string{},
+			})
+			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
+			It("Should return the error that failed to publish", func() {
+				err := queuePlugin.Send("test", sdk.NitricTask{
+					ID:   "mockrequestid",
+					PayloadType: "mockpayloadtype",
+					LeaseID: "MockId",
+					Payload: map[string]interface{}{
+						"Test": "Test",
+					},
+				})
+
+				// It should still attempt
+				By("Returning an error")
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+	})
+
 	Context("BatchPush", func() {
 
 		When("Publishing to a queue that exists", func() {
@@ -24,7 +72,7 @@ var _ = Describe("Pubsub", func() {
 				})
 			queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 
-			It("Should queue the Nitric Event", func() {
+			It("Should queue the Nitric Task", func() {
 				resp, err := queuePlugin.SendBatch("test", []sdk.NitricTask{{
 					ID:   "1234",
 					PayloadType: "test-payload",
@@ -65,7 +113,7 @@ var _ = Describe("Pubsub", func() {
 		})
 	})
 
-	Context("Pop", func() {
+	Context("Recieve", func() {
 
 		When("Popping from a queue that exists", func() {
 			When("There is a message on the queue", func() {
@@ -101,7 +149,7 @@ var _ = Describe("Pubsub", func() {
 					}, nil
 				})
 
-				It("Should pop the message", func() {
+				It("Should recieve the message", func() {
 					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     nil,
@@ -113,7 +161,7 @@ var _ = Describe("Pubsub", func() {
 					By("Returning no failed messages")
 					Expect(len(items)).To(Equal(1))
 
-					//By("Removing the popped messages")
+					//By("Removing the recieved messages")
 				})
 			})
 			When("There are no messages on the queue", func() {
