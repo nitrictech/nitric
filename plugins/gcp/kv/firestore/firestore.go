@@ -10,20 +10,6 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-// type FirestoreClientIface interface {
-// 	Collection(string) FirestoreCollectionIface
-// }
-
-// type FirestoreCollectionIface interface {
-// 	Doc(string) FirestoreDocumentIface
-// }
-
-// type FirestoreDocumentIface interface {
-// 	Create(context.Context, interface{}) (*firestore.WriteResult, error)
-// 	Get(context.Context) (*firestore.DocumentSnapshot, error)
-// 	Set(context.Context, interface{}) (*firestore.WriteResult, error)
-// }
-
 type FirestoreKVService struct {
 	client *firestore.Client
 	sdk.UnimplementedKeyValuePlugin

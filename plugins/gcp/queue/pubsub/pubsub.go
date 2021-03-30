@@ -132,7 +132,7 @@ func (s *PubsubQueueService) getQueueSubscription(queue string) (ifaces.Subscrip
 	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
-// Receives a collection of queue items off a given queue.
+// Receives a collection of tasks off a given queue.
 func (s *PubsubQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
 	err := options.Validate()
 	if err != nil {
