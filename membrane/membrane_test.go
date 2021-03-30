@@ -12,7 +12,7 @@ import (
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/membrane"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/sources"
+	"github.com/nitric-dev/membrane/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -67,22 +67,22 @@ func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
 
 type MockGateway struct {
 	sdk.UnimplementedGatewayPlugin
-	sources []sources.Source
+	triggers []triggers.Trigger
 	// store responses for inspection
 	responses []*http.Response
 	started   bool
 }
 
-func (gw *MockGateway) Start(handler handler.SourceHandler) error {
+func (gw *MockGateway) Start(handler handler.TriggerHandler) error {
 	// Spy on the mock gateway
 	gw.responses = make([]*http.Response, 0)
 
 	gw.started = true
-	if gw.sources != nil {
-		for _, source := range gw.sources {
-			if s, ok := source.(*sources.HttpRequest); ok {
+	if gw.triggers != nil {
+		for _, trigger := range gw.triggers {
+			if s, ok := trigger.(*triggers.HttpRequest); ok {
 				gw.responses = append(gw.responses, handler.HandleHttpRequest(s))
-			} else if s, ok := source.(*sources.Event); ok {
+			} else if s, ok := trigger.(*triggers.Event); ok {
 				handler.HandleEvent(s)
 			}
 		}
@@ -281,8 +281,8 @@ var _ = Describe("Membrane", func() {
 			var mb *membrane.Membrane
 			BeforeEach(func() {
 				mockGateway = &MockGateway{
-					sources: []sources.Source{
-						&sources.HttpRequest{
+					triggers: []triggers.Trigger{
+						&triggers.HttpRequest{
 							Body:   ioutil.NopCloser(bytes.NewReader([]byte("Test Payload"))),
 							Path:   "/test/",
 							Header: make(http.Header),
