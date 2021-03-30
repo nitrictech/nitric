@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -16,48 +18,50 @@ type HttpGateway struct {
 	sdk.UnimplementedGatewayPlugin
 }
 
-func (s *HttpGateway) Start(handler sdk.GatewayHandler) error {
+func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		// Handle the HTTP response...
 		headers := req.Header
 
-		var requestId = headers.Get("x-nitric-request-id")
-		var payloadType = headers.Get("x-nitric-payload-type")
-		var sourceTypeString = headers.Get("x-nitric-source-type")
-		var source = headers.Get("User-Agent")
-		// var contentType = strings.Join(headers["Content-Type"], "")
-		// var timestamp = &timestamp.Timestamp{}
-		var payload, _ = ioutil.ReadAll(req.Body)
+		var triggerTypeString = headers.Get("x-nitric-source-type")
 
-		// TODO: Create string to enum utility for SourceType
-		var sourceType = sdk.Request
+		// Handle Event/Subscription Request Types
+		if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
+			trigger := headers.Get("x-nitric-source")
+			requestId := headers.Get("x-nitric-request-id")
+			payload, _ := ioutil.ReadAll(req.Body)
 
-		if strings.ToLower(sourceTypeString) == "subscription" {
-			sourceType = sdk.Subscription
-			source = headers.Get("x-nitric-source")
+			err := handler.HandleEvent(&triggers.Event{
+				ID:      requestId,
+				Topic:   trigger,
+				Payload: payload,
+			})
+
+			if err != nil {
+				// TODO: Make this more informative
+				resp.WriteHeader(500)
+				resp.Write([]byte("There was an error processing the event"))
+			} else {
+				resp.WriteHeader(200)
+				resp.Write([]byte("Successfully Handled the Event"))
+			}
+
+			// return here...
+			return
 		}
 
-		nitricContext := &sdk.NitricContext{
-			RequestId:   requestId,
-			PayloadType: payloadType,
-			Source:      source,
-			SourceType:  sourceType,
+		httpReq := triggers.FromHttpRequest(req)
+		// Handle HTTP Request Types
+		response := handler.HandleHttpRequest(httpReq)
+		responsePayload, _ := ioutil.ReadAll(response.Body)
+
+		for key := range response.Header {
+			resp.Header().Add(key, response.Header.Get(key))
 		}
 
-		// Call the membrane function handler
-		response := handler(&sdk.NitricRequest{
-			Context: nitricContext,
-			Payload: payload,
-		})
-
-		for name, value := range response.Headers {
-			resp.Header().Add(name, value)
-		}
-
-		// Pass through the function response
-		resp.WriteHeader(response.Status)
-		resp.Write(response.Body)
+		resp.WriteHeader(response.StatusCode)
+		resp.Write(responsePayload)
 	})
 
 	// Start a HTTP Proxy server here...

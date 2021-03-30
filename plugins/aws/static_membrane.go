@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/plugins/sdk"
 	"log"
 	"strconv"
+
+	"github.com/nitric-dev/membrane/sdk"
 
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
 	documents "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
-	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 	httpGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
+	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 	queue "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
 	storage "github.com/nitric-dev/membrane/plugins/aws/storage/s3"
 	"github.com/nitric-dev/membrane/utils"
@@ -43,7 +44,6 @@ func main() {
 	default:
 		gatewayPlugin, _ = httpGateway.New()
 	}
-
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,

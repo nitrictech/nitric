@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )
@@ -51,6 +51,9 @@ func (s *PubsubEventService) Publish(topic string, event *sdk.NitricEvent) error
 	pubsubTopic := s.client.Topic(topic)
 
 	msg := adapters.AdaptPubsubMessage(&pubsub.Message{
+		Attributes: map[string]string{
+			"x-nitric-topic": topic,
+		},
 		Data: eventBytes,
 	})
 

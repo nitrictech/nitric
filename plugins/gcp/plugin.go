@@ -7,11 +7,10 @@ import (
 	http_service "github.com/nitric-dev/membrane/plugins/gcp/gateway/http"
 	pubsub_queue_service "github.com/nitric-dev/membrane/plugins/gcp/queue/pubsub"
 	storage_service "github.com/nitric-dev/membrane/plugins/gcp/storage/storage"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 type GCPServiceFactory struct {
-
 }
 
 func New() sdk.ServiceFactory {

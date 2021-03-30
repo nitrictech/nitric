@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/nitric-dev/membrane/plugins/dev/mocks"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -92,7 +92,7 @@ var _ = Describe("Queue", func() {
 				depth := uint32(10)
 				items, err := queuePlugin.Pop(sdk.PopOptions{
 					QueueName: "test",
-					Depth: &depth,
+					Depth:     &depth,
 				})
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -123,7 +123,7 @@ var _ = Describe("Queue", func() {
 				depth := uint32(10)
 				items, err := queuePlugin.Pop(sdk.PopOptions{
 					QueueName: "test",
-					Depth: &depth,
+					Depth:     &depth,
 				})
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -167,7 +167,7 @@ var _ = Describe("Queue", func() {
 					depth := uint32(10)
 					items, err := queuePlugin.Pop(sdk.PopOptions{
 						QueueName: "test",
-						Depth: &depth,
+						Depth:     &depth,
 					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())

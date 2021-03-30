@@ -3,47 +3,55 @@ package gateway_plugin_test
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
 	gateway_plugin "github.com/nitric-dev/membrane/plugins/dev/gateway"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type MockHandler struct {
 	// store the recieved requests for testing
-	handledRequests []*sdk.NitricRequest
+	requests []*triggers.HttpRequest
+	events   []*triggers.Event
 	// provide fixed mock response for testing
-	respondsWith *sdk.NitricResponse
+	// respondsWith *sdk.NitricResponse
 }
 
-func (m *MockHandler) handle(request *sdk.NitricRequest) *sdk.NitricResponse {
-	if m.handledRequests == nil {
-		// Initialize the handled requests array
-		m.handledRequests = make([]*sdk.NitricRequest, 0)
+func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
+	if m.events == nil {
+		m.events = make([]*triggers.Event, 0)
 	}
 
-	m.handledRequests = append(m.handledRequests, request)
+	m.events = append(m.events, evt)
 
-	if m.respondsWith != nil {
-		return m.respondsWith
+	return nil
+}
+
+func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) *http.Response {
+	if m.requests == nil {
+		m.requests = make([]*triggers.HttpRequest, 0)
 	}
 
-	// If there is no configured mock response, we'll return a default one
-	return &sdk.NitricResponse{
-		Headers: map[string]string{
-			"Content-Type": "text/plain",
-		},
-		Status: 200,
-		Body:   []byte("Test"),
+	// Read and re-created a new read stream here...
+	body, _ := ioutil.ReadAll(r.Body)
+	r.Body = ioutil.NopCloser(bytes.NewReader(body))
+
+	m.requests = append(m.requests, r)
+
+	return &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("success"))),
 	}
 }
 
 func (m *MockHandler) resetRequests() {
-	m.handledRequests = make([]*sdk.NitricRequest, 0)
+	m.requests = make([]*triggers.HttpRequest, 0)
+	m.events = make([]*triggers.Event, 0)
 }
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
@@ -63,14 +71,14 @@ var _ = Describe("Gateway", func() {
 	})
 
 	// Start the gatewat on a seperate thread so it doesn't block the tests...
-	go (gateway.Start)(handler.handle)
+	go (gateway.Start)(handler)
 	// FIXME: Update gateway to block on channel...
 	time.Sleep(500 * time.Millisecond)
 
 	When("Recieving standard HTTP requests", func() {
 		When("The request contains standard nitric headers", func() {
 			payload := []byte("Test")
-			request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payload))
+			request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader(payload))
 
 			request.Header.Add("x-nitric-request-id", "1234")
 			request.Header.Add("x-nitric-payload-type", "test-payload")
@@ -83,24 +91,23 @@ var _ = Describe("Gateway", func() {
 				Expect(err).To(BeNil())
 
 				By("Passing through exactly 1 request")
-				Expect(handler.handledRequests).To(HaveLen(1))
+				Expect(handler.requests).To(HaveLen(1))
 
-				handledRequest := handler.handledRequests[0]
+				handledRequest := handler.requests[0]
 
-				By("Passing setting the nitric source type to REQUEST")
-				Expect(handledRequest.Context.SourceType).To(Equal(sdk.Request))
+				By("Preserving the original request method")
+				Expect(handledRequest.Method).To(Equal("POST"))
 
-				By("Passing through the User-Agent as the nitric source")
-				Expect(handledRequest.Context.Source).To(Equal("Test"))
+				By("Preserving the original request URL")
+				Expect(handledRequest.Path).To(Equal("/test"))
 
-				By("Passing through the sent nitric request id")
-				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
-
-				By("Passing through the sent nitric payload type")
-				Expect(handledRequest.Context.PayloadType).To(Equal("test-payload"))
-
-				By("Passing through the provided payload")
-				Expect(handledRequest.Payload).To(BeEquivalentTo(payload))
+				// FIXME: Wierd bug occuring in tests,
+				// need to validate genuine runtime behaviour here...
+				// Seems like the original request stream is closed
+				// before we can actually properly assess it
+				body, _ := ioutil.ReadAll(handledRequest.Body)
+				By("Preserving the original request Body")
+				Expect(string(body)).To(Equal("Test"))
 			})
 		})
 		// TODO: Handle cases of missing nitric headers
@@ -123,25 +130,19 @@ var _ = Describe("Gateway", func() {
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
-				By("Passing through exactly 1 request")
-				Expect(handler.handledRequests).To(HaveLen(1))
+				By("Passing through exactly 1 event")
+				Expect(handler.events).To(HaveLen(1))
 
-				handledRequest := handler.handledRequests[0]
+				evt := handler.events[0]
 
-				By("Passing setting the nitric source type to SUBSCRIPTION")
-				Expect(handledRequest.Context.SourceType).To(Equal(sdk.Subscription))
+				By("Preserving the provided payload")
+				Expect(evt.Payload).To(BeEquivalentTo(payload))
 
-				By("Passing through the source header as the nitric source")
-				Expect(handledRequest.Context.Source).To(Equal("test-topic"))
+				By("Extracting the provided topic")
+				Expect(evt.Topic).To(Equal("test-topic"))
 
-				By("Passing through the sent nitric request id")
-				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
-
-				By("Passing through the sent nitric payload type")
-				Expect(handledRequest.Context.PayloadType).To(Equal("test-payload"))
-
-				By("Passing through the provided payload")
-				Expect(handledRequest.Payload).To(BeEquivalentTo(payload))
+				By("Extracting the provided ID")
+				Expect(evt.ID).To(Equal("1234"))
 			})
 		})
 	})

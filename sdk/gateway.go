@@ -1,25 +1,17 @@
 package sdk
 
-import "fmt"
+import (
+	"fmt"
 
-// SourceType enum
-type SourceType int
-
-const (
-	Subscription SourceType = iota
-	Request
-	Custom
+	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/triggers"
 )
-
-func (e SourceType) String() string {
-	return []string{"SUBSCRIPTION", "REQUEST", "CUSTOM"}[e]
-}
 
 type NitricContext struct {
 	RequestId   string
 	PayloadType string
-	Source      string
-	SourceType  SourceType
+	Trigger     string
+	TriggerType triggers.TriggerType
 }
 
 // Normalized NitricRequest
@@ -35,18 +27,16 @@ type NitricResponse struct {
 	Body    []byte
 }
 
-type GatewayHandler func(*NitricRequest) *NitricResponse
-
 type GatewayService interface {
 	// Start the Gateway
 	// This method should block
-	Start(handler GatewayHandler) error
+	Start(handler handler.TriggerHandler) error
 }
 
 type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ GatewayHandler) error {
+func (*UnimplementedGatewayPlugin) Start(_ handler.TriggerHandler) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }

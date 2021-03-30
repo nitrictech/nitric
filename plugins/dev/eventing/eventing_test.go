@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	eventing_plugin "github.com/nitric-dev/membrane/plugins/dev/eventing"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

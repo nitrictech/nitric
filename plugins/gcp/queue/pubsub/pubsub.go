@@ -1,14 +1,15 @@
 package pubsub_queue_service
 
 import (
-	"cloud.google.com/go/pubsub"
-	pubsubbase "cloud.google.com/go/pubsub/apiv1"
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"cloud.google.com/go/pubsub"
+	pubsubbase "cloud.google.com/go/pubsub/apiv1"
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -187,7 +188,7 @@ func (s *PubsubQueueService) Complete(queue string, leaseId string) error {
 	// Acknowledge the queue item so it's removed from the queue
 	req := pubsubpb.AcknowledgeRequest{
 		Subscription: queueSubscription.String(),
-		AckIds: []string{ leaseId },
+		AckIds:       []string{leaseId},
 	}
 	err = client.Acknowledge(ctx, &req)
 	if err != nil {
@@ -220,7 +221,7 @@ func New() (sdk.QueueService, error) {
 	}
 
 	return &PubsubQueueService{
-		client:              adapters.AdaptPubsubClient(client),
+		client: adapters.AdaptPubsubClient(client),
 		// TODO: replace this with a better mechanism for mocking the client.
 		newSubscriberClient: adaptNewClient(pubsubbase.NewSubscriberClient),
 		projectId:           credentials.ProjectID,

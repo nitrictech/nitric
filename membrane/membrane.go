@@ -1,19 +1,18 @@
 package membrane
 
 import (
-	"bytes"
 	"fmt"
-	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
-	"io/ioutil"
 	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
+	"github.com/nitric-dev/membrane/handler"
+
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 	"google.golang.org/grpc"
 )
 
@@ -35,6 +34,9 @@ type MembraneOptions struct {
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
+
+	// The operating mode of the membrane
+	Mode Mode
 }
 
 type Membrane struct {
@@ -68,6 +70,8 @@ type Membrane struct {
 
 	// Suppress println statements in the membrane server
 	supressLogs bool
+
+	mode Mode
 }
 
 func (s *Membrane) log(log string) {
@@ -152,51 +156,6 @@ func (s *Membrane) nitricResponseFromError(err error) *sdk.NitricResponse {
 	}
 }
 
-func (s *Membrane) httpHandler(request *sdk.NitricRequest) *sdk.NitricResponse {
-	httpRequest, err := http.NewRequest("POST", s.childUrl, bytes.NewReader(request.Payload))
-
-	// There was an error creating the HTTP request
-	if err != nil {
-		// return an error to the Gateway
-		return s.nitricResponseFromError(err)
-	}
-
-	// Encode NitricContext into HTTP headers
-	httpRequest.Header.Add("Content-Type", http.DetectContentType(request.Payload))
-	httpRequest.Header.Add("x-nitric-payload-type", request.Context.PayloadType)
-	httpRequest.Header.Add("x-nitric-request-id", request.Context.RequestId)
-	httpRequest.Header.Add("x-nitric-source-type", request.Context.SourceType.String())
-	httpRequest.Header.Add("x-nitric-source", request.Context.Source)
-
-	// Send the request down to our function
-	// Here we'll be making a normal http request to the function server
-	// From here we will return the response from the server
-	// Always do a post request to the local function???
-	response, err := http.DefaultClient.Do(httpRequest)
-
-	if err != nil {
-		return s.nitricResponseFromError(err)
-	}
-
-	responseBody, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return s.nitricResponseFromError(err)
-	}
-
-	headers := map[string]string{}
-	for name, value := range response.Header {
-		headers[name] = value[0]
-	}
-
-	// Pass the response back to the gateway
-	return &sdk.NitricResponse{
-		Headers: headers,
-		Body:    responseBody,
-		Status:  response.StatusCode,
-	}
-}
-
 // Start the membrane
 func (s *Membrane) Start() error {
 	// Search for known plugins
@@ -256,8 +215,18 @@ func (s *Membrane) Start() error {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Starting Gateway")
-	err = s.gatewayPlugin.Start(s.httpHandler)
-	// The gateway process has exited
+
+	var hndlr handler.TriggerHandler
+	switch s.mode {
+	case Mode_Faas:
+		hndlr = handler.NewFaasHandler(s.childAddress)
+		break
+	case Mode_HttpProxy:
+		hndlr = handler.NewHttpHandler(s.childAddress)
+		break
+	}
+
+	err = s.gatewayPlugin.Start(hndlr)
 
 	return err
 }
@@ -298,5 +267,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		gatewayPlugin:           options.GatewayPlugin,
 		supressLogs:             options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
+		mode:                    options.Mode,
 	}, nil
 }

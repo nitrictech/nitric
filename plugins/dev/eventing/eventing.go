@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -43,7 +44,7 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 			httpRequest.Header.Add("Content-Type", contentType)
 			httpRequest.Header.Add("x-nitric-request-id", requestId)
 			httpRequest.Header.Add("x-nitric-source", topic)
-			httpRequest.Header.Add("x-nitric-source-type", sdk.Subscription.String())
+			httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 			httpRequest.Header.Add("x-nitric-payload-type", payloadType)
 
 			// Call the target

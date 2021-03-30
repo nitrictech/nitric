@@ -12,7 +12,7 @@ import (
 
 	"github.com/nitric-dev/membrane/plugins/gcp/adapters"
 	"github.com/nitric-dev/membrane/plugins/gcp/ifaces"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 // IdentityPlatformAuthService - GCP Identity Platform implementation of the Nitric Auth plugin interface

@@ -8,7 +8,11 @@ The Nitric membrane is designed to separate application code from the non-functi
   <img src="docs/assets/architecture.png" alt="nitric membrane architecture diagram"/>
 </p>
 
-Documenation on key components is availabe in the [Membrane SDK](./plugins/sdk/README.md).
+Documentation on key components is available in the [Membrane SDK](./sdk/README.md).
+
+## Configuration
+
+Membrane configuration options can be found [here](./docs/Configuration.md)
 
 ## Membrane Build Options
 The Nitric Membrane comes in two variants `Pluggable` or `Static`.

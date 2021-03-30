@@ -4,15 +4,24 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/utils"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/utils"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
-	gw "github.com/nitric-dev/membrane/plugins/sdk"
+	gw "github.com/nitric-dev/membrane/sdk"
+)
+
+const (
+	AMZ_MESSAGE_ID   = "x-amz-sns-message-id"
+	AMZ_MESSAGE_TYPE = "x-amz-sns-message-type"
+	AMZ_TOPIC_ARN    = "x-amz-sns-topic-arn"
 )
 
 type HttpProxyGateway struct {
@@ -20,25 +29,22 @@ type HttpProxyGateway struct {
 	address string
 }
 
-func (s *HttpProxyGateway) Start(handler gw.GatewayHandler) error {
+func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		// Handle the HTTP response...
 		headers := req.Header
 
-		var sourceType = gw.Request
-		var source = strings.Join(headers["User-Agent"], "")
-		var requestId = strings.Join(headers["x-nitric-request-id"], "")
-		var payloadType = strings.Join(headers["x-nitric-payload-type"], "")
-		// var contentType = strings.Join(headers["Content-Type"], "")
-		// var timestamp = &timestamp.Timestamp{}
-		var payload, _ = ioutil.ReadAll(req.Body)
+		var trigger = strings.Join(headers["User-Agent"], "")
 
-		if source == "Amazon Simple Notification Service Agent" {
+		if trigger == "Amazon Simple Notification Service Agent" {
 			// If its a subscribe or unsubscribe notification then we need to handle it
-			amzMessageType := strings.Join(headers["x-amz-sns-message-type"], "")
-			topicArn := strings.Join(headers["x-amz-sns-topic-arn"], "")
+			amzMessageType := headers.Get(AMZ_MESSAGE_TYPE)
+			topicArn := headers.Get(AMZ_TOPIC_ARN)
+			id := headers.Get(AMZ_MESSAGE_ID)
+
+			payload, _ := ioutil.ReadAll(req.Body)
 
 			// SNS bodies are always JSON
 			var jsonBody map[string]interface{}
@@ -68,32 +74,36 @@ func (s *HttpProxyGateway) Start(handler gw.GatewayHandler) error {
 				return
 			}
 
-			// We know that the source is now a topic
-			sourceType = gw.Subscription
-			topicParts := strings.Split(topicArn, ":")
-			source = topicParts[len(topicParts)-1] // get the topic name from the full ARN.
+			if err := handler.HandleEvent(&triggers.Event{
+				ID: id,
+				// FIXME: Split this to retrive the nitric topic name
+				Topic:   topicArn,
+				Payload: payload,
+			}); err == nil {
+				// Return a positive (200) response
+				resp.WriteHeader(200)
+				resp.Write([]byte("Success"))
+			} else {
+				// return a negative (500) response
+				resp.WriteHeader(500)
+				// TODO: Debug mode for printing errror here...
+				resp.Write([]byte("Internal Server Error"))
+			}
+
+			return
 		}
 
-		nitricContext := &gw.NitricContext{
-			RequestId:   requestId,
-			PayloadType: payloadType,
-			Source:      source,
-			SourceType:  sourceType,
-		}
+		// Otherwise treat as a normal http request
+		response := handler.HandleHttpRequest(triggers.FromHttpRequest(req))
+		responseBody, _ := ioutil.ReadAll(response.Body)
 
-		// Call the membrane function handler
-		response := handler(&gw.NitricRequest{
-			Context: nitricContext,
-			Payload: payload,
-		})
-
-		for name, value := range response.Headers {
-			resp.Header().Add(name, value)
+		for name := range response.Header {
+			resp.Header().Add(name, response.Header.Get(name))
 		}
 
 		// Pass through the function response
-		resp.WriteHeader(response.Status)
-		resp.Write(response.Body)
+		resp.WriteHeader(response.StatusCode)
+		resp.Write(responseBody)
 	})
 
 	// Start a HTTP Proxy server here...

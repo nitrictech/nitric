@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	http_service "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/sdk"
 
 	"github.com/nitric-dev/membrane/membrane"
 	"github.com/nitric-dev/membrane/utils"

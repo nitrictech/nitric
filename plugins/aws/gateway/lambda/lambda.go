@@ -1,15 +1,19 @@
 package lambda_service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/nitric-dev/membrane/plugins/sdk"
+	"github.com/nitric-dev/membrane/handler"
+	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/triggers"
 )
 
 type eventType int
@@ -17,14 +21,14 @@ type eventType int
 const (
 	unknown eventType = iota
 	sns
-	http
+	httpEvent
 )
 
 type LambdaRuntimeHandler func(handler interface{})
 
 //Event incoming event
 type Event struct {
-	Requests []sdk.NitricRequest
+	Requests []triggers.Trigger
 }
 
 func (event *Event) getEventType(data []byte) eventType {
@@ -34,7 +38,7 @@ func (event *Event) getEventType(data []byte) eventType {
 
 	// If our event is a HTTP request
 	if _, ok := tmp["rawPath"]; ok {
-		return http
+		return httpEvent
 	} else if records, ok := tmp["Records"]; ok {
 		recordsList, _ := records.([]interface{})
 		record, _ := recordsList[0].(map[string]interface{})
@@ -60,7 +64,7 @@ func (event *Event) getEventType(data []byte) eventType {
 func (event *Event) UnmarshalJSON(data []byte) error {
 	var err error
 
-	event.Requests = make([]sdk.NitricRequest, 0)
+	event.Requests = make([]triggers.Trigger, 0)
 
 	switch event.getEventType(data) {
 	case sns:
@@ -79,51 +83,44 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 				topicArn := snsRecord.SNS.TopicArn
 				topicParts := strings.Split(topicArn, ":")
-				source := topicParts[len(topicParts)-1]
+				trigger := topicParts[len(topicParts)-1]
 				// get the topic name from the full ARN.
 				// Get the topic name from the arn
 
 				if err == nil {
 					// Decode the message to see if it's a Nitric message
-					context := sdk.NitricContext{
-						SourceType:  sdk.Subscription,
-						Source:      source,
-						PayloadType: messageJson.PayloadType,
-						RequestId:   messageJson.RequestId,
-					}
-
 					payloadMap := messageJson.Payload
-
 					payloadBytes, err := json.Marshal(&payloadMap)
 
 					if err == nil {
-						event.Requests = append(event.Requests, sdk.NitricRequest{
-							Context:     &context,
-							Payload:     payloadBytes,
-							ContentType: *aws.String("application/json"),
+						event.Requests = append(event.Requests, &triggers.Event{
+							ID:      messageJson.RequestId,
+							Topic:   trigger,
+							Payload: payloadBytes,
 						})
 					}
 				}
 			}
 		}
 		break
-	case http:
-		httpEvent := &events.APIGatewayV2HTTPRequest{}
+	case httpEvent:
+		evt := &events.APIGatewayV2HTTPRequest{}
 
-		err = json.Unmarshal(data, httpEvent)
+		err = json.Unmarshal(data, evt)
 
 		if err == nil {
-			nitricContext := sdk.NitricContext{
-				SourceType:  sdk.Request,
-				Source:      httpEvent.Headers["User-Agent"],
-				PayloadType: httpEvent.Headers["x-nitric-payload-type"],
-				RequestId:   httpEvent.Headers["x-nitric-request-id"],
+			httpHeader := make(http.Header)
+
+			for key, val := range evt.Headers {
+				httpHeader.Add(key, val)
 			}
 
-			event.Requests = append(event.Requests, sdk.NitricRequest{
-				Context:     &nitricContext,
-				ContentType: httpEvent.Headers["Content-Type"],
-				Payload:     []byte(httpEvent.Body),
+			event.Requests = append(event.Requests, &triggers.HttpRequest{
+				// FIXME: Translate to http.Header
+				Header: httpHeader,
+				Body:   ioutil.NopCloser(bytes.NewReader([]byte(evt.Body))),
+				Method: evt.RequestContext.HTTP.Method,
+				Path:   evt.RawPath,
 			})
 		}
 
@@ -144,7 +141,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 }
 
 type LambdaGateway struct {
-	handler sdk.GatewayHandler
+	handler handler.TriggerHandler
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
 }
@@ -153,23 +150,48 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 	for _, request := range event.Requests {
 		// TODO: Build up an array of responses?
 		//in some cases we won't need to send a response as well...
-		resp := s.handler(&request)
-		// There should only be one request if it was for a http request/response
-		// So we'll just return here...
-		if request.Context.SourceType == sdk.Request {
-			return events.APIGatewayProxyResponse{
-				StatusCode:      resp.Status,
-				Headers:         resp.Headers,
-				Body:            string(resp.Body),
-				IsBase64Encoded: false,
-			}, nil
+		// resp := s.handler(&request)
+
+		switch request.GetTriggerType() {
+		case triggers.TriggerType_Request:
+			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
+				response := s.handler.HandleHttpRequest(httpEvent)
+
+				lambdaHTTPHeaders := make(map[string]string)
+
+				for key := range response.Header {
+					lambdaHTTPHeaders[key] = response.Header.Get(key)
+				}
+
+				responsePayload, _ := ioutil.ReadAll(response.Body)
+
+				return events.APIGatewayProxyResponse{
+					StatusCode: response.StatusCode,
+					Headers:    lambdaHTTPHeaders,
+					Body:       string(responsePayload),
+					// TODO: Need to determine best case when to use this...
+					IsBase64Encoded: false,
+				}, nil
+			} else {
+				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
+			}
+			break
+		case triggers.TriggerType_Subscription:
+			if event, ok := request.(*triggers.Event); ok {
+				if err := s.handler.HandleEvent(event); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, fmt.Errorf("Error!: Found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
+			}
+			break
 		}
 	}
 	return nil, nil
 }
 
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(handler sdk.GatewayHandler) error {
+func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
 	s.handler = handler
 	// Here we want to begin polling lambda for incoming requests...
 	// Assuming that this is blocking

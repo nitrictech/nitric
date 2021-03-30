@@ -19,9 +19,14 @@ func main() {
 	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
 	childCommand := utils.GetEnv("INVOKE", "")
 	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
+	membraneMode := utils.GetEnv("MEMBRANE_MODE", "FAAS")
+
+	mode, err := membrane.ModeFromString(membraneMode)
+	if err != nil {
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
+	}
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
-
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
@@ -44,6 +49,7 @@ func main() {
 		AuthPlugin:              authPlugin,
 		GatewayPlugin:           gatewayPlugin,
 		TolerateMissingServices: tolerateMissing,
+		Mode:                    mode,
 	})
 
 	if err != nil {
