@@ -160,12 +160,7 @@ var _ = Describe("Pubsub", func() {
 
 					By("Returning no failed messages")
 					Expect(len(items)).To(Equal(1))
-
-					//By("Removing the recieved messages")
 				})
-			})
-			When("There are no messages on the queue", func() {
-
 			})
 		})
 

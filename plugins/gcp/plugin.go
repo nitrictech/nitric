@@ -23,7 +23,7 @@ func (p *GCPServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return identity_platform_service.New()
 }
 
-// NewKeyValueService - Returns Google Cloud Firestore based document service
+// NewKeyValueService - Returns Google Cloud Firestore based kv service
 func (p *GCPServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
 	return firestore_service.New()
 }
