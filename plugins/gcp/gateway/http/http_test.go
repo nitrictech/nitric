@@ -122,7 +122,7 @@ var _ = Describe("Http", func() {
 				"Test": "Test",
 			}
 			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
-				RequestId:   "1234",
+				ID:   "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,
 			})
@@ -152,7 +152,7 @@ var _ = Describe("Http", func() {
 
 				handledRequest := mockHandler.handledRequests[0]
 
-				By("Having the provided RequestId")
+				By("Having the provided RequestID")
 				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
 
 				By("Having the provided payload type")

@@ -55,7 +55,7 @@ func (s *HttpProxyGateway) Start(handler sdk.GatewayHandler) error {
 						// We'll contine here...
 						if err := json.Unmarshal(bytes, &nitricEvent); err == nil {
 							// We have an offical NitricEvent payload here...
-							requestId = nitricEvent.GetRequestId()
+							requestId = nitricEvent.GetId()
 							payloadType = nitricEvent.GetPayloadType()
 							if payloadBytes, err := nitricEvent.GetPayload().MarshalJSON(); err == nil {
 								payload = payloadBytes

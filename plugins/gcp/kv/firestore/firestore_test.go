@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/firestore"
-	firestore_plugin "github.com/nitric-dev/membrane/plugins/gcp/documents/firestore"
+	firestore_plugin "github.com/nitric-dev/membrane/plugins/gcp/kv/firestore"
 	mocks "github.com/nitric-dev/membrane/plugins/gcp/mocks"
 	"github.com/nitric-dev/membrane/plugins/sdk"
 	. "github.com/onsi/ginkgo"
@@ -15,11 +15,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-var _ = Describe("Firestore Documents Plugin", func() {
+var _ = Describe("Firestore KeyValue Plugin", func() {
 	// Setup mock environment...
 	var opts []grpc.ServerOption
 	var firestoreClient *firestore.Client
-	var firestorePlugin sdk.DocumentService
+	var firestorePlugin sdk.KeyValueService
 	grpcServer := grpc.NewServer(opts...)
 	mockFirestoreServer := &mocks.MockFirestoreServer{
 		Store: make(map[string]map[string]map[string]*pb.Value),
@@ -45,42 +45,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 		mockFirestoreServer.ClearStore()
 	})
 
-	When("Creating a new document", func() {
-		When("And the document does not already exist", func() {
-			err := firestorePlugin.Create("Test", "Test", map[string]interface{}{
-				"Test": "Test",
-			})
-			It("Should create and store the document", func() {
-				Expect(err).To(BeNil())
-			})
-		})
-
-		When("and the document already exists", func() {
-			It("Should return an AlreadyExists error", func() {
-				mockFirestoreServer.Store = map[string]map[string]map[string]*pb.Value{
-					// Collection Test
-					"Test": {
-						// Resource Test
-						"Test": {
-							"Test": &pb.Value{
-								ValueType: &pb.Value_StringValue{
-									StringValue: "Test",
-								},
-							},
-						},
-					},
-				}
-
-				err := firestorePlugin.Create("Test", "Test", map[string]interface{}{
-					"Test": "Test",
-				})
-
-				Expect(err).ToNot(BeNil())
-			})
-		})
-	})
-
-	When("Retrieving a document", func() {
+	When("Get", func() {
 		When("And the document already exists", func() {
 
 			It("The stored document should be returned", func() {
@@ -119,7 +84,7 @@ var _ = Describe("Firestore Documents Plugin", func() {
 		})
 	})
 
-	When("updating a document", func() {
+	When("Put", func() {
 		When("the document already exists", func() {
 			It("should successfully update the document", func() {
 				mockFirestoreServer.Store = map[string]map[string]map[string]*pb.Value{
@@ -136,26 +101,16 @@ var _ = Describe("Firestore Documents Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.Update("Test", "Test", map[string]interface{}{
+				err := firestorePlugin.Put("Test", "Test", map[string]interface{}{
 					"Test": "Test2",
 				})
 
 				Expect(err).To(BeNil())
 			})
 		})
-
-		When("the document doesn't exist", func() {
-			It("should return a not found error", func() {
-				err := firestorePlugin.Update("Test", "Test", map[string]interface{}{
-					"Test": "Test",
-				})
-
-				Expect(err).ToNot(BeNil())
-			})
-		})
 	})
 
-	When("deleting a document", func() {
+	When("Delete", func() {
 		When("the document does not exist", func() {
 			It("should return an error", func() {
 				err := firestorePlugin.Delete("Test", "Test")

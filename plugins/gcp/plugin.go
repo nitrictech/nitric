@@ -2,9 +2,9 @@ package main
 
 import (
 	identity_platform_service "github.com/nitric-dev/membrane/plugins/gcp/auth/identityplatform"
-	firestore_service "github.com/nitric-dev/membrane/plugins/gcp/documents/firestore"
 	pubsub_service "github.com/nitric-dev/membrane/plugins/gcp/eventing/pubsub"
 	http_service "github.com/nitric-dev/membrane/plugins/gcp/gateway/http"
+	firestore_service "github.com/nitric-dev/membrane/plugins/gcp/kv/firestore"
 	pubsub_queue_service "github.com/nitric-dev/membrane/plugins/gcp/queue/pubsub"
 	storage_service "github.com/nitric-dev/membrane/plugins/gcp/storage/storage"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -23,8 +23,8 @@ func (p *GCPServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return identity_platform_service.New()
 }
 
-// NewDocumentService - Returns Google Cloud Firestore based document service
-func (p *GCPServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+// NewKeyValueService - Returns Google Cloud Firestore based kv service
+func (p *GCPServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
 	return firestore_service.New()
 }
 
