@@ -2,8 +2,33 @@
 
 STAGED_GO_FILES=$(git diff --cached --name-only | grep ".go$")
 if [[ "$STAGED_GO_FILES" = "" ]]; then
-    echo "no go files were stashed"
-    exit 0
+  exit 0
 fi
-echo "found some interesting files!"
-exit 1
+
+PASS=true
+
+for FILE in $STAGED_GO_FILES
+do
+  goimports -w $FILE
+
+  golint "-set_exit_status" $FILE
+  if [[ $? == 1 ]]; then
+    PASS=false
+  fi
+
+  go vet $FILE
+  if [[ $? != 0 ]]; then
+    PASS=false
+  fi
+
+  gofmt $FILE
+done
+
+if ! $PASS; then
+  printf "COMMIT FAILED\n"
+  exit 1
+else
+  printf "COMMIT SUCCEEDED\n"
+fi
+
+exit 0
