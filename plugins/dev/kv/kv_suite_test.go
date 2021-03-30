@@ -1,4 +1,4 @@
-package documents_service_test
+package kv_service_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestDocuments(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Documents Suite")
+	RunSpecs(t, "KV Suite")
 }

@@ -77,7 +77,7 @@ var _ = Describe("Eventing", func() {
 			"Test": "test",
 		}
 		testEvent := &sdk.NitricEvent{
-			RequestId:   "1234",
+			ID:          "1234",
 			PayloadType: "Test-Payload",
 			Payload:     testPayload,
 		}
