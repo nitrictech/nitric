@@ -21,7 +21,7 @@ do
     PASS=false
   fi
 
-  gofmt $FILE
+  gofmt -s -w $FILE
 done
 
 if ! $PASS; then
