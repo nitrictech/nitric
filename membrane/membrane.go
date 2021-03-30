@@ -113,7 +113,7 @@ func (s *Membrane) startChildProcess() error {
 	commandArgs := strings.Fields(s.childCommand)
 
 	fmt.Println(fmt.Sprintf("Starting Function"))
-	childProcess := exec.Command(commandArgs[0], commandArgs[1:len(commandArgs)]...)
+	childProcess := exec.Command(commandArgs[0], commandArgs[1:]...)
 	childProcess.Stdout = os.Stdout
 	childProcess.Stderr = os.Stderr
 	applicationError := childProcess.Start()
@@ -238,6 +238,8 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	if options.ChildTimeoutSeconds > 0 {
 		childTimeout = options.ChildTimeoutSeconds
 	}
+
+	// testing
 
 	var childAddress = "localhost:8080"
 	if options.ChildAddress != "" {

@@ -3,6 +3,7 @@ membrane: install
 	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane pluggable_membrane.go
 
 init: install-tools
+	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
 fmt:
