@@ -10,11 +10,9 @@ The Nitric membrane is designed to separate application code from the non-functi
 
 Documentation on key components is available in the [Membrane SDK](./sdk/README.md).
 
-## Operating Modes
-The membrane operates in a number of different modes. These modes control how the membrane communicated with it's child process. The mode is configured by setting the system environment variable `MEMBRANE_MODE`. This environment variable will typically be implemented in nitric templates, based on their template type. Availabe modes are:
+## Configuration
 
-* FaaS: `MEMBRANE_MODE="FAAS"`
-* HTTP Proxy: `MEMBRANE_MODE="HTTP_PROXY"`
+Membrane configuration options can be found [here](./docs/Configuration.md)
 
 ## Membrane Build Options
 The Nitric Membrane comes in two variants `Pluggable` or `Static`.
