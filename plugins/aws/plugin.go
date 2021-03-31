@@ -11,7 +11,6 @@ import (
 )
 
 type AWSServiceFactory struct {
-
 }
 
 func New() sdk.ServiceFactory {
@@ -23,8 +22,8 @@ func (p *AWSServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return cognito_plugin.New()
 }
 
-// NewDocumentPlugin - Returns AWS DynamoDB based document plugin
-func (p *AWSServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
+func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
 	return dynamodb_plugin.New()
 }
 

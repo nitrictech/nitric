@@ -89,7 +89,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 						SourceType:  sdk.Subscription,
 						Source:      source,
 						PayloadType: messageJson.PayloadType,
-						RequestId:   messageJson.RequestId,
+						RequestId:   messageJson.ID,
 					}
 
 					payloadMap := messageJson.Payload

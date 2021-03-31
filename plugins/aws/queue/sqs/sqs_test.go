@@ -3,6 +3,7 @@ package sqs_service_test
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/plugins/aws/mocks"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -20,14 +21,14 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_plugin.NewWithClient(sqsMock)
 
 			It("Should publish the message", func() {
-				_, err := plugin.Push("test", []sdk.NitricEvent{
+				_, err := plugin.SendBatch("test", []sdk.NitricTask{
 					{
-						RequestId:   "1234",
+						ID:          "1234",
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
-											},
-										},
+						},
+					},
 				})
 
 				Expect(err).ShouldNot(HaveOccurred())
@@ -39,14 +40,14 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_plugin.NewWithClient(sqsMock)
 
 			It("Should fail to publish the message", func() {
-				_, err := plugin.Push("test", []sdk.NitricEvent{
+				_, err := plugin.SendBatch("test", []sdk.NitricTask{
 					{
-						RequestId:   "1234",
+						ID:          "1234",
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
-											},
-										},
+						},
+					},
 				})
 
 				Expect(err).Should(HaveOccurred())
@@ -61,7 +62,7 @@ var _ = Describe("Sqs", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
 				jsonBytes, _ := json.Marshal(sdk.NitricEvent{
-					RequestId:   "mockrequestid",
+					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},
 				})
@@ -84,7 +85,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Pop(sdk.PopOptions{
+					msg, err := plugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -106,7 +107,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Pop(sdk.PopOptions{
+					msg, err := plugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -128,7 +129,7 @@ var _ = Describe("Sqs", func() {
 			depth := uint32(10)
 
 			It("Should return an error", func() {
-				_, err := plugin.Pop(sdk.PopOptions{
+				_, err := plugin.Receive(sdk.ReceiveOptions{
 					QueueName: "non-existent-queue",
 					Depth:     &depth,
 				})
@@ -142,16 +143,16 @@ var _ = Describe("Sqs", func() {
 	// Tests for the Complete method
 	Context("Complete", func() {
 		When("The message is successfully deleted from SQS", func() {
-				// No errors set on mock, 'complete' won't return an error.
-				sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
-					Queues: []string{"test-queue"},
-				})
-				plugin := sqs_plugin.NewWithClient(sqsMock)
+			// No errors set on mock, 'complete' won't return an error.
+			sqsMock := mocks.NewMockSqs(&mocks.MockSqsOptions{
+				Queues: []string{"test-queue"},
+			})
+			plugin := sqs_plugin.NewWithClient(sqsMock)
 
-				It("Should not return an error", func() {
-					err := plugin.Complete("test-queue", "test-id")
-					Expect(err).ShouldNot(HaveOccurred())
-				})
+			It("Should not return an error", func() {
+				err := plugin.Complete("test-queue", "test-id")
+				Expect(err).ShouldNot(HaveOccurred())
+			})
 		})
 		When("The message fails to delete from SQS", func() {
 			// No errors set on mock, 'complete' won't return an error.

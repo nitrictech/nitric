@@ -63,8 +63,28 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	return nil, fmt.Errorf("Unable to find bucket with name: %s", bucket)
 }
 
-// Put - Writes a new item to a bucket
-func (s *S3StorageService) Put(bucket string, key string, object []byte) error {
+// Read - Retrieves an item from a bucket
+func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
+	if b, err := s.getBucketByName(bucket); err == nil {
+		resp, err := s.client.GetObject(&s3.GetObjectInput{
+			Bucket: b.Name,
+			Key:    aws.String(key),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer resp.Body.Close()
+		//TODO: Wrap the possible error from ReadAll
+		return ioutil.ReadAll(resp.Body)
+	} else {
+		return nil, err
+	}
+}
+
+// Write - Writes a new item to a bucket
+func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
@@ -80,33 +100,13 @@ func (s *S3StorageService) Put(bucket string, key string, object []byte) error {
 	}
 }
 
-// Get - Retrieves an item from a bucket
-func (s *S3StorageService) Get(bucket string, key string) ([]byte, error) {
-	if b, err := s.getBucketByName(bucket); err == nil {
-		resp, err := s.client.GetObject(&s3.GetObjectInput{
-			Bucket: b.Name,
-			Key: aws.String(key),
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		defer resp.Body.Close()
-		//TODO: Wrap the possible error from ReadAll
-		return ioutil.ReadAll(resp.Body)
-	} else {
-		return nil, err
-	}
-}
-
 // Delete - Deletes an item from a bucket
 func (s *S3StorageService) Delete(bucket string, key string) error {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
 		_, err := s.client.DeleteObject(&s3.DeleteObjectInput{
 			Bucket: b.Name,
-			Key: aws.String(key),
+			Key:    aws.String(key),
 		})
 
 		return err
