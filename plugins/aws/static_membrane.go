@@ -31,7 +31,7 @@ func main() {
 	}
 
 	eventingPlugin, _ := eventing.New()
-	documentsPlugin, _ := documents.New()
+	keyValuePlugin, _ := documents.New()
 	storagePlugin, _ := storage.New()
 	queuePlugin, _ := queue.New()
 	authPlugin, _ := auth.New()
@@ -50,7 +50,7 @@ func main() {
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		EventingPlugin:          eventingPlugin,
-		DocumentsPlugin:         documentsPlugin,
+		KvPlugin:                keyValuePlugin,
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,
