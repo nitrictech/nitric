@@ -105,8 +105,6 @@ var _ = Describe("Http", func() {
 
 				By("Preserving the original requests path")
 				Expect(handledRequest.Path).To(Equal("/test"))
-				By("Having the provided ID")
-				Expect(handledRequest.Context.RequestId).To(Equal("1234"))
 
 				streamRead, _ := ioutil.ReadAll(handledRequest.Body)
 				By("Preserving the original requests body")
@@ -130,7 +128,7 @@ var _ = Describe("Http", func() {
 				"Test": "Test",
 			}
 			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
-				ID:   "1234",
+				ID:          "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,
 			})
