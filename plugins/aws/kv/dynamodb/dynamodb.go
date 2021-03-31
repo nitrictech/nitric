@@ -13,18 +13,19 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-type NitricDocument struct {
+// NitricKVDocument - represents the structure of a Key Value record when stored in DynamoDB
+type NitricKVDocument struct {
 	Key   string
 	Value map[string]interface{}
 }
 
-// AWS DynamoDB AWS nitric plugin
-type DynamoDbDocumentService struct {
+// AWS DynamoDB AWS Nitric Key Value service
+type DynamoDbKVService struct {
 	sdk.UnimplementedKeyValuePlugin
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDbDocumentService) createStandardDocumentTable(name string) error {
+func (s *DynamoDbKVService) createStandardKVTable(name string) error {
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
@@ -48,30 +49,30 @@ func (s *DynamoDbDocumentService) createStandardDocumentTable(name string) error
 
 	_, err := s.client.CreateTable(input)
 	if err != nil {
-		return fmt.Errorf("failed to create new dynamodb document table, with name %v. details: %v", name, err)
+		return fmt.Errorf("failed to create new dynamodb key value table, with name %v. details: %v", name, err)
 	}
 	return nil
 }
 
-func (s *DynamoDbDocumentService) Put(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbKVService) Put(collection string, key string, value map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
 
 	// Construct DynamoDB attribute value object
-	av, err := dynamodbattribute.MarshalMap(NitricDocument{
+	av, err := dynamodbattribute.MarshalMap(NitricKVDocument{
 		Key:   key,
-		Value: document,
+		Value: value,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to marshal document")
+		return fmt.Errorf("failed to marshal value")
 	}
 
 	if err != nil {
 		return fmt.Errorf("failed to generate put request: %v", err)
 	}
 
-	// Store the NitricDocument attribute value to the specified table (collection)
+	// Store the NitricKVDocument attribute value to the specified table (collection)
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(collection),
@@ -82,7 +83,7 @@ func (s *DynamoDbDocumentService) Put(collection string, key string, document ma
 		if awsErr, ok := putError.(awserr.Error); ok {
 			// Table not found,  try to create and put again
 			if awsErr.Code() == dynamodb.ErrCodeResourceNotFoundException {
-				createError := s.createStandardDocumentTable(collection)
+				createError := s.createStandardKVTable(collection)
 				if createError != nil {
 					return fmt.Errorf("table not found and failed to create: %v", createError)
 				}
@@ -92,13 +93,13 @@ func (s *DynamoDbDocumentService) Put(collection string, key string, document ma
 	}
 
 	if putError != nil {
-		return fmt.Errorf("error creating new document: %v", putError)
+		return fmt.Errorf("error creating new value: %v", putError)
 	}
 
 	return nil
 }
 
-func (s *DynamoDbDocumentService) Get(collection string, key string) (map[string]interface{}, error) {
+func (s *DynamoDbKVService) Get(collection string, key string) (map[string]interface{}, error) {
 	tableName := collection
 
 	input := &dynamodb.GetItemInput{
@@ -112,23 +113,23 @@ func (s *DynamoDbDocumentService) Get(collection string, key string) (map[string
 
 	result, getError := s.client.GetItem(input)
 	if getError != nil {
-		return nil, fmt.Errorf("error getting document: %v", getError)
+		return nil, fmt.Errorf("error getting value for key %s: %v", key, getError)
 	}
 
 	if result.Item == nil {
-		return nil, fmt.Errorf("Document not found")
+		return nil, fmt.Errorf("value not found")
 	}
 
-	document := NitricDocument{}
-	unmarshalError := dynamodbattribute.UnmarshalMap(result.Item, &document)
+	kvDocument := NitricKVDocument{}
+	unmarshalError := dynamodbattribute.UnmarshalMap(result.Item, &kvDocument)
 	if unmarshalError != nil {
-		return nil, fmt.Errorf("Failed to unmarshal document %v", unmarshalError)
+		return nil, fmt.Errorf("failed to unmarshal key value document: %v", unmarshalError)
 	}
 
-	return document.Value, nil
+	return kvDocument.Value, nil
 }
 
-func (s *DynamoDbDocumentService) Delete(collection string, key string) error {
+func (s *DynamoDbKVService) Delete(collection string, key string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(collection),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -140,13 +141,13 @@ func (s *DynamoDbDocumentService) Delete(collection string, key string) error {
 
 	_, err := s.client.DeleteItem(input)
 	if err != nil {
-		return fmt.Errorf("error deleting document: %v", err)
+		return fmt.Errorf("error deleting key %s: %v", key, err)
 	}
 
 	return nil
 }
 
-// Create a New DynamoDB document plugin implementation
+// Create a New DynamoDB key value plugin implementation
 func New() (sdk.KeyValueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
@@ -162,14 +163,14 @@ func New() (sdk.KeyValueService, error) {
 
 	dynamoClient := dynamodb.New(sess)
 
-	return &DynamoDbDocumentService{
+	return &DynamoDbKVService{
 		client: dynamoClient,
 	}, nil
 }
 
 // Mainly used for mock testing to inject a mock client into this plugin
 func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.KeyValueService, error) {
-	return &DynamoDbDocumentService{
+	return &DynamoDbKVService{
 		client: client,
 	}, nil
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	cognito_plugin "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
-	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
+	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	sns_plugin "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	lambda_plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"

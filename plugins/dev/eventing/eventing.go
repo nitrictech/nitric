@@ -67,8 +67,7 @@ func (s *LocalEventService) ListTopics() ([]string, error) {
 	return keys, nil
 }
 
-// Create new DynamoDB documents server
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
+// Create new Dev EventService
 func New() (sdk.EventService, error) {
 	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 
