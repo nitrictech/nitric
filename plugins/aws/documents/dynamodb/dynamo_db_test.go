@@ -96,7 +96,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("documentsClient.Create should store the document without error", func() {
-				err := myMockClient.Create("Test", "Test", item)
+				err := myMockClient.Put("Test", "Test", item)
 				Expect(err).To(BeNil())
 
 				storedItem, ok := mockSvc.store["Test"]["Test"]
@@ -119,7 +119,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("should return an error", func() {
-				err := myMockClient.Create("Test", "", item)
+				err := myMockClient.Put("Test", "", item)
 
 				Expect(err.Error()).To(ContainSubstring("key auto-generation unimplemented, provide non-blank key"))
 			})
@@ -218,7 +218,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should behave as Create", func() {
-				err := myMockClient.Update("Test", "Test", item)
+				err := myMockClient.Put("Test", "Test", item)
 
 				Expect(err).To(BeNil())
 				storedItem, ok := mockSvc.store["Test"]["Test"]

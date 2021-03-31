@@ -140,7 +140,7 @@ var _ = Describe("Lambda", func() {
 			// eventBytes, _ := json.Marshal(&eventPayload)
 
 			event := sdk.NitricEvent{
-				RequestId:   "test-request-id",
+				ID:          "test-request-id",
 				PayloadType: "test-payload",
 				Payload:     eventPayload,
 			}

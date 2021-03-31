@@ -70,7 +70,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should publish without error", func() {
 				err := eventingClient.Publish("test", &sdk.NitricEvent{
-					RequestId:   "testing",
+					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
 				})
@@ -88,7 +88,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should return an error", func() {
 				err := eventingClient.Publish("test", &sdk.NitricEvent{
-					RequestId:   "testing",
+					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
 				})

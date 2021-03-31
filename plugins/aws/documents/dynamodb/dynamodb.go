@@ -3,8 +3,6 @@ package dynamodb_service
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -22,7 +20,7 @@ type NitricDocument struct {
 
 // AWS DynamoDB AWS nitric plugin
 type DynamoDbDocumentService struct {
-	sdk.UnimplementedDocumentsPlugin
+	sdk.UnimplementedKeyValuePlugin
 	client dynamodbiface.DynamoDBAPI
 }
 
@@ -55,7 +53,7 @@ func (s *DynamoDbDocumentService) createStandardDocumentTable(name string) error
 	return nil
 }
 
-func (s *DynamoDbDocumentService) Create(collection string, key string, document map[string]interface{}) error {
+func (s *DynamoDbDocumentService) Put(collection string, key string, document map[string]interface{}) error {
 	if key == "" {
 		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
 	}
@@ -69,19 +67,14 @@ func (s *DynamoDbDocumentService) Create(collection string, key string, document
 		return fmt.Errorf("failed to marshal document")
 	}
 
-	condition := expression.AttributeNotExists(expression.Name("Key"))
-	expr, err := expression.NewBuilder().WithCondition(condition).Build()
-
 	if err != nil {
 		return fmt.Errorf("failed to generate put request: %v", err)
 	}
 
 	// Store the NitricDocument attribute value to the specified table (collection)
 	input := &dynamodb.PutItemInput{
-		Item:                     av,
-		TableName:                aws.String(collection),
-		ExpressionAttributeNames: expr.Names(),
-		ConditionExpression:      expr.Condition(),
+		Item:      av,
+		TableName: aws.String(collection),
 	}
 
 	var _, putError = s.client.PutItem(input)
@@ -94,10 +87,6 @@ func (s *DynamoDbDocumentService) Create(collection string, key string, document
 					return fmt.Errorf("table not found and failed to create: %v", createError)
 				}
 				_, putError = s.client.PutItem(input)
-			}
-			// Condition Expression failed
-			if awsErr.Code() == dynamodb.ErrCodeConditionalCheckFailedException {
-				return fmt.Errorf("document exists with key: %v", key)
 			}
 		}
 	}
@@ -139,60 +128,6 @@ func (s *DynamoDbDocumentService) Get(collection string, key string) (map[string
 	return document.Value, nil
 }
 
-func (s *DynamoDbDocumentService) Update(collection string, key string, document map[string]interface{}) error {
-	if key == "" {
-		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
-	}
-
-	// Construct DynamoDB attribute value object
-	av, err := dynamodbattribute.MarshalMap(NitricDocument{
-		Key:   key,
-		Value: document,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to marshal document")
-	}
-
-	condition := expression.AttributeExists(expression.Name("Key"))
-	expr, err := expression.NewBuilder().WithCondition(condition).Build()
-
-	if err != nil {
-		return fmt.Errorf("failed to generate put request: %v", err)
-	}
-
-	// Store the NitricDocument attribute value to the specified table (collection)
-	input := &dynamodb.PutItemInput{
-		Item:                     av,
-		TableName:                aws.String(collection),
-		ExpressionAttributeNames: expr.Names(),
-		ConditionExpression:      expr.Condition(),
-	}
-
-	var _, putError = s.client.PutItem(input)
-	if putError != nil {
-		if awsErr, ok := putError.(awserr.Error); ok {
-			// Table not found,  try to create and put again
-			if awsErr.Code() == dynamodb.ErrCodeResourceNotFoundException {
-				createError := s.createStandardDocumentTable(collection)
-				if createError != nil {
-					return fmt.Errorf("table not found and failed to create: %v", createError)
-				}
-				_, putError = s.client.PutItem(input)
-			}
-			// Condition Expression failed
-			if awsErr.Code() == dynamodb.ErrCodeConditionalCheckFailedException {
-				return fmt.Errorf("no document found with key: %v", key)
-			}
-		}
-	}
-
-	if putError != nil {
-		return fmt.Errorf("error creating new document: %v", putError)
-	}
-
-	return nil
-}
-
 func (s *DynamoDbDocumentService) Delete(collection string, key string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(collection),
@@ -212,7 +147,7 @@ func (s *DynamoDbDocumentService) Delete(collection string, key string) error {
 }
 
 // Create a New DynamoDB document plugin implementation
-func New() (sdk.DocumentService, error) {
+func New() (sdk.KeyValueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -233,7 +168,7 @@ func New() (sdk.DocumentService, error) {
 }
 
 // Mainly used for mock testing to inject a mock client into this plugin
-func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.DocumentService, error) {
+func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.KeyValueService, error) {
 	return &DynamoDbDocumentService{
 		client: client,
 	}, nil
