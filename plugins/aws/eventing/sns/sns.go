@@ -84,7 +84,7 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-// Create new DynamoDB documents server
+// Create new DynamoDB kv server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (sdk.EventService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")

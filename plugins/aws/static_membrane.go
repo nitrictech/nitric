@@ -8,7 +8,7 @@ import (
 
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
-	documents "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
+	documents "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
