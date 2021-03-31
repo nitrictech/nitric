@@ -211,7 +211,7 @@ func (s *MockPublishResult) Get(context.Context) (string, error) {
 }
 
 type MockBaseClient struct {
-	Messages map[string][]ifaces.Message
+	Messages      map[string][]ifaces.Message
 	CompleteError error
 }
 
@@ -234,22 +234,17 @@ func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opt
 		topicSubName := fmt.Sprintf("projects/%s/subscriptions/%s-nitricqueue", MockProjectID, topicName)
 		fmt.Println(fmt.Sprintf("Topic: %s, Sub: %s", topicSubName, sub))
 		if topicSubName == sub {
-			fmt.Println("FOUND QUEUE, ATTEMPTING TO POP MESSAGES")
 			mockMessages := m.Messages[topicName]
 
 			if mockMessages == nil || len(mockMessages) < 1 {
-				fmt.Println("NO MESSAGES TO POP")
 				return &pubsubpb.PullResponse{}, nil
 			}
-			fmt.Println(fmt.Sprintf("%d MESSAGES TO POP", len(mockMessages)))
 
 			var messages []*pubsubpb.ReceivedMessage
 
 			for i, m := range mockMessages {
-				fmt.Println(fmt.Sprintf("RETURNING MESSAGE i:%d", i))
 				// Only return up to the max number of messages requested.
 				if int32(i) >= req.MaxMessages {
-					fmt.Println(fmt.Sprintf("REACHED MAX MESSAGES i:%d, max:%d", i, req.MaxMessages))
 					break
 				}
 				messages = append(messages, &pubsubpb.ReceivedMessage{
