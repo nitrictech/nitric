@@ -12,21 +12,21 @@ import (
 )
 
 var _ = Describe("Queue", func() {
-	Context("BatchPush", func() {
+	Context("SendBatch", func() {
 		When("The queue is empty", func() {
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
-			evt := sdk.NitricEvent{
-				RequestId:   "1234",
+			task := sdk.NitricTask{
+				ID:          "1234",
 				PayloadType: "test-payload",
 				Payload: map[string]interface{}{
 					"Test": "Test",
 				},
 			}
-			evts := []sdk.NitricEvent{evt}
-			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{evt})
+			tasks := []sdk.NitricTask{task}
+			taskBytes, _ := json.Marshal(tasks)
 			It("Should store the events in the queue", func() {
-				resp, err := queuePlugin.Push("test", evts)
+				resp, err := queuePlugin.SendBatch("test", tasks)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -37,20 +37,20 @@ var _ = Describe("Queue", func() {
 				Expect(mockStorageDriver.GetStoredItems()["/nitric/queues/test"]).ToNot(BeNil())
 
 				By("Storing the content of the given message")
-				Expect(mockStorageDriver.GetStoredItems()["/nitric/queues/test"]).To(BeEquivalentTo(evtsBytes))
+				Expect(mockStorageDriver.GetStoredItems()["/nitric/queues/test"]).To(BeEquivalentTo(taskBytes))
 			})
 		})
 
 		When("The queue is not empty", func() {
-			evt := sdk.NitricEvent{
-				RequestId:   "1234",
+			task := sdk.NitricTask{
+				ID:          "1234",
 				PayloadType: "test-payload",
 				Payload: map[string]interface{}{
 					"Test": "Test",
 				},
 			}
-			evts := []sdk.NitricEvent{evt}
-			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{evt})
+			tasks := []sdk.NitricTask{task}
+			evtsBytes, _ := json.Marshal(tasks)
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
 				StoredItems: map[string][]byte{
 					"/nitric/queues/test": evtsBytes,
@@ -59,7 +59,7 @@ var _ = Describe("Queue", func() {
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
 
 			It("Should append to the existing queue", func() {
-				resp, err := queuePlugin.Push("test", evts)
+				resp, err := queuePlugin.SendBatch("test", tasks)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -78,19 +78,19 @@ var _ = Describe("Queue", func() {
 		})
 	})
 
-	Context("Pop", func() {
+	Context("Recieve", func() {
 		When("The queue is empty", func() {
-			evtsBytes, _ := json.Marshal([]sdk.NitricEvent{})
+			tasksBytes, _ := json.Marshal([]sdk.NitricTask{})
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
 				StoredItems: map[string][]byte{
-					"/nitric/queues/test": evtsBytes,
+					"/nitric/queues/test": tasksBytes,
 				},
 			})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
 
 			It("Should return an empty slice of queue items", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Pop(sdk.PopOptions{
+				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -103,25 +103,25 @@ var _ = Describe("Queue", func() {
 		})
 
 		When("The queue is not empty", func() {
-			evt := sdk.NitricEvent{
-				RequestId:   "1234",
+			task := sdk.NitricEvent{
+				ID:          "1234",
 				PayloadType: "test-payload",
 				Payload: map[string]interface{}{
 					"Test": "Test",
 				},
 			}
-			evts := []sdk.NitricEvent{evt}
-			evtsBytes, _ := json.Marshal(evts)
+			tasks := []sdk.NitricEvent{task}
+			taskBytes, _ := json.Marshal(tasks)
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
 				StoredItems: map[string][]byte{
-					"/nitric/queues/test": evtsBytes,
+					"/nitric/queues/test": taskBytes,
 				},
 			})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
 
 			It("Should append to the existing queue", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Pop(sdk.PopOptions{
+				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -131,7 +131,7 @@ var _ = Describe("Queue", func() {
 				By("Returning 1 item")
 				Expect(items).To(HaveLen(1))
 
-				var messages []sdk.NitricEvent
+				var messages []sdk.NitricTask
 				bytes := mockStorageDriver.GetStoredItems()["/nitric/queues/test"]
 				json.Unmarshal(bytes, &messages)
 				By("Having no remaining messages on the Queue")
@@ -140,24 +140,24 @@ var _ = Describe("Queue", func() {
 		})
 
 		When("The queue depth is 15", func() {
-			evt := sdk.NitricEvent{
-				RequestId:   "1234",
+			task := sdk.NitricTask{
+				ID:          "1234",
 				PayloadType: "test-payload",
 				Payload: map[string]interface{}{
 					"Test": "Test",
 				},
 			}
-			evts := []sdk.NitricEvent{}
+			tasks := []sdk.NitricTask{}
 
 			// Add 15 items to the queue
 			for i := 0; i < 15; i++ {
-				evts = append(evts, evt)
+				tasks = append(tasks, task)
 			}
 
-			evtsBytes, _ := json.Marshal(evts)
+			taskBytes, _ := json.Marshal(tasks)
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{
 				StoredItems: map[string][]byte{
-					"/nitric/queues/test": evtsBytes,
+					"/nitric/queues/test": taskBytes,
 				},
 			})
 			queuePlugin, _ := queue_plugin.NewWithStorageDriver(mockStorageDriver)
@@ -165,7 +165,7 @@ var _ = Describe("Queue", func() {
 			When("Requested depth is 10", func() {
 				It("Should return 10 items", func() {
 					depth := uint32(10)
-					items, err := queuePlugin.Pop(sdk.PopOptions{
+					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 						QueueName: "test",
 						Depth:     &depth,
 					})
@@ -175,7 +175,7 @@ var _ = Describe("Queue", func() {
 					By("Returning 10 item")
 					Expect(items).To(HaveLen(10))
 
-					var messages []sdk.NitricEvent
+					var messages []sdk.NitricTask
 					bytes := mockStorageDriver.GetStoredItems()["/nitric/queues/test"]
 					json.Unmarshal(bytes, &messages)
 					By("Having 5 remaining messages on the Queue")

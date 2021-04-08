@@ -8,7 +8,7 @@ import (
 
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
-	documents "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
+	documents "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	eventingPlugin, _ := eventing.New()
-	documentsPlugin, _ := documents.New()
+	keyValuePlugin, _ := documents.New()
 	storagePlugin, _ := storage.New()
 	queuePlugin, _ := queue.New()
 	authPlugin, _ := auth.New()
@@ -50,7 +50,7 @@ func main() {
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		EventingPlugin:          eventingPlugin,
-		DocumentsPlugin:         documentsPlugin,
+		KvPlugin:                keyValuePlugin,
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,

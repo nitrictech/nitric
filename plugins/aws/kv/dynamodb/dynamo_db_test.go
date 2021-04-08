@@ -2,12 +2,13 @@ package dynamodb_service_test
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	plugin "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
+	plugin "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -30,13 +31,23 @@ func (m *mockDynamoDBClient) CreateTable(input *dynamodb.CreateTableInput) (*dyn
 	}
 
 	// Currently the output is ignored in our usecase so leave this empty for now...
-	return &dynamodb.CreateTableOutput{}, nil
+	return &dynamodb.CreateTableOutput{
+		TableDescription: &dynamodb.TableDescription{
+			TableStatus: aws.String("CREATING"),
+		},
+	} , nil
+}
+
+func (m *mockDynamoDBClient) DescribeTable(input *dynamodb.DescribeTableInput) (*dynamodb.DescribeTableOutput, error) {
+	return &dynamodb.DescribeTableOutput{Table: &dynamodb.TableDescription{
+		TableStatus: aws.String("ACTIVE"),
+	}}, nil
 }
 
 func (m *mockDynamoDBClient) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	tableName := input.TableName
 	item := input.Item
-	mapValue := plugin.NitricDocument{}
+	mapValue := plugin.NitricKVDocument{}
 
 	dynamodbattribute.UnmarshalMap(item, &mapValue)
 
@@ -58,14 +69,15 @@ func (m *mockDynamoDBClient) GetItem(input *dynamodb.GetItemInput) (*dynamodb.Ge
 	tableName := input.TableName
 
 	if item, ok := m.store[*tableName][*key]; ok {
-		attValue, _ := dynamodbattribute.MarshalMap(plugin.NitricDocument{
+		attValue, _ := dynamodbattribute.MarshalMap(plugin.NitricKVDocument{
 			Key:   *key,
 			Value: item,
 		})
 		return &dynamodb.GetItemOutput{Item: attValue}, nil
 	}
 
-	return nil, awserr.New("TODO", "Document does not exist!", fmt.Errorf("No document found"))
+	// TODO: match real error codes.
+	return nil, awserr.New("TESTERR", "Document does not exist!", fmt.Errorf("No document found"))
 
 }
 
@@ -78,7 +90,8 @@ func (m *mockDynamoDBClient) DeleteItem(input *dynamodb.DeleteItemInput) (*dynam
 		return &dynamodb.DeleteItemOutput{}, nil
 	}
 
-	return nil, awserr.New("TODO", "Document does not exist!", fmt.Errorf("No document found"))
+	// TODO: match real error codes.
+	return nil, awserr.New("TESTERR", "Document does not exist!", fmt.Errorf("No document found"))
 }
 
 var _ = Describe("DynamoDb", func() {
@@ -96,7 +109,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("documentsClient.Create should store the document without error", func() {
-				err := myMockClient.Create("Test", "Test", item)
+				err := myMockClient.Put("Test", "Test", item)
 				Expect(err).To(BeNil())
 
 				storedItem, ok := mockSvc.store["Test"]["Test"]
@@ -119,7 +132,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("should return an error", func() {
-				err := myMockClient.Create("Test", "", item)
+				err := myMockClient.Put("Test", "", item)
 
 				Expect(err.Error()).To(ContainSubstring("key auto-generation unimplemented, provide non-blank key"))
 			})
@@ -160,7 +173,7 @@ var _ = Describe("DynamoDb", func() {
 			It("Should fail when attempting to retrieve the document", func() {
 				_, err := myMockClient.Get("Test", "Test")
 
-				Expect(err.Error()).To(ContainSubstring("error getting document"))
+				Expect(err.Error()).To(ContainSubstring("error getting value for key"))
 			})
 		})
 	})
@@ -200,7 +213,7 @@ var _ = Describe("DynamoDb", func() {
 			It("Should delete the stored document", func() {
 				err := myMockClient.Delete("Test", "Test")
 
-				Expect(err.Error()).To(ContainSubstring("error deleting document"))
+				Expect(err.Error()).To(ContainSubstring("error deleting key"))
 			})
 		})
 	})
@@ -218,7 +231,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should behave as Create", func() {
-				err := myMockClient.Update("Test", "Test", item)
+				err := myMockClient.Put("Test", "Test", item)
 
 				Expect(err).To(BeNil())
 				storedItem, ok := mockSvc.store["Test"]["Test"]

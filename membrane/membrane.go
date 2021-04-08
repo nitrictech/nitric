@@ -25,12 +25,12 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	EventingPlugin  sdk.EventService
-	DocumentsPlugin sdk.DocumentService
-	StoragePlugin   sdk.StorageService
-	QueuePlugin     sdk.QueueService
-	GatewayPlugin   sdk.GatewayService
-	AuthPlugin      sdk.UserService
+	EventingPlugin sdk.EventService
+	KvPlugin       sdk.KeyValueService
+	StoragePlugin  sdk.StorageService
+	QueuePlugin    sdk.QueueService
+	GatewayPlugin  sdk.GatewayService
+	AuthPlugin     sdk.UserService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -57,25 +57,26 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	eventPlugin     sdk.EventService
-	documentsPlugin sdk.DocumentService
-	storagePlugin   sdk.StorageService
-	gatewayPlugin   sdk.GatewayService
-	queuePlugin     sdk.QueueService
-	authPlugin      sdk.UserService
+	eventPlugin   sdk.EventService
+	kvPlugin      sdk.KeyValueService
+	storagePlugin sdk.StorageService
+	gatewayPlugin sdk.GatewayService
+	queuePlugin   sdk.QueueService
+	authPlugin    sdk.UserService
 
-	// Tolerate if adapters are not available
+	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
 	tolerateMissingServices bool
 
 	// Suppress println statements in the membrane server
-	supressLogs bool
+	suppressLogs bool
 
+	// Handler operating mode, e.g. FaaS or HTTP Proxy. Governs how incoming triggers are translated.
 	mode Mode
 }
 
 func (s *Membrane) log(log string) {
-	if !s.supressLogs {
+	if !s.suppressLogs {
 		fmt.Println(log)
 	}
 }
@@ -94,8 +95,8 @@ func (s *Membrane) createStorageServer() v1.StorageServer {
 	return grpc2.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createDocumentsServer() v1.DocumentServer {
-	return grpc2.NewDocumentsServer(s.documentsPlugin)
+func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
+	return grpc2.NewKeyValueServer(s.kvPlugin)
 }
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
@@ -112,7 +113,7 @@ func (s *Membrane) startChildProcess() error {
 	commandArgs := strings.Fields(s.childCommand)
 
 	fmt.Println(fmt.Sprintf("Starting Function"))
-	childProcess := exec.Command(commandArgs[0], commandArgs[1:len(commandArgs)]...)
+	childProcess := exec.Command(commandArgs[0], commandArgs[1:]...)
 	childProcess.Stdout = os.Stdout
 	childProcess.Stderr = os.Stderr
 	applicationError := childProcess.Start()
@@ -170,8 +171,8 @@ func (s *Membrane) Start() error {
 	topicServer := s.createTopicServer()
 	v1.RegisterTopicServer(grpcServer, topicServer)
 
-	documentsServer := s.createDocumentsServer()
-	v1.RegisterDocumentServer(grpcServer, documentsServer)
+	kvServer := s.createKeyValueServer()
+	v1.RegisterKeyValueServer(grpcServer, kvServer)
 
 	storageServer := s.createStorageServer()
 	v1.RegisterStorageServer(grpcServer, storageServer)
@@ -248,7 +249,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentsPlugin == nil || options.QueuePlugin == nil || options.AuthPlugin == nil {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil || options.AuthPlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -262,10 +263,10 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		authPlugin:              options.AuthPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
-		documentsPlugin:         options.DocumentsPlugin,
+		kvPlugin:                options.KvPlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
-		supressLogs:             options.SuppressLogs,
+		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    options.Mode,
 	}, nil

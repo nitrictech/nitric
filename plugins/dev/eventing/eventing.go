@@ -26,7 +26,7 @@ type LocalHttpEventingClient interface {
 
 // Publish a message to a given topic
 func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error {
-	requestId := event.RequestId
+	requestId := event.ID
 	payloadType := event.PayloadType
 	payload := event.Payload
 
@@ -48,7 +48,10 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 			httpRequest.Header.Add("x-nitric-payload-type", payloadType)
 
 			// Call the target
-			s.client.Do(httpRequest)
+			_, err := s.client.Do(httpRequest)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		return fmt.Errorf("No subscription found for %s in %v", topic, s.subscriptions)
@@ -68,8 +71,7 @@ func (s *LocalEventService) ListTopics() ([]string, error) {
 	return keys, nil
 }
 
-// Create new DynamoDB documents server
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
+// Create new Dev EventService
 func New() (sdk.EventService, error) {
 	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 

@@ -94,7 +94,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 					if err == nil {
 						event.Requests = append(event.Requests, &triggers.Event{
-							ID:      messageJson.RequestId,
+							ID:      messageJson.ID,
 							Topic:   trigger,
 							Payload: payloadBytes,
 						})

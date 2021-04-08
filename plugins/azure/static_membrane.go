@@ -24,7 +24,7 @@ func main() {
 	}
 
 	authPlugin := &sdk.UnimplementedAuthPlugin{}
-	documentsPlugin := &sdk.UnimplementedDocumentsPlugin{}
+	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
 	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
 	gatewayPlugin, _ := http_service.New()
 	storagePlugin := &sdk.UnimplementedStoragePlugin{}
@@ -36,7 +36,7 @@ func main() {
 		ChildCommand:            childCommand,
 		TolerateMissingServices: tolerateMissing,
 		AuthPlugin:              authPlugin,
-		DocumentsPlugin:         documentsPlugin,
+		KvPlugin:                kvPlugin,
 		EventingPlugin:          eventingPlugin,
 		GatewayPlugin:           gatewayPlugin,
 		StoragePlugin:           storagePlugin,

@@ -128,7 +128,7 @@ var _ = Describe("Http", func() {
 				"Test": "Test",
 			}
 			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
-				RequestId:   "1234",
+				ID:          "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,
 			})

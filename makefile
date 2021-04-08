@@ -2,6 +2,18 @@ membrane: install
 	@echo Building Go Project...
 	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane pluggable_membrane.go
 
+init: install-tools
+	@echo Installing git hooks
+	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
+
+fmt:
+	@echo Formatting Code
+	@gofmt -s -w ./**/*.go
+
+lint:
+	@echo Formatting Code
+	@golint ./...
+
 install:
 	@echo installing go dependencies
 	@go mod download
@@ -13,6 +25,7 @@ install-tools: install
 clean:
 	@rm -rf ./bin/
 	@rm -rf ./lib/
+	@rm -rf ./interfaces/
 
 # Run all tests
 test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
@@ -41,7 +54,7 @@ license-check: install-tools license-check-dev license-check-aws license-check-g
 generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto/ ./contracts/proto/**/*.proto
+	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto
 
 # Build all service factory plugins
 plugins: aws-plugin gcp-plugin dev-plugin
@@ -148,7 +161,7 @@ dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
 test-dev-plugins:
-	@echo Testing Local Plugins
+	@echo Testing Dev Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
 # END Local Plugins
 
