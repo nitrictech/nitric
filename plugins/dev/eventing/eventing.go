@@ -48,7 +48,10 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 			httpRequest.Header.Add("x-nitric-payload-type", payloadType)
 
 			// Call the target
-			s.client.Do(httpRequest)
+			_, err := s.client.Do(httpRequest)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		return fmt.Errorf("No subscription found for %s in %v", topic, s.subscriptions)
