@@ -37,7 +37,9 @@ func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) 
 			Payload:     req.GetEvent().GetPayload().AsMap(),
 		}
 		if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
-			return &pb.EventPublishResponse{}, nil
+			return &pb.EventPublishResponse{
+				Id: ID,
+			}, nil
 		} else {
 			return nil, err
 		}
