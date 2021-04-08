@@ -239,8 +239,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childTimeout = options.ChildTimeoutSeconds
 	}
 
-	// testing
-
 	var childAddress = "localhost:8080"
 	if options.ChildAddress != "" {
 		childAddress = options.ChildAddress
