@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 
+	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"
 	"google.golang.org/grpc/codes"
@@ -25,8 +26,14 @@ func (s *EventServer) checkPluginRegistered() (bool, error) {
 
 func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
+		// auto generate an ID if we did not recieve one
+		var ID string = req.GetEvent().GetId()
+		if ID == "" {
+			ID = uuid.NewString()
+		}
+
 		event := &sdk.NitricEvent{
-			ID:          req.GetEvent().GetId(),
+			ID:          ID,
 			PayloadType: req.GetEvent().GetPayloadType(),
 			Payload:     req.GetEvent().GetPayload().AsMap(),
 		}
