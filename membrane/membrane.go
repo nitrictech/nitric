@@ -64,18 +64,19 @@ type Membrane struct {
 	queuePlugin   sdk.QueueService
 	authPlugin    sdk.UserService
 
-	// Tolerate if adapters are not available
+	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
 	tolerateMissingServices bool
 
 	// Suppress println statements in the membrane server
-	supressLogs bool
+	suppressLogs bool
 
+	// Handler operating mode, e.g. FaaS or HTTP Proxy. Governs how incoming triggers are translated.
 	mode Mode
 }
 
 func (s *Membrane) log(log string) {
-	if !s.supressLogs {
+	if !s.suppressLogs {
 		fmt.Println(log)
 	}
 }
@@ -265,7 +266,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		kvPlugin:                options.KvPlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
-		supressLogs:             options.SuppressLogs,
+		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    options.Mode,
 	}, nil

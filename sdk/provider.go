@@ -23,32 +23,32 @@ type UnimplementedServiceFactory struct {
 // Ensure UnimplementedServiceFactory implement all methods of the interface
 var _ ServiceFactory = (*UnimplementedServiceFactory)(nil)
 
-// NewAuthPlugin - Unimplemented
+// NewAuthService - Unimplemented
 func (p *UnimplementedServiceFactory) NewAuthService() (UserService, error) {
 	return nil, nil
 }
 
-// NewDocumentPlugin - Unimplemented
+// NewKeyValueService - Unimplemented
 func (p *UnimplementedServiceFactory) NewKeyValueService() (KeyValueService, error) {
 	return nil, nil
 }
 
-// NewEventingPlugin - Unimplemented
+// NewEventService - Unimplemented
 func (p *UnimplementedServiceFactory) NewEventService() (EventService, error) {
 	return nil, nil
 }
 
-// NewGatewayPlugin - Unimplemented
+// NewGatewayService - Unimplemented
 func (p *UnimplementedServiceFactory) NewGatewayService() (GatewayService, error) {
 	return nil, nil
 }
 
-// NewQueuePlugin - Unimplemented
+// NewQueueService - Unimplemented
 func (p *UnimplementedServiceFactory) NewQueueService() (QueueService, error) {
 	return nil, nil
 }
 
-// NewStoragePlugin - Unimplemented
+// NewStorageService - Unimplemented
 func (p *UnimplementedServiceFactory) NewStorageService() (StorageService, error) {
 	return nil, nil
 }

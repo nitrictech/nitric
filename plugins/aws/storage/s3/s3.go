@@ -83,7 +83,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 	}
 }
 
-// Write - Writes a new item to a bucket
+// Write - Writes an item to a bucket
 func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
 	if b, err := s.getBucketByName(bucket); err == nil {
 		contentType := http.DetectContentType(object)

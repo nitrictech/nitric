@@ -112,8 +112,7 @@ func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 	return httpError
 }
 
-// Create new DynamoDB kv server
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
+// Create new AWS HTTP Gateway service
 func New() (gw.GatewayService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")

@@ -29,12 +29,10 @@ type QueueService interface {
 type ReceiveOptions struct {
 	// Nitric name for the queue.
 	//
-	// The Nitric name will match the AWS SQS Queue name.
-	//
 	// queueName is a required field
 	QueueName string `type:"string" required:"true"`
 
-	// Max depth of queue messages to pop.
+	// Max depth of queue messages to receive from the queue.
 	//
 	// If nil or 0, defaults to depth 1.
 	Depth *uint32 `type:"int" required:"false"`

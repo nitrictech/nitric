@@ -32,7 +32,7 @@ Official Eventing Plugins:
 
 ## KeyValue Plugin
 
-KeyValue (KV) plugins are used to provide a simple key value store interface, that allows users to store simple object data under a given collection and key.
+KeyValue (KV) plugins are used to provide a key value store interface that allows users to store simple object data under a given collection and key.
 
 Official KeyValue Plugins:
 * [AWS Dynamodb](../aws/kv/dynamodb/README.md)

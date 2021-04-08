@@ -59,7 +59,6 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 			}
 		}
 
-		// TODO: Get Succeeded/Failed Messages
 		if out, err := s.client.SendMessageBatch(&sqs.SendMessageBatchInput{
 			Entries:  entries,
 			QueueUrl: url,
@@ -73,7 +72,7 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 							Task:    &e,
 							Message: *failed.Message,
 						})
-						// continue outer loop
+						// continue processing failed messages
 						break
 					}
 				}
