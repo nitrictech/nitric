@@ -8,7 +8,7 @@ install:
 
 install-tools: install
 	@echo Installing tools from tools.go
-	@cat ./tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
+	@cat ./tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go get %
 
 clean:
 	@rm -rf ./bin/
@@ -17,6 +17,25 @@ clean:
 # Run all tests
 test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
 	@echo Done.
+
+license-check-dev: dev-static
+	@echo Checking Dev Membrane OSS Licenses
+	@lichen --config=./lichen.yaml ./bin/membrane
+
+license-check-aws: aws-static
+	@echo Checking AWS Membrane OSS Licenses
+	@lichen --config=./lichen.yaml ./bin/membrane
+
+license-check-gcp: gcp-static
+	@echo Checking GCP Membrane OSS Licenses
+	@lichen --config=./lichen.yaml ./bin/membrane
+
+license-check-azure: azure-static
+	@echo Checking Azure Membrane OSS Licenses
+	@lichen --config=./lichen.yaml ./bin/membrane
+
+license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
+	@echo Checking OSS Licenses
 
 # Generate interfaces
 generate-proto:
