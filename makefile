@@ -2,6 +2,18 @@ membrane: install
 	@echo Building Go Project...
 	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane pluggable_membrane.go
 
+init: install-tools
+	@echo Installing git hooks
+	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
+
+fmt:
+	@echo Formatting Code
+	@gofmt -s -w ./**/*.go
+
+lint:
+	@echo Formatting Code
+	@golint ./...
+
 install:
 	@echo installing go dependencies
 	@go mod download
