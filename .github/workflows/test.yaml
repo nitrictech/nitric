@@ -19,3 +19,5 @@ jobs:
       run: make install-tools
     - name: Run Tests
       run: make test
+    - name: Check Licenses
+      run: make license-check
