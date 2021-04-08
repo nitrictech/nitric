@@ -29,7 +29,7 @@ func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) 
 		// auto generate an ID if we did not recieve one
 		var ID string = req.GetEvent().GetId()
 		if ID == "" {
-			ID = uuid.NewString()
+			ID = uuid.New().String()
 		}
 
 		event := &sdk.NitricEvent{
