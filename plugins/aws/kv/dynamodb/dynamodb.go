@@ -2,6 +2,7 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -47,11 +48,41 @@ func (s *DynamoDbKVService) createStandardKVTable(name string) error {
 		TableName: aws.String(name),
 	}
 
-	_, err := s.client.CreateTable(input)
+	createResponse, err := s.client.CreateTable(input)
+
 	if err != nil {
 		return fmt.Errorf("failed to create new dynamodb key value table, with name %v. details: %v", name, err)
 	}
-	return nil
+
+	// Table creation is async, we need to wait until the status is 'ACTIVE'.
+	var status = createResponse.TableDescription.TableStatus
+
+	// Wait a max of 1 second, polling every 100 milliseconds
+	maxWaitTime := time.Duration(5) * time.Second
+	pollInterval := time.Duration(100) * time.Millisecond
+	var waitedTime = time.Duration(0)
+
+	for {
+		if *status == "ACTIVE" {
+			// table created successfully
+			return nil
+		} else if *status != "CREATING" || waitedTime >= maxWaitTime {
+			return fmt.Errorf("failed to create new dynamodb key value table, with name %v. Status: %s", name, *status)
+		}
+
+		time.Sleep(pollInterval)
+		waitedTime += pollInterval
+
+		// Poll for the table status
+		describeInput := &dynamodb.DescribeTableInput{
+			TableName: createResponse.TableDescription.TableName,
+		}
+		tableDescription, err := s.client.DescribeTable(describeInput)
+		if err != nil {
+			return fmt.Errorf("failed to create new dynamodb key value table, with name %v. details: %v", name, err)
+		}
+		status = tableDescription.Table.TableStatus
+	}
 }
 
 func (s *DynamoDbKVService) Put(collection string, key string, value map[string]interface{}) error {
@@ -81,13 +112,26 @@ func (s *DynamoDbKVService) Put(collection string, key string, value map[string]
 	var _, putError = s.client.PutItem(input)
 	if putError != nil {
 		if awsErr, ok := putError.(awserr.Error); ok {
-			// Table not found,  try to create and put again
+			// Table not found, try to create and put again
 			if awsErr.Code() == dynamodb.ErrCodeResourceNotFoundException {
 				createError := s.createStandardKVTable(collection)
 				if createError != nil {
 					return fmt.Errorf("table not found and failed to create: %v", createError)
 				}
-				_, putError = s.client.PutItem(input)
+				// TODO: This should all be extracted to a separate function, Put shouldn't create tables.
+				// DynamoDB can report ACTIVE status on tables, when they still won't accept PutItem requests.
+				// performing multiple attempts usually results in success.
+				maxAttempts := 10
+				putAttempts := 0
+				waitInterval := time.Duration(150) * time.Millisecond
+				for {
+					putAttempts++
+					_, putError = s.client.PutItem(input)
+					if putError == nil || putAttempts >= maxAttempts {
+						break
+					}
+					time.Sleep(waitInterval)
+				}
 			}
 		}
 	}
