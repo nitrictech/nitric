@@ -36,15 +36,21 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 	return nil, fmt.Errorf("Could not find Queue: %s", queue)
 }
 
-func (s *SQSQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.PushResponse, error) {
-	if url, err := s.getUrlForQueueName(queue); err == nil {
-		evts := make([]*sqs.SendMessageBatchRequestEntry, 0)
+func (s *SQSQueueService) Send(queue string, task sdk.NitricTask) error {
+	tasks := []sdk.NitricTask{task}
+	_, err := s.SendBatch(queue, tasks)
+	return err
+}
 
-		for _, evt := range events {
-			if bytes, err := json.Marshal(evt); err == nil {
-				evts = append(evts, &sqs.SendMessageBatchRequestEntry{
+func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
+	if url, err := s.getUrlForQueueName(queue); err == nil {
+		entries := make([]*sqs.SendMessageBatchRequestEntry, 0)
+
+		for _, task := range tasks {
+			if bytes, err := json.Marshal(task); err == nil {
+				entries = append(entries, &sqs.SendMessageBatchRequestEntry{
 					// Share the request ID here...
-					Id:          &evt.RequestId,
+					Id:          &task.ID,
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
@@ -53,27 +59,26 @@ func (s *SQSQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.Pus
 			}
 		}
 
-		// TODO: Get Succeeded/Failed Messages
 		if out, err := s.client.SendMessageBatch(&sqs.SendMessageBatchInput{
-			Entries:  evts,
+			Entries:  entries,
 			QueueUrl: url,
 		}); err == nil {
 			// process out Failed messages to return to the user...
 			failedEvents := make([]*sdk.FailedMessage, 0)
 			for _, failed := range out.Failed {
-				for _, e := range events {
-					if e.RequestId == *failed.Id {
+				for _, e := range tasks {
+					if e.ID == *failed.Id {
 						failedEvents = append(failedEvents, &sdk.FailedMessage{
-							Event:   &e,
+							Task:    &e,
 							Message: *failed.Message,
 						})
-						// continue outer loop
+						// continue processing failed messages
 						break
 					}
 				}
 			}
 
-			return &sdk.PushResponse{
+			return &sdk.SendBatchResponse{
 				FailedMessages: failedEvents,
 			}, nil
 		} else {
@@ -84,7 +89,7 @@ func (s *SQSQueueService) Push(queue string, events []sdk.NitricEvent) (*sdk.Pus
 	}
 }
 
-func (s *SQSQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, error) {
+func (s *SQSQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
 	err := options.Validate()
 	if err != nil {
 		return nil, err
@@ -108,24 +113,27 @@ func (s *SQSQueueService) Pop(options sdk.PopOptions) ([]sdk.NitricQueueItem, er
 		}
 
 		if len(res.Messages) == 0 {
-			return []sdk.NitricQueueItem{}, nil
+			return []sdk.NitricTask{}, nil
 		}
 
-		var events []sdk.NitricQueueItem
+		var tasks []sdk.NitricTask
 		for _, m := range res.Messages {
-			var nitricEvt sdk.NitricEvent
+			var nitricTask sdk.NitricTask
 			bodyBytes := []byte(*m.Body)
-			err := json.Unmarshal(bodyBytes, &nitricEvt)
+			err := json.Unmarshal(bodyBytes, &nitricTask)
 			if err != nil {
 				// TODO: append error to error list and Nack the message.
 			}
-			events = append(events, sdk.NitricQueueItem{
-				Event:   nitricEvt,
-				LeaseId: *m.ReceiptHandle,
+
+			tasks = append(tasks, sdk.NitricTask{
+				ID:          nitricTask.ID,
+				Payload:     nitricTask.Payload,
+				PayloadType: nitricTask.PayloadType,
+				LeaseID:     *m.ReceiptHandle,
 			})
 		}
 
-		return events, nil
+		return tasks, nil
 
 	} else {
 		return nil, err

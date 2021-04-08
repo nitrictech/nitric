@@ -21,9 +21,9 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_plugin.NewWithClient(sqsMock)
 
 			It("Should publish the message", func() {
-				_, err := plugin.Push("test", []sdk.NitricEvent{
+				_, err := plugin.SendBatch("test", []sdk.NitricTask{
 					{
-						RequestId:   "1234",
+						ID:          "1234",
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
@@ -40,9 +40,9 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_plugin.NewWithClient(sqsMock)
 
 			It("Should fail to publish the message", func() {
-				_, err := plugin.Push("test", []sdk.NitricEvent{
+				_, err := plugin.SendBatch("test", []sdk.NitricTask{
 					{
-						RequestId:   "1234",
+						ID:          "1234",
 						PayloadType: "test-payload",
 						Payload: map[string]interface{}{
 							"Test": "Test",
@@ -62,7 +62,7 @@ var _ = Describe("Sqs", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
 				jsonBytes, _ := json.Marshal(sdk.NitricEvent{
-					RequestId:   "mockrequestid",
+					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},
 				})
@@ -85,7 +85,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Pop(sdk.PopOptions{
+					msg, err := plugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -107,7 +107,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Pop(sdk.PopOptions{
+					msg, err := plugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -129,7 +129,7 @@ var _ = Describe("Sqs", func() {
 			depth := uint32(10)
 
 			It("Should return an error", func() {
-				_, err := plugin.Pop(sdk.PopOptions{
+				_, err := plugin.Receive(sdk.ReceiveOptions{
 					QueueName: "non-existent-queue",
 					Depth:     &depth,
 				})

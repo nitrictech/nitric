@@ -6,9 +6,9 @@ import (
 
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/dev/auth"
-	documents "github.com/nitric-dev/membrane/plugins/dev/documents"
 	eventing "github.com/nitric-dev/membrane/plugins/dev/eventing"
 	gateway "github.com/nitric-dev/membrane/plugins/dev/gateway"
+	kv "github.com/nitric-dev/membrane/plugins/dev/kv"
 	queue "github.com/nitric-dev/membrane/plugins/dev/queue"
 	storage "github.com/nitric-dev/membrane/plugins/dev/storage"
 	"github.com/nitric-dev/membrane/utils"
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	eventingPlugin, _ := eventing.New()
-	documentsPlugin, _ := documents.New()
+	kvPlugin, _ := kv.New()
 	storagePlugin, _ := storage.New()
 	gatewayPlugin, _ := gateway.New()
 	queuePlugin, _ := queue.New()
@@ -43,7 +43,7 @@ func main() {
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		EventingPlugin:          eventingPlugin,
-		DocumentsPlugin:         documentsPlugin,
+		KvPlugin:                kvPlugin,
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		AuthPlugin:              authPlugin,

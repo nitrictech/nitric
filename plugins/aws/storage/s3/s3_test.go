@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("S3", func() {
-	When("Put", func() {
+	When("Write", func() {
 		When("Given the S3 backend is available", func() {
 			When("Creating an object in an existing bucket", func() {
 				testPayload := []byte("Test")
@@ -24,7 +24,7 @@ var _ = Describe("S3", func() {
 
 				storagePlugin, _ := s3Plugin.NewWithClient(mockStorageClient)
 				It("Should successfully store the object", func() {
-					err := storagePlugin.Put("my-bucket", "test-item", testPayload)
+					err := storagePlugin.Write("my-bucket", "test-item", testPayload)
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -38,17 +38,17 @@ var _ = Describe("S3", func() {
 				mockStorageClient := mocks.NewStorageClient([]*mocks.MockBucket{}, &storage)
 				storagePlugin, _ := s3Plugin.NewWithClient(mockStorageClient)
 				It("Should fail to store the item", func() {
-					err := storagePlugin.Put("my-bucket", "test-item", []byte("Test"))
+					err := storagePlugin.Write("my-bucket", "test-item", []byte("Test"))
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
 			})
 		})
 	})
-	When("Get", func() {
+	When("Read", func() {
 		When("The S3 backend is available", func() {
 			When("The bucket exists", func() {
-				When("The item exists", func () {
+				When("The item exists", func() {
 					// Setup a mock bucket, with a single item
 					storage := make(map[string]map[string][]byte)
 					storage["test-bucket"] = make(map[string][]byte)
@@ -64,7 +64,7 @@ var _ = Describe("S3", func() {
 					storagePlugin, _ := s3Plugin.NewWithClient(mockStorageClient)
 
 					It("Should successfully retrieve the object", func() {
-						object, err := storagePlugin.Get("test-bucket", "test-key")
+						object, err := storagePlugin.Read("test-bucket", "test-key")
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
@@ -72,7 +72,7 @@ var _ = Describe("S3", func() {
 						Expect(object).To(Equal([]byte("Test")))
 					})
 				})
-				When("The item doesn't exist", func () {
+				When("The item doesn't exist", func() {
 
 				})
 			})
@@ -84,7 +84,7 @@ var _ = Describe("S3", func() {
 	When("Delete", func() {
 		When("The S3 backend is available", func() {
 			When("The bucket exists", func() {
-				When("The item exists", func () {
+				When("The item exists", func() {
 					// Setup a mock bucket, with a single item
 					storage := make(map[string]map[string][]byte)
 					storage["test-bucket"] = make(map[string][]byte)
@@ -108,7 +108,7 @@ var _ = Describe("S3", func() {
 						Expect(storage["test-bucket"]["test-key"]).To(BeNil())
 					})
 				})
-				When("The item doesn't exist", func () {
+				When("The item doesn't exist", func() {
 
 				})
 			})

@@ -43,7 +43,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces.BucketHan
 /**
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Get(bucket string, key string) ([]byte, error) {
+func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) {
 	bucketHandle, err := s.getBucketByName(bucket)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (s *StorageStorageService) Get(bucket string, key string) ([]byte, error) {
 /**
  * Stores a new Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Put(bucket string, key string, object []byte) error {
+func (s *StorageStorageService) Write(bucket string, key string, object []byte) error {
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {

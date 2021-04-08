@@ -2,7 +2,7 @@ package main
 
 import (
 	cognito_plugin "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
-	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/aws/documents/dynamodb"
+	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	sns_plugin "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	lambda_plugin "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
@@ -22,8 +22,8 @@ func (p *AWSServiceFactory) NewAuthService() (sdk.UserService, error) {
 	return cognito_plugin.New()
 }
 
-// NewDocumentPlugin - Returns AWS DynamoDB based document plugin
-func (p *AWSServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
+func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
 	return dynamodb_plugin.New()
 }
 

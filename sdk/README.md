@@ -30,12 +30,12 @@ Official Eventing Plugins:
 * [GCP Pubsub](../gcp/eventing/pubsub/README.md)
 * [Dev Eventing](../dev/eventing/README.md)
 
-## Documents Plugin
+## KeyValue Plugin
 
-Documents plugins are used to provide a simple document store interface, that allows users to store simple object data under a given collection and key value.
+KeyValue (KV) plugins are used to provide a key value store interface that allows users to store simple object data under a given collection and key.
 
-Official Documents Plugins:
-* [AWS Dynamodb](../aws/documents/dynamodb/README.md)
+Official KeyValue Plugins:
+* [AWS Dynamodb](../aws/kv/dynamodb/README.md)
 * [GCP Firestore](../gcp/documents/firestore/README.md)
 * [Dev Documents](../dev/documents/README.md)
 

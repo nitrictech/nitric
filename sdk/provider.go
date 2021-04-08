@@ -3,7 +3,7 @@ package sdk
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
 	NewAuthService() (UserService, error)
-	NewDocumentService() (DocumentService, error)
+	NewKeyValueService() (KeyValueService, error)
 	NewEventService() (EventService, error)
 	NewGatewayService() (GatewayService, error)
 	NewQueueService() (QueueService, error)
@@ -18,38 +18,37 @@ type ServiceFactory interface {
 // Plugin Factories with unimplemented New methods are only supported when the TOLERATE_MISSING_SERVICE option is
 // set to true when executing the pluggable membrane.
 type UnimplementedServiceFactory struct {
-
 }
 
 // Ensure UnimplementedServiceFactory implement all methods of the interface
 var _ ServiceFactory = (*UnimplementedServiceFactory)(nil)
 
-// NewAuthPlugin - Unimplemented
+// NewAuthService - Unimplemented
 func (p *UnimplementedServiceFactory) NewAuthService() (UserService, error) {
 	return nil, nil
 }
 
-// NewDocumentPlugin - Unimplemented
-func (p *UnimplementedServiceFactory) NewDocumentService() (DocumentService, error) {
+// NewKeyValueService - Unimplemented
+func (p *UnimplementedServiceFactory) NewKeyValueService() (KeyValueService, error) {
 	return nil, nil
 }
 
-// NewEventingPlugin - Unimplemented
+// NewEventService - Unimplemented
 func (p *UnimplementedServiceFactory) NewEventService() (EventService, error) {
 	return nil, nil
 }
 
-// NewGatewayPlugin - Unimplemented
+// NewGatewayService - Unimplemented
 func (p *UnimplementedServiceFactory) NewGatewayService() (GatewayService, error) {
 	return nil, nil
 }
 
-// NewQueuePlugin - Unimplemented
+// NewQueueService - Unimplemented
 func (p *UnimplementedServiceFactory) NewQueueService() (QueueService, error) {
 	return nil, nil
 }
 
-// NewStoragePlugin - Unimplemented
+// NewStorageService - Unimplemented
 func (p *UnimplementedServiceFactory) NewStorageService() (StorageService, error) {
 	return nil, nil
 }

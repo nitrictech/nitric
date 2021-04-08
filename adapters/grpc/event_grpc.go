@@ -26,7 +26,7 @@ func (s *EventServer) checkPluginRegistered() (bool, error) {
 func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		event := &sdk.NitricEvent{
-			RequestId:   req.GetEvent().GetRequestId(),
+			ID:          req.GetEvent().GetId(),
 			PayloadType: req.GetEvent().GetPayloadType(),
 			Payload:     req.GetEvent().GetPayload().AsMap(),
 		}

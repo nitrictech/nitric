@@ -6,45 +6,46 @@ import (
 )
 
 type FailedMessage struct {
-	Event   *NitricEvent
+	Task    *NitricTask
 	Message string
 }
 
-type PushResponse struct {
+type SendBatchResponse struct {
 	FailedMessages []*FailedMessage
 }
 
 // QueueService - The Nitric plugin interface for cloud native queue adapters
 type QueueService interface {
-	// Push - The push method for the Nitric Queue Service
-	Push(queue string, events []NitricEvent) (*PushResponse, error)
-	Pop(options PopOptions) ([]NitricQueueItem, error)
+	// Send - Send a single task to a queue
+	Send(queue string, task NitricTask) error
+	// SendBatch - sends multiple tasks to a queue
+	SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error)
+	// Receive - Receives one or more tasks(s) off a queue
+	Receive(options ReceiveOptions) ([]NitricTask, error)
+	// Complete - Marks a received task as completed
 	Complete(queue string, leaseId string) error
-	//Release(leaseId string) error
 }
 
-type PopOptions struct {
+type ReceiveOptions struct {
 	// Nitric name for the queue.
-	//
-	// The Nitric name will match the AWS SQS Queue name.
 	//
 	// queueName is a required field
 	QueueName string `type:"string" required:"true"`
 
-	// Max depth of queue messages to pop.
+	// Max depth of queue messages to receive from the queue.
 	//
 	// If nil or 0, defaults to depth 1.
 	Depth *uint32 `type:"int" required:"false"`
 }
 
-func (p *PopOptions) Validate() error  {
+func (p *ReceiveOptions) Validate() error {
 	// Validation
 	var invalidParams []string
 	if p.QueueName == "" {
 		invalidParams = append(invalidParams, fmt.Errorf("queueName param must not be blank").Error())
 	}
 	if len(invalidParams) > 0 {
-		return fmt.Errorf( "invalid params: %s", strings.Join(invalidParams, "\n"))
+		return fmt.Errorf("invalid params: %s", strings.Join(invalidParams, "\n"))
 	}
 
 	// Defaults
@@ -52,7 +53,7 @@ func (p *PopOptions) Validate() error  {
 	if p.Depth == nil {
 		p.Depth = new(uint32)
 		*p.Depth = 1
-	}	else if *p.Depth < 1 {
+	} else if *p.Depth < 1 {
 		*p.Depth = uint32(1)
 	}
 	return nil
@@ -68,11 +69,18 @@ type UnimplementedQueuePlugin struct {
 var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
-func (*UnimplementedQueuePlugin) Push(queue string, events []NitricEvent) (*PushResponse, error) {
+func (*UnimplementedQueuePlugin) Send(queue string, task NitricTask) error {
+	return fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (*UnimplementedQueuePlugin) SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-// Pop - Unimplemented Stub for the UnimplementedQueuePlugin
-//func (*UnimplementedQueuePlugin) Pop(options PopOptions) ([]NitricQueueItem, error) {
-//	return nil, fmt.Errorf("UNIMPLEMENTED")
-//}
+func (*UnimplementedQueuePlugin) Receive(options ReceiveOptions) ([]NitricTask, error) {
+	return nil, fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (*UnimplementedQueuePlugin) Complete(queue string, leaseId string) error {
+	return fmt.Errorf("UNIMPLEMENTED")
+}

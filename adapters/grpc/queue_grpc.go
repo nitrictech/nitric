@@ -24,33 +24,54 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushRequest) (*pb.QueueBatchPushResponse, error) {
+func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		// Translate events
-		evts := make([]sdk.NitricEvent, len(req.GetEvents()))
-		for i, evt := range req.GetEvents() {
-			evts[i] = sdk.NitricEvent{
-				RequestId:   evt.GetRequestId(),
-				PayloadType: evt.GetPayloadType(),
-				Payload:     evt.GetPayload().AsMap(),
+		task := req.GetTask()
+
+		nitricTask := sdk.NitricTask{
+			ID:          task.GetId(),
+			PayloadType: task.GetPayloadType(),
+			Payload:     task.GetPayload().AsMap(),
+		}
+
+		if err := s.plugin.Send(req.GetQueue(), nitricTask); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+
+	// Success
+	return &pb.QueueSendResponse{}, nil
+}
+
+func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		// Translate tasks
+		tasks := make([]sdk.NitricTask, len(req.GetTasks()))
+		for i, task := range req.GetTasks() {
+			tasks[i] = sdk.NitricTask{
+				ID:          task.GetId(),
+				PayloadType: task.GetPayloadType(),
+				Payload:     task.GetPayload().AsMap(),
 			}
 		}
 
-		if resp, err := s.plugin.Push(req.GetQueue(), evts); err == nil {
-			failedEvents := make([]*pb.FailedEvent, len(resp.FailedMessages))
+		if resp, err := s.plugin.SendBatch(req.GetQueue(), tasks); err == nil {
+			failedTasks := make([]*pb.FailedTask, len(resp.FailedMessages))
 			for i, fmsg := range resp.FailedMessages {
-				st, _ := structpb.NewStruct(fmsg.Event.Payload)
-				failedEvents[i] = &pb.FailedEvent{
+				st, _ := structpb.NewStruct(fmsg.Task.Payload)
+				failedTasks[i] = &pb.FailedTask{
 					Message: fmsg.Message,
-					Event: &pb.NitricEvent{
-						RequestId:   fmsg.Event.RequestId,
-						PayloadType: fmsg.Event.PayloadType,
+					Task: &pb.NitricTask{
+						Id:          fmsg.Task.ID,
+						PayloadType: fmsg.Task.PayloadType,
 						Payload:     st,
 					},
 				}
 			}
-			return &pb.QueueBatchPushResponse{
-				FailedEvents: failedEvents,
+			return &pb.QueueSendBatchResponse{
+				FailedTasks: failedTasks,
 			}, nil
 		} else {
 			return nil, err
@@ -60,38 +81,36 @@ func (s *QueueServer) BatchPush(ctx context.Context, req *pb.QueueBatchPushReque
 	}
 }
 
-func (s *QueueServer) Pop(ctx context.Context, req *pb.QueuePopRequest) (*pb.QueuePopResponse, error) {
+func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		depth := uint32(req.GetDepth())
-		popOptions := sdk.PopOptions{
+		popOptions := sdk.ReceiveOptions{
 			QueueName: req.GetQueue(),
 			Depth:     &depth,
 		}
 
-		// Perform the Queue Pop operation
-		queueItems, err := s.plugin.Pop(popOptions)
+		// Perform the Queue Receive operation
+		tasks, err := s.plugin.Receive(popOptions)
 		if err != nil {
 			return nil, err
 		}
 
-		// Convert the NitricEvents to the gRPC type
-		grpcQueueItems := []*pb.NitricQueueItem{}
-		for _, queueItem := range queueItems {
-			st, _ := structpb.NewStruct(queueItem.Event.Payload)
-			grpcQueueItems = append(grpcQueueItems, &pb.NitricQueueItem{
-				Event: &pb.NitricEvent{
-					RequestId:   queueItem.Event.RequestId,
-					PayloadType: queueItem.Event.PayloadType,
-					Payload:     st,
-				},
-				LeaseId: queueItem.LeaseId,
+		// Convert the NitricTasks to the gRPC type
+		grpcTasks := make([]*pb.NitricTask, len(tasks))
+		for _, task := range tasks {
+			st, _ := structpb.NewStruct(task.Payload)
+			grpcTasks = append(grpcTasks, &pb.NitricTask{
+				Id:          task.ID,
+				Payload:     st,
+				LeaseId:     task.LeaseID,
+				PayloadType: task.PayloadType,
 			})
 		}
 
-		// Return the queue items
-		res := pb.QueuePopResponse{
-			Items: grpcQueueItems,
+		// Return the tasks
+		res := pb.QueueReceiveResponse{
+			Tasks: grpcTasks,
 		}
 		return &res, nil
 	} else {
