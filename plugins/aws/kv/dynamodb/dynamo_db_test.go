@@ -2,6 +2,7 @@ package dynamodb_service_test
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -30,7 +31,17 @@ func (m *mockDynamoDBClient) CreateTable(input *dynamodb.CreateTableInput) (*dyn
 	}
 
 	// Currently the output is ignored in our usecase so leave this empty for now...
-	return &dynamodb.CreateTableOutput{}, nil
+	return &dynamodb.CreateTableOutput{
+		TableDescription: &dynamodb.TableDescription{
+			TableStatus: aws.String("CREATING"),
+		},
+	} , nil
+}
+
+func (m *mockDynamoDBClient) DescribeTable(input *dynamodb.DescribeTableInput) (*dynamodb.DescribeTableOutput, error) {
+	return &dynamodb.DescribeTableOutput{Table: &dynamodb.TableDescription{
+		TableStatus: aws.String("ACTIVE"),
+	}}, nil
 }
 
 func (m *mockDynamoDBClient) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
