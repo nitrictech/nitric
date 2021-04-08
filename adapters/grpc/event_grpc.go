@@ -20,14 +20,13 @@ func (s *EventServer) checkPluginRegistered() (bool, error) {
 	if s.eventPlugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
 	}
-
 	return true, nil
 }
 
 func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		// auto generate an ID if we did not recieve one
-		var ID string = req.GetEvent().GetId()
+		// auto generate an ID if we did not receive one
+		var ID = req.GetEvent().GetId()
 		if ID == "" {
 			ID = uuid.New().String()
 		}
