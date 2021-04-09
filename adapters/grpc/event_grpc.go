@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"
@@ -37,7 +36,9 @@ func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) 
 			Payload:     req.GetEvent().GetPayload().AsMap(),
 		}
 		if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
-			return &pb.EventPublishResponse{}, nil
+			return &pb.EventPublishResponse{
+				Id: ID,
+			}, nil
 		} else {
 			return nil, err
 		}

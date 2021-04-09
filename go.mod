@@ -33,8 +33,10 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/uw-labs/lichen v0.1.3 // indirect
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
+	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201203001206-6486ece9c497
 	google.golang.org/grpc v1.34.0
