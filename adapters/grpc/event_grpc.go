@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"

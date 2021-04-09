@@ -28,7 +28,7 @@ clean:
 	@rm -rf ./interfaces/
 
 # Run all tests
-test: test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
+test: test-adapters test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
 	@echo Done.
 
 license-check-dev: dev-static
@@ -59,6 +59,11 @@ generate-proto:
 # Build all service factory plugins
 plugins: aws-plugin gcp-plugin dev-plugin
 	@echo Done.
+
+# Test the adapters
+test-adapters: install-tools generate-proto
+	@echo Testing gRPC Adapters
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./adapters/...
 
 # Test the membrane
 test-membrane: install-tools generate-proto 
