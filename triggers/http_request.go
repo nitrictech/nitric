@@ -3,7 +3,7 @@ package triggers
 import (
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
 )
 
 // HttpRequest - Storage information that captures a HTTP Request
@@ -16,6 +16,8 @@ type HttpRequest struct {
 	Method string
 	// The original path
 	Path string
+	// URL query parameters
+	Query url.Values
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
@@ -24,11 +26,11 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
 func FromHttpRequest(r *http.Request) *HttpRequest {
-	r.URL.RawPath
 	return &HttpRequest{
 		Header: r.Header,
 		Body:   r.Body,
 		Method: r.Method,
-		Path:   strings.Join(r.URL.RawPath, "?", r.URL.RawQuery),
+		Path:   r.URL.Path,
+		Query:  r.URL.Query(),
 	}
 }

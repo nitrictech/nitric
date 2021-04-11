@@ -42,6 +42,8 @@ func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Res
 	address := fmt.Sprintf("http://%s%s", h.host, trigger.Path)
 	httpRequest, err := http.NewRequest(trigger.Method, address, trigger.Body)
 	httpRequest.Header = trigger.Header
+	httpRequest.URL.RawQuery = trigger.Query.Encode()
+
 	defaultErr := &http.Response{
 		Status:     "Internal Server Error",
 		StatusCode: 500,
