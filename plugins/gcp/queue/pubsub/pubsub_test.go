@@ -85,7 +85,7 @@ var _ = Describe("Pubsub", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning no failed messages")
-				Expect(resp.FailedMessages).To(HaveLen(0))
+				Expect(resp.FailedTasks).To(HaveLen(0))
 
 				By("The queue containing the published message")
 				Expect(mockPubsubClient.PublishedMessages["test"]).To(HaveLen(1))

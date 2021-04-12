@@ -65,11 +65,11 @@ func (s *PubsubQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*s
 		return nil, fmt.Errorf("Queue: %s does not exist", queue)
 	}
 
-	// SendBatch once we've published all messages to the client
+	// SendBatch once we've published all tasks to the client
 	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more sense...
 	results := make([]ifaces.PublishResult, 0)
-	failedMessages := make([]*sdk.FailedMessage, 0)
-	publishedMessages := make([]sdk.NitricTask, 0)
+	failedTasks := make([]*sdk.FailedTask, 0)
+	publishedTasks := make([]sdk.NitricTask, 0)
 
 	for _, task := range tasks {
 		if taskBytes, err := json.Marshal(task); err == nil {
@@ -78,9 +78,9 @@ func (s *PubsubQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*s
 			})
 
 			results = append(results, topic.Publish(ctx, msg))
-			publishedMessages = append(publishedMessages, task)
+			publishedTasks = append(publishedTasks, task)
 		} else {
-			failedMessages = append(failedMessages, &sdk.FailedMessage{
+			failedTasks = append(failedTasks, &sdk.FailedTask{
 				Task:   &task,
 				Message: "Error unmarshalling message for queue",
 			})
@@ -91,15 +91,15 @@ func (s *PubsubQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*s
 		// Iterate over the results to check for successful publishing...
 		if _, err := result.Get(ctx); err != nil {
 			// Add this to our failures list in our results...
-			failedMessages = append(failedMessages, &sdk.FailedMessage{
-				Task:   &publishedMessages[idx],
+			failedTasks = append(failedTasks, &sdk.FailedTask{
+				Task:   &publishedTasks[idx],
 				Message: err.Error(),
 			})
 		}
 	}
 
 	return &sdk.SendBatchResponse{
-		FailedMessages: failedMessages,
+		FailedTasks: failedTasks,
 	}, nil
 }
 

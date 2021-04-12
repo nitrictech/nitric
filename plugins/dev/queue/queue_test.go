@@ -31,7 +31,7 @@ var _ = Describe("Queue", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning No failed messages")
-				Expect(resp.FailedMessages).To(BeEmpty())
+				Expect(resp.FailedTasks).To(BeEmpty())
 
 				By("Storing the sent message, in the given queue")
 				Expect(mockStorageDriver.GetStoredItems()["/nitric/queues/test"]).ToNot(BeNil())
@@ -64,7 +64,7 @@ var _ = Describe("Queue", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Having no Failed Messages")
-				Expect(resp.FailedMessages).To(BeEmpty())
+				Expect(resp.FailedTasks).To(BeEmpty())
 
 				By("Storing the sent message, in the given queue")
 				Expect(mockStorageDriver.GetStoredItems()["/nitric/queues/test"]).ToNot(BeNil())
