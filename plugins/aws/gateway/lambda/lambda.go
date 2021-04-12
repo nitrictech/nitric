@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	events "github.com/aws/aws-lambda-go/events"
@@ -115,12 +116,19 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 				httpHeader.Add(key, val)
 			}
 
+			queryParams := url.Values{}
+
+			for key, val := range evt.QueryStringParameters {
+				queryParams.Add(key, val)
+			}
+
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
 				Header: httpHeader,
 				Body:   ioutil.NopCloser(bytes.NewReader([]byte(evt.Body))),
 				Method: evt.RequestContext.HTTP.Method,
 				Path:   evt.RawPath,
+				Query:  queryParams,
 			})
 		}
 
