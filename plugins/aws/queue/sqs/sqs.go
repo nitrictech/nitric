@@ -64,11 +64,11 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 			QueueUrl: url,
 		}); err == nil {
 			// process out Failed messages to return to the user...
-			failedEvents := make([]*sdk.FailedMessage, 0)
+			failedTasks := make([]*sdk.FailedTask, 0)
 			for _, failed := range out.Failed {
 				for _, e := range tasks {
 					if e.ID == *failed.Id {
-						failedEvents = append(failedEvents, &sdk.FailedMessage{
+						failedTasks = append(failedTasks, &sdk.FailedTask{
 							Task:    &e,
 							Message: *failed.Message,
 						})
@@ -79,7 +79,7 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 			}
 
 			return &sdk.SendBatchResponse{
-				FailedMessages: failedEvents,
+				FailedTasks: failedTasks,
 			}, nil
 		} else {
 			return nil, err

@@ -119,7 +119,7 @@ func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 	}
 
 	return &sdk.SendBatchResponse{
-		FailedMessages: make([]*sdk.FailedMessage, 0),
+		FailedTasks: make([]*sdk.FailedTask, 0),
 	}, nil
 }
 

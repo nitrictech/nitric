@@ -89,7 +89,7 @@ func (s *MockSqs) SendMessageBatch(in *sqs.SendMessageBatchInput) (*sqs.SendMess
 			}
 
 			successfulMessages := make([]*sqs.SendMessageBatchResultEntry, 0)
-			failedMessages := make([]*sqs.BatchResultErrorEntry, 0)
+			failedTasks := make([]*sqs.BatchResultErrorEntry, 0)
 			for i, e := range in.Entries {
 				mockReceiptHandle := fmt.Sprintf("%s%s", string(rune(i)), time.Now())
 
@@ -107,7 +107,7 @@ func (s *MockSqs) SendMessageBatch(in *sqs.SendMessageBatchInput) (*sqs.SendMess
 			// TODO: Add a configurable failure mechanism here...
 			return &sqs.SendMessageBatchOutput{
 				Successful: successfulMessages,
-				Failed:     failedMessages,
+				Failed:     failedTasks,
 			}, nil
 		}
 	}

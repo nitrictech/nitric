@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type FailedMessage struct {
+type FailedTask struct {
 	Task    *NitricTask
 	Message string
 }
 
 type SendBatchResponse struct {
-	FailedMessages []*FailedMessage
+	FailedTasks []*FailedTask
 }
 
 // QueueService - The Nitric plugin interface for cloud native queue adapters

@@ -58,14 +58,14 @@ func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchReque
 		}
 
 		if resp, err := s.plugin.SendBatch(req.GetQueue(), tasks); err == nil {
-			failedTasks := make([]*pb.FailedTask, len(resp.FailedMessages))
-			for i, fmsg := range resp.FailedMessages {
-				st, _ := structpb.NewStruct(fmsg.Task.Payload)
+			failedTasks := make([]*pb.FailedTask, len(resp.FailedTasks))
+			for i, failedTask := range resp.FailedTasks {
+				st, _ := structpb.NewStruct(failedTask.Task.Payload)
 				failedTasks[i] = &pb.FailedTask{
-					Message: fmsg.Message,
+					Message: failedTask.Message,
 					Task: &pb.NitricTask{
-						Id:          fmsg.Task.ID,
-						PayloadType: fmsg.Task.PayloadType,
+						Id:          failedTask.Task.ID,
+						PayloadType: failedTask.Task.PayloadType,
 						Payload:     st,
 					},
 				}
