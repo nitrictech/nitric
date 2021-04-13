@@ -45,7 +45,7 @@ The Membrane also provides an API Server, with APIs for services such as Events,
 By wrapping both in-bound and out-bound communication in this way, the Membrane ensures maximum portability of applications via an intuitive set of services and APIs. The plugin based architecture ensures new and variety provider services can continue to be safely added without breaking application code.
 
 <p align="center">
-  <img src="docs/assets/membrane-architecture.png" alt="nitric membrane architecture diagram"/>
+  <img src="docs/assets/membrane-architecture.svg" alt="nitric membrane architecture diagram"/>
 </p>
 
 Documentation on key components is available in the [Membrane Plugin SDK](./sdk/README.md).
