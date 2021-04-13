@@ -1,34 +1,74 @@
+<p align="center">
+  <img src="docs/assets/dot-matrix-logo.png" alt="Nitric Logo"/>
+</p>
+
+
+
+Nitric is a portable, provider independent runtime for cloud-native and serverless applications. Using Nitric applications can take advantage of cloud-native services for activities like eventing, queues, compute, CDN, storage, caches, etc. without direct integration to product specific APIs.
+
+This decoupling enables applications to remain portable between cloud-providers and alternate deployment options such as Kubernetes or stand-alone servers, from a single application codebase. Nitric also takes an _intention based design_ approach to applications, where services and their resources are described in terms of how they should behave, allowing Nitric to ensure that behavior across a variety of providers and services.
+
+[Read the docs](https://nitric.io/docs) to get started.
+
 # Nitric Membrane
+
+The Membrane is at the heart of the solution. Nitric applications communicate with the Membrane via gRPC to access the following services in a provider agnostic way:
+
+  - Events
+  - Queues
+  - Key/Value Store
+  - Storage & Buckets
+  - Authentication & Authorization
+
+Additional services on our roadmap include:
+
+  - RDS
+  - Document DB
+  - Configuration
+  - Logging
+
+SDKs are available for many languages, providing an idiomatic wrapper around the gRPC client.
+
+  - [Node.js](https://github.com/nitrictech/node-sdk)
+  - [Python](https://github.com/nitrictech/python-sdk)
+  - [Go](https://github.com/nitrictech/go-sdk)
+  - [Java](https://github.com/nitrictech/java-sdk)
+  - [PHP](https://github.com/nitrictech/php-sdk)
+  - [.NET](https://github.com/nitrictech/dotnet-sdk)
 
 ## Architecture
 
-The Nitric membrane is designed to separate application code from the non-functional concerns of an application's hosting environment.
+The Nitric Membrane runs alongside your code as a separate process or side-car container. The process providers a Gateway server which accepts incoming triggers such as HTTP Requests, Events, etc., translates them into a standard trigger format and forwards them to your Service or Function. The Gateway also accepts a standard response format from your application and serializes it into an appropriate format based on the initial request.
+
+The Membrane also provides an API Server, with APIs for services such as Events, State, Auth, etc., which are implemented via provider specific plugins. Application code interacts with these services via gRPC, either directly or via a language SDK, enabling complete freedom in terms of the language or runtime you use to develop.
+
+By wrapping both in-bound and out-bound communication in this way, the Membrane ensures maximum portability of applications via an intuitive set of services and APIs. The plugin based architecture ensures new and variety provider services can continue to be safely added without breaking application code.
 
 <p align="center">
-  <img src="docs/assets/architecture.png" alt="nitric membrane architecture diagram"/>
+  <img src="docs/assets/membrane-architecture.png" alt="nitric membrane architecture diagram"/>
 </p>
 
-Documentation on key components is available in the [Membrane SDK](./sdk/README.md).
+Documentation on key components is available in the [Membrane Plugin SDK](./sdk/README.md).
 
 ## Configuration
 
-Membrane configuration options can be found [here](./docs/Configuration.md)
+Membrane configuration options can be found [here](./docs/configuration.md)
 
-## Membrane Build Options
+## Membrane Binary Options
 The Nitric Membrane comes in two variants `Pluggable` or `Static`.
 
 ### Static
-For each supported provider (e.g. AWS or GCP) we provide a static binary which includes all the supported services for that provider.
-The static membrane binaries are far smaller overall than using a pluggable binary with separate plugin files. This is the most efficient option
+For each supported provider (e.g. AWS, Google Cloud, Azure, etc.) we provide a static binary which includes all of the default service plugins for that provider.
+The static membrane binaries are far smaller than the equivalent pluggable binary, which uses separate plugin files. As a result, this is the most size efficient option
 when running Nitric on a single provider or when custom service implementations aren't required.
 
 ### Pluggable
-In cases where provider or service implementation flexibility is needed use the pluggable membrane. The pluggable 
-membrane loads service implementations (e.g. S3 implementation of the Storage service for AWS) via Go Plugin Service
+In cases where provider or service implementation flexibility is needed the pluggable membrane may be used. The pluggable 
+variant loads service implementations (e.g. the AWS S3 implementation of the Storage service) via Go Plugin Service
 Factories. This enables runtime loading of service implementations, as well as custom service implementations within a
-provider instead of the defaults from the static membrane.
+provider as an alternative to the fixed set of plugins in the static membranes.
 
-> Service implementation customization and multiplexing is currently unimplemented.
+> Service customization and multiplexing is currently on the roadmap.
 
 ## Development
 
