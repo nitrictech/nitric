@@ -38,7 +38,7 @@ SDKs are available for many languages, providing an idiomatic wrapper around the
 
 ## Architecture
 
-The Nitric Membrane runs alongside your code as a separate process or side-car container. The process providers a Gateway server which accepts incoming triggers such as HTTP Requests, Events, etc., translates them into a standard trigger format and forwards them to your Service or Function. The Gateway also accepts a standard response format from your application and serializes it into an appropriate format based on the initial request.
+The Nitric Membrane runs alongside your code as a separate process or side-car container. The process provides a Gateway server which accepts incoming triggers such as HTTP Requests, Events, etc., translates them into a standard trigger format and forwards them to your Service or Function. The Gateway also accepts a standard response format from your application and serializes it into an appropriate format based on the initial request.
 
 The Membrane also provides an API Server, with APIs for services such as Events, State, Auth, etc., which are implemented via provider specific plugins. Application code interacts with these services via gRPC, either directly or via a language SDK, enabling complete freedom in terms of the language or runtime you use to develop.
 
