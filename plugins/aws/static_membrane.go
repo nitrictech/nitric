@@ -8,10 +8,10 @@ import (
 
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/aws/auth/cognito"
-	documents "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/aws/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/http"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/aws/gateway/lambda"
+	documents "github.com/nitric-dev/membrane/plugins/aws/kv/dynamodb"
 	queue "github.com/nitric-dev/membrane/plugins/aws/queue/sqs"
 	storage "github.com/nitric-dev/membrane/plugins/aws/storage/s3"
 	"github.com/nitric-dev/membrane/utils"
@@ -23,6 +23,11 @@ func main() {
 	childCommand := utils.GetEnv("INVOKE", "")
 	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
 	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
+
+	mode, err := membrane.ModeFromString(utils.GetEnv("MEMBRANE_MODE", "FAAS"))
+	if err != nil {
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
+	}
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
 
@@ -56,6 +61,7 @@ func main() {
 		GatewayPlugin:           gatewayPlugin,
 		AuthPlugin:              authPlugin,
 		TolerateMissingServices: tolerateMissing,
+		Mode:                    mode,
 	})
 
 	if err != nil {

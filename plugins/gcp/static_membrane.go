@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -22,28 +23,52 @@ func main() {
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
 
+	mode, err := membrane.ModeFromString(utils.GetEnv("MEMBRANE_MODE", "FAAS"))
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	eventingPlugin, _ := eventing.New()
-	kvPlugin, _ := kv.New()
-	storagePlugin, _ := storage.New()
-	gatewayPlugin, _ := gateway.New()
-	queuePlugin, _ := queue.New()
-	authPlugin, _ := auth.New()
+	if err != nil {
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
+	}
+
+	eventingPlugin, err := eventing.New()
+	if err != nil {
+		fmt.Println("Failed to load eventing plugin:", err.Error())
+	}
+	kvPlugin, err := kv.New()
+	if err != nil {
+		fmt.Println("Failed to load kv plugin:", err.Error())
+	}
+	storagePlugin, err := storage.New()
+	if err != nil {
+		fmt.Println("Failed to load storage plugin:", err.Error())
+	}
+	gatewayPlugin, err := gateway.New()
+	if err != nil {
+		fmt.Println("Failed to load gateway plugin:", err.Error())
+	}
+	queuePlugin, err := queue.New()
+	if err != nil {
+		fmt.Println("Failed to load queue plugin:", err.Error())
+	}
+	authPlugin, err := auth.New()
+	if err != nil {
+		fmt.Println("Failed to load auth plugin:", err.Error())
+	}
 
 	membrane, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		EventingPlugin:          eventingPlugin,
-		KvPlugin:         		 kvPlugin,
+		KvPlugin:                kvPlugin,
 		StoragePlugin:           storagePlugin,
 		QueuePlugin:             queuePlugin,
 		GatewayPlugin:           gatewayPlugin,
 		AuthPlugin:              authPlugin,
 		TolerateMissingServices: tolerateMissing,
+		Mode:                    mode,
 	})
 
 	if err != nil {
