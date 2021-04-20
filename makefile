@@ -165,6 +165,12 @@ dev-docker-static:
 dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
+do-docker-static:
+	@docker build . -f ./plugins/do/do.dockerfile -t nitricimages/membrane-do
+
+do-docker: do-docker-static
+	@echo Built Digital Ocean Docker Images
+
 test-dev-plugins:
 	@echo Testing Dev Plugins
 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/dev/...
