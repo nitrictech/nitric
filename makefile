@@ -165,6 +165,9 @@ dev-docker-static:
 dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
+do-static:
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./plugins/do/static_membrane.go
+
 do-docker-static:
 	@docker build . -f ./plugins/do/do.dockerfile -t nitricimages/membrane-do
 
