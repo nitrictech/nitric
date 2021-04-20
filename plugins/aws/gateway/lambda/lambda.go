@@ -173,12 +173,16 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 
 				responsePayload, _ := ioutil.ReadAll(response.Body)
 
+				responseString := base64.StdEncoding.EncodeToString(responsePayload)
+
+				// We want to sniff the content type of the body that we have here as lambda cannot gzip it...
+
 				return events.APIGatewayProxyResponse{
 					StatusCode: response.StatusCode,
 					Headers:    lambdaHTTPHeaders,
-					Body:       string(responsePayload),
+					Body:       responseString,
 					// TODO: Need to determine best case when to use this...
-					IsBase64Encoded: false,
+					IsBase64Encoded: true,
 				}, nil
 			} else {
 				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
