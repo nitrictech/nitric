@@ -20,9 +20,6 @@ type HttpGateway struct {
 func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 	// Setup the function handler for the default (catch all route)
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		// Handle the HTTP response...
-		headers := req.Header
-
 		// Handle Event/Subscription Request Types
 		// TODO: Determine how we will handle nitric events for digital ocean
 
@@ -48,7 +45,7 @@ func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (sdk.GatewayService, error) {
-	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
+	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
 
 	return &HttpGateway{
 		address: address,
