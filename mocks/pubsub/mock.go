@@ -229,7 +229,7 @@ func (m MockBaseClient) Acknowledge(ctx context.Context, req *pubsubpb.Acknowled
 func (m MockBaseClient) Pull(ctx context.Context, req *pubsubpb.PullRequest, opts ...gax.CallOption) (*pubsubpb.PullResponse, error) {
 	sub := req.Subscription
 
-	for topicName, _ := range m.Messages {
+	for topicName := range m.Messages {
 		topicSubName := fmt.Sprintf("projects/%s/subscriptions/%s-nitricqueue", MockProjectID, topicName)
 		if topicSubName == sub {
 			mockMessages := m.Messages[topicName]

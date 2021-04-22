@@ -73,7 +73,7 @@ func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 		response := handler.HandleHttpRequest(httpTrigger)
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
-		for key, _ := range response.Header {
+		for key := range response.Header {
 			resp.Header().Add(key, response.Header.Get(key))
 		}
 

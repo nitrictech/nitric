@@ -64,7 +64,7 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 func (s *LocalEventService) ListTopics() ([]string, error) {
 	keys := []string{}
 
-	for key, _ := range s.subscriptions {
+	for key := range s.subscriptions {
 		keys = append(keys, key)
 	}
 

@@ -123,7 +123,7 @@ func (s *CognitoAuthService) Create(tenant string, id string, email string, pass
 		Password: &password,
 		Username: &id,
 		UserAttributes: []*cognitoidentityprovider.AttributeType{
-			&cognitoidentityprovider.AttributeType{
+			{
 				Name:  aws.String("email"),
 				Value: &email,
 			},

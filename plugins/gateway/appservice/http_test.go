@@ -105,7 +105,7 @@ var _ = Describe("Http", func() {
 			It("Should return the provided validation code", func() {
 				validationCode := "test"
 				evt := []eventgrid.Event{
-					eventgrid.Event{
+					{
 						Data: eventgrid.SubscriptionValidationEventData{
 							ValidationCode: &validationCode,
 						},
@@ -140,7 +140,7 @@ var _ = Describe("Http", func() {
 				testTopic := "test"
 				testID := "1234"
 				evt := []eventgrid.Event{
-					eventgrid.Event{
+					{
 						ID:    &testID,
 						Topic: &testTopic,
 						Data:  payload,

@@ -35,12 +35,12 @@ var _ = Describe("Identityplatform", func() {
 		When("A user with the same ID already exists", func() {
 			BeforeEach(func() {
 				mockFirebaseAuth.SetTenants([]*mocks.MockTenant{
-					&mocks.MockTenant{
+					{
 						T: &auth.Tenant{
 							DisplayName: "test",
 							ID:          "test",
 						},
-						Users: []*auth.UserRecord{&auth.UserRecord{
+						Users: []*auth.UserRecord{{
 							TenantID: "test",
 							UserInfo: &auth.UserInfo{
 								UID:         "test",
@@ -63,12 +63,12 @@ var _ = Describe("Identityplatform", func() {
 		When("A user with the same email already exists", func() {
 			BeforeEach(func() {
 				mockFirebaseAuth.SetTenants([]*mocks.MockTenant{
-					&mocks.MockTenant{
+					{
 						T: &auth.Tenant{
 							DisplayName: "test",
 							ID:          "test",
 						},
-						Users: []*auth.UserRecord{&auth.UserRecord{
+						Users: []*auth.UserRecord{{
 							TenantID: "test",
 							UserInfo: &auth.UserInfo{
 								UID:         "test2",

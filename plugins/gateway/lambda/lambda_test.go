@@ -151,7 +151,7 @@ var _ = Describe("Lambda", func() {
 				// Setup mock events for our runtime to process...
 				eventQueue: []interface{}{&events.SNSEvent{
 					Records: []events.SNSEventRecord{
-						events.SNSEventRecord{
+						{
 							EventVersion:         "",
 							EventSource:          "aws:sns",
 							EventSubscriptionArn: "some:arbitrary:subscription:arn:MySubscription",

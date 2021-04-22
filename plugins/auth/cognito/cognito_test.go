@@ -52,7 +52,7 @@ var _ = Describe("Cognito", func() {
 
 			BeforeEach(func() {
 				mockCognito.SetPools([]*mock.MockUserPool{
-					&mock.MockUserPool{
+					{
 						Pool: &cognitoidentityprovider.UserPoolType{
 							Name: aws.String("test"),
 							Id:   aws.String("test"),
@@ -76,7 +76,7 @@ var _ = Describe("Cognito", func() {
 			existingUser := &cognitoidentityprovider.UserType{
 				Username: aws.String("test"),
 				Attributes: []*cognitoidentityprovider.AttributeType{
-					&cognitoidentityprovider.AttributeType{
+					{
 						Name:  aws.String("email"),
 						Value: aws.String("test@test.com"),
 					},
@@ -85,7 +85,7 @@ var _ = Describe("Cognito", func() {
 
 			BeforeEach(func() {
 				mockCognito.SetPools([]*mock.MockUserPool{
-					&mock.MockUserPool{
+					{
 						Pool: &cognitoidentityprovider.UserPoolType{
 							Name: aws.String("test"),
 							Id:   aws.String("test"),

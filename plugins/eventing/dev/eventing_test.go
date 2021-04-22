@@ -47,7 +47,7 @@ var _ = Describe("Eventing", func() {
 
 		When("topics exist", func() {
 			subs := map[string][]string{
-				"test": []string{"http://test-endpoint/"},
+				"test": {"http://test-endpoint/"},
 			}
 
 			pubsubClient, _ := eventing_plugin.NewWithClientAndSubs(mockHttpClient, subs)
@@ -94,7 +94,7 @@ var _ = Describe("Eventing", func() {
 
 		When("The target topic is available", func() {
 			subs := map[string][]string{
-				"test": []string{"http://test-endpoint/"},
+				"test": {"http://test-endpoint/"},
 			}
 
 			pubsubClient, _ := eventing_plugin.NewWithClientAndSubs(mockHttpClient, subs)

@@ -49,7 +49,7 @@ var _ = Describe("Sns", func() {
 	Context("Get Topics", func() {
 		When("There are available topics", func() {
 			eventingClient, _ := plugin.NewWithClient(&MockSNSClient{
-				availableTopics: []*sns.Topic{&sns.Topic{TopicArn: aws.String("test")}},
+				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
 			})
 
 			It("Should return the available topics", func() {
@@ -64,7 +64,7 @@ var _ = Describe("Sns", func() {
 	Context("Publish", func() {
 		When("Publishing to an available topic", func() {
 			eventingClient, _ := plugin.NewWithClient(&MockSNSClient{
-				availableTopics: []*sns.Topic{&sns.Topic{TopicArn: aws.String("test")}},
+				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
 			})
 			payload := map[string]interface{}{"Test": "test"}
 

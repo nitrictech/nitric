@@ -162,7 +162,7 @@ func (m *MockFirestoreServer) Commit(ctx context.Context, req *pb.CommitRequest)
 
 	return &pb.CommitResponse{
 		WriteResults: []*pb.WriteResult{
-			&pb.WriteResult{
+			{
 				TransformResults: make([]*pb.Value, 0),
 			},
 		},
