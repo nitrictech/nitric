@@ -28,7 +28,7 @@ clean:
 	@rm -rf ./interfaces/
 
 # Run all tests
-test: test-adapters test-membrane test-aws-plugins test-gcp-plugins test-dev-plugins
+test: test-adapters test-membrane test-plugins
 	@echo Done.
 
 license-check-dev: dev-static
