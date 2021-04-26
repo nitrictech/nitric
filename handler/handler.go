@@ -11,7 +11,7 @@ import (
 
 type TriggerHandler interface {
 	HandleEvent(trigger *triggers.Event) error
-	HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response
+	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }
 
 type UnimplementedTriggerHandler struct{}

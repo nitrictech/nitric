@@ -32,9 +32,10 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/uw-labs/lichen v0.1.3 // indirect
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	github.com/valyala/fasthttp v1.23.0
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+	golang.org/x/net v0.0.0-20210226101413-39120d07d75e
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/api v0.36.0

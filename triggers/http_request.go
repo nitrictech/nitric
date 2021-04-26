@@ -1,23 +1,21 @@
 package triggers
 
 import (
-	"io"
-	"net/http"
-	"net/url"
+	"github.com/valyala/fasthttp"
 )
 
 // HttpRequest - Storage information that captures a HTTP Request
 type HttpRequest struct {
 	// The original Headers
-	Header http.Header
+	Header *fasthttp.RequestHeader
 	// The original body stream
-	Body io.ReadCloser
+	Body []byte
 	// The original method
 	Method string
 	// The original path
 	Path string
 	// URL query parameters
-	Query url.Values
+	Query *fasthttp.Args
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
@@ -25,12 +23,12 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 }
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
-func FromHttpRequest(r *http.Request) *HttpRequest {
+func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	return &HttpRequest{
-		Header: r.Header,
-		Body:   r.Body,
-		Method: r.Method,
-		Path:   r.URL.Path,
-		Query:  r.URL.Query(),
+		Header: &ctx.Request.Header,
+		Body:   ctx.PostBody(),
+		Method: string(ctx.Method()),
+		Path:   string(ctx.Path()),
+		Query:  ctx.QueryArgs(),
 	}
 }

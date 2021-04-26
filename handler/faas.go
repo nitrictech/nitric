@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/valyala/fasthttp"
 )
 
 // FaaSHandler - trigger handler for the membrane when operating in FaaS mode
@@ -49,24 +50,43 @@ func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
+func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+	//address := fmt.Sprintf("http://%s", h.host)
+	//httpRequest, err := http.NewRequest("POST", address, trigger.Body)
+
+	//if err != nil {
+	//	return errorToInternalServerError(err)
+	//}
+
+	//httpRequest.Header = trigger.Header
+
+	//resp, err := http.DefaultClient.Do(httpRequest)
+	//if err != nil {
+	//	return errorToInternalServerError(err)
+	//}
+
+	//return resp
+
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, err := http.NewRequest("POST", address, trigger.Body)
 
-	if err != nil {
-		return errorToInternalServerError(err)
-	}
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
 
-	httpRequest.Header = trigger.Header
+	trigger.Header.VisitAll(func(key []byte, val []byte) {
+		httpRequest.Header.SetBytesKV(key, val)
+	})
+
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Request.String())
 	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", trigger.Method, trigger.Path))
 
-	resp, err := http.DefaultClient.Do(httpRequest)
+	var resp fasthttp.Response
+	err := fasthttp.Do(httpRequest, &resp)
+
 	if err != nil {
-		return errorToInternalServerError(err)
+		return nil, err
 	}
 
-	return resp
+	return triggers.FromHttpResponse(&resp), nil
 }
 
 func NewFaasHandler(host string) *FaasHandler {
