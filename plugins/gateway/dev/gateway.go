@@ -21,15 +21,12 @@ type HttpGateway struct {
 // TODO: Lets bind this to a struct...
 func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
-		// Handle the HTTP response...
-		headers := ctx.Request.Header
-
-		var triggerTypeString = string(headers.Peek("x-nitric-source-type"))
+		var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 		// Handle Event/Subscription Request Types
 		if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
-			trigger := string(headers.Peek("x-nitric-source"))
-			requestId := string(headers.Peek("x-nitric-request-id"))
+			trigger := string(ctx.Request.Header.Peek("x-nitric-source"))
+			requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 			payload := ctx.PostBody()
 
 			err := handler.HandleEvent(&triggers.Event{
@@ -55,11 +52,16 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 
 		ctx.Response = fasthttp.Response{}
 
+		response.Header.VisitAll(func(key []byte, val []byte) {
+			if len(ctx.Response.Header.PeekBytes(key)) < 1 {
+				ctx.Response.Header.AddBytesKV(key, val)
+			}
+		})
+		ctx.Response.Header.Del("Content-Length")
+		ctx.Response.Header.Del("Connection")
+
 		ctx.Response.SetBody(response.Body)
 		ctx.Response.SetStatusCode(response.StatusCode)
-		response.Header.VisitAll(func(key []byte, val []byte) {
-			ctx.Response.Header.AddBytesKV(key, val)
-		})
 
 		if err != nil {
 			// TODO: Redact message in production
