@@ -53,9 +53,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		ctx.Response = fasthttp.Response{}
 
 		response.Header.VisitAll(func(key []byte, val []byte) {
-			if len(ctx.Response.Header.PeekBytes(key)) < 1 {
-				ctx.Response.Header.AddBytesKV(key, val)
-			}
+			ctx.Response.Header.AddBytesKV(key, val)
 		})
 		ctx.Response.Header.Del("Content-Length")
 		ctx.Response.Header.Del("Connection")
