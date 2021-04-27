@@ -3,8 +3,6 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
@@ -12,6 +10,7 @@ import (
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/valyala/fasthttp"
 )
 
 // HttpService - The HTTP gateway plugin for Azure
@@ -19,14 +18,11 @@ type HttpService struct {
 	address string
 }
 
-func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events []eventgrid.Event) {
+func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
 	var validateData eventgrid.SubscriptionValidationEventData
 	if err := mapstructure.Decode(subPayload.Data, &validateData); err != nil {
-		// Some error here...
-		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(400)
-		w.Write([]byte("Invalid subscription event data"))
+		ctx.Error("Invalid subscription event data", 400)
 		return
 	}
 
@@ -35,13 +31,11 @@ func (s *HttpService) handleSubscriptionValidation(w http.ResponseWriter, events
 	}
 
 	responseBody, _ := json.Marshal(response)
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	// TODO: Remove this unless in debug mode...
-	w.Write(responseBody)
+
+	ctx.Success("application/json", responseBody)
 }
 
-func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventgrid.Event, handler handler.TriggerHandler) {
+func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, handler handler.TriggerHandler) {
 	// FIXME: As we are batch handling events in azure
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -69,59 +63,62 @@ func (s *HttpService) handleNotifications(w http.ResponseWriter, events []eventg
 
 	// Return 200 OK (TODO: Determine how we could mark individual events for failure)
 	// Or potentially requeue them here internally...
-	w.WriteHeader(200)
-	w.Write([]byte("success"))
+	ctx.SuccessString("text/plain", "success")
 }
 
-func (s *HttpService) handleRequest(w http.ResponseWriter, r *http.Request, handler handler.TriggerHandler) {
-	response := handler.HandleHttpRequest(triggers.FromHttpRequest(r))
+func handleRequest(ctx *fasthttp.RequestCtx, handler handler.TriggerHandler) {
+	response, err := handler.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
-	for name := range response.Header {
-		w.Header().Add(name, response.Header.Get(name))
+	if err != nil {
+		ctx.Error(fmt.Sprintf("Error Handling Request: %v", err), 500)
+		return
+	}
+	if response.Header != nil {
+		response.Header.VisitAll(func(key []byte, val []byte) {
+			ctx.Response.Header.AddBytesKV(key, val)
+		})
 	}
 
-	responseBody, _ := ioutil.ReadAll(response.Body)
-
-	// Pass through the function response
-	w.WriteHeader(response.StatusCode)
-	w.Write(responseBody)
+	// Avoid content length header duplication
+	ctx.Response.Header.Del("Content-Length")
+	ctx.Response.SetStatusCode(response.StatusCode)
+	ctx.Response.SetBody(response.Body)
 }
 
-func (s *HttpService) Start(handler handler.TriggerHandler) error {
-
-	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		eventType := req.Header.Get("aeg-event-type")
+func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+	return func(ctx *fasthttp.RequestCtx) {
+		// Handle Event/Subscription Request Types
+		eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
 		// Handle an eventgrid webhook event
 		if eventType != "" {
 			var eventgridEvents []eventgrid.Event
-			bytes, _ := ioutil.ReadAll(req.Body)
+			bytes := ctx.Request.Body()
 			// TODO: verify topic for validity
 			if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
-				resp.Header().Add("Content-Type", "text/plain")
-				resp.WriteHeader(400)
-				resp.Write([]byte(fmt.Sprintf("Invalid event grid types")))
+				ctx.Error("Invalid event grid types", 400)
 				return
 			}
 
 			// Handle Eventgrid event
 			if eventType == "SubscriptionValidation" {
 				// Validate a subscription
-				s.handleSubscriptionValidation(resp, eventgridEvents)
+				handleSubscriptionValidation(ctx, eventgridEvents)
 				return
 			} else if eventType == "Notification" {
 				// Handle notifications
-				s.handleNotifications(resp, eventgridEvents, handler)
+				handleNotifications(ctx, eventgridEvents, handler)
 				return
 			}
 		}
 
 		// Handle a standard HTTP request
-		s.handleRequest(resp, req, handler)
-	})
+		handleRequest(ctx, handler)
+	}
+}
 
-	// Start a HTTP server here...
-	httpError := http.ListenAndServe(s.address, nil)
+func (s *HttpService) Start(handler handler.TriggerHandler) error {
+	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
 
 	return httpError
 }

@@ -37,17 +37,17 @@ func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
 	return nil
 }
 
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) *http.Response {
+func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	if m.requests == nil {
 		m.requests = make([]*triggers.HttpRequest, 0)
 	}
 
 	m.requests = append(m.requests, r)
 
-	return &http.Response{
+	return &triggers.HttpResponse{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("success"))),
-	}
+		Body:       []byte("success"),
+	}, nil
 }
 
 func (m *MockHandler) resetRequests() {
@@ -106,14 +106,14 @@ var _ = Describe("Http", func() {
 				By("Preserving the original requests path")
 				Expect(handledRequest.Path).To(Equal("/test"))
 
-				streamRead, _ := ioutil.ReadAll(handledRequest.Body)
+				streamRead := handledRequest.Body
 				By("Preserving the original requests body")
 				Expect(streamRead).To(BeEquivalentTo([]byte("Test")))
 
 				By("Preserving the original requests headers")
-				Expect(handledRequest.Header.Get("User-Agent")).To(Equal("Test"))
-				Expect(handledRequest.Header.Get("x-nitric-request-id")).To(Equal("1234"))
-				Expect(handledRequest.Header.Get("x-nitric-payload-type")).To(Equal("Test Payload"))
+				Expect(string(handledRequest.Header["User-Agent"])).To(Equal("Test"))
+				Expect(string(handledRequest.Header["X-Nitric-Request-Id"])).To(Equal("1234"))
+				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"])).To(Equal("Test Payload"))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -173,7 +173,7 @@ var _ = Describe("Http", func() {
 				Expect(resp.StatusCode).To(Equal(200))
 
 				By("Returning the expected output")
-				Expect(string(responseBody)).To(Equal("Success"))
+				Expect(string(responseBody)).To(Equal("success"))
 			})
 		})
 	})

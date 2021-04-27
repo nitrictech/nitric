@@ -48,11 +48,10 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		// Handle HTTP Request Types
 		response, err := handler.HandleHttpRequest(httpReq)
 
-		ctx.Response = fasthttp.Response{}
+		if response.Header != nil {
+			response.Header.CopyTo(&ctx.Response.Header)
+		}
 
-		response.Header.VisitAll(func(key []byte, val []byte) {
-			ctx.Response.Header.AddBytesKV(key, val)
-		})
 		ctx.Response.Header.Del("Content-Length")
 		ctx.Response.Header.Del("Connection")
 

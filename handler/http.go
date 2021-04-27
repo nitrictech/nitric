@@ -44,11 +44,14 @@ func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 
 	httpRequest := fasthttp.AcquireRequest()
 	httpRequest.SetRequestURI(address)
-	httpRequest.URI().SetQueryStringBytes(trigger.Query.QueryString())
 
-	trigger.Header.VisitAll(func(key []byte, val []byte) {
-		httpRequest.Header.SetBytesKV(key, val)
-	})
+	for key, val := range trigger.Query {
+		httpRequest.URI().QueryArgs().Add(key, val)
+	}
+
+	for key, val := range trigger.Header {
+		httpRequest.Header.Add(key, val)
+	}
 
 	var resp fasthttp.Response
 	err := fasthttp.Do(httpRequest, &resp)
