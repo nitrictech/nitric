@@ -107,9 +107,20 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		err = json.Unmarshal(data, evt)
 
 		if err == nil {
+			// Copy the headers and re-write for the proxy
+			headerCopy := make(map[string]string)
+
+			for key, val := range evt.Headers {
+				if strings.ToLower(key) == "host" {
+					headerCopy["x-forwarded-for"] = val
+				} else {
+					headerCopy[key] = val
+				}
+			}
+
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
-				Header: evt.Headers,
+				Header: headerCopy,
 				Body:   []byte(evt.Body),
 				Method: evt.RequestContext.HTTP.Method,
 				Path:   evt.RawPath,
