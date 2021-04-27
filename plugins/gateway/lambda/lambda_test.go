@@ -115,7 +115,6 @@ var _ = Describe("Lambda", func() {
 				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
 				By("Retaining the Headers")
 				Expect(request.Header["User-Agent"]).To(Equal("Test"))
-				fmt.Println(request.Header)
 				Expect(request.Header["x-nitric-payload-type"]).To(Equal("TestPayload"))
 				Expect(request.Header["x-nitric-request-id"]).To(Equal("test-request-id"))
 				Expect(request.Header["Content-Type"]).To(Equal("text/plain"))

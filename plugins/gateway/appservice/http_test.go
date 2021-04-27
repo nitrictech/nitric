@@ -31,8 +31,6 @@ func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
 		m.events = make([]*triggers.Event, 0)
 	}
 
-	fmt.Println("HandlingEvent")
-
 	m.events = append(m.events, evt)
 
 	return nil
@@ -42,8 +40,6 @@ func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.Http
 	if m.requests == nil {
 		m.requests = make([]*triggers.HttpRequest, 0)
 	}
-
-	fmt.Println("HandlingRequest")
 
 	// Read and re-created a new read stream here...
 	// body := r.Body

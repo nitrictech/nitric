@@ -30,20 +30,22 @@ func errorToInternalServerError(err error) *http.Response {
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(trigger.Payload)))
+
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
 	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	// TODO: Handle response or error and response appropriately
-	resp, err := http.DefaultClient.Do(httpRequest)
+	resp := &fasthttp.Response{}
 
-	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+	err := fasthttp.Do(httpRequest, resp)
+
+	// All good if we got a 2XX error code
+	if resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
 	} else if resp != nil {
-		respMessage, _ := ioutil.ReadAll(resp.Body)
-
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(respMessage))
+		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(resp.Body()))
 	}
 
 	return fmt.Errorf("Error processing event: %s", err.Error())

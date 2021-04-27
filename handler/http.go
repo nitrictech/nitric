@@ -1,10 +1,7 @@
 package handler
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/valyala/fasthttp"
@@ -19,20 +16,22 @@ type HttpHandler struct {
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
-	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(trigger.Payload)))
+
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
 	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	// TODO: Handle response or error and respond appropriately
-	resp, err := http.DefaultClient.Do(httpRequest)
+	resp := &fasthttp.Response{}
 
-	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+	// TODO: Handle response or error and respond appropriately
+	err := fasthttp.Do(httpRequest, resp)
+
+	if resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
 	} else if resp != nil {
-		respMessage, _ := ioutil.ReadAll(resp.Body)
-
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(respMessage))
+		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(resp.Body()))
 	}
 
 	return fmt.Errorf("Error processing event: %s", err.Error())
