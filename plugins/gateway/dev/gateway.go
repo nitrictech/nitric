@@ -26,6 +26,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 			trigger := string(ctx.Request.Header.Peek("x-nitric-source"))
 			requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 			payload := ctx.PostBody()
+			payload := ctx.Request.Body()
 
 			err := handler.HandleEvent(&triggers.Event{
 				ID:      requestId,

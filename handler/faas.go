@@ -62,10 +62,12 @@ func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 		httpRequest.Header.Add(key, val)
 	}
 
+	httpRequest.SetBody(trigger.Body)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Request.String())
 	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", trigger.Method, trigger.Path))
 
 	var resp fasthttp.Response
+
 	err := fasthttp.Do(httpRequest, &resp)
 
 	if err != nil {
