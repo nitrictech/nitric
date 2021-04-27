@@ -4,13 +4,12 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/valyala/fasthttp"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -29,31 +28,23 @@ type HttpProxyGateway struct {
 	address string
 }
 
-func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fasthttp.RequestCtx) {
+	return func(ctx *fasthttp.RequestCtx) {
+		var trigger = ctx.UserAgent()
 
-	// Setup the function handler for the default (catch all route)
-	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		// Handle the HTTP response...
-		headers := req.Header
-
-		var trigger = strings.Join(headers["User-Agent"], "")
-
-		if trigger == "Amazon Simple Notification Service Agent" {
+		if string(trigger) == "Amazon Simple Notification Service Agent" {
 			// If its a subscribe or unsubscribe notification then we need to handle it
-			amzMessageType := headers.Get(AMZ_MESSAGE_TYPE)
-			topicArn := headers.Get(AMZ_TOPIC_ARN)
-			id := headers.Get(AMZ_MESSAGE_ID)
+			amzMessageType := string(ctx.Request.Header.Peek(AMZ_MESSAGE_TYPE))
+			topicArn := string(ctx.Request.Header.Peek(AMZ_TOPIC_ARN))
+			id := string(ctx.Request.Header.Peek(AMZ_MESSAGE_ID))
 
-			payload, _ := ioutil.ReadAll(req.Body)
+			payload := ctx.Request.Body()
 
 			// SNS bodies are always JSON
 			var jsonBody map[string]interface{}
 			unmarshalError := json.Unmarshal(payload, &jsonBody)
 			if unmarshalError != nil {
-				// Return an error response
-				resp.Header().Add("Content-Type", "text/plain")
-				resp.Write([]byte("There was an error unmarshalling an SNS message"))
-				resp.WriteHeader(403)
+				ctx.Error("There was an error unmarshalling an SNS message", 403)
 				return
 			}
 
@@ -65,12 +56,11 @@ func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 					TopicArn: &topicArn,
 					Token:    &token,
 				})
-
-				resp.WriteHeader(200)
+				ctx.SuccessString("text/plain", "success")
 				return
 			} else if amzMessageType == "UnsubscribeConfirmation" {
 				// FIXME: Decide how we need to handle this
-				resp.WriteHeader(200)
+				ctx.SuccessString("text/plain", "success")
 				return
 			}
 
@@ -80,31 +70,29 @@ func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 				Topic:   topicArn,
 				Payload: payload,
 			}); err == nil {
-				// Return a positive (200) response
-				resp.WriteHeader(200)
-				resp.Write([]byte("Success"))
+				ctx.SuccessString("text/plain", "success")
 			} else {
-				// return a negative (500) response
-				resp.WriteHeader(500)
-				// TODO: Debug mode for printing errror here...
-				resp.Write([]byte("Internal Server Error"))
+				ctx.Error("Internal Server Error", 500)
 			}
 
 			return
 		}
 
 		// Otherwise treat as a normal http request
-		response := handler.HandleHttpRequest(triggers.FromHttpRequest(req))
-		responseBody, _ := ioutil.ReadAll(response.Body)
+		response, err := handler.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
-		for name := range response.Header {
-			resp.Header().Add(name, response.Header.Get(name))
+		if err != nil {
+			ctx.Error(err.Error(), 500)
+			return
 		}
 
-		// Pass through the function response
-		resp.WriteHeader(response.StatusCode)
-		resp.Write(responseBody)
-	})
+		response.Header.CopyTo(&ctx.Response.Header)
+		ctx.Response.SetStatusCode(response.Header.StatusCode())
+		ctx.Response.SetBody(response.Body)
+	}
+}
+
+func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
 
 	// Start a HTTP Proxy server here...
 	httpError := http.ListenAndServe(fmt.Sprintf("%s", s.address), nil)
