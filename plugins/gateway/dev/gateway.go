@@ -25,7 +25,6 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
 			trigger := string(ctx.Request.Header.Peek("x-nitric-source"))
 			requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
-			payload := ctx.PostBody()
 			payload := ctx.Request.Body()
 
 			err := handler.HandleEvent(&triggers.Event{
