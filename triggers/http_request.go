@@ -1,6 +1,8 @@
 package triggers
 
 import (
+	"strings"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -9,7 +11,6 @@ type HttpRequest struct {
 	// The original Headers
 	// Header *fasthttp.RequestHeader
 	Header map[string]string
-
 	// The original body stream
 	Body []byte
 	// The original method
@@ -30,7 +31,14 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	queryArgs := make(map[string]string)
 
 	ctx.Request.Header.VisitAll(func(key []byte, val []byte) {
-		headerCopy[string(key)] = string(val)
+		keyString := string(key)
+
+		if strings.ToLower(keyString) == "host" {
+			// Don't copy the host header
+			headerCopy["X-Forwarded-For"] = string(val)
+		} else {
+			headerCopy[string(key)] = string(val)
+		}
 	})
 
 	ctx.QueryArgs().VisitAll(func(key []byte, val []byte) {
