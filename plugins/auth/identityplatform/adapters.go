@@ -3,7 +3,7 @@ package identity_platform_service
 import (
 	"context"
 
-	"firebase.google.com/go/auth"
+	auth "firebase.google.com/go/v4/auth"
 )
 
 func AdaptFirebaseAuth(client *auth.Client) FirebaseAuth {
