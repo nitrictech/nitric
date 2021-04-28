@@ -2,6 +2,7 @@ package tools
 
 import (
 	_ "github.com/golang/protobuf/protoc-gen-go"
+	_ "github.com/google/addlicense"
 	_ "github.com/onsi/ginkgo/ginkgo"
 	_ "github.com/uw-labs/lichen"
 	_ "golang.org/x/lint/golint"
