@@ -47,6 +47,16 @@ license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
 	@lichen --config=./lichen.yaml ./bin/membrane
 
+gofiles := $(shell find . -name "*.go")
+
+license-header-add:
+	@echo Add License Headers to Source Files
+	@addlicense -c "Nitric Pty Ltd." -y "2021" $(gofiles)
+
+license-header-check:
+	@echo Checking License Headers to Source Files
+	@addlicense -check -c "Nitric Pty Ltd." -y "2021" $(gofiles)
+
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
 
