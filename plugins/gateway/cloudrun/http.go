@@ -33,7 +33,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		// TODO: We probably want to use a simpler method than this
 		// like reading off the request origin to ensure it is from pubsub
 		var pubsubEvent PubSubMessage
-		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil {
+		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 			// We have an event from pubsub here...
 			event := &triggers.Event{
 				ID: pubsubEvent.Message.ID,
