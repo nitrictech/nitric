@@ -17,6 +17,7 @@ package grpc_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/adapters/grpc"
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"
@@ -29,7 +30,7 @@ type MockEventService struct {
 	PublishTopic string
 	PublishEvent *sdk.NitricEvent
 
-	TopicList []string
+	TopicList      []string
 	TopicListError error
 }
 
