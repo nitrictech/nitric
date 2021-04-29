@@ -36,21 +36,21 @@ func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
 	return nil
 }
 
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) *http.Response {
+func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	if m.requests == nil {
 		m.requests = make([]*triggers.HttpRequest, 0)
 	}
 
 	// Read and re-created a new read stream here...
-	body, _ := ioutil.ReadAll(r.Body)
-	r.Body = ioutil.NopCloser(bytes.NewReader(body))
+	// body := r.Body
+	// r.Body = ioutil.NopCloser(bytes.NewReader(body))
 
 	m.requests = append(m.requests, r)
 
-	return &http.Response{
+	return &triggers.HttpResponse{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("success"))),
-	}
+		Body:       []byte("success"),
+	}, nil
 }
 
 func (m *MockHandler) resetRequests() {
@@ -72,13 +72,13 @@ var _ = Describe("Http", func() {
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	AfterEach(func() {
 		mockHandler.resetRequests()
 	})
 
-	When("Invoking the GCP HTTP Gateway", func() {
+	When("Invoking the Azure AppService HTTP Gateway", func() {
 		When("with a standard Nitric Request", func() {
 
 			It("Should be handled successfully", func() {

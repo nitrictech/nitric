@@ -1,12 +1,9 @@
 package lambda_service_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/nitric-dev/membrane/sdk"
@@ -31,17 +28,16 @@ func (m *MockTriggerHandler) HandleEvent(trigger *triggers.Event) error {
 	return nil
 }
 
-func (m *MockTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
+func (m *MockTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	if m.httpRequests == nil {
 		m.httpRequests = make([]*triggers.HttpRequest, 0)
 	}
 	m.httpRequests = append(m.httpRequests, trigger)
 
-	return &http.Response{
-		Status:     "OK",
+	return &triggers.HttpResponse{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("Mock Handled!"))),
-	}
+		Body:       []byte("Mock Handled!"),
+	}, nil
 }
 
 func (m *MockTriggerHandler) reset() {
@@ -116,13 +112,12 @@ var _ = Describe("Lambda", func() {
 				request := mockHandler.httpRequests[0]
 
 				By("Retaining the body")
-				bodyBytes, _ := ioutil.ReadAll(request.Body)
-				Expect(string(bodyBytes)).To(BeEquivalentTo("Test Payload"))
+				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
 				By("Retaining the Headers")
-				Expect(request.Header.Get("User-Agent")).To(Equal("Test"))
-				Expect(request.Header.Get("x-nitric-payload-type")).To(Equal("TestPayload"))
-				Expect(request.Header.Get("x-nitric-request-id")).To(Equal("test-request-id"))
-				Expect(request.Header.Get("Content-Type")).To(Equal("text/plain"))
+				Expect(request.Header["User-Agent"]).To(Equal("Test"))
+				Expect(request.Header["x-nitric-payload-type"]).To(Equal("TestPayload"))
+				Expect(request.Header["x-nitric-request-id"]).To(Equal("test-request-id"))
+				Expect(request.Header["Content-Type"]).To(Equal("text/plain"))
 				By("Retaining the method")
 				Expect(request.Method).To(Equal("GET"))
 				By("Retaining the path")

@@ -3,7 +3,6 @@ package gateway_plugin_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -32,21 +31,17 @@ func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
 	return nil
 }
 
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) *http.Response {
+func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	if m.requests == nil {
 		m.requests = make([]*triggers.HttpRequest, 0)
 	}
 
-	// Read and re-created a new read stream here...
-	body, _ := ioutil.ReadAll(r.Body)
-	r.Body = ioutil.NopCloser(bytes.NewReader(body))
-
 	m.requests = append(m.requests, r)
 
-	return &http.Response{
+	return &triggers.HttpResponse{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("success"))),
-	}
+		Body:       []byte("success"),
+	}, nil
 }
 
 func (m *MockHandler) resetRequests() {
@@ -105,9 +100,8 @@ var _ = Describe("Gateway", func() {
 				// need to validate genuine runtime behaviour here...
 				// Seems like the original request stream is closed
 				// before we can actually properly assess it
-				body, _ := ioutil.ReadAll(handledRequest.Body)
 				By("Preserving the original request Body")
-				Expect(string(body)).To(Equal("Test"))
+				Expect(string(handledRequest.Body)).To(Equal("Test"))
 			})
 		})
 		// TODO: Handle cases of missing nitric headers

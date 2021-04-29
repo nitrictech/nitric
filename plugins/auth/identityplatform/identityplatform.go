@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"cloud.google.com/go/pubsub"
-	firebase "firebase.google.com/go"
-	"golang.org/x/oauth2/google"
+	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 
 	"github.com/nitric-dev/membrane/sdk"
 )
@@ -84,25 +81,26 @@ func (s *IdentityPlatformAuthService) Create(tenant string, id string, email str
 func New() (sdk.UserService, error) {
 	ctx := context.Background()
 
-	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
-	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
-	}
+	//credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
+	//if credentialsError != nil {
+	//	return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+	//}
 
-	credOpt := option.WithCredentialsJSON(credentials.JSON)
+	//credOpt := option.WithCredentialsJSON(credentials.JSON)
+	app, err := firebase.NewApp(ctx, nil)
 
-	app, err := firebase.NewApp(ctx, &firebase.Config{
-		ProjectID: credentials.ProjectID,
-	}, credOpt)
+	//fmt.Println("Creds:", credOpt)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error instansiating Firebase App credentials")
+		return nil, fmt.Errorf("Error instansiating Firebase App credentials %v", err)
 	}
+
+	// fmt.Println("App:", app)
 
 	authClient, err := app.Auth(ctx)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error instansiating firebase auth client")
+		return nil, fmt.Errorf("Error instansiating firebase auth client %v", err)
 	}
 
 	return &IdentityPlatformAuthService{

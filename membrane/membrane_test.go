@@ -69,19 +69,28 @@ type MockGateway struct {
 	sdk.UnimplementedGatewayPlugin
 	triggers []triggers.Trigger
 	// store responses for inspection
-	responses []*http.Response
+	responses []*triggers.HttpResponse
 	started   bool
 }
 
 func (gw *MockGateway) Start(handler handler.TriggerHandler) error {
 	// Spy on the mock gateway
-	gw.responses = make([]*http.Response, 0)
+	gw.responses = make([]*triggers.HttpResponse, 0)
 
 	gw.started = true
 	if gw.triggers != nil {
 		for _, trigger := range gw.triggers {
 			if s, ok := trigger.(*triggers.HttpRequest); ok {
-				gw.responses = append(gw.responses, handler.HandleHttpRequest(s))
+				resp, err := handler.HandleHttpRequest(s)
+
+				if err != nil {
+					gw.responses = append(gw.responses, &triggers.HttpResponse{
+						StatusCode: 500,
+						Body:       []byte(err.Error()),
+					})
+				} else {
+					gw.responses = append(gw.responses, resp)
+				}
 			} else if s, ok := trigger.(*triggers.Event); ok {
 				handler.HandleEvent(s)
 			}
@@ -283,9 +292,9 @@ var _ = Describe("Membrane", func() {
 				mockGateway = &MockGateway{
 					triggers: []triggers.Trigger{
 						&triggers.HttpRequest{
-							Body:   ioutil.NopCloser(bytes.NewReader([]byte("Test Payload"))),
+							Body:   []byte("Test Payload"),
 							Path:   "/test/",
-							Header: make(http.Header),
+							Header: make(map[string]string),
 						},
 					},
 				}
@@ -309,10 +318,8 @@ var _ = Describe("Membrane", func() {
 					By("Having the 500 HTTP error code")
 					Expect(response.StatusCode).To(Equal(500))
 
-					By("Containing a Body with the encountered error message")
-					bytes, _ := ioutil.ReadAll(response.Body)
-
-					Expect(string(bytes)).To(ContainSubstring("connection refused"))
+					By("Containing a Body with the error message from the gateway")
+					Expect(string(response.Body)).To(ContainSubstring("connection refused"))
 				})
 			})
 
@@ -358,11 +365,10 @@ var _ = Describe("Membrane", func() {
 					Expect(response.StatusCode).To(Equal(200))
 
 					By("Having a Content-Type returned by the handler")
-					Expect(response.Header.Get("Content-Type")).To(ContainSubstring("text/plain"))
+					Expect(response.Header.Peek("Content-Type")).To(ContainSubstring("text/plain"))
 
 					By("Containing a Body with handler response")
-					responseBytes, _ := ioutil.ReadAll(response.Body)
-					Expect(string(responseBytes)).To(ContainSubstring("Hello World!"))
+					Expect(string(response.Body)).To(ContainSubstring("Hello World!"))
 				})
 			})
 		})

@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 
-	"firebase.google.com/go/auth"
+	"firebase.google.com/go/v4/auth"
 	ifaces "github.com/nitric-dev/membrane/plugins/auth/identityplatform"
 	"google.golang.org/api/iterator"
 )

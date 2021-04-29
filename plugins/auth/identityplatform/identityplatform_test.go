@@ -1,7 +1,7 @@
 package identity_platform_service_test
 
 import (
-	"firebase.google.com/go/auth"
+	"firebase.google.com/go/v4/auth"
 	mocks "github.com/nitric-dev/membrane/mocks/identityplatform"
 	identity_platform_plugin "github.com/nitric-dev/membrane/plugins/auth/identityplatform"
 	. "github.com/onsi/ginkgo"

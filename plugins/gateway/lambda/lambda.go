@@ -1,14 +1,10 @@
 package lambda_service
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"strings"
 
 	events "github.com/aws/aws-lambda-go/events"
@@ -111,25 +107,24 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		err = json.Unmarshal(data, evt)
 
 		if err == nil {
-			httpHeader := make(http.Header)
+			// Copy the headers and re-write for the proxy
+			headerCopy := make(map[string]string)
 
 			for key, val := range evt.Headers {
-				httpHeader.Add(key, val)
-			}
-
-			queryParams := url.Values{}
-
-			for key, val := range evt.QueryStringParameters {
-				queryParams.Add(key, val)
+				if strings.ToLower(key) == "host" {
+					headerCopy["x-forwarded-for"] = val
+				} else {
+					headerCopy[key] = val
+				}
 			}
 
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
-				Header: httpHeader,
-				Body:   ioutil.NopCloser(bytes.NewReader([]byte(evt.Body))),
+				Header: headerCopy,
+				Body:   []byte(evt.Body),
 				Method: evt.RequestContext.HTTP.Method,
 				Path:   evt.RawPath,
-				Query:  queryParams,
+				Query:  evt.QueryStringParameters,
 			})
 		}
 
@@ -164,20 +159,28 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
-				response := s.handler.HandleHttpRequest(httpEvent)
+				response, err := s.handler.HandleHttpRequest(httpEvent)
+
+				if err != nil {
+					return events.APIGatewayProxyResponse{
+						StatusCode: 500,
+						Body:       "Error processing lambda request",
+						// TODO: Need to determine best case when to use this...
+						IsBase64Encoded: true,
+					}, nil
+				}
 
 				lambdaHTTPHeaders := make(map[string]string)
 
-				for key := range response.Header {
-					lambdaHTTPHeaders[key] = response.Header.Get(key)
+				if response.Header != nil {
+					response.Header.VisitAll(func(key []byte, val []byte) {
+						lambdaHTTPHeaders[string(key)] = string(val)
+					})
 				}
 
-				responsePayload, _ := ioutil.ReadAll(response.Body)
-
-				responseString := base64.StdEncoding.EncodeToString(responsePayload)
+				responseString := base64.StdEncoding.EncodeToString(response.Body)
 
 				// We want to sniff the content type of the body that we have here as lambda cannot gzip it...
-
 				return events.APIGatewayProxyResponse{
 					StatusCode: response.StatusCode,
 					Headers:    lambdaHTTPHeaders,

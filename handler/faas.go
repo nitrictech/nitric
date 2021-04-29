@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/valyala/fasthttp"
 )
 
 // FaaSHandler - trigger handler for the membrane when operating in FaaS mode
@@ -29,44 +30,51 @@ func errorToInternalServerError(err error) *http.Response {
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, _ := http.NewRequest("POST", address, ioutil.NopCloser(bytes.NewReader(trigger.Payload)))
+
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
 	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	// TODO: Handle response or error and response appropriately
-	resp, err := http.DefaultClient.Do(httpRequest)
+	resp := &fasthttp.Response{}
 
-	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+	err := fasthttp.Do(httpRequest, resp)
+
+	// All good if we got a 2XX error code
+	if resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
 	} else if resp != nil {
-		respMessage, _ := ioutil.ReadAll(resp.Body)
-
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(respMessage))
+		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(resp.Body()))
 	}
 
 	return fmt.Errorf("Error processing event: %s", err.Error())
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
+func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	address := fmt.Sprintf("http://%s", h.host)
-	httpRequest, err := http.NewRequest("POST", address, trigger.Body)
 
-	if err != nil {
-		return errorToInternalServerError(err)
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
+
+	for key, val := range trigger.Header {
+		httpRequest.Header.Add(key, val)
 	}
 
-	httpRequest.Header = trigger.Header
+	httpRequest.SetBody(trigger.Body)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Request.String())
 	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", trigger.Method, trigger.Path))
 
-	resp, err := http.DefaultClient.Do(httpRequest)
+	var resp fasthttp.Response
+
+	err := fasthttp.Do(httpRequest, &resp)
+
 	if err != nil {
-		return errorToInternalServerError(err)
+		return nil, err
 	}
 
-	return resp
+	return triggers.FromHttpResponse(&resp), nil
 }
 
 func NewFaasHandler(host string) *FaasHandler {
