@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -102,6 +103,10 @@ func (gw *MockGateway) Start(handler handler.TriggerHandler) error {
 }
 
 var _ = Describe("Membrane", func() {
+	BeforeSuite(func() {
+		os.Args = []string{}
+	})
+
 	Context("New", func() {
 		Context("Tolerate Missing Services is enabled", func() {
 			When("The gateway plugin is missing", func() {
@@ -174,10 +179,11 @@ var _ = Describe("Membrane", func() {
 	})
 
 	Context("Starting the server", func() {
+
 		Context("That tolerates missing adapters", func() {
 			When("The Gateway plugin is available and working", func() {
 				mockGateway := &MockGateway{}
-
+				os.Args = []string{}
 				membrane, _ := membrane.New(&membrane.MembraneOptions{
 					GatewayPlugin:           mockGateway,
 					SuppressLogs:            true,
@@ -223,16 +229,24 @@ var _ = Describe("Membrane", func() {
 	})
 
 	Context("Starting the child process", func() {
+		BeforeEach(func() {
+			os.Args = []string{}
+		})
+
 		var mockGateway *MockGateway
 		var mb *membrane.Membrane
 		When("The configured command exists", func() {
+			port := 60051
+
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
+				port += 1
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:8081",
-					ChildCommand:            "echo",
+					ChildCommand:            []string{"echo"},
 					GatewayPlugin:           mockGateway,
+					ServiceAddress: fmt.Sprintf(":%d", port),
 					ChildTimeoutSeconds:     1,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
@@ -270,7 +284,7 @@ var _ = Describe("Membrane", func() {
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:808",
-					ChildCommand:            "fakecommand",
+					ChildCommand:            []string{"fakecommand"},
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
@@ -285,6 +299,12 @@ var _ = Describe("Membrane", func() {
 	})
 
 	Context("Operating in FaaS Mode", func() {
+		port := 50051
+		BeforeEach(func() {
+			os.Args = []string{}
+			port += 1
+		})
+
 		Context("Handling A Single HttpRequest", func() {
 			var mockGateway *MockGateway
 			var mb *membrane.Membrane
@@ -301,6 +321,7 @@ var _ = Describe("Membrane", func() {
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:8080",
+					ServiceAddress: fmt.Sprintf(":%d", port),
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
@@ -308,7 +329,7 @@ var _ = Describe("Membrane", func() {
 			})
 
 			When("There is no function available", func() {
-				It("Should recieve a single error response", func() {
+				It("Should receive a single error response", func() {
 					err := mb.Start()
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(mockGateway.responses).To(HaveLen(1))
@@ -323,7 +344,7 @@ var _ = Describe("Membrane", func() {
 				})
 			})
 
-			When("There is a function available to recieve", func() {
+			When("There is a function available to receive", func() {
 				var handlerFunction *MockFunction
 				BeforeEach(func() {
 					handlerFunction = &MockFunction{

@@ -2,9 +2,11 @@ package membrane
 
 import (
 	"fmt"
+	"github.com/nitric-dev/membrane/utils"
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,7 +23,7 @@ type MembraneOptions struct {
 	// The address the child will be listening on
 	ChildAddress string
 	// The command that will be used to invoke the child process
-	ChildCommand string
+	ChildCommand []string
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
@@ -36,7 +38,7 @@ type MembraneOptions struct {
 	TolerateMissingServices bool
 
 	// The operating mode of the membrane
-	Mode Mode
+	Mode *Mode
 }
 
 type Membrane struct {
@@ -52,7 +54,7 @@ type Membrane struct {
 	childUrl string
 
 	// The command that will be used to invoke the child process
-	childCommand string
+	childCommand []string
 
 	childTimeoutSeconds int
 
@@ -109,11 +111,10 @@ func (s *Membrane) createUserServer() v1.UserServer {
 
 func (s *Membrane) startChildProcess() error {
 	// TODO: This is a detached process
-	// so it will continue to run until even after the director dies
-	commandArgs := strings.Fields(s.childCommand)
+	// so it will continue to run until even after the membrane dies
 
-	fmt.Println(fmt.Sprintf("Starting Function"))
-	childProcess := exec.Command(commandArgs[0], commandArgs[1:]...)
+	fmt.Println(fmt.Sprintf("Starting Child Process"))
+	childProcess := exec.Command(s.childCommand[0], s.childCommand[1:]...)
 	childProcess.Stdout = os.Stdout
 	childProcess.Stderr = os.Stderr
 	applicationError := childProcess.Start()
@@ -124,8 +125,6 @@ func (s *Membrane) startChildProcess() error {
 	}
 
 	// Dial the child port to see if it's open and ready...
-	// Only wait for 10s, if we timeout that will be it
-	// TODO: make app startup time configurable
 	maxWaitTime := time.Duration(s.childTimeoutSeconds) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
 	pollInterval := time.Duration(15) * time.Millisecond
@@ -198,13 +197,13 @@ func (s *Membrane) Start() error {
 
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections
-	if s.childCommand != "" {
+	if len(s.childCommand) > 0 {
 		if err := s.startChildProcess(); err != nil {
 			// Return the error
 			return err
 		}
 	} else {
-		s.log("No Child Configured Specified, Skipping...")
+		s.log("No Child Command Specified, Skipping...")
 	}
 
 	// FIXME: Only do this in Gateway mode...
@@ -234,14 +233,47 @@ func (s *Membrane) Start() error {
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
-	var childTimeout = 5
-	if options.ChildTimeoutSeconds > 0 {
-		childTimeout = options.ChildTimeoutSeconds
+
+	// Get unset options from env or defaults
+	if options.ServiceAddress == "" {
+		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	}
 
-	var childAddress = "localhost:8080"
-	if options.ChildAddress != "" {
-		childAddress = options.ChildAddress
+	if options.ChildAddress == "" {
+		options.ChildAddress = utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
+	}
+
+	// Pull child command from command line args or environment variable if not provided.
+	if len(options.ChildCommand) < 1 {
+		// Get the command line arguments, minus the program name in index 0.
+		if len(os.Args) > 1 && len(os.Args[1:]) > 0 {
+			options.ChildCommand = os.Args[1:]
+		} else {
+			options.ChildCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
+			if len(options.ChildCommand) > 0 {
+				fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
+			}
+		}
+	}
+
+	if !options.TolerateMissingServices {
+		tolerateMissing, err := strconv.ParseBool(utils.GetEnv("TOLERATE_MISSING_SERVICES", "false"))
+		if err != nil {
+			return nil, err
+		}
+		options.TolerateMissingServices = tolerateMissing
+	}
+
+	if options.Mode == nil {
+		mode, err := ModeFromString(utils.GetEnv("MEMBRANE_MODE", "FAAS"))
+		if err != nil {
+			return nil, err
+		}
+		options.Mode = &mode
+	}
+
+	if options.ChildTimeoutSeconds < 1 {
+		options.ChildTimeoutSeconds = 5
 	}
 
 	if options.GatewayPlugin == nil {
@@ -256,10 +288,10 @@ func New(options *MembraneOptions) (*Membrane, error) {
 
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
-		childAddress:            childAddress,
-		childUrl:                fmt.Sprintf("http://%s", childAddress),
+		childAddress:            options.ChildAddress,
+		childUrl:                fmt.Sprintf("http://%s", options.ChildAddress),
 		childCommand:            options.ChildCommand,
-		childTimeoutSeconds:     childTimeout,
+		childTimeoutSeconds:     options.ChildTimeoutSeconds,
 		authPlugin:              options.AuthPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
@@ -268,6 +300,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		gatewayPlugin:           options.GatewayPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
-		mode:                    options.Mode,
+		mode:                    *options.Mode,
 	}, nil
 }
