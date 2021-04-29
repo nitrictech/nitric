@@ -23,15 +23,18 @@ func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	resp := &fasthttp.Response{}
+	var resp fasthttp.Response
+
+	httpRequest.SetBody(trigger.Payload)
+	httpRequest.Header.SetContentLength(len(trigger.Payload))
 
 	// TODO: Handle response or error and respond appropriately
-	err := fasthttp.Do(httpRequest, resp)
+	err := fasthttp.Do(httpRequest, &resp)
 
-	if resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
+	if &resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
-	} else if resp != nil {
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(resp.Body()))
+	} else if &resp != nil {
+		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
 	}
 
 	return fmt.Errorf("Error processing event: %s", err.Error())
@@ -51,6 +54,10 @@ func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	for key, val := range trigger.Header {
 		httpRequest.Header.Add(key, val)
 	}
+
+	httpRequest.Header.Del("Content-Length")
+	httpRequest.SetBody(trigger.Body)
+	httpRequest.Header.SetContentLength(len(trigger.Body))
 
 	var resp fasthttp.Response
 	err := fasthttp.Do(httpRequest, &resp)

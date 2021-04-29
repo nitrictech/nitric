@@ -37,15 +37,18 @@ func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
-	resp := &fasthttp.Response{}
+	var resp fasthttp.Response
 
-	err := fasthttp.Do(httpRequest, resp)
+	err := fasthttp.Do(httpRequest, &resp)
+
+	httpRequest.SetBody(trigger.Payload)
+	httpRequest.Header.SetContentLength(len(trigger.Payload))
 
 	// All good if we got a 2XX error code
-	if resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
+	if &resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
-	} else if resp != nil {
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode, string(resp.Body()))
+	} else if &resp != nil {
+		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
 	}
 
 	return fmt.Errorf("Error processing event: %s", err.Error())
@@ -62,7 +65,10 @@ func (h *FaasHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 		httpRequest.Header.Add(key, val)
 	}
 
+	httpRequest.Header.Del("Content-Length")
 	httpRequest.SetBody(trigger.Body)
+	httpRequest.Header.SetContentLength(len(trigger.Body))
+
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Request.String())
 	httpRequest.Header.Add("x-nitric-source", fmt.Sprintf("%s:%s", trigger.Method, trigger.Path))
 
