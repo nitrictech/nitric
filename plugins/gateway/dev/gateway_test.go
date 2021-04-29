@@ -70,7 +70,7 @@ var _ = Describe("Gateway", func() {
 	// FIXME: Update gateway to block on channel...
 	time.Sleep(500 * time.Millisecond)
 
-	When("Recieving standard HTTP requests", func() {
+	When("Receiving standard HTTP requests", func() {
 		When("The request contains standard nitric headers", func() {
 			payload := []byte("Test")
 			request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader(payload))
@@ -79,7 +79,7 @@ var _ = Describe("Gateway", func() {
 			request.Header.Add("x-nitric-payload-type", "test-payload")
 			request.Header.Add("User-Agent", "Test")
 
-			It("should succesfully pass on the request", func() {
+			It("should successfully pass on the request", func() {
 				_, err := http.DefaultClient.Do(request)
 
 				By("Not returning an error")
@@ -96,7 +96,7 @@ var _ = Describe("Gateway", func() {
 				By("Preserving the original request URL")
 				Expect(handledRequest.Path).To(Equal("/test"))
 
-				// FIXME: Wierd bug occuring in tests,
+				// FIXME: Weird bug occurring in tests,
 				// need to validate genuine runtime behaviour here...
 				// Seems like the original request stream is closed
 				// before we can actually properly assess it
@@ -108,7 +108,7 @@ var _ = Describe("Gateway", func() {
 		// TODO: Handle cases of other non POST methods
 	})
 
-	When("Recieving requests from a topic subscription", func() {
+	When("Receiving requests from a topic subscription", func() {
 		When("The request contains standard nitric headers", func() {
 			payload := []byte("Test")
 			request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payload))
@@ -118,7 +118,7 @@ var _ = Describe("Gateway", func() {
 			request.Header.Add("x-nitric-source-type", "SUBSCRIPTION")
 			request.Header.Add("x-nitric-source", "test-topic")
 
-			It("should succesfully pass on the event", func() {
+			It("should successfully pass on the event", func() {
 				_, err := http.DefaultClient.Do(request)
 
 				By("Not returning an error")
