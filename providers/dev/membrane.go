@@ -38,7 +38,7 @@ func main() {
 	queuePlugin, _ := queue.New()
 	authPlugin, _ := auth.New()
 
-	membrane, err := membrane.New(&membrane.MembraneOptions{
+	membraneServer, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
@@ -53,9 +53,9 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		log.Fatalf("There was an error initialising the membraneServer server: %v", err)
 	}
 
 	// Start the Membrane server
-	membrane.Start()
+	membraneServer.Start()
 }
