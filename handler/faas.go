@@ -39,10 +39,10 @@ func (h *FaasHandler) HandleEvent(trigger *triggers.Event) error {
 
 	var resp fasthttp.Response
 
-	err := fasthttp.Do(httpRequest, &resp)
-
 	httpRequest.SetBody(trigger.Payload)
 	httpRequest.Header.SetContentLength(len(trigger.Payload))
+
+	err := fasthttp.Do(httpRequest, &resp)
 
 	// All good if we got a 2XX error code
 	if &resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
