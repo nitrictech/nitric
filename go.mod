@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	firebase.google.com/go v3.13.0+incompatible
-	firebase.google.com/go/v4 v4.5.0 // indirect
+	firebase.google.com/go/v4 v4.5.0
 	github.com/Azure/azure-sdk-for-go v51.3.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect

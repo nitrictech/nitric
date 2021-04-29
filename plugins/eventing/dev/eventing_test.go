@@ -92,7 +92,7 @@ var _ = Describe("Eventing", func() {
 			})
 		})
 
-		When("The target topic is available", func() {
+		When("The target topic is available, with subscribers", func() {
 			subs := map[string][]string{
 				"test": {"http://test-endpoint/"},
 			}
@@ -130,6 +130,21 @@ var _ = Describe("Eventing", func() {
 				json.Unmarshal(bodyBytes, &bodyMap)
 				Expect(bodyMap).To(BeEquivalentTo(testPayload))
 
+			})
+		})
+
+		When("The target topic is available, with no subscribers", func() {
+			subs := map[string][]string{
+				"test": {},
+			}
+
+			eventPlugin, _ := eventing_plugin.NewWithClientAndSubs(mockHttpClient, subs)
+
+			It("should successfully publish", func() {
+				err := eventPlugin.Publish("test", testEvent)
+
+				By("Not returning an error")
+				Expect(err).To(BeNil())
 			})
 		})
 	})
