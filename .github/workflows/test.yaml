@@ -17,7 +17,9 @@ jobs:
       uses: arduino/setup-protoc@v1
     - name: Install modules
       run: make install-tools
+    - name: Check Source License Headers
+      run: make license-header-check
     - name: Run Tests
       run: make test
-    - name: Check Licenses
+    - name: Check Dependency Licenses
       run: make license-check
