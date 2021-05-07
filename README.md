@@ -238,7 +238,7 @@ Directory               | Package    | Description
 A Nitric SDK service invocation sequence diagram is provided below. 
 
 <p align="center">
-  <img src="docs/assets/sdk-service-call.png" alt="Nitric Logo"/>
+  <img src="docs/assets/sdk-service-call.svg" alt="SDK Service Invocation Sequence Diagram"/>
 </p>
 
 1. SDK Client - Application process makes SDK service call via GRPC client
