@@ -242,8 +242,8 @@ A Nitric SDK service invocation sequence diagram is provided below.
 </p>
 
 1. SDK Client - Application process makes SDK service call via GRPC client
-2. GRPC Server - Membrane process GRPC server receives call, and registered service handles call [`/membrane`]
-3. Service KV - server delegates the call to the service adaptor [`/interfaces/nitric/v1`] 
-4. Adaptor KV - service adaptor delegates call Cloud service plugin [`/adapters/grpc`] 
-5. Plugin KV - Cloud service plugin makes remote call to Cloud's API [`/plugins/...`]
+2. gRPC Server - Membrane process gRPC server receives call, and registered service handles call [`/membrane`]
+3. gRPC Service KV - server delegates the call to the service adaptor [`/interfaces/nitric/v1`] 
+4. KV Adaptor (gRPC) - service adaptor delegates call to Cloud service plugin [`/adapters/grpc`] 
+5. KV Plugin (DynamoDB) - Cloud service plugin makes remote call to Cloud's API [`/plugins/...`]
 6. DynamoDB API - Cloud API makes remote call to Cloud service
