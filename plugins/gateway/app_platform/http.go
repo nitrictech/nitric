@@ -17,13 +17,12 @@ package appplatform_service
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/valyala/fasthttp"
 )
 
 type HttpGateway struct {
@@ -31,27 +30,32 @@ type HttpGateway struct {
 	sdk.UnimplementedGatewayPlugin
 }
 
-func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
-	// Setup the function handler for the default (catch all route)
-	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		// Handle Event/Subscription Request Types
-		// TODO: Determine how we will handle nitric events for digital ocean
+func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+	return func(ctx *fasthttp.RequestCtx) {
+		httpTrigger := triggers.FromHttpRequest(ctx)
+		response, err := handler.HandleHttpRequest(httpTrigger)
 
-		httpReq := triggers.FromHttpRequest(req)
-		// Handle HTTP Request Types
-		response := handler.HandleHttpRequest(httpReq)
-		responsePayload, _ := ioutil.ReadAll(response.Body)
-
-		for key := range response.Header {
-			resp.Header().Add(key, response.Header.Get(key))
+		if err != nil {
+			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
+			return
+		}
+		// responseBody, _ := ioutil.ReadAll(response.Body)
+		if response.Header != nil {
+			// Set headers...
+			response.Header.VisitAll(func(key []byte, val []byte) {
+				ctx.Response.Header.AddBytesKV(key, val)
+			})
 		}
 
-		resp.WriteHeader(response.StatusCode)
-		resp.Write(responsePayload)
-	})
+		// Avoid content length header duplication
+		ctx.Response.Header.Del("Content-Length")
+		ctx.Response.SetStatusCode(response.StatusCode)
+		ctx.Response.SetBody(response.Body)
+	}
+}
 
-	// Start a HTTP Proxy server here...
-	httpError := http.ListenAndServe(fmt.Sprintf("%s", s.address), nil)
+func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
+	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
 
 	return httpError
 }
