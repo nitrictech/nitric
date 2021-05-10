@@ -15,6 +15,8 @@
 package kv_service
 
 import (
+	"fmt"
+
 	scribble "github.com/nanobox-io/golang-scribble"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
@@ -25,9 +27,10 @@ type DevKVService struct {
 	db ScribbleIface
 }
 
-func (s *DevKVService) Get(collection string, key string) (map[string]interface{}, error) {
+func (s *DevKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
+	dbKey := fmt.Sprintf("%v", key["key"])
 	value := make(map[string]interface{})
-	err := s.db.Read(collection, key, &value)
+	err := s.db.Read(collection, dbKey, &value)
 
 	if err != nil {
 		return nil, err
@@ -36,12 +39,14 @@ func (s *DevKVService) Get(collection string, key string) (map[string]interface{
 	return value, nil
 }
 
-func (s *DevKVService) Put(collection string, key string, value map[string]interface{}) error {
-	return s.db.Write(collection, key, value)
+func (s *DevKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
+	dbKey := fmt.Sprintf("%v", key["key"])
+	return s.db.Write(collection, dbKey, value)
 }
 
-func (s *DevKVService) Delete(collection string, key string) error {
-	error := s.db.Delete(collection, key)
+func (s *DevKVService) Delete(collection string, key map[string]interface{}) error {
+	dbKey := fmt.Sprintf("%v", key["key"])
+	error := s.db.Delete(collection, dbKey)
 
 	if error != nil {
 		return error

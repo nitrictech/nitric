@@ -59,6 +59,10 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 		mockFirestoreServer.ClearStore()
 	})
 
+	key := map[string]interface{}{
+		firestore_plugin.KEY: "Test",
+	}
+
 	When("Get", func() {
 		When("And the document already exists", func() {
 
@@ -80,7 +84,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 					},
 				}
 
-				doc, err := firestorePlugin.Get("Test", "Test")
+				doc, err := firestorePlugin.Get("Test", key)
 
 				Expect(err).To(BeNil())
 				Expect(doc).To(BeEquivalentTo(item))
@@ -91,7 +95,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 			It("A not found error should be returned", func() {
 				mockFirestoreServer.Store = map[string]map[string]map[string]*pb.Value{}
 
-				_, err := firestorePlugin.Get("Test", "Test")
+				_, err := firestorePlugin.Get("Test", key)
 
 				Expect(err).ToNot(BeNil())
 			})
@@ -115,7 +119,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.Put("Test", "Test", map[string]interface{}{
+				err := firestorePlugin.Put("Test", key, map[string]interface{}{
 					"Test": "Test2",
 				})
 
@@ -127,7 +131,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 	When("Delete", func() {
 		When("the document does not exist", func() {
 			It("should return an error", func() {
-				err := firestorePlugin.Delete("Test", "Test")
+				err := firestorePlugin.Delete("Test", key)
 
 				Expect(err).ToNot(BeNil())
 			})
@@ -149,7 +153,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 					},
 				}
 
-				err := firestorePlugin.Delete("Test", "Test")
+				err := firestorePlugin.Delete("Test", key)
 
 				Expect(err).To(BeNil())
 			})

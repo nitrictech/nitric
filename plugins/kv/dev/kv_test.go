@@ -31,10 +31,13 @@ var _ = Describe("KV", func() {
 
 	Context("Put", func() {
 		It("Should successfully store the document", func() {
+			key := map[string]interface{}{
+				"key": "Test",
+			}
 			testItem := map[string]interface{}{
 				"Test": "Test",
 			}
-			err := kvPlugin.Put("Test", "Test", testItem)
+			err := kvPlugin.Put("Test", key, testItem)
 
 			Expect(err).ShouldNot(HaveOccurred())
 			item := mockDbDriver.GetCollection("Test")["Test"]
@@ -55,7 +58,10 @@ var _ = Describe("KV", func() {
 			})
 
 			It("should return the stored item", func() {
-				gotItem, err := kvPlugin.Get("Test", "Test")
+				key := map[string]interface{}{
+					"key": "Test",
+				}
+				gotItem, err := kvPlugin.Get("Test", key)
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(gotItem).To(BeEquivalentTo(item))
@@ -64,7 +70,10 @@ var _ = Describe("KV", func() {
 
 		When("the key does not exist", func() {
 			It("should return an error", func() {
-				gotItem, err := kvPlugin.Get("Test", "Test")
+				key := map[string]interface{}{
+					"key": "Test",
+				}
+				gotItem, err := kvPlugin.Get("Test", key)
 
 				Expect(err).Should(HaveOccurred())
 				Expect(gotItem).To(BeNil())
@@ -85,7 +94,10 @@ var _ = Describe("KV", func() {
 			})
 
 			It("should delete successfully", func() {
-				err := kvPlugin.Delete("Test", "Test")
+				key := map[string]interface{}{
+					"key": "Test",
+				}
+				err := kvPlugin.Delete("Test", key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mockDbDriver.GetCollection("Test")["Test"]).To(BeNil())
 			})
@@ -93,7 +105,10 @@ var _ = Describe("KV", func() {
 
 		When("it does not exist", func() {
 			It("should cause en error", func() {
-				err := kvPlugin.Delete("Test", "Test")
+				key := map[string]interface{}{
+					"key": "Test",
+				}
+				err := kvPlugin.Delete("Test", key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})

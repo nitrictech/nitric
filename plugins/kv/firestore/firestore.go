@@ -24,13 +24,35 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+const KEY = "key"
+
 type FirestoreKVService struct {
 	client *firestore.Client
 	sdk.UnimplementedKeyValuePlugin
 }
 
-func (s *FirestoreKVService) Get(collection string, key string) (map[string]interface{}, error) {
-	value, error := s.client.Collection(collection).Doc(key).Get(context.TODO())
+func getKeyValue(key map[string]interface{}) (string, error) {
+	// Get key
+	if key == nil {
+		return "", fmt.Errorf("provide non-nil key")
+	}
+	keyEntry, found := key[KEY]
+	if !found {
+		return "", fmt.Errorf("provide key")
+	}
+	if keyEntry == "" {
+		return "", fmt.Errorf("provide non-blank key")
+	}
+	return fmt.Sprintf("%v", keyEntry), nil
+}
+
+func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
+	keyValue, error := getKeyValue(key)
+	if error != nil {
+		return nil, error
+	}
+
+	value, error := s.client.Collection(collection).Doc(keyValue).Get(context.TODO())
 
 	if error != nil {
 		return nil, fmt.Errorf("Error retrieving value: %v", error)
@@ -39,8 +61,13 @@ func (s *FirestoreKVService) Get(collection string, key string) (map[string]inte
 	return value.Data(), nil
 }
 
-func (s *FirestoreKVService) Put(collection string, key string, value map[string]interface{}) error {
-	_, err := s.client.Collection(collection).Doc(key).Set(context.TODO(), value)
+func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
+	keyValue, error := getKeyValue(key)
+	if error != nil {
+		return error
+	}
+
+	_, err := s.client.Collection(collection).Doc(keyValue).Set(context.TODO(), value)
 
 	if err != nil {
 		return fmt.Errorf("Error updating value: %v", err)
@@ -49,11 +76,16 @@ func (s *FirestoreKVService) Put(collection string, key string, value map[string
 	return nil
 }
 
-func (s *FirestoreKVService) Delete(collection string, key string) error {
-	_, error := s.client.Collection(collection).Doc(key).Delete(context.TODO())
+func (s *FirestoreKVService) Delete(collection string, key map[string]interface{}) error {
+	keyValue, error1 := getKeyValue(key)
+	if error1 != nil {
+		return error1
+	}
 
-	if error != nil {
-		return fmt.Errorf("Error deleting value: %v", error)
+	_, error2 := s.client.Collection(collection).Doc(keyValue).Delete(context.TODO())
+
+	if error2 != nil {
+		return fmt.Errorf("Error deleting value: %v", error2)
 	}
 
 	return nil

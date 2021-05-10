@@ -42,7 +42,7 @@ func (s *KeyValueServer) checkPluginRegistered() (bool, error) {
 
 func (s *KeyValueServer) Put(ctx context.Context, req *pb.KeyValuePutRequest) (*pb.KeyValuePutResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.kvPlugin.Put(req.GetCollection(), req.GetKey(), req.GetValue().AsMap()); err == nil {
+		if err := s.kvPlugin.Put(req.GetCollection(), req.GetKey().AsMap(), req.GetValue().AsMap()); err == nil {
 			return &pb.KeyValuePutResponse{}, nil
 		} else {
 			// Case: Failed to create the key
@@ -57,7 +57,7 @@ func (s *KeyValueServer) Put(ctx context.Context, req *pb.KeyValuePutRequest) (*
 
 func (s *KeyValueServer) Get(ctx context.Context, req *pb.KeyValueGetRequest) (*pb.KeyValueGetResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if val, err := s.kvPlugin.Get(req.GetCollection(), req.GetKey()); err == nil {
+		if val, err := s.kvPlugin.Get(req.GetCollection(), req.GetKey().AsMap()); err == nil {
 			if valStruct, err := structpb.NewStruct(val); err == nil {
 				return &pb.KeyValueGetResponse{
 					Value: valStruct,
@@ -81,7 +81,7 @@ func (s *KeyValueServer) Get(ctx context.Context, req *pb.KeyValueGetRequest) (*
 
 func (s *KeyValueServer) Delete(ctx context.Context, req *pb.KeyValueDeleteRequest) (*pb.KeyValueDeleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
-		if err := s.kvPlugin.Delete(req.GetCollection(), req.GetKey()); err == nil {
+		if err := s.kvPlugin.Delete(req.GetCollection(), req.GetKey().AsMap()); err == nil {
 			return &pb.KeyValueDeleteResponse{}, nil
 		} else {
 			// Case: Failed to create the keyvalue

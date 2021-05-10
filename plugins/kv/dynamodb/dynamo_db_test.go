@@ -80,7 +80,7 @@ func (m *mockDynamoDBClient) PutItem(input *dynamodb.PutItemInput) (*dynamodb.Pu
 
 func (m *mockDynamoDBClient) GetItem(input *dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
 	// mock response/functionality
-	key := input.Key["Key"].S
+	key := input.Key[plugin.KEY].S
 	tableName := input.TableName
 
 	if item, ok := m.store[*tableName][*key]; ok {
@@ -98,7 +98,7 @@ func (m *mockDynamoDBClient) GetItem(input *dynamodb.GetItemInput) (*dynamodb.Ge
 
 func (m *mockDynamoDBClient) DeleteItem(input *dynamodb.DeleteItemInput) (*dynamodb.DeleteItemOutput, error) {
 	// mock response/functionality
-	key := input.Key["Key"].S
+	key := input.Key[plugin.KEY].S
 
 	if _, ok := m.store[*key]; ok {
 		m.store[*key] = nil
@@ -113,6 +113,9 @@ var _ = Describe("DynamoDb", func() {
 	Context("Document Creation", func() {
 		When("The dynamo-db client is operational", func() {
 			// Setup Test
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			item := map[string]interface{}{
 				"Test": "Test",
 			}
@@ -124,7 +127,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("documentsClient.Create should store the document without error", func() {
-				err := myMockClient.Put("Test", "Test", item)
+				err := myMockClient.Put("Test", key, item)
 				Expect(err).To(BeNil())
 
 				storedItem, ok := mockSvc.store["Test"]["Test"]
@@ -147,7 +150,10 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("should return an error", func() {
-				err := myMockClient.Put("Test", "", item)
+				key := map[string]interface{}{
+					plugin.KEY: "",
+				}
+				err := myMockClient.Put("Test", key, item)
 
 				Expect(err.Error()).To(ContainSubstring("key auto-generation unimplemented, provide non-blank key"))
 			})
@@ -156,6 +162,9 @@ var _ = Describe("DynamoDb", func() {
 
 	Context("Document Retrieval", func() {
 		When("The document exists", func() {
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			item := map[string]interface{}{
 				"Test": "Test",
 			}
@@ -171,13 +180,16 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should retrieve the stored document", func() {
-				storedItem, _ := myMockClient.Get("Test", "Test")
+				storedItem, _ := myMockClient.Get("Test", key)
 
 				Expect(storedItem).To(BeEquivalentTo(item))
 			})
 		})
 
 		When("The document does not exist", func() {
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			// Setup Test
 			mockSvc := &mockDynamoDBClient{
 				store: map[string]map[string]map[string]interface{}{},
@@ -186,7 +198,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should fail when attempting to retrieve the document", func() {
-				_, err := myMockClient.Get("Test", "Test")
+				_, err := myMockClient.Get("Test", key)
 
 				Expect(err.Error()).To(ContainSubstring("error getting value for key"))
 			})
@@ -195,6 +207,9 @@ var _ = Describe("DynamoDb", func() {
 
 	Context("Document Deletion", func() {
 		When("The Document Exists", func() {
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			item := map[string]interface{}{
 				"Test": "Test",
 			}
@@ -210,7 +225,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should delete the stored document", func() {
-				_ = myMockClient.Delete("Test", "Test")
+				_ = myMockClient.Delete("Test", key)
 				_, ok := mockSvc.store["Test"]["Test"]
 
 				Expect(ok).To(BeFalse())
@@ -218,6 +233,9 @@ var _ = Describe("DynamoDb", func() {
 		})
 
 		When("The document does not exist", func() {
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			// Setup Test
 			mockSvc := &mockDynamoDBClient{
 				store: map[string]map[string]map[string]interface{}{},
@@ -226,7 +244,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should delete the stored document", func() {
-				err := myMockClient.Delete("Test", "Test")
+				err := myMockClient.Delete("Test", key)
 
 				Expect(err.Error()).To(ContainSubstring("error deleting key"))
 			})
@@ -235,6 +253,9 @@ var _ = Describe("DynamoDb", func() {
 
 	Context("Updating Documents", func() {
 		When("The document does not exist", func() {
+			key := map[string]interface{}{
+				plugin.KEY: "Test",
+			}
 			item := map[string]interface{}{
 				"Test": "Test",
 			}
@@ -246,7 +267,7 @@ var _ = Describe("DynamoDb", func() {
 			myMockClient, _ := plugin.NewWithClient(mockSvc)
 
 			It("Should behave as Create", func() {
-				err := myMockClient.Put("Test", "Test", item)
+				err := myMockClient.Put("Test", key, item)
 
 				Expect(err).To(BeNil())
 				storedItem, ok := mockSvc.store["Test"]["Test"]

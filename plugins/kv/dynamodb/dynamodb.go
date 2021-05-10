@@ -28,6 +28,8 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
+const KEY = "key"
+
 // NitricKVDocument - represents the structure of a Key Value record when stored in DynamoDB
 type NitricKVDocument struct {
 	Key   string
@@ -44,17 +46,18 @@ func (s *DynamoDbKVService) createStandardKVTable(name string) error {
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("Key"),
+				AttributeName: aws.String(KEY),
 				AttributeType: aws.String("S"),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("Key"),
+				AttributeName: aws.String(KEY),
 				KeyType:       aws.String("HASH"),
 			},
 		},
-		// TODO: This value is dependent on BillingMode, determine how to handle this. See: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html#DDB-CreateTable-request-ProvisionedThroughput
+		// TODO: This value is dependent on BillingMode, determine how to handle this.
+		// See: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html#DDB-CreateTable-request-ProvisionedThroughput
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(10),
 			WriteCapacityUnits: aws.Int64(10),
@@ -99,14 +102,30 @@ func (s *DynamoDbKVService) createStandardKVTable(name string) error {
 	}
 }
 
-func (s *DynamoDbKVService) Put(collection string, key string, value map[string]interface{}) error {
-	if key == "" {
-		return fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
+func getKeyValue(key map[string]interface{}) (string, error) {
+	// Get key
+	if key == nil {
+		return "", fmt.Errorf("key auto-generation unimplemented, provide non-nil key")
+	}
+	keyEntry, found := key[KEY]
+	if !found {
+		return "", fmt.Errorf("key auto-generation unimplemented, provide key")
+	}
+	if keyEntry == "" {
+		return "", fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
+	}
+	return fmt.Sprintf("%v", keyEntry), nil
+}
+
+func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
+	keyValue, error := getKeyValue(key)
+	if error != nil {
+		return error
 	}
 
 	// Construct DynamoDB attribute value object
 	av, err := dynamodbattribute.MarshalMap(NitricKVDocument{
-		Key:   key,
+		Key:   keyValue,
 		Value: value,
 	})
 	if err != nil {
@@ -157,14 +176,17 @@ func (s *DynamoDbKVService) Put(collection string, key string, value map[string]
 	return nil
 }
 
-func (s *DynamoDbKVService) Get(collection string, key string) (map[string]interface{}, error) {
-	tableName := collection
+func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
+	keyValue, error := getKeyValue(key)
+	if error != nil {
+		return nil, error
+	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(collection),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Key": {
-				S: aws.String(key),
+			KEY: {
+				S: aws.String(keyValue),
 			},
 		},
 	}
@@ -187,12 +209,17 @@ func (s *DynamoDbKVService) Get(collection string, key string) (map[string]inter
 	return kvDocument.Value, nil
 }
 
-func (s *DynamoDbKVService) Delete(collection string, key string) error {
+func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}) error {
+	keyValue, error := getKeyValue(key)
+	if error != nil {
+		return error
+	}
+
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(collection),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Key": {
-				S: aws.String(key),
+			KEY: {
+				S: aws.String(keyValue),
 			},
 		},
 	}
