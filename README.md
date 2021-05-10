@@ -59,8 +59,7 @@ The Nitric Membrane comes in two variants `Pluggable` or `Static`.
 
 ### Static
 For each supported provider (e.g. AWS, Google Cloud, Azure, etc.) we provide a static binary which includes all of the default service plugins for that provider.
-The static membrane binaries are far smaller than the equivalent pluggable binary, which uses separate plugin files. As a result, this is the most size efficient option
-when running Nitric on a single provider or when custom service implementations aren't required.
+The static membrane binaries are far smaller than the equivalent pluggable binary, which uses separate plugin files. As a result, this is the most size efficient option when running Nitric on a single provider or when custom service implementations aren't required.
 
 ### Pluggable
 In cases where provider or service implementation flexibility is needed the pluggable membrane may be used. The pluggable 
@@ -191,7 +190,7 @@ make dev-static
 make dev-docker
 ```
 
- 
+
 ### Run Locally
 
 To run the membrane server locally, perform a local build of the membrane binary for the platform you're targeting, then run the resulting binary.
@@ -216,4 +215,35 @@ make aws-static-xp
 (export GATEWAY_ENVIRONMENT=http; ./bin/membrane)
 ```
 
- 
+## Project Structure
+
+The Membrane project source code structure is outlined below:
+
+Directory               | Package    | Description
+---------               |----------- |------------
+`/adapters/grpc`        | `grpc`     | GRPC service to SDK adaptors 
+`/handler`              | `handler`  | gateway request handler
+`/interfaces/nitric/v1` | `v1`       | protoc generated GRPC services code 
+`/membrane`             | `membrane` | membrane application
+`/mocks/...`            | `...`      | Cloud service SDK mocks 
+`/plugins/...`          | `...`      | Cloud service SDK plugins 
+`/providers/...`        | `main`     | Cloud provider main application and plugin injection 
+`/sdk`                  | `sdk`      | SDK service interfaces 
+`/tools`                | `tools`    | include for 3rd party build tools
+`/triggers`             | `triggers` | provides Nitric event triggers
+`/utils`                | `utils`    | provides utility functions
+
+## Membrane Service Invocation
+
+A Nitric SDK service invocation sequence diagram is provided below. 
+
+<p align="center">
+  <img src="docs/assets/sdk-service-call.svg" alt="SDK Service Invocation Sequence Diagram"/>
+</p>
+
+1. SDK Client - Application process makes SDK service call via GRPC client
+2. gRPC Server - Membrane process gRPC server receives call, and registered service handles call [`/membrane`]
+3. gRPC Service KV - server delegates the call to the service adaptor [`/interfaces/nitric/v1`] 
+4. KV Adaptor (gRPC) - service adaptor delegates call to Cloud service plugin [`/adapters/grpc`] 
+5. KV Plugin (DynamoDB) - Cloud service plugin makes remote call to Cloud's API [`/plugins/...`]
+6. DynamoDB API - Cloud API makes remote call to Cloud service
