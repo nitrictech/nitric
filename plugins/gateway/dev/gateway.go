@@ -79,11 +79,23 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 	}
 }
 
-func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpGateway) Start(handler handler.TriggerHandler) (*fasthttp.Server, error) {
 	// Start the fasthttp server
-	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
+	server := &fasthttp.Server{
+		Handler: httpHandler(handler),
+	}
 
-	return httpError
+	println("Making http server error channel")
+
+	go (func() {
+		err := server.ListenAndServe(s.address)
+		if err != nil {
+			panic(err)
+		}
+	})()
+
+	println("Returning server")
+	return server, nil
 }
 
 // Create new HTTP gateway

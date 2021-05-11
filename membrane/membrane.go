@@ -17,6 +17,7 @@ package membrane
 import (
 	"fmt"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/valyala/fasthttp"
 	"net"
 	"os"
 	"os/exec"
@@ -89,6 +90,9 @@ type Membrane struct {
 
 	// Handler operating mode, e.g. FaaS or HTTP Proxy. Governs how incoming triggers are translated.
 	mode Mode
+
+	grpcServer *grpc.Server
+	httpServer *fasthttp.Server
 }
 
 func (s *Membrane) log(log string) {
@@ -175,26 +179,26 @@ func (s *Membrane) Start() error {
 	// Search for known plugins
 
 	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
+	s.grpcServer = grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
 	eventingServer := s.createEventingServer()
-	v1.RegisterEventServer(grpcServer, eventingServer)
+	v1.RegisterEventServer(s.grpcServer, eventingServer)
 
 	topicServer := s.createTopicServer()
-	v1.RegisterTopicServer(grpcServer, topicServer)
+	v1.RegisterTopicServer(s.grpcServer, topicServer)
 
 	kvServer := s.createKeyValueServer()
-	v1.RegisterKeyValueServer(grpcServer, kvServer)
+	v1.RegisterKeyValueServer(s.grpcServer, kvServer)
 
 	storageServer := s.createStorageServer()
-	v1.RegisterStorageServer(grpcServer, storageServer)
+	v1.RegisterStorageServer(s.grpcServer, storageServer)
 
 	queueServer := s.createQueueServer()
-	v1.RegisterQueueServer(grpcServer, queueServer)
+	v1.RegisterQueueServer(s.grpcServer, queueServer)
 
 	authServer := s.createUserServer()
-	v1.RegisterUserServer(grpcServer, authServer)
+	v1.RegisterUserServer(s.grpcServer, authServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
@@ -206,7 +210,7 @@ func (s *Membrane) Start() error {
 	// Start the gRPC server
 	go (func() {
 		s.log(fmt.Sprintf("Services listening on: %s", s.serviceAddress))
-		grpcServer.Serve(lis)
+		s.grpcServer.Serve(lis)
 	})()
 
 	// Start our child process
@@ -240,9 +244,16 @@ func (s *Membrane) Start() error {
 		break
 	}
 
-	err = s.gatewayPlugin.Start(hndlr)
+	println("Starting gateway plugin")
+	s.httpServer, err = s.gatewayPlugin.Start(hndlr)
 
+	println("Started gateway plugin")
 	return err
+}
+
+func (s *Membrane) Stop() {
+	_ = s.httpServer.Shutdown()
+	s.grpcServer.GracefulStop()
 }
 
 // Create a new Membrane server

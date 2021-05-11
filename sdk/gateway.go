@@ -16,6 +16,7 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/valyala/fasthttp"
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/triggers"
@@ -44,7 +45,7 @@ type NitricResponse struct {
 type GatewayService interface {
 	// Start the Gateway
 	// This method should block
-	Start(handler handler.TriggerHandler) error
+	Start(handler handler.TriggerHandler) (*fasthttp.Server, error)
 }
 
 type UnimplementedGatewayPlugin struct {
