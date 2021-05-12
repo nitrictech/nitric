@@ -16,17 +16,23 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nitric-dev/membrane/membrane"
 	gateway "github.com/nitric-dev/membrane/plugins/gateway/app_platform"
 )
 
 func main() {
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	gatewayPlugin, _ := gateway.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		GatewayPlugin:  gatewayPlugin,
+		GatewayPlugin: gatewayPlugin,
 		// FIXME: Hardcode as true as we don't have plugins for other services for digital ocean yet...
 		TolerateMissingServices: true,
 	})
@@ -35,6 +41,11 @@ func main() {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	// Start the Membrane server
-	m.Start()
+	println("starting membrane")
+	go (m.Start)()
+	println("wait for term signal")
+	// Wait for a terminate interrupt
+	<-term
+	println("stopping server")
+	m.Stop()
 }
