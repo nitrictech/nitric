@@ -16,14 +16,15 @@ package membrane
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/utils"
-	"github.com/valyala/fasthttp"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/utils"
+	"github.com/valyala/fasthttp"
 
 	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 	"github.com/nitric-dev/membrane/handler"
@@ -245,14 +246,14 @@ func (s *Membrane) Start() error {
 	}
 
 	println("Starting gateway plugin")
-	s.httpServer, err = s.gatewayPlugin.Start(hndlr)
+	err = s.gatewayPlugin.Start(hndlr)
 
 	println("Started gateway plugin")
 	return err
 }
 
 func (s *Membrane) Stop() {
-	_ = s.httpServer.Shutdown()
+	_ = s.gatewayPlugin.Stop()
 	s.grpcServer.GracefulStop()
 }
 
