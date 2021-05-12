@@ -28,6 +28,7 @@ import (
 
 type HttpProxyGateway struct {
 	address string
+	server  *fasthttp.Server
 }
 
 type PubSubMessage struct {
@@ -89,9 +90,22 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 }
 
 func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
-	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
+	// Start the fasthttp server
+	s.server = &fasthttp.Server{
+		Handler: httpHandler(handler),
+	}
 
-	return httpError
+	go (func() {
+		err := s.server.ListenAndServe(s.address)
+		if err != nil {
+			panic(err)
+		}
+	})()
+	return nil
+}
+
+func (s *HttpProxyGateway) Stop() error {
+	return s.server.Shutdown()
 }
 
 // Create new DynamoDB documents server
