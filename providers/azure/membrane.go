@@ -15,14 +15,21 @@
 package main
 
 import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	http_service "github.com/nitric-dev/membrane/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/sdk"
-	"log"
 
 	"github.com/nitric-dev/membrane/membrane"
 )
 
 func main() {
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	authPlugin := &sdk.UnimplementedAuthPlugin{}
 	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
@@ -32,18 +39,24 @@ func main() {
 	queuePlugin := &sdk.UnimplementedQueuePlugin{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		AuthPlugin:              authPlugin,
-		KvPlugin:                kvPlugin,
-		EventingPlugin:          eventingPlugin,
-		GatewayPlugin:           gatewayPlugin,
-		StoragePlugin:           storagePlugin,
-		QueuePlugin:             queuePlugin,
+		AuthPlugin:     authPlugin,
+		KvPlugin:       kvPlugin,
+		EventingPlugin: eventingPlugin,
+		GatewayPlugin:  gatewayPlugin,
+		StoragePlugin:  storagePlugin,
+		QueuePlugin:    queuePlugin,
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the m server: %v", err)
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	// Start the Membrane server
-	m.Start()
+	println("starting server")
+	go (m.Start)()
+
+	println("wait for term signal")
+	// Wait for a terminate interrupt
+	<-term
+	println("stopping server")
+	m.Stop()
 }
