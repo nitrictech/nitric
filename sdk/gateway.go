@@ -55,3 +55,7 @@ type UnimplementedGatewayPlugin struct {
 func (*UnimplementedGatewayPlugin) Start(_ handler.TriggerHandler) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
+
+func (*UnimplementedGatewayPlugin) Stop() error {
+	return fmt.Errorf("UNIMPLEMENTED")
+}
