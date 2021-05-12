@@ -18,7 +18,6 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/triggers"
@@ -40,6 +39,7 @@ const (
 type HttpProxyGateway struct {
 	client  *sns.SNS
 	address string
+	server  *fasthttp.Server
 }
 
 func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fasthttp.RequestCtx) {
@@ -107,11 +107,22 @@ func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fas
 }
 
 func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
+	// Start the fasthttp server
+	s.server = &fasthttp.Server{
+		Handler: s.httpHandler(handler),
+	}
 
-	// Start a HTTP Proxy server here...
-	httpError := http.ListenAndServe(fmt.Sprintf("%s", s.address), nil)
+	go (func() {
+		err := s.server.ListenAndServe(s.address)
+		if err != nil {
+			panic(err)
+		}
+	})()
+	return nil
+}
 
-	return httpError
+func (s *HttpProxyGateway) Stop() error {
+	return s.server.Shutdown()
 }
 
 // Create new AWS HTTP Gateway service

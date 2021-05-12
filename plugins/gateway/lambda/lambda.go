@@ -230,6 +230,14 @@ func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
 	return fmt.Errorf("Something went wrong causing the lambda runtime to stop")
 }
 
+func (s *LambdaGateway) Stop() error {
+	// XXX: This is a NO_OP Process, as this is a pull based system
+	// We don't need to stop listening to anything
+	fmt.Println("Shutting down lambda gateway")
+
+	return nil
+}
+
 func New() (sdk.GatewayService, error) {
 	return &LambdaGateway{
 		runtime: lambda.Start,
