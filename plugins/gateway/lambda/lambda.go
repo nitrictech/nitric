@@ -19,13 +19,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
+	"strings"
+	"syscall"
 )
 
 type eventType int
@@ -226,8 +226,17 @@ func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
 	// Here we want to begin polling lambda for incoming requests...
 	// Assuming that this is blocking
 	s.runtime(s.handle)
+	// Signal process to terminate if no more lambda requests to handle
+	syscall.SIGTERM.Signal()
+	return nil
+}
 
-	return fmt.Errorf("Something went wrong causing the lambda runtime to stop")
+func (s *LambdaGateway) Stop() error {
+	// XXX: This is a NO_OP Process, as this is a pull based system
+	// We don't need to stop listening to anything
+	fmt.Println("Shutting down lambda gateway")
+
+	return nil
 }
 
 func New() (sdk.GatewayService, error) {

@@ -27,6 +27,7 @@ import (
 
 type HttpGateway struct {
 	address string
+	server  *fasthttp.Server
 	sdk.UnimplementedGatewayPlugin
 }
 
@@ -81,9 +82,21 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 
 func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 	// Start the fasthttp server
-	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
+	s.server = &fasthttp.Server{
+		Handler: httpHandler(handler),
+	}
 
-	return httpError
+	go (func() {
+		err := s.server.ListenAndServe(s.address)
+		if err != nil {
+			panic(err)
+		}
+	})()
+	return nil
+}
+
+func (s *HttpGateway) Stop() error {
+	return s.server.Shutdown()
 }
 
 // Create new HTTP gateway

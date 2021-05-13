@@ -23,9 +23,17 @@ import (
 	queue "github.com/nitric-dev/membrane/plugins/queue/dev"
 	storage "github.com/nitric-dev/membrane/plugins/storage/dev"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+	// Setup signal interrupt handling for graceful shutdown
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
 	eventingPlugin, _ := eventing.New()
 	kvPlugin, _ := kv.New()
 	storagePlugin, _ := storage.New()
@@ -47,5 +55,12 @@ func main() {
 	}
 
 	// Start the Membrane server
-	m.Start()
+	println("starting server")
+	go(m.Start)()
+
+	println("wait for term signal")
+	// Wait for a terminate interrupt
+	<-term
+	println("stopping server")
+	m.Stop()
 }

@@ -30,6 +30,7 @@ import (
 // HttpService - The HTTP gateway plugin for Azure
 type HttpService struct {
 	address string
+	server  *fasthttp.Server
 }
 
 func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
@@ -132,9 +133,22 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 }
 
 func (s *HttpService) Start(handler handler.TriggerHandler) error {
-	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
+	// Start the fasthttp server
+	s.server = &fasthttp.Server{
+		Handler: httpHandler(handler),
+	}
 
-	return httpError
+	go (func() {
+		err := s.server.ListenAndServe(s.address)
+		if err != nil {
+			panic(err)
+		}
+	})()
+	return nil
+}
+
+func (s *HttpService) Stop() error {
+	return s.server.Shutdown()
 }
 
 // Create a new HTTP Gateway plugin
