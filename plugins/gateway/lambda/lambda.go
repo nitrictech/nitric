@@ -227,8 +227,7 @@ func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
 	// Assuming that this is blocking
 	s.runtime(s.handle)
 	// Signal process to terminate if no more lambda requests to handle
-	syscall.SIGTERM.Signal()
-	return nil
+	return syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 }
 
 func (s *LambdaGateway) Stop() error {
