@@ -68,12 +68,8 @@ func main() {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	println("starting server")
 	go (m.Start)()
-
-	println("wait for term signal")
 	// Wait for a terminate interrupt
 	<-term
-	println("stopping server")
 	m.Stop()
 }
