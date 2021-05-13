@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/nitric-dev/membrane/utils"
-	"github.com/valyala/fasthttp"
 
 	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 	"github.com/nitric-dev/membrane/handler"
@@ -93,7 +92,6 @@ type Membrane struct {
 	mode Mode
 
 	grpcServer *grpc.Server
-	httpServer *fasthttp.Server
 }
 
 func (s *Membrane) log(log string) {
@@ -244,11 +242,8 @@ func (s *Membrane) Start() error {
 		hndlr = handler.NewHttpHandler(s.childAddress)
 		break
 	}
-
-	println("Starting gateway plugin")
+	
 	err = s.gatewayPlugin.Start(hndlr)
-
-	println("Started gateway plugin")
 	return err
 }
 
