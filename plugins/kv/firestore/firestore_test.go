@@ -16,6 +16,7 @@ package firestore_service_test
 
 import (
 	"context"
+	"errors"
 	"net"
 	"os"
 
@@ -30,6 +31,8 @@ import (
 )
 
 var _ = Describe("Firestore KeyValue Plugin", func() {
+	defer GinkgoRecover()
+
 	// Setup mock environment...
 	var opts []grpc.ServerOption
 	var firestoreClient *firestore.Client
@@ -60,7 +63,7 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 	})
 
 	key := map[string]interface{}{
-		firestore_plugin.KEY: "Test",
+		"key": "Test",
 	}
 
 	When("Get", func() {
@@ -129,11 +132,36 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 	})
 
 	When("Delete", func() {
-		When("the document does not exist", func() {
+		When("the collection does not exist", func() {
 			It("should return an error", func() {
-				err := firestorePlugin.Delete("Test", key)
+				// key := map[string]interface{}{
+				// 	"key": "Not Found",
+				// }
+				err := firestorePlugin.Delete("collection ?", key)
+				Expect(err).NotTo(BeNil())
+			})
+		})
+		When("the document does not exist", func() {
+			It("should return not error", func() {
+				mockFirestoreServer.Store = map[string]map[string]map[string]*pb.Value{
+					// Collection Test
+					"Collection": {
+						// Resource Test
+						"Key": {
+							"Value": &pb.Value{
+								ValueType: &pb.Value_StringValue{
+									StringValue: "user@server.com",
+								},
+							},
+						},
+					},
+				}
+				key := map[string]interface{}{
+					"key": "Not Found",
+				}
+				err := firestorePlugin.Delete("Collection", key)
 
-				Expect(err).ToNot(BeNil())
+				Expect(err).To(BeNil())
 			})
 		})
 
@@ -158,5 +186,35 @@ var _ = Describe("Firestore KeyValue Plugin", func() {
 				Expect(err).To(BeNil())
 			})
 		})
+	})
+
+	When("Query", func() {
+		When("collection is empty", func() {
+			It("should return an error", func() {
+				result, err := firestorePlugin.Query("", nil, 0)
+
+				Expect(err).ToNot(BeNil())
+				Expect(result).To(BeNil())
+			})
+		})
+		When("expressions is nil", func() {
+			It("should return an error", func() {
+				result, err := firestorePlugin.Query("collection", nil, 0)
+
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil expressions")))
+				Expect(result).To(BeNil())
+			})
+		})
+		// TODO: create a query mocking facility
+		// When("empty result", func() {
+		// 	It("should return empty list", func() {
+		// 		exps := []sdk.QueryExpression{
+		// 			{Operand: "Pk", Operator: "==", Value: "123"},
+		// 		}
+		// 		result, err := firestorePlugin.Query("collection", exps, 10)
+		// 		Expect(result).NotTo(BeNil())
+		// 		Expect(err).To(BeNil())
+		// 	})
+		// })
 	})
 })

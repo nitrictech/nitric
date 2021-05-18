@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/nitric-dev/membrane/plugins/kv"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
@@ -32,8 +33,8 @@ const KEY = "key"
 
 // NitricKVDocument - represents the structure of a Key Value record when stored in DynamoDB
 type NitricKVDocument struct {
-	Key   string
-	Value map[string]interface{}
+	Key   string                 `json:"key"`
+	Value map[string]interface{} `json:"value"`
 }
 
 // AWS DynamoDB AWS Nitric Key Value service
@@ -102,23 +103,28 @@ func (s *DynamoDbKVService) createStandardKVTable(name string) error {
 	}
 }
 
-func getKeyValue(key map[string]interface{}) (string, error) {
-	// Get key
-	if key == nil {
-		return "", fmt.Errorf("key auto-generation unimplemented, provide non-nil key")
+func marshalListOfMaps(items []map[string]*dynamodb.AttributeValue) ([]map[string]interface{}, error) {
+	// Unmarshall Dynamo response items into Doc struct, the marshall into result map
+	var valueDocs []NitricKVDocument
+	err := dynamodbattribute.UnmarshalListOfMaps(items, &valueDocs)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling query response: %v", err)
 	}
-	keyEntry, found := key[KEY]
-	if !found {
-		return "", fmt.Errorf("key auto-generation unimplemented, provide key")
+
+	results := []map[string]interface{}{}
+	for _, m := range valueDocs {
+		results = append(results, m.Value)
 	}
-	if keyEntry == "" {
-		return "", fmt.Errorf("key auto-generation unimplemented, provide non-blank key")
-	}
-	return fmt.Sprintf("%v", keyEntry), nil
+
+	return results, nil
 }
 
 func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
-	keyValue, error := getKeyValue(key)
+	collection, error := kv.GetCollection(collection)
+	if error != nil {
+		return error
+	}
+	keyValue, error := kv.GetKeyValue(key)
 	if error != nil {
 		return error
 	}
@@ -177,7 +183,11 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 }
 
 func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
-	keyValue, error := getKeyValue(key)
+	collection, error := kv.GetCollection(collection)
+	if error != nil {
+		return nil, error
+	}
+	keyValue, error := kv.GetKeyValue(key)
 	if error != nil {
 		return nil, error
 	}
@@ -210,7 +220,11 @@ func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (
 }
 
 func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}) error {
-	keyValue, error := getKeyValue(key)
+	collection, error := kv.GetCollection(collection)
+	if error != nil {
+		return error
+	}
+	keyValue, error := kv.GetKeyValue(key)
 	if error != nil {
 		return error
 	}
@@ -230,6 +244,95 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 	}
 
 	return nil
+}
+
+func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+	collection, error := kv.GetCollection(collection)
+	if error != nil {
+		return nil, error
+	}
+	error = kv.ValidateExpressions(expressions)
+	if error != nil {
+		return nil, error
+	}
+
+	// If no expressions perform a query
+	if len(expressions) > 0 {
+
+		input := &dynamodb.QueryInput{
+			TableName:            aws.String(collection),
+			ProjectionExpression: aws.String("#value"),
+		}
+
+		// Configure KeyConditionExpression
+		keyExp := ""
+		for _, exp := range expressions {
+			if keyExp != "" {
+				keyExp += " AND "
+			}
+			if exp.Operator == "startsWith" {
+				keyExp += "begins_with(#" + exp.Operand + ", :" + fmt.Sprintf("%v", exp.Operand) + ")"
+
+			} else if exp.Operator == "==" {
+				keyExp += "#" + exp.Operand + " = :" + fmt.Sprintf("%v", exp.Operand)
+
+			} else {
+				keyExp += "#" + exp.Operand + " " + exp.Operator + " :" + fmt.Sprintf("%v", exp.Operand)
+			}
+		}
+		input.KeyConditionExpression = aws.String(keyExp)
+
+		// Configure ExpressionAttributeNames
+		input.ExpressionAttributeNames = make(map[string]*string)
+		for _, exp := range expressions {
+			input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
+		}
+		input.ExpressionAttributeNames["#value"] = aws.String("value")
+
+		// Configure ExpressionAttributeValues
+		input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
+		for _, exp := range expressions {
+			input.ExpressionAttributeValues[":"+exp.Operand] = &dynamodb.AttributeValue{
+				S: aws.String(exp.Value),
+			}
+		}
+
+		// Configure fetch Limit
+		if limit > 0 {
+			limit64 := int64(limit)
+			input.Limit = &(limit64)
+		}
+
+		// Perform query
+		resp, err := s.client.Query(input)
+		if err != nil {
+			return nil, fmt.Errorf("error performing query %v: %v", input, err)
+		}
+
+		return marshalListOfMaps(resp.Items)
+
+	} else {
+		input := &dynamodb.ScanInput{
+			TableName: aws.String(collection),
+			ExpressionAttributeNames: map[string]*string{
+				"#value": aws.String("value"),
+			},
+			ProjectionExpression: aws.String("#value"),
+		}
+
+		// Configure fetch Limit
+		if limit > 0 {
+			limit64 := int64(limit)
+			input.Limit = &(limit64)
+		}
+
+		resp, err := s.client.Scan(input)
+		if err != nil {
+			return nil, fmt.Errorf("error performing scan %v: %v", input, err)
+		}
+
+		return marshalListOfMaps(resp.Items)
+	}
 }
 
 // Create a New DynamoDB key value plugin implementation

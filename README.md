@@ -77,6 +77,7 @@ provider as an alternative to the fixed set of plugins in the static membranes.
  - Make
  - Docker
  - Google Protocol Buffers Compiler
+ - JRE (for DynamoDB testing)
 
 ### Getting Started
 

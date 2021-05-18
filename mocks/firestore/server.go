@@ -68,10 +68,8 @@ func (m *MockFirestoreServer) DeleteDocument(ctx context.Context, req *pb.Delete
 	if _, ok := m.Store[collection][key]; ok {
 		// Clear the reference
 		m.Store[collection][key] = nil
-		return &emptypb.Empty{}, nil
 	}
-
-	return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Document %s not found", path))
+	return &emptypb.Empty{}, nil
 }
 
 func (m *MockFirestoreServer) ClearStore() {
@@ -165,12 +163,10 @@ func (m *MockFirestoreServer) Commit(ctx context.Context, req *pb.CommitRequest)
 				return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Collection: %s, does not exist", collection))
 			}
 
-			if _, ok := m.Store[collection][key]; !ok {
-				return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Item: %s/%s, does not exist", collection, key))
+			if _, ok := m.Store[collection][key]; ok {
+				// Let's delete it...
+				m.Store[collection][key] = nil
 			}
-
-			// Let's delete it...
-			m.Store[collection][key] = nil
 		}
 	}
 
@@ -187,11 +183,11 @@ func (m *MockFirestoreServer) Rollback(context.Context, *pb.RollbackRequest) (*e
 	return nil, status.Errorf(codes.Unimplemented, "method Rollback not implemented")
 }
 
-func (m *MockFirestoreServer) RunQuery(*pb.RunQueryRequest, pb.Firestore_RunQueryServer) error {
+func (m *MockFirestoreServer) RunQuery(req *pb.RunQueryRequest, svr pb.Firestore_RunQueryServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunQuery not implemented")
 }
 
-func (m *MockFirestoreServer) PartitionQuery(context.Context, *pb.PartitionQueryRequest) (*pb.PartitionQueryResponse, error) {
+func (m *MockFirestoreServer) PartitionQuery(ctx context.Context, req *pb.PartitionQueryRequest) (*pb.PartitionQueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PartitionQuery not implemented")
 }
 

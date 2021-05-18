@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	scribble "github.com/nanobox-io/golang-scribble"
+	"github.com/nitric-dev/membrane/plugins/kv"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
@@ -53,6 +54,20 @@ func (s *DevKVService) Delete(collection string, key map[string]interface{}) err
 	}
 
 	return nil
+}
+
+func (p *DevKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("UNIMPLEMENTED")
+	collection, error := kv.GetCollection(collection)
+	if error != nil {
+		return nil, error
+	}
+	error = kv.ValidateExpressions(expressions)
+	if error != nil {
+		return nil, error
+	}
+
+	s.db.
 }
 
 // New - Create a new dev KV plugin

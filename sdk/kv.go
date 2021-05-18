@@ -16,6 +16,16 @@ package sdk
 
 import "fmt"
 
+type QueryExpression struct {
+	Operand  string
+	Operator string
+	Value    string
+}
+
+func (e QueryExpression) String() string {
+	return fmt.Sprintf("{Operand: '%v', Operator: '%v', Value: '%v'}", e.Operand, e.Operator, e.Value)
+}
+
 // The base KeyValue Plugin interface
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
@@ -23,6 +33,7 @@ type KeyValueService interface {
 	Put(string, map[string]interface{}, map[string]interface{}) error
 	Get(string, map[string]interface{}) (map[string]interface{}, error)
 	Delete(string, map[string]interface{}) error
+	Query(string, []QueryExpression, int) ([]map[string]interface{}, error)
 }
 
 type UnimplementedKeyValuePlugin struct {
@@ -39,4 +50,8 @@ func (p *UnimplementedKeyValuePlugin) Get(collection string, key map[string]inte
 
 func (p *UnimplementedKeyValuePlugin) Delete(collection string, key map[string]interface{}) error {
 	return fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (p *UnimplementedKeyValuePlugin) Query(collection string, expressions []QueryExpression, limit int) ([]map[string]interface{}, error) {
+	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv_service_test
+package kv_test
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDocuments(t *testing.T) {
+func TestKV(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Dev KV Suite")
+	RunSpecs(t, "Plugin KV Suite")
 }

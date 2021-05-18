@@ -94,6 +94,48 @@ func (s *KeyValueServer) Delete(ctx context.Context, req *pb.KeyValueDeleteReque
 	}
 }
 
+func (s *KeyValueServer) Query(ctx context.Context, req *pb.KeyValueQueryRequest) (*pb.KeyValueQueryResponse, error) {
+	if ok, err := s.checkPluginRegistered(); ok {
+		collection := req.GetCollection()
+		expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
+		for i, exp := range req.GetExpressions() {
+			expressions[i] = sdk.QueryExpression{
+				Operand:  exp.GetOperand(),
+				Operator: exp.GetOperator(),
+				Value:    exp.GetValue(),
+			}
+		}
+		limit := int(req.GetLimit())
+
+		if valMaps, err := s.kvPlugin.Query(collection, expressions, limit); err == nil {
+			valStructs := make([]*structpb.Struct, len(valMaps))
+			for i, valMap := range valMaps {
+				if valStruct, err := structpb.NewStruct(valMap); err == nil {
+					valStructs[i] = valStruct
+
+				} else {
+					// Case: Failed to create PB struct from stored value
+					// TODO: Translate from internal KeyValue Plugin Error
+					return nil, err
+				}
+			}
+
+			return &pb.KeyValueQueryResponse{
+				Values: valStructs,
+			}, nil
+
+		} else {
+			// Case: Failed to create the keyvalue
+			// TODO: Translate from internal KeyValue Plugin Error
+			return nil, err
+		}
+
+	} else {
+		// Case: Plugin was not registered
+		return nil, err
+	}
+}
+
 func NewKeyValueServer(kvPlugin sdk.KeyValueService) pb.KeyValueServer {
 	return &KeyValueServer{
 		kvPlugin: kvPlugin,
