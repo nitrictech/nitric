@@ -120,13 +120,17 @@ func marshalListOfMaps(items []map[string]*dynamodb.AttributeValue) ([]map[strin
 }
 
 func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return err
 	}
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return err
+	}
+
+	if value == nil {
+		return fmt.Errorf("provide non-nil value")
 	}
 
 	// Construct DynamoDB attribute value object
@@ -183,13 +187,13 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 }
 
 func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return nil, error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return nil, err
 	}
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return nil, error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return nil, err
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -220,13 +224,13 @@ func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (
 }
 
 func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}) error {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return err
 	}
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return err
 	}
 
 	input := &dynamodb.DeleteItemInput{
@@ -238,7 +242,7 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 		},
 	}
 
-	_, err := s.client.DeleteItem(input)
+	_, err = s.client.DeleteItem(input)
 	if err != nil {
 		return fmt.Errorf("error deleting key %s: %v", key, err)
 	}
@@ -247,13 +251,13 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 }
 
 func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return nil, error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return nil, err
 	}
-	error = kv.ValidateExpressions(expressions)
-	if error != nil {
-		return nil, error
+	err = kv.ValidateExpressions(expressions)
+	if err != nil {
+		return nil, err
 	}
 
 	// If no expressions perform a query

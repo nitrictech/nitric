@@ -48,10 +48,6 @@ type MockQueueServer struct {
 	sdk.UnimplementedQueuePlugin
 }
 
-type MockAuthServer struct {
-	sdk.UnimplementedAuthPlugin
-}
-
 type MockFunction struct {
 	// Records the requests that its recieved for later inspection
 	requests []*http.Request
@@ -169,7 +165,6 @@ var _ = Describe("Membrane", func() {
 				mockKeyValueServer := &MockKeyValueServer{}
 				mockStorageServer := &MockStorageServer{}
 				mockQueueServer := &MockQueueServer{}
-				mockAuthServer := &MockAuthServer{}
 
 				mockGateway := &MockGateway{}
 				mbraneOpts := membrane.MembraneOptions{
@@ -180,7 +175,6 @@ var _ = Describe("Membrane", func() {
 					KvPlugin:                mockKeyValueServer,
 					StoragePlugin:           mockStorageServer,
 					QueuePlugin:             mockQueueServer,
-					AuthPlugin:              mockAuthServer,
 				}
 
 				It("Should successfully create the membrane server", func() {
@@ -260,7 +254,7 @@ var _ = Describe("Membrane", func() {
 					ChildAddress:            "localhost:8081",
 					ChildCommand:            []string{"echo"},
 					GatewayPlugin:           mockGateway,
-					ServiceAddress: fmt.Sprintf(":%d", port),
+					ServiceAddress:          fmt.Sprintf(":%d", port),
 					ChildTimeoutSeconds:     1,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
@@ -335,7 +329,7 @@ var _ = Describe("Membrane", func() {
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:8080",
-					ServiceAddress: fmt.Sprintf(":%d", port),
+					ServiceAddress:          fmt.Sprintf(":%d", port),
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,

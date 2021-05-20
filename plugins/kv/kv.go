@@ -22,6 +22,7 @@ import (
 	"github.com/nitric-dev/membrane/sdk"
 )
 
+// Map of valid expression operators
 var validOperators = map[string]bool{
 	"==":         true,
 	">":          true,
@@ -31,14 +32,26 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
-func GetCollection(collection string) (string, error) {
+// Validate the collection name
+func ValidateCollection(collection string) error {
 	if collection == "" {
-		return "", fmt.Errorf("provide non-blank collection")
+		return fmt.Errorf("provide non-blank collection")
 	}
-
-	return collection, nil
+	return nil
 }
 
+func GetKeyMap(key string) (map[string]string, error) {
+	if key == "" {
+		return nil, fmt.Errorf("provide non-blank key")
+	}
+
+	return map[string]string{
+		"key": key,
+	}, nil
+}
+
+// Return a single key value, which appends multiple key values when the key map is > 0.
+// For example: {"pk": "Customer#1000", "sk": "Order#200"} => "Customer#1000_Order#200"
 func GetKeyValue(key map[string]interface{}) (string, error) {
 	// Get key
 	if key == nil {
@@ -69,6 +82,45 @@ func GetKeyValue(key map[string]interface{}) (string, error) {
 	return returnKey, nil
 }
 
+// Return a sorted list of key map values
+func GetKeyValues(key map[string]interface{}) ([]string, error) {
+	// Get key
+	if key == nil {
+		return nil, fmt.Errorf("provide non-nil key")
+	}
+	if len(key) == 0 {
+		return nil, fmt.Errorf("provide non-empty key")
+	}
+
+	// Create sorted keys
+	ks := make([]string, 0, len(key))
+	for k := range key {
+		ks = append(ks, k)
+	}
+	sort.Strings(ks)
+
+	kv := make([]string, 0, len(key))
+
+	for _, k := range ks {
+		kv = append(kv, fmt.Sprintf("%v", key[k]))
+	}
+
+	return kv, nil
+}
+
+// Get end range value to implement "startsWith" expression operator using where clause.
+// For example with sdk.Expression("pk", "startsWith", "Customer#") this translates to:
+// WHERE pk >= {startRangeValue} AND pk < {endRangeValue}
+// WHERE pk >= "Customer#" AND pk < "Customer!"
+func GetEndRangeValue(value string) string {
+	strFrontCode := value[:len(value)-1]
+
+	strEndCode := value[len(value)-1 : len(value)]
+
+	return strFrontCode + string(strEndCode[0]+1)
+}
+
+// Validate the provided query expressions
 func ValidateExpressions(expressions []sdk.QueryExpression) error {
 	if expressions == nil {
 		return errors.New("provide non-nil expressions")

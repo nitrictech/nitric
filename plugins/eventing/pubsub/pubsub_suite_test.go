@@ -23,5 +23,5 @@ import (
 
 func TestPubsub(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pubsub Suite")
+	RunSpecs(t, "PubSub Event Service Suite")
 }

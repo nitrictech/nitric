@@ -32,37 +32,41 @@ type FirestoreKVService struct {
 }
 
 func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return nil, error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return nil, err
 	}
 
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return nil, error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return nil, err
 	}
 
-	value, error := s.client.Collection(collection).Doc(keyValue).Get(context.TODO())
+	value, err := s.client.Collection(collection).Doc(keyValue).Get(context.TODO())
 
-	if error != nil {
-		return nil, fmt.Errorf("Error retrieving value: %v", error)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving value: %v", err)
 	}
 
 	return value.Data(), nil
 }
 
 func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return err
 	}
 
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return err
 	}
 
-	_, err := s.client.Collection(collection).Doc(keyValue).Set(context.TODO(), value)
+	if value == nil {
+		return fmt.Errorf("provide non-nil value")
+	}
+
+	_, err = s.client.Collection(collection).Doc(keyValue).Set(context.TODO(), value)
 
 	if err != nil {
 		return fmt.Errorf("Error updating value: %v", err)
@@ -72,38 +76,44 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 }
 
 func (s *FirestoreKVService) Delete(collection string, key map[string]interface{}) error {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return err
 	}
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return error
+	keyValue, err := kv.GetKeyValue(key)
+	if err != nil {
+		return err
 	}
 
-	_, error = s.client.Collection(collection).Doc(keyValue).Delete(context.TODO())
+	_, err = s.client.Collection(collection).Doc(keyValue).Delete(context.TODO())
 
-	if error != nil {
-		return fmt.Errorf("Error deleting value: %v", error)
+	if err != nil {
+		return fmt.Errorf("Error deleting value: %v", err)
 	}
 
 	return nil
 }
 
 func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
-	collection, error := kv.GetCollection(collection)
-	if error != nil {
-		return nil, error
+	err := kv.ValidateCollection(collection)
+	if err != nil {
+		return nil, err
 	}
-	error = kv.ValidateExpressions(expressions)
-	if error != nil {
-		return nil, error
+	err = kv.ValidateExpressions(expressions)
+	if err != nil {
+		return nil, err
 	}
 
 	query := s.client.Collection(collection).Select("Value")
 
 	for _, exp := range expressions {
-		query = query.Where(exp.Operand, exp.Operator, exp.Value)
+		if exp.Operator == "startsWith" {
+			endRangeValue := kv.GetEndRangeValue(exp.Value)
+			query = query.Where(exp.Operand, ">=", exp.Value).Where(exp.Operand, "<", endRangeValue)
+
+		} else {
+			query = query.Where(exp.Operand, exp.Operator, exp.Value)
+		}
 	}
 
 	if limit > 0 {
@@ -133,12 +143,12 @@ func New() (sdk.KeyValueService, error) {
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials err: %v", credentialsError)
 	}
 
 	client, clientError := firestore.NewClient(ctx, credentials.ProjectID)
 	if clientError != nil {
-		return nil, fmt.Errorf("firestore client error: %v", clientError)
+		return nil, fmt.Errorf("firestore client err: %v", clientError)
 	}
 
 	return &FirestoreKVService{

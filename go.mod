@@ -12,6 +12,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
+	github.com/asdine/storm v2.1.2+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/docker/distribution v2.7.1+incompatible // indirect
@@ -35,6 +36,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/uw-labs/lichen v0.1.3
 	github.com/valyala/fasthttp v1.23.0
+	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4

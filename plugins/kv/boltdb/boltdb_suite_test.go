@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kv_service_test
+package boltdb_service_test
 
 import (
 	"testing"
@@ -23,5 +23,5 @@ import (
 
 func TestDocuments(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Dev KV Suite")
+	RunSpecs(t, "BoltDB KV Service Suite")
 }

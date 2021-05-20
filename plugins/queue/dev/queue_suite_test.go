@@ -23,5 +23,5 @@ import (
 
 func TestQueue(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Queue Suite")
+	RunSpecs(t, "Dev Queue Service Suite")
 }

@@ -15,7 +15,6 @@
 package main
 
 import (
-	cognito_plugin "github.com/nitric-dev/membrane/plugins/auth/cognito"
 	sns_plugin "github.com/nitric-dev/membrane/plugins/eventing/sns"
 	lambda_plugin "github.com/nitric-dev/membrane/plugins/gateway/lambda"
 	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
@@ -31,16 +30,6 @@ func New() sdk.ServiceFactory {
 	return &AWSServiceFactory{}
 }
 
-// NewAuthPlugin - Returns AWS Cognito based auth plugin
-func (p *AWSServiceFactory) NewAuthService() (sdk.UserService, error) {
-	return cognito_plugin.New()
-}
-
-// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
-func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return dynamodb_plugin.New()
-}
-
 // NewEventingPlugin - Returns AWS SNS based eventing plugin
 func (p *AWSServiceFactory) NewEventService() (sdk.EventService, error) {
 	return sns_plugin.New()
@@ -49,6 +38,11 @@ func (p *AWSServiceFactory) NewEventService() (sdk.EventService, error) {
 // NewGatewayPlugin - Returns AWS Lambda Gateway plugin
 func (p *AWSServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return lambda_plugin.New()
+}
+
+// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
+func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
+	return dynamodb_plugin.New()
 }
 
 // NewQueuePlugin - Returns AWS SQS based queue plugin

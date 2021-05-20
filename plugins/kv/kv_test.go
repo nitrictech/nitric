@@ -27,16 +27,14 @@ var _ = Describe("KeyValue Plugin", func() {
 	When("GetCollection", func() {
 		When("Blank collection", func() {
 			It("should return error", func() {
-				col, err := kv.GetCollection("")
+				err := kv.ValidateCollection("")
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank collection")))
-				Expect(col).To(BeEquivalentTo(""))
 			})
 		})
 		When("Valid collection", func() {
-			It("should return collection", func() {
-				col, err := kv.GetCollection("collection")
+			It("should return nil", func() {
+				err := kv.ValidateCollection("collection")
 				Expect(err).To(BeNil())
-				Expect(col).To(BeEquivalentTo("collection"))
 			})
 		})
 	})
@@ -77,6 +75,54 @@ var _ = Describe("KeyValue Plugin", func() {
 				Expect(err).To(BeNil())
 				Expect(key).To(BeEquivalentTo("Customer#123_Order#456"))
 			})
+		})
+	})
+
+	When("GetKeyValues", func() {
+		When("Nil key", func() {
+			It("should return error", func() {
+				_, err := kv.GetKeyValues(nil)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
+			})
+		})
+		When("Empty key", func() {
+			It("should return error", func() {
+				keyMap := map[string]interface{}{}
+				_, err := kv.GetKeyValues(keyMap)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-empty key")))
+			})
+		})
+		When("Single key", func() {
+			It("should return single key value", func() {
+				keyMap := map[string]interface{}{
+					"key": "user@server.com",
+				}
+				keys, err := kv.GetKeyValues(keyMap)
+				Expect(err).To(BeNil())
+				Expect(len(keys)).To(BeEquivalentTo(1))
+				Expect(keys[0]).To(BeEquivalentTo("user@server.com"))
+			})
+		})
+		When("Multi key", func() {
+			It("should return key values", func() {
+				keyMap := map[string]interface{}{
+					"pk": "Customer#123",
+					"sk": "Order#456",
+				}
+				keys, err := kv.GetKeyValues(keyMap)
+				Expect(err).To(BeNil())
+				Expect(len(keys)).To(BeEquivalentTo(2))
+				Expect(keys[0]).To(BeEquivalentTo("Customer#123"))
+				Expect(keys[1]).To(BeEquivalentTo("Order#456"))
+			})
+		})
+	})
+
+	When("GetValueEndCode", func() {
+		It("should get next value", func() {
+			endCode := kv.GetEndRangeValue("Customer#")
+			Expect(endCode).NotTo(BeNil())
+			Expect(endCode).To(BeEquivalentTo("Customer$"))
 		})
 	})
 

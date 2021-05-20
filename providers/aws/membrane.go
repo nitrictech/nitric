@@ -15,11 +15,11 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/sdk"
 	"log"
 
+	"github.com/nitric-dev/membrane/sdk"
+
 	"github.com/nitric-dev/membrane/membrane"
-	auth "github.com/nitric-dev/membrane/plugins/auth/cognito"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/gateway/ecs"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/gateway/lambda"
@@ -43,17 +43,15 @@ func main() {
 
 	eventingPlugin, _ := eventing.New()
 	keyValuePlugin, _ := documents.New()
-	storagePlugin, _ := storage.New()
 	queuePlugin, _ := queue.New()
-	authPlugin, _ := auth.New()
+	storagePlugin, _ := storage.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		EventingPlugin:          eventingPlugin,
-		KvPlugin:                keyValuePlugin,
-		StoragePlugin:           storagePlugin,
-		QueuePlugin:             queuePlugin,
-		GatewayPlugin:           gatewayPlugin,
-		AuthPlugin:              authPlugin,
+		EventingPlugin: eventingPlugin,
+		GatewayPlugin:  gatewayPlugin,
+		KvPlugin:       keyValuePlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

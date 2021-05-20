@@ -15,31 +15,29 @@
 package main
 
 import (
+	"log"
+
 	"github.com/nitric-dev/membrane/membrane"
-	auth "github.com/nitric-dev/membrane/plugins/auth/dev"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/dev"
 	gateway "github.com/nitric-dev/membrane/plugins/gateway/dev"
-	kv "github.com/nitric-dev/membrane/plugins/kv/dev"
+	kv "github.com/nitric-dev/membrane/plugins/kv/boltdb"
 	queue "github.com/nitric-dev/membrane/plugins/queue/dev"
-	storage "github.com/nitric-dev/membrane/plugins/storage/dev"
-	"log"
+	storage "github.com/nitric-dev/membrane/plugins/storage/boltdb"
 )
 
 func main() {
 	eventingPlugin, _ := eventing.New()
-	kvPlugin, _ := kv.New()
-	storagePlugin, _ := storage.New()
 	gatewayPlugin, _ := gateway.New()
+	kvPlugin, _ := kv.New()
 	queuePlugin, _ := queue.New()
-	authPlugin, _ := auth.New()
+	storagePlugin, _ := storage.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		EventingPlugin:          eventingPlugin,
-		KvPlugin:                kvPlugin,
-		StoragePlugin:           storagePlugin,
-		QueuePlugin:             queuePlugin,
-		AuthPlugin:              authPlugin,
-		GatewayPlugin:           gatewayPlugin,
+		EventingPlugin: eventingPlugin,
+		GatewayPlugin:  gatewayPlugin,
+		KvPlugin:       kvPlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

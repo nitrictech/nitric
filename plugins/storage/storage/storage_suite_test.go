@@ -23,5 +23,5 @@ import (
 
 func TestStorage(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Storage Suite")
+	RunSpecs(t, "GCP Storage Service Suite")
 }

@@ -15,29 +15,27 @@
 package main
 
 import (
-	http_service "github.com/nitric-dev/membrane/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/sdk"
 	"log"
 
 	"github.com/nitric-dev/membrane/membrane"
+	http_service "github.com/nitric-dev/membrane/plugins/gateway/appservice"
+	"github.com/nitric-dev/membrane/sdk"
 )
 
 func main() {
 
-	authPlugin := &sdk.UnimplementedAuthPlugin{}
-	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
 	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
 	gatewayPlugin, _ := http_service.New()
-	storagePlugin := &sdk.UnimplementedStoragePlugin{}
+	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
 	queuePlugin := &sdk.UnimplementedQueuePlugin{}
+	storagePlugin := &sdk.UnimplementedStoragePlugin{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		AuthPlugin:              authPlugin,
-		KvPlugin:                kvPlugin,
-		EventingPlugin:          eventingPlugin,
-		GatewayPlugin:           gatewayPlugin,
-		StoragePlugin:           storagePlugin,
-		QueuePlugin:             queuePlugin,
+		EventingPlugin: eventingPlugin,
+		GatewayPlugin:  gatewayPlugin,
+		KvPlugin:       kvPlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

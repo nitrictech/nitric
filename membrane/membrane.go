@@ -16,13 +16,14 @@ package membrane
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/utils"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/utils"
 
 	grpc2 "github.com/nitric-dev/membrane/adapters/grpc"
 	"github.com/nitric-dev/membrane/handler"
@@ -46,7 +47,6 @@ type MembraneOptions struct {
 	StoragePlugin  sdk.StorageService
 	QueuePlugin    sdk.QueueService
 	GatewayPlugin  sdk.GatewayService
-	AuthPlugin     sdk.UserService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -78,7 +78,6 @@ type Membrane struct {
 	storagePlugin sdk.StorageService
 	gatewayPlugin sdk.GatewayService
 	queuePlugin   sdk.QueueService
-	authPlugin    sdk.UserService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -117,10 +116,6 @@ func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
 	return grpc2.NewQueueServer(s.queuePlugin)
-}
-
-func (s *Membrane) createUserServer() v1.UserServer {
-	return grpc2.NewUserServer(s.authPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -192,9 +187,6 @@ func (s *Membrane) Start() error {
 
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServer(grpcServer, queueServer)
-
-	authServer := s.createUserServer()
-	v1.RegisterUserServer(grpcServer, authServer)
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
@@ -295,7 +287,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil || options.AuthPlugin == nil {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -306,7 +298,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childUrl:                fmt.Sprintf("http://%s", options.ChildAddress),
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
-		authPlugin:              options.AuthPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		kvPlugin:                options.KvPlugin,

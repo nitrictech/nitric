@@ -23,5 +23,5 @@ import (
 
 func TestEventing(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Eventing Suite")
+	RunSpecs(t, "Dev Event Service Suite")
 }
