@@ -17,8 +17,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"plugin"
 	"strconv"
+	"strings"
 
 	"github.com/nitric-dev/membrane/membrane"
 	"github.com/nitric-dev/membrane/plugins/sdk"
@@ -31,7 +33,18 @@ func main() {
 	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
 	pluginDir := utils.GetEnv("PLUGIN_DIR", "./plugins")
 	serviceFactoryPluginFile := utils.GetEnv("SERVICE_FACTORY_PLUGIN", "default.so")
-	childCommand := utils.GetEnv("INVOKE", "")
+
+	var childCommand []string
+	// Get the command line arguments, minus the program name in index 0.
+	if len(os.Args) > 1 && len(os.Args[1:]) > 0 {
+		childCommand = os.Args[1:]
+	} else {
+		childCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
+		if len(childCommand) > 0 {
+			fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
+		}
+	}
+
 	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
@@ -57,27 +70,22 @@ func main() {
 	}
 
 	// Load the concrete service implementations
-	var authService sdk.UserService = nil
-	var documentsService sdk.DocumentService = nil
 	var eventingService sdk.EventService = nil
 	var gatewayService sdk.GatewayService = nil
+	var keyValueService sdk.KeyValueService = nil
 	var queueService sdk.QueueService = nil
 	var storageService sdk.StorageService = nil
 
-	// Load the auth service
-	if authService, err = serviceFactory.NewAuthService(); err != nil {
-		log.Fatal(err)
-	}
-	// Load the document service
-	if documentsService, err = serviceFactory.NewDocumentService(); err != nil {
-		log.Fatal(err)
-	}
 	// Load the eventing service
 	if eventingService, err = serviceFactory.NewEventService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the gateway service
 	if gatewayService, err = serviceFactory.NewGatewayService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the key value service
+	if keyValueService, err = serviceFactory.NewKeyValueService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the queue service
@@ -94,9 +102,8 @@ func main() {
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
-		AuthPlugin:              authService,
 		EventingPlugin:          eventingService,
-		DocumentsPlugin:         documentsService,
+		KvPlugin:                keyValueService,
 		StoragePlugin:           storageService,
 		GatewayPlugin:           gatewayService,
 		QueuePlugin:             queueService,

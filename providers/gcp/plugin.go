@@ -15,7 +15,6 @@
 package main
 
 import (
-	identity_platform_service "github.com/nitric-dev/membrane/plugins/auth/identityplatform"
 	pubsub_service "github.com/nitric-dev/membrane/plugins/eventing/pubsub"
 	http_service "github.com/nitric-dev/membrane/plugins/gateway/cloudrun"
 	firestore_service "github.com/nitric-dev/membrane/plugins/kv/firestore"
@@ -29,11 +28,6 @@ type GCPServiceFactory struct {
 
 func New() sdk.ServiceFactory {
 	return &GCPServiceFactory{}
-}
-
-// NewAuthService - Returns Google Cloud Identity Platform based auth service
-func (p *GCPServiceFactory) NewAuthService() (sdk.UserService, error) {
-	return identity_platform_service.New()
 }
 
 // NewKeyValueService - Returns Google Cloud Firestore based kv service
