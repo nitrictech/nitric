@@ -224,6 +224,7 @@ Directory               | Package    | Description
 ---------               |----------- |------------
 `/adapters/grpc`        | `grpc`     | GRPC service to SDK adaptors 
 `/handler`              | `handler`  | gateway request handler
+`/ifaces`               | `ifaces`   | GCP plugin adapter interfaces
 `/interfaces/nitric/v1` | `v1`       | protoc generated GRPC services code 
 `/membrane`             | `membrane` | membrane application
 `/mocks/...`            | `...`      | Cloud service SDK mocks 
