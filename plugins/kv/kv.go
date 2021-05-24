@@ -52,14 +52,7 @@ func GetKeyMap(key string) (map[string]string, error) {
 
 // Return a single key value, which appends multiple key values when the key map is > 0.
 // For example: {"pk": "Customer#1000", "sk": "Order#200"} => "Customer#1000_Order#200"
-func GetKeyValue(key map[string]interface{}) (string, error) {
-	// Get key
-	if key == nil {
-		return "", fmt.Errorf("provide non-nil key")
-	}
-	if len(key) == 0 {
-		return "", fmt.Errorf("provide non-empty key")
-	}
+func GetKeyValue(key map[string]interface{}) string {
 
 	// Create sorted keys
 	ks := make([]string, 0, len(key))
@@ -73,24 +66,14 @@ func GetKeyValue(key map[string]interface{}) (string, error) {
 		if i > 0 {
 			returnKey += "_"
 		}
-		if key[k] == "" {
-			return "", fmt.Errorf("provide non-empty key")
-		}
 		returnKey += fmt.Sprintf("%v", key[k])
 	}
 
-	return returnKey, nil
+	return returnKey
 }
 
 // Return a sorted list of key map values
-func GetKeyValues(key map[string]interface{}) ([]string, error) {
-	// Get key
-	if key == nil {
-		return nil, fmt.Errorf("provide non-nil key")
-	}
-	if len(key) == 0 {
-		return nil, fmt.Errorf("provide non-empty key")
-	}
+func GetKeyValues(key map[string]interface{}) []string {
 
 	// Create sorted keys
 	ks := make([]string, 0, len(key))
@@ -105,7 +88,7 @@ func GetKeyValues(key map[string]interface{}) ([]string, error) {
 		kv = append(kv, fmt.Sprintf("%v", key[k]))
 	}
 
-	return kv, nil
+	return kv
 }
 
 // Get end range value to implement "startsWith" expression operator using where clause.
@@ -139,6 +122,28 @@ func ValidateExpressions(expressions []sdk.QueryExpression) error {
 	}
 	if len(expressions) > 0 && expressions[0].Operator != "==" {
 		return fmt.Errorf("provide identity operator (==) for primary key expressions: %v", expressions[0])
+	}
+
+	return nil
+}
+
+// Validate the provided key map
+func ValidateKeyMap(key map[string]interface{}) error {
+	// Get key
+	if key == nil {
+		return fmt.Errorf("provide non-nil key")
+	}
+	if len(key) == 0 {
+		return fmt.Errorf("provide non-empty key")
+	}
+	if len(key) > 2 {
+		return fmt.Errorf("provide key with 1 or 2 items")
+	}
+
+	for _, v := range key {
+		if v == "" {
+			return fmt.Errorf("provide non-blank key value")
+		}
 	}
 
 	return nil

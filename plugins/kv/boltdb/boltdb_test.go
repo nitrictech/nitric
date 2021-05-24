@@ -18,6 +18,8 @@ import (
 	"os"
 
 	kv_plugin "github.com/nitric-dev/membrane/plugins/kv/boltdb"
+	data "github.com/nitric-dev/membrane/plugins/kv/test"
+	"github.com/nitric-dev/membrane/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,23 +28,6 @@ var _ = Describe("KV", func() {
 	kvPlugin, err := kv_plugin.New()
 	if err != nil {
 		panic(err)
-	}
-
-	key := map[string]interface{}{
-		"key": "jsmith@server.com",
-	}
-	testItem := map[string]interface{}{
-		"firstName": "John",
-		"lastName":  "Smith",
-	}
-	orderKey := map[string]interface{}{
-		"pk": "Customer#1000",
-		"sk": "Order#500",
-	}
-	orderItem := map[string]interface{}{
-		"sku":    "ABC-123",
-		"number": "1",
-		"price":  "13.95",
 	}
 
 	AfterEach(func() {
@@ -72,46 +57,61 @@ var _ = Describe("KV", func() {
 	Context("Put", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("", key, testItem)
+				err := kvPlugin.Put("", data.UserKey, data.UserItem)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Nil key", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("collection", nil, testItem)
+				err := kvPlugin.Put("users", nil, data.UserItem)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Nil item map", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("collection", key, nil)
+				err := kvPlugin.Put("users", data.UserKey, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
-		When("Valid Put", func() {
+		When("Valid New Put", func() {
 			It("Should store item successfully", func() {
-				err := kvPlugin.Put("collection", key, testItem)
+				err := kvPlugin.Put("users", data.UserKey, data.UserItem)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("collection", key)
+				doc, err := kvPlugin.Get("users", data.UserKey)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(testItem))
+				Expect(doc).To(BeEquivalentTo(data.UserItem))
 			})
 		})
-
-		When("Valid Compound Key Put", func() {
-			It("Should store item successfully", func() {
-				err := kvPlugin.Put("collection", orderKey, orderItem)
+		When("Valid Update Put", func() {
+			It("Should store new item successfully", func() {
+				err := kvPlugin.Put("users", data.UserKey, data.UserItem)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("collection", orderKey)
+				doc, err := kvPlugin.Get("users", data.UserKey)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(orderItem))
+				Expect(doc).To(BeEquivalentTo(data.UserItem))
+
+				err = kvPlugin.Put("users", data.UserKey, data.UserItem2)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err = kvPlugin.Get("users", data.UserKey)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc).To(BeEquivalentTo(data.UserItem2))
+			})
+		})
+		When("Valid Compound Key Put", func() {
+			It("Should store item successfully", func() {
+				err := kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := kvPlugin.Get("application", data.OrderKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc).To(BeEquivalentTo(data.OrderItem1))
 			})
 		})
 	})
@@ -119,37 +119,34 @@ var _ = Describe("KV", func() {
 	Context("Get", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				_, err := kvPlugin.Get("", key)
+				_, err := kvPlugin.Get("", data.UserKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Nil key", func() {
 			It("Should return error", func() {
-				_, err := kvPlugin.Get("collection", nil)
+				_, err := kvPlugin.Get("users", nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				kvPlugin.Put("collection", key, testItem)
+				kvPlugin.Put("users", data.UserKey, data.UserItem)
 
-				doc, err := kvPlugin.Get("collection", key)
+				doc, err := kvPlugin.Get("users", data.UserKey)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(testItem))
+				Expect(doc).To(BeEquivalentTo(data.UserItem))
 			})
 		})
-
 		When("Valid Compound Key Get", func() {
 			It("Should store item successfully", func() {
-				kvPlugin.Put("collection", orderKey, orderItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
 
-				doc, err := kvPlugin.Get("collection", orderKey)
+				doc, err := kvPlugin.Get("application", data.OrderKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(orderItem))
+				Expect(doc).To(BeEquivalentTo(data.OrderItem1))
 			})
 		})
 	})
@@ -157,74 +154,254 @@ var _ = Describe("KV", func() {
 	Context("Delete", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Delete("", key)
+				err := kvPlugin.Delete("", data.UserKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Nil key", func() {
 			It("Should return error", func() {
 				err := kvPlugin.Delete("collection", nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				kvPlugin.Put("collection", key, testItem)
+				kvPlugin.Put("users", data.UserKey, data.UserItem)
 
-				err := kvPlugin.Delete("collection", key)
+				err := kvPlugin.Delete("users", data.UserKey)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("collection", key)
+				doc, err := kvPlugin.Get("users", data.UserKey)
 				Expect(doc).To(BeNil())
-				Expect(err).ShouldNot(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 			})
 		})
-
-		// TODO: missing item delete - discuss behaviour
-
 		When("Valid Compound Key Delete", func() {
 			It("Should delete item successfully", func() {
-				kvPlugin.Put("collection", orderKey, orderItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
 
-				err := kvPlugin.Delete("collection", orderKey)
+				err := kvPlugin.Delete("application", data.OrderKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("collection", orderKey)
+				doc, err := kvPlugin.Get("application", data.OrderKey1)
 				Expect(doc).To(BeNil())
-				Expect(err).ShouldNot(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 			})
 		})
-
-		// TODO: missing item delete - discuss behaviour
 	})
 
-	// Context("Query", func() {
-	// 	item1 := map[string]interface{}{
-	// 		"email":     "john.smith@server.com",
-	// 		"firstName": "John",
-	// 		"lastName":  "Smith",
-	// 	}
-	// 	item2 := map[string]interface{}{
-	// 		"email":     "paul.davis@server.com",
-	// 		"firstName": "Paul",
-	// 		"lastName":  "Davis",
-	// 	}
+	Context("Query", func() {
+		When("Blank collection argument", func() {
+			It("Should return an error", func() {
+				vals, err := kvPlugin.Query("", nil, 0)
+				Expect(vals).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+		When("Nil key argument", func() {
+			It("Should return an error", func() {
+				vals, err := kvPlugin.Query("users", nil, 0)
+				Expect(vals).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+		When("Empty database collection", func() {
+			It("Should return empty list", func() {
+				vals, err := kvPlugin.Query("users", []sdk.QueryExpression{}, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(0))
+			})
+		})
+		When("Empty query", func() {
+			It("Should return all items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-	// 	BeforeEach(func() {
-	// 		mockDbDriver.SetCollection("collection", map[string]interface{}{
-	// 			"john.smith@server.com": item1,
-	// 			"paul.davis@server.com": item2,
-	// 		})
-	// 	})
+				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(5))
+			})
+		})
+		When("Empty limit query", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-	// 	When("it does not exist", func() {
-	// 		It("should cause en error", func() {
-	// 			vals, err := kvPlugin.Query("collection", []sdk.QueryExpression{}, 0)
-	// 			fmt.Println(vals)
-	// 			Expect(err).To(BeNil())
-	// 		})
-	// 	})
-	// })
+				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 3)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(3))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+			})
+		})
+		When("PK and SK equality query", func() {
+			It("Should return specified item", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: "==", Value: "Customer#1000"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(1))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+			})
+		})
+		When("PK equality query", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(4))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(vals[3]).To(BeEquivalentTo(data.OrderItem3))
+			})
+		})
+		When("PK equality limit query", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 3)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(3))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+			})
+		})
+		When("PK equality and SK startsWith", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: "startsWith", Value: "Order#"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(3))
+				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+			})
+		})
+		When("PK equality and SK >", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: ">", Value: "Order#501"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(2))
+				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem3))
+			})
+		})
+		When("PK equality and SK >=", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: ">=", Value: "Order#501"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(3))
+				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+			})
+		})
+		When("PK equality and SK <", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: "<", Value: "Order#501"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(1))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+			})
+		})
+		When("PK equality and SK <=", func() {
+			It("Should return specified items", func() {
+				kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+				kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+				kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: "<=", Value: "Order#501"},
+				}
+				vals, err := kvPlugin.Query("application", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(2))
+				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+			})
+		})
+	})
+
 })

@@ -37,14 +37,6 @@ clean:
 test: test-adapters test-membrane test-plugins
 	@echo Done.
 
-# Run all unit tests and integration tests
-test-integration: install-integration-testing	
-	@export INEGRATION_TESTING=true
-	@sh testing/dynamodb/db-start.sh
-	@sh testing/dynamodb/db-initialize.sh
-	$(MAKE) test
-	@echo Done.
-
 license-check-dev: dev-static
 	@echo Checking Dev Membrane OSS Licenses
 	@lichen --config=./lichen.yaml ./bin/membrane

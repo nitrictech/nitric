@@ -16,10 +16,8 @@ package dynamodb_service
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -29,11 +27,8 @@ import (
 	"github.com/nitric-dev/membrane/utils"
 )
 
-const KEY = "key"
-
 // NitricKVDocument - represents the structure of a Key Value record when stored in DynamoDB
 type NitricKVDocument struct {
-	Key   string                 `json:"key"`
 	Value map[string]interface{} `json:"value"`
 }
 
@@ -43,64 +38,12 @@ type DynamoDbKVService struct {
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDbKVService) createStandardKVTable(name string) error {
-	input := &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-			{
-				AttributeName: aws.String(KEY),
-				AttributeType: aws.String("S"),
-			},
-		},
-		KeySchema: []*dynamodb.KeySchemaElement{
-			{
-				AttributeName: aws.String(KEY),
-				KeyType:       aws.String("HASH"),
-			},
-		},
-		// TODO: This value is dependent on BillingMode, determine how to handle this.
-		// See: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html#DDB-CreateTable-request-ProvisionedThroughput
-		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(10),
-			WriteCapacityUnits: aws.Int64(10),
-		},
-		TableName: aws.String(name),
+func copy(source map[string]interface{}) map[string]interface{} {
+	newMap := make(map[string]interface{})
+	for key, value := range source {
+		newMap[key] = value
 	}
-
-	createResponse, err := s.client.CreateTable(input)
-
-	if err != nil {
-		return fmt.Errorf("failed to create new dynamodb key value table, with name %v. details: %v", name, err)
-	}
-
-	// Table creation is async, we need to wait until the status is 'ACTIVE'.
-	var status = createResponse.TableDescription.TableStatus
-
-	// Wait a max of 1 second, polling every 100 milliseconds
-	maxWaitTime := time.Duration(5) * time.Second
-	pollInterval := time.Duration(100) * time.Millisecond
-	var waitedTime = time.Duration(0)
-
-	for {
-		if *status == "ACTIVE" {
-			// table created successfully
-			return nil
-		} else if *status != "CREATING" || waitedTime >= maxWaitTime {
-			return fmt.Errorf("failed to create new dynamodb key value table, with name %v. Status: %s", name, *status)
-		}
-
-		time.Sleep(pollInterval)
-		waitedTime += pollInterval
-
-		// Poll for the table status
-		describeInput := &dynamodb.DescribeTableInput{
-			TableName: createResponse.TableDescription.TableName,
-		}
-		tableDescription, err := s.client.DescribeTable(describeInput)
-		if err != nil {
-			return fmt.Errorf("failed to create new dynamodb key value table, with name %v. details: %v", name, err)
-		}
-		status = tableDescription.Table.TableStatus
-	}
+	return newMap
 }
 
 func marshalListOfMaps(items []map[string]*dynamodb.AttributeValue) ([]map[string]interface{}, error) {
@@ -124,7 +67,7 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 	if err != nil {
 		return err
 	}
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return err
 	}
@@ -134,53 +77,22 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 	}
 
 	// Construct DynamoDB attribute value object
-	av, err := dynamodbattribute.MarshalMap(NitricKVDocument{
-		Key:   keyValue,
-		Value: value,
-	})
+	itemMap := copy(key)
+	itemMap["value"] = value
+
+	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value")
 	}
 
-	if err != nil {
-		return fmt.Errorf("failed to generate put request: %v", err)
-	}
-
-	// Store the NitricKVDocument attribute value to the specified table (collection)
 	input := &dynamodb.PutItemInput{
-		Item:      av,
+		Item:      itemAttributeMap,
 		TableName: aws.String(collection),
 	}
 
-	var _, putError = s.client.PutItem(input)
-	if putError != nil {
-		if awsErr, ok := putError.(awserr.Error); ok {
-			// Table not found, try to create and put again
-			if awsErr.Code() == dynamodb.ErrCodeResourceNotFoundException {
-				createError := s.createStandardKVTable(collection)
-				if createError != nil {
-					return fmt.Errorf("table not found and failed to create: %v", createError)
-				}
-				// TODO: This should all be extracted to a separate function, Put shouldn't create tables.
-				// DynamoDB can report ACTIVE status on tables, when they still won't accept PutItem requests.
-				// performing multiple attempts usually results in success.
-				maxAttempts := 10
-				putAttempts := 0
-				waitInterval := time.Duration(150) * time.Millisecond
-				for {
-					putAttempts++
-					_, putError = s.client.PutItem(input)
-					if putError == nil || putAttempts >= maxAttempts {
-						break
-					}
-					time.Sleep(waitInterval)
-				}
-			}
-		}
-	}
-
-	if putError != nil {
-		return fmt.Errorf("error creating new value: %v", putError)
+	_, err = s.client.PutItem(input)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -191,27 +103,28 @@ func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return nil, err
 	}
 
-	input := &dynamodb.GetItemInput{
-		TableName: aws.String(collection),
-		Key: map[string]*dynamodb.AttributeValue{
-			KEY: {
-				S: aws.String(keyValue),
-			},
-		},
+	attributeMap, err := dynamodbattribute.MarshalMap(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal key: %v", key)
 	}
 
-	result, getError := s.client.GetItem(input)
-	if getError != nil {
-		return nil, fmt.Errorf("error getting value for key %s: %v", key, getError)
+	input := &dynamodb.GetItemInput{
+		Key:       attributeMap,
+		TableName: aws.String(collection),
+	}
+
+	result, err := s.client.GetItem(input)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %v value %s : %v", collection, key, err)
 	}
 
 	if result.Item == nil {
-		return nil, fmt.Errorf("value not found")
+		return nil, fmt.Errorf("%v value %v not found", collection, key)
 	}
 
 	kvDocument := NitricKVDocument{}
@@ -228,23 +141,24 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 	if err != nil {
 		return err
 	}
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return err
 	}
 
+	attributeMap, err := dynamodbattribute.MarshalMap(key)
+	if err != nil {
+		return fmt.Errorf("failed to marshal key: %v", key)
+	}
+
 	input := &dynamodb.DeleteItemInput{
+		Key:       attributeMap,
 		TableName: aws.String(collection),
-		Key: map[string]*dynamodb.AttributeValue{
-			KEY: {
-				S: aws.String(keyValue),
-			},
-		},
 	}
 
 	_, err = s.client.DeleteItem(input)
 	if err != nil {
-		return fmt.Errorf("error deleting key %s: %v", key, err)
+		return fmt.Errorf("error deleting %v item %v : %v", collection, key, err)
 	}
 
 	return nil
@@ -260,7 +174,7 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		return nil, err
 	}
 
-	// If no expressions perform a query
+	// If expressions perform a query
 	if len(expressions) > 0 {
 
 		input := &dynamodb.QueryInput{
@@ -321,6 +235,7 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 			ExpressionAttributeNames: map[string]*string{
 				"#value": aws.String("value"),
 			},
+
 			ProjectionExpression: aws.String("#value"),
 		}
 
@@ -360,8 +275,8 @@ func New() (sdk.KeyValueService, error) {
 	}, nil
 }
 
-// Mainly used for mock testing to inject a mock client into this plugin
-func NewWithClient(client dynamodbiface.DynamoDBAPI) (sdk.KeyValueService, error) {
+// Mainly used for testing
+func NewWithClient(client *dynamodb.DynamoDB) (sdk.KeyValueService, error) {
 	return &DynamoDbKVService{
 		client: client,
 	}, nil

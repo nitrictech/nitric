@@ -36,11 +36,12 @@ func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) 
 	if err != nil {
 		return nil, err
 	}
-
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return nil, err
 	}
+
+	keyValue := kv.GetKeyValue(key)
 
 	value, err := s.client.Collection(collection).Doc(keyValue).Get(context.TODO())
 
@@ -56,8 +57,7 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 	if err != nil {
 		return err
 	}
-
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return err
 	}
@@ -65,6 +65,8 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 	if value == nil {
 		return fmt.Errorf("provide non-nil value")
 	}
+
+	keyValue := kv.GetKeyValue(key)
 
 	_, err = s.client.Collection(collection).Doc(keyValue).Set(context.TODO(), value)
 
@@ -80,10 +82,12 @@ func (s *FirestoreKVService) Delete(collection string, key map[string]interface{
 	if err != nil {
 		return err
 	}
-	keyValue, err := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
 		return err
 	}
+
+	keyValue := kv.GetKeyValue(key)
 
 	_, err = s.client.Collection(collection).Doc(keyValue).Delete(context.TODO())
 

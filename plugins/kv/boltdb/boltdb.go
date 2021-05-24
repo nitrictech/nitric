@@ -39,6 +39,9 @@ type Document struct {
 	Key        string `storm:"id"`
 	PartionKey string `storm:"index"`
 	SortKey    string `storm:"index"`
+	Attribute1 string `storm:"index"`
+	Attribute2 string `storm:"index"`
+	Attribute3 string `storm:"index"`
 	Value      map[string]interface{}
 }
 
@@ -53,15 +56,17 @@ func (s *DevKVService) Get(collection string, key map[string]interface{}) (map[s
 	}
 	defer db.Close()
 
-	keyValue, error := kv.GetKeyValue(key)
-	if error != nil {
-		return nil, error
+	err = kv.ValidateKeyMap(key)
+	if err != nil {
+		return nil, err
 	}
+
+	keyValue := kv.GetKeyValue(key)
 
 	var doc = Document{}
 	err = db.One("Key", keyValue, &doc)
 	if err != nil {
-		return nil, error
+		return nil, err
 	}
 
 	return doc.Value, nil
@@ -74,24 +79,21 @@ func (s *DevKVService) Put(collection string, key map[string]interface{}, value 
 	}
 	defer db.Close()
 
+	err = kv.ValidateKeyMap(key)
+	if err != nil {
+		return err
+	}
 	if value == nil {
 		return fmt.Errorf("provide non-nil value")
 	}
 
-	keyValue, error := kv.GetKeyValue(key)
-	if err != nil {
-		return error
-	}
-	keyValues, error := kv.GetKeyValues(key)
-	if err != nil {
-		return error
-	}
-
+	keyValue := kv.GetKeyValue(key)
 	doc := Document{
 		Key:   keyValue,
 		Value: value,
 	}
 
+	keyValues := kv.GetKeyValues(key)
 	if len(keyValues) > 1 {
 		doc.PartionKey = keyValues[0]
 		doc.SortKey = keyValues[1]
@@ -112,10 +114,12 @@ func (s *DevKVService) Delete(collection string, key map[string]interface{}) err
 	}
 	defer db.Close()
 
-	keyValue, error := kv.GetKeyValue(key)
+	err = kv.ValidateKeyMap(key)
 	if err != nil {
-		return error
+		return err
 	}
+
+	keyValue := kv.GetKeyValue(key)
 	doc := Document{
 		Key: keyValue,
 	}
@@ -144,26 +148,40 @@ func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpressio
 	}
 
 	// Build up chain of expression matchers
-	matcher := q.True()
+	matchers := []q.Matcher{}
 
-	for _, exp := range expressions {
+	for i, exp := range expressions {
+		// Operand is determined by expressions index
+		// TODO: replace attribute lookup with nitric stack 'collections' mapping
+		operand := "PartionKey"
+		if i == 1 {
+			operand = "SortKey"
+		} else if i == 2 {
+			operand = "Attribute1"
+		} else if i == 3 {
+			operand = "Attribute2"
+		} else if i == 4 {
+			operand = "Attribute3"
+		}
+
 		if exp.Operator == "==" {
-			matcher = q.And(q.Eq(exp.Operand, exp.Value))
+			matchers = append(matchers, q.Eq(operand, exp.Value))
 		} else if exp.Operator == "<" {
-			matcher = q.And(q.Lt(exp.Operand, exp.Value))
+			matchers = append(matchers, q.Lt(operand, exp.Value))
 		} else if exp.Operator == ">" {
-			matcher = q.And(q.Gt(exp.Operand, exp.Value))
+			matchers = append(matchers, q.Gt(operand, exp.Value))
 		} else if exp.Operator == "<=" {
-			matcher = q.And(q.Lte(exp.Operand, exp.Value))
+			matchers = append(matchers, q.Lte(operand, exp.Value))
 		} else if exp.Operator == ">=" {
-			matcher = q.And(q.Gte(exp.Operand, exp.Value))
-		} else if exp.Operand == "startsWith" {
-			endRangeValue := kv.GetEndRangeValue(exp.Value)
-			matcher = q.And(q.Gte(exp.Operand, exp.Value), q.Lt(exp.Operand, endRangeValue))
+			matchers = append(matchers, q.Gte(operand, exp.Value))
+		} else if exp.Operator == "startsWith" {
+			matchers = append(matchers, q.Gte(operand, exp.Value))
+			matchers = append(matchers, q.Lt(operand, kv.GetEndRangeValue(exp.Value)))
 		}
 	}
 
 	// Create query object
+	matcher := q.And(matchers[:]...)
 	query := db.Select(matcher)
 
 	if limit > 0 {
@@ -174,7 +192,7 @@ func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpressio
 	var docs []Document
 	query.Find(&docs)
 
-	results := []map[string]interface{}{}
+	results := make([]map[string]interface{}, 0)
 	for _, doc := range docs {
 		results = append(results, doc.Value)
 	}

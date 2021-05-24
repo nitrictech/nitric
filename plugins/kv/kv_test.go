@@ -22,9 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// Function Test Cases
+
 var _ = Describe("KeyValue Plugin", func() {
 
-	When("GetCollection", func() {
+	When("ValidateCollection", func() {
 		When("Blank collection", func() {
 			It("should return error", func() {
 				err := kv.ValidateCollection("")
@@ -39,29 +41,49 @@ var _ = Describe("KeyValue Plugin", func() {
 		})
 	})
 
-	When("GetKeyValue", func() {
+	When("ValidateKeyMap", func() {
 		When("Nil key", func() {
 			It("should return error", func() {
-				key, err := kv.GetKeyValue(nil)
+				err := kv.ValidateKeyMap(nil)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
-				Expect(key).To(BeEquivalentTo(""))
 			})
 		})
 		When("Empty key", func() {
 			It("should return error", func() {
 				keyMap := map[string]interface{}{}
-				key, err := kv.GetKeyValue(keyMap)
+				err := kv.ValidateKeyMap(keyMap)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-empty key")))
-				Expect(key).To(BeEquivalentTo(""))
 			})
 		})
+		When("Blank key value", func() {
+			It("should return error", func() {
+				keyMap := map[string]interface{}{
+					"key": "",
+				}
+				err := kv.ValidateKeyMap(keyMap)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key value")))
+			})
+		})
+		When("Too many key values", func() {
+			It("should return error", func() {
+				keyMap := map[string]interface{}{
+					"key1": "1",
+					"key2": "2",
+					"key3": "3",
+				}
+				err := kv.ValidateKeyMap(keyMap)
+				Expect(err).To(BeEquivalentTo(errors.New("provide key with 1 or 2 items")))
+			})
+		})
+	})
+
+	When("GetKeyValue", func() {
 		When("Single key", func() {
 			It("should return single key value", func() {
 				keyMap := map[string]interface{}{
 					"key": "user@server.com",
 				}
-				key, err := kv.GetKeyValue(keyMap)
-				Expect(err).To(BeNil())
+				key := kv.GetKeyValue(keyMap)
 				Expect(key).To(BeEquivalentTo("user@server.com"))
 			})
 		})
@@ -71,34 +93,19 @@ var _ = Describe("KeyValue Plugin", func() {
 					"pk": "Customer#123",
 					"sk": "Order#456",
 				}
-				key, err := kv.GetKeyValue(keyMap)
-				Expect(err).To(BeNil())
+				key := kv.GetKeyValue(keyMap)
 				Expect(key).To(BeEquivalentTo("Customer#123_Order#456"))
 			})
 		})
 	})
 
 	When("GetKeyValues", func() {
-		When("Nil key", func() {
-			It("should return error", func() {
-				_, err := kv.GetKeyValues(nil)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
-			})
-		})
-		When("Empty key", func() {
-			It("should return error", func() {
-				keyMap := map[string]interface{}{}
-				_, err := kv.GetKeyValues(keyMap)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-empty key")))
-			})
-		})
 		When("Single key", func() {
 			It("should return single key value", func() {
 				keyMap := map[string]interface{}{
 					"key": "user@server.com",
 				}
-				keys, err := kv.GetKeyValues(keyMap)
-				Expect(err).To(BeNil())
+				keys := kv.GetKeyValues(keyMap)
 				Expect(len(keys)).To(BeEquivalentTo(1))
 				Expect(keys[0]).To(BeEquivalentTo("user@server.com"))
 			})
@@ -109,8 +116,7 @@ var _ = Describe("KeyValue Plugin", func() {
 					"pk": "Customer#123",
 					"sk": "Order#456",
 				}
-				keys, err := kv.GetKeyValues(keyMap)
-				Expect(err).To(BeNil())
+				keys := kv.GetKeyValues(keyMap)
 				Expect(len(keys)).To(BeEquivalentTo(2))
 				Expect(keys[0]).To(BeEquivalentTo("Customer#123"))
 				Expect(keys[1]).To(BeEquivalentTo("Order#456"))
