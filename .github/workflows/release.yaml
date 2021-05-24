@@ -1,7 +1,7 @@
 name: Release Docker images
 on:
   release:
-    types: [published]
+    types: [released]
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
