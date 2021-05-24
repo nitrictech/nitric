@@ -64,3 +64,13 @@ jobs:
           tags: |
             nitricimages/membrane-azure:latest
             nitricimages/membrane-azure:${{ steps.tag.outputs.TAG }}
+      # Push Digital Ocean image
+      - name: Push Digital Ocean image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./providers/do/do.dockerfile
+          push: true
+          tags: |
+            nitricimages/membrane-do:latest
+            nitricimages/membrane-do:${{ steps.tag.outputs.TAG }}
