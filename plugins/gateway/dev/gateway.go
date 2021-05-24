@@ -63,6 +63,12 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		// Handle HTTP Request Types
 		response, err := handler.HandleHttpRequest(httpReq)
 
+		if err != nil {
+			// TODO: Redact message in production
+			ctx.Error(err.Error(), 500)
+			return
+		}
+
 		if response.Header != nil {
 			response.Header.CopyTo(&ctx.Response.Header)
 		}
@@ -72,11 +78,6 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 
 		ctx.Response.SetBody(response.Body)
 		ctx.Response.SetStatusCode(response.StatusCode)
-
-		if err != nil {
-			// TODO: Redact message in production
-			ctx.Error(err.Error(), 500)
-		}
 	}
 }
 

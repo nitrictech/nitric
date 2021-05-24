@@ -73,6 +73,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
+			return
 		}
 		// responseBody, _ := ioutil.ReadAll(response.Body)
 		if response.Header != nil {
