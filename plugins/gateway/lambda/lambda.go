@@ -25,7 +25,6 @@ import (
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"strings"
-	"syscall"
 )
 
 type eventType int
@@ -162,6 +161,7 @@ type LambdaGateway struct {
 	handler handler.TriggerHandler
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
+	finished chan int
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
@@ -222,30 +222,34 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 
 // Start the lambda gateway handler
 func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
+	//s.finished = make(chan int)
 	s.handler = handler
 	// Here we want to begin polling lambda for incoming requests...
-	// Assuming that this is blocking
 	s.runtime(s.handle)
-	// Signal process to terminate if no more lambda requests to handle
-	return syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	// Unblock the 'Stop' function if it's waiting.
+	go func(){s.finished <- 1}()
+	return nil
 }
 
 func (s *LambdaGateway) Stop() error {
 	// XXX: This is a NO_OP Process, as this is a pull based system
 	// We don't need to stop listening to anything
-	fmt.Println("Shutting down lambda gateway")
-
+	fmt.Println("gateway 'Stop' called, waiting for lambda runtime to finish")
+	// Lambda can't be stopped, need to wait for it to finish
+	<- s.finished
 	return nil
 }
 
 func New() (sdk.GatewayService, error) {
 	return &LambdaGateway{
 		runtime: lambda.Start,
+		finished: make(chan int),
 	}, nil
 }
 
 func NewWithRuntime(runtime LambdaRuntimeHandler) (sdk.GatewayService, error) {
 	return &LambdaGateway{
 		runtime: runtime,
+		finished: make(chan int),
 	}, nil
 }
