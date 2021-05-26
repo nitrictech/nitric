@@ -87,17 +87,14 @@ func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
 		Handler: httpHandler(handler),
 	}
 
-	go (func() {
-		err := s.server.ListenAndServe(s.address)
-		if err != nil {
-			panic(err)
-		}
-	})()
-	return nil
+	return s.server.ListenAndServe(s.address)
 }
 
 func (s *HttpGateway) Stop() error {
-	return s.server.Shutdown()
+	if s.server != nil {
+		return s.server.Shutdown()
+	}
+	return nil
 }
 
 // Create new HTTP gateway

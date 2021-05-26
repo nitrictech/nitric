@@ -242,9 +242,8 @@ func (s *Membrane) Start() error {
 		hndlr = handler.NewHttpHandler(s.childAddress)
 		break
 	}
-	
-	err = s.gatewayPlugin.Start(hndlr)
-	return err
+
+	return s.gatewayPlugin.Start(hndlr)
 }
 
 func (s *Membrane) Stop() {

@@ -51,8 +51,10 @@ func main() {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	go (m.Start)()
-	// Wait for a terminate interrupt
-	<-term
-	m.Stop()
+	go(func(){
+		<-term
+		m.Stop()
+	})()
+
+	m.Start()
 }
