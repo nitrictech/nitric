@@ -40,12 +40,9 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return
 		}
-		// responseBody, _ := ioutil.ReadAll(response.Body)
+
 		if response.Header != nil {
-			// Set headers...
-			response.Header.VisitAll(func(key []byte, val []byte) {
-				ctx.Response.Header.AddBytesKV(key, val)
-			})
+			response.Header.CopyTo(&ctx.Response.Header)
 		}
 
 		// Avoid content length header duplication
