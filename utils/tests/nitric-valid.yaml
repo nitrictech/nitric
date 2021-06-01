@@ -1,0 +1,40 @@
+name: nitric-website
+
+collections:
+  application:
+    attributes:
+      pk: string
+      sk: string
+      created: string
+      value: string
+    indexes:
+      composite: [ pk , sk ]
+  users:
+    attributes:
+      key: string
+      value: string
+    indexes:
+      unique: key
+  orders: ~
+  books:
+    attributes:
+      key: string
+      value: string
+    indexes:
+      unique: key
+
+services:
+  website:
+    path: website
+    runtime: official/nextjs
+  contact:
+    path: contact
+    runtime: official/nodets12
+
+entrypoints:
+  /:
+    name: website
+    type: service
+  /contact-sales:
+    name: contact
+    type: service

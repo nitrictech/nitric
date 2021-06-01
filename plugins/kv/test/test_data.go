@@ -15,18 +15,35 @@ package test
 
 // Simple 'users' collection test data
 
-var UserKey = map[string]interface{}{
+var UserKey1 = map[string]interface{}{
 	"key": "jsmith@server.com",
 }
-var UserItem = map[string]interface{}{
+var UserItem1 = map[string]interface{}{
 	"firstName": "John",
 	"lastName":  "Smith",
 	"email":     "jsmith@server.com",
+	"country":   "US",
+	"age":       "30",
+}
+var UserKey2 = map[string]interface{}{
+	"key": "j.smithers@yahoo.com",
 }
 var UserItem2 = map[string]interface{}{
 	"firstName": "Johnson",
 	"lastName":  "Smithers",
 	"email":     "j.smithers@yahoo.com",
+	"country":   "AU",
+	"age":       "40",
+}
+var UserKey3 = map[string]interface{}{
+	"key": "pdavis@server.com",
+}
+var UserItem3 = map[string]interface{}{
+	"firstName": "Paul",
+	"lastName":  "Davis",
+	"email":     "pdavis@server.com",
+	"country":   "US",
+	"age":       "50",
 }
 
 // Single Table Design 'application' collection test data
@@ -49,7 +66,7 @@ var OrderItem1 = map[string]interface{}{
 	"testName": "OrderItem1",
 	"sku":      "ABC-501",
 	"number":   "1",
-	"price":    "13.95",
+	"price":    "14.95",
 }
 var OrderKey2 = map[string]interface{}{
 	"pk": "Customer#1000",
@@ -58,8 +75,8 @@ var OrderKey2 = map[string]interface{}{
 var OrderItem2 = map[string]interface{}{
 	"testName": "OrderItem2",
 	"sku":      "ABC-502",
-	"number":   "1",
-	"price":    "13.95",
+	"number":   "2",
+	"price":    "19.95",
 }
 var OrderKey3 = map[string]interface{}{
 	"pk": "Customer#1000",
@@ -68,8 +85,8 @@ var OrderKey3 = map[string]interface{}{
 var OrderItem3 = map[string]interface{}{
 	"testName": "OrderItem3",
 	"sku":      "ABC-503",
-	"number":   "1",
-	"price":    "13.95",
+	"number":   "3",
+	"price":    "24.95",
 }
 var ProductKey = map[string]interface{}{
 	"pk": "Product#ABC-502",

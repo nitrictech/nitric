@@ -16,6 +16,7 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -67,7 +68,7 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 	if err != nil {
 		return err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
@@ -78,6 +79,18 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 
 	// Construct DynamoDB attribute value object
 	itemMap := copy(key)
+
+	// Project any collection filter attributes into Doc filter attributes
+	filterAttributes, err := kv.Stack.CollectionFilterAttributes(collection)
+	if filterAttributes != nil && err == nil {
+		for _, name := range filterAttributes {
+			if _, found := value[name]; found {
+				itemMap[name] = fmt.Sprintf("%v", value[name])
+			}
+		}
+	}
+
+	// Add value map
 	itemMap["value"] = value
 
 	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
@@ -103,7 +116,7 @@ func (s *DynamoDbKVService) Get(collection string, key map[string]interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +154,7 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 	if err != nil {
 		return err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
@@ -169,13 +182,16 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 	if err != nil {
 		return nil, err
 	}
-	err = kv.ValidateExpressions(expressions)
+	err = kv.ValidateExpressions(collection, expressions)
 	if err != nil {
 		return nil, err
 	}
 
+	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
+	sort.Sort(kv.ExpsSort(expressions))
+
 	// If expressions perform a query
-	if len(expressions) > 0 {
+	if isQueryOperation(collection, expressions) {
 
 		input := &dynamodb.QueryInput{
 			TableName:            aws.String(collection),
@@ -183,22 +199,14 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		}
 
 		// Configure KeyConditionExpression
-		keyExp := ""
-		for _, exp := range expressions {
-			if keyExp != "" {
-				keyExp += " AND "
-			}
-			if exp.Operator == "startsWith" {
-				keyExp += "begins_with(#" + exp.Operand + ", :" + fmt.Sprintf("%v", exp.Operand) + ")"
-
-			} else if exp.Operator == "==" {
-				keyExp += "#" + exp.Operand + " = :" + fmt.Sprintf("%v", exp.Operand)
-
-			} else {
-				keyExp += "#" + exp.Operand + " " + exp.Operator + " :" + fmt.Sprintf("%v", exp.Operand)
-			}
-		}
+		keyExp := createKeyExpression(collection, expressions)
 		input.KeyConditionExpression = aws.String(keyExp)
+
+		// Configure FilterExpression
+		filterExp := createFilterExpression(collection, expressions)
+		if filterExp != "" {
+			input.FilterExpression = aws.String(filterExp)
+		}
 
 		// Configure ExpressionAttributeNames
 		input.ExpressionAttributeNames = make(map[string]*string)
@@ -209,8 +217,9 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 
 		// Configure ExpressionAttributeValues
 		input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-		for _, exp := range expressions {
-			input.ExpressionAttributeValues[":"+exp.Operand] = &dynamodb.AttributeValue{
+		for i, exp := range expressions {
+			expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
+			input.ExpressionAttributeValues[expKey] = &dynamodb.AttributeValue{
 				S: aws.String(exp.Value),
 			}
 		}
@@ -235,8 +244,29 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 			ExpressionAttributeNames: map[string]*string{
 				"#value": aws.String("value"),
 			},
-
 			ProjectionExpression: aws.String("#value"),
+		}
+
+		filterExp := createFilterExpression(collection, expressions)
+		if filterExp != "" {
+			// Configure FilterExpression
+			input.FilterExpression = aws.String(filterExp)
+
+			// Configure ExpressionAttributeNames
+			input.ExpressionAttributeNames = make(map[string]*string)
+			for _, exp := range expressions {
+				input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
+			}
+			input.ExpressionAttributeNames["#value"] = aws.String("value")
+
+			// Configure ExpressionAttributeValues
+			input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
+			for i, exp := range expressions {
+				expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
+				input.ExpressionAttributeValues[expKey] = &dynamodb.AttributeValue{
+					S: aws.String(exp.Value),
+				}
+			}
 		}
 
 		// Configure fetch Limit
@@ -280,4 +310,103 @@ func NewWithClient(client *dynamodb.DynamoDB) (sdk.KeyValueService, error) {
 	return &DynamoDbKVService{
 		client: client,
 	}, nil
+}
+
+// Return true if should perform a query operation against keys or false
+// if should perform a Dynamodb scan operation
+func isQueryOperation(collection string, exps []sdk.QueryExpression) bool {
+	if len(exps) == 0 {
+		return false
+	}
+
+	indexes, _ := kv.Stack.CollectionIndexes(collection)
+	for _, exp := range exps {
+		if utils.IndexOf(indexes, exp.Operand) != -1 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func createKeyExpression(collection string, expressions []sdk.QueryExpression) string {
+	indexAttributes, _ := kv.Stack.CollectionIndexes(collection)
+
+	keyExp := ""
+	for i, exp := range expressions {
+		if utils.IndexOf(indexAttributes, exp.Operand) != -1 {
+			if keyExp != "" {
+				keyExp += " AND "
+			}
+			if exp.Operator == "startsWith" {
+				keyExp += "begins_with(#" + exp.Operand + ", :" + fmt.Sprintf("%v%v", exp.Operand, i) + ")"
+
+			} else if exp.Operator == "==" {
+				keyExp += "#" + exp.Operand + " = :" + fmt.Sprintf("%v%v", exp.Operand, i)
+
+			} else {
+				keyExp += "#" + exp.Operand + " " + exp.Operator + " :" + fmt.Sprintf("%v%v", exp.Operand, i)
+			}
+		}
+	}
+
+	return keyExp
+}
+
+func createFilterExpression(collection string, expressions []sdk.QueryExpression) string {
+	filterAttributes, _ := kv.Stack.CollectionFilterAttributes(collection)
+
+	keyExp := ""
+	for i, exp := range expressions {
+		if utils.IndexOf(filterAttributes, exp.Operand) != -1 {
+			if keyExp != "" {
+				keyExp += " AND "
+			}
+
+			if isBetweenStart(i, expressions) {
+				// #{exp.operand} BETWEEN :{exp.operand}{exp.index})
+				keyExp += fmt.Sprintf("#%v BETWEEN :%s%d", exp.Operand, exp.Operand, i)
+
+			} else if isBetweenEnd(i, expressions) {
+				// AND :{exp.operand}{exp.index})
+				keyExp += fmt.Sprintf(":%s%d", exp.Operand, i)
+
+			} else if exp.Operator == "startsWith" {
+				// begins_with(#{exp.operand}, :{exp.operand}{exp.index})
+				keyExp += fmt.Sprintf("begins_with(#%s, :%s%d)", exp.Operand, exp.Operand, i)
+
+			} else if exp.Operator == "==" {
+				// #{exp.operand} = :{exp.operand}{exp.index}
+				keyExp += fmt.Sprintf("#%s = :%s%d", exp.Operand, exp.Operand, i)
+
+			} else {
+				// #{exp.operand} {exp.operator} :{exp.operand}{exp.index}
+				keyExp += fmt.Sprintf("#%s %s :%s%d", exp.Operand, exp.Operator, exp.Operand, i)
+			}
+		}
+	}
+
+	return keyExp
+}
+
+func isBetweenStart(index int, exps []sdk.QueryExpression) bool {
+	if index < (len(exps) - 1) {
+		if exps[index].Operand == exps[index+1].Operand &&
+			exps[index].Operator == ">=" &&
+			exps[index+1].Operator == "<=" {
+			return true
+		}
+	}
+	return false
+}
+
+func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
+	if index > 0 && index < len(exps) {
+		if exps[index-1].Operand == exps[index].Operand &&
+			exps[index-1].Operator == ">=" &&
+			exps[index].Operator == "<=" {
+			return true
+		}
+	}
+	return false
 }

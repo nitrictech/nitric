@@ -17,18 +17,46 @@ package firestore_service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	"github.com/nitric-dev/membrane/plugins/kv"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/utils"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )
 
 type FirestoreKVService struct {
-	client *firestore.Client
+	client  *firestore.Client
+	context context.Context
 	sdk.UnimplementedKeyValuePlugin
+}
+
+func addMapKeys(values map[string]interface{}, keys map[string]interface{}) map[string]interface{} {
+	// Clone values
+	newMap := make(map[string]interface{})
+	for key, value := range values {
+		newMap[key] = value
+	}
+
+	// Add keys with "_" prefix
+	for key, value := range keys {
+		newMap["_"+key] = value
+	}
+
+	return newMap
+}
+
+func stripMapKeys(source map[string]interface{}) map[string]interface{} {
+	newMap := make(map[string]interface{})
+	for key, value := range source {
+		if !strings.HasPrefix(key, "_") {
+			newMap[key] = value
+		}
+	}
+	return newMap
 }
 
 func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
@@ -36,20 +64,22 @@ func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return nil, err
 	}
 
 	keyValue := kv.GetKeyValue(key)
 
-	value, err := s.client.Collection(collection).Doc(keyValue).Get(context.TODO())
+	value, err := s.client.Collection(collection).Doc(keyValue).Get(s.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving value: %v", err)
 	}
 
-	return value.Data(), nil
+	results := stripMapKeys(value.Data())
+
+	return results, nil
 }
 
 func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
@@ -57,7 +87,7 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 	if err != nil {
 		return err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
@@ -68,7 +98,10 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 
 	keyValue := kv.GetKeyValue(key)
 
-	_, err = s.client.Collection(collection).Doc(keyValue).Set(context.TODO(), value)
+	// Add keys to value item to support querying
+	value = addMapKeys(value, key)
+
+	_, err = s.client.Collection(collection).Doc(keyValue).Set(s.context, value)
 
 	if err != nil {
 		return fmt.Errorf("Error updating value: %v", err)
@@ -82,14 +115,14 @@ func (s *FirestoreKVService) Delete(collection string, key map[string]interface{
 	if err != nil {
 		return err
 	}
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
 
 	keyValue := kv.GetKeyValue(key)
 
-	_, err = s.client.Collection(collection).Doc(keyValue).Delete(context.TODO())
+	_, err = s.client.Collection(collection).Doc(keyValue).Delete(s.context)
 
 	if err != nil {
 		return fmt.Errorf("Error deleting value: %v", err)
@@ -103,43 +136,73 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 	if err != nil {
 		return nil, err
 	}
-	err = kv.ValidateExpressions(expressions)
+	err = kv.ValidateExpressions(collection, expressions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := s.client.Collection(collection).Select("Value")
+	if len(expressions) > 0 {
+		indexes, _ := kv.Stack.CollectionIndexes(collection)
 
-	for _, exp := range expressions {
-		if exp.Operator == "startsWith" {
-			endRangeValue := kv.GetEndRangeValue(exp.Value)
-			query = query.Where(exp.Operand, ">=", exp.Value).Where(exp.Operand, "<", endRangeValue)
+		query := s.client.Collection(collection).Offset(0)
 
-		} else {
-			query = query.Where(exp.Operand, exp.Operator, exp.Value)
+		for _, exp := range expressions {
+			// If operand is key/index then prefix with "_"
+			expOperand := exp.Operand
+			if utils.IndexOf(indexes, expOperand) != -1 {
+				expOperand = "_" + expOperand
+			}
+			if exp.Operator == "startsWith" {
+				endRangeValue := kv.GetEndRangeValue(exp.Value)
+				query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
+
+			} else {
+				query = query.Where(expOperand, exp.Operator, exp.Value)
+			}
 		}
-	}
 
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-
-	itr := query.Documents(context.TODO())
-
-	results := make([]map[string]interface{}, 0)
-
-	for {
-		docSnp, err := itr.Next()
-		if err == iterator.Done {
-			break
+		if limit > 0 {
+			query = query.Limit(limit)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("Error querying value: %v", err)
-		}
-		results = append(results, docSnp.Data())
-	}
 
-	return results, nil
+		itr := query.Documents(s.context)
+
+		results := make([]map[string]interface{}, 0)
+
+		for {
+			docSnp, err := itr.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("Error querying value: %v", err)
+			}
+			value := stripMapKeys(docSnp.Data())
+			results = append(results, value)
+		}
+
+		return results, nil
+
+	} else {
+		iter := s.client.Collection(collection).Documents(s.context)
+
+		results := make([]map[string]interface{}, 0)
+
+		for {
+			docSnp, err := iter.Next()
+			// Break done or fetch limit reached
+			if err == iterator.Done || (limit > 0 && len(results) == limit) {
+				break
+			}
+			if err != nil {
+				return nil, err
+			}
+			value := stripMapKeys(docSnp.Data())
+			results = append(results, value)
+		}
+
+		return results, nil
+	}
 }
 
 func New() (sdk.KeyValueService, error) {
@@ -156,12 +219,14 @@ func New() (sdk.KeyValueService, error) {
 	}
 
 	return &FirestoreKVService{
-		client: client,
+		client:  client,
+		context: ctx,
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client) (sdk.KeyValueService, error) {
+func NewWithClient(client *firestore.Client, ctx context.Context) (sdk.KeyValueService, error) {
 	return &FirestoreKVService{
-		client: client,
+		client:  client,
+		context: ctx,
 	}, nil
 }

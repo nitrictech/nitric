@@ -18,8 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/utils"
 )
 
 // Map of valid expression operators
@@ -32,10 +34,24 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
+var Stack utils.NitricStack
+
+// Package initialization
+func init() {
+	nitricStack, err := utils.NewStack(utils.DEFAULT_STACK)
+	if err != nil {
+		panic(err)
+	}
+	Stack = *nitricStack
+}
+
 // Validate the collection name
 func ValidateCollection(collection string) error {
 	if collection == "" {
 		return fmt.Errorf("provide non-blank collection")
+	}
+	if !Stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", Stack.Name, collection)
 	}
 	return nil
 }
@@ -98,37 +114,83 @@ func GetKeyValues(key map[string]interface{}) []string {
 func GetEndRangeValue(value string) string {
 	strFrontCode := value[:len(value)-1]
 
-	strEndCode := value[len(value)-1 : len(value)]
+	strEndCode := value[len(value)-1:]
 
 	return strFrontCode + string(strEndCode[0]+1)
 }
 
 // Validate the provided query expressions
-func ValidateExpressions(expressions []sdk.QueryExpression) error {
-	if expressions == nil {
-		return errors.New("provide non-nil expressions")
+func ValidateExpressions(collection string, expressions []sdk.QueryExpression) error {
+	if !Stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", Stack.Name, collection)
 	}
 
+	if expressions == nil {
+		return errors.New("provide non-nil query expressions")
+	}
+
+	attributes, err := Stack.CollectionAttributes(collection)
+	if err != nil {
+		return err
+	}
+
+	inequalityProperties := make(map[string]string)
+
 	for _, exp := range expressions {
-		if exp.Operand == "" {
-			return fmt.Errorf("provide non-blank expression operand: %v", exp)
+		if utils.IndexOf(attributes, exp.Operand) == -1 {
+			attributes, _ := Stack.CollectionAttributes(collection)
+			return fmt.Errorf("query expression '%v' operand not found in %v collections: %v: attributes: %v", exp.Operand, Stack.Name, collection, attributes)
+		}
+		if exp.Operand == "value" {
+			return fmt.Errorf("query expression 'value' operand is not indexed: %v", exp)
 		}
 		if _, found := validOperators[exp.Operator]; !found {
-			return fmt.Errorf("provide valid expression operator [==, <, >, <=, >=, startsWith]: %v", exp.Operator)
+			return fmt.Errorf("provide valid query expression operator [==, <, >, <=, >=, startsWith]: %v", exp.Operator)
 		}
 		if exp.Value == "" {
-			return fmt.Errorf("provide non-blank expression value: %v", exp)
+			return fmt.Errorf("provide non-blank query expression value: %v", exp)
+		}
+
+		// Ensure key expressions are valid
+		keys, err := Stack.CollectionIndexes(collection)
+		if err != nil {
+			return err
+		}
+		if keys[0] == exp.Operand && exp.Operator != "==" {
+			return fmt.Errorf("collection: '%v' key '%v' only supports '==' query operator: %v", collection, exp.Operand, exp)
+		}
+
+		if exp.Operator != "==" {
+			inequalityProperties[exp.Operand] = exp.Operator
 		}
 	}
-	if len(expressions) > 0 && expressions[0].Operator != "==" {
-		return fmt.Errorf("provide identity operator (==) for primary key expressions: %v", expressions[0])
+
+	// Firestore inequality compatability check
+	if len(inequalityProperties) > 1 {
+		msg := ""
+		for prop, exp := range inequalityProperties {
+			if msg != "" {
+				msg += ", "
+			}
+			msg += prop + " " + exp
+		}
+		return fmt.Errorf("inequality expressions on multiple properties not supported with Firestore: [ %v ]", msg)
+	}
+
+	// DynamoDB range expression compatability check
+	if err = hasRangeError(expressions); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // Validate the provided key map
-func ValidateKeyMap(key map[string]interface{}) error {
+func ValidateKeyMap(collection string, key map[string]interface{}) error {
+	if !Stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", Stack.Name, collection)
+	}
+
 	// Get key
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
@@ -140,9 +202,78 @@ func ValidateKeyMap(key map[string]interface{}) error {
 		return fmt.Errorf("provide key with 1 or 2 items")
 	}
 
-	for _, v := range key {
-		if v == "" {
+	// Validate names and values
+	indexes, err := Stack.CollectionIndexes(collection)
+	if err != nil {
+		return err
+	}
+
+	for name, value := range key {
+		if utils.IndexOf(indexes, name) == -1 {
+			return fmt.Errorf("%v collections: %v: indexes: key '%s' not found", Stack.Name, collection, name)
+		}
+
+		if value == "" {
 			return fmt.Errorf("provide non-blank key value")
+		}
+	}
+
+	return nil
+}
+
+// QueryExpression sorting support with sort.Interface
+
+type ExpsSort []sdk.QueryExpression
+
+func (exps ExpsSort) Len() int {
+	return len(exps)
+}
+
+// Sort by Operand then Operator then Value
+func (exps ExpsSort) Less(i, j int) bool {
+
+	operandCompare := strings.Compare(exps[i].Operand, exps[j].Operand)
+	if operandCompare == 0 {
+
+		// Reverse operator comparison for to support range expressions
+		operatorCompare := strings.Compare(exps[j].Operator, exps[i].Operator)
+		if operatorCompare == 0 {
+
+			return strings.Compare(exps[i].Value, exps[j].Value) < 0
+
+		} else {
+			return operatorCompare < 0
+		}
+
+	} else {
+		return operandCompare < 0
+	}
+}
+
+func (exps ExpsSort) Swap(i, j int) {
+	exps[i], exps[j] = exps[j], exps[i]
+}
+
+// DynamoDB only supports query range operands: >= AND <=
+// For example: WHERE price >= 20.00 AND price <= 50.0
+func hasRangeError(exps []sdk.QueryExpression) error {
+
+	sortedExps := make([]sdk.QueryExpression, len(exps))
+	copy(sortedExps, exps)
+
+	sort.Sort(ExpsSort(sortedExps))
+
+	for index, exp := range sortedExps {
+		if index < (len(sortedExps) - 1) {
+			nextExp := sortedExps[index+1]
+
+			if exp.Operand == nextExp.Operand &&
+				((exp.Operator == ">" && nextExp.Operator == "<") ||
+					(exp.Operator == ">" && nextExp.Operator == "<=") ||
+					(exp.Operator == ">=" && nextExp.Operator == "<")) {
+
+				return fmt.Errorf("range expression not supported with DynamoDB (use operators >= and <=) : %v", exp)
+			}
 		}
 	}
 

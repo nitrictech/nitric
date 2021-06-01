@@ -30,41 +30,43 @@ import (
 
 const DEFAULT_DIR = "nitric/collections/"
 
-type DevKVService struct {
+type BoltKVService struct {
 	sdk.UnimplementedKeyValuePlugin
 	dbDir string
 }
 
-type Document struct {
+type BoltDoc struct {
 	Key        string `storm:"id"`
 	PartionKey string `storm:"index"`
 	SortKey    string `storm:"index"`
 	Attribute1 string `storm:"index"`
 	Attribute2 string `storm:"index"`
 	Attribute3 string `storm:"index"`
+	Attribute4 string `storm:"index"`
+	Attribute5 string `storm:"index"`
 	Value      map[string]interface{}
 }
 
-func (d Document) String() string {
-	return fmt.Sprintf("{Key:'%v', ParitionKey:'%v', SortKey:'%v', Value:%v}", d.Key, d.PartionKey, d.SortKey, d.Value)
-}
+// Implement sdk.KeyValueService interface
 
-func (s *DevKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
-	db, err := s.createDb(collection)
+func (s *BoltKVService) Get(collection string, key map[string]interface{}) (map[string]interface{}, error) {
+	db, err := s.createdDb(collection)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return nil, err
 	}
 
 	keyValue := kv.GetKeyValue(key)
 
-	var doc = Document{}
+	var doc = BoltDoc{}
+
 	err = db.One("Key", keyValue, &doc)
+
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +74,14 @@ func (s *DevKVService) Get(collection string, key map[string]interface{}) (map[s
 	return doc.Value, nil
 }
 
-func (s *DevKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
-	db, err := s.createDb(collection)
+func (s *BoltKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
+	db, err := s.createdDb(collection)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
@@ -87,62 +89,71 @@ func (s *DevKVService) Put(collection string, key map[string]interface{}, value 
 		return fmt.Errorf("provide non-nil value")
 	}
 
-	keyValue := kv.GetKeyValue(key)
-	doc := Document{
-		Key:   keyValue,
+	doc := BoltDoc{
+		Key:   kv.GetKeyValue(key),
 		Value: value,
 	}
 
-	keyValues := kv.GetKeyValues(key)
-	if len(keyValues) > 1 {
-		doc.PartionKey = keyValues[0]
-		doc.SortKey = keyValues[1]
+	// Specify any composite indexes for filtering
+	compositeKeys, err := kv.Stack.CollectionIndexesComposite(collection)
+	if compositeKeys != nil && err == nil {
+		doc.PartionKey = fmt.Sprintf("%v", key[compositeKeys[0]])
+		doc.SortKey = fmt.Sprintf("%v", key[compositeKeys[1]])
 	}
 
-	err = db.Save(&doc)
-	if err != nil {
-		return err
+	// Project any collection filter attributes into Doc filter attributes
+	filterAttributes, err := kv.Stack.CollectionFilterAttributes(collection)
+	if filterAttributes != nil && err == nil {
+		for i, name := range filterAttributes {
+			valueStr := fmt.Sprintf("%v", value[name])
+			switch i {
+			case 0:
+				doc.Attribute1 = valueStr
+			case 1:
+				doc.Attribute2 = valueStr
+			case 2:
+				doc.Attribute3 = valueStr
+			case 3:
+				doc.Attribute4 = valueStr
+			case 4:
+				doc.Attribute5 = valueStr
+			}
+		}
 	}
 
-	return nil
+	return db.Save(&doc)
 }
 
-func (s *DevKVService) Delete(collection string, key map[string]interface{}) error {
-	db, err := s.createDb(collection)
+func (s *BoltKVService) Delete(collection string, key map[string]interface{}) error {
+	db, err := s.createdDb(collection)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	err = kv.ValidateKeyMap(key)
+	err = kv.ValidateKeyMap(collection, key)
 	if err != nil {
 		return err
 	}
 
 	keyValue := kv.GetKeyValue(key)
-	doc := Document{
+	doc := BoltDoc{
 		Key: keyValue,
 	}
 
-	return db.DeleteStruct(&doc)
+	err = db.DeleteStruct(&doc)
 
-	// TODO: discuss delete behaviour for Get and Delete
-	// err = db.DeleteStruct(&doc)
-	// if err != nil && err.Error() != "not found" {
-	// 	return err
-	// } else {
-	// 	return nil
-	// }
+	return err
 }
 
-func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
-	db, err := s.createDb(collection)
+func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+	db, err := s.createdDb(collection)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
-	err = kv.ValidateExpressions(expressions)
+	err = kv.ValidateExpressions(collection, expressions)
 	if err != nil {
 		return nil, err
 	}
@@ -150,18 +161,37 @@ func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpressio
 	// Build up chain of expression matchers
 	matchers := []q.Matcher{}
 
-	for i, exp := range expressions {
-		// Operand is determined by expressions index
-		// TODO: replace attribute lookup with nitric stack 'collections' mapping
-		operand := "PartionKey"
-		if i == 1 {
-			operand = "SortKey"
-		} else if i == 2 {
-			operand = "Attribute1"
-		} else if i == 3 {
-			operand = "Attribute2"
-		} else if i == 4 {
-			operand = "Attribute3"
+	uniqueKeyName, _ := kv.Stack.CollectionIndexesUnique(collection)
+	compositeKeyNames, _ := kv.Stack.CollectionIndexesComposite(collection)
+	filterNames, _ := kv.Stack.CollectionFilterAttributes(collection)
+
+	for _, exp := range expressions {
+		operand := ""
+
+		if exp.Operand == uniqueKeyName {
+			operand = "Key"
+		}
+		if index := utils.IndexOf(compositeKeyNames, exp.Operand); index != -1 {
+			switch index {
+			case 0:
+				operand = "PartionKey"
+			case 1:
+				operand = "SortKey"
+			}
+		}
+		if index := utils.IndexOf(filterNames, exp.Operand); index != -1 {
+			switch index {
+			case 0:
+				operand = "Attribute1"
+			case 1:
+				operand = "Attribute2"
+			case 2:
+				operand = "Attribute3"
+			case 3:
+				operand = "Attribute4"
+			case 4:
+				operand = "Attribute5"
+			}
 		}
 
 		if exp.Operator == "==" {
@@ -189,7 +219,8 @@ func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpressio
 	}
 
 	// Execute query
-	var docs []Document
+	var docs []BoltDoc
+
 	query.Find(&docs)
 
 	results := make([]map[string]interface{}, 0)
@@ -201,7 +232,7 @@ func (s *DevKVService) Query(collection string, expressions []sdk.QueryExpressio
 }
 
 // New - Create a new dev KV plugin
-func New() (sdk.KeyValueService, error) {
+func New() (*BoltKVService, error) {
 	dbDir := utils.GetEnv("LOCAL_DB_DIR", DEFAULT_DIR)
 
 	// Check whether file exists
@@ -214,10 +245,10 @@ func New() (sdk.KeyValueService, error) {
 		}
 	}
 
-	return &DevKVService{dbDir: dbDir}, nil
+	return &BoltKVService{dbDir: dbDir}, nil
 }
 
-func (s *DevKVService) createDb(collection string) (*storm.DB, error) {
+func (s *BoltKVService) createdDb(collection string) (*storm.DB, error) {
 	err := kv.ValidateCollection(collection)
 	if err != nil {
 		return nil, err

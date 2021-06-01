@@ -15,6 +15,7 @@ package kv_test
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/nitric-dev/membrane/plugins/kv"
 	"github.com/nitric-dev/membrane/sdk"
@@ -33,9 +34,15 @@ var _ = Describe("KeyValue Plugin", func() {
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank collection")))
 			})
 		})
+		When("Missing collection", func() {
+			It("should return error", func() {
+				err := kv.ValidateCollection("uknown")
+				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: uknown: not found"))
+			})
+		})
 		When("Valid collection", func() {
 			It("should return nil", func() {
-				err := kv.ValidateCollection("collection")
+				err := kv.ValidateCollection("users")
 				Expect(err).To(BeNil())
 			})
 		})
@@ -44,14 +51,14 @@ var _ = Describe("KeyValue Plugin", func() {
 	When("ValidateKeyMap", func() {
 		When("Nil key", func() {
 			It("should return error", func() {
-				err := kv.ValidateKeyMap(nil)
+				err := kv.ValidateKeyMap("users", nil)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
 			})
 		})
 		When("Empty key", func() {
 			It("should return error", func() {
 				keyMap := map[string]interface{}{}
-				err := kv.ValidateKeyMap(keyMap)
+				err := kv.ValidateKeyMap("users", keyMap)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-empty key")))
 			})
 		})
@@ -60,8 +67,26 @@ var _ = Describe("KeyValue Plugin", func() {
 				keyMap := map[string]interface{}{
 					"key": "",
 				}
-				err := kv.ValidateKeyMap(keyMap)
+				err := kv.ValidateKeyMap("users", keyMap)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key value")))
+			})
+		})
+		When("Unique key not found", func() {
+			It("should return error", func() {
+				keyMap := map[string]interface{}{
+					"unknown": "abc",
+				}
+				err := kv.ValidateKeyMap("users", keyMap)
+				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: users: indexes: key 'unknown' not found"))
+			})
+		})
+		When("Composite key not found", func() {
+			It("should return error", func() {
+				keyMap := map[string]interface{}{
+					"unknown": "abc",
+				}
+				err := kv.ValidateKeyMap("application", keyMap)
+				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: application: indexes: key 'unknown' not found"))
 			})
 		})
 		When("Too many key values", func() {
@@ -71,7 +96,7 @@ var _ = Describe("KeyValue Plugin", func() {
 					"key2": "2",
 					"key3": "3",
 				}
-				err := kv.ValidateKeyMap(keyMap)
+				err := kv.ValidateKeyMap("users", keyMap)
 				Expect(err).To(BeEquivalentTo(errors.New("provide key with 1 or 2 items")))
 			})
 		})
@@ -132,61 +157,112 @@ var _ = Describe("KeyValue Plugin", func() {
 		})
 	})
 
+	When("ExpsSort", func() {
+		When("order is sorted", func() {
+			It("Should not change order", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "A", Operator: "==", Value: "1"},
+					{Operand: "B", Operator: "==", Value: "2"},
+					{Operand: "C", Operator: "==", Value: "3"},
+				}
+				sort.Sort(kv.ExpsSort(exps))
+				Expect(exps[0].Operand).To(BeEquivalentTo("A"))
+				Expect(exps[1].Operand).To(BeEquivalentTo("B"))
+				Expect(exps[2].Operand).To(BeEquivalentTo("C"))
+			})
+		})
+		When("not order not sorted", func() {
+			It("Should not change order", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "C", Operator: "==", Value: "3"},
+					{Operand: "A", Operator: "==", Value: "1"},
+					{Operand: "B", Operator: "==", Value: "2"},
+				}
+				sort.Sort(kv.ExpsSort(exps))
+				Expect(exps[0].Operand).To(BeEquivalentTo("A"))
+				Expect(exps[1].Operand).To(BeEquivalentTo("B"))
+				Expect(exps[2].Operand).To(BeEquivalentTo("C"))
+			})
+		})
+		When("not order not sorted", func() {
+			It("Should not change order", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: "==", Value: "3"},
+					{Operand: "number", Operator: ">=", Value: "1"},
+					{Operand: "number", Operator: "<=", Value: "2"},
+				}
+				sort.Sort(kv.ExpsSort(exps))
+				Expect(exps[0].Operator).To(BeEquivalentTo(">="))
+				Expect(exps[1].Operator).To(BeEquivalentTo("=="))
+				Expect(exps[2].Operator).To(BeEquivalentTo("<="))
+			})
+		})
+	})
+
 	When("ValidateExpression", func() {
 		When("expression is valid", func() {
 			It("should return error", func() {
 				exps := []sdk.QueryExpression{
-					{Operand: "Pk", Operator: "==", Value: "123"},
+					{Operand: "pk", Operator: "==", Value: "123"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).To(BeNil())
 			})
 		})
 		When("expressions empty", func() {
 			It("should be valid", func() {
-				err := kv.ValidateExpressions([]sdk.QueryExpression{})
+				err := kv.ValidateExpressions("users", []sdk.QueryExpression{})
 				Expect(err).To(BeNil())
 			})
 		})
 		When("operand is nil", func() {
 			It("should return error", func() {
-				err := kv.ValidateExpressions(nil)
+				err := kv.ValidateExpressions("users", nil)
 				Expect(err).ToNot(BeNil())
 			})
 		})
-		When("operand is blank", func() {
+		When("operand not found", func() {
 			It("should return error", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "", Operator: "==", Value: "123"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("users", exps)
+				Expect(err).ToNot(BeNil())
+			})
+		})
+		When("operand is value", func() {
+			It("should return error", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "value", Operator: "==", Value: "123"},
+				}
+				err := kv.ValidateExpressions("users", exps)
 				Expect(err).ToNot(BeNil())
 			})
 		})
 		When("operator is blank", func() {
 			It("should return error", func() {
 				exps := []sdk.QueryExpression{
-					{Operand: "Pk", Operator: "", Value: "123"},
+					{Operand: "pk", Operator: "", Value: "123"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).ToNot(BeNil())
 			})
 		})
 		When("value is blank", func() {
 			It("should return error", func() {
 				exps := []sdk.QueryExpression{
-					{Operand: "Pk", Operator: "==", Value: ""},
+					{Operand: "pk", Operator: "==", Value: ""},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).ToNot(BeNil())
 			})
 		})
 		When("operation is not valid", func() {
 			It("should return error", func() {
 				exps := []sdk.QueryExpression{
-					{Operand: "Pk", Operator: "=", Value: "123"},
+					{Operand: "pk", Operator: "=", Value: "123"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -196,7 +272,7 @@ var _ = Describe("KeyValue Plugin", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "startWith", Value: "Order#"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -205,8 +281,51 @@ var _ = Describe("KeyValue Plugin", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "pk", Operator: ">", Value: "Customer#1000"},
 				}
-				err := kv.ValidateExpressions(exps)
+				err := kv.ValidateExpressions("application", exps)
 				Expect(err).ToNot(BeNil())
+			})
+		})
+		When("inequality query against muliple operations", func() {
+			It("should return error", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+					{Operand: "sk", Operator: "startsWith", Value: "Order#"},
+					{Operand: "number", Operator: ">", Value: "1"},
+				}
+				err := kv.ValidateExpressions("application", exps)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(HavePrefix("inequality expressions on multiple properties not supported with Firestore:"))
+			})
+		})
+		When("valid range filter expression", func() {
+			It("expression is valid", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: ">=", Value: "1"},
+					{Operand: "number", Operator: "<=", Value: "2"},
+				}
+				err := kv.ValidateExpressions("application", exps)
+				Expect(err).To(BeNil())
+			})
+		})
+		When("valid range filter expression in reverse order", func() {
+			It("expression is valid", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: "<=", Value: "1"},
+					{Operand: "number", Operator: ">=", Value: "2"},
+				}
+				err := kv.ValidateExpressions("application", exps)
+				Expect(err).To(BeNil())
+			})
+		})
+		When("invalid valid range filter expression", func() {
+			It("should return error", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: ">", Value: "1"},
+					{Operand: "number", Operator: "<=", Value: "2"},
+				}
+				err := kv.ValidateExpressions("application", exps)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(HavePrefix("range expression not supported with DynamoDB"))
 			})
 		})
 	})

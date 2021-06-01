@@ -23,3 +23,6 @@ bin/
 
 # Ignore proto generated interfaces
 interfaces/
+
+# GCP integration testing key
+plugins/kv/firestore/gcp-firestore-testing.json

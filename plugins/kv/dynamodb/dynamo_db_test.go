@@ -29,7 +29,30 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-func createDynamoDB() *dynamodb.DynamoDB {
+func startDynamoProcess() *exec.Cmd {
+	// Start Local DynamoDB
+	args := []string{
+		"-Djava.library.path=/usr/local/dynamodb/DynamoDBLocal_lib",
+		"-jar",
+		"/usr/local/dynamodb/DynamoDBLocal.jar",
+		"-inMemory",
+	}
+	cmd := exec.Command("/usr/bin/java", args[:]...)
+	if err := cmd.Start(); err != nil {
+		panic(fmt.Sprintf("Error starting Local DynamoDB %v : %v", cmd, err))
+	}
+	fmt.Printf("Started Local DynamoDB (PID %v) and loading data...\n", cmd.Process.Pid)
+
+	return cmd
+}
+
+func stopDynamoProcess(cmd *exec.Cmd) {
+	if err := cmd.Process.Kill(); err != nil {
+		fmt.Printf("failed to kill DynamoDB %v : %v \n", cmd.Process.Pid, err)
+	}
+}
+
+func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String("x"),
 		Endpoint: aws.String("http://127.0.0.1:8000"),
@@ -113,13 +136,14 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 	}
 }
 
-// Local DynamoDB process
-var dynaCmd *exec.Cmd
-
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
 
-	db := createDynamoDB()
+	// Start Local DynamoDB
+	dynaCmd := startDynamoProcess()
+
+	// Create DyanmoDB client
+	db := createDynamoClient()
 
 	BeforeEach(func() {
 		createApplicationTable(db)
@@ -132,24 +156,8 @@ var _ = Describe("DynamoDb", func() {
 	})
 
 	AfterSuite(func() {
-		if err := dynaCmd.Process.Kill(); err != nil {
-			fmt.Printf("failed to kill DynamoDB %v : %v \n", dynaCmd.Process.Pid, err)
-		}
+		stopDynamoProcess(dynaCmd)
 	})
-
-	// Start Local DynamoDB
-	args := []string{
-		"-Djava.library.path=/usr/local/dynamodb/DynamoDBLocal_lib",
-		"-jar",
-		"/usr/local/dynamodb/DynamoDBLocal.jar",
-		"-inMemory",
-	}
-	dynaCmd = exec.Command("/usr/bin/java", args[:]...)
-	err := dynaCmd.Start()
-	if err != nil {
-		panic(fmt.Sprintf("Error starting Local DynamoDB %v : %v", dynaCmd, err))
-	}
-	fmt.Printf("Started Local DynamoDB (PID %v) and loading data...\n", dynaCmd.Process.Pid)
 
 	kvPlugin, err := kv_plugin.NewWithClient(db)
 	if err != nil {
@@ -159,50 +167,50 @@ var _ = Describe("DynamoDb", func() {
 	Context("Put", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("", data.UserKey, data.UserItem)
+				err := kvPlugin.Put("", data.UserKey1, data.UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil key", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("users", nil, data.UserItem)
+				err := kvPlugin.Put("users", nil, data.UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil item map", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Put("users", data.UserKey, nil)
+				err := kvPlugin.Put("users", data.UserKey1, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid New Put", func() {
 			It("Should store new item successfully", func() {
-				err := kvPlugin.Put("users", data.UserKey, data.UserItem)
+				err := kvPlugin.Put("users", data.UserKey1, data.UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("users", data.UserKey)
+				doc, err := kvPlugin.Get("users", data.UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(data.UserItem))
+				Expect(doc["email"]).To(BeEquivalentTo(data.UserItem1["email"]))
 			})
 		})
 		When("Valid Update Put", func() {
 			It("Should store new item successfully", func() {
-				err := kvPlugin.Put("users", data.UserKey, data.UserItem)
+				err := kvPlugin.Put("users", data.UserKey1, data.UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("users", data.UserKey)
+				doc, err := kvPlugin.Get("users", data.UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(data.UserItem))
+				Expect(doc["email"]).To(BeEquivalentTo(data.UserItem1["email"]))
 
-				err = kvPlugin.Put("users", data.UserKey, data.UserItem2)
+				err = kvPlugin.Put("users", data.UserKey1, data.UserItem2)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err = kvPlugin.Get("users", data.UserKey)
+				doc, err = kvPlugin.Get("users", data.UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(data.UserItem2))
+				Expect(doc["email"]).To(BeEquivalentTo(data.UserItem2["email"]))
 			})
 		})
 		When("Valid Compound Key Put", func() {
@@ -221,7 +229,7 @@ var _ = Describe("DynamoDb", func() {
 	Context("Get", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				_, err := kvPlugin.Get("", data.UserKey)
+				_, err := kvPlugin.Get("", data.UserKey1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -233,12 +241,12 @@ var _ = Describe("DynamoDb", func() {
 		})
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				kvPlugin.Put("users", data.UserKey, data.UserItem)
+				kvPlugin.Put("users", data.UserKey1, data.UserItem1)
 
-				doc, err := kvPlugin.Get("users", data.UserKey)
+				doc, err := kvPlugin.Get("users", data.UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
-				Expect(doc).To(BeEquivalentTo(data.UserItem))
+				Expect(doc["email"]).To(BeEquivalentTo(data.UserItem1["email"]))
 			})
 		})
 		When("Valid Compound Key Get", func() {
@@ -256,7 +264,7 @@ var _ = Describe("DynamoDb", func() {
 	Context("Delete", func() {
 		When("Blank collection", func() {
 			It("Should return error", func() {
-				err := kvPlugin.Delete("", data.UserKey)
+				err := kvPlugin.Delete("", data.UserKey1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -268,12 +276,12 @@ var _ = Describe("DynamoDb", func() {
 		})
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				kvPlugin.Put("users", data.UserKey, data.UserItem)
+				kvPlugin.Put("users", data.UserKey1, data.UserItem1)
 
-				err := kvPlugin.Delete("users", data.UserKey)
+				err := kvPlugin.Delete("users", data.UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := kvPlugin.Get("users", data.UserKey)
+				doc, err := kvPlugin.Get("users", data.UserKey1)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
@@ -313,6 +321,22 @@ var _ = Describe("DynamoDb", func() {
 				Expect(vals).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(vals).To(HaveLen(0))
+			})
+		})
+		When("Filter users collection", func() {
+			It("Should return 1 item", func() {
+				kvPlugin.Put("users", data.UserKey1, data.UserItem1)
+				kvPlugin.Put("users", data.UserKey2, data.UserItem2)
+				kvPlugin.Put("users", data.UserKey3, data.UserItem3)
+				exps := []sdk.QueryExpression{
+					{Operand: "country", Operator: "==", Value: "US"},
+					{Operand: "age", Operator: ">", Value: "40"},
+				}
+				vals, err := kvPlugin.Query("users", exps, 0)
+				Expect(vals).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(vals).To(HaveLen(1))
+				Expect(vals[0]["email"]).To(BeEquivalentTo(data.UserItem3["email"]))
 			})
 		})
 		When("Empty query (Scan)", func() {
@@ -503,6 +527,70 @@ var _ = Describe("DynamoDb", func() {
 				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
 			})
 		})
+		// Firestore: cant support multiple property inequality operators
+		// When("PK equality and SK startsWith and filter", func() {
+		// 	It("Should return specified items", func() {
+		// 		kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+		// 		kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+		// 		kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+		// 		kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+		// 		kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+		// 		exps := []sdk.QueryExpression{
+		// 			{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+		// 			{Operand: "sk", Operator: "startsWith", Value: "Order#"},
+		// 			{Operand: "number", Operator: ">", Value: "1"},
+		// 			{Operand: "price", Operator: "<", Value: "20"},
+		// 		}
+		// 		vals, err := kvPlugin.Query("application", exps, 0)
+		// 		Expect(vals).ToNot(BeNil())
+		// 		Expect(err).ShouldNot(HaveOccurred())
+		// 		Expect(vals).To(HaveLen(1))
+		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
+		// 	})
+		// })
+		// When("PK equality and SK startsWith and between filter", func() {
+		// 	It("Should return specified items", func() {
+		// 		kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+		// 		kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+		// 		kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+		// 		kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+		// 		kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+		// 		exps := []sdk.QueryExpression{
+		// 			{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+		// 			{Operand: "sk", Operator: "startsWith", Value: "Order#"},
+		// 			{Operand: "number", Operator: ">=", Value: "0"},
+		// 			{Operand: "number", Operator: "<=", Value: "1"},
+		// 		}
+		// 		vals, err := kvPlugin.Query("application", exps, 0)
+		// 		Expect(vals).ToNot(BeNil())
+		// 		Expect(err).ShouldNot(HaveOccurred())
+		// 		Expect(vals).To(HaveLen(1))
+		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+		// 	})
+		// })
+		// When("PK equality and SK startsWith and between filters with reversed order", func() {
+		// 	It("Should return specified items", func() {
+		// 		kvPlugin.Put("application", data.CustomerKey, data.CustomerItem)
+		// 		kvPlugin.Put("application", data.OrderKey1, data.OrderItem1)
+		// 		kvPlugin.Put("application", data.OrderKey2, data.OrderItem2)
+		// 		kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
+		// 		kvPlugin.Put("application", data.ProductKey, data.ProductItem)
+
+		// 		exps := []sdk.QueryExpression{
+		// 			{Operand: "pk", Operator: "==", Value: "Customer#1000"},
+		// 			{Operand: "sk", Operator: "startsWith", Value: "Order#"},
+		// 			{Operand: "number", Operator: "<=", Value: "1"},
+		// 			{Operand: "number", Operator: ">=", Value: "0"},
+		// 		}
+		// 		vals, err := kvPlugin.Query("application", exps, 0)
+		// 		Expect(vals).ToNot(BeNil())
+		// 		Expect(err).ShouldNot(HaveOccurred())
+		// 		Expect(vals).To(HaveLen(1))
+		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+		// 	})
+		// })
 	})
 
 })

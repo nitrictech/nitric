@@ -29,12 +29,12 @@ require (
 	github.com/mitchellh/golicense v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nanobox-io/golang-scribble v0.0.0-20190309225732-aa3e7c118975
-	github.com/onsi/ginkgo v1.16.2
+	github.com/onsi/ginkgo v1.16.3
 	github.com/onsi/gomega v1.10.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/uw-labs/lichen v0.1.3
+	github.com/uw-labs/lichen v0.1.4
 	github.com/valyala/fasthttp v1.23.0
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
@@ -42,10 +42,11 @@ require (
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/tools v0.1.1
+	golang.org/x/tools v0.1.2
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210222152913-aa3ee6e6a81c
 	google.golang.org/grpc v1.35.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.26.0
+	gopkg.in/yaml.v2 v2.4.0
 )

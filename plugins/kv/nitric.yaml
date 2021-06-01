@@ -1,0 +1,17 @@
+name: nitric-website
+
+collections:
+  application:
+    attributes:
+      pk: string
+      sk: string
+      number: string
+      value: string
+    indexes:
+      composite: [ pk , sk ]
+  users:
+    attributes:
+      key: string
+      value: string
+    indexes:
+      unique: key

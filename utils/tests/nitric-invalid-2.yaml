@@ -1,0 +1,11 @@
+name: nitric-website
+
+collections:
+  application:
+    attributes:
+      pk: string
+      sk: string
+      created: string
+      value: string
+    indexes:
+      composite:
