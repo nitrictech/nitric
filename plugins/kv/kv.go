@@ -40,7 +40,7 @@ var Stack utils.NitricStack
 func init() {
 	nitricStack, err := utils.NewStack(utils.DEFAULT_STACK)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Error loading Nitric stack definition: %v", err))
 	}
 	Stack = *nitricStack
 }

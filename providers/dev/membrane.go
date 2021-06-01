@@ -16,8 +16,6 @@ package main
 
 import (
 	"log"
-
-	"log"
 	"os"
 	"os/signal"
 	"syscall"

@@ -20,10 +20,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/sdk"
-
-	"github.com/nitric-dev/membrane/sdk"
-
 	"github.com/nitric-dev/membrane/membrane"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/gateway/ecs"
@@ -31,6 +27,7 @@ import (
 	documents "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
 	queue "github.com/nitric-dev/membrane/plugins/queue/sqs"
 	storage "github.com/nitric-dev/membrane/plugins/storage/s3"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 

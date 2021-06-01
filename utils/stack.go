@@ -23,7 +23,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const DEFAULT_STACK = "nitric.yaml"
+const DEFAULT_STACK = "./nitric.yaml"
 
 // Provides a nitric stack collections definition
 type Collection struct {
