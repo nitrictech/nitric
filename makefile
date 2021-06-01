@@ -172,7 +172,7 @@ dev-docker-static:
 dev-docker: dev-docker-static
 	@echo Built Local Docker Images
 
-do-static:
+do-static: generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/do/membrane.go
 
 do-docker-static:

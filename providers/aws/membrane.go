@@ -16,6 +16,11 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/nitric-dev/membrane/sdk"
 
 	"github.com/nitric-dev/membrane/sdk"
 
@@ -30,6 +35,10 @@ import (
 )
 
 func main() {
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
 	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
 
 	// Load the appropriate gateway based on the environment.
@@ -55,9 +64,13 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the m server: %v", err)
+		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
-	// Start the Membrane server
+	go (func() {
+		<-term
+		m.Stop()
+	})()
+
 	m.Start()
 }

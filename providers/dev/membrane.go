@@ -17,6 +17,11 @@ package main
 import (
 	"log"
 
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/nitric-dev/membrane/membrane"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/dev"
 	gateway "github.com/nitric-dev/membrane/plugins/gateway/dev"
@@ -26,6 +31,11 @@ import (
 )
 
 func main() {
+	// Setup signal interrupt handling for graceful shutdown
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
 	eventingPlugin, _ := eventing.New()
 	gatewayPlugin, _ := gateway.New()
 	kvPlugin, _ := kv.New()
@@ -45,5 +55,12 @@ func main() {
 	}
 
 	// Start the Membrane server
-	m.Start()
+	println("starting server")
+	go (m.Start)()
+
+	println("wait for term signal")
+	// Wait for a terminate interrupt
+	<-term
+	println("stopping server")
+	m.Stop()
 }

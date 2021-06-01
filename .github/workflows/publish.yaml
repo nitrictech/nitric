@@ -1,66 +1,27 @@
-name: Publish Docker images
+name: Create Release
 on:
-  release:
-    types: [published]
+  pull_request:
+    types: [closed]
+    branches:
+      - 'main'
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  version_bump:
+    name: Bump Version and Create Release
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.5
         with:
-          token: ${{secrets.GOLANG_TOKEN}}
-          submodules: recursive
-      - name: Get Tag
-        id: tag
-        run: echo ::set-output name=TAG::$(echo $GITHUB_REF | cut -d / -f 3)
-      # Setup docker build image
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      # Login to dockerhub
-      - name: Login to DockerHub
-        uses: docker/login-action@v1 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create a GitHub release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # Push development image
-      - name: Push Local Static image to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./plugins/dev/dev.dockerfile
-          push: true
-          tags: |
-            nitricimages/membrane-local:latest
-            nitricimages/membrane-local:${{ steps.tag.outputs.TAG }}
-      # Push AWS image
-      - name: Push AWS Static image to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./plugins/aws/aws.dockerfile
-          push: true
-          tags: |
-            nitricimages/membrane-aws:latest
-            nitricimages/membrane-aws:${{ steps.tag.outputs.TAG }}
-      # Push GCP image
-      - name: Push GCP Static image to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./plugins/gcp/gcp.dockerfile
-          push: true
-          tags: |
-            nitricimages/membrane-gcp:latest
-            nitricimages/membrane-gcp:${{ steps.tag.outputs.TAG }}
-      # Push Azure image
-      - name: Push Azure Static image to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./plugins/azure/azure.dockerfile
-          push: true
-          tags: |
-            nitricimages/membrane-azure:latest
-            nitricimages/membrane-azure:${{ steps.tag.outputs.TAG }}
+          draft: true
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+      

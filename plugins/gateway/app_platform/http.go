@@ -27,6 +27,7 @@ import (
 
 type HttpGateway struct {
 	address string
+	server  *fasthttp.Server
 	sdk.UnimplementedGatewayPlugin
 }
 
@@ -39,12 +40,9 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return
 		}
-		// responseBody, _ := ioutil.ReadAll(response.Body)
+
 		if response.Header != nil {
-			// Set headers...
-			response.Header.VisitAll(func(key []byte, val []byte) {
-				ctx.Response.Header.AddBytesKV(key, val)
-			})
+			response.Header.CopyTo(&ctx.Response.Header)
 		}
 
 		// Avoid content length header duplication
@@ -55,9 +53,18 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 }
 
 func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
-	httpError := fasthttp.ListenAndServe(s.address, httpHandler(handler))
+	s.server = &fasthttp.Server{
+		Handler: httpHandler(handler),
+	}
 
-	return httpError
+	return s.server.ListenAndServe(s.address)
+}
+
+func (s *HttpGateway) Stop() error {
+	if s.server != nil {
+		return s.server.Shutdown()
+	}
+	return nil
 }
 
 // Create new HTTP gateway

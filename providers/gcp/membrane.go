@@ -17,6 +17,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nitric-dev/membrane/membrane"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/pubsub"
@@ -27,6 +30,11 @@ import (
 )
 
 func main() {
+	// Setup signal interrupt handling for graceful shutdown
+	term := make(chan os.Signal)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
 	eventingPlugin, err := eventing.New()
 	if err != nil {
 		fmt.Println("Failed to load eventing plugin:", err.Error())
@@ -59,7 +67,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}
-
 	// Start the Membrane server
-	m.Start()
+	go (m.Start)()
+	// Wait for a terminate interrupt
+	<-term
+	m.Stop()
 }
