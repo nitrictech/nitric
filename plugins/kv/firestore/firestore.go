@@ -210,12 +210,12 @@ func New() (sdk.KeyValueService, error) {
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials err: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
 	}
 
 	client, clientError := firestore.NewClient(ctx, credentials.ProjectID)
 	if clientError != nil {
-		return nil, fmt.Errorf("firestore client err: %v", clientError)
+		return nil, fmt.Errorf("firestore client error: %v", clientError)
 	}
 
 	return &FirestoreKVService{
