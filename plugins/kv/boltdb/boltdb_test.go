@@ -20,11 +20,16 @@ import (
 	kv_plugin "github.com/nitric-dev/membrane/plugins/kv/boltdb"
 	data "github.com/nitric-dev/membrane/plugins/kv/test"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("KV", func() {
+
+	os.Setenv(utils.NITRIC_HOME, "../test/")
+	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
+
 	kvPlugin, err := kv_plugin.New()
 	if err != nil {
 		panic(err)

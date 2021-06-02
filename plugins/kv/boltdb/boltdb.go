@@ -95,14 +95,14 @@ func (s *BoltKVService) Put(collection string, key map[string]interface{}, value
 	}
 
 	// Specify any composite indexes for filtering
-	compositeKeys, err := kv.Stack.CollectionIndexesComposite(collection)
+	compositeKeys, err := kv.Stack().CollectionIndexesComposite(collection)
 	if compositeKeys != nil && err == nil {
 		doc.PartionKey = fmt.Sprintf("%v", key[compositeKeys[0]])
 		doc.SortKey = fmt.Sprintf("%v", key[compositeKeys[1]])
 	}
 
 	// Project any collection filter attributes into Doc filter attributes
-	filterAttributes, err := kv.Stack.CollectionFilterAttributes(collection)
+	filterAttributes, err := kv.Stack().CollectionFilterAttributes(collection)
 	if filterAttributes != nil && err == nil {
 		for i, name := range filterAttributes {
 			valueStr := fmt.Sprintf("%v", value[name])
@@ -161,9 +161,9 @@ func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpressi
 	// Build up chain of expression matchers
 	matchers := []q.Matcher{}
 
-	uniqueKeyName, _ := kv.Stack.CollectionIndexesUnique(collection)
-	compositeKeyNames, _ := kv.Stack.CollectionIndexesComposite(collection)
-	filterNames, _ := kv.Stack.CollectionFilterAttributes(collection)
+	uniqueKeyName, _ := kv.Stack().CollectionIndexesUnique(collection)
+	compositeKeyNames, _ := kv.Stack().CollectionIndexesComposite(collection)
+	filterNames, _ := kv.Stack().CollectionFilterAttributes(collection)
 
 	for _, exp := range expressions {
 		operand := ""

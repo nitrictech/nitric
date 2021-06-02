@@ -142,7 +142,7 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 	}
 
 	if len(expressions) > 0 {
-		indexes, _ := kv.Stack.CollectionIndexes(collection)
+		indexes, _ := kv.Stack().CollectionIndexes(collection)
 
 		query := s.client.Collection(collection).Offset(0)
 

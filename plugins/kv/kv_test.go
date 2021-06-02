@@ -15,10 +15,12 @@ package kv_test
 
 import (
 	"errors"
+	"os"
 	"sort"
 
 	"github.com/nitric-dev/membrane/plugins/kv"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,6 +28,9 @@ import (
 // Function Test Cases
 
 var _ = Describe("KeyValue Plugin", func() {
+
+	os.Setenv(utils.NITRIC_HOME, "test/")
+	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	When("ValidateCollection", func() {
 		When("Blank collection", func() {

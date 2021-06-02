@@ -16,11 +16,13 @@ package dynamodb_service_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	kv_plugin "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
 	data "github.com/nitric-dev/membrane/plugins/kv/test"
 	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -138,6 +140,9 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
+
+	os.Setenv(utils.NITRIC_HOME, "../test/")
+	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	// Start Local DynamoDB
 	dynaCmd := startDynamoProcess()

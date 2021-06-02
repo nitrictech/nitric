@@ -1,25 +1,49 @@
 package utils_test
 
 import (
+	"os"
+
 	"github.com/nitric-dev/membrane/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 // Function Test Cases
-const YAML_INVALID_1 = "tests/nitric-invalid-1.yaml"
-const YAML_INVALID_2 = "tests/nitric-invalid-2.yaml"
-const YAML_INVALID_3 = "tests/nitric-invalid-3.yaml"
-const YAML_VALID = "tests/nitric-valid.yaml"
+const YAML_INVALID_1 = "test/nitric-invalid-1.yaml"
+const YAML_INVALID_2 = "test/nitric-invalid-2.yaml"
+const YAML_INVALID_3 = "test/nitric-invalid-3.yaml"
+const YAML_VALID = "test/nitric-valid.yaml"
 
 var _ = Describe("Utils", func() {
 	defer GinkgoRecover()
 
-	Context("New", func() {
+	Context("NewStack", func() {
 		When("Valid stack definition", func() {
 			It("Should return new stack", func() {
 				stack, err := utils.NewStack(YAML_VALID)
 				Expect(stack).ToNot(BeNil())
+				Expect(err).To(BeNil())
+				Expect(stack.Collections).To(HaveLen(4))
+			})
+		})
+		When("Configured default 'orders' collection", func() {
+			It("Should have default attributes and indexes", func() {
+				stack, _ := utils.NewStack(YAML_VALID)
+
+				indexes, err := stack.CollectionIndexes("orders")
+				Expect(indexes).To(BeEquivalentTo([]string{"key"}))
+				Expect(err).To(BeNil())
+
+				indexes, err = stack.CollectionIndexesComposite("orders")
+				Expect(indexes).To(BeNil())
+				Expect(err).ToNot(BeNil())
+
+				key, err := stack.CollectionIndexesUnique("orders")
+				Expect(key).To(BeEquivalentTo("key"))
+				Expect(err).To(BeNil())
+
+				attributes, err := stack.CollectionAttributes("orders")
+				Expect(attributes).To(BeEquivalentTo([]string{"key", "value"}))
 				Expect(err).To(BeNil())
 			})
 		})
@@ -164,6 +188,25 @@ var _ = Describe("Utils", func() {
 				names, err := stack.CollectionIndexesComposite("unknown")
 				Expect(names).To(BeNil())
 				Expect(err).ToNot(BeNil())
+			})
+		})
+	})
+	Context("NewStackDefault", func() {
+		When("default not available", func() {
+			It("Should return error", func() {
+				stack, err := utils.NewStackDefault()
+				Expect(stack).To(BeNil())
+				Expect(err).ToNot(BeNil())
+			})
+		})
+		When("environment variable configured", func() {
+			It("Should return new stack", func() {
+				os.Setenv(utils.NITRIC_HOME, "test/")
+				os.Setenv(utils.NITRIC_YAML, "nitric-valid.yaml")
+				stack, err := utils.NewStackDefault()
+				Expect(stack).ToNot(BeNil())
+				Expect(err).To(BeNil())
+				Expect(stack.Collections).To(HaveLen(4))
 			})
 		})
 	})

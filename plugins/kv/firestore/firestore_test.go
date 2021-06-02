@@ -71,6 +71,9 @@ func createFirestoreClient(ctx context.Context) *firestore.Client {
 var _ = Describe("Firestore", func() {
 	defer GinkgoRecover()
 
+	os.Setenv(utils.NITRIC_HOME, "../test/")
+	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
+
 	// Start Firestore Emulator
 	firestoreCmd := startFirestoreProcess()
 

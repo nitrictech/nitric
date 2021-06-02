@@ -23,7 +23,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const DEFAULT_STACK = "./nitric.yaml"
+// NITRIC_HOME directory environment variable name, default value:  .nitric/
+const NITRIC_HOME = "NITRIC_HOME"
+
+// NITRIC_YAML filename environment variable name, default value: nitric.yaml
+const NITRIC_YAML = "NITRIC_YAML"
 
 // Provides a nitric stack collections definition
 type Collection struct {
@@ -140,6 +144,18 @@ func (s NitricStack) CollectionFilterAttributes(colName string) ([]string, error
 	return names, nil
 }
 
+// Create a Nitric Stack definition with default path
+func NewStackDefault() (*NitricStack, error) {
+	// Determine path
+	filePath := GetEnv("NITRIC_HOME", ".nitric/") + GetEnv("NITRIC_YAML", "nitric.yaml")
+
+	nitricStack, err := NewStack(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return nitricStack, nil
+}
+
 // Create a new Nitric Stack definition
 func NewStack(filename string) (*NitricStack, error) {
 	if filename == "" {
@@ -158,70 +174,21 @@ func NewStack(filename string) (*NitricStack, error) {
 		return nil, err
 	}
 
-	// Validate collections
+	// Configure default collection attributes and indexes
 	for colName, collection := range stack.Collections {
-
-		// Ensure indexes defined
-		if len(collection.Attributes) > 0 && len(collection.Indexes) == 0 {
-			return nil, fmt.Errorf("%s collections: %v: has no indexes:", stack.Name, colName)
+		if collection.Attributes == nil && collection.Indexes == nil {
+			collection.Attributes = make(map[string]interface{})
+			collection.Attributes["key"] = "string"
+			collection.Attributes["value"] = "string"
+			collection.Indexes = make(map[string]interface{})
+			collection.Indexes["unique"] = "key"
+			stack.Collections[colName] = collection
 		}
-		// Ensure attributes defined
-		if len(collection.Attributes) == 0 && len(collection.Indexes) > 0 {
-			return nil, fmt.Errorf("%s collections: %v: has no attributes:", stack.Name, colName)
-		}
-		if len(collection.Attributes) == 1 {
-			return nil, fmt.Errorf("%s collections: %v: requires 2 or more attributes", stack.Name, colName)
-		}
-		if len(collection.Attributes) > 0 && !hasAttribute("value", collection.Attributes) {
-			return nil, fmt.Errorf("%s collections: %v: requires a value: attribute", stack.Name, colName)
-		}
+	}
 
-		for attName, value := range collection.Attributes {
-			if value != "string" {
-				return nil, fmt.Errorf("%s collections: %v: attributes: %v: %v is not supported, use string", stack.Name, colName, attName, value)
-			}
-		}
-
-		// Ensure index names are valid
-		for idxName, value := range collection.Indexes {
-			if idxName != "unique" && idxName != "composite" {
-				return nil, fmt.Errorf("%s collections: %v: indexes: %v: is invalid, use unique: or composite:", stack.Name, colName, idxName)
-			}
-			// Ensure index is a defined attribute
-			valueKind := reflect.ValueOf(value).Kind()
-
-			if valueKind == reflect.String {
-				if idxName == "composite" {
-					return nil, fmt.Errorf("%s collections: %v: indexes: %v: requires 2 values", stack.Name, colName, idxName)
-				}
-				if !hasAttribute(value, collection.Attributes) {
-					return nil, fmt.Errorf("%s collections: %v: indexes: %v: %v has no matching collection attribute", stack.Name, colName, idxName, value)
-				}
-
-			} else if valueKind == reflect.Slice {
-				if idxName == "unique" {
-					return nil, fmt.Errorf("%s collections: %v: indexes: %v: does not support composite values %v", stack.Name, colName, idxName, value)
-				}
-
-				values := marshalInterfaceSlice(value)
-
-				if len(values) != 2 {
-					return nil, fmt.Errorf("%s collections: %v: indexes: %v: requires 2 values %v", stack.Name, colName, idxName, value)
-				}
-
-				for _, v := range values {
-					if !hasAttribute(v, collection.Attributes) {
-						return nil, fmt.Errorf("%s collections: %v: indexes: %v: %v has no matching collection attribute", stack.Name, colName, idxName, value)
-					}
-				}
-
-			} else if value == nil {
-				return nil, fmt.Errorf("%s collections: %v: indexes: %v: not defined", stack.Name, colName, idxName)
-
-			} else {
-				return nil, fmt.Errorf("%s collections: %v: indexes: %v: %T invalid", stack.Name, colName, idxName, value)
-			}
-		}
+	err = validateCollections(stack)
+	if err != nil {
+		return nil, err
 	}
 
 	return &stack, nil
@@ -255,4 +222,75 @@ func marshalInterfaceSlice(value interface{}) []string {
 	}
 
 	return strings
+}
+
+func validateCollections(stack NitricStack) error {
+
+	// Validate collections
+	for colName, collection := range stack.Collections {
+
+		// Ensure indexes defined
+		if len(collection.Attributes) > 0 && len(collection.Indexes) == 0 {
+			return fmt.Errorf("%s collections: %v: has no indexes:", stack.Name, colName)
+		}
+		// Ensure attributes defined
+		if len(collection.Attributes) == 0 && len(collection.Indexes) > 0 {
+			return fmt.Errorf("%s collections: %v: has no attributes:", stack.Name, colName)
+		}
+		if len(collection.Attributes) == 1 {
+			return fmt.Errorf("%s collections: %v: requires 2 or more attributes", stack.Name, colName)
+		}
+		if len(collection.Attributes) > 0 && !hasAttribute("value", collection.Attributes) {
+			return fmt.Errorf("%s collections: %v: requires a value: attribute", stack.Name, colName)
+		}
+
+		for attName, value := range collection.Attributes {
+			if value != "string" {
+				return fmt.Errorf("%s collections: %v: attributes: %v: %v is not supported, use string", stack.Name, colName, attName, value)
+			}
+		}
+
+		// Ensure index names are valid
+		for idxName, value := range collection.Indexes {
+			if idxName != "unique" && idxName != "composite" {
+				return fmt.Errorf("%s collections: %v: indexes: %v: is invalid, use unique: or composite:", stack.Name, colName, idxName)
+			}
+			// Ensure index is a defined attribute
+			valueKind := reflect.ValueOf(value).Kind()
+
+			if valueKind == reflect.String {
+				if idxName == "composite" {
+					return fmt.Errorf("%s collections: %v: indexes: %v: requires 2 values", stack.Name, colName, idxName)
+				}
+				if !hasAttribute(value, collection.Attributes) {
+					return fmt.Errorf("%s collections: %v: indexes: %v: %v has no matching collection attribute", stack.Name, colName, idxName, value)
+				}
+
+			} else if valueKind == reflect.Slice {
+				if idxName == "unique" {
+					return fmt.Errorf("%s collections: %v: indexes: %v: does not support composite values %v", stack.Name, colName, idxName, value)
+				}
+
+				values := marshalInterfaceSlice(value)
+
+				if len(values) != 2 {
+					return fmt.Errorf("%s collections: %v: indexes: %v: requires 2 values %v", stack.Name, colName, idxName, value)
+				}
+
+				for _, v := range values {
+					if !hasAttribute(v, collection.Attributes) {
+						return fmt.Errorf("%s collections: %v: indexes: %v: %v has no matching collection attribute", stack.Name, colName, idxName, value)
+					}
+				}
+
+			} else if value == nil {
+				return fmt.Errorf("%s collections: %v: indexes: %v: not defined", stack.Name, colName, idxName)
+
+			} else {
+				return fmt.Errorf("%s collections: %v: indexes: %v: %T invalid", stack.Name, colName, idxName, value)
+			}
+		}
+	}
+
+	return nil
 }

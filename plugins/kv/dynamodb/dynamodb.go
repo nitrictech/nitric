@@ -81,7 +81,7 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 	itemMap := copy(key)
 
 	// Project any collection filter attributes into Doc filter attributes
-	filterAttributes, err := kv.Stack.CollectionFilterAttributes(collection)
+	filterAttributes, err := kv.Stack().CollectionFilterAttributes(collection)
 	if filterAttributes != nil && err == nil {
 		for _, name := range filterAttributes {
 			if _, found := value[name]; found {
@@ -319,7 +319,7 @@ func isQueryOperation(collection string, exps []sdk.QueryExpression) bool {
 		return false
 	}
 
-	indexes, _ := kv.Stack.CollectionIndexes(collection)
+	indexes, _ := kv.Stack().CollectionIndexes(collection)
 	for _, exp := range exps {
 		if utils.IndexOf(indexes, exp.Operand) != -1 {
 			return true
@@ -330,7 +330,7 @@ func isQueryOperation(collection string, exps []sdk.QueryExpression) bool {
 }
 
 func createKeyExpression(collection string, expressions []sdk.QueryExpression) string {
-	indexAttributes, _ := kv.Stack.CollectionIndexes(collection)
+	indexAttributes, _ := kv.Stack().CollectionIndexes(collection)
 
 	keyExp := ""
 	for i, exp := range expressions {
@@ -354,7 +354,7 @@ func createKeyExpression(collection string, expressions []sdk.QueryExpression) s
 }
 
 func createFilterExpression(collection string, expressions []sdk.QueryExpression) string {
-	filterAttributes, _ := kv.Stack.CollectionFilterAttributes(collection)
+	filterAttributes, _ := kv.Stack().CollectionFilterAttributes(collection)
 
 	keyExp := ""
 	for i, exp := range expressions {
