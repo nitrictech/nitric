@@ -29,7 +29,7 @@ jobs:
       with:
         aws-access-key-id: fakeMyKeyId
         aws-secret-access-key: fakeSecretAccessKey
-        aws-region: x
+        aws-region: ap-southeast-2
     - name: Check Source License Headers
       run: make license-header-check
     - name: Run Tests
