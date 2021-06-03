@@ -24,6 +24,12 @@ jobs:
         distribution: 'adopt'
     - name: Install integration testing tools
       run: make install-test-tools
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: fakeMyKeyId
+        aws-secret-access-key: fakeSecretAccessKey
+        aws-region: x
     - name: Check Source License Headers
       run: make license-header-check
     - name: Run Tests
