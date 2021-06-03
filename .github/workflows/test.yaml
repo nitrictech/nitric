@@ -22,8 +22,10 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
-    - name: Install integration testing tools
+    - name: Setup local DynamoDB
       run: make install-test-tools
+    - name: Setup Cloud SDK and local Firestore
+      uses: google-github-actions/setup-gcloud@master
     - name: Check Source License Headers
       run: make license-header-check
     - name: Run Tests
