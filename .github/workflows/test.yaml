@@ -24,8 +24,10 @@ jobs:
         distribution: 'adopt'
     - name: Setup local DynamoDB
       run: make install-test-tools
-    - name: Setup Cloud SDK and local Firestore
-      uses: google-github-actions/setup-gcloud@master
+    # - name: Setup Cloud SDK and local Firestore
+    #   uses: google-github-actions/setup-gcloud@master
+    - name: Setup Google Cloud SDK
+      uses: mathieu-bour/setup-gcloud@1.3.0    
     - name: Check Source License Headers
       run: make license-header-check
     - name: Run Tests
