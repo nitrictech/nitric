@@ -141,8 +141,9 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
 
-	os.Setenv(utils.NITRIC_HOME, "../test/")
-	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
+	os.Setenv("AWS_ACCESS_KEY_ID", "fakeMyKeyId")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "fakeSecretAccessKey")
+	os.Setenv("AWS_REGION", "X")
 
 	// Start Local DynamoDB
 	dynaCmd := startDynamoProcess()
@@ -163,6 +164,9 @@ var _ = Describe("DynamoDb", func() {
 	AfterSuite(func() {
 		stopDynamoProcess(dynaCmd)
 	})
+
+	os.Setenv(utils.NITRIC_HOME, "../test/")
+	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	kvPlugin, err := kv_plugin.NewWithClient(db)
 	if err != nil {
