@@ -9,14 +9,15 @@ collections:
       value: string
     indexes:
       composite: [ pk , sk ]
-  users:
+  events:
     attributes:
-      key: string
+      pk: string
+      sk: number
       value: string
     indexes:
-      unique: key
+      composite: [ pk , sk ]
   orders: ~
-  books:
+  users:
     attributes:
       key: string
       value: string

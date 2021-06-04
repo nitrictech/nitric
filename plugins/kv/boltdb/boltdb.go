@@ -35,6 +35,8 @@ type BoltKVService struct {
 	dbDir string
 }
 
+// Note BoltDock has strings for Keys and Attributes which may lead to number sorting issues
+
 type BoltDoc struct {
 	Key        string `storm:"id"`
 	PartionKey string `storm:"index"`

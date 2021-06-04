@@ -149,6 +149,17 @@ var _ = Describe("Firestore", func() {
 				Expect(doc).To(BeEquivalentTo(data.OrderItem1))
 			})
 		})
+		When("Valid Mixed Types Put", func() {
+			It("Should store item successfully", func() {
+				err := kvPlugin.Put("events", data.EventKey1, data.EventItem1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := kvPlugin.Get("events", data.EventKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc["block"]).To(BeEquivalentTo(12))
+			})
+		})
 	})
 
 	Context("Get", func() {
@@ -219,6 +230,18 @@ var _ = Describe("Firestore", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := kvPlugin.Get("application", data.OrderKey1)
+				Expect(doc).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+		When("Valid Mixed Key Type Delete", func() {
+			It("Should delete item successfully", func() {
+				kvPlugin.Put("events", data.EventKey1, data.EventItem1)
+
+				err := kvPlugin.Delete("events", data.EventKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := kvPlugin.Get("events", data.EventKey1)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})

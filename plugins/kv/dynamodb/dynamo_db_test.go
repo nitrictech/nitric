@@ -99,6 +99,42 @@ func createApplicationTable(db *dynamodb.DynamoDB) {
 	}
 }
 
+func createEventsTable(db *dynamodb.DynamoDB) {
+	tableName := "events"
+
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("pk"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("sk"),
+				AttributeType: aws.String("N"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("pk"),
+				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("sk"),
+				KeyType:       aws.String("RANGE"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(10),
+			WriteCapacityUnits: aws.Int64(10),
+		},
+		TableName: aws.String(tableName),
+	}
+	_, err := db.CreateTable(input)
+	if err != nil {
+		panic(fmt.Sprintf("Error calling CreateTable: %s", err))
+	}
+}
+
 func createUsersTable(db *dynamodb.DynamoDB) {
 	tableName := "users"
 
@@ -153,11 +189,13 @@ var _ = Describe("DynamoDb", func() {
 
 	BeforeEach(func() {
 		createApplicationTable(db)
+		createEventsTable(db)
 		createUsersTable(db)
 	})
 
 	AfterEach(func() {
 		deleteTable(db, "application")
+		deleteTable(db, "events")
 		deleteTable(db, "users")
 	})
 
@@ -233,6 +271,17 @@ var _ = Describe("DynamoDb", func() {
 				Expect(doc).To(BeEquivalentTo(data.OrderItem1))
 			})
 		})
+		When("Valid Mixed Types Put", func() {
+			It("Should store item successfully", func() {
+				err := kvPlugin.Put("events", data.EventKey1, data.EventItem1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := kvPlugin.Get("events", data.EventKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc["block"]).To(BeEquivalentTo(12))
+			})
+		})
 	})
 
 	Context("Get", func() {
@@ -303,6 +352,18 @@ var _ = Describe("DynamoDb", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := kvPlugin.Get("application", data.OrderKey1)
+				Expect(doc).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+		When("Valid Mixed Key Type Delete", func() {
+			It("Should delete item successfully", func() {
+				kvPlugin.Put("events", data.EventKey1, data.EventItem1)
+
+				err := kvPlugin.Delete("events", data.EventKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := kvPlugin.Get("events", data.EventKey1)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})

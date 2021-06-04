@@ -10,6 +10,13 @@ collections:
       value: string
     indexes:
       composite: [ pk , sk ]
+  events:
+    attributes:
+      pk: string
+      sk: number
+      value: string
+    indexes:
+      composite: [ pk , sk ]
   users:
     attributes:
       key: string

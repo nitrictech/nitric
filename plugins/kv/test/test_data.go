@@ -46,6 +46,19 @@ var UserItem3 = map[string]interface{}{
 	"age":       "50",
 }
 
+// Mixed key type (string, number) test data
+var EventKey1 = map[string]interface{}{
+	"pk": "Sensor-A",
+	"sk": 1,
+}
+var EventItem1 = map[string]interface{}{
+	"id":        "A",
+	"type":      "Sensor",
+	"block":     12,
+	"message":   "init",
+	"timestamp": "2021-06-04T10:53:41",
+}
+
 // Single Table Design 'application' collection test data
 
 var CustomerKey = map[string]interface{}{

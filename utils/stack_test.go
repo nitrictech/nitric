@@ -23,10 +23,11 @@ import (
 )
 
 // Function Test Cases
+const YAML_VALID = "test/nitric-valid.yaml"
 const YAML_INVALID_1 = "test/nitric-invalid-1.yaml"
 const YAML_INVALID_2 = "test/nitric-invalid-2.yaml"
 const YAML_INVALID_3 = "test/nitric-invalid-3.yaml"
-const YAML_VALID = "test/nitric-valid.yaml"
+const YAML_INVALID_4 = "test/nitric-invalid-4.yaml"
 
 var _ = Describe("Utils", func() {
 	defer GinkgoRecover()
@@ -83,6 +84,14 @@ var _ = Describe("Utils", func() {
 				Expect(stack).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: users: indexes: unique: unknown has no matching collection attribute"))
+			})
+		})
+		When("Invalid stack definition", func() {
+			It("Should return error", func() {
+				stack, err := utils.NewStack(YAML_INVALID_4)
+				Expect(stack).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: users: attributes: value: float is not supported, use string or number"))
 			})
 		})
 	})

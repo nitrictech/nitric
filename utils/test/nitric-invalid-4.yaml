@@ -1,0 +1,9 @@
+name: nitric-website
+
+collections:
+  users:
+    attributes:
+      key: string
+      value: float
+    indexes:
+      unique: unknown

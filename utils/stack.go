@@ -245,8 +245,8 @@ func validateCollections(stack NitricStack) error {
 		}
 
 		for attName, value := range collection.Attributes {
-			if value != "string" {
-				return fmt.Errorf("%s collections: %v: attributes: %v: %v is not supported, use string", stack.Name, colName, attName, value)
+			if value != "string" && value != "number" {
+				return fmt.Errorf("%s collections: %v: attributes: %v: %v is not supported, use string or number", stack.Name, colName, attName, value)
 			}
 		}
 
