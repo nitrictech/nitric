@@ -20,7 +20,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/onsi/ginkgo v1.16.3
+	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.10.1
 	github.com/uw-labs/lichen v0.1.4
 	github.com/valyala/fasthttp v1.23.0

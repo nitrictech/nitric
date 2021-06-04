@@ -81,7 +81,11 @@ func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, v
 	itemMap := copy(key)
 
 	// Project any collection filter attributes into Doc filter attributes
-	filterAttributes, err := kv.Stack().CollectionFilterAttributes(collection)
+	stack, err := kv.Stack()
+	if err != nil {
+		return err
+	}
+	filterAttributes, err := stack.CollectionFilterAttributes(collection)
 	if filterAttributes != nil && err == nil {
 		for _, name := range filterAttributes {
 			if _, found := value[name]; found {
@@ -187,11 +191,16 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		return nil, err
 	}
 
+	stack, err := kv.Stack()
+	if err != nil {
+		return nil, err
+	}
+
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(kv.ExpsSort(expressions))
 
 	// If expressions perform a query
-	if isQueryOperation(collection, expressions) {
+	if isQueryOperation(collection, expressions, stack) {
 
 		input := &dynamodb.QueryInput{
 			TableName:            aws.String(collection),
@@ -199,11 +208,11 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		}
 
 		// Configure KeyConditionExpression
-		keyExp := createKeyExpression(collection, expressions)
+		keyExp := createKeyExpression(collection, expressions, stack)
 		input.KeyConditionExpression = aws.String(keyExp)
 
 		// Configure FilterExpression
-		filterExp := createFilterExpression(collection, expressions)
+		filterExp := createFilterExpression(collection, expressions, stack)
 		if filterExp != "" {
 			input.FilterExpression = aws.String(filterExp)
 		}
@@ -247,7 +256,7 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 			ProjectionExpression: aws.String("#value"),
 		}
 
-		filterExp := createFilterExpression(collection, expressions)
+		filterExp := createFilterExpression(collection, expressions, stack)
 		if filterExp != "" {
 			// Configure FilterExpression
 			input.FilterExpression = aws.String(filterExp)
@@ -314,12 +323,12 @@ func NewWithClient(client *dynamodb.DynamoDB) (sdk.KeyValueService, error) {
 
 // Return true if should perform a query operation against keys or false
 // if should perform a Dynamodb scan operation
-func isQueryOperation(collection string, exps []sdk.QueryExpression) bool {
+func isQueryOperation(collection string, exps []sdk.QueryExpression, stack *utils.NitricStack) bool {
 	if len(exps) == 0 {
 		return false
 	}
 
-	indexes, _ := kv.Stack().CollectionIndexes(collection)
+	indexes, _ := stack.CollectionIndexes(collection)
 	for _, exp := range exps {
 		if utils.IndexOf(indexes, exp.Operand) != -1 {
 			return true
@@ -329,8 +338,8 @@ func isQueryOperation(collection string, exps []sdk.QueryExpression) bool {
 	return false
 }
 
-func createKeyExpression(collection string, expressions []sdk.QueryExpression) string {
-	indexAttributes, _ := kv.Stack().CollectionIndexes(collection)
+func createKeyExpression(collection string, expressions []sdk.QueryExpression, stack *utils.NitricStack) string {
+	indexAttributes, _ := stack.CollectionIndexes(collection)
 
 	keyExp := ""
 	for i, exp := range expressions {
@@ -353,8 +362,8 @@ func createKeyExpression(collection string, expressions []sdk.QueryExpression) s
 	return keyExp
 }
 
-func createFilterExpression(collection string, expressions []sdk.QueryExpression) string {
-	filterAttributes, _ := kv.Stack().CollectionFilterAttributes(collection)
+func createFilterExpression(collection string, expressions []sdk.QueryExpression, stack *utils.NitricStack) string {
+	filterAttributes, _ := stack.CollectionFilterAttributes(collection)
 
 	keyExp := ""
 	for i, exp := range expressions {

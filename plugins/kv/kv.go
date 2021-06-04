@@ -36,15 +36,15 @@ var validOperators = map[string]bool{
 
 var stack *utils.NitricStack
 
-func Stack() utils.NitricStack {
+func Stack() (*utils.NitricStack, error) {
 	if stack == nil {
 		nitricStack, err := utils.NewStackDefault()
 		if err != nil {
-			panic(fmt.Sprintf("Error loading Nitric stack definition: %v", err))
+			return nil, fmt.Errorf("Error loading Nitric stack definition: %v", err)
 		}
 		stack = nitricStack
 	}
-	return *stack
+	return stack, nil
 }
 
 // Validate the collection name
@@ -52,8 +52,12 @@ func ValidateCollection(collection string) error {
 	if collection == "" {
 		return fmt.Errorf("provide non-blank collection")
 	}
-	if !Stack().HasCollection(collection) {
-		return fmt.Errorf("%v collections: %v: not found", Stack().Name, collection)
+	stack, err := Stack()
+	if err != nil {
+		return err
+	}
+	if !stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", stack.Name, collection)
 	}
 	return nil
 }
@@ -123,15 +127,19 @@ func GetEndRangeValue(value string) string {
 
 // Validate the provided query expressions
 func ValidateExpressions(collection string, expressions []sdk.QueryExpression) error {
-	if !Stack().HasCollection(collection) {
-		return fmt.Errorf("%v collections: %v: not found", Stack().Name, collection)
+	stack, err := Stack()
+	if err != nil {
+		return err
+	}
+	if !stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", stack.Name, collection)
 	}
 
 	if expressions == nil {
 		return errors.New("provide non-nil query expressions")
 	}
 
-	attributes, err := Stack().CollectionAttributes(collection)
+	attributes, err := stack.CollectionAttributes(collection)
 	if err != nil {
 		return err
 	}
@@ -140,8 +148,8 @@ func ValidateExpressions(collection string, expressions []sdk.QueryExpression) e
 
 	for _, exp := range expressions {
 		if utils.IndexOf(attributes, exp.Operand) == -1 {
-			attributes, _ := Stack().CollectionAttributes(collection)
-			return fmt.Errorf("query expression '%v' operand not found in %v collections: %v: attributes: %v", exp.Operand, Stack().Name, collection, attributes)
+			attributes, _ := stack.CollectionAttributes(collection)
+			return fmt.Errorf("query expression '%v' operand not found in %v collections: %v: attributes: %v", exp.Operand, stack.Name, collection, attributes)
 		}
 		if exp.Operand == "value" {
 			return fmt.Errorf("query expression 'value' operand is not indexed: %v", exp)
@@ -154,7 +162,7 @@ func ValidateExpressions(collection string, expressions []sdk.QueryExpression) e
 		}
 
 		// Ensure key expressions are valid
-		keys, err := Stack().CollectionIndexes(collection)
+		keys, err := stack.CollectionIndexes(collection)
 		if err != nil {
 			return err
 		}
@@ -189,8 +197,13 @@ func ValidateExpressions(collection string, expressions []sdk.QueryExpression) e
 
 // Validate the provided key map
 func ValidateKeyMap(collection string, key map[string]interface{}) error {
-	if !Stack().HasCollection(collection) {
-		return fmt.Errorf("%v collections: %v: not found", Stack().Name, collection)
+	stack, err := Stack()
+	if err != nil {
+		return err
+	}
+
+	if !stack.HasCollection(collection) {
+		return fmt.Errorf("%v collections: %v: not found", stack.Name, collection)
 	}
 
 	// Get key
@@ -205,14 +218,14 @@ func ValidateKeyMap(collection string, key map[string]interface{}) error {
 	}
 
 	// Validate names and values
-	indexes, err := Stack().CollectionIndexes(collection)
+	indexes, err := stack.CollectionIndexes(collection)
 	if err != nil {
 		return err
 	}
 
 	for name, value := range key {
 		if utils.IndexOf(indexes, name) == -1 {
-			return fmt.Errorf("%v collections: %v: indexes: key '%s' not found", Stack().Name, collection, name)
+			return fmt.Errorf("%v collections: %v: indexes: key '%s' not found", stack.Name, collection, name)
 		}
 
 		if value == "" {
