@@ -28,6 +28,8 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+const idTokenName = "id"
+
 type FirestoreKVService struct {
 	client  *firestore.Client
 	context context.Context
@@ -74,7 +76,7 @@ func (s *FirestoreKVService) Get(collection string, key map[string]interface{}) 
 	value, err := s.client.Collection(collection).Doc(keyValue).Get(s.context)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving value: %v", err)
+		return nil, fmt.Errorf("error retrieving value: %v", err)
 	}
 
 	results := stripMapKeys(value.Data())
@@ -104,7 +106,7 @@ func (s *FirestoreKVService) Put(collection string, key map[string]interface{}, 
 	_, err = s.client.Collection(collection).Doc(keyValue).Set(s.context, value)
 
 	if err != nil {
-		return fmt.Errorf("Error updating value: %v", err)
+		return fmt.Errorf("error updating value: %v", err)
 	}
 
 	return nil
@@ -125,13 +127,13 @@ func (s *FirestoreKVService) Delete(collection string, key map[string]interface{
 	_, err = s.client.Collection(collection).Doc(keyValue).Delete(s.context)
 
 	if err != nil {
-		return fmt.Errorf("Error deleting value: %v", err)
+		return fmt.Errorf("error deleting value: %v", err)
 	}
 
 	return nil
 }
 
-func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]interface{}) (*sdk.QueryResult, error) {
 	err := kv.ValidateCollection(collection)
 	if err != nil {
 		return nil, err
@@ -141,6 +143,9 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 		return nil, err
 	}
 
+	results := make([]map[string]interface{}, 0)
+	var resultPagingToken map[string]interface{}
+
 	if len(expressions) > 0 {
 		stack, err := kv.Stack()
 		if err != nil {
@@ -149,6 +154,8 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 		indexes, _ := stack.CollectionIndexes(collection)
 
 		query := s.client.Collection(collection).Offset(0)
+
+		appliedOrderBy := false
 
 		for _, exp := range expressions {
 			// If operand is key/index then prefix with "_"
@@ -163,15 +170,24 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 			} else {
 				query = query.Where(expOperand, exp.Operator, exp.Value)
 			}
+
+			if exp.Operator != "==" && limit > 0 && !appliedOrderBy {
+				query = query.OrderBy(expOperand, firestore.Asc)
+				appliedOrderBy = true
+			}
 		}
 
 		if limit > 0 {
 			query = query.Limit(limit)
+
+			if len(pagingToken) > 0 {
+				if id, found := pagingToken[idTokenName]; found {
+					query = query.StartAfter(id)
+				}
+			}
 		}
 
 		itr := query.Documents(s.context)
-
-		results := make([]map[string]interface{}, 0)
 
 		for {
 			docSnp, err := itr.Next()
@@ -179,18 +195,32 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 				break
 			}
 			if err != nil {
-				return nil, fmt.Errorf("Error querying value: %v", err)
+				return nil, fmt.Errorf("error querying value: %v", err)
 			}
 			value := stripMapKeys(docSnp.Data())
 			results = append(results, value)
+
+			// If query limit configured determine continue token
+			if limit > 0 && len(results) == limit {
+				resultPagingToken = make(map[string]interface{})
+				resultPagingToken[idTokenName] = docSnp.Ref.ID
+			}
 		}
 
-		return results, nil
-
 	} else {
-		iter := s.client.Collection(collection).Documents(s.context)
+		query := s.client.Collection(collection).Offset(0)
 
-		results := make([]map[string]interface{}, 0)
+		if limit > 0 {
+			if len(pagingToken) > 0 {
+				if id, found := pagingToken[idTokenName]; found {
+					query = query.StartAfter(id)
+				}
+			}
+		}
+
+		query = query.OrderBy(firestore.DocumentID, firestore.Asc)
+
+		iter := query.Documents(s.context)
 
 		for {
 			docSnp, err := iter.Next()
@@ -203,10 +233,19 @@ func (s *FirestoreKVService) Query(collection string, expressions []sdk.QueryExp
 			}
 			value := stripMapKeys(docSnp.Data())
 			results = append(results, value)
-		}
 
-		return results, nil
+			// If query limit configured determine continue token
+			if limit > 0 && len(results) == limit {
+				resultPagingToken = make(map[string]interface{})
+				resultPagingToken[idTokenName] = docSnp.Ref.ID
+			}
+		}
 	}
+
+	return &sdk.QueryResult{
+		Data:        results,
+		PagingToken: resultPagingToken,
+	}, nil
 }
 
 func New() (sdk.KeyValueService, error) {

@@ -22,8 +22,17 @@ type QueryExpression struct {
 	Value    string
 }
 
+type QueryResult struct {
+	Data        []map[string]interface{}
+	PagingToken map[string]interface{}
+}
+
 func (e QueryExpression) String() string {
 	return fmt.Sprintf("{Operand: '%v', Operator: '%v', Value: '%v'}", e.Operand, e.Operator, e.Value)
+}
+
+func (q *QueryResult) String() string {
+	return fmt.Sprintf("Data len:%v, PagingToken: %v", len(q.Data), q.PagingToken)
 }
 
 // The base KeyValue Plugin interface
@@ -33,7 +42,7 @@ type KeyValueService interface {
 	Put(string, map[string]interface{}, map[string]interface{}) error
 	Get(string, map[string]interface{}) (map[string]interface{}, error)
 	Delete(string, map[string]interface{}) error
-	Query(string, []QueryExpression, int) ([]map[string]interface{}, error)
+	Query(string, []QueryExpression, int, map[string]interface{}) (*QueryResult, error)
 }
 
 type UnimplementedKeyValuePlugin struct {
@@ -52,6 +61,6 @@ func (p *UnimplementedKeyValuePlugin) Delete(collection string, key map[string]i
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedKeyValuePlugin) Query(collection string, expressions []QueryExpression, limit int) ([]map[string]interface{}, error) {
+func (p *UnimplementedKeyValuePlugin) Query(collection string, expressions []QueryExpression, limit int, pagingToken map[string]interface{}) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

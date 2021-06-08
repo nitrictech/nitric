@@ -30,6 +30,8 @@ import (
 
 const DEFAULT_DIR = "nitric/collections/"
 
+const skipTokenName = "skip"
+
 type BoltKVService struct {
 	sdk.UnimplementedKeyValuePlugin
 	dbDir string
@@ -153,7 +155,8 @@ func (s *BoltKVService) Delete(collection string, key map[string]interface{}) er
 	return err
 }
 
-func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]interface{}) (*sdk.QueryResult, error) {
+
 	db, err := s.createdDb(collection)
 	if err != nil {
 		return nil, err
@@ -225,13 +228,26 @@ func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpressi
 	matcher := q.And(matchers[:]...)
 	query := db.Select(matcher)
 
+	var pagingSkip = 0
+
 	if limit > 0 {
 		query = query.Limit(limit)
+
+		if len(pagingToken) > 0 {
+			if val, found := pagingToken[skipTokenName]; found {
+				var ok bool
+				if pagingSkip, ok = val.(int); ok {
+					query = query.Skip(pagingSkip)
+				} else {
+					return nil, fmt.Errorf("invalid pagingToken: %v", pagingToken)
+				}
+			}
+		}
 	}
 
-	// Execute query
 	var docs []BoltDoc
 
+	// Execute query
 	query.Find(&docs)
 
 	results := make([]map[string]interface{}, 0)
@@ -239,7 +255,17 @@ func (s *BoltKVService) Query(collection string, expressions []sdk.QueryExpressi
 		results = append(results, doc.Value)
 	}
 
-	return results, nil
+	// Provide skip continuation token
+	var resultPagingToken map[string]interface{}
+	if limit > 0 && len(results) == limit {
+		resultPagingToken = make(map[string]interface{})
+		resultPagingToken[skipTokenName] = pagingSkip + limit
+	}
+
+	return &sdk.QueryResult{
+		Data:        results,
+		PagingToken: resultPagingToken,
+	}, nil
 }
 
 // New - Create a new dev KV plugin

@@ -61,11 +61,20 @@ func stopFirestoreProcess(cmd *exec.Cmd) {
 func createFirestoreClient(ctx context.Context) *firestore.Client {
 	client, err := firestore.NewClient(ctx, "test")
 	if err != nil {
-		fmt.Printf("NewClient error: v% \n", err)
+		fmt.Printf("NewClient error: %v \n", err)
 		panic(err)
 	}
 
 	return client
+}
+
+func loadPageTestData(ctx context.Context, db *firestore.Client) {
+	for _, item := range data.Items {
+		_, err := db.Collection("items").Doc(item.Key).Set(ctx, item.Value)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 var _ = Describe("Firestore", func() {
@@ -79,6 +88,10 @@ var _ = Describe("Firestore", func() {
 
 	ctx := context.Background()
 	db := createFirestoreClient(ctx)
+
+	BeforeSuite(func() {
+		loadPageTestData(ctx, db)
+	})
 
 	AfterSuite(func() {
 		stopFirestoreProcess(firestoreCmd)
@@ -251,24 +264,25 @@ var _ = Describe("Firestore", func() {
 	Context("Query", func() {
 		When("Blank collection argument", func() {
 			It("Should return an error", func() {
-				vals, err := kvPlugin.Query("", nil, 0)
-				Expect(vals).To(BeNil())
+				result, err := kvPlugin.Query("", nil, 0, nil)
+				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil key argument", func() {
 			It("Should return an error", func() {
-				vals, err := kvPlugin.Query("users", nil, 0)
-				Expect(vals).To(BeNil())
+				result, err := kvPlugin.Query("users", nil, 0, nil)
+				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Empty database collection", func() {
 			It("Should return empty list", func() {
-				vals, err := kvPlugin.Query("users", []sdk.QueryExpression{}, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("users", []sdk.QueryExpression{}, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(0))
+				Expect(result.Data).To(HaveLen(0))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Filter users collection", func() {
@@ -280,11 +294,12 @@ var _ = Describe("Firestore", func() {
 					{Operand: "country", Operator: "==", Value: "US"},
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
-				vals, err := kvPlugin.Query("users", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("users", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(1))
-				Expect(vals[0]["email"]).To(BeEquivalentTo(data.UserItem3["email"]))
+				Expect(result.Data).To(HaveLen(1))
+				Expect(result.Data[0]["email"]).To(BeEquivalentTo(data.UserItem3["email"]))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Empty query", func() {
@@ -295,15 +310,16 @@ var _ = Describe("Firestore", func() {
 				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
 				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(5))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[3]).To(BeEquivalentTo(data.OrderItem3))
-				Expect(vals[4]).To(BeEquivalentTo(data.ProductItem))
+				Expect(result.Data).To(HaveLen(5))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[3]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data[4]).To(BeEquivalentTo(data.ProductItem))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Empty limit query", func() {
@@ -314,13 +330,14 @@ var _ = Describe("Firestore", func() {
 				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
 				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 3)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 3, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.PagingToken).ToNot(BeNil())
 			})
 		})
 		When("PK and SK equality query", func() {
@@ -334,11 +351,12 @@ var _ = Describe("Firestore", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(1))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data).To(HaveLen(1))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality query", func() {
@@ -351,14 +369,15 @@ var _ = Describe("Firestore", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(4))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[3]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data).To(HaveLen(4))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[3]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality limit query", func() {
@@ -371,13 +390,77 @@ var _ = Describe("Firestore", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 3)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 3, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.PagingToken).ToNot(BeNil())
+			})
+		})
+		When("Paging large collection", func() {
+			It("Should return have multiple pages", func() {
+				result, err := kvPlugin.Query("items", []sdk.QueryExpression{}, 10, nil)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(10))
+				Expect(result.PagingToken).ToNot(BeEmpty())
+
+				// Ensure values are unique
+				dataMap := make(map[string]string)
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					dataMap[val] = val
+				}
+
+				result, err = kvPlugin.Query("items", []sdk.QueryExpression{}, 10, result.PagingToken)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.PagingToken).To(BeEmpty())
+
+				// Ensure values are unique
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					if _, found := dataMap[val]; found {
+						Expect("matching value").ShouldNot(HaveOccurred())
+					}
+				}
+			})
+		})
+		When("Paging large collection with where clause", func() {
+			It("Should return have multiple pages", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: ">", Value: "0"},
+				}
+				result, err := kvPlugin.Query("items", exps, 10, nil)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(10))
+				Expect(result.PagingToken).ToNot(BeEmpty())
+
+				// Ensure values are unique
+				dataMap := make(map[string]string)
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					dataMap[val] = val
+				}
+
+				result, err = kvPlugin.Query("items", exps, 10, result.PagingToken)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.PagingToken).To(BeNil())
+
+				// Ensure values are unique
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					if _, found := dataMap[val]; found {
+						Expect("matching value").ShouldNot(HaveOccurred())
+					}
+				}
 			})
 		})
 
@@ -425,13 +508,13 @@ var _ = Describe("Firestore", func() {
 						{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 						{Operand: "sk", Operator: "startsWith", Value: "Order#"},
 					}
-					vals, err := kvPlugin.Query("application", exps, 0)
-					Expect(vals).ToNot(BeNil())
+					result, err := kvPlugin.Query("application", exps, 0, nil)
+					Expect(result).ToNot(BeNil())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(vals).To(HaveLen(3))
-					Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
-					Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
-					Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+					Expect(result.Data).To(HaveLen(3))
+					Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
+					Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem2))
+					Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem3))
 				})
 			})
 			When("PK equality and SK >", func() {
@@ -446,12 +529,12 @@ var _ = Describe("Firestore", func() {
 						{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 						{Operand: "sk", Operator: ">", Value: "Order#501"},
 					}
-					vals, err := kvPlugin.Query("application", exps, 0)
-					Expect(vals).ToNot(BeNil())
+					result, err := kvPlugin.Query("application", exps, 0, nil)
+					Expect(result).ToNot(BeNil())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(vals).To(HaveLen(2))
-					Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
-					Expect(vals[1]).To(BeEquivalentTo(data.OrderItem3))
+					Expect(result.Data).To(HaveLen(2))
+					Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem2))
+					Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem3))
 				})
 			})
 			When("PK equality and SK >=", func() {
@@ -466,13 +549,13 @@ var _ = Describe("Firestore", func() {
 						{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 						{Operand: "sk", Operator: ">=", Value: "Order#501"},
 					}
-					vals, err := kvPlugin.Query("application", exps, 0)
-					Expect(vals).ToNot(BeNil())
+					result, err := kvPlugin.Query("application", exps, 0, nil)
+					Expect(result).ToNot(BeNil())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(vals).To(HaveLen(3))
-					Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
-					Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
-					Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+					Expect(result.Data).To(HaveLen(3))
+					Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
+					Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem2))
+					Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem3))
 				})
 			})
 			When("PK equality and SK <", func() {
@@ -487,11 +570,11 @@ var _ = Describe("Firestore", func() {
 						{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 						{Operand: "sk", Operator: "<", Value: "Order#501"},
 					}
-					vals, err := kvPlugin.Query("application", exps, 0)
-					Expect(vals).ToNot(BeNil())
+					result, err := kvPlugin.Query("application", exps, 0, nil)
+					Expect(result).ToNot(BeNil())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(vals).To(HaveLen(1))
-					Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+					Expect(result.Data).To(HaveLen(1))
+					Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
 				})
 			})
 			When("PK equality and SK <=", func() {
@@ -506,12 +589,12 @@ var _ = Describe("Firestore", func() {
 						{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 						{Operand: "sk", Operator: "<=", Value: "Order#501"},
 					}
-					vals, err := kvPlugin.Query("application", exps, 0)
-					Expect(vals).ToNot(BeNil())
+					result, err := kvPlugin.Query("application", exps, 0, nil)
+					Expect(result).ToNot(BeNil())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(vals).To(HaveLen(2))
-					Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-					Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+					Expect(result.Data).To(HaveLen(2))
+					Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+					Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
 				})
 			})
 			// Firestore: cant support multiple property inequality operators
@@ -529,12 +612,11 @@ var _ = Describe("Firestore", func() {
 			// 			{Operand: "number", Operator: ">", Value: "1"},
 			// 			{Operand: "price", Operator: "<", Value: "20"},
 			// 		}
-			// 		vals, err := kvPlugin.Query("application", exps, 0)
-			// 		fmt.Println("error #1: ", err)
-			// 		Expect(vals).ToNot(BeNil()) // FAILED
+			// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+			// 		Expect(result).ToNot(BeNil()) // FAILED
 			// 		Expect(err).ShouldNot(HaveOccurred())
-			// 		Expect(vals).To(HaveLen(1))
-			// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
+			// 		Expect(result.Data).To(HaveLen(1))
+			// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem2))
 			// 	})
 			// })
 			// When("PK equality and SK startsWith and between filter", func() {
@@ -551,11 +633,11 @@ var _ = Describe("Firestore", func() {
 			// 			{Operand: "number", Operator: ">=", Value: "0"},
 			// 			{Operand: "number", Operator: "<=", Value: "1"},
 			// 		}
-			// 		vals, err := kvPlugin.Query("application", exps, 0)
-			// 		Expect(vals).ToNot(BeNil()) // FAILED
+			// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+			// 		Expect(result).ToNot(BeNil()) // FAILED
 			// 		Expect(err).ShouldNot(HaveOccurred())
-			// 		Expect(vals).To(HaveLen(1))
-			// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+			// 		Expect(result.Data).To(HaveLen(1))
+			// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
 			// 	})
 			// })
 			// When("PK equality and SK startsWith and between filters with reversed order", func() {
@@ -572,10 +654,11 @@ var _ = Describe("Firestore", func() {
 			// 			{Operand: "number", Operator: "<=", Value: "1"},
 			// 			{Operand: "number", Operator: ">=", Value: "0"},
 			// 		}
-			// 		vals, err := kvPlugin.Query("application", exps, 0)
+			// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+			// 		Expect(result).ToNot(BeNil())
 			// 		Expect(err).ShouldNot(HaveOccurred())
-			// 		Expect(vals).To(HaveLen(1))
-			// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+			// 		Expect(result.Data).To(HaveLen(1))
+			// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
 			// 	})
 			// })
 		}

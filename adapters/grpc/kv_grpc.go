@@ -107,9 +107,15 @@ func (s *KeyValueServer) Query(ctx context.Context, req *pb.KeyValueQueryRequest
 		}
 		limit := int(req.GetLimit())
 
-		if valMaps, err := s.kvPlugin.Query(collection, expressions, limit); err == nil {
-			valStructs := make([]*structpb.Struct, len(valMaps))
-			for i, valMap := range valMaps {
+		var pagingMap map[string]interface{}
+		if req.PagingToken != nil {
+			pagingMap = req.PagingToken.AsMap()
+		}
+
+		if qr, err := s.kvPlugin.Query(collection, expressions, limit, pagingMap); err == nil {
+
+			valStructs := make([]*structpb.Struct, len(qr.Data))
+			for i, valMap := range qr.Data {
 				if valStruct, err := structpb.NewStruct(valMap); err == nil {
 					valStructs[i] = valStruct
 
@@ -120,8 +126,16 @@ func (s *KeyValueServer) Query(ctx context.Context, req *pb.KeyValueQueryRequest
 				}
 			}
 
+			var pagingStruct *structpb.Struct
+			if len(qr.PagingToken) > 0 {
+				if pagingStruct, err = structpb.NewStruct(qr.PagingToken); err != nil {
+					return nil, err
+				}
+			}
+
 			return &pb.KeyValueQueryResponse{
-				Values: valStructs,
+				Values:      valStructs,
+				PagingToken: pagingStruct,
 			}, nil
 
 		} else {

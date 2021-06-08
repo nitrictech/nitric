@@ -47,8 +47,8 @@ func copy(source map[string]interface{}) map[string]interface{} {
 	return newMap
 }
 
-func marshalListOfMaps(items []map[string]*dynamodb.AttributeValue) ([]map[string]interface{}, error) {
-	// Unmarshall Dynamo response items into Doc struct, the marshall into result map
+func marshalQueryResult(items []map[string]*dynamodb.AttributeValue, lastEvaluatedKey map[string]*dynamodb.AttributeValue) (*sdk.QueryResult, error) {
+	// Unmarshal Dynamo response items into Doc struct, the marshall into result map
 	var valueDocs []NitricKVDocument
 	err := dynamodbattribute.UnmarshalListOfMaps(items, &valueDocs)
 	if err != nil {
@@ -60,7 +60,19 @@ func marshalListOfMaps(items []map[string]*dynamodb.AttributeValue) ([]map[strin
 		results = append(results, m.Value)
 	}
 
-	return results, nil
+	// Unmarshal lastEvalutedKey
+	var resultPagingToken map[string]interface{}
+	if len(lastEvaluatedKey) > 0 {
+		err = dynamodbattribute.UnmarshalMap(lastEvaluatedKey, &resultPagingToken)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling query lastEvaluatedKey: %v", err)
+		}
+	}
+
+	return &sdk.QueryResult{
+		Data:        results,
+		PagingToken: resultPagingToken,
+	}, nil
 }
 
 func (s *DynamoDbKVService) Put(collection string, key map[string]interface{}, value map[string]interface{}) error {
@@ -181,7 +193,7 @@ func (s *DynamoDbKVService) Delete(collection string, key map[string]interface{}
 	return nil
 }
 
-func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpression, limit int) ([]map[string]interface{}, error) {
+func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]interface{}) (*sdk.QueryResult, error) {
 	err := kv.ValidateCollection(collection)
 	if err != nil {
 		return nil, err
@@ -237,6 +249,14 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		if limit > 0 {
 			limit64 := int64(limit)
 			input.Limit = &(limit64)
+
+			if len(pagingToken) > 0 {
+				startKey, err := dynamodbattribute.MarshalMap(pagingToken)
+				if err != nil {
+					return nil, fmt.Errorf("error performing query %v: %v", input, err)
+				}
+				input.SetExclusiveStartKey(startKey)
+			}
 		}
 
 		// Perform query
@@ -245,7 +265,7 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 			return nil, fmt.Errorf("error performing query %v: %v", input, err)
 		}
 
-		return marshalListOfMaps(resp.Items)
+		return marshalQueryResult(resp.Items, resp.LastEvaluatedKey)
 
 	} else {
 		input := &dynamodb.ScanInput{
@@ -282,6 +302,14 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 		if limit > 0 {
 			limit64 := int64(limit)
 			input.Limit = &(limit64)
+
+			if len(pagingToken) > 0 {
+				startKey, err := dynamodbattribute.MarshalMap(pagingToken)
+				if err != nil {
+					return nil, fmt.Errorf("error performing scan %v: %v", input, err)
+				}
+				input.SetExclusiveStartKey(startKey)
+			}
 		}
 
 		resp, err := s.client.Scan(input)
@@ -289,7 +317,7 @@ func (s *DynamoDbKVService) Query(collection string, expressions []sdk.QueryExpr
 			return nil, fmt.Errorf("error performing scan %v: %v", input, err)
 		}
 
-		return marshalListOfMaps(resp.Items)
+		return marshalQueryResult(resp.Items, resp.LastEvaluatedKey)
 	}
 }
 

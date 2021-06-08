@@ -135,9 +135,7 @@ func createEventsTable(db *dynamodb.DynamoDB) {
 	}
 }
 
-func createUsersTable(db *dynamodb.DynamoDB) {
-	tableName := "users"
-
+func createStandardTable(db *dynamodb.DynamoDB, tableName string) {
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
@@ -174,6 +172,17 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 	}
 }
 
+func loadItemsData(db *dynamodb.DynamoDB) {
+	for _, item := range data.Items {
+		client, err := kv_plugin.NewWithClient(db)
+		if err != nil {
+			panic(err)
+		}
+		key := map[string]interface{}{"key": item.Key}
+		client.Put("items", key, item.Value)
+	}
+}
+
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
 
@@ -190,12 +199,16 @@ var _ = Describe("DynamoDb", func() {
 	BeforeEach(func() {
 		createApplicationTable(db)
 		createEventsTable(db)
-		createUsersTable(db)
+		createStandardTable(db, "users")
+
+		createStandardTable(db, "items")
+		loadItemsData(db)
 	})
 
 	AfterEach(func() {
 		deleteTable(db, "application")
 		deleteTable(db, "events")
+		deleteTable(db, "items")
 		deleteTable(db, "users")
 	})
 
@@ -242,7 +255,7 @@ var _ = Describe("DynamoDb", func() {
 			})
 		})
 		When("Valid Update Put", func() {
-			It("Should store new item successfully", func() {
+			It("Should update existing item successfully", func() {
 				err := kvPlugin.Put("users", data.UserKey1, data.UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -373,24 +386,25 @@ var _ = Describe("DynamoDb", func() {
 	Context("Query", func() {
 		When("Blank collection argument", func() {
 			It("Should return an error", func() {
-				vals, err := kvPlugin.Query("", nil, 0)
-				Expect(vals).To(BeNil())
+				result, err := kvPlugin.Query("", nil, 0, nil)
+				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil key argument", func() {
 			It("Should return an error", func() {
-				vals, err := kvPlugin.Query("users", nil, 0)
-				Expect(vals).To(BeNil())
+				result, err := kvPlugin.Query("users", nil, 0, nil)
+				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Empty database collection", func() {
 			It("Should return empty list", func() {
-				vals, err := kvPlugin.Query("users", []sdk.QueryExpression{}, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("users", []sdk.QueryExpression{}, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(0))
+				Expect(result.Data).To(HaveLen(0))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Filter users collection", func() {
@@ -402,11 +416,12 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "country", Operator: "==", Value: "US"},
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
-				vals, err := kvPlugin.Query("users", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("users", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(1))
-				Expect(vals[0]["email"]).To(BeEquivalentTo(data.UserItem3["email"]))
+				Expect(result.Data).To(HaveLen(1))
+				Expect(result.Data[0]["email"]).To(BeEquivalentTo(data.UserItem3["email"]))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Empty query (Scan)", func() {
@@ -417,10 +432,11 @@ var _ = Describe("DynamoDb", func() {
 				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
 				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(5))
+				Expect(result.Data).To(HaveLen(5))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("Empty limit query (Scan)", func() {
@@ -431,10 +447,11 @@ var _ = Describe("DynamoDb", func() {
 				kvPlugin.Put("application", data.OrderKey3, data.OrderItem3)
 				kvPlugin.Put("application", data.ProductKey, data.ProductItem)
 
-				vals, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 3)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", []sdk.QueryExpression{}, 3, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.PagingToken).ToNot(BeNil())
 
 				// DynamoDB scan operations do not have any order, so results could be in any order
 			})
@@ -450,11 +467,12 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(1))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data).To(HaveLen(1))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality query", func() {
@@ -467,14 +485,15 @@ var _ = Describe("DynamoDb", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(4))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[3]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data).To(HaveLen(4))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[3]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality limit query", func() {
@@ -487,13 +506,14 @@ var _ = Describe("DynamoDb", func() {
 				exps := []sdk.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 3)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 3, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.PagingToken).ToNot(BeNil())
 			})
 		})
 		When("PK equality and SK startsWith", func() {
@@ -508,13 +528,14 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "startsWith", Value: "Order#"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
-				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality and SK >", func() {
@@ -529,12 +550,13 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: ">", Value: "Order#501"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(2))
-				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality and SK >=", func() {
@@ -549,13 +571,14 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: ">=", Value: "Order#501"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(3))
-				Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem2))
-				Expect(vals[2]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.Data).To(HaveLen(3))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem2))
+				Expect(result.Data[2]).To(BeEquivalentTo(data.OrderItem3))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality and SK <", func() {
@@ -570,11 +593,12 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "<", Value: "Order#501"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(1))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data).To(HaveLen(1))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
 		When("PK equality and SK <=", func() {
@@ -589,14 +613,80 @@ var _ = Describe("DynamoDb", func() {
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "<=", Value: "Order#501"},
 				}
-				vals, err := kvPlugin.Query("application", exps, 0)
-				Expect(vals).ToNot(BeNil())
+				result, err := kvPlugin.Query("application", exps, 0, nil)
+				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(vals).To(HaveLen(2))
-				Expect(vals[0]).To(BeEquivalentTo(data.CustomerItem))
-				Expect(vals[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.Data[0]).To(BeEquivalentTo(data.CustomerItem))
+				Expect(result.Data[1]).To(BeEquivalentTo(data.OrderItem1))
+				Expect(result.PagingToken).To(BeNil())
 			})
 		})
+		When("Paging large collection", func() {
+			It("Should return have multiple pages", func() {
+				result, err := kvPlugin.Query("items", []sdk.QueryExpression{}, 10, nil)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(10))
+				Expect(result.PagingToken).ToNot(BeEmpty())
+
+				// Ensure values are unique
+				dataMap := make(map[string]string)
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					dataMap[val] = val
+				}
+
+				result, err = kvPlugin.Query("items", []sdk.QueryExpression{}, 10, result.PagingToken)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.PagingToken).To(BeNil())
+
+				// Ensure values are unique
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					if _, found := dataMap[val]; found {
+						Expect("matching value").ShouldNot(HaveOccurred())
+					}
+				}
+			})
+		})
+		When("Paging large collection with where clause", func() {
+			It("Should return have multiple pages", func() {
+				exps := []sdk.QueryExpression{
+					{Operand: "number", Operator: ">", Value: "0"},
+				}
+				result, err := kvPlugin.Query("items", exps, 10, nil)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(10))
+				Expect(result.PagingToken).ToNot(BeEmpty())
+				Expect(result.PagingToken["key"]).To(BeEquivalentTo("10"))
+
+				// Ensure values are unique
+				dataMap := make(map[string]string)
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					dataMap[val] = val
+				}
+
+				result, err = kvPlugin.Query("items", exps, 10, result.PagingToken)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Data).To(HaveLen(2))
+				Expect(result.PagingToken).To(BeNil())
+
+				// Ensure values are unique
+				for i := range result.Data {
+					val := fmt.Sprintf("%v", result.Data[i]["number"])
+					if _, found := dataMap[val]; found {
+						Expect("matching value").ShouldNot(HaveOccurred())
+					}
+				}
+			})
+		})
+
 		// Firestore: cant support multiple property inequality operators
 		// When("PK equality and SK startsWith and filter", func() {
 		// 	It("Should return specified items", func() {
@@ -612,11 +702,11 @@ var _ = Describe("DynamoDb", func() {
 		// 			{Operand: "number", Operator: ">", Value: "1"},
 		// 			{Operand: "price", Operator: "<", Value: "20"},
 		// 		}
-		// 		vals, err := kvPlugin.Query("application", exps, 0)
-		// 		Expect(vals).ToNot(BeNil())
+		// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+		// 		Expect(result).ToNot(BeNil())
 		// 		Expect(err).ShouldNot(HaveOccurred())
-		// 		Expect(vals).To(HaveLen(1))
-		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem2))
+		// 		Expect(result.Data).To(HaveLen(1))
+		// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem2))
 		// 	})
 		// })
 		// When("PK equality and SK startsWith and between filter", func() {
@@ -633,11 +723,11 @@ var _ = Describe("DynamoDb", func() {
 		// 			{Operand: "number", Operator: ">=", Value: "0"},
 		// 			{Operand: "number", Operator: "<=", Value: "1"},
 		// 		}
-		// 		vals, err := kvPlugin.Query("application", exps, 0)
-		// 		Expect(vals).ToNot(BeNil())
+		// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+		// 		Expect(result).ToNot(BeNil())
 		// 		Expect(err).ShouldNot(HaveOccurred())
-		// 		Expect(vals).To(HaveLen(1))
-		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+		// 		Expect(result.Data).To(HaveLen(1))
+		// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
 		// 	})
 		// })
 		// When("PK equality and SK startsWith and between filters with reversed order", func() {
@@ -654,11 +744,11 @@ var _ = Describe("DynamoDb", func() {
 		// 			{Operand: "number", Operator: "<=", Value: "1"},
 		// 			{Operand: "number", Operator: ">=", Value: "0"},
 		// 		}
-		// 		vals, err := kvPlugin.Query("application", exps, 0)
-		// 		Expect(vals).ToNot(BeNil())
+		// 		result, err := kvPlugin.Query("application", exps, 0, nil)
+		// 		Expect(result).ToNot(BeNil())
 		// 		Expect(err).ShouldNot(HaveOccurred())
-		// 		Expect(vals).To(HaveLen(1))
-		// 		Expect(vals[0]).To(BeEquivalentTo(data.OrderItem1))
+		// 		Expect(result.Data).To(HaveLen(1))
+		// 		Expect(result.Data[0]).To(BeEquivalentTo(data.OrderItem1))
 		// 	})
 		// })
 	})

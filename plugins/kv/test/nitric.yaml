@@ -17,6 +17,13 @@ collections:
       value: string
     indexes:
       composite: [ pk , sk ]
+  items:
+    attributes:
+      key: string
+      number: number
+      value: string
+    indexes:
+      unique: key
   users:
     attributes:
       key: string

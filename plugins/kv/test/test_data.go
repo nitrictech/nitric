@@ -111,3 +111,23 @@ var ProductItem = map[string]interface{}{
 	"mode":     "dark",
 	"weight":   "13.95",
 }
+
+type Item struct {
+	Key   string
+	Value map[string]interface{}
+}
+
+var Items = []Item{
+	{Key: "01", Value: map[string]interface{}{"number": "01"}},
+	{Key: "02", Value: map[string]interface{}{"number": "02"}},
+	{Key: "03", Value: map[string]interface{}{"number": "03"}},
+	{Key: "04", Value: map[string]interface{}{"number": "04"}},
+	{Key: "05", Value: map[string]interface{}{"number": "05"}},
+	{Key: "06", Value: map[string]interface{}{"number": "06"}},
+	{Key: "07", Value: map[string]interface{}{"number": "07"}},
+	{Key: "08", Value: map[string]interface{}{"number": "08"}},
+	{Key: "09", Value: map[string]interface{}{"number": "09"}},
+	{Key: "10", Value: map[string]interface{}{"number": "10"}},
+	{Key: "11", Value: map[string]interface{}{"number": "11"}},
+	{Key: "12", Value: map[string]interface{}{"number": "12"}},
+}
