@@ -2,10 +2,13 @@ package worker
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
+	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/valyala/fasthttp"
 )
 
 // FaasWorker
@@ -14,7 +17,7 @@ type FaasWorker struct {
 	// gRPC Stream for this worker
 	stream pb.Faas_TriggerStreamServer
 	// Response channels for this worker
-	responseQueue sync.Map	
+	responseQueue sync.Map
 }
 
 func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
@@ -25,12 +28,12 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 		Data: trigger.Body,
 		Context: &pb.TriggerRequest_Http{
 			Http: &pb.HttpTriggerContext{
-				Method: trigger.Method,
+				Method:      trigger.Method,
 				QueryParams: trigger.Query,
 				// TODO: Populate path params
 				PathParams: make(map[string]string),
 				// TODO: Update contract to provide original path as well???
-			}
+			},
 		},
 	}
 
@@ -43,7 +46,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	}
 
 	// send the message
-	error := s.stream.Send(message)
+	err := s.stream.Send(message)
 
 	if err != nil {
 		// There was an error enqueuing the message
@@ -57,11 +60,31 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	s.responseQueue.Store(ID, returnChan)
 
 	// wait for the response
-	response := <-returnChan
+	triggerResponse := <-returnChan
+
+	httpResponse := triggerResponse.GetHttp()
+
+	if httpResponse == nil {
+		return nil, fmt.Errorf("Fatal: Error handling event, incorrect response recieved from function")
+	}
+
+	fasthttpHeader := &fasthttp.ResponseHeader{}
+
+	for key, val := range httpResponse.GetHeaders() {
+		fasthttpHeader.Add(key, val)
+	}
+
+	response := &triggers.HttpResponse{
+		Body: triggerResponse.Data,
+		// No need to worry about integer truncation
+		// as this should be a HTTP status code...
+		StatusCode: int(httpResponse.Status),
+		Header:     fasthttpHeader,
+	}
 
 	// translate the response to a Http response trigger
 
-	return returnChan, nil
+	return response, nil
 }
 
 func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
@@ -86,11 +109,11 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	// send the message
-	error := s.stream.Send(message)
+	err := s.stream.Send(message)
 
 	if err != nil {
 		// There was an error enqueuing the message
-		return nil, err
+		return err
 	}
 
 	// Get a lock on the response queue
@@ -119,17 +142,19 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 }
 
 // listen
-func (s *FaasWorker) listen(chan error) {
+func (s *FaasWorker) listen() {
 	// Listen for responses
 	for {
 		var msg *pb.Message
 
 		// Blocking read here...
-		err := s.srv.RecvMsg(msg)
+		err := s.stream.RecvMsg(msg)
 
 		if err != nil {
 			// exit
-			errch <- err
+			// errch <- err
+			// FIXME: Handle/Return error
+			log.Fatal(err)
 			break
 		}
 
@@ -141,7 +166,7 @@ func (s *FaasWorker) listen(chan error) {
 			// Write the response the the waiting recipient
 			rChan <- response
 		} else {
-			errch <- fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!!")
+			log.Fatal(fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!!"))
 			break
 		}
 	}
@@ -149,8 +174,8 @@ func (s *FaasWorker) listen(chan error) {
 
 // Package private method
 // Only a pool may create a new faas worker
-func newFaasWorker(stream pb.Faas_TriggerStreamServer) TriggerHandler {
+func newFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
 	return &FaasWorker{
-		stream: stream
+		stream: stream,
 	}
 }

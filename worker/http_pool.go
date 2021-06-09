@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/nitric-dev/membrane/handler"
 )
@@ -10,7 +11,7 @@ import (
 type HttpWorkerPool struct {
 	maxWorkers int
 	workerLock sync.Mutex
-	workers    []*FaasWorker
+	workers    []*HttpWorker
 }
 
 // Ensure workers implement the trigger handler interface
@@ -23,8 +24,6 @@ func (s *HttpWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
 	} else {
 		return nil, fmt.Errorf("No available workers in this pool!")
 	}
-
-	return s
 }
 
 func (s *HttpWorkerPool) WaitForActiveWorkers(timeout int) error {
@@ -35,19 +34,25 @@ func (s *HttpWorkerPool) WaitForActiveWorkers(timeout int) error {
 
 	var waitedTime = time.Duration(0)
 	for {
-		if s.GetWorkerCount() >= 1 {
+		if s.getWorkerCount() >= 1 {
 			break
 		} else {
 			if waitedTime < maxWaitTime {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				return fmt.Errorf("Unable to dial child server, does it expose a http server at: %s?", s.childAddress)
+				return fmt.Errorf("Unable to dial child server, does it expose a http server?")
 			}
 		}
 	}
 
 	return nil
+}
+
+func (s *HttpWorkerPool) getWorkerCount() int {
+	s.workerLock.Lock()
+	defer s.workerLock.Unlock()
+	return len(s.workers)
 }
 
 func (s *HttpWorkerPool) getActiveWorkers() int {
@@ -62,7 +67,11 @@ func (s *HttpWorkerPool) AddWorker(address string) error {
 	defer s.workerLock.Unlock()
 	length := len(s.workers)
 	if length < s.maxWorkers {
-		s.workers[length] = newHttpWorker(address)
+		worker, err := newHttpWorker(address)
+		if err != nil {
+			return err
+		}
+		s.workers[length] = worker
 		return nil
 	}
 
@@ -73,6 +82,6 @@ func NewHttpWorkerPool() *HttpWorkerPool {
 	return &HttpWorkerPool{
 		maxWorkers: 1,
 		workerLock: sync.Mutex{},
-		workers: make([]*FaasWorker, 1)
+		workers:    make([]*HttpWorker, 1),
 	}
 }

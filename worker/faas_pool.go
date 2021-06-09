@@ -3,16 +3,16 @@ package worker
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/nitric-dev/membrane/handler"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 )
 
-
 type FaasWorkerPool struct {
 	maxWorkers int
 	workerLock sync.Mutex
-	workers []*FaasWorker
+	workers    []*FaasWorker
 }
 
 // Ensure workers implement the trigger handler interface
@@ -25,13 +25,11 @@ func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
 	} else {
 		return nil, fmt.Errorf("No available workers in this pool!")
 	}
-
-	return s
 }
 
 // Synchronously wait for at least one active worker
 func (s *FaasWorkerPool) WaitForActiveWorkers(timeout int) error {
-  // Dial the child port to see if it's open and ready...
+	// Dial the child port to see if it's open and ready...
 	maxWaitTime := time.Duration(timeout) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
 	pollInterval := time.Duration(15) * time.Millisecond
@@ -45,7 +43,7 @@ func (s *FaasWorkerPool) WaitForActiveWorkers(timeout int) error {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				return fmt.Errorf("Unable to dial child server, does it expose a http server at: %s?", s.childAddress)
+				return fmt.Errorf("No server available, has the FaaS grpc client been started?")
 			}
 		}
 	}
@@ -63,22 +61,28 @@ func (s *FaasWorkerPool) getWorkerCount() int {
 func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) error {
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
-	workerCount := len(workers)
+	workerCount := len(s.workers)
 
 	// Ensure we haven't reached the maximum number of workers
-	if workerCount > maxWorkers {
+	if workerCount > s.maxWorkers {
 		return fmt.Errorf("Max worker capacity reached! Cannot add more workers!")
 	}
 
 	// Add a new worker to this pool
-	workers[workerCount] = newFaasWorker(stream)
+	worker := newFaasWorker(stream)
+	s.workers[workerCount] = worker
+
+	worker.listen()
+
+	return nil
 }
 
 func NewFaasWorkerPool() *FaasWorkerPool {
 	return &FaasWorkerPool{
 		// Only need one at the moment, but leaving open to future proofing
 		maxWorkers: 1,
+		workerLock: sync.Mutex{},
 		// Pre-allocate this for efficiency
-		workers: make(*FaasWorker, 1)
+		workers: make([]*FaasWorker, 1),
 	}
 }
