@@ -145,17 +145,22 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 func (s *FaasWorker) listen() {
 	// Listen for responses
 	for {
-		var msg *pb.Message
+		var msg *pb.Message = &pb.Message{}
 
 		// Blocking read here...
 		err := s.stream.RecvMsg(msg)
-
+		fmt.Println("Got Message: ", msg)
 		if err != nil {
 			// exit
 			// errch <- err
 			// FIXME: Handle/Return error
 			log.Fatal(err)
 			break
+		}
+
+		if msg.GetInitRequest() != nil {
+			fmt.Println("Recieved init request from worker")
+			continue
 		}
 
 		// Load the the response channel and delete its map key reference
@@ -166,7 +171,7 @@ func (s *FaasWorker) listen() {
 			// Write the response the the waiting recipient
 			rChan <- response
 		} else {
-			log.Fatal(fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!!"))
+			log.Fatal(fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!! %v", val))
 			break
 		}
 	}
@@ -176,6 +181,7 @@ func (s *FaasWorker) listen() {
 // Only a pool may create a new faas worker
 func newFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
 	return &FaasWorker{
-		stream: stream,
+		stream:        stream,
+		responseQueue: sync.Map{},
 	}
 }

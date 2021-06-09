@@ -70,7 +70,7 @@ func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) error {
 
 	// Add a new worker to this pool
 	worker := newFaasWorker(stream)
-	s.workers[workerCount] = worker
+	s.workers = append(s.workers, worker)
 
 	worker.listen()
 
@@ -83,6 +83,6 @@ func NewFaasWorkerPool() *FaasWorkerPool {
 		maxWorkers: 1,
 		workerLock: sync.Mutex{},
 		// Pre-allocate this for efficiency
-		workers: make([]*FaasWorker, 1),
+		workers: make([]*FaasWorker, 0),
 	}
 }

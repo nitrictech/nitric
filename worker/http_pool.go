@@ -71,7 +71,7 @@ func (s *HttpWorkerPool) AddWorker(address string) error {
 		if err != nil {
 			return err
 		}
-		s.workers[length] = worker
+		s.workers = append(s.workers, worker)
 		return nil
 	}
 
