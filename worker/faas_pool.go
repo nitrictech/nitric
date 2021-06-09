@@ -63,23 +63,22 @@ func (s *FaasWorkerPool) getWorkerCount() int {
 }
 
 // Add a New FaaS worker to this pool
-func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) error {
+func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) (*FaasWorker, error) {
 	s.workerLock.Lock()
 
 	workerCount := len(s.workers)
 
 	// Ensure we haven't reached the maximum number of workers
 	if workerCount > s.maxWorkers {
-		return fmt.Errorf("Max worker capacity reached! Cannot add more workers!")
+		return nil, fmt.Errorf("Max worker capacity reached! Cannot add more workers!")
 	}
 
 	// Add a new worker to this pool
 	worker := newFaasWorker(stream)
 	s.workers = append(s.workers, worker)
 	s.workerLock.Unlock()
-	worker.listen()
 
-	return nil
+	return worker, nil
 }
 
 func NewFaasWorkerPool() *FaasWorkerPool {

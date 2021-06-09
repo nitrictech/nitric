@@ -15,13 +15,17 @@ type FaasServer struct {
 // A reference to this stream will be passed on to a new worker instance
 // This represents a new server that is ready to begin processing
 func (s *FaasServer) TriggerStream(srv pb.Faas_TriggerStreamServer) error {
-	if err := s.pool.AddWorker(srv); err != nil {
+	if worker, err := s.pool.AddWorker(srv); err != nil {
 		// return an error here...
 		// TODO: Return proper grpc error with status here...
 		return err
-	}
+	} else {
+		errchan := make(chan error)
+		go worker.Listen(errchan)
 
-	return nil
+		// block here instead
+		return <-errchan
+	}
 }
 
 func NewFaasServer(workerPool *worker.FaasWorkerPool) *FaasServer {

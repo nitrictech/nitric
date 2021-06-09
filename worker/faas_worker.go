@@ -143,7 +143,7 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 }
 
 // listen
-func (s *FaasWorker) listen() {
+func (s *FaasWorker) Listen(errchan chan error) {
 	// Listen for responses
 	for {
 		// var msg *pb.Message = &pb.Message{}
@@ -157,13 +157,13 @@ func (s *FaasWorker) listen() {
 			if err == io.EOF {
 				// return will close stream from server side
 				log.Println("exit")
-				break
 			}
 			if err != nil {
 				log.Printf("received error %v", err)
-				break
 			}
 
+			errchan <- err
+			break
 		}
 
 		if msg.GetInitRequest() != nil {
@@ -184,7 +184,7 @@ func (s *FaasWorker) listen() {
 			// Write the response the the waiting recipient
 			rChan <- response
 		} else {
-			log.Fatal(fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!! %v", val))
+			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!! %v", val)
 			break
 		}
 	}
