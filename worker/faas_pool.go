@@ -17,8 +17,10 @@ type FaasWorkerPool struct {
 
 // Ensure workers implement the trigger handler interface
 func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
+	fmt.Println("Waiting on lock for trigger handler")
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
+	fmt.Println("Got lock for trigger handler")
 
 	if len(s.workers) > 0 {
 		return s.workers[0], nil
@@ -36,7 +38,9 @@ func (s *FaasWorkerPool) WaitForActiveWorkers(timeout int) error {
 
 	var waitedTime = time.Duration(0)
 	for {
+		// fmt.Println("Polling for worker!")
 		if s.getWorkerCount() >= 1 {
+			fmt.Println("Found worker!")
 			break
 		} else {
 			if waitedTime < maxWaitTime {
@@ -52,6 +56,7 @@ func (s *FaasWorkerPool) WaitForActiveWorkers(timeout int) error {
 }
 
 func (s *FaasWorkerPool) getWorkerCount() int {
+	// fmt.Println("Waiting on lock to get worker count")
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
 	return len(s.workers)
@@ -60,7 +65,7 @@ func (s *FaasWorkerPool) getWorkerCount() int {
 // Add a New FaaS worker to this pool
 func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) error {
 	s.workerLock.Lock()
-	defer s.workerLock.Unlock()
+
 	workerCount := len(s.workers)
 
 	// Ensure we haven't reached the maximum number of workers
@@ -71,7 +76,7 @@ func (s *FaasWorkerPool) AddWorker(stream pb.Faas_TriggerStreamServer) error {
 	// Add a new worker to this pool
 	worker := newFaasWorker(stream)
 	s.workers = append(s.workers, worker)
-
+	s.workerLock.Unlock()
 	worker.listen()
 
 	return nil

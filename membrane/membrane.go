@@ -230,6 +230,7 @@ func (s *Membrane) Start() error {
 	s.log("Waiting for active workers")
 	pool.WaitForActiveWorkers(5)
 
+	s.log("Getting trigger handler")
 	hndler, err := pool.GetTriggerHandler()
 
 	if err != nil {

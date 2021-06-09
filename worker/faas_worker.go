@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"sync"
 
@@ -145,21 +146,33 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 func (s *FaasWorker) listen() {
 	// Listen for responses
 	for {
-		var msg *pb.Message = &pb.Message{}
+		// var msg *pb.Message = &pb.Message{}
 
 		// Blocking read here...
-		err := s.stream.RecvMsg(msg)
-		fmt.Println("Got Message: ", msg)
+		// err := s.stream.RecvMsg(msg)
+		msg, err := s.stream.Recv()
+
+		// fmt.Println("Got Message: ", msg)
 		if err != nil {
-			// exit
-			// errch <- err
-			// FIXME: Handle/Return error
-			log.Fatal(err)
-			break
+			if err == io.EOF {
+				// return will close stream from server side
+				log.Println("exit")
+				break
+			}
+			if err != nil {
+				log.Printf("received error %v", err)
+				break
+			}
+
 		}
 
 		if msg.GetInitRequest() != nil {
 			fmt.Println("Recieved init request from worker")
+			s.stream.Send(&pb.Message{
+				Content: &pb.Message_InitResponse{
+					InitResponse: &pb.InitResponse{},
+				},
+			})
 			continue
 		}
 
