@@ -18,10 +18,10 @@ package appplatform_service
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 )
 
@@ -31,10 +31,10 @@ type HttpGateway struct {
 	sdk.UnimplementedGatewayPlugin
 }
 
-func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		httpTrigger := triggers.FromHttpRequest(ctx)
-		response, err := handler.HandleHttpRequest(httpTrigger)
+		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
@@ -52,9 +52,9 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 	}
 }
 
-func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpGateway) Start(wrkr Worker) error {
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(handler),
+		Handler: httpHandler(wrkr),
 	}
 
 	return s.server.ListenAndServe(s.address)

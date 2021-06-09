@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nitric-dev/membrane/handler"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 )
 
@@ -16,7 +15,7 @@ type FaasWorkerPool struct {
 }
 
 // Ensure workers implement the trigger handler interface
-func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
+func (s *FaasWorkerPool) GetWorker() (Worker, error) {
 	fmt.Println("Waiting on lock for trigger handler")
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()

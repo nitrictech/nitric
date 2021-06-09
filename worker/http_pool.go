@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	"github.com/nitric-dev/membrane/handler"
 )
 
 type HttpWorkerPool struct {
@@ -15,7 +13,7 @@ type HttpWorkerPool struct {
 }
 
 // Ensure workers implement the trigger handler interface
-func (s *HttpWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
+func (s *HttpWorkerPool) GetWorker() (Worker, error) {
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
 

@@ -19,9 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -42,7 +42,7 @@ type HttpProxyGateway struct {
 	server  *fasthttp.Server
 }
 
-func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fasthttp.RequestCtx) {
+func (s *HttpProxyGateway) httpHandler(wrkr worker.Worker) func(*fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		var trigger = ctx.UserAgent()
 
@@ -78,7 +78,7 @@ func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fas
 				return
 			}
 
-			if err := handler.HandleEvent(&triggers.Event{
+			if err := wrkr.HandleEvent(&triggers.Event{
 				ID: id,
 				// FIXME: Split this to retrive the nitric topic name
 				Topic:   topicArn,
@@ -93,7 +93,7 @@ func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fas
 		}
 
 		// Otherwise treat as a normal http request
-		response, err := handler.HandleHttpRequest(triggers.FromHttpRequest(ctx))
+		response, err := wrkr.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
 		if err != nil {
 			ctx.Error(err.Error(), 500)
@@ -106,10 +106,10 @@ func (s *HttpProxyGateway) httpHandler(handler handler.TriggerHandler) func(*fas
 	}
 }
 
-func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpProxyGateway) Start(wrkr worker.Worker) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: s.httpHandler(handler),
+		Handler: s.httpHandler(wrkr),
 	}
 
 	go (func() {

@@ -19,10 +19,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 )
 
@@ -40,7 +40,7 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		bodyBytes := ctx.Request.Body()
 
@@ -58,7 +58,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 				Payload: pubsubEvent.Message.Data,
 			}
 
-			if err := handler.HandleEvent(event); err == nil {
+			if err := wrkr.HandleEvent(event); err == nil {
 				// return a successful response
 				ctx.SuccessString("text/plain", "success")
 			} else {
@@ -69,7 +69,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		}
 
 		httpTrigger := triggers.FromHttpRequest(ctx)
-		response, err := handler.HandleHttpRequest(httpTrigger)
+		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
@@ -90,10 +90,10 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 	}
 }
 
-func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpProxyGateway) Start(wrkr worker.Worker) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(handler),
+		Handler: httpHandler(wrkr),
 	}
 
 	return s.server.ListenAndServe(s.address)

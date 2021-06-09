@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handler
+package worker
 
 import (
 	"bytes"
@@ -23,18 +23,18 @@ import (
 	"github.com/nitric-dev/membrane/triggers"
 )
 
-type TriggerHandler interface {
+type Worker interface {
 	HandleEvent(trigger *triggers.Event) error
 	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }
 
-type UnimplementedTriggerHandler struct{}
+type UnimplementedWorker struct{}
 
-func (*UnimplementedTriggerHandler) HandleEvent(trigger *triggers.Event) error {
+func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
+func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	return &http.Response{
 		Status:     "Unimplemented",
 		StatusCode: 501,

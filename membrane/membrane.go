@@ -231,13 +231,13 @@ func (s *Membrane) Start() error {
 	pool.WaitForActiveWorkers(5)
 
 	s.log("Getting trigger handler")
-	hndler, err := pool.GetTriggerHandler()
+	wrk, err := pool.GetWorker()
 
 	if err != nil {
 		return err
 	}
 	s.log("Starting Gateway")
-	return s.gatewayPlugin.Start(hndler)
+	return s.gatewayPlugin.Start(wrk)
 }
 
 func (s *Membrane) Stop() {

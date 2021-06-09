@@ -20,10 +20,10 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 )
 
@@ -50,7 +50,7 @@ func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.E
 	ctx.Success("application/json", responseBody)
 }
 
-func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, handler handler.TriggerHandler) {
+func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrkr worker.Worker) {
 	// FIXME: As we are batch handling events in azure
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -68,7 +68,7 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, han
 		}
 
 		// FIXME: Handle error
-		handler.HandleEvent(&triggers.Event{
+		wrkr.HandleEvent(&triggers.Event{
 			// FIXME: Check if ID is nil
 			ID:      *event.ID,
 			Topic:   *event.Topic,
@@ -81,8 +81,8 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, han
 	ctx.SuccessString("text/plain", "success")
 }
 
-func handleRequest(ctx *fasthttp.RequestCtx, handler handler.TriggerHandler) {
-	response, err := handler.HandleHttpRequest(triggers.FromHttpRequest(ctx))
+func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker.Worker) {
+	response, err := wrkr.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Error Handling Request: %v", err), 500)
@@ -100,7 +100,7 @@ func handleRequest(ctx *fasthttp.RequestCtx, handler handler.TriggerHandler) {
 	ctx.Response.SetBody(response.Body)
 }
 
-func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		// Handle Event/Subscription Request Types
 		eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
@@ -122,20 +122,20 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 				return
 			} else if eventType == "Notification" {
 				// Handle notifications
-				handleNotifications(ctx, eventgridEvents, handler)
+				handleNotifications(ctx, eventgridEvents, wrkr)
 				return
 			}
 		}
 
 		// Handle a standard HTTP request
-		handleRequest(ctx, handler)
+		handleRequest(ctx, wrkr)
 	}
 }
 
-func (s *HttpService) Start(handler handler.TriggerHandler) error {
+func (s *HttpService) Start(wrkr worker.Worker) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(handler),
+		Handler: httpHandler(wrkr),
 	}
 
 	return s.server.ListenAndServe(s.address)
