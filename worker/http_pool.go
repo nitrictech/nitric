@@ -3,6 +3,8 @@ package worker
 import (
 	"fmt"
 	"sync"
+
+	"github.com/nitric-dev/membrane/handler"
 )
 
 type HttpWorkerPool struct {
@@ -12,7 +14,7 @@ type HttpWorkerPool struct {
 }
 
 // Ensure workers implement the trigger handler interface
-func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
+func (s *HttpWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
 
@@ -25,7 +27,7 @@ func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
 	return s
 }
 
-func WaitForActiveWorker(timeout int) {
+func (s *HttpWorkerPool) WaitForActiveWorkers(timeout int) error {
 	// Dial the child port to see if it's open and ready...
 	maxWaitTime := time.Duration(timeout) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
@@ -48,7 +50,7 @@ func WaitForActiveWorker(timeout int) {
 	return nil
 }
 
-func getActiveWorkers() int {
+func (s *HttpWorkerPool) getActiveWorkers() int {
 	s.workerLock.Lock()
 	defer s.workerLock.Unlock()
 

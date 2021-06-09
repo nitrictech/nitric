@@ -30,7 +30,7 @@ func (s *FaasWorkerPool) GetTriggerHandler() (handler.TriggerHandler, error) {
 }
 
 // Synchronously wait for at least one active worker
-func (s *FaasWorkerPool) WaitForActiveWorker(timeout int) error {
+func (s *FaasWorkerPool) WaitForActiveWorkers(timeout int) error {
   // Dial the child port to see if it's open and ready...
 	maxWaitTime := time.Duration(timeout) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
@@ -38,7 +38,7 @@ func (s *FaasWorkerPool) WaitForActiveWorker(timeout int) error {
 
 	var waitedTime = time.Duration(0)
 	for {
-		if s.GetWorkerCount() >= 1 {
+		if s.getWorkerCount() >= 1 {
 			break
 		} else {
 			if waitedTime < maxWaitTime {
