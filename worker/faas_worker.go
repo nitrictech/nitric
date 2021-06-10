@@ -192,7 +192,7 @@ func (s *FaasWorker) Listen(errchan chan error) {
 
 // Package private method
 // Only a pool may create a new faas worker
-func newFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
+func NewFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
 	return &FaasWorker{
 		stream:        stream,
 		responseQueue: sync.Map{},

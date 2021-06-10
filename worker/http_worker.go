@@ -70,8 +70,10 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	return triggers.FromHttpResponse(&resp), nil
 }
 
-// Only a HTTP pool may create new workers
-func newHttpWorker(address string) (*HttpWorker, error) {
+// Creates a new HttpWorker
+// Will wait to ensure that the provided address is dialable
+// before proceeding
+func NewHttpWorker(address string) (*HttpWorker, error) {
 	// Dial the child port to see if it's open and ready...
 	maxWaitTime := time.Duration(5) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)

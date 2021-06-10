@@ -177,14 +177,14 @@ func (s *Membrane) Start() error {
 	authServer := s.createUserServer()
 	v1.RegisterUserServer(s.grpcServer, authServer)
 
-	var pool worker.WorkerPool
+	// Start with a maximum of a single worker
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{
+		MaxWorkers: 1,
+	})
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
-		faasPool := worker.NewFaasWorkerPool()
-		// Register the faas server
-		faasServer := grpc2.NewFaasServer(faasPool)
+		faasServer := grpc2.NewFaasServer(pool)
 		v1.RegisterFaasServer(s.grpcServer, faasServer)
-		pool = faasPool
 	}
 
 	lis, err := net.Listen("tcp", s.serviceAddress)
@@ -212,11 +212,13 @@ func (s *Membrane) Start() error {
 	}
 
 	if s.mode == Mode_HttpProxy {
-		httpPool := worker.NewHttpWorkerPool()
-		if err := httpPool.AddWorker(s.childAddress); err != nil {
+		if httpWorker, err := worker.NewHttpWorker(s.childAddress); err != nil {
 			return err
+		} else {
+			if err := pool.AddWorker(httpWorker); err != nil {
+				return err
+			}
 		}
-		pool = httpPool
 	}
 
 	// FIXME: Only do this in Gateway mode...
@@ -228,16 +230,13 @@ func (s *Membrane) Start() error {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Waiting for active workers")
-	pool.WaitForActiveWorkers(5)
-
-	s.log("Getting trigger handler")
-	wrk, err := pool.GetWorker()
+	err = pool.WaitForActiveWorkers(5)
 
 	if err != nil {
 		return err
 	}
 	s.log("Starting Gateway")
-	return s.gatewayPlugin.Start(wrk)
+	return s.gatewayPlugin.Start(pool)
 }
 
 func (s *Membrane) Stop() {

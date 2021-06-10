@@ -8,27 +8,35 @@ import (
 type FaasServer struct {
 	pb.UnimplementedFaasServer
 	// srv  pb.Faas_TriggerStreamServer
-	pool *worker.FaasWorkerPool
+	pool worker.WorkerPool
 }
 
 // Starts a new stream
 // A reference to this stream will be passed on to a new worker instance
 // This represents a new server that is ready to begin processing
-func (s *FaasServer) TriggerStream(srv pb.Faas_TriggerStreamServer) error {
-	if worker, err := s.pool.AddWorker(srv); err != nil {
-		// return an error here...
-		// TODO: Return proper grpc error with status here...
-		return err
-	} else {
-		errchan := make(chan error)
-		go worker.Listen(errchan)
+func (s *FaasServer) TriggerStream(stream pb.Faas_TriggerStreamServer) error {
+	// Create a new worker
+	worker := worker.NewFaasWorker(stream)
 
-		// block here instead
-		return <-errchan
+	// Add it to our new pool
+	if err := s.pool.AddWorker(worker); err != nil {
+		// Worker could not be added
+		// Cancel the stream by returning an error
+		// This should cause the spawned child process to exit
+		return err
 	}
+
+	// We're good to go
+	errchan := make(chan error)
+
+	// Start the worker
+	go worker.Listen(errchan)
+
+	// block here on error returned from the worker
+	return <-errchan
 }
 
-func NewFaasServer(workerPool *worker.FaasWorkerPool) *FaasServer {
+func NewFaasServer(workerPool worker.WorkerPool) *FaasServer {
 	return &FaasServer{
 		pool: workerPool,
 	}

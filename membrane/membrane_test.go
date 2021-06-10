@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/membrane"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -88,7 +88,7 @@ type MockGateway struct {
 	started   bool
 }
 
-func (gw *MockGateway) Start(handler handler.TriggerHandler) error {
+func (gw *MockGateway) Start(wrkr worker.Worker) error {
 	// Spy on the mock gateway
 	gw.responses = make([]*triggers.HttpResponse, 0)
 
@@ -96,7 +96,7 @@ func (gw *MockGateway) Start(handler handler.TriggerHandler) error {
 	if gw.triggers != nil {
 		for _, trigger := range gw.triggers {
 			if s, ok := trigger.(*triggers.HttpRequest); ok {
-				resp, err := handler.HandleHttpRequest(s)
+				resp, err := wrkr.HandleHttpRequest(s)
 
 				if err != nil {
 					gw.responses = append(gw.responses, &triggers.HttpResponse{
@@ -260,7 +260,7 @@ var _ = Describe("Membrane", func() {
 					ChildAddress:            "localhost:8081",
 					ChildCommand:            []string{"echo"},
 					GatewayPlugin:           mockGateway,
-					ServiceAddress: fmt.Sprintf(":%d", port),
+					ServiceAddress:          fmt.Sprintf(":%d", port),
 					ChildTimeoutSeconds:     1,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
@@ -335,7 +335,7 @@ var _ = Describe("Membrane", func() {
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:8080",
-					ServiceAddress: fmt.Sprintf(":%d", port),
+					ServiceAddress:          fmt.Sprintf(":%d", port),
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,

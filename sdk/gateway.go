@@ -43,7 +43,7 @@ type NitricResponse struct {
 
 type GatewayService interface {
 	// Start the Gateway
-	Start(wrkr worker.Worker) error
+	Start(pool worker.WorkerPool) error
 	// Stops the Gateway
 	Stop() error
 }
@@ -52,7 +52,7 @@ type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ worker.Worker) error {
+func (*UnimplementedGatewayPlugin) Start(_ worker.WorkerPool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
