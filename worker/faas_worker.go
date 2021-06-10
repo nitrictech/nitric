@@ -39,9 +39,9 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	}
 
 	// construct the message
-	message := &pb.Message{
+	message := &pb.ServerMessage{
 		Id: ID,
-		Content: &pb.Message_TriggerRequest{
+		Content: &pb.ServerMessage_TriggerRequest{
 			TriggerRequest: triggerRequest,
 		},
 	}
@@ -102,9 +102,9 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	// construct the message
-	message := &pb.Message{
+	message := &pb.ServerMessage{
 		Id: ID,
-		Content: &pb.Message_TriggerRequest{
+		Content: &pb.ServerMessage_TriggerRequest{
 			TriggerRequest: triggerRequest,
 		},
 	}
@@ -168,8 +168,8 @@ func (s *FaasWorker) Listen(errchan chan error) {
 
 		if msg.GetInitRequest() != nil {
 			fmt.Println("Recieved init request from worker")
-			s.stream.Send(&pb.Message{
-				Content: &pb.Message_InitResponse{
+			s.stream.Send(&pb.ServerMessage{
+				Content: &pb.ServerMessage_InitResponse{
 					InitResponse: &pb.InitResponse{},
 				},
 			})
