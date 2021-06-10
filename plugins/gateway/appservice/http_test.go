@@ -24,72 +24,42 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+	mock_worker "github.com/nitric-dev/membrane/mocks/worker"
 	http_plugin "github.com/nitric-dev/membrane/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
-type MockHandler struct {
-	// store the recieved requests for testing
-	requests []*triggers.HttpRequest
-	events   []*triggers.Event
-	// provide fixed mock response for testing
-	// respondsWith *sdk.NitricResponse
-}
-
-func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
-	if m.events == nil {
-		m.events = make([]*triggers.Event, 0)
-	}
-
-	m.events = append(m.events, evt)
-
-	return nil
-}
-
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	if m.requests == nil {
-		m.requests = make([]*triggers.HttpRequest, 0)
-	}
-
-	// Read and re-created a new read stream here...
-	// body := r.Body
-	// r.Body = ioutil.NopCloser(bytes.NewReader(body))
-
-	m.requests = append(m.requests, r)
-
-	return &triggers.HttpResponse{
-		StatusCode: 200,
-		Body:       []byte("success"),
-	}, nil
-}
-
-func (m *MockHandler) resetRequests() {
-	m.requests = make([]*triggers.HttpRequest, 0)
-	m.events = make([]*triggers.Event, 0)
-}
-
 var _ = Describe("Http", func() {
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := &MockHandler{}
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
+			Body:       []byte("Testing Response"),
+			StatusCode: 200,
+		},
+	})
+	pool.AddWorker(mockHandler)
 	httpPlugin, _ := http_plugin.New()
 	// Run on a non-blocking thread
-	go (httpPlugin.Start)(mockHandler)
+	go (httpPlugin.Start)(pool)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
 	time.Sleep(1000 * time.Millisecond)
 
 	AfterEach(func() {
-		mockHandler.resetRequests()
+		mockHandler.Reset()
 	})
 
 	When("Invoking the Azure AppService HTTP Gateway", func() {
@@ -106,9 +76,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.requests).To(HaveLen(1))
+				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
 
-				handledRequest := mockHandler.requests[0]
+				handledRequest := mockHandler.RecievedRequests[0]
 
 				By("Having the provided path")
 				Expect(handledRequest.Path).To((Equal("/test/")))
@@ -132,7 +102,7 @@ var _ = Describe("Http", func() {
 				resp, _ := http.DefaultClient.Do(request)
 
 				By("Not invoking the nitric application")
-				Expect(mockHandler.requests).To(BeEmpty())
+				Expect(mockHandler.RecievedRequests).To(BeEmpty())
 
 				By("Returning a 200 response")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -167,9 +137,9 @@ var _ = Describe("Http", func() {
 				_, _ = http.DefaultClient.Do(request)
 
 				By("Passing the event to the Nitric Application")
-				Expect(mockHandler.events).To(HaveLen(1))
+				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
 
-				event := mockHandler.events[0]
+				event := mockHandler.RecievedEvents[0]
 				By("Having the provided requestId")
 				Expect(event.ID).To(Equal("1234"))
 

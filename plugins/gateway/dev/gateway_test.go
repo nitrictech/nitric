@@ -21,66 +21,40 @@ import (
 	"os"
 	"time"
 
+	mock_worker "github.com/nitric-dev/membrane/mocks/worker"
 	gateway_plugin "github.com/nitric-dev/membrane/plugins/gateway/dev"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type MockHandler struct {
-	// store the recieved requests for testing
-	requests []*triggers.HttpRequest
-	events   []*triggers.Event
-	// provide fixed mock response for testing
-	// respondsWith *sdk.NitricResponse
-}
-
-func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
-	if m.events == nil {
-		m.events = make([]*triggers.Event, 0)
-	}
-
-	m.events = append(m.events, evt)
-
-	return nil
-}
-
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	if m.requests == nil {
-		m.requests = make([]*triggers.HttpRequest, 0)
-	}
-
-	m.requests = append(m.requests, r)
-
-	return &triggers.HttpResponse{
-		StatusCode: 200,
-		Body:       []byte("success"),
-	}, nil
-}
-
-func (m *MockHandler) resetRequests() {
-	m.requests = make([]*triggers.HttpRequest, 0)
-	m.events = make([]*triggers.Event, 0)
-}
-
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Gateway", func() {
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
 
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	handler := &MockHandler{}
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
+			Body:       []byte("success"),
+			StatusCode: 200,
+		},
+	})
+	pool.AddWorker(mockHandler)
+
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	gateway, _ := gateway_plugin.New()
 
 	AfterEach(func() {
-		handler.resetRequests()
+		mockHandler.Reset()
 	})
 
 	// Start the gatewat on a seperate thread so it doesn't block the tests...
-	go (gateway.Start)(handler)
+	go (gateway.Start)(pool)
 	// FIXME: Update gateway to block on channel...
 	time.Sleep(500 * time.Millisecond)
 
@@ -100,9 +74,9 @@ var _ = Describe("Gateway", func() {
 				Expect(err).To(BeNil())
 
 				By("Passing through exactly 1 request")
-				Expect(handler.requests).To(HaveLen(1))
+				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
 
-				handledRequest := handler.requests[0]
+				handledRequest := mockHandler.RecievedRequests[0]
 
 				By("Preserving the original request method")
 				Expect(handledRequest.Method).To(Equal("POST"))
@@ -139,9 +113,9 @@ var _ = Describe("Gateway", func() {
 				Expect(err).To(BeNil())
 
 				By("Passing through exactly 1 event")
-				Expect(handler.events).To(HaveLen(1))
+				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
 
-				evt := handler.events[0]
+				evt := mockHandler.RecievedEvents[0]
 
 				By("Preserving the provided payload")
 				Expect(evt.Payload).To(BeEquivalentTo(payload))

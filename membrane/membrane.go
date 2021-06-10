@@ -53,6 +53,9 @@ type MembraneOptions struct {
 
 	// The operating mode of the membrane
 	Mode *Mode
+
+	// Supply your own worker pool
+	Pool worker.WorkerPool
 }
 
 type Membrane struct {
@@ -91,6 +94,9 @@ type Membrane struct {
 	mode Mode
 
 	grpcServer *grpc.Server
+
+	// Worker pool
+	pool worker.WorkerPool
 }
 
 func (s *Membrane) log(log string) {
@@ -177,13 +183,9 @@ func (s *Membrane) Start() error {
 	authServer := s.createUserServer()
 	v1.RegisterUserServer(s.grpcServer, authServer)
 
-	// Start with a maximum of a single worker
-	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{
-		MaxWorkers: 1,
-	})
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
-		faasServer := grpc2.NewFaasServer(pool)
+		faasServer := grpc2.NewFaasServer(s.pool)
 		v1.RegisterFaasServer(s.grpcServer, faasServer)
 	}
 
@@ -215,7 +217,7 @@ func (s *Membrane) Start() error {
 		if httpWorker, err := worker.NewHttpWorker(s.childAddress); err != nil {
 			return err
 		} else {
-			if err := pool.AddWorker(httpWorker); err != nil {
+			if err := s.pool.AddWorker(httpWorker); err != nil {
 				return err
 			}
 		}
@@ -230,13 +232,14 @@ func (s *Membrane) Start() error {
 	// The gateway should block the main thread but will
 	// use this callback as a control mechanism
 	s.log("Waiting for active workers")
-	err = pool.WaitForActiveWorkers(5)
+	err = s.pool.WaitForActiveWorkers(s.childTimeoutSeconds)
 
 	if err != nil {
 		return err
 	}
+
 	s.log("Starting Gateway")
-	return s.gatewayPlugin.Start(pool)
+	return s.gatewayPlugin.Start(s.pool)
 }
 
 func (s *Membrane) Stop() {
@@ -299,6 +302,13 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		}
 	}
 
+	if options.Pool == nil {
+		// Create new pool with defaults
+		options.Pool = worker.NewProcessPool(&worker.ProcessPoolOptions{
+			MaxWorkers: 1,
+		})
+	}
+
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
 		childAddress:            options.ChildAddress,
@@ -314,5 +324,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,
+		pool:                    options.Pool,
 	}, nil
 }

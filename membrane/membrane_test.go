@@ -15,16 +15,15 @@
 package membrane_test
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/nitric-dev/membrane/membrane"
+	mock_worker "github.com/nitric-dev/membrane/mocks/worker"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/worker"
@@ -88,9 +87,11 @@ type MockGateway struct {
 	started   bool
 }
 
-func (gw *MockGateway) Start(wrkr worker.Worker) error {
+func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 	// Spy on the mock gateway
 	gw.responses = make([]*triggers.HttpResponse, 0)
+
+	wrkr, _ := pool.GetWorker()
 
 	gw.started = true
 	if gw.triggers != nil {
@@ -107,7 +108,7 @@ func (gw *MockGateway) Start(wrkr worker.Worker) error {
 					gw.responses = append(gw.responses, resp)
 				}
 			} else if s, ok := trigger.(*triggers.Event); ok {
-				handler.HandleEvent(s)
+				wrkr.HandleEvent(s)
 			}
 		}
 	}
@@ -117,6 +118,9 @@ func (gw *MockGateway) Start(wrkr worker.Worker) error {
 }
 
 var _ = Describe("Membrane", func() {
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	pool.AddWorker(mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{}))
+
 	BeforeSuite(func() {
 		os.Args = []string{}
 	})
@@ -140,6 +144,7 @@ var _ = Describe("Membrane", func() {
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
+					Pool:                    pool,
 				}
 				It("Should successfully create the membrane server", func() {
 					m, err := membrane.New(&mbraneOpts)
@@ -156,6 +161,7 @@ var _ = Describe("Membrane", func() {
 					TolerateMissingServices: false,
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
+					Pool:                    pool,
 				}
 				It("Should fail to create", func() {
 					m, err := membrane.New(&mbraneOpts)
@@ -181,6 +187,7 @@ var _ = Describe("Membrane", func() {
 					StoragePlugin:           mockStorageServer,
 					QueuePlugin:             mockQueueServer,
 					AuthPlugin:              mockAuthServer,
+					Pool:                    pool,
 				}
 
 				It("Should successfully create the membrane server", func() {
@@ -202,6 +209,7 @@ var _ = Describe("Membrane", func() {
 					GatewayPlugin:           mockGateway,
 					SuppressLogs:            true,
 					TolerateMissingServices: true,
+					Pool:                    pool,
 				})
 
 				It("Start should not error", func() {
@@ -224,6 +232,7 @@ var _ = Describe("Membrane", func() {
 				SuppressLogs:            true,
 				TolerateMissingServices: true,
 				ServiceAddress:          "localhost:9005",
+				Pool:                    pool,
 			})
 
 			BeforeEach(func() {
@@ -250,39 +259,29 @@ var _ = Describe("Membrane", func() {
 		var mockGateway *MockGateway
 		var mb *membrane.Membrane
 		When("The configured command exists", func() {
-			port := 60051
 
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
-				port += 1
-
 				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildAddress:            "localhost:8081",
 					ChildCommand:            []string{"echo"},
 					GatewayPlugin:           mockGateway,
-					ServiceAddress:          fmt.Sprintf(":%d", port),
+					ServiceAddress:          fmt.Sprintf(":%d", 9001),
 					ChildTimeoutSeconds:     1,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
+					Pool:                    pool,
 				})
 			})
 
-			When("There is nothing listening on ChildAddress", func() {
-				It("Should return an error", func() {
-					err := mb.Start()
-					Expect(err).Should(HaveOccurred())
-				})
+			AfterEach(func() {
+				mb.Stop()
 			})
 
-			When("There is something listening on childAddress", func() {
+			When("There is a worker available in the pool", func() {
 				BeforeEach(func() {
 					go (func() {
 						http.ListenAndServe(fmt.Sprintf("localhost:8081"), nil)
 					})()
-				})
-
-				AfterEach(func() {
-
 				})
 
 				It("Should wait for the service to start", func() {
@@ -308,103 +307,6 @@ var _ = Describe("Membrane", func() {
 			It("Should return an error", func() {
 				err := mb.Start()
 				Expect(err).Should(HaveOccurred())
-			})
-		})
-	})
-
-	Context("Operating in FaaS Mode", func() {
-		port := 50051
-		BeforeEach(func() {
-			os.Args = []string{}
-			port += 1
-		})
-
-		Context("Handling A Single HttpRequest", func() {
-			var mockGateway *MockGateway
-			var mb *membrane.Membrane
-			BeforeEach(func() {
-				mockGateway = &MockGateway{
-					triggers: []triggers.Trigger{
-						&triggers.HttpRequest{
-							Body:   []byte("Test Payload"),
-							Path:   "/test/",
-							Header: make(map[string]string),
-						},
-					},
-				}
-
-				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildAddress:            "localhost:8080",
-					ServiceAddress:          fmt.Sprintf(":%d", port),
-					GatewayPlugin:           mockGateway,
-					TolerateMissingServices: true,
-					SuppressLogs:            true,
-				})
-			})
-
-			When("There is no function available", func() {
-				It("Should receive a single error response", func() {
-					err := mb.Start()
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(mockGateway.responses).To(HaveLen(1))
-
-					response := mockGateway.responses[0]
-
-					By("Having the 500 HTTP error code")
-					Expect(response.StatusCode).To(Equal(500))
-
-					By("Containing a Body with the error message from the gateway")
-					Expect(string(response.Body)).To(ContainSubstring("connection refused"))
-				})
-			})
-
-			When("There is a function available to receive", func() {
-				var handlerFunction *MockFunction
-				BeforeEach(func() {
-					handlerFunction = &MockFunction{
-						response: &http.Response{
-							StatusCode: 200,
-							Header: http.Header{
-								"Content-Type": []string{"text/plain"},
-							},
-							// Note: This can only be read once!
-							Body: ioutil.NopCloser(bytes.NewReader([]byte("Hello World!"))),
-						},
-					}
-					// Setup the function handler here...
-					http.HandleFunc("/", handlerFunction.handler)
-					go (func() {
-						http.ListenAndServe(fmt.Sprintf("localhost:8080"), nil)
-					})()
-
-					// FIXME: This is expensive! Need to wait for the server to start...
-					time.Sleep(200 * time.Millisecond)
-				})
-
-				It("The request should be successfully handled", func() {
-					err := mb.Start()
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(mockGateway.responses).To(HaveLen(1))
-
-					response := mockGateway.responses[0]
-
-					By("The handler recieving exactly one request")
-					Expect(handlerFunction.requests).To(HaveLen(1))
-
-					request := handlerFunction.requests[0]
-
-					By("By consuming the path of the request")
-					Expect(request.URL.String()).To(ContainSubstring("/"))
-
-					By("Having the 200 HTTP status code")
-					Expect(response.StatusCode).To(Equal(200))
-
-					By("Having a Content-Type returned by the handler")
-					Expect(response.Header.Peek("Content-Type")).To(ContainSubstring("text/plain"))
-
-					By("Containing a Body with handler response")
-					Expect(string(response.Body)).To(ContainSubstring("Hello World!"))
-				})
 			})
 		})
 	})

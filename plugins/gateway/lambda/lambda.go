@@ -166,10 +166,10 @@ type LambdaGateway struct {
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-	wrkr, err := pool.GetWorker()
+	wrkr, err := s.pool.GetWorker()
 
 	if err != nil {
-		return fmt.Errorf("Unable to get worker to handle events")
+		return nil, fmt.Errorf("Unable to get worker to handle events")
 	}
 
 	for _, request := range event.Requests {
