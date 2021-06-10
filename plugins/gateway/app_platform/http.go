@@ -31,8 +31,15 @@ type HttpGateway struct {
 	sdk.UnimplementedGatewayPlugin
 }
 
-func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		wrkr, err := pool.GetWorker()
+
+		if err != nil {
+			ctx.Error("Unable to get worker to handle request", 500)
+			return
+		}
+
 		httpTrigger := triggers.FromHttpRequest(ctx)
 		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
@@ -52,9 +59,9 @@ func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpGateway) Start(wrkr Worker) error {
+func (s *HttpGateway) Start(pool worker.WorkerPool) error {
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(wrkr),
+		Handler: httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)

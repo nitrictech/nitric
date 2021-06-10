@@ -38,7 +38,7 @@ func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 		wrkr, err := pool.GetWorker()
 
 		if err != nil {
-			ctx.Error("Unable to retrieve worker for this event", 500)
+			ctx.Error("Unable to get worker for this event", 500)
 			return
 		}
 

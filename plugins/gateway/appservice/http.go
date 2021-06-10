@@ -100,8 +100,14 @@ func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker.Worker) {
 	ctx.Response.SetBody(response.Body)
 }
 
-func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		wrkr, err := pool.GetWorker()
+
+		if err != nil {
+			ctx.Error("Unable to get worker to handle request", 500)
+			return
+		}
 		// Handle Event/Subscription Request Types
 		eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
@@ -132,10 +138,10 @@ func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpService) Start(wrkr worker.Worker) error {
+func (s *HttpService) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(wrkr),
+		Handler: httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)

@@ -40,8 +40,14 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		wrkr, err := pool.GetWorker()
+		if err != nil {
+			ctx.Error("Unable to get worker to handle request", 500)
+			return
+		}
+
 		bodyBytes := ctx.Request.Body()
 
 		// Check if the payload contains a pubsub event
@@ -90,10 +96,10 @@ func httpHandler(wrkr worker.Worker) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpProxyGateway) Start(wrkr worker.Worker) error {
+func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(wrkr),
+		Handler: httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)

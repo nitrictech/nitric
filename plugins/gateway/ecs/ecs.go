@@ -42,8 +42,13 @@ type HttpProxyGateway struct {
 	server  *fasthttp.Server
 }
 
-func (s *HttpProxyGateway) httpHandler(wrkr worker.Worker) func(*fasthttp.RequestCtx) {
+func (s *HttpProxyGateway) httpHandler(pool worker.WorkerPool) func(*fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		wrkr, err := pool.GetWorker()
+		if err != nil {
+			ctx.Error("Unable to get work to handle this event", 500)
+		}
+
 		var trigger = ctx.UserAgent()
 
 		if string(trigger) == "Amazon Simple Notification Service Agent" {
@@ -106,10 +111,10 @@ func (s *HttpProxyGateway) httpHandler(wrkr worker.Worker) func(*fasthttp.Reques
 	}
 }
 
-func (s *HttpProxyGateway) Start(wrkr worker.Worker) error {
+func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: s.httpHandler(wrkr),
+		Handler: s.httpHandler(pool),
 	}
 
 	go (func() {
