@@ -23,6 +23,7 @@ import (
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/valyala/fasthttp"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // A Nitric HTTP worker
@@ -117,9 +118,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		},
 	}
 
-	if jsonData, err := json.Marshal(triggerRequest); err != nil {
-		request := fasthttp.AcquireRequest()
-
+	if jsonData, err := protojson.Marshal(triggerRequest); err == nil {
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)
@@ -132,7 +131,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 
 		// Response body should contain an instance of triggerResponse
 		var triggerResponse pb.TriggerResponse
-		err = json.Unmarshal(response.Body(), &triggerResponse)
+		err = protojson.Unmarshal(response.Body(), &triggerResponse)
 
 		if err != nil {
 			return nil, err
@@ -168,7 +167,6 @@ func NewFaasHttpWorker(address string) (*FaasHttpWorker, error) {
 			}
 		}
 	}
-
 	// Dial the provided address to ensure its availability
 	return &FaasHttpWorker{
 		address: address,
