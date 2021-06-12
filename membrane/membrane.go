@@ -213,24 +213,28 @@ func (s *Membrane) Start() error {
 		s.log("No Child Command Specified, Skipping...")
 	}
 
-	if s.mode == Mode_HttpProxy {
-		if httpWorker, err := worker.NewHttpWorker(s.childAddress); err != nil {
-			return err
-		} else {
-			if err := s.pool.AddWorker(httpWorker); err != nil {
+	// If we aren't in FaaS mode
+	// We need to manually register our worker for now
+	if s.mode != Mode_Faas {
+		var wrkr worker.Worker
+		var workerErr error
+		if s.mode == Mode_HttpProxy {
+			wrkr, workerErr = worker.NewHttpWorker(s.childAddress)
+		} else if s.mode == Mode_HttpFaas {
+			wrkr, workerErr = worker.NewFaasHttpWorker(s.childAddress)
+		}
+
+		if workerErr == nil {
+			if err := s.pool.AddWorker(wrkr); err != nil {
 				return err
 			}
+		} else {
+			return workerErr
 		}
 	}
 
-	// FIXME: Only do this in Gateway mode...
-	// Otherwise always pass through to the provided child address
-	// Start the Gateway Server
-
-	// Start the gateway, this will provide us an entrypoint for
-	// data ingress/egress to our userland code
-	// The gateway should block the main thread but will
-	// use this callback as a control mechanism
+	// Wait for active workers to be available before begining the gateway
+	// This will ensure requests can be facilitated as soon as the gateway is ready
 	s.log("Waiting for active workers")
 	err = s.pool.WaitForActiveWorkers(s.childTimeoutSeconds)
 
