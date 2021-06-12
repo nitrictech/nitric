@@ -13,7 +13,7 @@ import (
 )
 
 // FaasWorker
-// Worker representation for a Nitric FaaS functon
+// Worker representation for a Nitric FaaS function using gRPC
 type FaasWorker struct {
 	// gRPC Stream for this worker
 	stream pb.Faas_TriggerStreamServer
@@ -168,11 +168,11 @@ func (s *FaasWorker) Listen(errchan chan error) {
 
 		if msg.GetInitRequest() != nil {
 			fmt.Println("Recieved init request from worker")
-			s.stream.Send(&pb.ServerMessage{
-				Content: &pb.ServerMessage_InitResponse{
-					InitResponse: &pb.InitResponse{},
-				},
-			})
+			//s.stream.Send(&pb.ServerMessage{
+			//	Content: &pb.ServerMessage_InitResponse{
+			//		InitResponse: &pb.InitResponse{},
+			//	},
+			//})
 			continue
 		}
 

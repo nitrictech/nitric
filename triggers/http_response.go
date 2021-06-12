@@ -15,6 +15,9 @@
 package triggers
 
 import (
+	"fmt"
+
+	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 )
 
@@ -35,4 +38,27 @@ func FromHttpResponse(resp *fasthttp.Response) *HttpResponse {
 		Body:       resp.Body(),
 		StatusCode: resp.StatusCode(),
 	}
+}
+
+// FromTriggerResponse (csontructs a HttpResponse from a FaaS TriggerResponse)
+func FromTriggerResponse(triggerResponse *pb.TriggerResponse) (*HttpResponse, error) {
+	// FIXME: This will panic if the incorrect response type is provided
+	httpContext := triggerResponse.GetHttp()
+	if httpContext != nil {
+		fasthttpHeader := &fasthttp.ResponseHeader{}
+
+		if httpContext.GetHeaders() != nil {
+			for key, val := range httpContext.GetHeaders() {
+				fasthttpHeader.Add(key, val)
+			}
+		}
+
+		return &HttpResponse{
+			Header:     fasthttpHeader,
+			StatusCode: int(httpContext.Status),
+			Body:       triggerResponse.GetData(),
+		}, nil
+	}
+
+	return nil, fmt.Errorf("TriggerResponse does not container HTTP Context")
 }
