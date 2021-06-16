@@ -40,10 +40,12 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	// Generate an ID here
 	ID := uuid.New().String()
 
-	var mimeType string
-	if trigger.Header != nil&trigger.Header["Content-Type"] != nil {
+	var mimeType string = ""
+	if trigger.Header != nil {
 		mimeType = trigger.Header["Content-Type"]
-	} else {
+	}
+
+	if mimeType == "" {
 		mimeType = http.DetectContentType(trigger.Body)
 	}
 

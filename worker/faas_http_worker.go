@@ -109,10 +109,12 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		fasthttp.ReleaseResponse(response)
 	}()
 
-	var mimeType string
-	if trigger.Header&trigger.Header["Content-Type"] != nil {
+	var mimeType string = ""
+	if trigger.Header != nil {
 		mimeType = trigger.Header["Content-Type"]
-	} else {
+	}
+
+	if mimeType == "" {
 		mimeType = http.DetectContentType(trigger.Body)
 	}
 
