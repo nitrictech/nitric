@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"sync"
 
 	"github.com/google/uuid"
@@ -39,15 +40,23 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	// Generate an ID here
 	ID := uuid.New().String()
 
+	var mimeType string
+	if trigger.Header != nil&trigger.Header["Content-Type"] != nil {
+		mimeType = trigger.Header["Content-Type"]
+	} else {
+		mimeType = http.DetectContentType(trigger.Body)
+	}
+
 	triggerRequest := &pb.TriggerRequest{
-		Data: trigger.Body,
+		Data:     trigger.Body,
+		MimeType: mimeType,
 		Context: &pb.TriggerRequest_Http{
 			Http: &pb.HttpTriggerContext{
+				Path:        trigger.Path,
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
+				Headers:     trigger.Header,
 				// TODO: Populate path params
-				PathParams: make(map[string]string),
-				// TODO: Update contract to provide original path as well???
 			},
 		},
 	}
@@ -106,7 +115,8 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	// Generate an ID here
 	ID := uuid.New().String()
 	triggerRequest := &pb.TriggerRequest{
-		Data: trigger.Payload,
+		Data:     trigger.Payload,
+		MimeType: http.DetectContentType(trigger.Payload),
 		Context: &pb.TriggerRequest_Topic{
 			Topic: &pb.TopicTriggerContext{
 				Topic: trigger.Topic,
@@ -160,13 +170,8 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 func (s *FaasWorker) Listen(errchan chan error) {
 	// Listen for responses
 	for {
-		// var msg *pb.Message = &pb.Message{}
-
-		// Blocking read here...
-		// err := s.stream.RecvMsg(msg)
 		msg, err := s.stream.Recv()
 
-		// fmt.Println("Got Message: ", msg)
 		if err != nil {
 			if err == io.EOF {
 				// return will close stream from server side
@@ -182,6 +187,7 @@ func (s *FaasWorker) Listen(errchan chan error) {
 
 		if msg.GetInitRequest() != nil {
 			fmt.Println("Recieved init request from worker")
+			// FIXME: This appears to not work with the PHP runtime?
 			//s.stream.Send(&pb.ServerMessage{
 			//	Content: &pb.ServerMessage_InitResponse{
 			//		InitResponse: &pb.InitResponse{},

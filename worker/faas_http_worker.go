@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
@@ -48,7 +49,8 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	}()
 
 	triggerRequest := &pb.TriggerRequest{
-		Data: trigger.Payload,
+		Data:     trigger.Payload,
+		MimeType: http.DetectContentType(trigger.Payload),
 		Context: &pb.TriggerRequest_Topic{
 			Topic: &pb.TopicTriggerContext{
 				Topic: trigger.Topic,
@@ -107,13 +109,22 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		fasthttp.ReleaseResponse(response)
 	}()
 
+	var mimeType string
+	if trigger.Header&trigger.Header["Content-Type"] != nil {
+		mimeType = trigger.Header["Content-Type"]
+	} else {
+		mimeType = http.DetectContentType(trigger.Body)
+	}
+
 	triggerRequest := &pb.TriggerRequest{
-		Data: trigger.Body,
+		Data:     trigger.Body,
+		MimeType: mimeType,
 		Context: &pb.TriggerRequest_Http{
 			Http: &pb.HttpTriggerContext{
+				Path:        trigger.Path,
+				Headers:     trigger.Header,
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
-				PathParams:  make(map[string]string),
 			},
 		},
 	}
