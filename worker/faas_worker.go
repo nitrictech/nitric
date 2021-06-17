@@ -33,12 +33,41 @@ type FaasWorker struct {
 	// gRPC Stream for this worker
 	stream pb.Faas_TriggerStreamServer
 	// Response channels for this worker
-	responseQueue sync.Map
+	// responseQueue sync.Map
+
+	responseQueueLock sync.Mutex
+	responseQueue     map[string]chan *pb.TriggerResponse
+}
+
+func (s *FaasWorker) newTicket() (string, chan *pb.TriggerResponse) {
+	s.responseQueueLock.Lock()
+	defer s.responseQueueLock.Unlock()
+
+	ID := uuid.New().String()
+	responseChan := make(chan *pb.TriggerResponse)
+
+	s.responseQueue[ID] = responseChan
+
+	return ID, responseChan
+}
+
+func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
+	s.responseQueueLock.Lock()
+	defer func() {
+		delete(s.responseQueue, ID)
+		s.responseQueueLock.Unlock()
+	}()
+
+	if s.responseQueue[ID] == nil {
+		return nil, fmt.Errorf("Attempted to resolve ticket that does not exist!")
+	}
+
+	return s.responseQueue[ID], nil
 }
 
 func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
-	ID := uuid.New().String()
+	ID, returnChan := s.newTicket()
 
 	var mimeType string = ""
 	if trigger.Header != nil {
@@ -79,12 +108,6 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 		return nil, err
 	}
 
-	// Get a lock on the response queue
-	returnChan := make(chan *pb.TriggerResponse)
-
-	// Let the worker know where to return the results
-	s.responseQueue.Store(ID, returnChan)
-
 	// wait for the response
 	triggerResponse := <-returnChan
 
@@ -115,7 +138,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 
 func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	// Generate an ID here
-	ID := uuid.New().String()
+	ID, returnChan := s.newTicket()
 	triggerRequest := &pb.TriggerRequest{
 		Data:     trigger.Payload,
 		MimeType: http.DetectContentType(trigger.Payload),
@@ -142,12 +165,6 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 		// There was an error enqueuing the message
 		return err
 	}
-
-	// Get a lock on the response queue
-	returnChan := make(chan *pb.TriggerResponse)
-
-	// Let the worker know where to return the results
-	s.responseQueue.Store(ID, returnChan)
 
 	// wait for the response
 	// FIXME: Need to handle timeouts here...
@@ -199,14 +216,14 @@ func (s *FaasWorker) Listen(errchan chan error) {
 		}
 
 		// Load the the response channel and delete its map key reference
-		if val, ok := s.responseQueue.LoadAndDelete(msg.GetId()); ok {
+		if val, err := s.resolveTicket(msg.GetId()); err == nil {
 			// For now assume this is a trigger response...
 			response := msg.GetTriggerResponse()
-			rChan := val.(chan *pb.TriggerResponse)
 			// Write the response the the waiting recipient
-			rChan <- response
+			val <- response
 		} else {
-			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state exiting!!! %v", val)
+			fmt.Println("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
+			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
 			break
 		}
 	}
@@ -216,7 +233,8 @@ func (s *FaasWorker) Listen(errchan chan error) {
 // Only a pool may create a new faas worker
 func NewFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
 	return &FaasWorker{
-		stream:        stream,
-		responseQueue: sync.Map{},
+		stream:            stream,
+		responseQueueLock: sync.Mutex{},
+		responseQueue:     make(map[string]chan *pb.TriggerResponse),
 	}
 }
