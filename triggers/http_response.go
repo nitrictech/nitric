@@ -40,7 +40,7 @@ func FromHttpResponse(resp *fasthttp.Response) *HttpResponse {
 	}
 }
 
-// FromTriggerResponse (csontructs a HttpResponse from a FaaS TriggerResponse)
+// FromTriggerResponse (constructs a HttpResponse from a FaaS TriggerResponse)
 func FromTriggerResponse(triggerResponse *pb.TriggerResponse) (*HttpResponse, error) {
 	// FIXME: This will panic if the incorrect response type is provided
 	httpContext := triggerResponse.GetHttp()

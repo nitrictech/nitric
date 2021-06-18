@@ -33,12 +33,12 @@ type FaasWorker struct {
 	// gRPC Stream for this worker
 	stream pb.Faas_TriggerStreamServer
 	// Response channels for this worker
-	// responseQueue sync.Map
-
 	responseQueueLock sync.Mutex
 	responseQueue     map[string]chan *pb.TriggerResponse
 }
 
+// newTicket - Generates a request/response ID and response channel
+// for the requesting thread to wait on
 func (s *FaasWorker) newTicket() (string, chan *pb.TriggerResponse) {
 	s.responseQueueLock.Lock()
 	defer s.responseQueueLock.Unlock()
@@ -51,6 +51,8 @@ func (s *FaasWorker) newTicket() (string, chan *pb.TriggerResponse) {
 	return ID, responseChan
 }
 
+// resolveTicket - Retrieves a response channel from the queue for
+// the given ID and removes the entry from the map
 func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
 	s.responseQueueLock.Lock()
 	defer func() {
@@ -131,8 +133,6 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 		Header:     fasthttpHeader,
 	}
 
-	// translate the response to a Http response trigger
-
 	return response, nil
 }
 
@@ -175,7 +175,7 @@ func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	if topic == nil {
 		// Fatal error in this case
 		// We don't have the correct response type for this handler
-		return fmt.Errorf("Fatal: Error handling event, incorrect response recieved from function")
+		return fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
 	}
 
 	if topic.GetSuccess() {
@@ -205,7 +205,7 @@ func (s *FaasWorker) Listen(errchan chan error) {
 		}
 
 		if msg.GetInitRequest() != nil {
-			fmt.Println("Recieved init request from worker")
+			fmt.Println("Received init request from worker")
 			// FIXME: This appears to not work with the PHP runtime?
 			//s.stream.Send(&pb.ServerMessage{
 			//	Content: &pb.ServerMessage_InitResponse{
@@ -215,14 +215,14 @@ func (s *FaasWorker) Listen(errchan chan error) {
 			continue
 		}
 
-		// Load the the response channel and delete its map key reference
+		// Load the response channel and delete its map key reference
 		if val, err := s.resolveTicket(msg.GetId()); err == nil {
 			// For now assume this is a trigger response...
 			response := msg.GetTriggerResponse()
 			// Write the response the the waiting recipient
 			val <- response
 		} else {
-			fmt.Println("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
+			fmt.Println("Fatal: FaaS Worker in bad state closing stream: ", msg.GetId())
 			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
 			break
 		}

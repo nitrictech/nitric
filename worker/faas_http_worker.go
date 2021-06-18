@@ -59,8 +59,6 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	if jsonData, err := json.Marshal(triggerRequest); err != nil {
-		request := fasthttp.AcquireRequest()
-
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)
@@ -86,7 +84,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 				return nil
 			}
 
-			return fmt.Errorf("Topic context indicated processing was unsuccesful")
+			return fmt.Errorf("Topic context indicated processing was unsuccessful")
 		}
 
 		return fmt.Errorf("Response from function did not contain topic context")
