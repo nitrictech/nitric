@@ -18,14 +18,16 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
   - Queues
   - Key/Value Store
   - Storage & Buckets
-  - Authentication & Authorization
 
 Additional services on our roadmap include:
 
   - RDS
-  - Document DB
+  - Document Store
   - Configuration
   - Logging
+  - Authentication
+
+> If you have any requests or suggestions let us know in the issues.
 
 SDKs are available for many languages, providing an idiomatic wrapper around the gRPC client.
 
@@ -35,6 +37,8 @@ SDKs are available for many languages, providing an idiomatic wrapper around the
   - [Java](https://github.com/nitrictech/java-sdk)
   - [PHP](https://github.com/nitrictech/php-sdk)
   - [.NET](https://github.com/nitrictech/dotnet-sdk)
+
+> If you have additional languages you would like support for let us know in the issues, we also welcome community contribtions for new language support.
 
 ## Architecture
 
@@ -222,7 +226,7 @@ The Membrane project source code structure is outlined below:
 Directory               | Package    | Description
 ---------               |----------- |------------
 `/adapters/grpc`        | `grpc`     | GRPC service to SDK adaptors 
-`/handler`              | `handler`  | gateway request handler
+`/worker`               | `worker`   | Membrane workers representing function/service connections
 `/interfaces/nitric/v1` | `v1`       | protoc generated GRPC services code 
 `/membrane`             | `membrane` | membrane application
 `/mocks/...`            | `...`      | Cloud service SDK mocks 
