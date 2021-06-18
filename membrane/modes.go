@@ -23,12 +23,15 @@ import (
 type Mode int
 
 const (
+	// Mode_Faas Facilitates FaaS via gRPC FaaS Server
 	Mode_Faas Mode = iota
-	// PROXY Mode is designed for integration of monoliths into a nitric application
+	// Mode_HttpFaas Facilitates FaaS via HTTP Request/Response
+	Mode_HttpFaas
+	// Mode_HttpProxy is designed for integration of monoliths into a nitric application
 	Mode_HttpProxy
 )
 
-var modes = [...]string{"FAAS", "HTTP_PROXY"}
+var modes = [...]string{"FAAS", "HTTP_FAAS", "HTTP_PROXY"}
 
 func (m Mode) String() string {
 	return modes[m]

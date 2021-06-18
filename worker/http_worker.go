@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handler
+package worker
 
 import (
 	"fmt"
+	"net"
+	"time"
 
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/valyala/fasthttp"
 )
 
-// HttpHandler - The http handler for the membrane when operating in HTTP_PROXY mode
-type HttpHandler struct {
-	// Get the host we're sending to
+// A Nitric HTTP worker
+type HttpWorker struct {
 	address string
 }
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
+func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
 
 	httpRequest := fasthttp.AcquireRequest()
@@ -55,7 +56,7 @@ func (h *HttpHandler) HandleEvent(trigger *triggers.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	address := fmt.Sprintf("http://%s%s", h.address, trigger.Path)
 
 	httpRequest := fasthttp.AcquireRequest()
@@ -83,8 +84,33 @@ func (h *HttpHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	return triggers.FromHttpResponse(&resp), nil
 }
 
-func NewHttpHandler(host string) *HttpHandler {
-	return &HttpHandler{
-		address: host,
+// Creates a new HttpWorker
+// Will wait to ensure that the provided address is dialable
+// before proceeding
+func NewHttpWorker(address string) (*HttpWorker, error) {
+	// Dial the child port to see if it's open and ready...
+	maxWaitTime := time.Duration(5) * time.Second
+	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
+	pollInterval := time.Duration(15) * time.Millisecond
+
+	var waitedTime = time.Duration(0)
+	for {
+		conn, _ := net.Dial("tcp", address)
+		if conn != nil {
+			conn.Close()
+			break
+		} else {
+			if waitedTime < maxWaitTime {
+				time.Sleep(pollInterval)
+				waitedTime += pollInterval
+			} else {
+				return nil, fmt.Errorf("Unable to dial http worker, does it expose a http server at: %s?", address)
+			}
+		}
 	}
+
+	// Dial the provided address to ensure its availability
+	return &HttpWorker{
+		address: address,
+	}, nil
 }

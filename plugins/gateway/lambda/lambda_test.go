@@ -20,44 +20,15 @@ import (
 	"fmt"
 
 	events "github.com/aws/aws-lambda-go/events"
+	mock_worker "github.com/nitric-dev/membrane/mocks/worker"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	plugin "github.com/nitric-dev/membrane/plugins/gateway/lambda"
 )
-
-type MockTriggerHandler struct {
-	httpRequests []*triggers.HttpRequest
-	events       []*triggers.Event
-}
-
-func (m *MockTriggerHandler) HandleEvent(trigger *triggers.Event) error {
-	if m.events == nil {
-		m.events = make([]*triggers.Event, 0)
-	}
-	m.events = append(m.events, trigger)
-
-	return nil
-}
-
-func (m *MockTriggerHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	if m.httpRequests == nil {
-		m.httpRequests = make([]*triggers.HttpRequest, 0)
-	}
-	m.httpRequests = append(m.httpRequests, trigger)
-
-	return &triggers.HttpResponse{
-		StatusCode: 200,
-		Body:       []byte("Mock Handled!"),
-	}, nil
-}
-
-func (m *MockTriggerHandler) reset() {
-	m.httpRequests = make([]*triggers.HttpRequest, 0)
-	m.events = make([]*triggers.Event, 0)
-}
 
 type MockLambdaRuntime struct {
 	plugin.LambdaRuntimeHandler
@@ -85,9 +56,17 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 }
 
 var _ = Describe("Lambda", func() {
-	mockHandler := &MockTriggerHandler{}
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
+			Body:       []byte("success"),
+			StatusCode: 200,
+		},
+	})
+	pool.AddWorker(mockHandler)
+
 	AfterEach(func() {
-		mockHandler.reset()
+		mockHandler.Reset()
 	})
 
 	Context("Http Events", func() {
@@ -118,12 +97,12 @@ var _ = Describe("Lambda", func() {
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
-				client.Start(mockHandler)
+				client.Start(pool)
 
 				By("Handling a single HTTP request")
-				Expect(len(mockHandler.httpRequests)).To(Equal(1))
+				Expect(len(mockHandler.RecievedRequests)).To(Equal(1))
 
-				request := mockHandler.httpRequests[0]
+				request := mockHandler.RecievedRequests[0]
 
 				By("Retaining the body")
 				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
@@ -179,12 +158,12 @@ var _ = Describe("Lambda", func() {
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request
-				client.Start(mockHandler)
+				client.Start(pool)
 
 				By("Handling a single event")
-				Expect(len(mockHandler.events)).To(Equal(1))
+				Expect(len(mockHandler.RecievedEvents)).To(Equal(1))
 
-				request := mockHandler.events[0]
+				request := mockHandler.RecievedEvents[0]
 
 				By("Containing the Source Topic")
 				Expect(request.Topic).To(Equal("MyTopic"))

@@ -17,8 +17,8 @@ package sdk
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 )
 
 type NitricContext struct {
@@ -43,7 +43,7 @@ type NitricResponse struct {
 
 type GatewayService interface {
 	// Start the Gateway
-	Start(handler handler.TriggerHandler) error
+	Start(pool worker.WorkerPool) error
 	// Stops the Gateway
 	Stop() error
 }
@@ -52,7 +52,7 @@ type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ handler.TriggerHandler) error {
+func (*UnimplementedGatewayPlugin) Start(_ worker.WorkerPool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

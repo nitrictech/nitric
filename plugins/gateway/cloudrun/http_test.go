@@ -24,69 +24,42 @@ import (
 	"os"
 	"time"
 
+	mock_worker "github.com/nitric-dev/membrane/mocks/worker"
 	http_plugin "github.com/nitric-dev/membrane/plugins/gateway/cloudrun"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
+	"github.com/nitric-dev/membrane/worker"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type MockHandler struct {
-	// store the recieved requests for testing
-	requests []*triggers.HttpRequest
-	events   []*triggers.Event
-	// provide fixed mock response for testing
-	// respondsWith *sdk.NitricResponse
-}
-
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
-func (m *MockHandler) HandleEvent(evt *triggers.Event) error {
-	if m.events == nil {
-		m.events = make([]*triggers.Event, 0)
-	}
-
-	m.events = append(m.events, evt)
-
-	return nil
-}
-
-func (m *MockHandler) HandleHttpRequest(r *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	if m.requests == nil {
-		m.requests = make([]*triggers.HttpRequest, 0)
-	}
-
-	m.requests = append(m.requests, r)
-
-	return &triggers.HttpResponse{
-		StatusCode: 200,
-		Body:       []byte("success"),
-	}, nil
-}
-
-func (m *MockHandler) resetRequests() {
-	m.requests = make([]*triggers.HttpRequest, 0)
-	m.events = make([]*triggers.Event, 0)
-}
-
 var _ = Describe("Http", func() {
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := &MockHandler{}
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
+			Body:       []byte("success"),
+			StatusCode: 200,
+		},
+	})
+	pool.AddWorker(mockHandler)
 	httpPlugin, _ := http_plugin.New()
 	// Run on a non-blocking thread
-	go (httpPlugin.Start)(mockHandler)
+	go (httpPlugin.Start)(pool)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
 	time.Sleep(500 * time.Millisecond)
 
 	AfterEach(func() {
-		mockHandler.resetRequests()
+		mockHandler.Reset()
 	})
 
 	When("Invoking the GCP HTTP Gateway", func() {
@@ -111,9 +84,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.requests).To(HaveLen(1))
+				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
 
-				handledRequest := mockHandler.requests[0]
+				handledRequest := mockHandler.RecievedRequests[0]
 				By("Preserving the original requests method")
 				Expect(handledRequest.Method).To(Equal("POST"))
 
@@ -170,9 +143,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.events).To(HaveLen(1))
+				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
 
-				handledEvent := mockHandler.events[0]
+				handledEvent := mockHandler.RecievedEvents[0]
 
 				By("Passing through the pubsub message ID")
 				Expect(handledEvent.ID).To(Equal("test"))

@@ -19,12 +19,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	events "github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
-	"strings"
+	"github.com/nitric-dev/membrane/worker"
 )
 
 type eventType int
@@ -158,22 +159,24 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 }
 
 type LambdaGateway struct {
-	handler handler.TriggerHandler
+	pool    worker.WorkerPool
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
 	finished chan int
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-	for _, request := range event.Requests {
-		// TODO: Build up an array of responses?
-		//in some cases we won't need to send a response as well...
-		// resp := s.handler(&request)
+	wrkr, err := s.pool.GetWorker()
 
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get worker to handle events")
+	}
+
+	for _, request := range event.Requests {
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
-				response, err := s.handler.HandleHttpRequest(httpEvent)
+				response, err := wrkr.HandleHttpRequest(httpEvent)
 
 				if err != nil {
 					return events.APIGatewayProxyResponse{
@@ -208,7 +211,7 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 			break
 		case triggers.TriggerType_Subscription:
 			if event, ok := request.(*triggers.Event); ok {
-				if err := s.handler.HandleEvent(event); err != nil {
+				if err := wrkr.HandleEvent(event); err != nil {
 					return nil, err
 				}
 			} else {
@@ -221,13 +224,13 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 }
 
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(handler handler.TriggerHandler) error {
+func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 	//s.finished = make(chan int)
-	s.handler = handler
+	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...
 	s.runtime(s.handle)
 	// Unblock the 'Stop' function if it's waiting.
-	go func(){s.finished <- 1}()
+	go func() { s.finished <- 1 }()
 	return nil
 }
 
@@ -236,20 +239,20 @@ func (s *LambdaGateway) Stop() error {
 	// We don't need to stop listening to anything
 	fmt.Println("gateway 'Stop' called, waiting for lambda runtime to finish")
 	// Lambda can't be stopped, need to wait for it to finish
-	<- s.finished
+	<-s.finished
 	return nil
 }
 
 func New() (sdk.GatewayService, error) {
 	return &LambdaGateway{
-		runtime: lambda.Start,
+		runtime:  lambda.Start,
 		finished: make(chan int),
 	}, nil
 }
 
 func NewWithRuntime(runtime LambdaRuntimeHandler) (sdk.GatewayService, error) {
 	return &LambdaGateway{
-		runtime: runtime,
+		runtime:  runtime,
 		finished: make(chan int),
 	}, nil
 }

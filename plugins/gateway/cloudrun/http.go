@@ -19,10 +19,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 )
 
@@ -40,8 +40,14 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		wrkr, err := pool.GetWorker()
+		if err != nil {
+			ctx.Error("Unable to get worker to handle request", 500)
+			return
+		}
+
 		bodyBytes := ctx.Request.Body()
 
 		// Check if the payload contains a pubsub event
@@ -58,7 +64,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 				Payload: pubsubEvent.Message.Data,
 			}
 
-			if err := handler.HandleEvent(event); err == nil {
+			if err := wrkr.HandleEvent(event); err == nil {
 				// return a successful response
 				ctx.SuccessString("text/plain", "success")
 			} else {
@@ -69,7 +75,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 		}
 
 		httpTrigger := triggers.FromHttpRequest(ctx)
-		response, err := handler.HandleHttpRequest(httpTrigger)
+		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
@@ -90,10 +96,10 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 	}
 }
 
-func (s *HttpProxyGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(handler),
+		Handler: httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)

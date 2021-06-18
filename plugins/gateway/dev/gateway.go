@@ -18,10 +18,10 @@ package gateway_plugin
 import (
 	"strings"
 
-	"github.com/nitric-dev/membrane/handler"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/triggers"
 	"github.com/nitric-dev/membrane/utils"
+	"github.com/nitric-dev/membrane/worker"
 	"github.com/valyala/fasthttp"
 )
 
@@ -32,8 +32,16 @@ type HttpGateway struct {
 }
 
 // TODO: Lets bind this to a struct...
-func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		// Get a worker for this request
+		wrkr, err := pool.GetWorker()
+
+		if err != nil {
+			ctx.Error("Unable to get worker for this event", 500)
+			return
+		}
+
 		var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 		// Handle Event/Subscription Request Types
@@ -42,7 +50,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 			requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 			payload := ctx.Request.Body()
 
-			err := handler.HandleEvent(&triggers.Event{
+			err := wrkr.HandleEvent(&triggers.Event{
 				ID:      requestId,
 				Topic:   trigger,
 				Payload: payload,
@@ -61,7 +69,7 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 
 		httpReq := triggers.FromHttpRequest(ctx)
 		// Handle HTTP Request Types
-		response, err := handler.HandleHttpRequest(httpReq)
+		response, err := wrkr.HandleHttpRequest(httpReq)
 
 		if err != nil {
 			// TODO: Redact message in production
@@ -81,10 +89,10 @@ func httpHandler(handler handler.TriggerHandler) func(ctx *fasthttp.RequestCtx) 
 	}
 }
 
-func (s *HttpGateway) Start(handler handler.TriggerHandler) error {
+func (s *HttpGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(handler),
+		Handler: httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)
