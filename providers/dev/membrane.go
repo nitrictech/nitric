@@ -15,6 +15,12 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/nitric-dev/membrane/membrane"
 	auth "github.com/nitric-dev/membrane/plugins/auth/dev"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/dev"
@@ -22,10 +28,6 @@ import (
 	kv "github.com/nitric-dev/membrane/plugins/kv/dev"
 	queue "github.com/nitric-dev/membrane/plugins/queue/dev"
 	storage "github.com/nitric-dev/membrane/plugins/storage/dev"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -42,25 +44,30 @@ func main() {
 	authPlugin, _ := auth.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		EventingPlugin:          eventingPlugin,
-		KvPlugin:                kvPlugin,
-		StoragePlugin:           storagePlugin,
-		QueuePlugin:             queuePlugin,
-		AuthPlugin:              authPlugin,
-		GatewayPlugin:           gatewayPlugin,
+		EventingPlugin: eventingPlugin,
+		KvPlugin:       kvPlugin,
+		StoragePlugin:  storagePlugin,
+		QueuePlugin:    queuePlugin,
+		AuthPlugin:     authPlugin,
+		GatewayPlugin:  gatewayPlugin,
 	})
 
 	if err != nil {
 		log.Fatalf("There was an error initialising the membraneServer server: %v", err)
 	}
 
+	errChan := make(chan error)
 	// Start the Membrane server
-	println("starting server")
-	go(m.Start)()
+	go func(chan error) {
+		errChan <- m.Start()
+	}(errChan)
 
-	println("wait for term signal")
-	// Wait for a terminate interrupt
-	<-term
-	println("stopping server")
+	select {
+	case membraneError := <-errChan:
+		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+	case sigTerm := <-term:
+		fmt.Println(fmt.Sprintf("Recieved %v, exiting", sigTerm))
+	}
+
 	m.Stop()
 }
