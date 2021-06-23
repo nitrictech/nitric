@@ -242,13 +242,37 @@ func (s *Membrane) Start() error {
 		return err
 	}
 
-	s.log("Starting Gateway")
-	return s.gatewayPlugin.Start(s.pool)
+	gatewayErrchan := make(chan error)
+	poolErrchan := make(chan error)
+
+	// Start the gateway
+	go func(errch chan error) {
+		s.log("Starting Gateway")
+		errch <- s.gatewayPlugin.Start(s.pool)
+	}(gatewayErrchan)
+
+	// Start the worker pool monitor
+	go func(errch chan error) {
+		s.log("Starting Worker Supervisor")
+		errch <- s.pool.Monitor()
+	}(poolErrchan)
+
+	var exitErr error
+
+	// Wait and fail on either
+	select {
+	case gatewayErr := <-gatewayErrchan:
+		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
+	case poolErr := <-poolErrchan:
+		exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
+	}
+
+	return exitErr
 }
 
 func (s *Membrane) Stop() {
-	_ = s.gatewayPlugin.Stop()
-	s.grpcServer.GracefulStop()
+	s.gatewayPlugin.Stop()
+	s.grpcServer.Stop()
 }
 
 // Create a new Membrane server
@@ -293,7 +317,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if options.ChildTimeoutSeconds < 1 {
-		options.ChildTimeoutSeconds = 5
+		options.ChildTimeoutSeconds = 10
 	}
 
 	if options.GatewayPlugin == nil {
