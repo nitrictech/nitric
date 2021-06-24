@@ -262,6 +262,11 @@ func (s *Membrane) Start() error {
 	// Wait and fail on either
 	select {
 	case gatewayErr := <-gatewayErrchan:
+		if err == nil {
+			// Normal Gateway shutdown
+			// Allowing the membrane to exit
+			return nil
+		}
 		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
 	case poolErr := <-poolErrchan:
 		exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
