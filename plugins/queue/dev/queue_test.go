@@ -92,7 +92,7 @@ var _ = Describe("Queue", func() {
 		})
 	})
 
-	Context("Recieve", func() {
+	Context("Receive", func() {
 		When("The queue is empty", func() {
 			tasksBytes, _ := json.Marshal([]sdk.NitricTask{})
 			mockStorageDriver := mocks.NewMockStorageDriver(&mocks.MockStorageDriverOptions{

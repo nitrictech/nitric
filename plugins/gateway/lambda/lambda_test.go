@@ -100,9 +100,9 @@ var _ = Describe("Lambda", func() {
 				client.Start(pool)
 
 				By("Handling a single HTTP request")
-				Expect(len(mockHandler.RecievedRequests)).To(Equal(1))
+				Expect(len(mockHandler.ReceivedRequests)).To(Equal(1))
 
-				request := mockHandler.RecievedRequests[0]
+				request := mockHandler.ReceivedRequests[0]
 
 				By("Retaining the body")
 				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
@@ -120,7 +120,7 @@ var _ = Describe("Lambda", func() {
 	})
 
 	Context("SNS Events", func() {
-		When("The Lambda Gateway recieves SNS events", func() {
+		When("The Lambda Gateway receives SNS events", func() {
 			topicName := "MyTopic"
 			eventPayload := map[string]interface{}{
 				"test": "test",
@@ -161,9 +161,9 @@ var _ = Describe("Lambda", func() {
 				client.Start(pool)
 
 				By("Handling a single event")
-				Expect(len(mockHandler.RecievedEvents)).To(Equal(1))
+				Expect(len(mockHandler.ReceivedEvents)).To(Equal(1))
 
-				request := mockHandler.RecievedEvents[0]
+				request := mockHandler.ReceivedEvents[0]
 
 				By("Containing the Source Topic")
 				Expect(request.Topic).To(Equal("MyTopic"))

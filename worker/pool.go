@@ -25,6 +25,8 @@ type WorkerPool interface {
 	WaitForActiveWorkers(timeout int) error
 	GetWorker() (Worker, error)
 	AddWorker(Worker) error
+	RemoveWorker(Worker) error
+	Monitor() error
 }
 
 type ProcessPoolOptions struct {
@@ -36,6 +38,7 @@ type ProcessPool struct {
 	maxWorkers int
 	workerLock sync.Mutex
 	workers    []Worker
+	poolErr    chan error
 }
 
 func (p *ProcessPool) getWorkerCount() int {
@@ -44,6 +47,16 @@ func (p *ProcessPool) getWorkerCount() int {
 	return len(p.workers)
 }
 
+// Monitor - Blocks the current thread to supervise this worker pool
+func (p *ProcessPool) Monitor() error {
+	// Returns a pool error
+	// In future we can catch this and attempt to create new workers to recover
+	err := <-p.poolErr
+
+	return err
+}
+
+// WaitForActiveWorkers - Waits for workers to be available in this pool
 func (p *ProcessPool) WaitForActiveWorkers(timeout int) error {
 	maxWaitTime := time.Duration(timeout) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
@@ -66,7 +79,7 @@ func (p *ProcessPool) WaitForActiveWorkers(timeout int) error {
 	return nil
 }
 
-// TODO: Add policy logic for managing worker assignment
+// GetWorker - Retrieves a worker from this pool
 func (p *ProcessPool) GetWorker() (Worker, error) {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
@@ -78,6 +91,26 @@ func (p *ProcessPool) GetWorker() (Worker, error) {
 	}
 }
 
+// RemoveWorker - Removes the given worker from this pool
+func (p *ProcessPool) RemoveWorker(wrkr Worker) error {
+	p.workerLock.Lock()
+	defer p.workerLock.Unlock()
+
+	for i, w := range p.workers {
+		if wrkr == w {
+			p.workers = append(p.workers[:i], p.workers[i+1:]...)
+			if len(p.workers) < 1 {
+				p.poolErr <- fmt.Errorf("Worker pool drained")
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Worker does not exist in this pool")
+}
+
+// AddWorker - Adds the given worker to this pool
 func (p *ProcessPool) AddWorker(wrkr Worker) error {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
@@ -94,6 +127,7 @@ func (p *ProcessPool) AddWorker(wrkr Worker) error {
 	return nil
 }
 
+// NewProcessPool - Creates a new process pool
 func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 	if opts.MaxWorkers < 1 {
 		opts.MaxWorkers = 1
@@ -103,5 +137,6 @@ func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 		maxWorkers: opts.MaxWorkers,
 		workerLock: sync.Mutex{},
 		workers:    make([]Worker, 0),
+		poolErr:    make(chan error),
 	}
 }

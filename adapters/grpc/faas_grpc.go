@@ -15,6 +15,8 @@
 package grpc
 
 import (
+	"fmt"
+
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/worker"
 )
@@ -47,7 +49,13 @@ func (s *FaasServer) TriggerStream(stream pb.Faas_TriggerStreamServer) error {
 	go worker.Listen(errchan)
 
 	// block here on error returned from the worker
-	return <-errchan
+	err := <-errchan
+	fmt.Println("FaaS stream closed, removing worker")
+
+	// Worker is done so we can remove it from the pool
+	s.pool.RemoveWorker(worker)
+
+	return err
 }
 
 func NewFaasServer(workerPool worker.WorkerPool) *FaasServer {

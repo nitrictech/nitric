@@ -29,25 +29,25 @@ type MockWorker struct {
 	returnHttp       *triggers.HttpResponse
 	httpError        error
 	eventError       error
-	RecievedEvents   []*triggers.Event
-	RecievedRequests []*triggers.HttpRequest
+	ReceivedEvents   []*triggers.Event
+	ReceivedRequests []*triggers.HttpRequest
 }
 
 func (m *MockWorker) HandleEvent(trigger *triggers.Event) error {
-	m.RecievedEvents = append(m.RecievedEvents, trigger)
+	m.ReceivedEvents = append(m.ReceivedEvents, trigger)
 
 	return m.eventError
 }
 
 func (m *MockWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	m.RecievedRequests = append(m.RecievedRequests, trigger)
+	m.ReceivedRequests = append(m.ReceivedRequests, trigger)
 
 	return m.returnHttp, m.httpError
 }
 
 func (m *MockWorker) Reset() {
-	m.RecievedEvents = make([]*triggers.Event, 0)
-	m.RecievedRequests = make([]*triggers.HttpRequest, 0)
+	m.ReceivedEvents = make([]*triggers.Event, 0)
+	m.ReceivedRequests = make([]*triggers.HttpRequest, 0)
 }
 
 func NewMockWorker(opts *MockWorkerOptions) *MockWorker {
@@ -55,7 +55,7 @@ func NewMockWorker(opts *MockWorkerOptions) *MockWorker {
 		httpError:        opts.HttpError,
 		returnHttp:       opts.ReturnHttp,
 		eventError:       opts.eventError,
-		RecievedEvents:   make([]*triggers.Event, 0),
-		RecievedRequests: make([]*triggers.HttpRequest, 0),
+		ReceivedEvents:   make([]*triggers.Event, 0),
+		ReceivedRequests: make([]*triggers.HttpRequest, 0),
 	}
 }
