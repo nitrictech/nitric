@@ -116,7 +116,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	httpResponse := triggerResponse.GetHttp()
 
 	if httpResponse == nil {
-		return nil, fmt.Errorf("Fatal: Error handling event, incorrect response recieved from function")
+		return nil, fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
 	}
 
 	fasthttpHeader := &fasthttp.ResponseHeader{}

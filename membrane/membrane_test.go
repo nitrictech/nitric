@@ -52,7 +52,7 @@ type MockAuthServer struct {
 }
 
 type MockFunction struct {
-	// Records the requests that its recieved for later inspection
+	// Records the requests that its received for later inspection
 	requests []*http.Request
 	// Returns a fixed HTTP response
 	response *http.Response

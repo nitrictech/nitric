@@ -84,9 +84,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
+				Expect(mockHandler.ReceivedRequests).To(HaveLen(1))
 
-				handledRequest := mockHandler.RecievedRequests[0]
+				handledRequest := mockHandler.ReceivedRequests[0]
 				By("Preserving the original requests method")
 				Expect(handledRequest.Method).To(Equal("POST"))
 
@@ -143,9 +143,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
+				Expect(mockHandler.ReceivedEvents).To(HaveLen(1))
 
-				handledEvent := mockHandler.RecievedEvents[0]
+				handledEvent := mockHandler.ReceivedEvents[0]
 
 				By("Passing through the pubsub message ID")
 				Expect(handledEvent.ID).To(Equal("test"))

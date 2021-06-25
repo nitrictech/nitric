@@ -76,9 +76,9 @@ var _ = Describe("Http", func() {
 				Expect(err).To(BeNil())
 
 				By("Handling exactly 1 request")
-				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
+				Expect(mockHandler.ReceivedRequests).To(HaveLen(1))
 
-				handledRequest := mockHandler.RecievedRequests[0]
+				handledRequest := mockHandler.ReceivedRequests[0]
 
 				By("Having the provided path")
 				Expect(handledRequest.Path).To((Equal("/test/")))
@@ -102,7 +102,7 @@ var _ = Describe("Http", func() {
 				resp, _ := http.DefaultClient.Do(request)
 
 				By("Not invoking the nitric application")
-				Expect(mockHandler.RecievedRequests).To(BeEmpty())
+				Expect(mockHandler.ReceivedRequests).To(BeEmpty())
 
 				By("Returning a 200 response")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -137,9 +137,9 @@ var _ = Describe("Http", func() {
 				_, _ = http.DefaultClient.Do(request)
 
 				By("Passing the event to the Nitric Application")
-				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
+				Expect(mockHandler.ReceivedEvents).To(HaveLen(1))
 
-				event := mockHandler.RecievedEvents[0]
+				event := mockHandler.ReceivedEvents[0]
 				By("Having the provided requestId")
 				Expect(event.ID).To(Equal("1234"))
 

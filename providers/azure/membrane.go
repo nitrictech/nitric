@@ -62,7 +62,7 @@ func main() {
 	case membraneError := <-errChan:
 		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Recieved %v, exiting", sigTerm))
+		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
 	}
 
 	m.Stop()

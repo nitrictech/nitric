@@ -127,7 +127,7 @@ var _ = Describe("Pubsub", func() {
 		})
 	})
 
-	Context("Recieve", func() {
+	Context("Receive", func() {
 
 		When("Popping from a queue that exists", func() {
 			When("There is a message on the queue", func() {
@@ -163,7 +163,7 @@ var _ = Describe("Pubsub", func() {
 					}, nil
 				})
 
-				It("Should recieve the message", func() {
+				It("Should receive the message", func() {
 					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     nil,

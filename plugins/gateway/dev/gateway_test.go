@@ -74,9 +74,9 @@ var _ = Describe("Gateway", func() {
 				Expect(err).To(BeNil())
 
 				By("Passing through exactly 1 request")
-				Expect(mockHandler.RecievedRequests).To(HaveLen(1))
+				Expect(mockHandler.ReceivedRequests).To(HaveLen(1))
 
-				handledRequest := mockHandler.RecievedRequests[0]
+				handledRequest := mockHandler.ReceivedRequests[0]
 
 				By("Preserving the original request method")
 				Expect(handledRequest.Method).To(Equal("POST"))
@@ -113,9 +113,9 @@ var _ = Describe("Gateway", func() {
 				Expect(err).To(BeNil())
 
 				By("Passing through exactly 1 event")
-				Expect(mockHandler.RecievedEvents).To(HaveLen(1))
+				Expect(mockHandler.ReceivedEvents).To(HaveLen(1))
 
-				evt := mockHandler.RecievedEvents[0]
+				evt := mockHandler.ReceivedEvents[0]
 
 				By("Preserving the provided payload")
 				Expect(evt.Payload).To(BeEquivalentTo(payload))
