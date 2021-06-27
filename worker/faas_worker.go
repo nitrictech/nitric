@@ -122,7 +122,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	fasthttpHeader := &fasthttp.ResponseHeader{}
 
 	for key, val := range httpResponse.GetHeaders() {
-		fasthttpHeader.Add(key, val)
+		fasthttpHeader.Set(key, val)
 	}
 
 	response := &triggers.HttpResponse{

@@ -67,7 +67,7 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	}
 
 	for key, val := range trigger.Header {
-		httpRequest.Header.Add(key, val)
+		httpRequest.Header.Set(key, val)
 	}
 
 	httpRequest.Header.Del("Content-Length")
