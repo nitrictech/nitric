@@ -17,120 +17,84 @@ package queue_service
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"strings"
+	"time"
 
+	"github.com/asdine/storm"
 	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
+	"go.etcd.io/bbolt"
 )
 
-type DefaultQueueDriver struct{}
-
-// EnsureDirExists - Recurively creates directories for the given path
-func (s *DefaultQueueDriver) EnsureDirExists(dir string) error {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// WriteFile - Writes the given byte array to the given path
-func (s *DefaultQueueDriver) WriteFile(file string, contents []byte, fileMode os.FileMode) error {
-	return ioutil.WriteFile(file, contents, fileMode)
-}
-
-func (s *DefaultQueueDriver) ExistsOrFail(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return err
-	}
-
-	return nil
-}
-
-func (s *DefaultQueueDriver) ReadFile(file string) ([]byte, error) {
-	return ioutil.ReadFile(file)
-}
-
-func (s *DefaultQueueDriver) DeleteFile(file string) error {
-	return os.Remove(file)
-}
+const DEFAULT_DIR = "nitric/queues/"
 
 type DevQueueService struct {
 	sdk.UnimplementedQueuePlugin
-	driver   StorageDriver
-	queueDir string
+	dbDir string
+}
+
+type Item struct {
+	ID   int `storm:"id,increment"` // primary key with auto increment
+	Data []byte
 }
 
 func (s *DevQueueService) Send(queue string, task sdk.NitricTask) error {
-	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
-		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
+	if queue == "" {
+		return fmt.Errorf("provide non-blank queue")
+	}
 
-		var existingQueue []sdk.NitricTask
-		// See if the queue exists first...
-		if err := s.driver.ExistsOrFail(fileName); err == nil {
-			// Read the file first
-			if b, err := s.driver.ReadFile(fileName); err == nil {
-				if err := json.Unmarshal(b, &existingQueue); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		} else {
-			existingQueue = make([]sdk.NitricTask, 0)
-		}
-
-		newQueue := append(existingQueue, task)
-
-		if queueByte, err := json.Marshal(&newQueue); err == nil {
-			// Write the new queue, to a file named after the queue
-			if err := s.driver.WriteFile(fileName, queueByte, os.ModePerm); err != nil {
-				return err
-			}
-		}
-	} else {
+	db, err := s.createDb(queue)
+	if err != nil {
 		return err
+	}
+	defer db.Close()
+
+	data, err := json.Marshal(task)
+	if err != nil {
+		return err
+	}
+
+	item := Item{
+		Data: data,
+	}
+
+	err = db.Save(&item)
+	if err != nil {
+		return fmt.Errorf("Error sending %s : %v", task, err)
 	}
 
 	return nil
 }
 
 func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
-	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
-		fileName := fmt.Sprintf("%s%s", s.queueDir, queue)
+	if queue == "" {
+		return nil, fmt.Errorf("provide non-blank queue")
+	}
+	if tasks == nil {
+		return nil, fmt.Errorf("provide non-nil tasks")
+	}
 
-		var existingQueue []sdk.NitricTask
-		// See if the queue exists first...
-		if err := s.driver.ExistsOrFail(fileName); err == nil {
-			// Read the file first
-			if b, err := s.driver.ReadFile(fileName); err == nil {
-				if err := json.Unmarshal(b, &existingQueue); err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		} else {
-			existingQueue = make([]sdk.NitricTask, 0)
-		}
-
-		newQueue := existingQueue
-		for _, task := range tasks {
-			// Add indirected task references to the new queue...
-			newQueue = append(newQueue, task)
-		}
-
-		if queueByte, err := json.Marshal(&newQueue); err == nil {
-			// Write the new queue, to a file named after the queue
-			if err := s.driver.WriteFile(fileName, queueByte, os.ModePerm); err != nil {
-				return nil, err
-			}
-		}
-	} else {
+	db, err := s.createDb(queue)
+	if err != nil {
 		return nil, err
+	}
+	defer db.Close()
+
+	for _, task := range tasks {
+		data, err := json.Marshal(task)
+		if err != nil {
+			return nil, err
+		}
+
+		item := Item{
+			Data: data,
+		}
+
+		err = db.Save(&item)
+		if err != nil {
+			return nil, fmt.Errorf("Error sending %s : %v", task, err)
+		}
 	}
 
 	return &sdk.SendBatchResponse{
@@ -139,75 +103,74 @@ func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 }
 
 func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
-	if err := s.driver.EnsureDirExists(s.queueDir); err == nil {
-		fileName := fmt.Sprintf("%s%s", s.queueDir, options.QueueName)
+	if options.QueueName == "" {
+		return nil, fmt.Errorf("provide non-blank options.queue")
+	}
 
-		var existingQueue []sdk.NitricTask
-		// See if the queue exists first...
-		if err := s.driver.ExistsOrFail(fileName); err == nil {
-			// Read the file first
-			if b, err := s.driver.ReadFile(fileName); err == nil {
-				if err := json.Unmarshal(b, &existingQueue); err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		} else {
-			return nil, fmt.Errorf("queue not found")
-		}
-
-		if len(existingQueue) == 0 {
-			return []sdk.NitricTask{}, nil
-		}
-
-		poppedTasks := make([]sdk.NitricTask, 0)
-		remainingItems := make([]sdk.NitricTask, 0)
-		for i, task := range existingQueue {
-			if uint32(i) < *options.Depth {
-				poppedTasks = append(poppedTasks, sdk.NitricTask{
-					ID:          task.ID,
-					Payload:     task.Payload,
-					PayloadType: task.PayloadType,
-					LeaseID:     task.LeaseID,
-				})
-			} else {
-				remainingItems = append(remainingItems, task)
-			}
-		}
-
-		// Store the remaining items back to the queue file.
-		if queueByte, err := json.Marshal(&remainingItems); err == nil {
-			// Write the new queue, to a file named after the queue
-			if err := s.driver.WriteFile(fileName, queueByte, os.ModePerm); err != nil {
-				return nil, err
-			}
-		}
-		return poppedTasks, nil
-	} else {
+	db, err := s.createDb(options.QueueName)
+	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
+
+	var items []Item
+	err = db.All(&items, storm.Limit(int(*options.Depth)))
+
+	poppedTasks := make([]sdk.NitricTask, 0)
+	for _, item := range items {
+		var task sdk.NitricTask
+		err := json.Unmarshal(item.Data, &task)
+		if err != nil {
+			return nil, err
+		}
+		poppedTasks = append(poppedTasks, task)
+
+		err = db.DeleteStruct(&item)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return poppedTasks, nil
 }
 
 // Completes a previously popped queue item
 func (s *DevQueueService) Complete(queue string, leaseId string) error {
+	if queue == "" {
+		return fmt.Errorf("provide non-blank queue")
+	}
+	if leaseId == "" {
+		return fmt.Errorf("provide non-blank leaseId")
+	}
 	return nil
 }
 
 func New() (sdk.QueueService, error) {
-	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
+	dbDir := utils.GetEnv("LOCAL_QUEUE_DIR", DEFAULT_DIR)
+
+	// Check whether file exists
+	_, err := os.Stat(dbDir)
+	if os.IsNotExist(err) {
+		// Make diretory if not present
+		err := os.MkdirAll(dbDir, 0777)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &DevQueueService{
-		driver:   &DefaultQueueDriver{},
-		queueDir: queueDir,
+		dbDir: dbDir,
 	}, nil
 }
 
-func NewWithStorageDriver(driver StorageDriver) (sdk.QueueService, error) {
-	queueDir := utils.GetEnv("LOCAL_QUEUE_DIR", "/nitric/queues/")
+func (s *DevQueueService) createDb(queue string) (*storm.DB, error) {
+	dbPath := s.dbDir + strings.ToLower(queue) + ".db"
 
-	return &DevQueueService{
-		driver:   driver,
-		queueDir: queueDir,
-	}, nil
+	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
+	db, err := storm.Open(dbPath, options)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

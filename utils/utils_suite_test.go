@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cognito_service_test
+package utils_test
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCognito(t *testing.T) {
+func TestStack(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cognito Suite")
+	RunSpecs(t, "Utils Suite")
 }

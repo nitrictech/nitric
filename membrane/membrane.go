@@ -41,12 +41,12 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
+	DocumentPlugin sdk.DocumentService
 	EventingPlugin sdk.EventService
 	KvPlugin       sdk.KeyValueService
 	StoragePlugin  sdk.StorageService
 	QueuePlugin    sdk.QueueService
 	GatewayPlugin  sdk.GatewayService
-	AuthPlugin     sdk.UserService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -76,12 +76,12 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	eventPlugin   sdk.EventService
-	kvPlugin      sdk.KeyValueService
-	storagePlugin sdk.StorageService
-	gatewayPlugin sdk.GatewayService
-	queuePlugin   sdk.QueueService
-	authPlugin    sdk.UserService
+	documentPlugin sdk.DocumentService
+	eventPlugin    sdk.EventService
+	kvPlugin       sdk.KeyValueService
+	storagePlugin  sdk.StorageService
+	gatewayPlugin  sdk.GatewayService
+	queuePlugin    sdk.QueueService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -105,11 +105,17 @@ func (s *Membrane) log(log string) {
 	}
 }
 
+// Create a new Nitric Document Server
+func (s *Membrane) createDocumentServer() v1.DocumentServer {
+	return grpc2.NewDocumentServer(s.documentPlugin)
+}
+
 // Create a new Nitric Eventing Server
 func (s *Membrane) createEventingServer() v1.EventServer {
 	return grpc2.NewEventServer(s.eventPlugin)
 }
 
+// Create a new Nitric Topic Server
 func (s *Membrane) createTopicServer() v1.TopicServer {
 	return grpc2.NewTopicServer(s.eventPlugin)
 }
@@ -125,10 +131,6 @@ func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
 
 func (s *Membrane) createQueueServer() v1.QueueServer {
 	return grpc2.NewQueueServer(s.queuePlugin)
-}
-
-func (s *Membrane) createUserServer() v1.UserServer {
-	return grpc2.NewUserServer(s.authPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -165,6 +167,9 @@ func (s *Membrane) Start() error {
 	s.grpcServer = grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
+	documentServer := s.createDocumentServer()
+	v1.RegisterDocumentServer(s.grpcServer, documentServer)
+
 	eventingServer := s.createEventingServer()
 	v1.RegisterEventServer(s.grpcServer, eventingServer)
 
@@ -180,15 +185,11 @@ func (s *Membrane) Start() error {
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServer(s.grpcServer, queueServer)
 
-	authServer := s.createUserServer()
-	v1.RegisterUserServer(s.grpcServer, authServer)
-
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
 		faasServer := grpc2.NewFaasServer(s.pool)
 		v1.RegisterFaasServer(s.grpcServer, faasServer)
 	}
-
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
 		return fmt.Errorf("Could not listen on configured service address: %v", err)
@@ -330,7 +331,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil || options.AuthPlugin == nil {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -348,7 +349,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childUrl:                fmt.Sprintf("http://%s", options.ChildAddress),
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
-		authPlugin:              options.AuthPlugin,
+		documentPlugin:          options.DocumentPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
 		kvPlugin:                options.KvPlugin,

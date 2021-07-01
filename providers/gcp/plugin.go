@@ -15,10 +15,10 @@
 package main
 
 import (
-	identity_platform_service "github.com/nitric-dev/membrane/plugins/auth/identityplatform"
+	doc_firestore_service "github.com/nitric-dev/membrane/plugins/document/firestore"
 	pubsub_service "github.com/nitric-dev/membrane/plugins/eventing/pubsub"
 	http_service "github.com/nitric-dev/membrane/plugins/gateway/cloudrun"
-	firestore_service "github.com/nitric-dev/membrane/plugins/kv/firestore"
+	kv_firestore_service "github.com/nitric-dev/membrane/plugins/kv/firestore"
 	pubsub_queue_service "github.com/nitric-dev/membrane/plugins/queue/pubsub"
 	storage_service "github.com/nitric-dev/membrane/plugins/storage/storage"
 	"github.com/nitric-dev/membrane/sdk"
@@ -31,19 +31,19 @@ func New() sdk.ServiceFactory {
 	return &GCPServiceFactory{}
 }
 
-// NewAuthService - Returns Google Cloud Identity Platform based auth service
-func (p *GCPServiceFactory) NewAuthService() (sdk.UserService, error) {
-	return identity_platform_service.New()
-}
-
-// NewKeyValueService - Returns Google Cloud Firestore based kv service
-func (p *GCPServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return firestore_service.New()
+// NewDocumentService - Returns Google Cloud Firestore based document service
+func (p *GCPServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+	return doc_firestore_service.New()
 }
 
 // NewEventService - Returns Google Cloud Pubsub based eventing service
 func (p *GCPServiceFactory) NewEventService() (sdk.EventService, error) {
 	return pubsub_service.New()
+}
+
+// NewKeyValueService - Returns Google Cloud Firestore based kv service
+func (p *GCPServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
+	return kv_firestore_service.New()
 }
 
 // NewGatewayService - Google Cloud Http Gateway service

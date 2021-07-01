@@ -22,7 +22,7 @@ import (
 	"syscall"
 
 	"github.com/nitric-dev/membrane/membrane"
-	auth "github.com/nitric-dev/membrane/plugins/auth/identityplatform"
+	document "github.com/nitric-dev/membrane/plugins/document/firestore"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/pubsub"
 	gateway "github.com/nitric-dev/membrane/plugins/gateway/cloudrun"
 	kv "github.com/nitric-dev/membrane/plugins/kv/firestore"
@@ -36,6 +36,10 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
+	documentPlugin, err := document.New()
+	if err != nil {
+		fmt.Println("Failed to load document plugin:", err.Error())
+	}
 	eventingPlugin, err := eventing.New()
 	if err != nil {
 		fmt.Println("Failed to load eventing plugin:", err.Error())
@@ -56,18 +60,14 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to load queue plugin:", err.Error())
 	}
-	authPlugin, err := auth.New()
-	if err != nil {
-		fmt.Println("Failed to load auth plugin:", err.Error())
-	}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
+		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
-		KvPlugin:       kvPlugin,
-		StoragePlugin:  storagePlugin,
-		QueuePlugin:    queuePlugin,
 		GatewayPlugin:  gatewayPlugin,
-		AuthPlugin:     authPlugin,
+		KvPlugin:       kvPlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

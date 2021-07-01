@@ -23,5 +23,5 @@ import (
 
 func TestLambda(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Lambda Suite")
+	RunSpecs(t, "Lambda Gateway Suite")
 }

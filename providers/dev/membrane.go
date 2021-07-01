@@ -22,12 +22,12 @@ import (
 	"syscall"
 
 	"github.com/nitric-dev/membrane/membrane"
-	auth "github.com/nitric-dev/membrane/plugins/auth/dev"
+	document "github.com/nitric-dev/membrane/plugins/document/boltdb"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/dev"
 	gateway "github.com/nitric-dev/membrane/plugins/gateway/dev"
 	kv "github.com/nitric-dev/membrane/plugins/kv/dev"
 	queue "github.com/nitric-dev/membrane/plugins/queue/dev"
-	storage "github.com/nitric-dev/membrane/plugins/storage/dev"
+	storage "github.com/nitric-dev/membrane/plugins/storage/boltdb"
 )
 
 func main() {
@@ -36,20 +36,20 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
+	documentPlugin, _ := document.New()
 	eventingPlugin, _ := eventing.New()
-	kvPlugin, _ := kv.New()
-	storagePlugin, _ := storage.New()
 	gatewayPlugin, _ := gateway.New()
+	kvPlugin, _ := kv.New()
 	queuePlugin, _ := queue.New()
-	authPlugin, _ := auth.New()
+	storagePlugin, _ := storage.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
+		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
-		KvPlugin:       kvPlugin,
-		StoragePlugin:  storagePlugin,
-		QueuePlugin:    queuePlugin,
-		AuthPlugin:     authPlugin,
 		GatewayPlugin:  gatewayPlugin,
+		KvPlugin:       kvPlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

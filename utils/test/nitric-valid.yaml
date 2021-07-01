@@ -1,0 +1,25 @@
+name: nitric-website
+
+collections:
+  customers:
+    sub-collections:
+      addresses: ~
+      orders: ~
+      payments: ~
+  users: ~
+
+services:
+  website:
+    path: website
+    runtime: official/nextjs
+  contact:
+    path: contact
+    runtime: official/nodets12
+
+entrypoints:
+  /:
+    name: website
+    type: service
+  /contact-sales:
+    name: contact
+    type: service

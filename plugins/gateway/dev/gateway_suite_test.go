@@ -23,5 +23,5 @@ import (
 
 func TestGateway(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Gateway Suite")
+	RunSpecs(t, "Dev Gateway Suite")
 }

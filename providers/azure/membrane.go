@@ -21,10 +21,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitric-dev/membrane/membrane"
 	http_service "github.com/nitric-dev/membrane/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/sdk"
-
-	"github.com/nitric-dev/membrane/membrane"
 )
 
 func main() {
@@ -32,20 +31,20 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	authPlugin := &sdk.UnimplementedAuthPlugin{}
-	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
+	documentPlugin := &sdk.UnimplementedDocumentPlugin{}
 	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
 	gatewayPlugin, _ := http_service.New()
-	storagePlugin := &sdk.UnimplementedStoragePlugin{}
+	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
 	queuePlugin := &sdk.UnimplementedQueuePlugin{}
+	storagePlugin := &sdk.UnimplementedStoragePlugin{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
-		AuthPlugin:     authPlugin,
-		KvPlugin:       kvPlugin,
+		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
 		GatewayPlugin:  gatewayPlugin,
-		StoragePlugin:  storagePlugin,
+		KvPlugin:       kvPlugin,
 		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

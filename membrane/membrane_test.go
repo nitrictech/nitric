@@ -31,6 +31,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type MockDocumentServer struct {
+	sdk.UnimplementedDocumentPlugin
+}
+
 type MockEventingServer struct {
 	sdk.UnimplementedEventingPlugin
 }
@@ -45,10 +49,6 @@ type MockKeyValueServer struct {
 
 type MockQueueServer struct {
 	sdk.UnimplementedQueuePlugin
-}
-
-type MockAuthServer struct {
-	sdk.UnimplementedAuthPlugin
 }
 
 type MockFunction struct {
@@ -171,22 +171,22 @@ var _ = Describe("Membrane", func() {
 			})
 
 			When("All plugins are present", func() {
+				mockDocumentServer := &MockDocumentServer{}
 				mockEventingServer := &MockEventingServer{}
 				mockKeyValueServer := &MockKeyValueServer{}
 				mockStorageServer := &MockStorageServer{}
 				mockQueueServer := &MockQueueServer{}
-				mockAuthServer := &MockAuthServer{}
 
 				mockGateway := &MockGateway{}
 				mbraneOpts := membrane.MembraneOptions{
 					TolerateMissingServices: false,
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
+					DocumentPlugin:          mockDocumentServer,
 					EventingPlugin:          mockEventingServer,
 					KvPlugin:                mockKeyValueServer,
 					StoragePlugin:           mockStorageServer,
 					QueuePlugin:             mockQueueServer,
-					AuthPlugin:              mockAuthServer,
 					Pool:                    pool,
 				}
 

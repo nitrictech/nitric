@@ -15,10 +15,10 @@
 package main
 
 import (
-	cognito_plugin "github.com/nitric-dev/membrane/plugins/auth/cognito"
+	doc_dynamodb_plugin "github.com/nitric-dev/membrane/plugins/document/dynamodb"
 	sns_plugin "github.com/nitric-dev/membrane/plugins/eventing/sns"
 	lambda_plugin "github.com/nitric-dev/membrane/plugins/gateway/lambda"
-	dynamodb_plugin "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
+	kv_dynamodb_plugin "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
 	sqs_plugin "github.com/nitric-dev/membrane/plugins/queue/sqs"
 	s3_plugin "github.com/nitric-dev/membrane/plugins/storage/s3"
 	"github.com/nitric-dev/membrane/sdk"
@@ -31,14 +31,9 @@ func New() sdk.ServiceFactory {
 	return &AWSServiceFactory{}
 }
 
-// NewAuthPlugin - Returns AWS Cognito based auth plugin
-func (p *AWSServiceFactory) NewAuthService() (sdk.UserService, error) {
-	return cognito_plugin.New()
-}
-
-// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
-func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return dynamodb_plugin.New()
+// NewDocumentPlugin - Return AWS DynamoDB document plugin
+func (p *AWSServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+	return doc_dynamodb_plugin.New()
 }
 
 // NewEventingPlugin - Returns AWS SNS based eventing plugin
@@ -49,6 +44,11 @@ func (p *AWSServiceFactory) NewEventService() (sdk.EventService, error) {
 // NewGatewayPlugin - Returns AWS Lambda Gateway plugin
 func (p *AWSServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return lambda_plugin.New()
+}
+
+// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
+func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
+	return kv_dynamodb_plugin.New()
 }
 
 // NewQueuePlugin - Returns AWS SQS based queue plugin

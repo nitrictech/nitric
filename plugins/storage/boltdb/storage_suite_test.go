@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package queue_service
+package boltdb_storage_service_test
 
-import "os"
+import (
+	"testing"
 
-// StorageDriver - The interface used by the LocalStorage plugin to write/read files
-// from the local file system
-type StorageDriver interface {
-	EnsureDirExists(string) error
-	ExistsOrFail(string) error
-	WriteFile(string, []byte, os.FileMode) error
-	ReadFile(string) ([]byte, error)
-	DeleteFile(string) error
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestStorage(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "BoltDB Storage Service Suite")
 }

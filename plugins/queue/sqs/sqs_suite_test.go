@@ -23,5 +23,5 @@ import (
 
 func TestSqs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Sqs Suite")
+	RunSpecs(t, "SQS Queue Service Suite")
 }
