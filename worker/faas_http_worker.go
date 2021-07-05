@@ -58,7 +58,8 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 		},
 	}
 
-	if jsonData, err := json.Marshal(triggerRequest); err != nil {
+	if jsonData, err := json.Marshal(triggerRequest); err == nil {
+		fmt.Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)
@@ -84,12 +85,12 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 				return nil
 			}
 
-			return fmt.Errorf("Topic context indicated processing was unsuccessful")
+			return fmt.Errorf("topic context indicated processing was unsuccessful")
 		}
 
-		return fmt.Errorf("Response from function did not contain topic context")
+		return fmt.Errorf("response from function did not contain topic context")
 	} else {
-		return fmt.Errorf("Error marshalling request")
+		return fmt.Errorf("error marshalling request. Details: %v", err)
 	}
 }
 
