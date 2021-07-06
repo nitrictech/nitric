@@ -15,7 +15,6 @@
 package worker
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -58,7 +57,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 		},
 	}
 
-	if jsonData, err := json.Marshal(triggerRequest); err == nil {
+	if jsonData, err := protojson.Marshal(triggerRequest); err == nil {
 		fmt.Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
@@ -72,7 +71,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 
 		// Response body should contain an instance of triggerResponse
 		var triggerResponse pb.TriggerResponse
-		err = json.Unmarshal(response.Body(), &triggerResponse)
+		err = protojson.Unmarshal(response.Body(), &triggerResponse)
 
 		if err != nil {
 			return err
