@@ -16,6 +16,7 @@
 package gateway_plugin
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/nitric-dev/membrane/sdk"
@@ -57,8 +58,8 @@ func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 			})
 
 			if err != nil {
-				// TODO: Make this more informative
-				ctx.Error("There was an error processing the event", 500)
+				fmt.Println(err)
+				ctx.Error(fmt.Sprintf("Error processing event. Details: %s", err), 500)
 			} else {
 				ctx.SuccessString("text/plain", "Successfully Handled the Event")
 			}
