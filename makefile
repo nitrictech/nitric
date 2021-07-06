@@ -66,9 +66,9 @@ generate-proto:
 # plugins: aws-plugin gcp-plugin dev-plugin
 # 	@echo Done.
 
-# test-plugins: install-tools
-# 	@echo Testing membrane plugins
-# 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/...
+test-plugins: install-tools
+	@echo Testing membrane plugins
+	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/...
 
 # Test the adapters
 test-adapters: install-tools generate-proto
