@@ -1,7 +1,3 @@
-membrane: install
-	@echo Building Go Project...
-	@CGO_ENABLED=1 GOOS=linux go build -o bin/membrane pluggable_membrane.go
-
 init: install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
@@ -66,13 +62,13 @@ generate-proto:
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto
 
-# Build all service factory plugins
-plugins: aws-plugin gcp-plugin dev-plugin
-	@echo Done.
+# # Build all service factory plugins
+# plugins: aws-plugin gcp-plugin dev-plugin
+# 	@echo Done.
 
-test-plugins: install-tools
-	@echo Testing membrane plugins
-	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/...
+# test-plugins: install-tools
+# 	@echo Testing membrane plugins
+# 	@go run github.com/onsi/ginkgo/ginkgo -cover ./plugins/...
 
 # Test the adapters
 test-adapters: install-tools generate-proto
@@ -94,10 +90,10 @@ aws-static-xp: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/aws/membrane.go
 
-# Service Factory Plugin for Pluggable Membrane
-aws-plugin:
-	@echo Building AWS Service Factory Plugin
-	@go build -buildmode=plugin -o lib/plugins/aws.so ./providers/aws/plugin.go
+# # Service Factory Plugin for Pluggable Membrane
+# aws-plugin:
+# 	@echo Building AWS Service Factory Plugin
+# 	@go build -buildmode=plugin -o lib/plugins/aws.so ./providers/aws/plugin.go
 
 aws-docker-static:
 	@docker build . -f ./providers/aws/aws.dockerfile -t nitricimages/membrane-aws
@@ -116,10 +112,10 @@ azure-static-xp: generate-proto
 	@echo Building static Azure membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/azure/membrane.go
 
-# Service Factory Plugin for Pluggable Membrane
-azure-plugin:
-	@echo Building Azure Service Factory Plugin
-	@go build -buildmode=plugin -o lib/plugins/azure.so ./providers/azure/plugin.go
+# # Service Factory Plugin for Pluggable Membrane
+# azure-plugin:
+# 	@echo Building Azure Service Factory Plugin
+# 	@go build -buildmode=plugin -o lib/plugins/azure.so ./providers/azure/plugin.go
 
 azure-docker-static:
 	@docker build . -f ./providers/azure/azure.dockerfile -t nitricimages/membrane-azure
@@ -137,10 +133,10 @@ gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/gcp/membrane.go
 
-# Service Factory Plugin for Pluggable Membrane
-gcp-plugin:
-	@echo Building GCP Service Factory Plugin
-	@go build -buildmode=plugin -o lib/plugins/gcp.so ./providers/gcp/plugin.go
+# # Service Factory Plugin for Pluggable Membrane
+# gcp-plugin:
+# 	@echo Building GCP Service Factory Plugin
+# 	@go build -buildmode=plugin -o lib/plugins/gcp.so ./providers/gcp/plugin.go
 
 gcp-docker-static:
 	@docker build . -f ./providers/gcp/gcp.dockerfile -t nitricimages/membrane-gcp
@@ -155,17 +151,19 @@ dev-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/dev/membrane.go
 
-# Service Factory Plugin for Pluggable Membrane
-dev-plugin:
-	@echo Building Dev Service Factory Plugin
-	@go build -buildmode=plugin -o lib/plugins/dev.so ./providers/dev/plugin.go
+# # Service Factory Plugin for Pluggable Membrane
+# dev-plugin:
+# 	@echo Building Dev Service Factory Plugin
+# 	@go build -buildmode=plugin -o lib/plugins/dev.so ./providers/dev/plugin.go
 
 dev-docker-static:
 	@docker build . -f ./providers/dev/dev.dockerfile -t nitricimages/membrane-local
 
 dev-docker: dev-docker-static
 	@echo Built Local Docker Images
+# END Local Plugins
 
+# BEGIN DigitalOcean Plugins
 do-static: generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./providers/do/membrane.go
 
@@ -174,14 +172,14 @@ do-docker-static:
 
 do-docker: do-docker-static
 	@echo Built Digital Ocean Docker Images
-# END Local Plugins
+# END DigitalOcean Plugins
 
-membrane-docker-alpine: generate-proto
-	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
-membrane-docker-debian: generate-proto
-	@docker build . -f debian.dockerfile -t nitric:membrane-debian
+# membrane-docker-alpine: generate-proto
+# 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
+# membrane-docker-debian: generate-proto
+# 	@docker build . -f debian.dockerfile -t nitric:membrane-debian
 
-# Generate proto files locally before building docker images
-# TODO: Get alpine image generating its own sources
-membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
-	@echo Built Docker Images
+# # Generate proto files locally before building docker images
+# # TODO: Get alpine image generating its own sources
+# membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
+# 	@echo Built Docker Images
