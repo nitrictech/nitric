@@ -99,38 +99,11 @@ Download the Google Protobuf Compiler (standalone binary called `protoc`) from h
 make tests
 ```
 
-### Build Pluggable Membrane
-```bash
-# Build all of the Service Factory plugins
-make plugins
-```
-
-#### Building Pluggable Membrane Images
-
-##### Alpine Linux
-
-```bash
-make membrane-docker-alpine
-```
-
-##### Debian
-
-```bash
-make membrane-docker-debian
-```
-
-##### Both
-```bash
-make membrane-docker
-```
-
 ### Build Static Membranes
 
-#### Building Static Membrane
+#### AWS
 
-##### AWS
-
-###### Standard Binary
+##### Standard Binary
 
 > Linux support only - used in container images and for production.
 
@@ -138,7 +111,7 @@ make membrane-docker
 make aws-static
 ```
 
-###### Cross-platform Binary
+##### Cross-platform Binary
 
 Useful for local testing
 
@@ -146,15 +119,15 @@ Useful for local testing
 make aws-static-xp
 ```
 
-###### Container Images
+##### Container Images
 
 ```bash
 make aws-docker
 ```
 
-##### Google Cloud Platform
+#### Google Cloud Platform
 
-###### Standard Binary
+##### Standard Binary
 
 > Linux support only - used in container images and for production.
 
@@ -162,7 +135,7 @@ make aws-docker
 make gcp-static
 ```
 
-###### Cross-platform Binary
+##### Cross-platform Binary
 
 Useful for local testing
 
@@ -170,17 +143,17 @@ Useful for local testing
 make gcp-static-xp
 ```
 
-###### Container Images
+##### Container Images
 
 ```bash
 make gcp-docker
 ```
 
-##### Dev Membrane
+#### Dev Membrane
 
 > Note: the Dev Membrane should only be used for local development and testing.
 
-###### Standard Binary
+##### Standard Binary
 
 The dev binary is always cross-platform, since it doesn't need to be optimized for production deployments.
 
@@ -188,7 +161,7 @@ The dev binary is always cross-platform, since it doesn't need to be optimized f
 make dev-static
 ```
 
-###### Container Images
+##### Container Images
 
 ```bash
 make dev-docker
