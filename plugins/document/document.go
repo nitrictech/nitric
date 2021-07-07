@@ -65,9 +65,10 @@ func ValidateCollection(collection string, subcollection string) error {
 	if !stack.HasCollection(collection) {
 		return fmt.Errorf("%v collections: %v: not found", stack.Name, collection)
 	}
-	if subcollection != "" && !stack.HasSubCollection(collection, subcollection) {
-		return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, collection, subcollection)
-	}
+	// TODO: review subcollection validation
+	// if subcollection != "" && !stack.HasSubCollection(collection, subcollection) {
+	// 	return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, collection, subcollection)
+	// }
 	return nil
 }
 
@@ -90,9 +91,10 @@ func ValidateKeys(key sdk.Key, subKey *sdk.Key) error {
 		if subKey.Collection == "" {
 			return fmt.Errorf("provide non-blank subKey.Collection")
 		}
-		if !stack.HasSubCollection(key.Collection, subKey.Collection) {
-			return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, key.Collection, subKey.Collection)
-		}
+		// TODO: review subcollection validate in the future
+		// if !stack.HasSubCollection(key.Collection, subKey.Collection) {
+		// 	return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, key.Collection, subKey.Collection)
+		// }
 		if subKey.Id == "" {
 			return fmt.Errorf("provide non-blank subKey.Id")
 		}

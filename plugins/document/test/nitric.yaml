@@ -1,13 +1,7 @@
 name: nitric-website
 
 collections:
-  customers:
-    sub-collections:
-      addresses: ~
-      orders: ~
-      payments: ~
+  customers: ~
   items: ~
-  parentItems:
-    sub-collections:
-      items: ~
+  parentItems: ~
   users: ~
