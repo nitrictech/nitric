@@ -84,6 +84,12 @@ provider as an alternative to the fixed set of plugins in the static membranes.
 
 ### Getting Started
 
+#### Contracts Submodule
+Initialize the GRPC [contracts](https://github.com/nitrictech/contracts) submodule:
+```bash
+git submodule update --init --recursive
+```
+
 #### Install dependencies
 ```bash
 make install-tools
