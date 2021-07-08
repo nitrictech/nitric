@@ -35,7 +35,7 @@ type FirestoreDocService struct {
 	sdk.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (s *FirestoreDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]inte
 	return value.Data(), nil
 }
 
-func (s *FirestoreDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
+func (s *FirestoreDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (s *FirestoreDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string
 	return nil
 }
 
-func (s *FirestoreDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
+func (s *FirestoreDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (s *FirestoreDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
 	return nil
 }
 
-func (s *FirestoreDocService) Query(key sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
 	err := document.ValidateCollection(key.Collection, subcollection)
 	if err != nil {
 		return nil, err

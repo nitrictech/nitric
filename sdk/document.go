@@ -40,28 +40,28 @@ type QueryResult struct {
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
 type DocumentService interface {
-	Get(Key, *Key) (map[string]interface{}, error)
-	Set(Key, *Key, map[string]interface{}) error
-	Delete(Key, *Key) error
-	Query(Key, string, []QueryExpression, int, map[string]string) (*QueryResult, error)
+	Get(*Key, *Key) (map[string]interface{}, error)
+	Set(*Key, *Key, map[string]interface{}) error
+	Delete(*Key, *Key) error
+	Query(*Key, string, []QueryExpression, int, map[string]string) (*QueryResult, error)
 }
 
 type UnimplementedDocumentPlugin struct {
 	DocumentService
 }
 
-func (p *UnimplementedDocumentPlugin) Get(key Key, subKey *Key) (map[string]interface{}, error) {
+func (p *UnimplementedDocumentPlugin) Get(key *Key, subKey *Key) (map[string]interface{}, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Set(key Key, subKey *Key, value map[string]interface{}) error {
+func (p *UnimplementedDocumentPlugin) Set(key *Key, subKey *Key, value map[string]interface{}) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Delete(key Key, subKey *Key) error {
+func (p *UnimplementedDocumentPlugin) Delete(key *Key, subKey *Key) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Query(key Key, subcollection string, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
+func (p *UnimplementedDocumentPlugin) Query(key *Key, subcollection string, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

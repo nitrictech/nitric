@@ -19,8 +19,6 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -32,119 +30,89 @@ type DocumentServer struct {
 	documentPlugin sdk.DocumentService
 }
 
-func (s *DocumentServer) checkPluginRegistered() (bool, error) {
-	if s.documentPlugin == nil {
-		return false, status.Errorf(codes.Unimplemented, "Document plugin not registered")
-	}
+func (s *DocumentServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
+	key := toSdkKey(req.Key)
+	subKey := toSdkKey(req.SubKey)
 
-	return true, nil
-}
-
-func (s *DocumentServer) Set(ctx context.Context, req *pb.DocSetRequest) (*pb.DocSetResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-		key := toSdkKey(req.Key)
-		subKey := toSdkKey(req.SubKey)
-
-		if err := s.documentPlugin.Set(*key, subKey, req.GetValue().AsMap()); err == nil {
-			return &pb.DocSetResponse{}, nil
-		} else {
-			// Case: Failed to create the key
-			// TODO: Translate from internal Document Service Error
-			return nil, err
-		}
+	if err := s.documentPlugin.Set(key, subKey, req.GetValue().AsMap()); err == nil {
+		return &pb.DocumentSetResponse{}, nil
 	} else {
-		// Case: Plugin was not registered
+		// Case: Failed to create the key
+		// TODO: Translate from internal Document Service Error
 		return nil, err
 	}
 }
 
-func (s *DocumentServer) Get(ctx context.Context, req *pb.DocGetRequest) (*pb.DocGetResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-		key := toSdkKey(req.Key)
-		subKey := toSdkKey(req.SubKey)
+func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
+	key := toSdkKey(req.Key)
+	subKey := toSdkKey(req.SubKey)
 
-		if val, err := s.documentPlugin.Get(*key, subKey); err == nil {
-			if valStruct, err := structpb.NewStruct(val); err == nil {
-				return &pb.DocGetResponse{
-					Value: valStruct,
-				}, nil
-			} else {
-				// Case: Failed to create PB struct from stored value
-				// TODO: Translate from internal Document Plugin Error
-				return nil, err
-			}
+	if val, err := s.documentPlugin.Get(key, subKey); err == nil {
+		if valStruct, err := structpb.NewStruct(val); err == nil {
+			return &pb.DocumentGetResponse{
+				Value: valStruct,
+			}, nil
 		} else {
-			// Case: There was an error retrieving the keyvalue
+			// Case: Failed to create PB struct from stored value
 			// TODO: Translate from internal Document Plugin Error
 			return nil, err
 		}
 	} else {
-		// Case: The Document plugin was not registered
+		// Case: There was an error retrieving the keyvalue
 		// TODO: Translate from internal Document Plugin Error
 		return nil, err
 	}
 }
 
-func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocDeleteRequest) (*pb.DocDeleteResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-		key := toSdkKey(req.Key)
-		subKey := toSdkKey(req.SubKey)
+func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
+	key := toSdkKey(req.Key)
+	subKey := toSdkKey(req.SubKey)
 
-		if err := s.documentPlugin.Delete(*key, subKey); err == nil {
-			return &pb.DocDeleteResponse{}, nil
-		} else {
-			// Case: Failed to create the keyvalue
-			// TODO: Translate from internal Document Plugin Error
-			return nil, err
-		}
+	if err := s.documentPlugin.Delete(key, subKey); err == nil {
+		return &pb.DocumentDeleteResponse{}, nil
 	} else {
-		// Case: Plugin was not registered
+		// Case: Failed to create the keyvalue
+		// TODO: Translate from internal Document Plugin Error
 		return nil, err
 	}
 }
 
-func (s *DocumentServer) Query(ctx context.Context, req *pb.DocQueryRequest) (*pb.DocQueryResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-		key := toSdkKey(req.Key)
-		subcoll := req.GetSubCollection()
-		expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
-		for i, exp := range req.GetExpressions() {
-			expressions[i] = sdk.QueryExpression{
-				Operand:  exp.GetOperand(),
-				Operator: exp.GetOperator(),
-				Value:    exp.GetValue(),
+func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
+	key := toSdkKey(req.Key)
+	subcoll := req.GetSubCollection()
+	expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
+	for i, exp := range req.GetExpressions() {
+		expressions[i] = sdk.QueryExpression{
+			Operand:  exp.GetOperand(),
+			Operator: exp.GetOperator(),
+			Value:    exp.GetValue(),
+		}
+	}
+	limit := int(req.GetLimit())
+	pagingMap := req.GetPagingToken()
+
+	if qr, err := s.documentPlugin.Query(key, subcoll, expressions, limit, pagingMap); err == nil {
+
+		valStructs := make([]*structpb.Struct, len(qr.Data))
+		for i, valMap := range qr.Data {
+			if valStruct, err := structpb.NewStruct(valMap); err == nil {
+				valStructs[i] = valStruct
+
+			} else {
+				// Case: Failed to create PB struct from stored value
+				// TODO: Translate from internal Document Plugin Error
+				return nil, err
 			}
 		}
-		limit := int(req.GetLimit())
-		pagingMap := req.GetPagingToken()
 
-		if qr, err := s.documentPlugin.Query(*key, subcoll, expressions, limit, pagingMap); err == nil {
-
-			valStructs := make([]*structpb.Struct, len(qr.Data))
-			for i, valMap := range qr.Data {
-				if valStruct, err := structpb.NewStruct(valMap); err == nil {
-					valStructs[i] = valStruct
-
-				} else {
-					// Case: Failed to create PB struct from stored value
-					// TODO: Translate from internal Document Plugin Error
-					return nil, err
-				}
-			}
-
-			return &pb.DocQueryResponse{
-				Values:      valStructs,
-				PagingToken: qr.PagingToken,
-			}, nil
-
-		} else {
-			// Case: Failed to create the keyvalue
-			// TODO: Translate from internal Document Plugin Error
-			return nil, err
-		}
+		return &pb.DocumentQueryResponse{
+			Values:      valStructs,
+			PagingToken: qr.PagingToken,
+		}, nil
 
 	} else {
-		// Case: Plugin was not registered
+		// Case: Failed to create the keyvalue
+		// TODO: Translate from internal Document Plugin Error
 		return nil, err
 	}
 }

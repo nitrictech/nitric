@@ -1,11 +1,7 @@
 name: nitric-website
 
 collections:
-  customers:
-    sub-collections:
-      addresses: ~
-      orders: ~
-      payments: ~
+  customers: ~
   users: ~
 
 services:

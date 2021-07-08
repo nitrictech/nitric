@@ -34,7 +34,7 @@ type DynamoDocService struct {
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (s *DynamoDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]interfa
 	return itemMap, nil
 }
 
-func (s *DynamoDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
+func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func (s *DynamoDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string]in
 	return nil
 }
 
-func (s *DynamoDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
+func (s *DynamoDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (s *DynamoDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
 	return nil
 }
 
-func (s *DynamoDocService) Query(key sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
 	err := document.ValidateCollection(key.Collection, subcollection)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func NewWithClient(client *dynamodb.DynamoDB) (sdk.DocumentService, error) {
 
 // Private Functions ----------------------------------------------------------
 
-func createKeyMap(key sdk.Key, subKey *sdk.Key) map[string]string {
+func createKeyMap(key *sdk.Key, subKey *sdk.Key) map[string]string {
 	keyMap := make(map[string]string)
 
 	keyMap[document.ATTRIB_PK] = key.Id
@@ -236,7 +236,7 @@ func createKeyMap(key sdk.Key, subKey *sdk.Key) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key sdk.Key, subKey *sdk.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, key *sdk.Key, subKey *sdk.Key) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
@@ -253,7 +253,7 @@ func createItemMap(source map[string]interface{}, key sdk.Key, subKey *sdk.Key) 
 }
 
 func (s *DynamoDocService) performQuery(
-	key sdk.Key,
+	key *sdk.Key,
 	subcoll string,
 	expressions []sdk.QueryExpression,
 	limit int,
@@ -335,7 +335,7 @@ func (s *DynamoDocService) performQuery(
 }
 
 func (s *DynamoDocService) performScan(
-	key sdk.Key,
+	key *sdk.Key,
 	subcoll string,
 	expressions []sdk.QueryExpression,
 	limit int,

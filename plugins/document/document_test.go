@@ -55,45 +55,29 @@ var _ = Describe("Document Plugin", func() {
 			It("should return nil", func() {
 				err := doc.ValidateCollection("customers", "unknown")
 				Expect(err).To(BeNil())
-				// TODO: review subcollection validation in future
-				// Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: customers: sub-collection: unknown: not found"))
 			})
 		})
-		// TODO: review subcollection validation in future
-		// When("Valid subcollection", func() {
-		// 	It("should return nil", func() {
-		// 		err := doc.ValidateCollection("customers", "addresses")
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
 	})
 
 	When("ValidateKeys", func() {
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := doc.ValidateKeys(sdk.Key{}, nil)
+				err := doc.ValidateKeys(&sdk.Key{}, nil)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection")))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return error", func() {
-				err := doc.ValidateKeys(sdk.Key{Collection: "users"}, nil)
+				err := doc.ValidateKeys(&sdk.Key{Collection: "users"}, nil)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
 			})
 		})
 		When("Unknown key.Collection", func() {
 			It("should return error", func() {
-				err := doc.ValidateKeys(sdk.Key{Collection: "unknown", Id: "123"}, nil)
+				err := doc.ValidateKeys(&sdk.Key{Collection: "unknown", Id: "123"}, nil)
 				Expect(err).To(BeEquivalentTo(errors.New("nitric-website collections: unknown: not found")))
 			})
 		})
-		// TODO: review subcollection validate in the future
-		// When("Unknown subKey.Collection", func() {
-		// 	It("should return error", func() {
-		// 		err := doc.ValidateKeys(sdk.Key{Collection: "users", Id: "123"}, &sdk.Key{Collection: "unknown"})
-		// 		Expect(err).To(BeEquivalentTo(errors.New("nitric-website collections: users: sub-collection: unknown: not found")))
-		// 	})
-		// })
 	})
 
 	When("GetValueEndCode", func() {
@@ -223,7 +207,7 @@ var _ = Describe("Document Plugin", func() {
 				}
 				err := doc.ValidateExpressions(exps)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(HavePrefix("inequality expressions on multiple properties not supported with Firestore:"))
+				Expect(err.Error()).To(HavePrefix("inequality expressions on multiple properties are not supported:"))
 			})
 		})
 		When("valid range filter expression", func() {
@@ -254,7 +238,7 @@ var _ = Describe("Document Plugin", func() {
 				}
 				err := doc.ValidateExpressions(exps)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(HavePrefix("range expression not supported with DynamoDB"))
+				Expect(err.Error()).To(HavePrefix("range expression combination not supported (use operators >= and <=) :"))
 			})
 		})
 	})

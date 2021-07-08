@@ -51,44 +51,6 @@ var _ = Describe("Utils", func() {
 			})
 		})
 	})
-	Context("HasSubCollection", func() {
-		stack, _ := utils.NewStack(YAML_VALID)
-		When("invalid selection", func() {
-			It("Should return false", func() {
-				Expect(stack.HasSubCollection("unknown", "orders")).To(BeFalse())
-			})
-		})
-		When("invalid selection", func() {
-			It("Should return false", func() {
-				Expect(stack.HasSubCollection("customers", "unknown")).To(BeFalse())
-			})
-		})
-		When("valid selection", func() {
-			It("Should return true", func() {
-				Expect(stack.HasSubCollection("customers", "orders")).To(BeTrue())
-			})
-		})
-	})
-	Context("SubCollectionNames", func() {
-		stack, _ := utils.NewStack(YAML_VALID)
-		When("valid selection", func() {
-			It("Should return true", func() {
-				names, err := stack.SubCollectionNames("customers")
-				Expect(names).To(HaveLen(3))
-				Expect(names[0]).To(BeEquivalentTo("addresses"))
-				Expect(names[1]).To(BeEquivalentTo("orders"))
-				Expect(names[2]).To(BeEquivalentTo("payments"))
-				Expect(err).To(BeNil())
-			})
-		})
-		When("invalid selection", func() {
-			It("Should return error", func() {
-				names, err := stack.SubCollectionNames("unknown")
-				Expect(names).To(BeNil())
-				Expect(err).ToNot(BeNil())
-			})
-		})
-	})
 	Context("NewStackDefault", func() {
 		When("default not available", func() {
 			It("Should return error", func() {

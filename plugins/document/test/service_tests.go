@@ -201,26 +201,26 @@ var ParentItemsKey = sdk.Key{
 // Test Data Loading Functions ------------------------------------------------
 
 func LoadUsersData(kvPlugin sdk.DocumentService) {
-	kvPlugin.Set(UserKey1, nil, UserItem1)
-	kvPlugin.Set(UserKey2, nil, UserItem2)
-	kvPlugin.Set(UserKey3, nil, UserItem3)
+	kvPlugin.Set(&UserKey1, nil, UserItem1)
+	kvPlugin.Set(&UserKey2, nil, UserItem2)
+	kvPlugin.Set(&UserKey3, nil, UserItem3)
 }
 
 func LoadCustomersData(docPlugin sdk.DocumentService) {
-	docPlugin.Set(Customer1.Key, nil, Customer1.Data)
-	docPlugin.Set(Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
-	docPlugin.Set(Customer1.Key, &Customer1.Orders[1].Key, Customer1.Orders[1].Data)
-	docPlugin.Set(Customer1.Key, &Customer1.Orders[2].Key, Customer1.Orders[2].Data)
+	docPlugin.Set(&Customer1.Key, nil, Customer1.Data)
+	docPlugin.Set(&Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
+	docPlugin.Set(&Customer1.Key, &Customer1.Orders[1].Key, Customer1.Orders[1].Data)
+	docPlugin.Set(&Customer1.Key, &Customer1.Orders[2].Key, Customer1.Orders[2].Data)
 
-	docPlugin.Set(Customer2.Key, nil, Customer2.Data)
-	docPlugin.Set(Customer2.Key, &Customer2.Orders[0].Key, Customer2.Orders[0].Data)
-	docPlugin.Set(Customer2.Key, &Customer2.Orders[1].Key, Customer2.Orders[1].Data)
+	docPlugin.Set(&Customer2.Key, nil, Customer2.Data)
+	docPlugin.Set(&Customer2.Key, &Customer2.Orders[0].Key, Customer2.Orders[0].Data)
+	docPlugin.Set(&Customer2.Key, &Customer2.Orders[1].Key, Customer2.Orders[1].Data)
 }
 
 func LoadItemsData(docPlugin sdk.DocumentService) {
 	for _, item := range Items {
-		docPlugin.Set(item.Key, nil, item.Data)
-		docPlugin.Set(ParentItemsKey, &item.Key, item.Data)
+		docPlugin.Set(&item.Key, nil, item.Data)
+		docPlugin.Set(&ParentItemsKey, &item.Key, item.Data)
 	}
 }
 
@@ -231,21 +231,21 @@ func GetTests(docPlugin sdk.DocumentService) {
 		When("Blank key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Id: "1"}
-				_, err := docPlugin.Get(key, nil)
+				_, err := docPlugin.Get(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Unknown key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "unknown", Id: "1"}
-				_, err := docPlugin.Get(key, nil)
+				_, err := docPlugin.Get(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users"}
-				_, err := docPlugin.Get(key, nil)
+				_, err := docPlugin.Get(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -253,7 +253,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Id: "1"}
-				_, err := docPlugin.Get(key, &parentKey)
+				_, err := docPlugin.Get(&key, &parentKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -261,15 +261,15 @@ func GetTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Collection: "users"}
-				_, err := docPlugin.Get(key, &parentKey)
+				_, err := docPlugin.Get(&key, &parentKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				docPlugin.Set(UserKey1, nil, UserItem1)
+				docPlugin.Set(&UserKey1, nil, UserItem1)
 
-				doc, err := docPlugin.Get(UserKey1, nil)
+				doc, err := docPlugin.Get(&UserKey1, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc["email"]).To(BeEquivalentTo(UserItem1["email"]))
@@ -277,9 +277,9 @@ func GetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Compound Key Get", func() {
 			It("Should store item successfully", func() {
-				docPlugin.Set(Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
+				docPlugin.Set(&Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
 
-				doc, err := docPlugin.Get(Customer1.Key, &Customer1.Orders[0].Key)
+				doc, err := docPlugin.Get(&Customer1.Key, &Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc).To(BeEquivalentTo(Customer1.Orders[0].Data))
@@ -293,21 +293,21 @@ func SetTests(docPlugin sdk.DocumentService) {
 		When("Blank key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Id: "1"}
-				err := docPlugin.Set(key, nil, UserItem1)
+				err := docPlugin.Set(&key, nil, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Unknown key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "unknown", Id: "1"}
-				err := docPlugin.Set(key, nil, UserItem1)
+				err := docPlugin.Set(&key, nil, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users"}
-				err := docPlugin.Set(key, nil, UserItem1)
+				err := docPlugin.Set(&key, nil, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -315,7 +315,7 @@ func SetTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Id: "1"}
-				err := docPlugin.Set(key, &parentKey, UserItem1)
+				err := docPlugin.Set(&key, &parentKey, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -323,23 +323,23 @@ func SetTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Collection: "users"}
-				err := docPlugin.Set(key, &parentKey, UserItem1)
+				err := docPlugin.Set(&key, &parentKey, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil item map", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
-				err := docPlugin.Set(key, nil, nil)
+				err := docPlugin.Set(&key, nil, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid New Set", func() {
 			It("Should store new item successfully", func() {
-				err := docPlugin.Set(UserKey1, nil, UserItem1)
+				err := docPlugin.Set(&UserKey1, nil, UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(UserKey1, nil)
+				doc, err := docPlugin.Get(&UserKey1, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc["email"]).To(BeEquivalentTo(UserItem1["email"]))
@@ -347,18 +347,18 @@ func SetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Update Set", func() {
 			It("Should update existing item successfully", func() {
-				err := docPlugin.Set(UserKey1, nil, UserItem1)
+				err := docPlugin.Set(&UserKey1, nil, UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(UserKey1, nil)
+				doc, err := docPlugin.Get(&UserKey1, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc["email"]).To(BeEquivalentTo(UserItem1["email"]))
 
-				err = docPlugin.Set(UserKey1, nil, UserItem2)
+				err = docPlugin.Set(&UserKey1, nil, UserItem2)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err = docPlugin.Get(UserKey1, nil)
+				doc, err = docPlugin.Get(&UserKey1, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc["email"]).To(BeEquivalentTo(UserItem2["email"]))
@@ -366,10 +366,10 @@ func SetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Compound Key Set", func() {
 			It("Should store item successfully", func() {
-				err := docPlugin.Set(Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
+				err := docPlugin.Set(&Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(Customer1.Key, &Customer1.Orders[0].Key)
+				doc, err := docPlugin.Get(&Customer1.Key, &Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc).To(BeEquivalentTo(Customer1.Orders[0].Data))
@@ -383,21 +383,21 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 		When("Blank key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Id: "1"}
-				err := docPlugin.Delete(key, nil)
+				err := docPlugin.Delete(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Unknown key.Collection", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "unknown", Id: "1"}
-				err := docPlugin.Delete(key, nil)
+				err := docPlugin.Delete(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users"}
-				err := docPlugin.Delete(key, nil)
+				err := docPlugin.Delete(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -405,7 +405,7 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Id: "1"}
-				err := docPlugin.Delete(key, &parentKey)
+				err := docPlugin.Delete(&key, &parentKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -413,32 +413,40 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users", Id: "1"}
 				parentKey := sdk.Key{Collection: "users"}
-				err := docPlugin.Delete(key, &parentKey)
+				err := docPlugin.Delete(&key, &parentKey)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(UserKey1, nil, UserItem1)
+				docPlugin.Set(&UserKey1, nil, UserItem1)
 
-				err := docPlugin.Delete(UserKey1, nil)
+				err := docPlugin.Delete(&UserKey1, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(UserKey1, nil)
+				doc, err := docPlugin.Get(&UserKey1, nil)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Compound Key Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
+				docPlugin.Set(&Customer1.Key, &Customer1.Orders[0].Key, Customer1.Orders[0].Data)
 
-				err := docPlugin.Delete(Customer1.Key, &Customer1.Orders[0].Key)
+				err := docPlugin.Delete(&Customer1.Key, &Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(Customer1.Key, &Customer1.Orders[0].Key)
+				doc, err := docPlugin.Get(&Customer1.Key, &Customer1.Orders[0].Key)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
+			})
+		})
+		When("Valid SubCollection Delete", func() {
+			It("Should delete all children", func() {
+				LoadCustomersData(docPlugin)
+
+				err := docPlugin.Delete(&Customer1.Key, nil)
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})
 	})
@@ -448,36 +456,28 @@ func QueryTests(docPlugin sdk.DocumentService) {
 	Context("Query", func() {
 		When("Invalid - blank key.Collection", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(sdk.Key{}, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Invalid - uknown key.Collection", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(sdk.Key{Collection: "unknown"}, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "unknown"}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Invalid - nil expressions argument", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(sdk.Key{Collection: "users"}, "", nil, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "users"}, "", nil, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-		When("Invalid - unkown subcol", func() {
-			It("Should return an error", func() {
-				// TODO: review sub-collection validation
-				// result, err := docPlugin.Query(Customer1.Key, "unknown", []sdk.QueryExpression{}, 0, nil)
-				// Expect(result).To(BeNil())
-				// Expect(err).Should(HaveOccurred())
-			})
-		})
 		When("Empty database", func() {
 			It("Should return empty list", func() {
-				result, err := docPlugin.Query(sdk.Key{Collection: "users"}, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "users"}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -489,7 +489,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(sdk.Key{Collection: "users"}, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "users"}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(3))
@@ -500,7 +500,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(UserKey2, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&UserKey2, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(1))
@@ -512,7 +512,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(sdk.Key{Collection: "users", Id: "unknown"}, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "users", Id: "unknown"}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -522,7 +522,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 items", func() {
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(CustomersKey, "", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -538,7 +538,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "country", Operator: "==", Value: "US"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(1))
@@ -554,7 +554,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					{Operand: "country", Operator: "==", Value: "US"},
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -564,7 +564,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 3 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(Customer1.Key, "orders", []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(3))
@@ -580,7 +580,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -595,7 +595,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(1))
@@ -609,7 +609,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(3))
@@ -622,7 +622,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -637,7 +637,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -650,7 +650,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -663,7 +663,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(5))
@@ -676,7 +676,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(3))
@@ -689,7 +689,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -704,7 +704,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(1))
@@ -718,7 +718,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
-				result, err := docPlugin.Query(CustomersKey, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&CustomersKey, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -733,7 +733,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
-				result, err := docPlugin.Query(Customer1.Key, "orders", exps, 0, nil)
+				result, err := docPlugin.Query(&Customer1.Key, "orders", exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(1))
@@ -744,7 +744,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				result, err := docPlugin.Query(sdk.Key{Collection: "items"}, "", []sdk.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "items"}, "", []sdk.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(10))
@@ -757,7 +757,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(sdk.Key{Collection: "items"}, "", []sdk.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(&sdk.Key{Collection: "items"}, "", []sdk.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -779,7 +779,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
-				result, err := docPlugin.Query(sdk.Key{Collection: "items"}, "", exps, 4, nil)
+				result, err := docPlugin.Query(&sdk.Key{Collection: "items"}, "", exps, 4, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(4))
@@ -792,7 +792,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(sdk.Key{Collection: "items"}, "", exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(&sdk.Key{Collection: "items"}, "", exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(4))
@@ -806,7 +806,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					}
 				}
 
-				result, err = docPlugin.Query(sdk.Key{Collection: "items"}, "", exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(&sdk.Key{Collection: "items"}, "", exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))
@@ -817,7 +817,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				result, err := docPlugin.Query(ParentItemsKey, "items", []sdk.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(&ParentItemsKey, "items", []sdk.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(10))
@@ -830,7 +830,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(ParentItemsKey, "items", []sdk.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(&ParentItemsKey, "items", []sdk.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(2))
@@ -852,7 +852,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				exps := []sdk.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
-				result, err := docPlugin.Query(ParentItemsKey, "items", exps, 4, nil)
+				result, err := docPlugin.Query(&ParentItemsKey, "items", exps, 4, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(4))
@@ -865,7 +865,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(ParentItemsKey, "items", exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(&ParentItemsKey, "items", exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(4))
@@ -879,7 +879,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					}
 				}
 
-				result, err = docPlugin.Query(ParentItemsKey, "items", exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(&ParentItemsKey, "items", exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Data).To(HaveLen(0))

@@ -17,7 +17,6 @@ package utils
 import (
 	"fmt"
 	"io/ioutil"
-	"sort"
 
 	"gopkg.in/yaml.v2"
 )
@@ -28,47 +27,16 @@ const NITRIC_HOME = "NITRIC_HOME"
 // NITRIC_YAML filename environment variable name, default value: nitric.yaml
 const NITRIC_YAML = "NITRIC_YAML"
 
-// Provides a nitric stack collections definition
-type Collection struct {
-	SubCollections map[string]interface{} `yaml:"sub-collections"`
-}
-
 // Provides a nitric stack definition
 type NitricStack struct {
-	Name        string                `yaml:"name"`
-	Collections map[string]Collection `yaml:"collections"`
+	Name        string                 `yaml:"name"`
+	Collections map[string]interface{} `yaml:"collections"`
 }
 
 // Return true if the named collection is defined in the stack
 func (s NitricStack) HasCollection(name string) bool {
 	_, found := s.Collections[name]
 	return found
-}
-
-// Return true if the collection and subcollection is defined in the stack
-func (s NitricStack) HasSubCollection(collection string, subcollection string) bool {
-	if coll, found := s.Collections[collection]; found {
-		_, subcollFound := coll.SubCollections[subcollection]
-		return subcollFound
-	}
-	return false
-}
-
-// Return the colleciton subcollection names
-func (s NitricStack) SubCollectionNames(collection string) ([]string, error) {
-	if !s.HasCollection(collection) {
-		return nil, fmt.Errorf("%v collections: %v: not found", s.Name, collection)
-	}
-
-	var names []string
-
-	for key := range s.Collections[collection].SubCollections {
-		names = append(names, key)
-	}
-
-	sort.Strings(names)
-
-	return names, nil
 }
 
 // Create a Nitric Stack definition with default path

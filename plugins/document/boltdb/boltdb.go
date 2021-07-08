@@ -49,7 +49,7 @@ type BoltDoc struct {
 	Value       map[string]interface{}
 }
 
-func (s *BoltDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (s *BoltDocService) Get(key sdk.Key, subKey *sdk.Key) (map[string]interface
 	return doc.Value, nil
 }
 
-func (s *BoltDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
+func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (s *BoltDocService) Set(key sdk.Key, subKey *sdk.Key, value map[string]inte
 	return db.Save(&doc)
 }
 
-func (s *BoltDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
+func (s *BoltDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func (s *BoltDocService) Delete(key sdk.Key, subKey *sdk.Key) error {
 	return err
 }
 
-func (s *BoltDocService) Query(key sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
 	err := document.ValidateCollection(key.Collection, subcollection)
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (s *BoltDocService) createdDb(collection string) (*storm.DB, error) {
 	return db, nil
 }
 
-func createDoc(key sdk.Key, subKey *sdk.Key) BoltDoc {
+func createDoc(key *sdk.Key, subKey *sdk.Key) BoltDoc {
 
 	doc := BoltDoc{
 		Id:          key.Id,

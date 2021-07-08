@@ -72,12 +72,15 @@ func ValidateCollection(collection string, subcollection string) error {
 	return nil
 }
 
-func ValidateKeys(key sdk.Key, subKey *sdk.Key) error {
+func ValidateKeys(key *sdk.Key, subKey *sdk.Key) error {
 	stack, err := Stack()
 	if err != nil {
 		return err
 	}
 
+	if key == nil {
+		return fmt.Errorf("provide non-nil key")
+	}
 	if key.Collection == "" {
 		return fmt.Errorf("provide non-blank key.Collection")
 	}
@@ -148,7 +151,9 @@ func ValidateExpressions(expressions []sdk.QueryExpression) error {
 			}
 			msg += prop + " " + exp
 		}
-		return fmt.Errorf("inequality expressions on multiple properties not supported with Firestore: [ %v ]", msg)
+		// Firestore does not support inequality expressions on multiple properties.
+		// Firestore requires composite key to be created at deployment time.
+		return fmt.Errorf("inequality expressions on multiple properties are not supported: [ %v ]", msg)
 	}
 
 	// DynamoDB range expression compatability check
@@ -210,7 +215,8 @@ func hasRangeError(exps []sdk.QueryExpression) error {
 					(exp.Operator == ">" && nextExp.Operator == "<=") ||
 					(exp.Operator == ">=" && nextExp.Operator == "<")) {
 
-				return fmt.Errorf("range expression not supported with DynamoDB (use operators >= and <=) : %v", exp)
+				// Range expression combination not supported with DynamoDB, must use >= and <= which maps to DynamoDB BETWEEN
+				return fmt.Errorf("range expression combination not supported (use operators >= and <=) : %v", exp)
 			}
 		}
 	}

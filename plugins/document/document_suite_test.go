@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestKV(t *testing.T) {
+func TestDocument(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Plugin Document Suite")
 }
