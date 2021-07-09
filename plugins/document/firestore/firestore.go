@@ -35,7 +35,7 @@ type FirestoreDocService struct {
 	sdk.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,9 @@ func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]int
 		return nil, fmt.Errorf("error retrieving value: %v", err)
 	}
 
-	return value.Data(), nil
+	return &sdk.Document{
+		Content: value.Data(),
+	}, nil
 }
 
 func (s *FirestoreDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
@@ -113,7 +115,7 @@ func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressi
 	}
 
 	queryResult := &sdk.QueryResult{
-		Data: make([]map[string]interface{}, 0),
+		Documents: make([]sdk.Document, 0),
 	}
 
 	collRef := s.client.Collection(key.Collection)
@@ -130,7 +132,8 @@ func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressi
 			}
 		}
 
-		queryResult.Data = append(queryResult.Data, value.Data())
+		sdkDoc := sdk.Document{Content: value.Data()}
+		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 		return queryResult, nil
 	}
 
@@ -194,10 +197,11 @@ func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressi
 		if err != nil {
 			return nil, fmt.Errorf("error querying value: %v", err)
 		}
-		queryResult.Data = append(queryResult.Data, docSnp.Data())
+		sdkDoc := sdk.Document{Content: docSnp.Data()}
+		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
-		if limit > 0 && len(queryResult.Data) == limit {
+		if limit > 0 && len(queryResult.Documents) == limit {
 			tokens := ""
 			if orderByAttrib != "" {
 				tokens = fmt.Sprintf("%v", docSnp.Data()[orderByAttrib]) + "|"

@@ -49,7 +49,7 @@ type BoltDoc struct {
 	Value       map[string]interface{}
 }
 
-func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -69,17 +69,17 @@ func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interfac
 		return nil, err
 	}
 
-	return doc.Value, nil
+	return toSdkDoc(doc), nil
 }
 
-func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
+func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, content map[string]interface{}) error {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return err
 	}
 
-	if value == nil {
-		return fmt.Errorf("provide non-nil value")
+	if content == nil {
+		return fmt.Errorf("provide non-nil content")
 	}
 
 	db, err := s.createdDb(key.Collection)
@@ -89,7 +89,7 @@ func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]int
 	defer db.Close()
 
 	doc := createDoc(key, subKey)
-	doc.Value = value
+	doc.Value = content
 
 	return db.Save(&doc)
 }
@@ -195,7 +195,7 @@ func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions [
 	}
 
 	// Process query results, applying value filter expressions and fetch limit
-	results := make([]map[string]interface{}, 0)
+	documents := make([]sdk.Document, 0)
 	scanCount := 0
 	for _, doc := range docs {
 
@@ -206,30 +206,32 @@ func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions [
 			}
 			include := eval.(bool)
 			if include {
-				results = append(results, doc.Value)
+				sdkDoc := toSdkDoc(doc)
+				documents = append(documents, *sdkDoc)
 			}
 
 		} else {
-			results = append(results, doc.Value)
+			sdkDoc := toSdkDoc(doc)
+			documents = append(documents, *sdkDoc)
 		}
 
 		scanCount += 1
 
 		// Break if greater than fetch limit
-		if limit > 0 && len(results) == limit {
+		if limit > 0 && len(documents) == limit {
 			break
 		}
 	}
 
 	// Provide paging token to skip previous reads
 	var resultPagingToken map[string]string
-	if limit > 0 && len(results) == limit {
+	if limit > 0 && len(documents) == limit {
 		resultPagingToken = make(map[string]string)
 		resultPagingToken[skipTokenName] = fmt.Sprintf("%v", pagingSkip+scanCount)
 	}
 
 	return &sdk.QueryResult{
-		Data:        results,
+		Documents:   documents,
 		PagingToken: resultPagingToken,
 	}, nil
 }
@@ -288,4 +290,10 @@ func createDoc(key *sdk.Key, subKey *sdk.Key) BoltDoc {
 	}
 
 	return doc
+}
+
+func toSdkDoc(doc BoltDoc) *sdk.Document {
+	return &sdk.Document{
+		Content: doc.Value,
+	}
 }

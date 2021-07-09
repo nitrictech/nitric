@@ -25,6 +25,14 @@ func (k *Key) String() string {
 	return fmt.Sprintf("Key{Collection: %v Id: %v}\n", k.Collection, k.Id)
 }
 
+type Document struct {
+	Content map[string]interface{}
+}
+
+func (d *Document) String() string {
+	return fmt.Sprintf("Document{Content: %v}\n", d.Content)
+}
+
 type QueryExpression struct {
 	Operand  string
 	Operator string
@@ -32,7 +40,7 @@ type QueryExpression struct {
 }
 
 type QueryResult struct {
-	Data        []map[string]interface{}
+	Documents   []Document
 	PagingToken map[string]string
 }
 
@@ -40,7 +48,7 @@ type QueryResult struct {
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
 type DocumentService interface {
-	Get(*Key, *Key) (map[string]interface{}, error)
+	Get(*Key, *Key) (*Document, error)
 	Set(*Key, *Key, map[string]interface{}) error
 	Delete(*Key, *Key) error
 	Query(*Key, string, []QueryExpression, int, map[string]string) (*QueryResult, error)
@@ -50,11 +58,11 @@ type UnimplementedDocumentPlugin struct {
 	DocumentService
 }
 
-func (p *UnimplementedDocumentPlugin) Get(key *Key, subKey *Key) (map[string]interface{}, error) {
+func (p *UnimplementedDocumentPlugin) Get(key *Key, subKey *Key) (*Document, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Set(key *Key, subKey *Key, value map[string]interface{}) error {
+func (p *UnimplementedDocumentPlugin) Set(key *Key, subKey *Key, content map[string]interface{}) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

@@ -106,7 +106,7 @@ func (s *Membrane) log(log string) {
 }
 
 // Create a new Nitric Document Server
-func (s *Membrane) createDocumentServer() v1.DocumentServer {
+func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 	return grpc2.NewDocumentServer(s.documentPlugin)
 }
 
@@ -168,7 +168,7 @@ func (s *Membrane) Start() error {
 
 	// Load & Register the GRPC service plugins
 	documentServer := s.createDocumentServer()
-	v1.RegisterDocumentServer(s.grpcServer, documentServer)
+	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
 	eventingServer := s.createEventingServer()
 	v1.RegisterEventServer(s.grpcServer, eventingServer)

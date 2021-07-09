@@ -24,7 +24,7 @@ import (
 
 // GRPC Interface for registered Nitric Document Plugin
 type DocumentServer struct {
-	pb.UnimplementedDocumentServer
+	pb.UnimplementedDocumentServiceServer
 	// TODO: Support multiple plugin registrations
 	// Just need to settle on a way of addressing them on calls
 	documentPlugin sdk.DocumentService
@@ -34,7 +34,7 @@ func (s *DocumentServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*
 	key := toSdkKey(req.Key)
 	subKey := toSdkKey(req.SubKey)
 
-	if err := s.documentPlugin.Set(key, subKey, req.GetValue().AsMap()); err == nil {
+	if err := s.documentPlugin.Set(key, subKey, req.GetContent().AsMap()); err == nil {
 		return &pb.DocumentSetResponse{}, nil
 	} else {
 		// Case: Failed to create the key
@@ -47,34 +47,31 @@ func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*
 	key := toSdkKey(req.Key)
 	subKey := toSdkKey(req.SubKey)
 
-	if val, err := s.documentPlugin.Get(key, subKey); err == nil {
-		if valStruct, err := structpb.NewStruct(val); err == nil {
-			return &pb.DocumentGetResponse{
-				Value: valStruct,
-			}, nil
-		} else {
-			// Case: Failed to create PB struct from stored value
-			// TODO: Translate from internal Document Plugin Error
-			return nil, err
-		}
-	} else {
-		// Case: There was an error retrieving the keyvalue
-		// TODO: Translate from internal Document Plugin Error
+	doc, err := s.documentPlugin.Get(key, subKey)
+	if err != nil {
 		return nil, err
 	}
+
+	pbDoc, err := toPbDoc(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DocumentGetResponse{
+		Document: pbDoc,
+	}, nil
 }
 
 func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
 	key := toSdkKey(req.Key)
 	subKey := toSdkKey(req.SubKey)
 
-	if err := s.documentPlugin.Delete(key, subKey); err == nil {
-		return &pb.DocumentDeleteResponse{}, nil
-	} else {
-		// Case: Failed to create the keyvalue
-		// TODO: Translate from internal Document Plugin Error
+	err := s.documentPlugin.Delete(key, subKey)
+	if err != nil {
 		return nil, err
 	}
+
+	return &pb.DocumentDeleteResponse{}, nil
 }
 
 func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
@@ -91,33 +88,28 @@ func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest
 	limit := int(req.GetLimit())
 	pagingMap := req.GetPagingToken()
 
-	if qr, err := s.documentPlugin.Query(key, subcoll, expressions, limit, pagingMap); err == nil {
-
-		valStructs := make([]*structpb.Struct, len(qr.Data))
-		for i, valMap := range qr.Data {
-			if valStruct, err := structpb.NewStruct(valMap); err == nil {
-				valStructs[i] = valStruct
-
-			} else {
-				// Case: Failed to create PB struct from stored value
-				// TODO: Translate from internal Document Plugin Error
-				return nil, err
-			}
-		}
-
-		return &pb.DocumentQueryResponse{
-			Values:      valStructs,
-			PagingToken: qr.PagingToken,
-		}, nil
-
-	} else {
-		// Case: Failed to create the keyvalue
-		// TODO: Translate from internal Document Plugin Error
+	qr, err := s.documentPlugin.Query(key, subcoll, expressions, limit, pagingMap)
+	if err != nil {
 		return nil, err
 	}
+
+	pbDocuments := make([]*pb.Document, len(qr.Documents))
+	for _, doc := range qr.Documents {
+		pbDoc, err := toPbDoc(&doc)
+		if err != nil {
+			return nil, err
+		}
+
+		pbDocuments = append(pbDocuments, pbDoc)
+	}
+
+	return &pb.DocumentQueryResponse{
+		Documents:   pbDocuments,
+		PagingToken: qr.PagingToken,
+	}, nil
 }
 
-func NewDocumentServer(docPlugin sdk.DocumentService) pb.DocumentServer {
+func NewDocumentServer(docPlugin sdk.DocumentService) pb.DocumentServiceServer {
 	return &DocumentServer{
 		documentPlugin: docPlugin,
 	}
@@ -131,4 +123,15 @@ func toSdkKey(key *pb.Key) *sdk.Key {
 		}
 	}
 	return nil
+}
+
+func toPbDoc(doc *sdk.Document) (*pb.Document, error) {
+	valStruct, err := structpb.NewStruct(doc.Content)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.Document{
+		Content: valStruct,
+	}, nil
 }

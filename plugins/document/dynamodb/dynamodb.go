@@ -34,7 +34,7 @@ type DynamoDocService struct {
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interface{}, error) {
+func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
 	err := document.ValidateKeys(key, subKey)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,9 @@ func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (map[string]interf
 	delete(itemMap, document.ATTRIB_PK)
 	delete(itemMap, document.ATTRIB_SK)
 
-	return itemMap, nil
+	return &sdk.Document{
+		Content: itemMap,
+	}, nil
 }
 
 func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
@@ -141,7 +143,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 	}
 
 	queryResult := &sdk.QueryResult{
-		Data: make([]map[string]interface{}, 0),
+		Documents: make([]sdk.Document, 0),
 	}
 
 	// If partion key defined then perform a query
@@ -151,7 +153,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 			return nil, err
 		}
 
-		remainingLimit := limit - len(queryResult.Data)
+		remainingLimit := limit - len(queryResult.Documents)
 
 		// If more results available, perform additional queries
 		for remainingLimit > 0 &&
@@ -162,7 +164,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 				return nil, err
 			}
 
-			remainingLimit = limit - len(queryResult.Data)
+			remainingLimit = limit - len(queryResult.Documents)
 		}
 
 	} else {
@@ -171,7 +173,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 			return nil, err
 		}
 
-		remainingLimit := limit - len(queryResult.Data)
+		remainingLimit := limit - len(queryResult.Documents)
 
 		// If more results available, perform additional scans
 		for remainingLimit > 0 &&
@@ -182,7 +184,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 				return nil, err
 			}
 
-			remainingLimit = limit - len(queryResult.Data)
+			remainingLimit = limit - len(queryResult.Documents)
 		}
 	}
 
@@ -424,12 +426,16 @@ func marshalQueryResult(
 		return fmt.Errorf("error unmarshalling query response: %v", err)
 	}
 
-	// Strip keys
+	// Strip keys & append results
 	for _, m := range valueMaps {
 		delete(m, document.ATTRIB_PK)
 		delete(m, document.ATTRIB_SK)
+
+		sdkDoc := sdk.Document{
+			Content: m,
+		}
+		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 	}
-	queryResult.Data = append(queryResult.Data, valueMaps...)
 
 	// Unmarshal lastEvalutedKey
 	var resultPagingToken map[string]string
