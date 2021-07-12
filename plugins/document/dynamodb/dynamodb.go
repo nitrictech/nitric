@@ -48,7 +48,7 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 
 	input := &dynamodb.GetItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(key),
+		TableName: getTableName(key.Collection),
 	}
 
 	result, err := s.client.GetItem(input)
@@ -93,7 +93,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error
 
 	input := &dynamodb.PutItemInput{
 		Item:      itemAttributeMap,
-		TableName: getTableName(key),
+		TableName: getTableName(key.Collection),
 	}
 
 	_, err = s.client.PutItem(input)
@@ -118,7 +118,7 @@ func (s *DynamoDocService) Delete(key *sdk.Key) error {
 
 	input := &dynamodb.DeleteItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(key),
+		TableName: getTableName(key.Collection),
 	}
 
 	_, err = s.client.DeleteItem(input)
@@ -131,8 +131,8 @@ func (s *DynamoDocService) Delete(key *sdk.Key) error {
 	return nil
 }
 
-func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateQueryKey(key)
+func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +147,8 @@ func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression
 	}
 
 	// If partion key defined then perform a query
-	if key.Id != "" || key.Collection.Parent != nil && key.Collection.Parent.Id != "" {
-		err := s.performQuery(key, expressions, limit, pagingToken, queryResult)
+	if collection.Parent != nil && collection.Parent.Id != "" {
+		err := s.performQuery(collection, expressions, limit, pagingToken, queryResult)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression
 		for remainingLimit > 0 &&
 			(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
 
-			err := s.performQuery(key, expressions, remainingLimit, queryResult.PagingToken, queryResult)
+			err := s.performQuery(collection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
 				return nil, err
 			}
@@ -168,7 +168,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression
 		}
 
 	} else {
-		err := s.performScan(key, expressions, limit, pagingToken, queryResult)
+		err := s.performScan(collection, expressions, limit, pagingToken, queryResult)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression
 		for remainingLimit > 0 &&
 			(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
 
-			err := s.performScan(key, expressions, remainingLimit, queryResult.PagingToken, queryResult)
+			err := s.performScan(collection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
 				return nil, err
 			}
@@ -255,24 +255,26 @@ func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]inter
 }
 
 func (s *DynamoDocService) performQuery(
-	key *sdk.Key,
+	collection *sdk.Collection,
 	expressions []sdk.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
 	queryResult *sdk.QueryResult) error {
 
+	if collection.Parent == nil {
+		// Should never occur
+		return fmt.Errorf("cannot perform query without partion key defined")
+	}
+
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.QueryInput{
-		TableName: getTableName(key),
+		TableName: getTableName(*collection),
 	}
 
 	// Configure KeyConditionExpression
-	keyExp := "#pk = :pk AND #sk = :sk"
-	if key.Collection.Parent != nil {
-		keyExp = "#pk = :pk AND begins_with(#sk, :sk)"
-	}
+	keyExp := "#pk = :pk AND begins_with(#sk, :sk)"
 	input.KeyConditionExpression = aws.String(keyExp)
 
 	// Configure FilterExpression
@@ -289,21 +291,13 @@ func (s *DynamoDocService) performQuery(
 		input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
 	}
 
-	parentKey := key.Collection.Parent
-
 	// Configure ExpressionAttributeValues
 	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	if parentKey == nil {
-		input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
-			S: aws.String(key.Id),
-		}
-	} else {
-		input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
-			S: aws.String(parentKey.Id),
-		}
+	input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
+		S: aws.String(collection.Parent.Id),
 	}
 	input.ExpressionAttributeValues[":sk"] = &dynamodb.AttributeValue{
-		S: aws.String(key.Collection.Name + "#"),
+		S: aws.String(collection.Name + "#"),
 	}
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
@@ -339,7 +333,7 @@ func (s *DynamoDocService) performQuery(
 }
 
 func (s *DynamoDocService) performScan(
-	key *sdk.Key,
+	collection *sdk.Collection,
 	expressions []sdk.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
@@ -349,12 +343,12 @@ func (s *DynamoDocService) performScan(
 	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.ScanInput{
-		TableName: getTableName(key),
+		TableName: getTableName(*collection),
 	}
 
 	// Filter on SK collection name or sub-collection name
 	filterExp := "#sk = :sk"
-	if key.Collection.Parent != nil {
+	if collection.Parent != nil {
 		filterExp = "begins_with(#sk, :sk)"
 	}
 
@@ -376,7 +370,7 @@ func (s *DynamoDocService) performScan(
 
 	// Configure ExpressionAttributeValues
 	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	keyAttrib := &dynamodb.AttributeValue{S: aws.String(key.Collection.Name + "#")}
+	keyAttrib := &dynamodb.AttributeValue{S: aws.String(collection.Name + "#")}
 
 	input.ExpressionAttributeValues[":sk"] = keyAttrib
 	for i, exp := range expressions {
@@ -504,8 +498,8 @@ func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
 	return false
 }
 
-func getTableName(key *sdk.Key) *string {
-	coll := key.Collection
+func getTableName(collection sdk.Collection) *string {
+	coll := collection
 	for coll.Parent != nil {
 		coll = coll.Parent.Collection
 	}

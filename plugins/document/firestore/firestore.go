@@ -91,8 +91,8 @@ func (s *FirestoreDocService) Delete(key *sdk.Key) error {
 	return nil
 }
 
-func (s *FirestoreDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateQueryKey(key)
+func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
@@ -106,27 +106,8 @@ func (s *FirestoreDocService) Query(key *sdk.Key, expressions []sdk.QueryExpress
 		Documents: make([]sdk.Document, 0),
 	}
 
-	// Fast path lookup document
-	if key.Id != "" && key.Collection.Parent == nil && len(expressions) == 0 {
-		value, err := s.client.Collection(key.Collection.Name).
-			Doc(key.Id).
-			Get(s.context)
-		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
-				return queryResult, nil
-
-			} else {
-				return nil, fmt.Errorf("error retrieving value: %v", err)
-			}
-		}
-
-		sdkDoc := sdk.Document{Content: value.Data()}
-		queryResult.Documents = append(queryResult.Documents, sdkDoc)
-		return queryResult, nil
-	}
-
 	// Select correct root collection to perform query on
-	query := s.getQueryRoot(key)
+	query := s.getQueryRoot(collection)
 
 	var orderByAttrib string
 
@@ -234,23 +215,23 @@ func (s *FirestoreDocService) getDocRef(key *sdk.Key) *firestore.DocumentRef {
 	}
 }
 
-func (s *FirestoreDocService) getQueryRoot(key *sdk.Key) firestore.Query {
-	parentKey := key.Collection.Parent
+func (s *FirestoreDocService) getQueryRoot(collection *sdk.Collection) firestore.Query {
+	parentKey := collection.Parent
 
 	if parentKey == nil {
-		return s.client.Collection(key.Collection.Name).Offset(0)
+		return s.client.Collection(collection.Name).Offset(0)
 
 	} else {
 		if parentKey.Id != "" {
 			return s.client.Collection(parentKey.Collection.Name).
 				Doc(parentKey.Id).
-				Collection(key.Collection.Name).
+				Collection(collection.Name).
 				Offset(0)
 
 		} else {
 			// Note there is a risk of subcollection name collison
 			// TODO: future YAML validation could help mitigate this
-			return s.client.CollectionGroup(key.Collection.Name).Offset(0)
+			return s.client.CollectionGroup(collection.Name).Offset(0)
 		}
 	}
 }

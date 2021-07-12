@@ -56,7 +56,7 @@ type DocumentService interface {
 	Get(*Key) (*Document, error)
 	Set(*Key, map[string]interface{}) error
 	Delete(*Key) error
-	Query(*Key, []QueryExpression, int, map[string]string) (*QueryResult, error)
+	Query(*Collection, []QueryExpression, int, map[string]string) (*QueryResult, error)
 }
 
 type UnimplementedDocumentPlugin struct {
@@ -75,6 +75,6 @@ func (p *UnimplementedDocumentPlugin) Delete(key *Key) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Query(key *Key, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
+func (p *UnimplementedDocumentPlugin) Query(collection *Collection, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

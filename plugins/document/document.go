@@ -60,16 +60,16 @@ func ValidateKey(key *sdk.Key) error {
 	return nil
 }
 
-func ValidateQueryKey(key *sdk.Key) error {
-	if key == nil {
-		return fmt.Errorf("provide non-nil key")
+func ValidateQueryCollection(collection *sdk.Collection) error {
+	if collection == nil {
+		return fmt.Errorf("provide non-nil collection")
 	}
-	if key.Collection.Name == "" {
-		return fmt.Errorf("provide non-blank key.Collection.Name")
+	if collection.Name == "" {
+		return fmt.Errorf("provide non-blank collection.Name")
 	}
-	if key.Collection.Parent != nil {
-		if key.Collection.Parent.Collection.Name == "" {
-			return fmt.Errorf("provide non-blank key.Collection.Parent.Collection.Name")
+	if collection.Parent != nil {
+		if collection.Parent.Collection.Name == "" {
+			return fmt.Errorf("provide non-blank collection.Parent.Collection.Name")
 		}
 	}
 	return nil

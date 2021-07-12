@@ -59,7 +59,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, err
 	}
 
-	db, err := s.createdDb(key)
+	db, err := s.createdDb(key.Collection)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error
 		return fmt.Errorf("provide non-nil content")
 	}
 
-	db, err := s.createdDb(key)
+	db, err := s.createdDb(key.Collection)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (s *BoltDocService) Delete(key *sdk.Key) error {
 		return err
 	}
 
-	db, err := s.createdDb(key)
+	db, err := s.createdDb(key.Collection)
 	if err != nil {
 		return err
 	}
@@ -119,8 +119,8 @@ func (s *BoltDocService) Delete(key *sdk.Key) error {
 	return err
 }
 
-func (s *BoltDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateQueryKey(key)
+func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (s *BoltDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, 
 		return nil, err
 	}
 
-	db, err := s.createdDb(key)
+	db, err := s.createdDb(*collection)
 	if err != nil {
 		return nil, err
 	}
@@ -145,20 +145,17 @@ func (s *BoltDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, 
 	matchers := []q.Matcher{}
 
 	// Apply collection/sub-collection filters
-	parentKey := key.Collection.Parent
+	parentKey := collection.Parent
 
 	if parentKey == nil {
-		if key.Id != "" {
-			matchers = append(matchers, q.Eq(partionKeyName, key.Id))
-		}
-		matchers = append(matchers, q.Eq(sortKeyName, key.Collection.Name+"#"))
+		matchers = append(matchers, q.Eq(sortKeyName, collection.Name+"#"))
 
 	} else {
 		if parentKey.Id != "" {
 			matchers = append(matchers, q.Eq(partionKeyName, parentKey.Id))
 		}
-		matchers = append(matchers, q.Gte(sortKeyName, key.Collection.Name+"#"))
-		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(key.Collection.Name+"#")))
+		matchers = append(matchers, q.Gte(sortKeyName, collection.Name+"#"))
+		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(collection.Name+"#")))
 	}
 
 	// Create query object
@@ -265,8 +262,7 @@ func New() (*BoltDocService, error) {
 	return &BoltDocService{dbDir: dbDir}, nil
 }
 
-func (s *BoltDocService) createdDb(key *sdk.Key) (*storm.DB, error) {
-	coll := key.Collection
+func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
 	for coll.Parent != nil {
 		coll = coll.Parent.Collection
 	}
