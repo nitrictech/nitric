@@ -297,13 +297,6 @@ func SetTests(docPlugin sdk.DocumentService) {
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-		When("Unknown key.Collection", func() {
-			It("Should return error", func() {
-				key := sdk.Key{Collection: "unknown", Id: "1"}
-				err := docPlugin.Set(&key, nil, UserItem1)
-				Expect(err).Should(HaveOccurred())
-			})
-		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users"}
@@ -387,13 +380,6 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-		When("Unknown key.Collection", func() {
-			It("Should return error", func() {
-				key := sdk.Key{Collection: "unknown", Id: "1"}
-				err := docPlugin.Delete(&key, nil)
-				Expect(err).Should(HaveOccurred())
-			})
-		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: "users"}
@@ -458,13 +444,6 @@ func QueryTests(docPlugin sdk.DocumentService) {
 		When("Invalid - blank key.Collection", func() {
 			It("Should return an error", func() {
 				result, err := docPlugin.Query(&sdk.Key{}, "", []sdk.QueryExpression{}, 0, nil)
-				Expect(result).To(BeNil())
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-		When("Invalid - uknown key.Collection", func() {
-			It("Should return an error", func() {
-				result, err := docPlugin.Query(&sdk.Key{Collection: "unknown"}, "", []sdk.QueryExpression{}, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})

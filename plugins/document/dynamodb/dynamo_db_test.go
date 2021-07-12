@@ -21,7 +21,6 @@ import (
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/dynamodb"
 	"github.com/nitric-dev/membrane/plugins/document/test"
-	"github.com/nitric-dev/membrane/utils"
 	"github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -136,9 +135,6 @@ var _ = ginkgo.Describe("DynamoDb", func() {
 	ginkgo.AfterSuite(func() {
 		stopDynamoProcess(dynaCmd)
 	})
-
-	os.Setenv(utils.NITRIC_HOME, "../test/")
-	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	docPlugin, err := ds_plugin.NewWithClient(db)
 	if err != nil {

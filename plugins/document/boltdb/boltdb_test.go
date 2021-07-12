@@ -19,14 +19,10 @@ import (
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
 	test "github.com/nitric-dev/membrane/plugins/document/test"
-	"github.com/nitric-dev/membrane/utils"
 	"github.com/onsi/ginkgo"
 )
 
 var _ = ginkgo.Describe("Bolt", func() {
-
-	os.Setenv(utils.NITRIC_HOME, "../test/")
-	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	docPlugin, err := ds_plugin.New()
 	if err != nil {

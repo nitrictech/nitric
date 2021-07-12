@@ -24,7 +24,6 @@ import (
 	"cloud.google.com/go/firestore"
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/firestore"
 	"github.com/nitric-dev/membrane/plugins/document/test"
-	"github.com/nitric-dev/membrane/utils"
 	"github.com/onsi/ginkgo"
 )
 
@@ -68,9 +67,6 @@ func createFirestoreClient(ctx context.Context) *firestore.Client {
 
 var _ = ginkgo.Describe("Firestore", func() {
 	defer ginkgo.GinkgoRecover()
-
-	os.Setenv(utils.NITRIC_HOME, "../test/")
-	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
 
 	// Start Firestore Emulator
 	firestoreCmd := startFirestoreProcess()

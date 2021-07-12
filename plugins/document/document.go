@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/utils"
 )
 
 const ATTRIB_PK = "_pk"
@@ -40,52 +39,21 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
-var stack *utils.NitricStack
-
-func Stack() (*utils.NitricStack, error) {
-	if stack == nil {
-		nitricStack, err := utils.NewStackDefault()
-		if err != nil {
-			return nil, fmt.Errorf("error loading Nitric stack definition: %v", err)
-		}
-		stack = nitricStack
-	}
-	return stack, nil
-}
-
 // Validate the collection name and subcollection (optional)
 func ValidateCollection(collection string, subcollection string) error {
 	if collection == "" {
 		return fmt.Errorf("provide non-blank collection")
 	}
-	stack, err := Stack()
-	if err != nil {
-		return err
-	}
-	if !stack.HasCollection(collection) {
-		return fmt.Errorf("%v collections: %v: not found", stack.Name, collection)
-	}
-	// TODO: review subcollection validation
-	// if subcollection != "" && !stack.HasSubCollection(collection, subcollection) {
-	// 	return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, collection, subcollection)
-	// }
+
 	return nil
 }
 
 func ValidateKeys(key *sdk.Key, subKey *sdk.Key) error {
-	stack, err := Stack()
-	if err != nil {
-		return err
-	}
-
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
 	}
 	if key.Collection == "" {
 		return fmt.Errorf("provide non-blank key.Collection")
-	}
-	if !stack.HasCollection(key.Collection) {
-		return fmt.Errorf("%v collections: %v: not found", stack.Name, key.Collection)
 	}
 	if key.Id == "" {
 		return fmt.Errorf("provide non-blank key.Id")

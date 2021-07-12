@@ -15,12 +15,10 @@ package document_test
 
 import (
 	"errors"
-	"os"
 	"sort"
 
 	doc "github.com/nitric-dev/membrane/plugins/document"
 	"github.com/nitric-dev/membrane/sdk"
-	"github.com/nitric-dev/membrane/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -29,20 +27,11 @@ import (
 
 var _ = Describe("Document Plugin", func() {
 
-	os.Setenv(utils.NITRIC_HOME, "test/")
-	os.Setenv(utils.NITRIC_YAML, "nitric.yaml")
-
 	When("ValidateCollection", func() {
 		When("Blank collection", func() {
 			It("should return error", func() {
 				err := doc.ValidateCollection("", "")
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank collection")))
-			})
-		})
-		When("Missing collection", func() {
-			It("should return error", func() {
-				err := doc.ValidateCollection("uknown", "")
-				Expect(err.Error()).To(BeEquivalentTo("nitric-website collections: uknown: not found"))
 			})
 		})
 		When("Valid collection", func() {
@@ -70,12 +59,6 @@ var _ = Describe("Document Plugin", func() {
 			It("should return error", func() {
 				err := doc.ValidateKeys(&sdk.Key{Collection: "users"}, nil)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
-			})
-		})
-		When("Unknown key.Collection", func() {
-			It("should return error", func() {
-				err := doc.ValidateKeys(&sdk.Key{Collection: "unknown", Id: "123"}, nil)
-				Expect(err).To(BeEquivalentTo(errors.New("nitric-website collections: unknown: not found")))
 			})
 		})
 	})
