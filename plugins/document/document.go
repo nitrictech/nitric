@@ -151,8 +151,10 @@ func (exps ExpsSort) Less(i, j int) bool {
 		// Reverse operator comparison for to support range expressions
 		operatorCompare := strings.Compare(exps[j].Operator, exps[i].Operator)
 		if operatorCompare == 0 {
+			iVal := fmt.Sprintf("%v", exps[i].Value)
+			jVal := fmt.Sprintf("%v", exps[2].Value)
 
-			return strings.Compare(exps[i].Value, exps[j].Value) < 0
+			return strings.Compare(iVal, jVal) < 0
 
 		} else {
 			return operatorCompare < 0

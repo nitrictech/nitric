@@ -133,7 +133,8 @@ func (s *FirestoreDocService) Query(key *sdk.Key, expressions []sdk.QueryExpress
 	for _, exp := range expressions {
 		expOperand := exp.Operand
 		if exp.Operator == "startsWith" {
-			endRangeValue := document.GetEndRangeValue(exp.Value)
+			expVal := fmt.Sprintf("%v", exp.Value)
+			endRangeValue := document.GetEndRangeValue(expVal)
 			query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
 
 		} else {

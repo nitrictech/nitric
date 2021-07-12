@@ -307,9 +307,11 @@ func (s *DynamoDocService) performQuery(
 	}
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
-		input.ExpressionAttributeValues[expKey] = &dynamodb.AttributeValue{
-			S: aws.String(exp.Value),
+		valAttrib, err := dynamodbattribute.Marshal(exp.Value)
+		if err != nil {
+			return fmt.Errorf("error marshalling %v: %v", exp.Operand, exp.Value)
 		}
+		input.ExpressionAttributeValues[expKey] = valAttrib
 	}
 
 	// Configure fetch Limit
@@ -379,9 +381,11 @@ func (s *DynamoDocService) performScan(
 	input.ExpressionAttributeValues[":sk"] = keyAttrib
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
-		input.ExpressionAttributeValues[expKey] = &dynamodb.AttributeValue{
-			S: aws.String(exp.Value),
+		valAttrib, err := dynamodbattribute.Marshal(exp.Value)
+		if err != nil {
+			return fmt.Errorf("error marshalling %v: %v", exp.Operand, exp.Value)
 		}
+		input.ExpressionAttributeValues[expKey] = valAttrib
 	}
 
 	// Configure fetch Limit

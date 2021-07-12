@@ -41,9 +41,7 @@ func (d *Document) String() string {
 type QueryExpression struct {
 	Operand  string
 	Operator string
-	// Value    interface{}
-	// TODO: convert to interface
-	Value string
+	Value    interface{}
 }
 
 type QueryResult struct {

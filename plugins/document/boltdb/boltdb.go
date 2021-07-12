@@ -185,15 +185,17 @@ func (s *BoltDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, 
 	// Create values map filter expression, for example : country == 'US' && age < '12'
 	expStr := strings.Builder{}
 	for _, exp := range expressions {
+		// TODO: test typing capabilities of library and rewrite expressions based on value type
+		expValue := fmt.Sprintf("%v", exp.Value)
 		if expStr.Len() > 0 {
 			expStr.WriteString(" && ")
 		}
 		if exp.Operator == "startsWith" {
-			expStr.WriteString(exp.Operand + " >= '" + exp.Value + "' && ")
-			expStr.WriteString(exp.Operand + " < '" + document.GetEndRangeValue(exp.Value) + "'")
+			expStr.WriteString(exp.Operand + " >= '" + expValue + "' && ")
+			expStr.WriteString(exp.Operand + " < '" + document.GetEndRangeValue(expValue) + "'")
 
 		} else {
-			expStr.WriteString(exp.Operand + " " + exp.Operator + " '" + exp.Value + "'")
+			expStr.WriteString(exp.Operand + " " + exp.Operator + " '" + expValue + "'")
 		}
 	}
 	var filterExp *govaluate.EvaluableExpression
