@@ -111,7 +111,7 @@ func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) 
 		}
 
 		// Convert the NitricTasks to the gRPC type
-		grpcTasks := make([]*pb.NitricTask, len(tasks))
+		grpcTasks := make([]*pb.NitricTask, 0, len(tasks))
 		for _, task := range tasks {
 			st, _ := structpb.NewStruct(task.Payload)
 			grpcTasks = append(grpcTasks, &pb.NitricTask{
