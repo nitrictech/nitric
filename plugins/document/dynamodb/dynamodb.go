@@ -34,30 +34,30 @@ type DynamoDocService struct {
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
-	err := document.ValidateKeys(key, subKey)
+func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	keyMap := createKeyMap(key, subKey)
+	keyMap := createKeyMap(key)
 	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal keys: %v %v", key, subKey)
+		return nil, fmt.Errorf("failed to marshal key: %v", key)
 	}
 
 	input := &dynamodb.GetItemInput{
 		Key:       attributeMap,
-		TableName: aws.String(key.Collection),
+		TableName: getTableName(key),
 	}
 
 	result, err := s.client.GetItem(input)
 	if err != nil {
-		return nil, fmt.Errorf("error getting %v %v : %v", key, subKey, err)
+		return nil, fmt.Errorf("error getting %v : %v", key, err)
 	}
 
 	if result.Item == nil {
-		return nil, fmt.Errorf("%v %v value not found", key, subKey)
+		return nil, fmt.Errorf("%v value not found", key)
 	}
 
 	var itemMap map[string]interface{}
@@ -74,8 +74,8 @@ func (s *DynamoDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, er
 	}, nil
 }
 
-func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]i
 	}
 
 	// Construct DynamoDB attribute value object
-	itemMap := createItemMap(value, key, subKey)
+	itemMap := createItemMap(value, key)
 	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value")
@@ -93,7 +93,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]i
 
 	input := &dynamodb.PutItemInput{
 		Item:      itemAttributeMap,
-		TableName: aws.String(key.Collection),
+		TableName: getTableName(key),
 	}
 
 	_, err = s.client.PutItem(input)
@@ -104,21 +104,21 @@ func (s *DynamoDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]i
 	return nil
 }
 
-func (s *DynamoDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *DynamoDocService) Delete(key *sdk.Key) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
 
-	keyMap := createKeyMap(key, subKey)
+	keyMap := createKeyMap(key)
 	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
 	if err != nil {
-		return fmt.Errorf("failed to marshal keys: %v %v", key, subKey)
+		return fmt.Errorf("failed to marshal keys: %v", key)
 	}
 
 	input := &dynamodb.DeleteItemInput{
 		Key:       attributeMap,
-		TableName: aws.String(key.Collection),
+		TableName: getTableName(key),
 	}
 
 	_, err = s.client.DeleteItem(input)
@@ -131,8 +131,8 @@ func (s *DynamoDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	return nil
 }
 
-func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateCollection(key.Collection, subcollection)
+func (s *DynamoDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +147,8 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 	}
 
 	// If partion key defined then perform a query
-	if key.Id != "" {
-		err := s.performQuery(key, subcollection, expressions, limit, pagingToken, queryResult)
+	if key.Id != "" || key.Collection.Parent != nil && key.Collection.Parent.Id != "" {
+		err := s.performQuery(key, expressions, limit, pagingToken, queryResult)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 		for remainingLimit > 0 &&
 			(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
 
-			err := s.performQuery(key, subcollection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
+			err := s.performQuery(key, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
 				return nil, err
 			}
@@ -168,7 +168,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 		}
 
 	} else {
-		err := s.performScan(key, subcollection, expressions, limit, pagingToken, queryResult)
+		err := s.performScan(key, expressions, limit, pagingToken, queryResult)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func (s *DynamoDocService) Query(key *sdk.Key, subcollection string, expressions
 		for remainingLimit > 0 &&
 			(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
 
-			err := s.performScan(key, subcollection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
+			err := s.performScan(key, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
 				return nil, err
 			}
@@ -221,31 +221,31 @@ func NewWithClient(client *dynamodb.DynamoDB) (sdk.DocumentService, error) {
 
 // Private Functions ----------------------------------------------------------
 
-func createKeyMap(key *sdk.Key, subKey *sdk.Key) map[string]string {
+func createKeyMap(key *sdk.Key) map[string]string {
 	keyMap := make(map[string]string)
 
-	keyMap[document.ATTRIB_PK] = key.Id
+	parentKey := key.Collection.Parent
 
-	// Top level collection item
-	if subKey == nil {
-		keyMap[document.ATTRIB_SK] = key.Collection + "#"
+	if parentKey == nil {
+		keyMap[document.ATTRIB_PK] = key.Id
+		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#"
 
 	} else {
-		// Sub-collection item
-		keyMap[document.ATTRIB_SK] = subKey.Collection + "#" + subKey.Id
+		keyMap[document.ATTRIB_PK] = parentKey.Id
+		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#" + key.Id
 	}
 
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key *sdk.Key, subKey *sdk.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
 		newMap[key] = value
 	}
 
-	keyMap := createKeyMap(key, subKey)
+	keyMap := createKeyMap(key)
 
 	// Add key attributes
 	newMap[document.ATTRIB_PK] = keyMap[document.ATTRIB_PK]
@@ -256,7 +256,6 @@ func createItemMap(source map[string]interface{}, key *sdk.Key, subKey *sdk.Key)
 
 func (s *DynamoDocService) performQuery(
 	key *sdk.Key,
-	subcoll string,
 	expressions []sdk.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
@@ -266,12 +265,12 @@ func (s *DynamoDocService) performQuery(
 	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.QueryInput{
-		TableName: aws.String(key.Collection),
+		TableName: getTableName(key),
 	}
 
 	// Configure KeyConditionExpression
 	keyExp := "#pk = :pk AND #sk = :sk"
-	if subcoll != "" {
+	if key.Collection.Parent != nil {
 		keyExp = "#pk = :pk AND begins_with(#sk, :sk)"
 	}
 	input.KeyConditionExpression = aws.String(keyExp)
@@ -290,20 +289,21 @@ func (s *DynamoDocService) performQuery(
 		input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
 	}
 
+	parentKey := key.Collection.Parent
+
 	// Configure ExpressionAttributeValues
 	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
-		S: aws.String(key.Id),
-	}
-	// If sub-collection defined we are performing begins_with(_sk, subcol#)
-	if subcoll != "" {
-		input.ExpressionAttributeValues[":sk"] = &dynamodb.AttributeValue{
-			S: aws.String(subcoll + "#"),
+	if parentKey == nil {
+		input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
+			S: aws.String(key.Id),
 		}
 	} else {
-		input.ExpressionAttributeValues[":sk"] = &dynamodb.AttributeValue{
-			S: aws.String(key.Collection + "#"),
+		input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
+			S: aws.String(parentKey.Id),
 		}
+	}
+	input.ExpressionAttributeValues[":sk"] = &dynamodb.AttributeValue{
+		S: aws.String(key.Collection.Name + "#"),
 	}
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
@@ -338,7 +338,6 @@ func (s *DynamoDocService) performQuery(
 
 func (s *DynamoDocService) performScan(
 	key *sdk.Key,
-	subcoll string,
 	expressions []sdk.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
@@ -348,12 +347,12 @@ func (s *DynamoDocService) performScan(
 	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.ScanInput{
-		TableName: aws.String(key.Collection),
+		TableName: getTableName(key),
 	}
 
 	// Filter on SK collection name or sub-collection name
 	filterExp := "#sk = :sk"
-	if subcoll != "" {
+	if key.Collection.Parent != nil {
 		filterExp = "begins_with(#sk, :sk)"
 	}
 
@@ -375,12 +374,8 @@ func (s *DynamoDocService) performScan(
 
 	// Configure ExpressionAttributeValues
 	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	var keyAttrib *dynamodb.AttributeValue
-	if subcoll != "" {
-		keyAttrib = &dynamodb.AttributeValue{S: aws.String(subcoll + "#")}
-	} else {
-		keyAttrib = &dynamodb.AttributeValue{S: aws.String(key.Collection + "#")}
-	}
+	keyAttrib := &dynamodb.AttributeValue{S: aws.String(key.Collection.Name + "#")}
+
 	input.ExpressionAttributeValues[":sk"] = keyAttrib
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
@@ -503,4 +498,13 @@ func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
 		}
 	}
 	return false
+}
+
+func getTableName(key *sdk.Key) *string {
+	coll := key.Collection
+	for coll.Parent != nil {
+		coll = coll.Parent.Collection
+	}
+
+	return aws.String(coll.Name)
 }

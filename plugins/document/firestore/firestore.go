@@ -35,17 +35,13 @@ type FirestoreDocService struct {
 	sdk.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
-	err := document.ValidateKeys(key, subKey)
+func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	doc := s.client.Collection(key.Collection).Doc(key.Id)
-
-	if subKey != nil {
-		doc = doc.Collection(subKey.Collection).Doc(subKey.Id)
-	}
+	doc := s.getDocRef(key)
 
 	value, err := doc.Get(s.context)
 	if err != nil {
@@ -57,8 +53,8 @@ func (s *FirestoreDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document,
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[string]interface{}) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -67,11 +63,7 @@ func (s *FirestoreDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[strin
 		return fmt.Errorf("provide non-nil value")
 	}
 
-	doc := s.client.Collection(key.Collection).Doc(key.Id)
-
-	if subKey != nil {
-		doc = doc.Collection(subKey.Collection).Doc(subKey.Id)
-	}
+	doc := s.getDocRef(key)
 
 	_, err = doc.Set(s.context, value)
 	if err != nil {
@@ -81,17 +73,13 @@ func (s *FirestoreDocService) Set(key *sdk.Key, subKey *sdk.Key, value map[strin
 	return nil
 }
 
-func (s *FirestoreDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *FirestoreDocService) Delete(key *sdk.Key) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
 
-	doc := s.client.Collection(key.Collection).Doc(key.Id)
-
-	if subKey != nil {
-		doc = doc.Collection(subKey.Collection).Doc(subKey.Id)
-	}
+	doc := s.getDocRef(key)
 
 	_, err = doc.Delete(s.context)
 	if err != nil {
@@ -103,8 +91,8 @@ func (s *FirestoreDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	return nil
 }
 
-func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateCollection(key.Collection, subcollection)
+func (s *FirestoreDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +106,11 @@ func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressi
 		Documents: make([]sdk.Document, 0),
 	}
 
-	collRef := s.client.Collection(key.Collection)
-
 	// Fast path lookup document
-	if key.Id != "" && subcollection == "" && len(expressions) == 0 {
-		value, err := collRef.Doc(key.Id).Get(s.context)
+	if key.Id != "" && key.Collection.Parent == nil && len(expressions) == 0 {
+		value, err := s.client.Collection(key.Collection.Name).
+			Doc(key.Id).
+			Get(s.context)
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") {
 				return queryResult, nil
@@ -137,20 +125,8 @@ func (s *FirestoreDocService) Query(key *sdk.Key, subcollection string, expressi
 		return queryResult, nil
 	}
 
-	var query firestore.Query
-
 	// Select correct root collection to perform query on
-	if key.Id != "" {
-		subcollRef := collRef.Doc(key.Id).Collection(subcollection)
-		query = subcollRef.Offset(0)
-
-	} else {
-		if subcollection != "" {
-			query = s.client.CollectionGroup(subcollection).Offset(0)
-		} else {
-			query = collRef.Offset(0)
-		}
-	}
+	query := s.getQueryRoot(key)
 
 	var orderByAttrib string
 
@@ -241,4 +217,39 @@ func NewWithClient(client *firestore.Client, ctx context.Context) (sdk.DocumentS
 		client:  client,
 		context: ctx,
 	}, nil
+}
+
+func (s *FirestoreDocService) getDocRef(key *sdk.Key) *firestore.DocumentRef {
+	parentKey := key.Collection.Parent
+
+	if parentKey == nil {
+		return s.client.Collection(key.Collection.Name).Doc(key.Id)
+
+	} else {
+		return s.client.Collection(parentKey.Collection.Name).
+			Doc(parentKey.Id).
+			Collection(key.Collection.Name).
+			Doc(key.Id)
+	}
+}
+
+func (s *FirestoreDocService) getQueryRoot(key *sdk.Key) firestore.Query {
+	parentKey := key.Collection.Parent
+
+	if parentKey == nil {
+		return s.client.Collection(key.Collection.Name).Offset(0)
+
+	} else {
+		if parentKey.Id != "" {
+			return s.client.Collection(parentKey.Collection.Name).
+				Doc(parentKey.Id).
+				Collection(key.Collection.Name).
+				Offset(0)
+
+		} else {
+			// Note there is a risk of subcollection name collison
+			// TODO: future YAML validation could help mitigate this
+			return s.client.CollectionGroup(key.Collection.Name).Offset(0)
+		}
+	}
 }

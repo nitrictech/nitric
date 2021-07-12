@@ -16,8 +16,13 @@ package sdk
 
 import "fmt"
 
+type Collection struct {
+	Name   string
+	Parent *Key
+}
+
 type Key struct {
-	Collection string
+	Collection Collection
 	Id         string
 }
 
@@ -36,7 +41,9 @@ func (d *Document) String() string {
 type QueryExpression struct {
 	Operand  string
 	Operator string
-	Value    string
+	// Value    interface{}
+	// TODO: convert to interface
+	Value string
 }
 
 type QueryResult struct {
@@ -48,28 +55,28 @@ type QueryResult struct {
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
 type DocumentService interface {
-	Get(*Key, *Key) (*Document, error)
-	Set(*Key, *Key, map[string]interface{}) error
-	Delete(*Key, *Key) error
-	Query(*Key, string, []QueryExpression, int, map[string]string) (*QueryResult, error)
+	Get(*Key) (*Document, error)
+	Set(*Key, map[string]interface{}) error
+	Delete(*Key) error
+	Query(*Key, []QueryExpression, int, map[string]string) (*QueryResult, error)
 }
 
 type UnimplementedDocumentPlugin struct {
 	DocumentService
 }
 
-func (p *UnimplementedDocumentPlugin) Get(key *Key, subKey *Key) (*Document, error) {
+func (p *UnimplementedDocumentPlugin) Get(key *Key) (*Document, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Set(key *Key, subKey *Key, content map[string]interface{}) error {
+func (p *UnimplementedDocumentPlugin) Set(key *Key, content map[string]interface{}) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Delete(key *Key, subKey *Key) error {
+func (p *UnimplementedDocumentPlugin) Delete(key *Key) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Query(key *Key, subcollection string, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
+func (p *UnimplementedDocumentPlugin) Query(key *Key, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

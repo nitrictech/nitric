@@ -23,5 +23,5 @@ import (
 
 func TestDocuments(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "BoltDB KV Service Suite")
+	RunSpecs(t, "BoltDB Document Suite")
 }

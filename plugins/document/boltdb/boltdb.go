@@ -49,19 +49,23 @@ type BoltDoc struct {
 	Value       map[string]interface{}
 }
 
-func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, error) {
-	err := document.ValidateKeys(key, subKey)
+func (d BoltDoc) String() string {
+	return fmt.Sprintf("BoltDoc{Id: %v ParitionKey: %v SortKey: %v Value: %v}\n", d.Id, d.ParitionKey, d.SortKey, d.Value)
+}
+
+func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(key)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
-	doc := createDoc(key, subKey)
+	doc := createDoc(key)
 
 	err = db.One(idName, doc.Id, &doc)
 
@@ -72,8 +76,8 @@ func (s *BoltDocService) Get(key *sdk.Key, subKey *sdk.Key) (*sdk.Document, erro
 	return toSdkDoc(doc), nil
 }
 
-func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, content map[string]interface{}) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -82,31 +86,31 @@ func (s *BoltDocService) Set(key *sdk.Key, subKey *sdk.Key, content map[string]i
 		return fmt.Errorf("provide non-nil content")
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(key)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	doc := createDoc(key, subKey)
+	doc := createDoc(key)
 	doc.Value = content
 
 	return db.Save(&doc)
 }
 
-func (s *BoltDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
-	err := document.ValidateKeys(key, subKey)
+func (s *BoltDocService) Delete(key *sdk.Key) error {
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(key)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	doc := createDoc(key, subKey)
+	doc := createDoc(key)
 
 	err = db.DeleteStruct(&doc)
 
@@ -115,8 +119,8 @@ func (s *BoltDocService) Delete(key *sdk.Key, subKey *sdk.Key) error {
 	return err
 }
 
-func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document.ValidateCollection(key.Collection, subcollection)
+func (s *BoltDocService) Query(key *sdk.Key, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+	err := document.ValidateQueryKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +130,7 @@ func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions [
 		return nil, err
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(key)
 	if err != nil {
 		return nil, err
 	}
@@ -141,14 +145,20 @@ func (s *BoltDocService) Query(key *sdk.Key, subcollection string, expressions [
 	matchers := []q.Matcher{}
 
 	// Apply collection/sub-collection filters
-	if key.Id != "" {
-		matchers = append(matchers, q.Eq(partionKeyName, key.Id))
-	}
-	if subcollection != "" {
-		matchers = append(matchers, q.Gte(sortKeyName, subcollection+"#"))
-		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(subcollection+"#")))
+	parentKey := key.Collection.Parent
+
+	if parentKey == nil {
+		if key.Id != "" {
+			matchers = append(matchers, q.Eq(partionKeyName, key.Id))
+		}
+		matchers = append(matchers, q.Eq(sortKeyName, key.Collection.Name+"#"))
+
 	} else {
-		matchers = append(matchers, q.Eq(sortKeyName, key.Collection+"#"))
+		if parentKey.Id != "" {
+			matchers = append(matchers, q.Eq(partionKeyName, parentKey.Id))
+		}
+		matchers = append(matchers, q.Gte(sortKeyName, key.Collection.Name+"#"))
+		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(key.Collection.Name+"#")))
 	}
 
 	// Create query object
@@ -253,13 +263,13 @@ func New() (*BoltDocService, error) {
 	return &BoltDocService{dbDir: dbDir}, nil
 }
 
-func (s *BoltDocService) createdDb(collection string) (*storm.DB, error) {
-	err := document.ValidateCollection(collection, "")
-	if err != nil {
-		return nil, err
+func (s *BoltDocService) createdDb(key *sdk.Key) (*storm.DB, error) {
+	coll := key.Collection
+	for coll.Parent != nil {
+		coll = coll.Parent.Collection
 	}
 
-	dbPath := s.dbDir + strings.ToLower(collection) + ".db"
+	dbPath := s.dbDir + strings.ToLower(coll.Name) + ".db"
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
@@ -270,26 +280,25 @@ func (s *BoltDocService) createdDb(collection string) (*storm.DB, error) {
 	return db, nil
 }
 
-func createDoc(key *sdk.Key, subKey *sdk.Key) BoltDoc {
+func createDoc(key *sdk.Key) BoltDoc {
 
-	doc := BoltDoc{
-		Id:          key.Id,
-		ParitionKey: key.Id,
-	}
-	if subKey != nil {
-		doc.Id += "_" + subKey.Id
-	}
+	parentKey := key.Collection.Parent
 
-	// Top level collection item
-	if subKey == nil {
-		doc.SortKey = key.Collection + "#"
+	// Top Level Collection
+	if parentKey == nil {
+		return BoltDoc{
+			Id:          key.Id,
+			ParitionKey: key.Id,
+			SortKey:     key.Collection.Name + "#",
+		}
 
 	} else {
-		// Sub-collection item
-		doc.SortKey = subKey.Collection + "#" + subKey.Id
+		return BoltDoc{
+			Id:          parentKey.Id + "_" + key.Id,
+			ParitionKey: parentKey.Id,
+			SortKey:     key.Collection.Name + "#" + key.Id,
+		}
 	}
-
-	return doc
 }
 
 func toSdkDoc(doc BoltDoc) *sdk.Document {

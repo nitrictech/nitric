@@ -23,5 +23,5 @@ import (
 
 func TestFirestore(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Firestore Document Service Suite")
+	RunSpecs(t, "Firestore Document Suite")
 }

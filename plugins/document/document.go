@@ -39,35 +39,37 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
-// Validate the collection name and subcollection (optional)
-func ValidateCollection(collection string, subcollection string) error {
-	if collection == "" {
-		return fmt.Errorf("provide non-blank collection")
-	}
-
-	return nil
-}
-
-func ValidateKeys(key *sdk.Key, subKey *sdk.Key) error {
+func ValidateKey(key *sdk.Key) error {
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
 	}
-	if key.Collection == "" {
-		return fmt.Errorf("provide non-blank key.Collection")
+	if key.Collection.Name == "" {
+		return fmt.Errorf("provide non-blank key.Collection.Name")
 	}
 	if key.Id == "" {
 		return fmt.Errorf("provide non-blank key.Id")
 	}
-	if subKey != nil {
-		if subKey.Collection == "" {
-			return fmt.Errorf("provide non-blank subKey.Collection")
+	if key.Collection.Parent != nil {
+		if key.Collection.Parent.Collection.Name == "" {
+			return fmt.Errorf("provide non-blank key.Collection.Parent.Collection.Name")
 		}
-		// TODO: review subcollection validate in the future
-		// if !stack.HasSubCollection(key.Collection, subKey.Collection) {
-		// 	return fmt.Errorf("%v collections: %v: sub-collection: %v: not found", stack.Name, key.Collection, subKey.Collection)
-		// }
-		if subKey.Id == "" {
-			return fmt.Errorf("provide non-blank subKey.Id")
+		if key.Collection.Parent.Id == "" {
+			return fmt.Errorf("provide non-blank key.Collection.Parent.Id")
+		}
+	}
+	return nil
+}
+
+func ValidateQueryKey(key *sdk.Key) error {
+	if key == nil {
+		return fmt.Errorf("provide non-nil key")
+	}
+	if key.Collection.Name == "" {
+		return fmt.Errorf("provide non-blank key.Collection.Name")
+	}
+	if key.Collection.Parent != nil {
+		if key.Collection.Parent.Collection.Name == "" {
+			return fmt.Errorf("provide non-blank key.Collection.Parent.Collection.Name")
 		}
 	}
 	return nil

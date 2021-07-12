@@ -27,38 +27,96 @@ import (
 
 var _ = Describe("Document Plugin", func() {
 
-	When("ValidateCollection", func() {
-		When("Blank collection", func() {
+	When("ValidateKey", func() {
+		When("Nil key", func() {
 			It("should return error", func() {
-				err := doc.ValidateCollection("", "")
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank collection")))
+				err := doc.ValidateKey(nil)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
 			})
 		})
-		When("Valid collection", func() {
-			It("should return nil", func() {
-				err := doc.ValidateCollection("users", "")
-				Expect(err).To(BeNil())
-			})
-		})
-		When("Missing subcollection", func() {
-			It("should return nil", func() {
-				err := doc.ValidateCollection("customers", "unknown")
-				Expect(err).To(BeNil())
-			})
-		})
-	})
-
-	When("ValidateKeys", func() {
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := doc.ValidateKeys(&sdk.Key{}, nil)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection")))
+				err := doc.ValidateKey(&sdk.Key{})
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection.Name")))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return error", func() {
-				err := doc.ValidateKeys(&sdk.Key{Collection: "users"}, nil)
+				key := sdk.Key{
+					Collection: sdk.Collection{Name: "users"},
+				}
+				err := doc.ValidateKey(&key)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
+			})
+		})
+		When("Blank key.Collection.Parent.Collection.Name", func() {
+			It("should return error", func() {
+				key := sdk.Key{
+					Collection: sdk.Collection{Name: "users", Parent: &sdk.Key{}},
+					Id:         "123",
+				}
+				err := doc.ValidateKey(&key)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection.Parent.Collection.Name")))
+			})
+		})
+		When("Blank key.Collection.Parent.Id", func() {
+			It("should return error", func() {
+				key := sdk.Key{
+					Collection: sdk.Collection{
+						Name:   "orders",
+						Parent: &sdk.Key{Collection: sdk.Collection{Name: "customers"}},
+					},
+					Id: "123",
+				}
+				err := doc.ValidateKey(&key)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection.Parent.Id")))
+			})
+		})
+	})
+
+	When("ValidateQueryKey", func() {
+		When("Nil key", func() {
+			It("should return error", func() {
+				err := doc.ValidateQueryKey(nil)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
+			})
+		})
+		When("Blank key.Collection", func() {
+			It("should return error", func() {
+				err := doc.ValidateQueryKey(&sdk.Key{})
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection.Name")))
+			})
+		})
+		When("Blank key.Id", func() {
+			It("should return nil", func() {
+				key := sdk.Key{
+					Collection: sdk.Collection{Name: "users"},
+				}
+				err := doc.ValidateQueryKey(&key)
+				Expect(err).To(BeNil())
+			})
+		})
+		When("Blank key.Collection.Parent.Collection.Name", func() {
+			It("should return error", func() {
+				key := sdk.Key{
+					Collection: sdk.Collection{Name: "users", Parent: &sdk.Key{}},
+					Id:         "123",
+				}
+				err := doc.ValidateQueryKey(&key)
+				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Collection.Parent.Collection.Name")))
+			})
+		})
+		When("Blank key.Collection.Parent.Id", func() {
+			It("should return nil", func() {
+				key := sdk.Key{
+					Collection: sdk.Collection{
+						Name:   "orders",
+						Parent: &sdk.Key{Collection: sdk.Collection{Name: "customers"}},
+					},
+					Id: "123",
+				}
+				err := doc.ValidateQueryKey(&key)
+				Expect(err).To(BeNil())
 			})
 		})
 	})

@@ -23,5 +23,5 @@ import (
 
 func TestDynamoDb(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "DynamoDB KV Service Suite")
+	RunSpecs(t, "DynamoDB Document Suite")
 }
