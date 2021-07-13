@@ -122,7 +122,7 @@ func toPbDoc(doc *sdk.Document) (*pb.Document, error) {
 }
 
 func toSdkKey(key *pb.Key) *sdk.Key {
-	if key != nil {
+	if key == nil {
 		return nil
 	}
 
