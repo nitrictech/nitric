@@ -43,18 +43,14 @@ func ValidateKey(key *sdk.Key) error {
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
 	}
-	if key.Collection.Name == "" {
-		return fmt.Errorf("provide non-blank key.Collection.Name")
-	}
 	if key.Id == "" {
 		return fmt.Errorf("provide non-blank key.Id")
 	}
-	if key.Collection.Parent != nil {
-		if key.Collection.Parent.Collection.Name == "" {
-			return fmt.Errorf("provide non-blank key.Collection.Parent.Collection.Name")
-		}
-		if key.Collection.Parent.Id == "" {
-			return fmt.Errorf("provide non-blank key.Collection.Parent.Id")
+	if key.Collection == nil {
+		return fmt.Errorf("provide non-nil key.Collection")
+	} else {
+		if err := ValidateQueryCollection(key.Collection); err != nil {
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
 		}
 	}
 	return nil
@@ -68,8 +64,8 @@ func ValidateQueryCollection(collection *sdk.Collection) error {
 		return fmt.Errorf("provide non-blank collection.Name")
 	}
 	if collection.Parent != nil {
-		if collection.Parent.Collection.Name == "" {
-			return fmt.Errorf("provide non-blank collection.Parent.Collection.Name")
+		if err := ValidateKey(collection.Parent); err != nil {
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
 	return nil
