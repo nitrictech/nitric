@@ -39,7 +39,7 @@ type MockEventingServer struct {
 	sdk.UnimplementedEventingPlugin
 }
 
-type MockStorageServer struct {
+type MockStorageServiceServer struct {
 	sdk.UnimplementedStoragePlugin
 }
 
@@ -47,7 +47,7 @@ type MockKeyValueServer struct {
 	sdk.UnimplementedKeyValuePlugin
 }
 
-type MockQueueServer struct {
+type MockQueueServiceServer struct {
 	sdk.UnimplementedQueuePlugin
 }
 
@@ -174,8 +174,8 @@ var _ = Describe("Membrane", func() {
 				mockDocumentServer := &MockDocumentServer{}
 				mockEventingServer := &MockEventingServer{}
 				mockKeyValueServer := &MockKeyValueServer{}
-				mockStorageServer := &MockStorageServer{}
-				mockQueueServer := &MockQueueServer{}
+				mockStorageServiceServer := &MockStorageServiceServer{}
+				mockQueueServiceServer := &MockQueueServiceServer{}
 
 				mockGateway := &MockGateway{}
 				mbraneOpts := membrane2.MembraneOptions{
@@ -185,8 +185,8 @@ var _ = Describe("Membrane", func() {
 					DocumentPlugin:          mockDocumentServer,
 					EventingPlugin:          mockEventingServer,
 					KvPlugin:                mockKeyValueServer,
-					StoragePlugin:           mockStorageServer,
-					QueuePlugin:             mockQueueServer,
+					StoragePlugin:           mockStorageServiceServer,
+					QueuePlugin:             mockQueueServiceServer,
 					Pool:                    pool,
 				}
 

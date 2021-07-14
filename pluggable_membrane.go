@@ -74,7 +74,7 @@ func main() {
 	var eventingService sdk.EventService = nil
 	var gatewayService sdk.GatewayService = nil
 	var keyValueService sdk.KeyValueService = nil
-	var queueService sdk.QueueService = nil
+	var QueueService sdk.QueueService = nil
 	var storageService sdk.StorageService = nil
 
 	// Load the document service
@@ -94,7 +94,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// Load the queue service
-	if queueService, err = serviceFactory.NewQueueService(); err != nil {
+	if QueueService, err = serviceFactory.NewQueueService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the storage service
@@ -112,7 +112,7 @@ func main() {
 		KvPlugin:                keyValueService,
 		StoragePlugin:           storageService,
 		GatewayPlugin:           gatewayService,
-		QueuePlugin:             queueService,
+		QueuePlugin:             QueueService,
 		TolerateMissingServices: tolerateMissing,
 	})
 

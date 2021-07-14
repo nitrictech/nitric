@@ -31,7 +31,7 @@ import (
 // Worker representation for a Nitric FaaS function using gRPC
 type FaasWorker struct {
 	// gRPC Stream for this worker
-	stream pb.Faas_TriggerStreamServer
+	stream pb.FaasService_TriggerStreamServer
 	// Response channels for this worker
 	responseQueueLock sync.Mutex
 	responseQueue     map[string]chan *pb.TriggerResponse
@@ -231,7 +231,7 @@ func (s *FaasWorker) Listen(errchan chan error) {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewFaasWorker(stream pb.Faas_TriggerStreamServer) *FaasWorker {
+func NewFaasWorker(stream pb.FaasService_TriggerStreamServer) *FaasWorker {
 	return &FaasWorker{
 		stream:            stream,
 		responseQueueLock: sync.Mutex{},

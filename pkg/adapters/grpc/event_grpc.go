@@ -25,19 +25,19 @@ import (
 )
 
 // GRPC Interface for registered Nitric Eventing Plugins
-type EventServer struct {
-	pb.UnimplementedEventServer
+type EventServiceServer struct {
+	pb.UnimplementedEventServiceServer
 	eventPlugin sdk.EventService
 }
 
-func (s *EventServer) checkPluginRegistered() (bool, error) {
+func (s *EventServiceServer) checkPluginRegistered() (bool, error) {
 	if s.eventPlugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
 	}
 	return true, nil
 }
 
-func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
+func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// auto generate an ID if we did not receive one
 		var ID = req.GetEvent().GetId()
@@ -62,18 +62,18 @@ func (s *EventServer) Publish(ctx context.Context, req *pb.EventPublishRequest) 
 	}
 }
 
-func NewEventServer(eventingPlugin sdk.EventService) pb.EventServer {
-	return &EventServer{
+func NewEventServiceServer(eventingPlugin sdk.EventService) pb.EventServiceServer {
+	return &EventServiceServer{
 		eventPlugin: eventingPlugin,
 	}
 }
 
-type TopicServer struct {
-	pb.UnimplementedTopicServer
+type TopicServiceServer struct {
+	pb.UnimplementedTopicServiceServer
 	eventPlugin sdk.EventService
 }
 
-func (s *TopicServer) checkPluginRegistered() (bool, error) {
+func (s *TopicServiceServer) checkPluginRegistered() (bool, error) {
 	if s.eventPlugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
 	}
@@ -81,7 +81,7 @@ func (s *TopicServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *TopicServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
+func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 
 		if res, err := s.eventPlugin.ListTopics(); err == nil {
@@ -103,10 +103,10 @@ func (s *TopicServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicList
 	}
 }
 
-func NewTopicServer(eventService sdk.EventService) pb.TopicServer {
+func NewTopicServiceServer(eventService sdk.EventService) pb.TopicServiceServer {
 	// The external topic/event interfaces are separate. Internally, they're fulfilled together,
 	// so the event plugin is all that's needed for both the Event and Topic servers currently.
-	return &TopicServer{
+	return &TopicServiceServer{
 		eventPlugin: eventService,
 	}
 }
