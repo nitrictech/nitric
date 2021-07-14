@@ -43,7 +43,7 @@ var _ = Describe("Document Plugin", func() {
 		When("Blank key.Id", func() {
 			It("should return error", func() {
 				key := sdk.Key{
-					Collection: sdk.Collection{Name: "users"},
+					Collection: &sdk.Collection{Name: "users"},
 				}
 				err := doc.ValidateKey(&key)
 				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
@@ -52,7 +52,7 @@ var _ = Describe("Document Plugin", func() {
 		When("Blank key.Collection.Parent.Collection.Name", func() {
 			It("should return error", func() {
 				key := sdk.Key{
-					Collection: sdk.Collection{Name: "users", Parent: &sdk.Key{}},
+					Collection: &sdk.Collection{Name: "users", Parent: &sdk.Key{}},
 					Id:         "123",
 				}
 				err := doc.ValidateKey(&key)
@@ -62,9 +62,9 @@ var _ = Describe("Document Plugin", func() {
 		When("Blank key.Collection.Parent.Id", func() {
 			It("should return error", func() {
 				key := sdk.Key{
-					Collection: sdk.Collection{
+					Collection: &sdk.Collection{
 						Name:   "orders",
-						Parent: &sdk.Key{Collection: sdk.Collection{Name: "customers"}},
+						Parent: &sdk.Key{Collection: &sdk.Collection{Name: "customers"}},
 					},
 					Id: "123",
 				}
@@ -108,7 +108,7 @@ var _ = Describe("Document Plugin", func() {
 			It("should return nil", func() {
 				coll := sdk.Collection{
 					Name:   "orders",
-					Parent: &sdk.Key{Collection: sdk.Collection{Name: "customers"}},
+					Parent: &sdk.Key{Collection: &sdk.Collection{Name: "customers"}},
 				}
 				err := doc.ValidateQueryCollection(&coll)
 				Expect(err).To(BeNil())

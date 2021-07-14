@@ -16,13 +16,19 @@ package sdk
 
 import "fmt"
 
+// MaxSubCollectionDepth - maximum number of parents a collection can support.
+// Depth is a count of the number of parents for a collection.
+// e.g. a collection with no parent has a depth of 0
+// a collection with a parent has a depth of 1
+const MaxSubCollectionDepth int = 1
+
 type Collection struct {
 	Name   string
 	Parent *Key
 }
 
 type Key struct {
-	Collection Collection
+	Collection *Collection
 	Id         string
 }
 

@@ -48,7 +48,7 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 
 	input := &dynamodb.GetItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(key.Collection),
+		TableName: getTableName(*key.Collection),
 	}
 
 	result, err := s.client.GetItem(input)
@@ -93,7 +93,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error
 
 	input := &dynamodb.PutItemInput{
 		Item:      itemAttributeMap,
-		TableName: getTableName(key.Collection),
+		TableName: getTableName(*key.Collection),
 	}
 
 	_, err = s.client.PutItem(input)
@@ -118,7 +118,7 @@ func (s *DynamoDocService) Delete(key *sdk.Key) error {
 
 	input := &dynamodb.DeleteItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(key.Collection),
+		TableName: getTableName(*key.Collection),
 	}
 
 	_, err = s.client.DeleteItem(input)
@@ -501,7 +501,7 @@ func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
 func getTableName(collection sdk.Collection) *string {
 	coll := collection
 	for coll.Parent != nil {
-		coll = coll.Parent.Collection
+		coll = *coll.Parent.Collection
 	}
 
 	return aws.String(coll.Name)

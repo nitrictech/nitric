@@ -59,7 +59,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, err
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(*key.Collection)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error
 		return fmt.Errorf("provide non-nil content")
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(*key.Collection)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (s *BoltDocService) Delete(key *sdk.Key) error {
 		return err
 	}
 
-	db, err := s.createdDb(key.Collection)
+	db, err := s.createdDb(*key.Collection)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func New() (*BoltDocService, error) {
 
 func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
 	for coll.Parent != nil {
-		coll = coll.Parent.Collection
+		coll = *coll.Parent.Collection
 	}
 
 	dbPath := s.dbDir + strings.ToLower(coll.Name) + ".db"
