@@ -23,7 +23,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/firestore"
-	"github.com/nitric-dev/membrane/plugins/document/test"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 

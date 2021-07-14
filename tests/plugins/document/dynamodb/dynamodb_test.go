@@ -20,7 +20,7 @@ import (
 	"os/exec"
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/plugins/document/test"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
