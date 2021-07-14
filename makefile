@@ -35,8 +35,8 @@ clean:
 	@rm -rf ./interfaces/
 
 # Run the integration tests
-integration-test:
-	@echo Testing membrane plugins
+test-integration:
+	@echo Running integration tests
 	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
 
 # Run all tests
