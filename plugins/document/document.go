@@ -39,6 +39,26 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
+// ValidateSubCollectionDepth - returns an error if the provided collection exceeds the maximum supported
+// depth for a sub-collection.
+func ValidateSubCollectionDepth(collection *sdk.Collection) error {
+	coll := collection
+	depth := 0
+	for coll.Parent != nil {
+		depth += 1
+		coll = coll.Parent.Collection
+	}
+	if depth > sdk.MaxSubCollectionDepth {
+		return fmt.Errorf(
+			"sub-collections only supported to a depth of %d, found depth of %d for collection %s",
+			sdk.MaxSubCollectionDepth,
+			depth,
+			collection.Name,
+		)
+	}
+	return nil
+}
+
 // ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
 func ValidateKey(key *sdk.Key) error {
 	if key == nil {
@@ -70,7 +90,8 @@ func ValidateCollection(collection *sdk.Collection) error {
 			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
-	return nil
+
+	return ValidateSubCollectionDepth(collection)
 }
 
 // ValidateQueryKey - Validates a key used for query operations.
@@ -104,7 +125,7 @@ func ValidateQueryCollection(collection *sdk.Collection) error {
 			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
-	return nil
+	return ValidateSubCollectionDepth(collection)
 }
 
 // GetEndRangeValue - Get end range value to implement "startsWith" expression operator using where clause.

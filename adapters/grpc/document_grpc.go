@@ -16,8 +16,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
-
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/sdk"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -33,10 +31,6 @@ type DocumentServer struct {
 
 func (s *DocumentServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
 	key := keyFromWire(req.Key)
-	// Check the collection depth doesn't exceed the maximum
-	if err := isInvalidSubCollectionDepth(key.Collection); err != nil {
-		return nil, err
-	}
 
 	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
 	if err != nil {
@@ -48,9 +42,6 @@ func (s *DocumentServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*
 
 func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
 	key := keyFromWire(req.Key)
-	if err := isInvalidSubCollectionDepth(key.Collection); err != nil {
-		return nil, err
-	}
 
 	doc, err := s.documentPlugin.Get(key)
 	if err != nil {
@@ -69,9 +60,6 @@ func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*
 
 func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
 	key := keyFromWire(req.Key)
-	if err := isInvalidSubCollectionDepth(key.Collection); err != nil {
-		return nil, err
-	}
 
 	err := s.documentPlugin.Delete(key)
 	if err != nil {
@@ -83,9 +71,6 @@ func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocumentDeleteReque
 
 func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
 	collection := collectionFromWire(req.Collection)
-	if err := isInvalidSubCollectionDepth(collection); err != nil {
-		return nil, err
-	}
 	expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
 	for i, exp := range req.GetExpressions() {
 		expressions[i] = sdk.QueryExpression{
@@ -122,26 +107,6 @@ func NewDocumentServer(docPlugin sdk.DocumentService) pb.DocumentServiceServer {
 	return &DocumentServer{
 		documentPlugin: docPlugin,
 	}
-}
-
-// isInvalidSubCollectionDepth - returns an error if the provided collection exceeds the maximum supported
-// depth for a sub-collection.
-func isInvalidSubCollectionDepth(collection *sdk.Collection) error {
-	coll := collection
-	depth := 0
-	for coll.Parent != nil {
-		depth += 1
-		coll = coll.Parent.Collection
-	}
-	if depth > sdk.MaxSubCollectionDepth {
-		return fmt.Errorf(
-			"sub-collections only supported to a depth of %d, found depth of %d for collection %s",
-			sdk.MaxSubCollectionDepth,
-			depth,
-			collection.Name,
-			)
-	}
-	return nil
 }
 
 func documentToWire(doc *sdk.Document) (*pb.Document, error) {
