@@ -18,7 +18,7 @@ import (
 	"os"
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
-	test "github.com/nitric-dev/membrane/plugins/document/test"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 
