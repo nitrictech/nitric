@@ -41,11 +41,6 @@ func (p *AzureServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return http_service2.New()
 }
 
-// NewDocumentPlugin - Returns Azure _ based document plugin
-func (p *AzureServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return &sdk.UnimplementedKeyValuePlugin{}, nil
-}
-
 // NewQueuePlugin - Returns Azure _ based queue plugin
 func (p *AzureServiceFactory) NewQueueService() (sdk.QueueService, error) {
 	return &sdk.UnimplementedQueuePlugin{}, nil

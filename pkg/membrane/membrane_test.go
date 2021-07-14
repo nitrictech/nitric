@@ -43,10 +43,6 @@ type MockStorageServiceServer struct {
 	sdk.UnimplementedStoragePlugin
 }
 
-type MockKeyValueServer struct {
-	sdk.UnimplementedKeyValuePlugin
-}
-
 type MockQueueServiceServer struct {
 	sdk.UnimplementedQueuePlugin
 }
@@ -173,7 +169,6 @@ var _ = Describe("Membrane", func() {
 			When("All plugins are present", func() {
 				mockDocumentServer := &MockDocumentServer{}
 				mockEventingServer := &MockEventingServer{}
-				mockKeyValueServer := &MockKeyValueServer{}
 				mockStorageServiceServer := &MockStorageServiceServer{}
 				mockQueueServiceServer := &MockQueueServiceServer{}
 
@@ -184,7 +179,6 @@ var _ = Describe("Membrane", func() {
 					GatewayPlugin:           mockGateway,
 					DocumentPlugin:          mockDocumentServer,
 					EventingPlugin:          mockEventingServer,
-					KvPlugin:                mockKeyValueServer,
 					StoragePlugin:           mockStorageServiceServer,
 					QueuePlugin:             mockQueueServiceServer,
 					Pool:                    pool,

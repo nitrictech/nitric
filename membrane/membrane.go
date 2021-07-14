@@ -43,7 +43,6 @@ type MembraneOptions struct {
 
 	DocumentPlugin sdk.DocumentService
 	EventingPlugin sdk.EventService
-	KvPlugin       sdk.KeyValueService
 	StoragePlugin  sdk.StorageService
 	QueuePlugin    sdk.QueueService
 	GatewayPlugin  sdk.GatewayService
@@ -78,7 +77,6 @@ type Membrane struct {
 	// Configured plugins
 	documentPlugin sdk.DocumentService
 	eventPlugin    sdk.EventService
-	kvPlugin       sdk.KeyValueService
 	storagePlugin  sdk.StorageService
 	gatewayPlugin  sdk.GatewayService
 	queuePlugin    sdk.QueueService
@@ -125,12 +123,8 @@ func (s *Membrane) createStorageServer() v1.StorageServer {
 	return grpc2.NewStorageServer(s.storagePlugin)
 }
 
-func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
-	return grpc2.NewKeyValueServer(s.kvPlugin)
-}
-
-func (s *Membrane) createQueueServer() v1.QueueServer {
-	return grpc2.NewQueueServer(s.queuePlugin)
+func (s *Membrane) createQueueServiceServer() v1.QueueServiceServer {
+	return grpc2.NewQueueServiceServer(s.queuePlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -176,11 +170,8 @@ func (s *Membrane) Start() error {
 	topicServer := s.createTopicServer()
 	v1.RegisterTopicServer(s.grpcServer, topicServer)
 
-	kvServer := s.createKeyValueServer()
-	v1.RegisterKeyValueServer(s.grpcServer, kvServer)
-
-	storageServer := s.createStorageServer()
-	v1.RegisterStorageServer(s.grpcServer, storageServer)
+	StorageServiceServer := s.createStorageServiceServer()
+	v1.RegisterStorageServiceServer(s.grpcServer, StorageServiceServer)
 
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServer(s.grpcServer, queueServer)
@@ -331,7 +322,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil {
+		if options.EventingPlugin == nil || options.DocumentPlugin == nil || options.StoragePlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -352,7 +343,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		documentPlugin:          options.DocumentPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
-		kvPlugin:                options.KvPlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		suppressLogs:            options.SuppressLogs,
