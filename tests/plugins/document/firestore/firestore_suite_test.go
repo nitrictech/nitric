@@ -12,21 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package firestore_service_test
 
-import "fmt"
+import (
+	"testing"
 
-// UserService - Pure Golang interface
-type UserService interface {
-	Create(tenant string, id string, email string, password string) error
-}
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
 
-// UnimplementedAuthPlugin - Unimplemented stub struct for extension for partial implementation of the UserService
-type UnimplementedAuthPlugin struct {
-	UserService
-}
-
-// CreateUser - Stub user creation method returning default UNIMPLEMENTED error message
-func (s *UnimplementedAuthPlugin) Create(tenant string, id string, email string, password string) error {
-	return fmt.Errorf("Unimplemented")
+func TestFirestore(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Firestore Document Suite")
 }

@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth_service
+package boltdb_service_test
 
-type ScribbleIface interface {
-	Read(string, string, interface{}) error
-	ReadAll(string) ([]string, error)
-	Write(string, string, interface{}) error
-	Delete(string, string) error
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestDocuments(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "BoltDB Document Suite")
 }

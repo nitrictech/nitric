@@ -15,12 +15,12 @@
 package main
 
 import (
-	auth_service "github.com/nitric-dev/membrane/plugins/dev/auth"
-	documents_plugin "github.com/nitric-dev/membrane/plugins/dev/documents"
-	eventing_plugin "github.com/nitric-dev/membrane/plugins/dev/eventing"
-	gateway_plugin "github.com/nitric-dev/membrane/plugins/dev/gateway"
-	queue_plugin "github.com/nitric-dev/membrane/plugins/dev/queue"
-	storage_plugin "github.com/nitric-dev/membrane/plugins/dev/storage"
+	document_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
+	eventing_plugin "github.com/nitric-dev/membrane/plugins/eventing/dev"
+	gateway_plugin "github.com/nitric-dev/membrane/plugins/gateway/dev"
+	kv_plugin "github.com/nitric-dev/membrane/plugins/kv/dev"
+	queue_plugin "github.com/nitric-dev/membrane/plugins/queue/dev"
+	storage_plugin "github.com/nitric-dev/membrane/plugins/storage/boltdb"
 	"github.com/nitric-dev/membrane/sdk"
 )
 
@@ -31,32 +31,32 @@ func New() sdk.ServiceFactory {
 	return &DevServiceFactory{}
 }
 
-// NewAuthPlugin - Returns AWS Cognito based auth plugin
-func (p *DevServiceFactory) NewAuthService() (sdk.UserService, error) {
-	return auth_service.New()
-}
-
-// NewDocumentPlugin - Returns AWS DynamoDB based document plugin
+// NewDocumentPlugin - Returns local dev document plugin
 func (p *DevServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
-	return documents_plugin.New()
+	return document_plugin.New()
 }
 
-// NewEventingPlugin - Returns AWS SNS based eventing plugin
+// NewEventingPlugin - Returns local dev eventing plugin
 func (p *DevServiceFactory) NewEventService() (sdk.EventService, error) {
 	return eventing_plugin.New()
 }
 
-// NewGatewayPlugin - Returns AWS Lambda Gateway plugin
+// NewGatewayPlugin - Returns local dev Gateway plugin
 func (p *DevServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return gateway_plugin.New()
 }
 
-// NewQueuePlugin - Returns AWS SQS based queue plugin
+// NewKeyValuePlugin - Returns local dev key value plugin
+func (p *DevServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
+	return kv_plugin.New()
+}
+
+// NewQueuePlugin - Returns local dev queue plugin
 func (p *DevServiceFactory) NewQueueService() (sdk.QueueService, error) {
 	return queue_plugin.New()
 }
 
-// NewStoragePlugin - Returns AWS S3 based storage plugin
+// NewStoragePlugin - Returns local dev storage plugin
 func (p *DevServiceFactory) NewStorageService() (sdk.StorageService, error) {
 	return storage_plugin.New()
 }

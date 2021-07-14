@@ -81,6 +81,8 @@ provider as an alternative to the fixed set of plugins in the static membranes.
  - Make
  - Docker
  - Google Protocol Buffers Compiler
+ - Google Cloud SDK (for Firestore testing)
+ - JRE (for DynamoDB testing)
 
 ### Getting Started
 
@@ -95,12 +97,27 @@ git submodule update --init --recursive
 make install-tools
 ```
 
-##### Protocol Buffers
+#### Install integration testing tools
+```bash
+make install-test-tools
+```
+
+##### Install Protocol Buffers
 Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
 
 > On Mac OS with Homebrew, you can run `brew install protobuf`
 
-#### Run tests
+##### Install Google Cloud SDK
+Install the Google Cloud SDK following in the instructions at: https://cloud.google.com/sdk/docs/install
+
+#### Install JRE
+Install a Java Runtime Environment (JRE) version 11 or later for your OS. For example on Ubuntu Linux run:
+
+```bash
+sudo apt-get install openjdk-11-jdk
+```
+
+### Run tests
 ```bash
 make tests
 ```

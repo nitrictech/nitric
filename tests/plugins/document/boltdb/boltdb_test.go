@@ -12,16 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage_service_test
+package boltdb_service_test
 
 import (
-	"testing"
+	"os"
 
+	ds_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-func TestStorage(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Storage Suite")
-}
+var _ = Describe("Bolt", func() {
+
+	docPlugin, err := ds_plugin.New()
+	if err != nil {
+		panic(err)
+	}
+
+	BeforeSuite(func() {
+		test.LoadItemsData(docPlugin)
+	})
+
+	AfterSuite(func() {
+		err = os.RemoveAll(ds_plugin.DEFAULT_DIR)
+		if err == nil {
+			os.Remove(ds_plugin.DEFAULT_DIR)
+			os.Remove("nitric/")
+		}
+	})
+
+	test.GetTests(docPlugin)
+	test.SetTests(docPlugin)
+	test.DeleteTests(docPlugin)
+	test.QueryTests(docPlugin)
+})

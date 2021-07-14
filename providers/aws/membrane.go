@@ -21,16 +21,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/sdk"
-
 	"github.com/nitric-dev/membrane/membrane"
-	auth "github.com/nitric-dev/membrane/plugins/auth/cognito"
+	document "github.com/nitric-dev/membrane/plugins/document/dynamodb"
 	eventing "github.com/nitric-dev/membrane/plugins/eventing/sns"
 	httpGateway "github.com/nitric-dev/membrane/plugins/gateway/ecs"
 	lambdaGateway "github.com/nitric-dev/membrane/plugins/gateway/lambda"
-	documents "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
+	kv_dynamodb "github.com/nitric-dev/membrane/plugins/kv/dynamodb"
 	queue "github.com/nitric-dev/membrane/plugins/queue/sqs"
 	storage "github.com/nitric-dev/membrane/plugins/storage/s3"
+	"github.com/nitric-dev/membrane/sdk"
 	"github.com/nitric-dev/membrane/utils"
 )
 
@@ -49,20 +48,19 @@ func main() {
 	default:
 		gatewayPlugin, _ = httpGateway.New()
 	}
-
+	documentPlugin, _ := document.New()
 	eventingPlugin, _ := eventing.New()
-	keyValuePlugin, _ := documents.New()
-	storagePlugin, _ := storage.New()
+	keyValuePlugin, _ := kv_dynamodb.New()
 	queuePlugin, _ := queue.New()
-	authPlugin, _ := auth.New()
+	storagePlugin, _ := storage.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
+		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
-		KvPlugin:       keyValuePlugin,
-		StoragePlugin:  storagePlugin,
-		QueuePlugin:    queuePlugin,
 		GatewayPlugin:  gatewayPlugin,
-		AuthPlugin:     authPlugin,
+		KvPlugin:       keyValuePlugin,
+		QueuePlugin:    queuePlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

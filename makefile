@@ -18,10 +18,22 @@ install-tools: install
 	@echo Installing tools from tools.go
 	@cat ./tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go get %
 
+# Install integration testing tools
+install-test-tools:
+	@wget https://s3.us-west-2.amazonaws.com/dynamodb-local/dynamodb_local_latest.tar.gz
+	@sudo mkdir -p /usr/local/dynamodb
+	@sudo tar -xf dynamodb_local_latest.tar.gz -C /usr/local/dynamodb
+	@rm dynamodb_local_latest.tar.gz
+
 clean:
 	@rm -rf ./bin/
 	@rm -rf ./lib/
 	@rm -rf ./interfaces/
+
+# Run the integration tests
+test-integration: install-tools generate-proto
+	@echo Running integration tests
+	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
 
 # Run all tests
 test: test-adapters test-membrane test-plugins

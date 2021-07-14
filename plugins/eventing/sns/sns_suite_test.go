@@ -23,5 +23,5 @@ import (
 
 func TestSns(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Sns Suite")
+	RunSpecs(t, "SNS Event Service Suite")
 }
