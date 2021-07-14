@@ -35,7 +35,7 @@ clean:
 	@rm -rf ./interfaces/
 
 # Run the integration tests
-test-integration:
+test-integration: install-tools generate-proto
 	@echo Running integration tests
 	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
 
