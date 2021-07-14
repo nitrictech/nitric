@@ -23,5 +23,5 @@ import (
 
 func TestFirestore(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Firestore Suite")
+	RunSpecs(t, "Firestore KV Suite")
 }
