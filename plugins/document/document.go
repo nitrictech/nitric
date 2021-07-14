@@ -39,6 +39,7 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
+// ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
 func ValidateKey(key *sdk.Key) error {
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
@@ -49,14 +50,15 @@ func ValidateKey(key *sdk.Key) error {
 	if key.Collection == nil {
 		return fmt.Errorf("provide non-nil key.Collection")
 	} else {
-		if err := ValidateQueryCollection(key.Collection); err != nil {
+		if err := ValidateCollection(key.Collection); err != nil {
 			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
 		}
 	}
 	return nil
 }
 
-func ValidateQueryCollection(collection *sdk.Collection) error {
+// ValidateCollection - validates a collection key, used for operations on a single document/collection e.g. Get, Set, Delete
+func ValidateCollection(collection *sdk.Collection) error {
 	if collection == nil {
 		return fmt.Errorf("provide non-nil collection")
 	}
@@ -71,7 +73,41 @@ func ValidateQueryCollection(collection *sdk.Collection) error {
 	return nil
 }
 
-// Get end range value to implement "startsWith" expression operator using where clause.
+// ValidateQueryKey - Validates a key used for query operations.
+// unique from ValidateKey in that it permits blank key.Id values for wildcard query scenarios.
+// e.g. querying values in a sub-collection for all documents in the parent collection.
+func ValidateQueryKey(key *sdk.Key) error {
+	if key == nil {
+		return fmt.Errorf("provide non-nil key")
+	}
+	if key.Collection == nil {
+		return fmt.Errorf("provide non-nil key.Collection")
+	} else {
+		if err := ValidateQueryCollection(key.Collection); err != nil {
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
+		}
+	}
+	return nil
+}
+
+// ValidateQueryCollection - Validates a collection used for query operations.
+// unique from ValidateCollection in that it calls ValidateQueryKey for the collection.Key
+func ValidateQueryCollection(collection *sdk.Collection) error {
+	if collection == nil {
+		return fmt.Errorf("provide non-nil collection")
+	}
+	if collection.Name == "" {
+		return fmt.Errorf("provide non-blank collection.Name")
+	}
+	if collection.Parent != nil {
+		if err := ValidateQueryKey(collection.Parent); err != nil {
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
+		}
+	}
+	return nil
+}
+
+// GetEndRangeValue - Get end range value to implement "startsWith" expression operator using where clause.
 // For example with sdk.Expression("pk", "startsWith", "Customer#") this translates to:
 // WHERE pk >= {startRangeValue} AND pk < {endRangeValue}
 // WHERE pk >= "Customer#" AND pk < "Customer!"
@@ -83,7 +119,7 @@ func GetEndRangeValue(value string) string {
 	return strFrontCode + string(strEndCode[0]+1)
 }
 
-// Validate the provided query expressions
+// ValidateExpressions - Validate the provided query expressions
 func ValidateExpressions(expressions []sdk.QueryExpression) error {
 	if expressions == nil {
 		return errors.New("provide non-nil query expressions")
@@ -138,7 +174,7 @@ func (exps ExpsSort) Len() int {
 	return len(exps)
 }
 
-// Sort by Operand then Operator then Value
+// Less - Sort by Operand then Operator then Value
 func (exps ExpsSort) Less(i, j int) bool {
 
 	operandCompare := strings.Compare(exps[i].Operand, exps[j].Operand)
