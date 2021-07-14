@@ -20,8 +20,8 @@ import (
 	"os/exec"
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/plugins/document/test"
-	"github.com/onsi/ginkgo"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -105,8 +105,8 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 	}
 }
 
-var _ = ginkgo.Describe("DynamoDb", func() {
-	defer ginkgo.GinkgoRecover()
+var _ = Describe("DynamoDb", func() {
+	defer GinkgoRecover()
 
 	os.Setenv("AWS_ACCESS_KEY_ID", "fakeMyKeyId")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "fakeSecretAccessKey")
@@ -118,21 +118,21 @@ var _ = ginkgo.Describe("DynamoDb", func() {
 	// Create DyanmoDB client
 	db := createDynamoClient()
 
-	ginkgo.BeforeEach(func() {
+	BeforeEach(func() {
 		createTable(db, "customers")
 		createTable(db, "users")
 		createTable(db, "items")
 		createTable(db, "parentItems")
 	})
 
-	ginkgo.AfterEach(func() {
+	AfterEach(func() {
 		deleteTable(db, "customers")
 		deleteTable(db, "users")
 		deleteTable(db, "items")
 		deleteTable(db, "parentItems")
 	})
 
-	ginkgo.AfterSuite(func() {
+	AfterSuite(func() {
 		stopDynamoProcess(dynaCmd)
 	})
 

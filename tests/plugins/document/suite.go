@@ -11,7 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package test
+
+package document
 
 import (
 	"fmt"
@@ -24,7 +25,7 @@ import (
 // Simple 'users' collection test data
 
 var UserKey1 = sdk.Key{
-	Collection: sdk.Collection{Name: "users"},
+	Collection: &sdk.Collection{Name: "users"},
 	Id:         "jsmith@server.com",
 }
 var UserItem1 = map[string]interface{}{
@@ -35,7 +36,7 @@ var UserItem1 = map[string]interface{}{
 	"age":       "30",
 }
 var UserKey2 = sdk.Key{
-	Collection: sdk.Collection{Name: "users"},
+	Collection: &sdk.Collection{Name: "users"},
 	Id:         "j.smithers@yahoo.com",
 }
 var UserItem2 = map[string]interface{}{
@@ -46,7 +47,7 @@ var UserItem2 = map[string]interface{}{
 	"age":       "40",
 }
 var UserKey3 = sdk.Key{
-	Collection: sdk.Collection{Name: "users"},
+	Collection: &sdk.Collection{Name: "users"},
 	Id:         "pdavis@server.com",
 }
 var UserItem3 = map[string]interface{}{
@@ -60,7 +61,7 @@ var UserItem3 = map[string]interface{}{
 // Single Table Design 'customers' collection test data
 
 var CustomersKey = sdk.Key{
-	Collection: sdk.Collection{Name: "customers"},
+	Collection: &sdk.Collection{Name: "customers"},
 }
 
 var CustomersColl = sdk.Collection{Name: "customers"}
@@ -78,7 +79,7 @@ type Order struct {
 
 var Customer1 = Customer{
 	Key: sdk.Key{
-		Collection: sdk.Collection{Name: "customers"},
+		Collection: &sdk.Collection{Name: "customers"},
 		Id:         "1000",
 	},
 	Content: map[string]interface{}{
@@ -92,10 +93,10 @@ var Customer1 = Customer{
 	Orders: []Order{
 		{
 			Key: sdk.Key{
-				Collection: sdk.Collection{
+				Collection: &sdk.Collection{
 					Name: "orders",
 					Parent: &sdk.Key{
-						Collection: sdk.Collection{Name: "customers"},
+						Collection: &sdk.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -111,10 +112,10 @@ var Customer1 = Customer{
 		},
 		{
 			Key: sdk.Key{
-				Collection: sdk.Collection{
+				Collection: &sdk.Collection{
 					Name: "orders",
 					Parent: &sdk.Key{
-						Collection: sdk.Collection{Name: "customers"},
+						Collection: &sdk.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -130,10 +131,10 @@ var Customer1 = Customer{
 		},
 		{
 			Key: sdk.Key{
-				Collection: sdk.Collection{
+				Collection: &sdk.Collection{
 					Name: "orders",
 					Parent: &sdk.Key{
-						Collection: sdk.Collection{Name: "customers"},
+						Collection: &sdk.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -152,7 +153,7 @@ var Customer1 = Customer{
 
 var Customer2 = Customer{
 	Key: sdk.Key{
-		Collection: sdk.Collection{Name: "customers"},
+		Collection: &sdk.Collection{Name: "customers"},
 		Id:         "2000",
 	},
 	Content: map[string]interface{}{
@@ -166,10 +167,10 @@ var Customer2 = Customer{
 	Orders: []Order{
 		{
 			Key: sdk.Key{
-				Collection: sdk.Collection{
+				Collection: &sdk.Collection{
 					Name: "orders",
 					Parent: &sdk.Key{
-						Collection: sdk.Collection{Name: "customers"},
+						Collection: &sdk.Collection{Name: "customers"},
 						Id:         "2000",
 					},
 				},
@@ -185,10 +186,10 @@ var Customer2 = Customer{
 		},
 		{
 			Key: sdk.Key{
-				Collection: sdk.Collection{
+				Collection: &sdk.Collection{
 					Name: "orders",
 					Parent: &sdk.Key{
-						Collection: sdk.Collection{Name: "customers"},
+						Collection: &sdk.Collection{Name: "customers"},
 						Id:         "2000",
 					},
 				},
@@ -212,51 +213,51 @@ type Item struct {
 
 var Items = []Item{
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "01"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "01"},
 		Content: map[string]interface{}{"letter": "A"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "02"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "02"},
 		Content: map[string]interface{}{"letter": "B"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "03"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "03"},
 		Content: map[string]interface{}{"letter": "C"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "04"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "04"},
 		Content: map[string]interface{}{"letter": "D"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "05"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "05"},
 		Content: map[string]interface{}{"letter": "E"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "06"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "06"},
 		Content: map[string]interface{}{"letter": "F"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "07"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "07"},
 		Content: map[string]interface{}{"letter": "G"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "08"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "08"},
 		Content: map[string]interface{}{"letter": "H"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "09"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "09"},
 		Content: map[string]interface{}{"letter": "I"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "10"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "10"},
 		Content: map[string]interface{}{"letter": "J"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "11"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "11"},
 		Content: map[string]interface{}{"letter": "K"},
 	},
 	{
-		Key:     sdk.Key{Collection: sdk.Collection{Name: "items"}, Id: "12"},
+		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "12"},
 		Content: map[string]interface{}{"letter": "L"},
 	},
 }
@@ -264,7 +265,7 @@ var Items = []Item{
 var ChildItemsCollection = sdk.Collection{
 	Name: "items",
 	Parent: &sdk.Key{
-		Collection: sdk.Collection{Name: "parentItems"},
+		Collection: &sdk.Collection{Name: "parentItems"},
 		Id:         "1",
 	},
 }
@@ -293,7 +294,7 @@ func LoadItemsData(docPlugin sdk.DocumentService) {
 		docPlugin.Set(&item.Key, item.Content)
 
 		key := sdk.Key{
-			Collection: ChildItemsCollection,
+			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
 		docPlugin.Set(&key, item.Content)
@@ -313,7 +314,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: sdk.Collection{Name: "users"}}
+				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
 				_, err := docPlugin.Get(&key)
 				Expect(err).Should(HaveOccurred())
 			})
@@ -352,14 +353,14 @@ func SetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: sdk.Collection{Name: "users"}}
+				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
 				err := docPlugin.Set(&key, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil item map", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: sdk.Collection{Name: "users"}, Id: "1"}
+				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}, Id: "1"}
 				err := docPlugin.Set(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
@@ -419,7 +420,7 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: sdk.Collection{Name: "users"}}
+				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
 				err := docPlugin.Delete(&key)
 				Expect(err).Should(HaveOccurred())
 			})

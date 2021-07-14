@@ -39,27 +39,80 @@ var validOperators = map[string]bool{
 	"startsWith": true,
 }
 
+// ValidateSubCollectionDepth - returns an error if the provided collection exceeds the maximum supported
+// depth for a sub-collection.
+func ValidateSubCollectionDepth(collection *sdk.Collection) error {
+	coll := collection
+	depth := 0
+	for coll.Parent != nil {
+		depth += 1
+		coll = coll.Parent.Collection
+	}
+	if depth > sdk.MaxSubCollectionDepth {
+		return fmt.Errorf(
+			"sub-collections only supported to a depth of %d, found depth of %d for collection %s",
+			sdk.MaxSubCollectionDepth,
+			depth,
+			collection.Name,
+		)
+	}
+	return nil
+}
+
+// ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
 func ValidateKey(key *sdk.Key) error {
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
 	}
-	if key.Collection.Name == "" {
-		return fmt.Errorf("provide non-blank key.Collection.Name")
-	}
 	if key.Id == "" {
 		return fmt.Errorf("provide non-blank key.Id")
 	}
-	if key.Collection.Parent != nil {
-		if key.Collection.Parent.Collection.Name == "" {
-			return fmt.Errorf("provide non-blank key.Collection.Parent.Collection.Name")
-		}
-		if key.Collection.Parent.Id == "" {
-			return fmt.Errorf("provide non-blank key.Collection.Parent.Id")
+	if key.Collection == nil {
+		return fmt.Errorf("provide non-nil key.Collection")
+	} else {
+		if err := ValidateCollection(key.Collection); err != nil {
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
 		}
 	}
 	return nil
 }
 
+// ValidateCollection - validates a collection key, used for operations on a single document/collection e.g. Get, Set, Delete
+func ValidateCollection(collection *sdk.Collection) error {
+	if collection == nil {
+		return fmt.Errorf("provide non-nil collection")
+	}
+	if collection.Name == "" {
+		return fmt.Errorf("provide non-blank collection.Name")
+	}
+	if collection.Parent != nil {
+		if err := ValidateKey(collection.Parent); err != nil {
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
+		}
+	}
+
+	return ValidateSubCollectionDepth(collection)
+}
+
+// ValidateQueryKey - Validates a key used for query operations.
+// unique from ValidateKey in that it permits blank key.Id values for wildcard query scenarios.
+// e.g. querying values in a sub-collection for all documents in the parent collection.
+func ValidateQueryKey(key *sdk.Key) error {
+	if key == nil {
+		return fmt.Errorf("provide non-nil key")
+	}
+	if key.Collection == nil {
+		return fmt.Errorf("provide non-nil key.Collection")
+	} else {
+		if err := ValidateQueryCollection(key.Collection); err != nil {
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
+		}
+	}
+	return nil
+}
+
+// ValidateQueryCollection - Validates a collection used for query operations.
+// unique from ValidateCollection in that it calls ValidateQueryKey for the collection.Key
 func ValidateQueryCollection(collection *sdk.Collection) error {
 	if collection == nil {
 		return fmt.Errorf("provide non-nil collection")
@@ -68,14 +121,14 @@ func ValidateQueryCollection(collection *sdk.Collection) error {
 		return fmt.Errorf("provide non-blank collection.Name")
 	}
 	if collection.Parent != nil {
-		if collection.Parent.Collection.Name == "" {
-			return fmt.Errorf("provide non-blank collection.Parent.Collection.Name")
+		if err := ValidateQueryKey(collection.Parent); err != nil {
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
-	return nil
+	return ValidateSubCollectionDepth(collection)
 }
 
-// Get end range value to implement "startsWith" expression operator using where clause.
+// GetEndRangeValue - Get end range value to implement "startsWith" expression operator using where clause.
 // For example with sdk.Expression("pk", "startsWith", "Customer#") this translates to:
 // WHERE pk >= {startRangeValue} AND pk < {endRangeValue}
 // WHERE pk >= "Customer#" AND pk < "Customer!"
@@ -87,7 +140,7 @@ func GetEndRangeValue(value string) string {
 	return strFrontCode + string(strEndCode[0]+1)
 }
 
-// Validate the provided query expressions
+// ValidateExpressions - Validate the provided query expressions
 func ValidateExpressions(expressions []sdk.QueryExpression) error {
 	if expressions == nil {
 		return errors.New("provide non-nil query expressions")
@@ -142,7 +195,7 @@ func (exps ExpsSort) Len() int {
 	return len(exps)
 }
 
-// Sort by Operand then Operator then Value
+// Less - Sort by Operand then Operator then Value
 func (exps ExpsSort) Less(i, j int) bool {
 
 	operandCompare := strings.Compare(exps[i].Operand, exps[j].Operand)

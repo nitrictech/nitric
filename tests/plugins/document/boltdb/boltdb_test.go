@@ -18,22 +18,22 @@ import (
 	"os"
 
 	ds_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
-	test "github.com/nitric-dev/membrane/plugins/document/test"
-	"github.com/onsi/ginkgo"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	. "github.com/onsi/ginkgo"
 )
 
-var _ = ginkgo.Describe("Bolt", func() {
+var _ = Describe("Bolt", func() {
 
 	docPlugin, err := ds_plugin.New()
 	if err != nil {
 		panic(err)
 	}
 
-	ginkgo.BeforeSuite(func() {
+	BeforeSuite(func() {
 		test.LoadItemsData(docPlugin)
 	})
 
-	ginkgo.AfterSuite(func() {
+	AfterSuite(func() {
 		err = os.RemoveAll(ds_plugin.DEFAULT_DIR)
 		if err == nil {
 			os.Remove(ds_plugin.DEFAULT_DIR)
