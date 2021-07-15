@@ -223,11 +223,10 @@ func (s *Membrane) Start() error {
 		}
 	}
 
-	// Wait for active workers to be available before beginning the gateway
-	// This will ensure requests can be facilitated as soon as the gateway is ready
+	// Wait for the minimum number of active workers to be available before beginning the gateway
+	// This ensures workers have registered and can handle triggers as soon the gateway is ready, if a minimum > 1 has been set
 	s.log("Waiting for active workers")
-	err = s.pool.WaitForActiveWorkers(s.childTimeoutSeconds)
-
+	err = s.pool.WaitForMinimumWorkers(s.childTimeoutSeconds)
 	if err != nil {
 		return err
 	}
@@ -237,7 +236,7 @@ func (s *Membrane) Start() error {
 
 	// Start the gateway
 	go func(errch chan error) {
-		s.log("Starting Gateway")
+		s.log(fmt.Sprintf("Starting Gateway, %d workers currently available", s.pool.GetWorkerCount()))
 		errch <- s.gatewayPlugin.Start(s.pool)
 	}(gatewayErrchan)
 
@@ -327,8 +326,21 @@ func New(options *MembraneOptions) (*Membrane, error) {
 
 	if options.Pool == nil {
 		// Create new pool with defaults
+		minWorkersEnv := utils.GetEnv("MIN_WORKERS", "1")
+		minWorkers, err := strconv.Atoi(minWorkersEnv)
+		if err != nil || minWorkers < 0 {
+			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
+		}
+
+		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "1")
+		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
+		if err != nil || minWorkers < 0 {
+			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)
+		}
+
 		options.Pool = worker.NewProcessPool(&worker.ProcessPoolOptions{
-			MaxWorkers: 1,
+			MinWorkers: minWorkers,
+			MaxWorkers: maxWorkers,
 		})
 	}
 

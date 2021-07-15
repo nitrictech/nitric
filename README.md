@@ -105,7 +105,7 @@ make install-test-tools
 ##### Install Protocol Buffers
 Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
 
-> On Mac OS with Homebrew, you can run `brew install protobuf`
+> On MacOS with Homebrew, you can run `brew install protobuf`
 
 ##### Install Google Cloud SDK
 Install the Google Cloud SDK following in the instructions at: https://cloud.google.com/sdk/docs/install
@@ -218,6 +218,12 @@ make aws-static-xp
 # Set environment variable in subshell, then run the membrane binary
 (export GATEWAY_ENVIRONMENT=http; ./bin/membrane)
 ```
+
+##### Running without a child process
+
+It can be useful to run the Membrane in a 'service only' mode, where the cloud APIs are available but you don't need/want to start a child process to handle incoming request. This can be achieved by setting the MIN_WORKERS variable to `0`:
+
+(export MIN_WORKERS=0; ./bin/membrane)
 
 ## Project Structure
 

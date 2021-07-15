@@ -43,7 +43,7 @@ type NitricResponse struct {
 type GatewayService interface {
 	// Start the Gateway
 	Start(pool worker.WorkerPool) error
-	// Stops the Gateway
+	// Stop the Gateway
 	Stop() error
 }
 
