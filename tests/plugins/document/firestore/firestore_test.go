@@ -17,12 +17,12 @@ package firestore_service_test
 import (
 	"context"
 	"fmt"
+	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 	"os"
 	"os/exec"
 	"syscall"
 
 	"cloud.google.com/go/firestore"
-	ds_plugin "github.com/nitric-dev/membrane/plugins/document/firestore"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
@@ -78,7 +78,7 @@ var _ = Describe("Firestore", func() {
 		stopFirestoreProcess(firestoreCmd)
 	})
 
-	docPlugin, err := ds_plugin.NewWithClient(db, ctx)
+	docPlugin, err := firestore_service.NewWithClient(db, ctx)
 	if err != nil {
 		panic(err)
 	}
