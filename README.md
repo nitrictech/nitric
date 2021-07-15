@@ -117,9 +117,13 @@ Install a Java Runtime Environment (JRE) version 11 or later for your OS. For ex
 sudo apt-get install openjdk-11-jdk
 ```
 
-### Run tests
+### Run unit tests
 ```bash
 make tests
+```
+### Run integration tests
+```bash
+make test-integration
 ```
 
 ### Build Static Membranes
@@ -219,19 +223,20 @@ make aws-static-xp
 
 The Membrane project source code structure is outlined below:
 
-Directory               | Package    | Description
----------               |----------- |------------
-`/adapters/grpc`        | `grpc`     | GRPC service to SDK adaptors 
-`/worker`               | `worker`   | Membrane workers representing function/service connections
-`/interfaces/nitric/v1` | `v1`       | protoc generated GRPC services code 
-`/membrane`             | `membrane` | membrane application
-`/mocks/...`            | `...`      | Cloud service SDK mocks 
-`/plugins/...`          | `...`      | Cloud service SDK plugins 
-`/providers/...`        | `main`     | Cloud provider main application and plugin injection 
-`/sdk`                  | `sdk`      | SDK service interfaces 
-`/tools`                | `tools`    | include for 3rd party build tools
-`/triggers`             | `triggers` | provides Nitric event triggers
-`/utils`                | `utils`    | provides utility functions
+Directory                   | Package    | Description
+---------                   |----------- |------------
+`/interfaces/nitric/v1`     | `v1`       | protoc generated GRPC services code 
+`/pkg/adapters/grpc`        | `grpc`     | GRPC service to SDK adaptors 
+`/pkg/membrane`             | `membrane` | membrane application
+`/pkg/plugins/...`          | `...`      | Cloud service SDK plugins 
+`/pkg/providers/...`        | `main`     | Cloud provider main application and plugin injection 
+`/pkg/sdk`                  | `sdk`      | SDK service interfaces 
+`/pkg/triggers`             | `triggers` | provides Nitric event triggers
+`/pkg/utils`                | `utils`    | provides utility functions
+`/pkg/worker`               | `worker`   | Membrane workers representing function/service connections
+`/tests/mocks/...`          | `...`      | Cloud service SDK mocks 
+`/tests/plugins/...`        | `...`      | Plugin services integration test suites
+`/tools`                    | `tools`    | include for 3rd party build tools
 
 ## Membrane Service Invocation
 
@@ -242,8 +247,8 @@ A Nitric SDK service invocation sequence diagram is provided below.
 </p>
 
 1. SDK Client - Application process makes SDK service call via GRPC client
-2. gRPC Server - Membrane process gRPC server receives call, and registered service handles call [`/membrane`]
-3. gRPC Service KV - server delegates the call to the service adaptor [`/interfaces/nitric/v1`] 
-4. KV Adaptor (gRPC) - service adaptor delegates call to Cloud service plugin [`/adapters/grpc`] 
-5. KV Plugin (DynamoDB) - Cloud service plugin makes remote call to Cloud's API [`/plugins/...`]
+2. GRPC Server - Membrane process GRPC server receives call, and registered service handles call [`/pkg/membrane`]
+3. GRPC Document Service - delegates the call to the service adaptor [`/interfaces/nitric/v1/document_grpc.pb.go`] 
+4. GRPC Document Adaptor - service adaptor delegates call to Cloud service plugin [`/pkg/adapters/grpc/document_grpc.go`] 
+5. Document Service Plugin (DynamoDB) - Cloud service plugin makes remote call to Cloud's API [`/pkg/plugins/document/dynamodb/dynamodb.go`]
 6. DynamoDB API - Cloud API makes remote call to Cloud service
