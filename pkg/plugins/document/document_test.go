@@ -14,9 +14,9 @@
 package document_test
 
 import (
-	"errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"sort"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 
 	"github.com/nitric-dev/membrane/pkg/sdk"
 	. "github.com/onsi/ginkgo"
@@ -31,13 +31,13 @@ var _ = Describe("Document Plugin", func() {
 		When("Nil key", func() {
 			It("should return error", func() {
 				err := document.ValidateKey(nil)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil key")))
+				Expect(err.Error()).To(ContainSubstring("provide non-nil key"))
 			})
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
 				err := document.ValidateKey(&sdk.Key{})
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
+				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
 		When("Blank key.Id", func() {
@@ -46,7 +46,7 @@ var _ = Describe("Document Plugin", func() {
 					Collection: &sdk.Collection{Name: "users"},
 				}
 				err := document.ValidateKey(&key)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank key.Id")))
+				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
 		When("Blank key.Collection.Parent.Collection.Name", func() {
@@ -78,13 +78,13 @@ var _ = Describe("Document Plugin", func() {
 		When("Nil key", func() {
 			It("should return error", func() {
 				err := document.ValidateQueryCollection(nil)
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-nil collection")))
+				Expect(err.Error()).To(ContainSubstring("provide non-nil collection"))
 			})
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
 				err := document.ValidateQueryCollection(&sdk.Collection{})
-				Expect(err).To(BeEquivalentTo(errors.New("provide non-blank collection.Name")))
+				Expect(err.Error()).To(ContainSubstring("provide non-blank collection.Name"))
 			})
 		})
 		When("Blank key.Id", func() {
@@ -97,9 +97,9 @@ var _ = Describe("Document Plugin", func() {
 		When("Blank key.Collection.Parent.Collection.Name", func() {
 			It("should return error", func() {
 				coll := sdk.Collection{
-					Name:   "users",
+					Name: "users",
 					Parent: &sdk.Key{
-						Id: "test-key",
+						Id:         "test-key",
 						Collection: &sdk.Collection{},
 					},
 				}
@@ -110,9 +110,9 @@ var _ = Describe("Document Plugin", func() {
 		When("Blank collection.Parent.Id", func() {
 			It("should return nil", func() {
 				coll := sdk.Collection{
-					Name:   "orders",
+					Name: "orders",
 					Parent: &sdk.Key{
-						Id: "test-key",
+						Id:         "test-key",
 						Collection: &sdk.Collection{Name: "customers"},
 					},
 				}

@@ -16,41 +16,31 @@ package grpc
 
 import (
 	"context"
+
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// DocumentServer - GRPC Interface for registered Nitric Document Plugin
-type DocumentServer struct {
+// DocumentServiceServer - GRPC Interface for registered Nitric Document Plugin
+type DocumentServiceServer struct {
 	pb.UnimplementedDocumentServiceServer
 	// TODO: Support multiple plugin registrations
 	// Just need to settle on a way of addressing them on calls
 	documentPlugin sdk.DocumentService
 }
 
-func (s *DocumentServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
-	key := keyFromWire(req.Key)
-
-	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.DocumentSetResponse{}, nil
-}
-
-func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
+func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
 	key := keyFromWire(req.Key)
 
 	doc, err := s.documentPlugin.Get(key)
 	if err != nil {
-		return nil, err
+		return nil, NewGrpcError("DocumentService.Get", err)
 	}
 
 	pbDoc, err := documentToWire(doc)
 	if err != nil {
-		return nil, err
+		return nil, NewGrpcError("DocumentService.Get", err)
 	}
 
 	return &pb.DocumentGetResponse{
@@ -58,18 +48,29 @@ func (s *DocumentServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*
 	}, nil
 }
 
-func (s *DocumentServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
+func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
+	key := keyFromWire(req.Key)
+
+	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
+	if err != nil {
+		return nil, NewGrpcError("DocumentService.Set", err)
+	}
+
+	return &pb.DocumentSetResponse{}, nil
+}
+
+func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
 	key := keyFromWire(req.Key)
 
 	err := s.documentPlugin.Delete(key)
 	if err != nil {
-		return nil, err
+		return nil, NewGrpcError("DocumentService.Delete", err)
 	}
 
 	return &pb.DocumentDeleteResponse{}, nil
 }
 
-func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
+func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
 	collection := collectionFromWire(req.Collection)
 	expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
 	for i, exp := range req.GetExpressions() {
@@ -84,14 +85,14 @@ func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest
 
 	qr, err := s.documentPlugin.Query(collection, expressions, limit, pagingMap)
 	if err != nil {
-		return nil, err
+		return nil, NewGrpcError("DocumentService.Query", err)
 	}
 
 	pbDocuments := make([]*pb.Document, len(qr.Documents))
 	for _, doc := range qr.Documents {
 		pbDoc, err := documentToWire(&doc)
 		if err != nil {
-			return nil, err
+			return nil, NewGrpcError("DocumentService.Query", err)
 		}
 
 		pbDocuments = append(pbDocuments, pbDoc)
@@ -104,7 +105,7 @@ func (s *DocumentServer) Query(ctx context.Context, req *pb.DocumentQueryRequest
 }
 
 func NewDocumentServer(docPlugin sdk.DocumentService) pb.DocumentServiceServer {
-	return &DocumentServer{
+	return &DocumentServiceServer{
 		documentPlugin: docPlugin,
 	}
 }

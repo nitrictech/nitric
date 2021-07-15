@@ -16,13 +16,14 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
 	"log"
 	"os"
 	"plugin"
 	"strconv"
 	"strings"
+
+	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
+	utils2 "github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
@@ -73,7 +74,6 @@ func main() {
 	var documentService sdk.DocumentService = nil
 	var eventingService sdk.EventService = nil
 	var gatewayService sdk.GatewayService = nil
-	var keyValueService sdk.KeyValueService = nil
 	var queueService sdk.QueueService = nil
 	var storageService sdk.StorageService = nil
 
@@ -87,10 +87,6 @@ func main() {
 	}
 	// Load the gateway service
 	if gatewayService, err = serviceFactory.NewGatewayService(); err != nil {
-		log.Fatal(err)
-	}
-	// Load the key value service
-	if keyValueService, err = serviceFactory.NewKeyValueService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the queue service
@@ -109,7 +105,6 @@ func main() {
 		ChildCommand:            childCommand,
 		DocumentPlugin:          documentService,
 		EventingPlugin:          eventingService,
-		KvPlugin:                keyValueService,
 		StoragePlugin:           storageService,
 		GatewayPlugin:           gatewayService,
 		QueuePlugin:             queueService,

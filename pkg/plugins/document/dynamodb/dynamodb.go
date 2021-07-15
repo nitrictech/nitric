@@ -16,9 +16,10 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/utils"
-	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -27,6 +28,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
+
+const ATTRIB_PK = "_pk"
+const ATTRIB_SK = "_sk"
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
@@ -66,8 +70,8 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, fmt.Errorf("error unmarshalling item: %v", err)
 	}
 
-	delete(itemMap, document.ATTRIB_PK)
-	delete(itemMap, document.ATTRIB_SK)
+	delete(itemMap, ATTRIB_PK)
+	delete(itemMap, ATTRIB_SK)
 
 	return &sdk.Document{
 		Content: itemMap,
@@ -227,12 +231,12 @@ func createKeyMap(key *sdk.Key) map[string]string {
 	parentKey := key.Collection.Parent
 
 	if parentKey == nil {
-		keyMap[document.ATTRIB_PK] = key.Id
-		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#"
+		keyMap[ATTRIB_PK] = key.Id
+		keyMap[ATTRIB_SK] = key.Collection.Name + "#"
 
 	} else {
-		keyMap[document.ATTRIB_PK] = parentKey.Id
-		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#" + key.Id
+		keyMap[ATTRIB_PK] = parentKey.Id
+		keyMap[ATTRIB_SK] = key.Collection.Name + "#" + key.Id
 	}
 
 	return keyMap
@@ -248,8 +252,8 @@ func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]inter
 	keyMap := createKeyMap(key)
 
 	// Add key attributes
-	newMap[document.ATTRIB_PK] = keyMap[document.ATTRIB_PK]
-	newMap[document.ATTRIB_SK] = keyMap[document.ATTRIB_SK]
+	newMap[ATTRIB_PK] = keyMap[ATTRIB_PK]
+	newMap[ATTRIB_SK] = keyMap[ATTRIB_SK]
 
 	return newMap
 }
@@ -421,8 +425,8 @@ func marshalQueryResult(
 
 	// Strip keys & append results
 	for _, m := range valueMaps {
-		delete(m, document.ATTRIB_PK)
-		delete(m, document.ATTRIB_SK)
+		delete(m, ATTRIB_PK)
+		delete(m, ATTRIB_SK)
 
 		sdkDoc := sdk.Document{
 			Content: m,

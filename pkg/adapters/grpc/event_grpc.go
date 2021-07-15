@@ -20,8 +20,6 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/sdk"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // GRPC Interface for registered Nitric Eventing Plugins
@@ -30,35 +28,24 @@ type EventServiceServer struct {
 	eventPlugin sdk.EventService
 }
 
-func (s *EventServiceServer) checkPluginRegistered() (bool, error) {
-	if s.eventPlugin == nil {
-		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
-	}
-	return true, nil
-}
-
 func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-		// auto generate an ID if we did not receive one
-		var ID = req.GetEvent().GetId()
-		if ID == "" {
-			ID = uuid.New().String()
-		}
+	// auto generate an ID if we did not receive one
+	var ID = req.GetEvent().GetId()
+	if ID == "" {
+		ID = uuid.New().String()
+	}
 
-		event := &sdk.NitricEvent{
-			ID:          ID,
-			PayloadType: req.GetEvent().GetPayloadType(),
-			Payload:     req.GetEvent().GetPayload().AsMap(),
-		}
-		if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
-			return &pb.EventPublishResponse{
-				Id: ID,
-			}, nil
-		} else {
-			return nil, err
-		}
+	event := &sdk.NitricEvent{
+		ID:          ID,
+		PayloadType: req.GetEvent().GetPayloadType(),
+		Payload:     req.GetEvent().GetPayload().AsMap(),
+	}
+	if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
+		return &pb.EventPublishResponse{
+			Id: ID,
+		}, nil
 	} else {
-		return nil, err
+		return nil, NewGrpcError("EventService.Publish", err)
 	}
 }
 
@@ -73,33 +60,20 @@ type TopicServiceServer struct {
 	eventPlugin sdk.EventService
 }
 
-func (s *TopicServiceServer) checkPluginRegistered() (bool, error) {
-	if s.eventPlugin == nil {
-		return false, status.Errorf(codes.Unimplemented, "Event plugin not registered")
-	}
-
-	return true, nil
-}
-
 func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
-	if ok, err := s.checkPluginRegistered(); ok {
-
-		if res, err := s.eventPlugin.ListTopics(); err == nil {
-			topics := make([]*pb.NitricTopic, len(res))
-			for i, topicName := range res {
-				topics[i] = &pb.NitricTopic{
-					Name: topicName,
-				}
+	if res, err := s.eventPlugin.ListTopics(); err == nil {
+		topics := make([]*pb.NitricTopic, len(res))
+		for i, topicName := range res {
+			topics[i] = &pb.NitricTopic{
+				Name: topicName,
 			}
-
-			return &pb.TopicListResponse{
-				Topics: topics,
-			}, nil
-		} else {
-			return nil, err
 		}
+
+		return &pb.TopicListResponse{
+			Topics: topics,
+		}, nil
 	} else {
-		return nil, err
+		return nil, NewGrpcError("TopicService.List", err)
 	}
 }
 
