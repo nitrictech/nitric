@@ -21,8 +21,9 @@ import (
 )
 
 type WorkerPool interface {
-	// WaitForActiveWorkers - A blocking method
-	WaitForActiveWorkers(timeout int) error
+	// WaitForMinimumWorkers - A blocking method
+	WaitForMinimumWorkers(timeout int) error
+	GetWorkerCount() int
 	GetWorker() (Worker, error)
 	AddWorker(Worker) error
 	RemoveWorker(Worker) error
@@ -30,21 +31,33 @@ type WorkerPool interface {
 }
 
 type ProcessPoolOptions struct {
+	MinWorkers int
 	MaxWorkers int
 }
 
-// A worker pool that represent co-located processes
+// ProcessPool - A worker pool that represent co-located processes
 type ProcessPool struct {
+	minWorkers int
 	maxWorkers int
 	workerLock sync.Mutex
 	workers    []Worker
 	poolErr    chan error
 }
 
-func (p *ProcessPool) getWorkerCount() int {
+func (p *ProcessPool) GetWorkerCount() int {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 	return len(p.workers)
+}
+
+// GetMinWorkers - return the minimum number of workers for this pool
+func (p *ProcessPool) GetMinWorkers() int {
+	return p.minWorkers
+}
+
+// GetMaxWorkers - return the maximum number of workers for this pool
+func (p *ProcessPool) GetMaxWorkers() int {
+	return p.maxWorkers
 }
 
 // Monitor - Blocks the current thread to supervise this worker pool
@@ -56,22 +69,22 @@ func (p *ProcessPool) Monitor() error {
 	return err
 }
 
-// WaitForActiveWorkers - Waits for workers to be available in this pool
-func (p *ProcessPool) WaitForActiveWorkers(timeout int) error {
+// WaitForMinimumWorkers - Waits for the configured minimum number of workers to be available in this pool
+func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
 	maxWaitTime := time.Duration(timeout) * time.Second
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
 	pollInterval := time.Duration(15) * time.Millisecond
 
 	var waitedTime = time.Duration(0)
 	for {
-		if p.getWorkerCount() >= 1 {
+		if p.GetWorkerCount() >= p.minWorkers {
 			break
 		} else {
 			if waitedTime < maxWaitTime {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				return fmt.Errorf("No workers available!")
+				return fmt.Errorf("available workers below required minimum of %d, %d available, timedout waiting for more workers", p.minWorkers, p.GetWorkerCount())
 			}
 		}
 	}
@@ -87,7 +100,7 @@ func (p *ProcessPool) GetWorker() (Worker, error) {
 	if len(p.workers) > 0 {
 		return p.workers[0], nil
 	} else {
-		return nil, fmt.Errorf("No available workers in this pool!")
+		return nil, fmt.Errorf("no workers available in this pool")
 	}
 }
 
@@ -99,15 +112,15 @@ func (p *ProcessPool) RemoveWorker(wrkr Worker) error {
 	for i, w := range p.workers {
 		if wrkr == w {
 			p.workers = append(p.workers[:i], p.workers[i+1:]...)
-			if len(p.workers) < 1 {
-				p.poolErr <- fmt.Errorf("Worker pool drained")
+			if len(p.workers) < p.minWorkers {
+				p.poolErr <- fmt.Errorf("insufficient workers in pool, need minimum of %d, %d available", p.minWorkers, len(p.workers))
 			}
 
 			return nil
 		}
 	}
 
-	return fmt.Errorf("Worker does not exist in this pool")
+	return fmt.Errorf("worker does not exist in this pool")
 }
 
 // AddWorker - Adds the given worker to this pool
@@ -119,7 +132,7 @@ func (p *ProcessPool) AddWorker(wrkr Worker) error {
 
 	// Ensure we haven't reached the maximum number of workers
 	if workerCount > p.maxWorkers {
-		return fmt.Errorf("Max worker capacity reached! Cannot add more workers!")
+		return fmt.Errorf("max worker capacity reached! cannot add more workers")
 	}
 
 	p.workers = append(p.workers, wrkr)
@@ -134,6 +147,7 @@ func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 	}
 
 	return &ProcessPool{
+		minWorkers: opts.MinWorkers,
 		maxWorkers: opts.MaxWorkers,
 		workerLock: sync.Mutex{},
 		workers:    make([]Worker, 0),
