@@ -16,7 +16,7 @@ package worker
 
 import (
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/triggers"
 	"io"
 	"log"
 	"net/http"
@@ -67,7 +67,7 @@ func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) 
 	return s.responseQueue[ID], nil
 }
 
-func (s *FaasWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
+func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 
@@ -125,7 +125,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*trigger
 		fasthttpHeader.Set(key, val)
 	}
 
-	response := &triggers2.HttpResponse{
+	response := &triggers.HttpResponse{
 		Body: triggerResponse.Data,
 		// No need to worry about integer truncation
 		// as this should be a HTTP status code...
@@ -136,7 +136,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*trigger
 	return response, nil
 }
 
-func (s *FaasWorker) HandleEvent(trigger *triggers2.Event) error {
+func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 	triggerRequest := &pb.TriggerRequest{

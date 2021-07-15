@@ -17,8 +17,7 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
 	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
-	gateway_plugin2 "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/kv/dev"
+	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	"github.com/nitric-dev/membrane/pkg/sdk"
@@ -31,32 +30,27 @@ func New() sdk.ServiceFactory {
 	return &DevServiceFactory{}
 }
 
-// NewDocumentPlugin - Returns local dev document plugin
+// NewDocumentService - Returns local dev document plugin
 func (p *DevServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
 	return boltdb_service.New()
 }
 
-// NewEventingPlugin - Returns local dev eventing plugin
+// NewEventService - Returns local dev eventing plugin
 func (p *DevServiceFactory) NewEventService() (sdk.EventService, error) {
 	return eventing_service.New()
 }
 
-// NewGatewayPlugin - Returns local dev Gateway plugin
+// NewGatewayService - Returns local dev Gateway plugin
 func (p *DevServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
-	return gateway_plugin2.New()
+	return gateway_plugin.New()
 }
 
-// NewKeyValuePlugin - Returns local dev key value plugin
-func (p *DevServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return kv_service.New()
-}
-
-// NewQueuePlugin - Returns local dev queue plugin
+// NewQueueService - Returns local dev queue plugin
 func (p *DevServiceFactory) NewQueueService() (sdk.QueueService, error) {
 	return queue_service.New()
 }
 
-// NewStoragePlugin - Returns local dev storage plugin
+// NewStorageService - Returns local dev storage plugin
 func (p *DevServiceFactory) NewStorageService() (sdk.StorageService, error) {
 	return boltdb_storage_service.New()
 }

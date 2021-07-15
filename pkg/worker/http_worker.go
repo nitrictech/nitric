@@ -16,7 +16,7 @@ package worker
 
 import (
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/triggers"
 	"net"
 	"time"
 
@@ -29,13 +29,13 @@ type HttpWorker struct {
 }
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *HttpWorker) HandleEvent(trigger *triggers2.Event) error {
+func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
 
 	httpRequest := fasthttp.AcquireRequest()
 	httpRequest.SetRequestURI(address)
 	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
-	httpRequest.Header.Add("x-nitric-source-type", triggers2.TriggerType_Subscription.String())
+	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
 
 	var resp fasthttp.Response
@@ -56,7 +56,7 @@ func (h *HttpWorker) HandleEvent(trigger *triggers2.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *HttpWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
+func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	address := fmt.Sprintf("http://%s%s", h.address, trigger.Path)
 
 	httpRequest := fasthttp.AcquireRequest()
@@ -81,7 +81,7 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*trigger
 		return nil, err
 	}
 
-	return triggers2.FromHttpResponse(&resp), nil
+	return triggers.FromHttpResponse(&resp), nil
 }
 
 // Creates a new HttpWorker

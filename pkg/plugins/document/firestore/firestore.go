@@ -17,7 +17,7 @@ package firestore_service
 import (
 	"context"
 	"fmt"
-	document2 "github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -36,7 +36,7 @@ type FirestoreDocService struct {
 }
 
 func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 }
 
 func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) er
 }
 
 func (s *FirestoreDocService) Delete(key *sdk.Key) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -92,12 +92,12 @@ func (s *FirestoreDocService) Delete(key *sdk.Key) error {
 }
 
 func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document2.ValidateQueryCollection(collection)
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
 
-	err = document2.ValidateExpressions(expressions)
+	err = document.ValidateExpressions(expressions)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 		expOperand := exp.Operand
 		if exp.Operator == "startsWith" {
 			expVal := fmt.Sprintf("%v", exp.Value)
-			endRangeValue := document2.GetEndRangeValue(expVal)
+			endRangeValue := document.GetEndRangeValue(expVal)
 			query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
 
 		} else {

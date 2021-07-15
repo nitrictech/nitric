@@ -16,8 +16,8 @@ package dynamodb_service
 
 import (
 	"fmt"
-	document2 "github.com/nitric-dev/membrane/pkg/plugins/document"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -28,14 +28,14 @@ import (
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
-// AWS DynamoDB AWS Nitric Document service
+// DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
 	sdk.UnimplementedDocumentPlugin
 	client dynamodbiface.DynamoDBAPI
 }
 
 func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, fmt.Errorf("error unmarshalling item: %v", err)
 	}
 
-	delete(itemMap, document2.ATTRIB_PK)
-	delete(itemMap, document2.ATTRIB_SK)
+	delete(itemMap, document.ATTRIB_PK)
+	delete(itemMap, document.ATTRIB_SK)
 
 	return &sdk.Document{
 		Content: itemMap,
@@ -75,7 +75,7 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 }
 
 func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error
 }
 
 func (s *DynamoDocService) Delete(key *sdk.Key) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -132,12 +132,12 @@ func (s *DynamoDocService) Delete(key *sdk.Key) error {
 }
 
 func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document2.ValidateQueryCollection(collection)
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
 
-	err = document2.ValidateExpressions(expressions)
+	err = document.ValidateExpressions(expressions)
 	if err != nil {
 		return nil, err
 	}
@@ -191,9 +191,9 @@ func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.Q
 	return queryResult, nil
 }
 
-// Create a New DynamoDB key value plugin implementation
+// New - Create a new DynamoDB key value plugin implementation
 func New() (sdk.DocumentService, error) {
-	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -212,7 +212,7 @@ func New() (sdk.DocumentService, error) {
 	}, nil
 }
 
-// Mainly used for testing
+// NewWithClient - Mainly used for testing
 func NewWithClient(client *dynamodb.DynamoDB) (sdk.DocumentService, error) {
 	return &DynamoDocService{
 		client: client,
@@ -227,12 +227,12 @@ func createKeyMap(key *sdk.Key) map[string]string {
 	parentKey := key.Collection.Parent
 
 	if parentKey == nil {
-		keyMap[document2.ATTRIB_PK] = key.Id
-		keyMap[document2.ATTRIB_SK] = key.Collection.Name + "#"
+		keyMap[document.ATTRIB_PK] = key.Id
+		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#"
 
 	} else {
-		keyMap[document2.ATTRIB_PK] = parentKey.Id
-		keyMap[document2.ATTRIB_SK] = key.Collection.Name + "#" + key.Id
+		keyMap[document.ATTRIB_PK] = parentKey.Id
+		keyMap[document.ATTRIB_SK] = key.Collection.Name + "#" + key.Id
 	}
 
 	return keyMap
@@ -248,8 +248,8 @@ func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]inter
 	keyMap := createKeyMap(key)
 
 	// Add key attributes
-	newMap[document2.ATTRIB_PK] = keyMap[document2.ATTRIB_PK]
-	newMap[document2.ATTRIB_SK] = keyMap[document2.ATTRIB_SK]
+	newMap[document.ATTRIB_PK] = keyMap[document.ATTRIB_PK]
+	newMap[document.ATTRIB_SK] = keyMap[document.ATTRIB_SK]
 
 	return newMap
 }
@@ -267,7 +267,7 @@ func (s *DynamoDocService) performQuery(
 	}
 
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
-	sort.Sort(document2.ExpsSort(expressions))
+	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.QueryInput{
 		TableName: getTableName(*collection),
@@ -340,7 +340,7 @@ func (s *DynamoDocService) performScan(
 	queryResult *sdk.QueryResult) error {
 
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
-	sort.Sort(document2.ExpsSort(expressions))
+	sort.Sort(document.ExpsSort(expressions))
 
 	input := &dynamodb.ScanInput{
 		TableName: getTableName(*collection),
@@ -421,8 +421,8 @@ func marshalQueryResult(
 
 	// Strip keys & append results
 	for _, m := range valueMaps {
-		delete(m, document2.ATTRIB_PK)
-		delete(m, document2.ATTRIB_SK)
+		delete(m, document.ATTRIB_PK)
+		delete(m, document.ATTRIB_SK)
 
 		sdkDoc := sdk.Document{
 			Content: m,

@@ -17,7 +17,7 @@ package sqs_service
 import (
 	"encoding/json"
 	"fmt"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -175,7 +175,7 @@ func (s *SQSQueueService) Complete(queue string, leaseId string) error {
 }
 
 func New() (sdk.QueueService, error) {
-	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),

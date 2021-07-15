@@ -17,7 +17,7 @@ package queue_service
 import (
 	"encoding/json"
 	"fmt"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strings"
 	"time"
@@ -146,7 +146,7 @@ func (s *DevQueueService) Complete(queue string, leaseId string) error {
 }
 
 func New() (sdk.QueueService, error) {
-	dbDir := utils2.GetEnv("LOCAL_QUEUE_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_QUEUE_DIR", DEFAULT_DIR)
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)

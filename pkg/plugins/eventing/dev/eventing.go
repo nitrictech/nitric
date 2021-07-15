@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"net/http"
 	"strings"
 
@@ -59,7 +59,7 @@ func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error 
 			httpRequest.Header.Add("Content-Type", contentType)
 			httpRequest.Header.Add("x-nitric-request-id", requestId)
 			httpRequest.Header.Add("x-nitric-source", topic)
-			httpRequest.Header.Add("x-nitric-source-type", triggers2.TriggerType_Subscription.String())
+			httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 			httpRequest.Header.Add("x-nitric-payload-type", payloadType)
 
 			// Call the target
@@ -97,7 +97,7 @@ func (s *LocalEventService) ListTopics() ([]string, error) {
 
 // Create new Dev EventService
 func New() (sdk.EventService, error) {
-	localSubscriptions := utils2.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
+	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 
 	tmpSubs := make(map[string][]string)
 	subs := make(map[string][]string)

@@ -16,11 +16,10 @@ package main
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	pubsub_service2 "github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
+	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	firestore_service2 "github.com/nitric-dev/membrane/pkg/plugins/kv/firestore"
-	pubsub_queue_service2 "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	storage_service2 "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
+	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
+	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
@@ -38,12 +37,7 @@ func (p *GCPServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
 
 // NewEventService - Returns Google Cloud Pubsub based eventing service
 func (p *GCPServiceFactory) NewEventService() (sdk.EventService, error) {
-	return pubsub_service2.New()
-}
-
-// NewKeyValueService - Returns Google Cloud Firestore based kv service
-func (p *GCPServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return firestore_service2.New()
+	return pubsub_service.New()
 }
 
 // NewGatewayService - Google Cloud Http Gateway service
@@ -53,10 +47,10 @@ func (p *GCPServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 
 // NewQueueService - Returns Google Cloud Pubsub based queue service
 func (p *GCPServiceFactory) NewQueueService() (sdk.QueueService, error) {
-	return pubsub_queue_service2.New()
+	return pubsub_queue_service.New()
 }
 
 // NewStorageService - Returns Google Cloud Storage based storage service
 func (p *GCPServiceFactory) NewStorageService() (sdk.StorageService, error) {
-	return storage_service2.New()
+	return storage_service.New()
 }

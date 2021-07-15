@@ -16,7 +16,7 @@ package worker
 
 import (
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/triggers"
 	"net"
 	"net/http"
 	"time"
@@ -34,7 +34,7 @@ type FaasHttpWorker struct {
 var METHOD_TYPE = []byte("POST")
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *FaasHttpWorker) HandleEvent(trigger *triggers2.Event) error {
+func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s", h.address)
 	request := fasthttp.AcquireRequest()
 	response := fasthttp.AcquireResponse()
@@ -94,7 +94,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers2.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
+func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	address := fmt.Sprintf("http://%s", h.address)
 	request := fasthttp.AcquireRequest()
 	response := fasthttp.AcquireResponse()
@@ -148,7 +148,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*tri
 			return nil, err
 		}
 
-		return triggers2.FromTriggerResponse(&triggerResponse)
+		return triggers.FromTriggerResponse(&triggerResponse)
 	} else {
 		return nil, err
 	}

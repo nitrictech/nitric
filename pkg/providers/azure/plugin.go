@@ -15,7 +15,7 @@
 package main
 
 import (
-	http_service2 "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
+	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
@@ -26,27 +26,27 @@ func New() sdk.ServiceFactory {
 	return &AzureServiceFactory{}
 }
 
-// NewDocumentPlugin - Returns Azure _ based document plugin
+// NewDocumentService - Returns Azure _ based document plugin
 func (p *AzureServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
 	return &sdk.UnimplementedDocumentPlugin{}, nil
 }
 
-// NewEventingPlugin - Returns Azure _ based eventing plugin
+// NewEventService - Returns Azure _ based eventing plugin
 func (p *AzureServiceFactory) NewEventService() (sdk.EventService, error) {
 	return &sdk.UnimplementedEventingPlugin{}, nil
 }
 
-// NewGatewayPlugin - Returns Azure _ Gateway plugin
+// NewGatewayService - Returns Azure _ Gateway plugin
 func (p *AzureServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
-	return http_service2.New()
+	return http_service.New()
 }
 
-// NewQueuePlugin - Returns Azure _ based queue plugin
+// NewQueueService - Returns Azure _ based queue plugin
 func (p *AzureServiceFactory) NewQueueService() (sdk.QueueService, error) {
 	return &sdk.UnimplementedQueuePlugin{}, nil
 }
 
-// NewStoragePlugin - Returns Azure _ based storage plugin
+// NewStorageService - Returns Azure _ based storage plugin
 func (p *AzureServiceFactory) NewStorageService() (sdk.StorageService, error) {
 	return &sdk.UnimplementedStoragePlugin{}, nil
 }

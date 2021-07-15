@@ -17,9 +17,9 @@ package gateway_plugin
 
 import (
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/sdk"
@@ -33,7 +33,7 @@ type HttpGateway struct {
 }
 
 // TODO: Lets bind this to a struct...
-func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		// Get a worker for this request
 		wrkr, err := pool.GetWorker()
@@ -46,12 +46,12 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 		var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 		// Handle Event/Subscription Request Types
-		if strings.ToUpper(triggerTypeString) == triggers2.TriggerType_Subscription.String() {
+		if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
 			trigger := string(ctx.Request.Header.Peek("x-nitric-source"))
 			requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 			payload := ctx.Request.Body()
 
-			err := wrkr.HandleEvent(&triggers2.Event{
+			err := wrkr.HandleEvent(&triggers.Event{
 				ID:      requestId,
 				Topic:   trigger,
 				Payload: payload,
@@ -68,7 +68,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 			return
 		}
 
-		httpReq := triggers2.FromHttpRequest(ctx)
+		httpReq := triggers.FromHttpRequest(ctx)
 		// Handle HTTP Request Types
 		response, err := wrkr.HandleHttpRequest(httpReq)
 
@@ -90,7 +90,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpGateway) Start(pool worker2.WorkerPool) error {
+func (s *HttpGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
 		Handler: httpHandler(pool),
@@ -109,7 +109,7 @@ func (s *HttpGateway) Stop() error {
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (sdk.GatewayService, error) {
-	address := utils2.GetEnv("GATEWAY_ADDRESS", ":9001")
+	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
 
 	return &HttpGateway{
 		address: address,

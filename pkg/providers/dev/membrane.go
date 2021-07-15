@@ -16,11 +16,10 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
 	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/kv/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	"log"
@@ -38,15 +37,13 @@ func main() {
 	documentPlugin, _ := boltdb_service.New()
 	eventingPlugin, _ := eventing_service.New()
 	gatewayPlugin, _ := gateway_plugin.New()
-	kvPlugin, _ := kv_service.New()
 	queuePlugin, _ := queue_service.New()
 	storagePlugin, _ := boltdb_storage_service.New()
 
-	m, err := membrane2.New(&membrane2.MembraneOptions{
+	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
 		GatewayPlugin:  gatewayPlugin,
-		KvPlugin:       kvPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 	})

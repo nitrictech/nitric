@@ -16,10 +16,10 @@ package membrane_test
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
-	"github.com/nitric-dev/membrane/tests/mocks/worker"
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -77,33 +77,33 @@ func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
 
 type MockGateway struct {
 	sdk.UnimplementedGatewayPlugin
-	triggers []triggers2.Trigger
+	triggers []triggers.Trigger
 	// store responses for inspection
-	responses []*triggers2.HttpResponse
+	responses []*triggers.HttpResponse
 	started   bool
 }
 
-func (gw *MockGateway) Start(pool worker2.WorkerPool) error {
+func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 	// Spy on the mock gateway
-	gw.responses = make([]*triggers2.HttpResponse, 0)
+	gw.responses = make([]*triggers.HttpResponse, 0)
 
 	wrkr, _ := pool.GetWorker()
 
 	gw.started = true
 	if gw.triggers != nil {
 		for _, trigger := range gw.triggers {
-			if s, ok := trigger.(*triggers2.HttpRequest); ok {
+			if s, ok := trigger.(*triggers.HttpRequest); ok {
 				resp, err := wrkr.HandleHttpRequest(s)
 
 				if err != nil {
-					gw.responses = append(gw.responses, &triggers2.HttpResponse{
+					gw.responses = append(gw.responses, &triggers.HttpResponse{
 						StatusCode: 500,
 						Body:       []byte(err.Error()),
 					})
 				} else {
 					gw.responses = append(gw.responses, resp)
 				}
-			} else if s, ok := trigger.(*triggers2.Event); ok {
+			} else if s, ok := trigger.(*triggers.Event); ok {
 				wrkr.HandleEvent(s)
 			}
 		}
@@ -114,8 +114,8 @@ func (gw *MockGateway) Start(pool worker2.WorkerPool) error {
 }
 
 var _ = Describe("Membrane", func() {
-	pool := worker2.NewProcessPool(&worker2.ProcessPoolOptions{})
-	pool.AddWorker(worker_mocks.NewMockWorker(&worker_mocks.MockWorkerOptions{}))
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	pool.AddWorker(mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{}))
 
 	BeforeSuite(func() {
 		os.Args = []string{}
@@ -125,7 +125,7 @@ var _ = Describe("Membrane", func() {
 		Context("Tolerate Missing Services is enabled", func() {
 			When("The gateway plugin is missing", func() {
 				It("Should still fail to create", func() {
-					m, err := membrane2.New(&membrane2.MembraneOptions{
+					m, err := membrane.New(&membrane.MembraneOptions{
 						SuppressLogs:            true,
 						TolerateMissingServices: true,
 					})
@@ -136,14 +136,14 @@ var _ = Describe("Membrane", func() {
 
 			When("The gateway plugin is present", func() {
 				mockGateway := &MockGateway{}
-				mbraneOpts := membrane2.MembraneOptions{
+				mbraneOpts := membrane.MembraneOptions{
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,
 					Pool:                    pool,
 				}
 				It("Should successfully create the membrane server", func() {
-					m, err := membrane2.New(&mbraneOpts)
+					m, err := membrane.New(&mbraneOpts)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(m).ToNot(BeNil())
 				})
@@ -153,14 +153,14 @@ var _ = Describe("Membrane", func() {
 		Context("Tolerate Missing Services is disabled", func() {
 			When("Only the gateway plugin is present", func() {
 				mockGateway := &MockGateway{}
-				mbraneOpts := membrane2.MembraneOptions{
+				mbraneOpts := membrane.MembraneOptions{
 					TolerateMissingServices: false,
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
 					Pool:                    pool,
 				}
 				It("Should fail to create", func() {
-					m, err := membrane2.New(&mbraneOpts)
+					m, err := membrane.New(&mbraneOpts)
 					Expect(err).Should(HaveOccurred())
 					Expect(m).To(BeNil())
 				})
@@ -173,7 +173,7 @@ var _ = Describe("Membrane", func() {
 				mockQueueServiceServer := &MockQueueServiceServer{}
 
 				mockGateway := &MockGateway{}
-				mbraneOpts := membrane2.MembraneOptions{
+				mbraneOpts := membrane.MembraneOptions{
 					TolerateMissingServices: false,
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
@@ -185,7 +185,7 @@ var _ = Describe("Membrane", func() {
 				}
 
 				It("Should successfully create the membrane server", func() {
-					m, err := membrane2.New(&mbraneOpts)
+					m, err := membrane.New(&mbraneOpts)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(m).ToNot(BeNil())
 				})
@@ -199,7 +199,7 @@ var _ = Describe("Membrane", func() {
 			When("The Gateway plugin is available and working", func() {
 				mockGateway := &MockGateway{}
 				os.Args = []string{}
-				membrane, _ := membrane2.New(&membrane2.MembraneOptions{
+				membrane, _ := membrane.New(&membrane.MembraneOptions{
 					GatewayPlugin:           mockGateway,
 					SuppressLogs:            true,
 					TolerateMissingServices: true,
@@ -221,7 +221,7 @@ var _ = Describe("Membrane", func() {
 			mockGateway := &MockGateway{}
 			var lis net.Listener
 
-			membrane, _ := membrane2.New(&membrane2.MembraneOptions{
+			membrane, _ := membrane.New(&membrane.MembraneOptions{
 				GatewayPlugin:           mockGateway,
 				SuppressLogs:            true,
 				TolerateMissingServices: true,
@@ -251,12 +251,12 @@ var _ = Describe("Membrane", func() {
 		})
 
 		var mockGateway *MockGateway
-		var mb *membrane2.Membrane
+		var mb *membrane.Membrane
 		When("The configured command exists", func() {
 
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
-				mb, _ = membrane2.New(&membrane2.MembraneOptions{
+				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildCommand:            []string{"echo"},
 					GatewayPlugin:           mockGateway,
 					ServiceAddress:          fmt.Sprintf(":%d", 9001),
@@ -289,7 +289,7 @@ var _ = Describe("Membrane", func() {
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
 
-				mb, _ = membrane2.New(&membrane2.MembraneOptions{
+				mb, _ = membrane.New(&membrane.MembraneOptions{
 					ChildAddress:            "localhost:808",
 					ChildCommand:            []string{"fakecommand"},
 					GatewayPlugin:           mockGateway,
