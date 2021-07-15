@@ -16,8 +16,8 @@ package boltdb_service
 
 import (
 	"fmt"
-	document2 "github.com/nitric-dev/membrane/pkg/plugins/document"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strconv"
 	"strings"
@@ -54,7 +54,7 @@ func (d BoltDoc) String() string {
 }
 
 func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 }
 
 func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error
 }
 
 func (s *BoltDocService) Delete(key *sdk.Key) error {
-	err := document2.ValidateKey(key)
+	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
@@ -120,12 +120,12 @@ func (s *BoltDocService) Delete(key *sdk.Key) error {
 }
 
 func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
-	err := document2.ValidateQueryCollection(collection)
+	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
 	}
 
-	err = document2.ValidateExpressions(expressions)
+	err = document.ValidateExpressions(expressions)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	}
 	defer db.Close()
 
-	err = document2.ValidateExpressions(expressions)
+	err = document.ValidateExpressions(expressions)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 			matchers = append(matchers, q.Eq(partionKeyName, parentKey.Id))
 		}
 		matchers = append(matchers, q.Gte(sortKeyName, collection.Name+"#"))
-		matchers = append(matchers, q.Lt(sortKeyName, document2.GetEndRangeValue(collection.Name+"#")))
+		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(collection.Name+"#")))
 	}
 
 	// Create query object
@@ -189,7 +189,7 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 		}
 		if exp.Operator == "startsWith" {
 			expStr.WriteString(exp.Operand + " >= '" + expValue + "' && ")
-			expStr.WriteString(exp.Operand + " < '" + document2.GetEndRangeValue(expValue) + "'")
+			expStr.WriteString(exp.Operand + " < '" + document.GetEndRangeValue(expValue) + "'")
 
 		} else {
 			expStr.WriteString(exp.Operand + " " + exp.Operator + " '" + expValue + "'")
@@ -247,12 +247,12 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 
 // New - Create a new dev KV plugin
 func New() (*BoltDocService, error) {
-	dbDir := utils2.GetEnv("LOCAL_DB_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_DB_DIR", DEFAULT_DIR)
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)
 	if os.IsNotExist(err) {
-		// Make diretory if not present
+		// Make directory if not present
 		err := os.MkdirAll(dbDir, 0777)
 		if err != nil {
 			return nil, err

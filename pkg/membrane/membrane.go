@@ -16,9 +16,9 @@ package membrane
 
 import (
 	"fmt"
-	grpc3 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
 	"net"
 	"os"
 	"os/exec"
@@ -41,7 +41,6 @@ type MembraneOptions struct {
 
 	DocumentPlugin sdk.DocumentService
 	EventingPlugin sdk.EventService
-	KvPlugin       sdk.KeyValueService
 	StoragePlugin  sdk.StorageService
 	QueuePlugin    sdk.QueueService
 	GatewayPlugin  sdk.GatewayService
@@ -53,7 +52,7 @@ type MembraneOptions struct {
 	Mode *Mode
 
 	// Supply your own worker pool
-	Pool worker2.WorkerPool
+	Pool worker.WorkerPool
 }
 
 type Membrane struct {
@@ -76,7 +75,6 @@ type Membrane struct {
 	// Configured plugins
 	documentPlugin sdk.DocumentService
 	eventPlugin    sdk.EventService
-	kvPlugin       sdk.KeyValueService
 	storagePlugin  sdk.StorageService
 	gatewayPlugin  sdk.GatewayService
 	queuePlugin    sdk.QueueService
@@ -94,7 +92,7 @@ type Membrane struct {
 	grpcServer *grpc.Server
 
 	// Worker pool
-	pool worker2.WorkerPool
+	pool worker.WorkerPool
 }
 
 func (s *Membrane) log(log string) {
@@ -105,30 +103,26 @@ func (s *Membrane) log(log string) {
 
 // Create a new Nitric Document Server
 func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
-	return grpc3.NewDocumentServer(s.documentPlugin)
+	return grpc2.NewDocumentServer(s.documentPlugin)
 }
 
 // Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() v1.EventServer {
-	return grpc3.NewEventServer(s.eventPlugin)
+func (s *Membrane) createEventingServer() v1.EventServiceServer {
+	return grpc2.NewEventServiceServer(s.eventPlugin)
 }
 
 // Create a new Nitric Topic Server
-func (s *Membrane) createTopicServer() v1.TopicServer {
-	return grpc3.NewTopicServer(s.eventPlugin)
+func (s *Membrane) createTopicServer() v1.TopicServiceServer {
+	return grpc2.NewTopicServiceServer(s.eventPlugin)
 }
 
 // Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() v1.StorageServer {
-	return grpc3.NewStorageServer(s.storagePlugin)
+func (s *Membrane) createStorageServer() v1.StorageServiceServer {
+	return grpc2.NewStorageServiceServer(s.storagePlugin)
 }
 
-func (s *Membrane) createKeyValueServer() v1.KeyValueServer {
-	return grpc3.NewKeyValueServer(s.kvPlugin)
-}
-
-func (s *Membrane) createQueueServer() v1.QueueServer {
-	return grpc3.NewQueueServer(s.queuePlugin)
+func (s *Membrane) createQueueServer() v1.QueueServiceServer {
+	return grpc2.NewQueueServiceServer(s.queuePlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -169,24 +163,21 @@ func (s *Membrane) Start() error {
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
 	eventingServer := s.createEventingServer()
-	v1.RegisterEventServer(s.grpcServer, eventingServer)
+	v1.RegisterEventServiceServer(s.grpcServer, eventingServer)
 
 	topicServer := s.createTopicServer()
-	v1.RegisterTopicServer(s.grpcServer, topicServer)
-
-	kvServer := s.createKeyValueServer()
-	v1.RegisterKeyValueServer(s.grpcServer, kvServer)
+	v1.RegisterTopicServiceServer(s.grpcServer, topicServer)
 
 	storageServer := s.createStorageServer()
-	v1.RegisterStorageServer(s.grpcServer, storageServer)
+	v1.RegisterStorageServiceServer(s.grpcServer, storageServer)
 
 	queueServer := s.createQueueServer()
-	v1.RegisterQueueServer(s.grpcServer, queueServer)
+	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
 
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
-		faasServer := grpc3.NewFaasServer(s.pool)
-		v1.RegisterFaasServer(s.grpcServer, faasServer)
+		faasServer := grpc2.NewFaasServer(s.pool)
+		v1.RegisterFaasServiceServer(s.grpcServer, faasServer)
 	}
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
@@ -215,12 +206,12 @@ func (s *Membrane) Start() error {
 	// If we aren't in FaaS mode
 	// We need to manually register our worker for now
 	if s.mode != Mode_Faas {
-		var wrkr worker2.Worker
+		var wrkr worker.Worker
 		var workerErr error
 		if s.mode == Mode_HttpProxy {
-			wrkr, workerErr = worker2.NewHttpWorker(s.childAddress)
+			wrkr, workerErr = worker.NewHttpWorker(s.childAddress)
 		} else if s.mode == Mode_HttpFaas {
-			wrkr, workerErr = worker2.NewFaasHttpWorker(s.childAddress)
+			wrkr, workerErr = worker.NewFaasHttpWorker(s.childAddress)
 		}
 
 		if workerErr == nil {
@@ -232,7 +223,7 @@ func (s *Membrane) Start() error {
 		}
 	}
 
-	// Wait for active workers to be available before begining the gateway
+	// Wait for active workers to be available before beginning the gateway
 	// This will ensure requests can be facilitated as soon as the gateway is ready
 	s.log("Waiting for active workers")
 	err = s.pool.WaitForActiveWorkers(s.childTimeoutSeconds)
@@ -284,11 +275,11 @@ func New(options *MembraneOptions) (*Membrane, error) {
 
 	// Get unset options from env or defaults
 	if options.ServiceAddress == "" {
-		options.ServiceAddress = utils2.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
+		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	}
 
 	if options.ChildAddress == "" {
-		options.ChildAddress = utils2.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
+		options.ChildAddress = utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
 	}
 
 	// Pull child command from command line args or environment variable if not provided.
@@ -297,7 +288,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		if len(os.Args) > 1 && len(os.Args[1:]) > 0 {
 			options.ChildCommand = os.Args[1:]
 		} else {
-			options.ChildCommand = strings.Fields(utils2.GetEnv("INVOKE", ""))
+			options.ChildCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
 			if len(options.ChildCommand) > 0 {
 				fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
 			}
@@ -305,7 +296,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		tolerateMissing, err := strconv.ParseBool(utils2.GetEnv("TOLERATE_MISSING_SERVICES", "false"))
+		tolerateMissing, err := strconv.ParseBool(utils.GetEnv("TOLERATE_MISSING_SERVICES", "false"))
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +304,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if options.Mode == nil {
-		mode, err := ModeFromString(utils2.GetEnv("MEMBRANE_MODE", "FAAS"))
+		mode, err := ModeFromString(utils.GetEnv("MEMBRANE_MODE", "FAAS"))
 		if err != nil {
 			return nil, err
 		}
@@ -329,14 +320,14 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.KvPlugin == nil || options.QueuePlugin == nil {
+		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
 
 	if options.Pool == nil {
 		// Create new pool with defaults
-		options.Pool = worker2.NewProcessPool(&worker2.ProcessPoolOptions{
+		options.Pool = worker.NewProcessPool(&worker.ProcessPoolOptions{
 			MaxWorkers: 1,
 		})
 	}
@@ -350,7 +341,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		documentPlugin:          options.DocumentPlugin,
 		eventPlugin:             options.EventingPlugin,
 		storagePlugin:           options.StoragePlugin,
-		kvPlugin:                options.KvPlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		suppressLogs:            options.SuppressLogs,

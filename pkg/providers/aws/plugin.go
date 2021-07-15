@@ -18,7 +18,6 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	dynamodb_service2 "github.com/nitric-dev/membrane/pkg/plugins/kv/dynamodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
 	"github.com/nitric-dev/membrane/pkg/sdk"
@@ -31,32 +30,27 @@ func New() sdk.ServiceFactory {
 	return &AWSServiceFactory{}
 }
 
-// NewDocumentPlugin - Return AWS DynamoDB document plugin
+// NewDocumentService - Return AWS DynamoDB document plugin
 func (p *AWSServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
 	return dynamodb_service.New()
 }
 
-// NewEventingPlugin - Returns AWS SNS based eventing plugin
+// NewEventService - Returns AWS SNS based eventing plugin
 func (p *AWSServiceFactory) NewEventService() (sdk.EventService, error) {
 	return sns_service.New()
 }
 
-// NewGatewayPlugin - Returns AWS Lambda Gateway plugin
+// NewGatewayService - Returns AWS Lambda Gateway plugin
 func (p *AWSServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
 	return lambda_service.New()
 }
 
-// NewDocumentPlugin - Returns AWS DynamoDB based key value plugin
-func (p *AWSServiceFactory) NewKeyValueService() (sdk.KeyValueService, error) {
-	return dynamodb_service2.New()
-}
-
-// NewQueuePlugin - Returns AWS SQS based queue plugin
+// NewQueueService - Returns AWS SQS based queue plugin
 func (p *AWSServiceFactory) NewQueueService() (sdk.QueueService, error) {
 	return sqs_service.New()
 }
 
-// NewStoragePlugin - Returns AWS S3 based storage plugin
+// NewStorageService - Returns AWS S3 based storage plugin
 func (p *AWSServiceFactory) NewStorageService() (sdk.StorageService, error) {
 	return s3_service.New()
 }

@@ -16,15 +16,14 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	dynamodb_service2 "github.com/nitric-dev/membrane/pkg/plugins/kv/dynamodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"log"
 	"os"
 	"os/signal"
@@ -38,7 +37,7 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	gatewayEnv := utils2.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
+	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
 
 	// Load the appropriate gateway based on the environment.
 	var gatewayPlugin sdk.GatewayService
@@ -50,15 +49,13 @@ func main() {
 	}
 	documentPlugin, _ := dynamodb_service.New()
 	eventingPlugin, _ := sns_service.New()
-	keyValuePlugin, _ := dynamodb_service2.New()
 	queuePlugin, _ := sqs_service.New()
 	storagePlugin, _ := s3_service.New()
 
-	m, err := membrane2.New(&membrane2.MembraneOptions{
+	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
 		GatewayPlugin:  gatewayPlugin,
-		KvPlugin:       keyValuePlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 	})

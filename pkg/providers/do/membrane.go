@@ -16,7 +16,7 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/app_platform"
 	"log"
 	"os"
@@ -31,7 +31,7 @@ func main() {
 
 	gatewayPlugin, _ := appplatform_service.New()
 
-	m, err := membrane2.New(&membrane2.MembraneOptions{
+	m, err := membrane.New(&membrane.MembraneOptions{
 		GatewayPlugin: gatewayPlugin,
 		// FIXME: Hardcode as true as we don't have plugins for other services for digital ocean yet...
 		TolerateMissingServices: true,

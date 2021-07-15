@@ -17,7 +17,7 @@ package s3_service
 import (
 	"bytes"
 	"fmt"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"io/ioutil"
 	"net/http"
 
@@ -130,7 +130,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 
 // New creates a new default S3 storage plugin
 func New() (sdk.StorageService, error) {
-	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
 		// FIXME: Use ENV configuration

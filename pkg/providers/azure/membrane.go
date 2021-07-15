@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
-	http_service2 "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"log"
 	"os"
 	"os/signal"
@@ -33,16 +33,14 @@ func main() {
 
 	documentPlugin := &sdk.UnimplementedDocumentPlugin{}
 	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
-	gatewayPlugin, _ := http_service2.New()
-	kvPlugin := &sdk.UnimplementedKeyValuePlugin{}
+	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &sdk.UnimplementedQueuePlugin{}
 	storagePlugin := &sdk.UnimplementedStoragePlugin{}
 
-	m, err := membrane2.New(&membrane2.MembraneOptions{
+	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
 		GatewayPlugin:  gatewayPlugin,
-		KvPlugin:       kvPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 	})

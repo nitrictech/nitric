@@ -16,11 +16,10 @@ package main
 
 import (
 	"fmt"
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 	"github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	firestore_service2 "github.com/nitric-dev/membrane/pkg/plugins/kv/firestore"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 	"log"
@@ -43,10 +42,6 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to load eventing plugin:", err.Error())
 	}
-	kvPlugin, err := firestore_service2.New()
-	if err != nil {
-		fmt.Println("Failed to load kv plugin:", err.Error())
-	}
 	storagePlugin, err := storage_service.New()
 	if err != nil {
 		fmt.Println("Failed to load storage plugin:", err.Error())
@@ -60,11 +55,10 @@ func main() {
 		fmt.Println("Failed to load queue plugin:", err.Error())
 	}
 
-	m, err := membrane2.New(&membrane2.MembraneOptions{
+	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
 		EventingPlugin: eventingPlugin,
 		GatewayPlugin:  gatewayPlugin,
-		KvPlugin:       kvPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 	})

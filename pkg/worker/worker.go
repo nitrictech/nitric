@@ -17,23 +17,23 @@ package worker
 import (
 	"bytes"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/triggers"
 	"io/ioutil"
 	"net/http"
 )
 
 type Worker interface {
-	HandleEvent(trigger *triggers2.Event) error
-	HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error)
+	HandleEvent(trigger *triggers.Event) error
+	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }
 
 type UnimplementedWorker struct{}
 
-func (*UnimplementedWorker) HandleEvent(trigger *triggers2.Event) error {
+func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) *http.Response {
+func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	return &http.Response{
 		Status:     "Unimplemented",
 		StatusCode: 501,

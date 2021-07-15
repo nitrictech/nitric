@@ -18,9 +18,9 @@ package cloudrun_plugin
 import (
 	"encoding/json"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
 
 	"github.com/nitric-dev/membrane/pkg/sdk"
 	"github.com/valyala/fasthttp"
@@ -40,7 +40,7 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		wrkr, err := pool.GetWorker()
 		if err != nil {
@@ -56,7 +56,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 		var pubsubEvent PubSubMessage
 		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 			// We have an event from pubsub here...
-			event := &triggers2.Event{
+			event := &triggers.Event{
 				ID: pubsubEvent.Message.ID,
 				// Set the topic
 				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
@@ -74,7 +74,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 			return
 		}
 
-		httpTrigger := triggers2.FromHttpRequest(ctx)
+		httpTrigger := triggers.FromHttpRequest(ctx)
 		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
 		if err != nil {
@@ -96,7 +96,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpProxyGateway) Start(pool worker2.WorkerPool) error {
+func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
 		Handler: httpHandler(pool),
@@ -115,7 +115,7 @@ func (s *HttpProxyGateway) Stop() error {
 // Create new DynamoDB documents server
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (sdk.GatewayService, error) {
-	address := utils2.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
+	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
 	return &HttpProxyGateway{
 		address: address,

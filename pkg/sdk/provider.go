@@ -18,7 +18,6 @@ package sdk
 type ServiceFactory interface {
 	NewDocumentService() (DocumentService, error)
 	NewEventService() (EventService, error)
-	NewKeyValueService() (KeyValueService, error)
 	NewGatewayService() (GatewayService, error)
 	NewQueueService() (QueueService, error)
 	NewStorageService() (StorageService, error)
@@ -44,11 +43,6 @@ func (p *UnimplementedServiceFactory) NewDocumentService() (DocumentService, err
 
 // NewEventService - Unimplemented
 func (p *UnimplementedServiceFactory) NewEventService() (EventService, error) {
-	return nil, nil
-}
-
-// NewKeyValueService - Unimplemented
-func (p *UnimplementedServiceFactory) NewKeyValueService() (KeyValueService, error) {
 	return nil, nil
 }
 

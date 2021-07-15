@@ -19,11 +19,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
 	"strings"
 
-	events "github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
@@ -40,7 +40,7 @@ type LambdaRuntimeHandler func(handler interface{})
 
 //Event incoming event
 type Event struct {
-	Requests []triggers2.Trigger
+	Requests []triggers.Trigger
 }
 
 func (event *Event) getEventType(data []byte) eventType {
@@ -76,7 +76,7 @@ func (event *Event) getEventType(data []byte) eventType {
 func (event *Event) UnmarshalJSON(data []byte) error {
 	var err error
 
-	event.Requests = make([]triggers2.Trigger, 0)
+	event.Requests = make([]triggers.Trigger, 0)
 
 	switch event.getEventType(data) {
 	case sns:
@@ -105,7 +105,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 					payloadBytes, err := json.Marshal(&payloadMap)
 
 					if err == nil {
-						event.Requests = append(event.Requests, &triggers2.Event{
+						event.Requests = append(event.Requests, &triggers.Event{
 							ID:      messageJson.ID,
 							Topic:   trigger,
 							Payload: payloadBytes,
@@ -132,7 +132,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 				}
 			}
 
-			event.Requests = append(event.Requests, &triggers2.HttpRequest{
+			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
 				Header: headerCopy,
 				Body:   []byte(evt.Body),
@@ -159,7 +159,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 }
 
 type LambdaGateway struct {
-	pool    worker2.WorkerPool
+	pool    worker.WorkerPool
 	runtime LambdaRuntimeHandler
 	sdk.UnimplementedGatewayPlugin
 	finished chan int
@@ -174,8 +174,8 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 
 	for _, request := range event.Requests {
 		switch request.GetTriggerType() {
-		case triggers2.TriggerType_Request:
-			if httpEvent, ok := request.(*triggers2.HttpRequest); ok {
+		case triggers.TriggerType_Request:
+			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
 				response, err := wrkr.HandleHttpRequest(httpEvent)
 
 				if err != nil {
@@ -206,16 +206,16 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 					IsBase64Encoded: true,
 				}, nil
 			} else {
-				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers2.TriggerType_Request.String())
+				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
 			}
 			break
-		case triggers2.TriggerType_Subscription:
-			if event, ok := request.(*triggers2.Event); ok {
+		case triggers.TriggerType_Subscription:
+			if event, ok := request.(*triggers.Event); ok {
 				if err := wrkr.HandleEvent(event); err != nil {
 					return nil, err
 				}
 			} else {
-				return nil, fmt.Errorf("Error!: Found non Event in event with trigger type: %s", triggers2.TriggerType_Subscription.String())
+				return nil, fmt.Errorf("Error!: Found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
 			}
 			break
 		}
@@ -224,7 +224,7 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 }
 
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(pool worker2.WorkerPool) error {
+func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 	//s.finished = make(chan int)
 	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...

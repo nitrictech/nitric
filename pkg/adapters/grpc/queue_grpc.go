@@ -25,12 +25,12 @@ import (
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
-type QueueServer struct {
-	pb.UnimplementedQueueServer
+type QueueServiceServer struct {
+	pb.UnimplementedQueueServiceServer
 	plugin sdk.QueueService
 }
 
-func (s *QueueServer) checkPluginRegistered() (bool, error) {
+func (s *QueueServiceServer) checkPluginRegistered() (bool, error) {
 	if s.plugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Queue plugin not registered")
 	}
@@ -38,7 +38,7 @@ func (s *QueueServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
+func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		task := req.GetTask()
 
@@ -59,7 +59,7 @@ func (s *QueueServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.Q
 	return &pb.QueueSendResponse{}, nil
 }
 
-func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
+func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Translate tasks
 		tasks := make([]sdk.NitricTask, len(req.GetTasks()))
@@ -95,7 +95,7 @@ func (s *QueueServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchReque
 	}
 }
 
-func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
+func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		depth := uint32(req.GetDepth())
@@ -132,7 +132,7 @@ func (s *QueueServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) 
 	}
 }
 
-func (s *QueueServer) Complete(ctx context.Context, req *pb.QueueCompleteRequest) (*pb.QueueCompleteResponse, error) {
+func (s *QueueServiceServer) Complete(ctx context.Context, req *pb.QueueCompleteRequest) (*pb.QueueCompleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		// Convert gRPC request to plugin params
 		queueName := req.GetQueue()
@@ -151,8 +151,8 @@ func (s *QueueServer) Complete(ctx context.Context, req *pb.QueueCompleteRequest
 	}
 }
 
-func NewQueueServer(plugin sdk.QueueService) pb.QueueServer {
-	return &QueueServer{
+func NewQueueServiceServer(plugin sdk.QueueService) pb.QueueServiceServer {
+	return &QueueServiceServer{
 		plugin: plugin,
 	}
 }

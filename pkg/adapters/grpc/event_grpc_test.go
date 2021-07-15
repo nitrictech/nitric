@@ -17,7 +17,7 @@ package grpc_test
 import (
 	"context"
 	"fmt"
-	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/sdk"
@@ -53,7 +53,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 				TopicListError: nil,
 			}
 
-			eventServer := grpc2.NewEventServer(mockService)
+			eventServer := grpc.NewEventServiceServer(mockService)
 			response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
 				Topic: "test-topic",
 				Event: &v1.NitricEvent{
@@ -82,7 +82,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 				TopicListError: nil,
 			}
 
-			eventServer := grpc2.NewEventServer(mockService)
+			eventServer := grpc.NewEventServiceServer(mockService)
 			response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
 				Topic: "test-topic",
 				Event: &v1.NitricEvent{

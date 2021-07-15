@@ -16,26 +16,26 @@ package grpc
 
 import (
 	"fmt"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/worker"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 )
 
 type FaasServer struct {
-	pb.UnimplementedFaasServer
+	pb.UnimplementedFaasServiceServer
 	// srv  pb.Faas_TriggerStreamServer
-	pool worker2.WorkerPool
+	pool worker.WorkerPool
 }
 
 // Starts a new stream
 // A reference to this stream will be passed on to a new worker instance
 // This represents a new server that is ready to begin processing
-func (s *FaasServer) TriggerStream(stream pb.Faas_TriggerStreamServer) error {
+func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
 	// Create a new worker
-	worker := worker2.NewFaasWorker(stream)
+	wrkr := worker.NewFaasWorker(stream)
 
 	// Add it to our new pool
-	if err := s.pool.AddWorker(worker); err != nil {
+	if err := s.pool.AddWorker(wrkr); err != nil {
 		// Worker could not be added
 		// Cancel the stream by returning an error
 		// This should cause the spawned child process to exit
@@ -46,19 +46,19 @@ func (s *FaasServer) TriggerStream(stream pb.Faas_TriggerStreamServer) error {
 	errchan := make(chan error)
 
 	// Start the worker
-	go worker.Listen(errchan)
+	go wrkr.Listen(errchan)
 
 	// block here on error returned from the worker
 	err := <-errchan
 	fmt.Println("FaaS stream closed, removing worker")
 
 	// Worker is done so we can remove it from the pool
-	s.pool.RemoveWorker(worker)
+	s.pool.RemoveWorker(wrkr)
 
 	return err
 }
 
-func NewFaasServer(workerPool worker2.WorkerPool) *FaasServer {
+func NewFaasServer(workerPool worker.WorkerPool) *FaasServer {
 	return &FaasServer{
 		pool: workerPool,
 	}

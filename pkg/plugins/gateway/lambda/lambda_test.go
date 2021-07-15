@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
-	"github.com/nitric-dev/membrane/tests/mocks/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 
-	events "github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -55,9 +55,9 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 }
 
 var _ = Describe("Lambda", func() {
-	pool := worker2.NewProcessPool(&worker2.ProcessPoolOptions{})
-	mockHandler := worker_mocks.NewMockWorker(&worker_mocks.MockWorkerOptions{
-		ReturnHttp: &triggers2.HttpResponse{
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
 			Body:       []byte("success"),
 			StatusCode: 200,
 		},

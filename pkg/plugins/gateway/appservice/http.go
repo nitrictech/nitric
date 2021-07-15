@@ -17,9 +17,9 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
@@ -50,7 +50,7 @@ func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.E
 	ctx.Success("application/json", responseBody)
 }
 
-func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrkr worker2.Worker) {
+func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrkr worker.Worker) {
 	// FIXME: As we are batch handling events in azure
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -68,7 +68,7 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrk
 		}
 
 		// FIXME: Handle error
-		wrkr.HandleEvent(&triggers2.Event{
+		wrkr.HandleEvent(&triggers.Event{
 			// FIXME: Check if ID is nil
 			ID:      *event.ID,
 			Topic:   *event.Topic,
@@ -81,8 +81,8 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrk
 	ctx.SuccessString("text/plain", "success")
 }
 
-func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker2.Worker) {
-	response, err := wrkr.HandleHttpRequest(triggers2.FromHttpRequest(ctx))
+func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker.Worker) {
+	response, err := wrkr.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Error Handling Request: %v", err), 500)
@@ -100,7 +100,7 @@ func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker2.Worker) {
 	ctx.Response.SetBody(response.Body)
 }
 
-func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		wrkr, err := pool.GetWorker()
 
@@ -138,7 +138,7 @@ func httpHandler(pool worker2.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (s *HttpService) Start(pool worker2.WorkerPool) error {
+func (s *HttpService) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
 		Handler: httpHandler(pool),
@@ -156,7 +156,7 @@ func (s *HttpService) Stop() error {
 
 // Create a new HTTP Gateway plugin
 func New() (sdk.GatewayService, error) {
-	address := utils2.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
+	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
 	return &HttpService{
 		address: address,

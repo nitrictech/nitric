@@ -24,13 +24,13 @@ import (
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
-type StorageServer struct {
-	pb.UnimplementedStorageServer
+type StorageServiceServer struct {
+	pb.UnimplementedStorageServiceServer
 	storagePlugin sdk.StorageService
 }
 
 // Checks that the storage server is registered and returns gRPC Unimplemented error if not.
-func (s *StorageServer) checkPluginRegistered() (bool, error) {
+func (s *StorageServiceServer) checkPluginRegistered() (bool, error) {
 	if s.storagePlugin == nil {
 		return false, status.Errorf(codes.Unimplemented, "Storage plugin not registered")
 	}
@@ -38,7 +38,7 @@ func (s *StorageServer) checkPluginRegistered() (bool, error) {
 	return true, nil
 }
 
-func (s *StorageServer) Write(ctx context.Context, req *pb.StorageWriteRequest) (*pb.StorageWriteResponse, error) {
+func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRequest) (*pb.StorageWriteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.storagePlugin.Write(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
 			return &pb.StorageWriteResponse{}, nil
@@ -50,7 +50,7 @@ func (s *StorageServer) Write(ctx context.Context, req *pb.StorageWriteRequest) 
 	}
 }
 
-func (s *StorageServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*pb.StorageReadResponse, error) {
+func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*pb.StorageReadResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if object, err := s.storagePlugin.Read(req.GetBucketName(), req.GetKey()); err == nil {
 			return &pb.StorageReadResponse{
@@ -64,7 +64,7 @@ func (s *StorageServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*
 	}
 }
 
-func (s *StorageServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest) (*pb.StorageDeleteResponse, error) {
+func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest) (*pb.StorageDeleteResponse, error) {
 	if ok, err := s.checkPluginRegistered(); ok {
 		if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {
 			return &pb.StorageDeleteResponse{}, nil
@@ -77,8 +77,8 @@ func (s *StorageServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest
 	}
 }
 
-func NewStorageServer(storagePlugin sdk.StorageService) pb.StorageServer {
-	return &StorageServer{
+func NewStorageServiceServer(storagePlugin sdk.StorageService) pb.StorageServiceServer {
+	return &StorageServiceServer{
 		storagePlugin: storagePlugin,
 	}
 }

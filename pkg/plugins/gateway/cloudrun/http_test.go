@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
-	"github.com/nitric-dev/membrane/tests/mocks/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,15 +36,15 @@ import (
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Http", func() {
-	pool := worker2.NewProcessPool(&worker2.ProcessPoolOptions{})
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := worker_mocks.NewMockWorker(&worker_mocks.MockWorkerOptions{
-		ReturnHttp: &triggers2.HttpResponse{
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
 			Body:       []byte("success"),
 			StatusCode: 200,
 		},

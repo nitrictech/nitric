@@ -16,7 +16,7 @@ package boltdb_storage_service
 
 import (
 	"fmt"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strings"
 	"time"
@@ -126,7 +126,7 @@ func (s *BoltStorageService) Delete(bucket string, key string) error {
 
 // New - Create a new BoltDB Storage plugin
 func New() (sdk.StorageService, error) {
-	dbDir := utils2.GetEnv("LOCAL_BLOB_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_BLOB_DIR", DEFAULT_DIR)
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)

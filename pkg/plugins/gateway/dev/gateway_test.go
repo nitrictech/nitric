@@ -17,10 +17,10 @@ package gateway_plugin_test
 import (
 	"bytes"
 	"fmt"
-	gateway_plugin2 "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
-	"github.com/nitric-dev/membrane/tests/mocks/worker"
+	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"net/http"
 	"os"
 	"time"
@@ -32,14 +32,14 @@ import (
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Gateway", func() {
-	pool := worker2.NewProcessPool(&worker2.ProcessPoolOptions{})
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
 
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := worker_mocks.NewMockWorker(&worker_mocks.MockWorkerOptions{
-		ReturnHttp: &triggers2.HttpResponse{
+	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
+		ReturnHttp: &triggers.HttpResponse{
 			Body:       []byte("success"),
 			StatusCode: 200,
 		},
@@ -47,7 +47,7 @@ var _ = Describe("Gateway", func() {
 	pool.AddWorker(mockHandler)
 
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
-	gateway, _ := gateway_plugin2.New()
+	gateway, _ := gateway_plugin.New()
 
 	AfterEach(func() {
 		mockHandler.Reset()

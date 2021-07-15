@@ -16,15 +16,15 @@ package sdk
 
 import (
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
 )
 
 type NitricContext struct {
 	RequestId   string
 	PayloadType string
 	Trigger     string
-	TriggerType triggers2.TriggerType
+	TriggerType triggers.TriggerType
 }
 
 // Normalized NitricRequest
@@ -42,7 +42,7 @@ type NitricResponse struct {
 
 type GatewayService interface {
 	// Start the Gateway
-	Start(pool worker2.WorkerPool) error
+	Start(pool worker.WorkerPool) error
 	// Stops the Gateway
 	Stop() error
 }
@@ -51,7 +51,7 @@ type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ worker2.WorkerPool) error {
+func (*UnimplementedGatewayPlugin) Start(_ worker.WorkerPool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

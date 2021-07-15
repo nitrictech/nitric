@@ -18,9 +18,9 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-	worker2 "github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
 
 	"github.com/valyala/fasthttp"
 
@@ -42,7 +42,7 @@ type HttpProxyGateway struct {
 	server  *fasthttp.Server
 }
 
-func (s *HttpProxyGateway) httpHandler(pool worker2.WorkerPool) func(*fasthttp.RequestCtx) {
+func (s *HttpProxyGateway) httpHandler(pool worker.WorkerPool) func(*fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		wrkr, err := pool.GetWorker()
 		if err != nil {
@@ -83,7 +83,7 @@ func (s *HttpProxyGateway) httpHandler(pool worker2.WorkerPool) func(*fasthttp.R
 				return
 			}
 
-			if err := wrkr.HandleEvent(&triggers2.Event{
+			if err := wrkr.HandleEvent(&triggers.Event{
 				ID: id,
 				// FIXME: Split this to retrive the nitric topic name
 				Topic:   topicArn,
@@ -98,7 +98,7 @@ func (s *HttpProxyGateway) httpHandler(pool worker2.WorkerPool) func(*fasthttp.R
 		}
 
 		// Otherwise treat as a normal http request
-		response, err := wrkr.HandleHttpRequest(triggers2.FromHttpRequest(ctx))
+		response, err := wrkr.HandleHttpRequest(triggers.FromHttpRequest(ctx))
 
 		if err != nil {
 			ctx.Error(err.Error(), 500)
@@ -111,7 +111,7 @@ func (s *HttpProxyGateway) httpHandler(pool worker2.WorkerPool) func(*fasthttp.R
 	}
 }
 
-func (s *HttpProxyGateway) Start(pool worker2.WorkerPool) error {
+func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
 		Handler: s.httpHandler(pool),
@@ -132,8 +132,8 @@ func (s *HttpProxyGateway) Stop() error {
 
 // Create new AWS HTTP Gateway service
 func New() (gw.GatewayService, error) {
-	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
-	address := utils2.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
 	sess, sessionError := session.NewSession(&aws.Config{
 		// FIXME: Use ENV configuration
