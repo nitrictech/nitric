@@ -136,11 +136,6 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	}
 	defer db.Close()
 
-	err = document.ValidateExpressions(expressions)
-	if err != nil {
-		return nil, err
-	}
-
 	// Build up chain of expression matchers
 	matchers := []q.Matcher{}
 
@@ -184,15 +179,18 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	for _, exp := range expressions {
 		// TODO: test typing capabilities of library and rewrite expressions based on value type
 		expValue := fmt.Sprintf("%v", exp.Value)
+
 		if expStr.Len() > 0 {
 			expStr.WriteString(" && ")
 		}
 		if exp.Operator == "startsWith" {
 			expStr.WriteString(exp.Operand + " >= '" + expValue + "' && ")
 			expStr.WriteString(exp.Operand + " < '" + document.GetEndRangeValue(expValue) + "'")
-
 		} else {
-			expStr.WriteString(exp.Operand + " " + exp.Operator + " '" + expValue + "'")
+			if stringValue, ok := exp.Value.(string); ok {
+				expValue = fmt.Sprintf("'%s'", stringValue)
+			}
+			expStr.WriteString(exp.Operand + " " + exp.Operator + " " + expValue)
 		}
 	}
 	var filterExp *govaluate.EvaluableExpression
@@ -211,7 +209,11 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 		if filterExp != nil {
 			eval, err := filterExp.Evaluate(doc.Value)
 			if err != nil {
-				return nil, err
+				//return nil, err
+				//fmt.Printf("failed to evaluate query expression for document. Details: %v\n\tExpression: %v\n\tDocument: %v\n", err, filterExp.String(), doc.Value)
+				// TODO: determine if skipping failed evaluations is always appropriate.
+				// Treat a failed eval as a mismatch, since it's usually a datatype mismatch or a missing key/prop on the doc, which is essentially a failed match.
+				continue
 			}
 			include := eval.(bool)
 			if include {
