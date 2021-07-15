@@ -15,16 +15,16 @@
 package boltdb_service_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
 	"os"
 
-	ds_plugin "github.com/nitric-dev/membrane/plugins/document/boltdb"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 
 var _ = Describe("Bolt", func() {
 
-	docPlugin, err := ds_plugin.New()
+	docPlugin, err := boltdb_service.New()
 	if err != nil {
 		panic(err)
 	}
@@ -34,9 +34,9 @@ var _ = Describe("Bolt", func() {
 	})
 
 	AfterSuite(func() {
-		err = os.RemoveAll(ds_plugin.DEFAULT_DIR)
+		err = os.RemoveAll(boltdb_service.DEFAULT_DIR)
 		if err == nil {
-			os.Remove(ds_plugin.DEFAULT_DIR)
+			os.Remove(boltdb_service.DEFAULT_DIR)
 			os.Remove("nitric/")
 		}
 	})

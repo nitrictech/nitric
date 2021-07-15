@@ -17,7 +17,7 @@ package document
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/sdk"
+	"github.com/nitric-dev/membrane/pkg/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

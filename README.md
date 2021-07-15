@@ -52,7 +52,7 @@ By wrapping both in-bound and out-bound communication in this way, the Membrane 
   <img src="docs/assets/membrane-architecture.svg" alt="nitric membrane architecture diagram"/>
 </p>
 
-Documentation on key components is available in the [Membrane Plugin SDK](./sdk/README.md).
+Documentation on key components is available in the [Membrane Plugin SDK](pkg/sdk/README.md).
 
 ## Configuration
 

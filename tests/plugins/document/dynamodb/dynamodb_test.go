@@ -16,10 +16,10 @@ package dynamodb_service_test
 
 import (
 	"fmt"
+	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	"os"
 	"os/exec"
 
-	ds_plugin "github.com/nitric-dev/membrane/plugins/document/dynamodb"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 
@@ -136,7 +136,7 @@ var _ = Describe("DynamoDb", func() {
 		stopDynamoProcess(dynaCmd)
 	})
 
-	docPlugin, err := ds_plugin.NewWithClient(db)
+	docPlugin, err := dynamodb_service.NewWithClient(db)
 	if err != nil {
 		panic(err)
 	}
