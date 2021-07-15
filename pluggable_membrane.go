@@ -22,31 +22,30 @@ import (
 	"strconv"
 	"strings"
 
-	membrane2 "github.com/nitric-dev/membrane/pkg/membrane"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
-
+	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
 // Pluggable version of the Nitric membrane
 func main() {
-	serviceAddress := utils2.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
-	childAddress := utils2.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	pluginDir := utils2.GetEnv("PLUGIN_DIR", "./plugins")
-	serviceFactoryPluginFile := utils2.GetEnv("SERVICE_FACTORY_PLUGIN", "default.so")
+	serviceAddress := utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
+	childAddress := utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
+	pluginDir := utils.GetEnv("PLUGIN_DIR", "./plugins")
+	serviceFactoryPluginFile := utils.GetEnv("SERVICE_FACTORY_PLUGIN", "default.so")
 
 	var childCommand []string
 	// Get the command line arguments, minus the program name in index 0.
 	if len(os.Args) > 1 && len(os.Args[1:]) > 0 {
 		childCommand = os.Args[1:]
 	} else {
-		childCommand = strings.Fields(utils2.GetEnv("INVOKE", ""))
+		childCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
 		if len(childCommand) > 0 {
 			fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
 		}
 	}
 
-	tolerateMissingServices := utils2.GetEnv("TOLERATE_MISSING_SERVICES", "false")
+	tolerateMissingServices := utils.GetEnv("TOLERATE_MISSING_SERVICES", "false")
 
 	tolerateMissing, err := strconv.ParseBool(tolerateMissingServices)
 	// Set tolerate missing to false by default so missing plugins will cause a fatal error for safety.
@@ -99,7 +98,7 @@ func main() {
 	}
 
 	// Construct and validate the membrane server
-	membraneServer, err := membrane2.New(&membrane2.MembraneOptions{
+	membraneServer, err := membrane.New(&membrane.MembraneOptions{
 		ServiceAddress:          serviceAddress,
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
