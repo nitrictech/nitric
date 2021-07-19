@@ -326,6 +326,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 				doc, err := docPlugin.Get(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
+				Expect(doc.Key).To(Equal(&UserKey1))
 				Expect(doc.Content["email"]).To(BeEquivalentTo(UserItem1["email"]))
 			})
 		})
@@ -336,6 +337,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
+				Expect(doc.Key).To(Equal(&Customer1.Orders[0].Key))
 				Expect(doc.Content).To(BeEquivalentTo(Customer1.Orders[0].Content))
 			})
 		})
@@ -495,6 +497,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: '', exp: []", func() {
@@ -508,6 +514,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents[0].Content["email"]).To(BeEquivalentTo(Customer1.Content["email"]))
 				Expect(result.Documents[1].Content["email"]).To(BeEquivalentTo(Customer2.Content["email"]))
 				Expect(result.PagingToken).To(BeNil())
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: '', exp: [country == US]", func() {
@@ -523,6 +533,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["email"]).To(BeEquivalentTo(Customer2.Content["email"]))
 				Expect(result.PagingToken).To(BeNil())
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: '', exp: [country == US, age > 40]", func() {
@@ -554,6 +568,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[1].Content["testName"]))
 				Expect(result.Documents[2].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number == 1]", func() {
@@ -573,6 +591,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[0].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number == 1]", func() {
@@ -591,6 +613,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number > 1]", func() {
@@ -608,6 +634,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number > 1]", func() {
@@ -627,6 +657,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[1].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number < 1]", func() {
@@ -644,6 +678,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number < 1]", func() {
@@ -678,6 +716,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(5))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number >= 1]", func() {
@@ -695,6 +737,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number <= 1]", func() {
@@ -714,6 +760,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[0].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number <= 1]", func() {
@@ -732,6 +782,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key {customers, nil}, subcol: orders, exps: [type startsWith scooter]", func() {
@@ -751,6 +805,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[1].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key {customers, key1}, subcol: orders, exps: [type startsWith bike/road]", func() {
@@ -769,6 +827,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
+
+				for _, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
+				}
 			})
 		})
 		When("key: {items, nil}, subcol: '', exp: [], limit: 10", func() {
@@ -786,7 +848,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				// Ensure values are unique
 				dataMap := make(map[string]string)
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					dataMap[val] = val
 				}
@@ -798,7 +861,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.PagingToken).To(BeNil())
 
 				// Ensure values are unique
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					if _, found := dataMap[val]; found {
 						Expect("matching value").ShouldNot(HaveOccurred())
@@ -824,7 +888,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				// Ensure values are unique
 				dataMap := make(map[string]string)
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					dataMap[val] = val
 				}
@@ -836,7 +901,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.PagingToken).ToNot(BeEmpty())
 
 				// Ensure values are unique
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					if _, found := dataMap[val]; found {
 						Expect("matching value").ShouldNot(HaveOccurred())
@@ -862,7 +928,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				// Ensure values are unique
 				dataMap := make(map[string]string)
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					dataMap[val] = val
 				}
@@ -874,7 +941,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.PagingToken).To(BeNil())
 
 				// Ensure values are unique
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					if _, found := dataMap[val]; found {
 						Expect("matching value").ShouldNot(HaveOccurred())
@@ -897,7 +965,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				// Ensure values are unique
 				dataMap := make(map[string]string)
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					dataMap[val] = val
 				}
@@ -909,7 +978,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.PagingToken).ToNot(BeEmpty())
 
 				// Ensure values are unique
-				for i := range result.Documents {
+				for i, d := range result.Documents {
+					Expect(d.Key).ToNot(BeNil())
 					val := fmt.Sprintf("%v", result.Documents[i].Content["letter"])
 					if _, found := dataMap[val]; found {
 						Expect("matching value").ShouldNot(HaveOccurred())
