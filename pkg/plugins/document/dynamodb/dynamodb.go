@@ -430,15 +430,27 @@ func marshalQueryResult(
 	for _, m := range valueMaps {
 		// Retrieve the original ID on the result
 		var id string
+		var c *sdk.Collection
 		if collection.Parent == nil {
 			// We know this is a root document so its key will be located in PK
 			pk, _ := m[ATTRIB_PK].(string)
 			id = pk
+			c = collection
 		} else {
 			// We know this is a child document so its key will be located in the SK
+			pk, _ := m[ATTRIB_PK].(string)
 			sk, _ := m[ATTRIB_SK].(string)
 			idStr := strings.Split(sk, "#")
 			id = idStr[len(idStr)-1]
+			c = &sdk.Collection{
+				Name: collection.Name,
+				Parent: &sdk.Key{
+					Collection: &sdk.Collection{
+						Name: collection.Parent.Collection.Name,
+					},
+					Id: pk,
+				},
+			}
 		}
 		// Get the sort key as a string
 
@@ -448,7 +460,7 @@ func marshalQueryResult(
 
 		sdkDoc := sdk.Document{
 			Key: &sdk.Key{
-				Collection: collection,
+				Collection: c,
 				Id:         id,
 			},
 			Content: m,
