@@ -500,6 +500,9 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Collection.Name).To(Equal("users"))
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent).To(BeNil())
 				}
 			})
 		})
@@ -517,6 +520,9 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Collection.Name).To(Equal("customers"))
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent).To(BeNil())
 				}
 			})
 		})
@@ -536,6 +542,9 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Collection.Name).To(Equal("customers"))
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent).To(BeNil())
 				}
 			})
 		})
@@ -571,6 +580,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -594,6 +608,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -616,6 +635,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -637,6 +661,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -660,6 +689,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -681,6 +715,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -719,6 +758,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -740,6 +784,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -763,6 +812,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -785,6 +839,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -808,6 +867,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
@@ -830,6 +894,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 
 				for _, d := range result.Documents {
 					Expect(d.Key).ToNot(BeNil())
+					Expect(d.Key.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection).To(Equal("orders"))
+					Expect(d.Key.Collection.Parent).ToNot(BeNil())
+					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
+					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
 				}
 			})
 		})
