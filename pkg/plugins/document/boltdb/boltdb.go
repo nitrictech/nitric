@@ -16,12 +16,13 @@ package boltdb_service
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/Knetic/govaluate"
 	"github.com/asdine/storm"
@@ -73,7 +74,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, err
 	}
 
-	return toSdkDoc(doc), nil
+	return toSdkDoc(key.Collection, doc), nil
 }
 
 func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
@@ -217,12 +218,12 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 			}
 			include := eval.(bool)
 			if include {
-				sdkDoc := toSdkDoc(doc)
+				sdkDoc := toSdkDoc(collection, doc)
 				documents = append(documents, *sdkDoc)
 			}
 
 		} else {
-			sdkDoc := toSdkDoc(doc)
+			sdkDoc := toSdkDoc(collection, doc)
 			documents = append(documents, *sdkDoc)
 		}
 
@@ -281,7 +282,6 @@ func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
 }
 
 func createDoc(key *sdk.Key) BoltDoc {
-
 	parentKey := key.Collection.Parent
 
 	// Top Level Collection
@@ -301,8 +301,25 @@ func createDoc(key *sdk.Key) BoltDoc {
 	}
 }
 
-func toSdkDoc(doc BoltDoc) *sdk.Document {
+func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
+	keys := strings.Split(doc.Id, "_")
+
+	// Translate the boltdb Id into a nitric document key Id
+	var id string
+	if len(keys) > 1 {
+		// sub document
+		id = keys[len(keys)-1]
+	} else {
+		id = doc.Id
+	}
+
 	return &sdk.Document{
 		Content: doc.Value,
+		Key: &sdk.Key{
+
+			Collection: col,
+			// TODO: need to split out parent key id...
+			Id: id,
+		},
 	}
 }
