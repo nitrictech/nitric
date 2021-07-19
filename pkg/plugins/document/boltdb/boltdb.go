@@ -306,18 +306,26 @@ func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
 
 	// Translate the boltdb Id into a nitric document key Id
 	var id string
+	var c *sdk.Collection
 	if len(keys) > 1 {
 		// sub document
 		id = keys[len(keys)-1]
+		c = &sdk.Collection{
+			Name: col.Name,
+			Parent: &sdk.Key{
+				Collection: col.Parent.Collection,
+				Id:         keys[0],
+			},
+		}
 	} else {
 		id = doc.Id
+		c = col
 	}
 
 	return &sdk.Document{
 		Content: doc.Value,
 		Key: &sdk.Key{
-
-			Collection: col,
+			Collection: c,
 			// TODO: need to split out parent key id...
 			Id: id,
 		},
