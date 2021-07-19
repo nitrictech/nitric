@@ -164,6 +164,17 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 				Id:         docSnp.Ref.ID,
 			},
 		}
+
+		if p := docSnp.Ref.Parent.Parent; p != nil {
+			sdkDoc.Key.Collection = &sdk.Collection{
+				Name: collection.Name,
+				Parent: &sdk.Key{
+					Collection: collection.Parent.Collection,
+					Id:         p.ID,
+				},
+			}
+		}
+
 		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
