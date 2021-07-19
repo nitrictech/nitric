@@ -51,7 +51,7 @@ func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequ
 func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
 	key := keyFromWire(req.Key)
 
-	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
+	err := s.documentPlugin.Set(key, req.GetContent().AsMap(), req.Merge)
 	if err != nil {
 		return nil, NewGrpcError("DocumentService.Set", err)
 	}

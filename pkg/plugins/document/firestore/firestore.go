@@ -17,8 +17,9 @@ package firestore_service
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"strings"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
@@ -53,21 +54,33 @@ func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+func (s *FirestoreDocService) Set(key *sdk.Key, content map[string]interface{}, merge bool) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
 
-	if value == nil {
-		return fmt.Errorf("provide non-nil value")
+	if content == nil {
+		return fmt.Errorf("provide non-nil content")
 	}
 
 	doc := s.getDocRef(key)
 
-	_, err = doc.Set(s.context, value)
-	if err != nil {
-		return fmt.Errorf("error updating value: %v", err)
+	if merge {
+		if len(content) == 0 {
+			return nil
+		}
+
+		_, err = doc.Set(s.context, content, firestore.MergeAll)
+		if err != nil {
+			return fmt.Errorf("error updating content: %v", err)
+		}
+
+	} else {
+		_, err = doc.Set(s.context, content)
+		if err != nil {
+			return fmt.Errorf("error updating content: %v", err)
+		}
 	}
 
 	return nil

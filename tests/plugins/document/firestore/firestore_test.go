@@ -17,10 +17,12 @@ package firestore_service_test
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 	"os"
 	"os/exec"
 	"syscall"
+
+	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	"google.golang.org/api/iterator"
 
 	"cloud.google.com/go/firestore"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
@@ -65,6 +67,38 @@ func createFirestoreClient(ctx context.Context) *firestore.Client {
 	return client
 }
 
+func deleteCollection(ctx context.Context, client *firestore.Client, collection string) error {
+	colRef := client.Collection(collection)
+
+	for {
+		iter := colRef.Limit(100).Documents(ctx)
+		numDeleted := 0
+
+		batch := client.Batch()
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return err
+			}
+
+			batch.Delete(doc.Ref)
+			numDeleted++
+		}
+
+		if numDeleted == 0 {
+			return nil
+		}
+
+		_, err := batch.Commit(ctx)
+		if err != nil {
+			return err
+		}
+	}
+}
+
 var _ = Describe("Firestore", func() {
 	defer GinkgoRecover()
 
@@ -73,6 +107,13 @@ var _ = Describe("Firestore", func() {
 
 	ctx := context.Background()
 	db := createFirestoreClient(ctx)
+
+	AfterEach(func() {
+		deleteCollection(ctx, db, "customers")
+		deleteCollection(ctx, db, "users")
+		deleteCollection(ctx, db, "items")
+		deleteCollection(ctx, db, "parentItems")
+	})
 
 	AfterSuite(func() {
 		stopFirestoreProcess(firestoreCmd)

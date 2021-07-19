@@ -60,7 +60,7 @@ type QueryResult struct {
 // and open options to adding additional non-grpc interfaces
 type DocumentService interface {
 	Get(*Key) (*Document, error)
-	Set(*Key, map[string]interface{}) error
+	Set(*Key, map[string]interface{}, bool) error
 	Delete(*Key) error
 	Query(*Collection, []QueryExpression, int, map[string]string) (*QueryResult, error)
 }
@@ -73,7 +73,7 @@ func (p *UnimplementedDocumentPlugin) Get(key *Key) (*Document, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Set(key *Key, content map[string]interface{}) error {
+func (p *UnimplementedDocumentPlugin) Set(key *Key, content map[string]interface{}, merge bool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

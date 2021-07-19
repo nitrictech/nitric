@@ -16,12 +16,13 @@ package boltdb_service
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/Knetic/govaluate"
 	"github.com/asdine/storm"
@@ -76,7 +77,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	return toSdkDoc(doc), nil
 }
 
-func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
+func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}, merge bool) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -93,7 +94,24 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error
 	defer db.Close()
 
 	doc := createDoc(key)
-	doc.Value = content
+
+	if merge {
+		if len(content) == 0 {
+			return nil
+		}
+
+		err = db.One(idName, doc.Id, &doc)
+		if err != nil {
+			// If doc not found save will create a new record
+			doc.Value = make(map[string]interface{})
+		}
+		for name, value := range content {
+			doc.Value[name] = value
+		}
+
+	} else {
+		doc.Value = content
+	}
 
 	return db.Save(&doc)
 }

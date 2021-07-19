@@ -78,31 +78,71 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	}, nil
 }
 
-func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+func (s *DynamoDocService) Set(key *sdk.Key, content map[string]interface{}, merge bool) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
 	}
 
-	if value == nil {
-		return fmt.Errorf("provide non-nil value")
+	if content == nil {
+		return fmt.Errorf("provide non-nil content")
 	}
 
-	// Construct DynamoDB attribute value object
-	itemMap := createItemMap(value, key)
-	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
-	if err != nil {
-		return fmt.Errorf("failed to marshal value")
-	}
+	if merge {
+		if len(content) == 0 {
+			return nil
+		}
 
-	input := &dynamodb.PutItemInput{
-		Item:      itemAttributeMap,
-		TableName: getTableName(*key.Collection),
-	}
+		input := &dynamodb.UpdateItemInput{}
 
-	_, err = s.client.PutItem(input)
-	if err != nil {
-		return err
+		keyMap := createKeyMap(key)
+		input.Key, err = dynamodbattribute.MarshalMap(keyMap)
+		if err != nil {
+			return fmt.Errorf("failed to marshal key: %v", key)
+		}
+
+		updateExp := ""
+		input.ExpressionAttributeNames = make(map[string]*string)
+		input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
+
+		for name, value := range content {
+			input.ExpressionAttributeNames["#"+name] = aws.String(name)
+			input.ExpressionAttributeValues[":"+name], err = dynamodbattribute.Marshal(value)
+			if err != nil {
+				return fmt.Errorf("error marshalling %v: %v", name, value)
+			}
+			if updateExp == "" {
+				updateExp += "SET "
+			} else {
+				updateExp += ", "
+			}
+			updateExp += "#" + name + " = :" + name
+		}
+		input.UpdateExpression = aws.String(updateExp)
+
+		input.TableName = getTableName(*key.Collection)
+
+		_, err = s.client.UpdateItem(input)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		// Construct DynamoDB attribute value object
+		itemMap := createItemMap(content, key)
+		itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
+		if err != nil {
+			return fmt.Errorf("failed to marshal content")
+		}
+
+		input := &dynamodb.PutItemInput{
+			Item:      itemAttributeMap,
+			TableName: getTableName(*key.Collection),
+		}
+		_, err = s.client.PutItem(input)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

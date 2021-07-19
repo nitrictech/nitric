@@ -15,12 +15,18 @@
 package boltdb_service_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
 	"os"
+
+	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	"github.com/nitric-dev/membrane/pkg/sdk"
 
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
+
+func deleteCollection(docPlugin sdk.DocumentService, collection string) {
+	// TODO: delete items when query doc.key support available
+}
 
 var _ = Describe("Bolt", func() {
 
@@ -31,6 +37,13 @@ var _ = Describe("Bolt", func() {
 
 	BeforeSuite(func() {
 		test.LoadItemsData(docPlugin)
+	})
+
+	AfterEach(func() {
+		deleteCollection(docPlugin, "customers")
+		deleteCollection(docPlugin, "users")
+		deleteCollection(docPlugin, "items")
+		deleteCollection(docPlugin, "parentItems")
 	})
 
 	AfterSuite(func() {

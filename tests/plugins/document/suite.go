@@ -273,31 +273,31 @@ var ChildItemsCollection = sdk.Collection{
 // Test Data Loading Functions ------------------------------------------------
 
 func LoadUsersData(docPlugin sdk.DocumentService) {
-	docPlugin.Set(&UserKey1, UserItem1)
-	docPlugin.Set(&UserKey2, UserItem2)
-	docPlugin.Set(&UserKey3, UserItem3)
+	docPlugin.Set(&UserKey1, UserItem1, false)
+	docPlugin.Set(&UserKey2, UserItem2, false)
+	docPlugin.Set(&UserKey3, UserItem3, false)
 }
 
 func LoadCustomersData(docPlugin sdk.DocumentService) {
-	docPlugin.Set(&Customer1.Key, Customer1.Content)
-	docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
-	docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content)
-	docPlugin.Set(&Customer1.Orders[2].Key, Customer1.Orders[2].Content)
+	docPlugin.Set(&Customer1.Key, Customer1.Content, false)
+	docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content, false)
+	docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content, false)
+	docPlugin.Set(&Customer1.Orders[2].Key, Customer1.Orders[2].Content, false)
 
-	docPlugin.Set(&Customer2.Key, Customer2.Content)
-	docPlugin.Set(&Customer2.Orders[0].Key, Customer2.Orders[0].Content)
-	docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content)
+	docPlugin.Set(&Customer2.Key, Customer2.Content, false)
+	docPlugin.Set(&Customer2.Orders[0].Key, Customer2.Orders[0].Content, false)
+	docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content, false)
 }
 
 func LoadItemsData(docPlugin sdk.DocumentService) {
 	for _, item := range Items {
-		docPlugin.Set(&item.Key, item.Content)
+		docPlugin.Set(&item.Key, item.Content, false)
 
 		key := sdk.Key{
 			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
-		docPlugin.Set(&key, item.Content)
+		docPlugin.Set(&key, item.Content, false)
 	}
 }
 
@@ -321,7 +321,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				docPlugin.Set(&UserKey1, UserItem1)
+				docPlugin.Set(&UserKey1, UserItem1, false)
 
 				doc, err := docPlugin.Get(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -331,7 +331,7 @@ func GetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Sub Collection Get", func() {
 			It("Should store item successfully", func() {
-				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content, false)
 
 				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -347,27 +347,27 @@ func SetTests(docPlugin sdk.DocumentService) {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Id: "1"}
-				err := docPlugin.Set(&key, UserItem1)
+				err := docPlugin.Set(&key, UserItem1, false)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
-				err := docPlugin.Set(&key, UserItem1)
+				err := docPlugin.Set(&key, UserItem1, false)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil item map", func() {
 			It("Should return error", func() {
 				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}, Id: "1"}
-				err := docPlugin.Set(&key, nil)
+				err := docPlugin.Set(&key, nil, false)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid New Set", func() {
 			It("Should store new item successfully", func() {
-				err := docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(&UserKey1, UserItem1, false)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&UserKey1)
@@ -378,7 +378,7 @@ func SetTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Update Set", func() {
 			It("Should update existing item successfully", func() {
-				err := docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(&UserKey1, UserItem1, false)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&UserKey1)
@@ -386,7 +386,7 @@ func SetTests(docPlugin sdk.DocumentService) {
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Content["email"]).To(BeEquivalentTo(UserItem1["email"]))
 
-				err = docPlugin.Set(&UserKey1, UserItem2)
+				err = docPlugin.Set(&UserKey1, UserItem2, false)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err = docPlugin.Get(&UserKey1)
@@ -395,15 +395,99 @@ func SetTests(docPlugin sdk.DocumentService) {
 				Expect(doc.Content["email"]).To(BeEquivalentTo(UserItem2["email"]))
 			})
 		})
+		When("Valid Set Update Existing No Merge", func() {
+			It("Should update existing item successfully", func() {
+				err := docPlugin.Set(&UserKey1, UserItem1, false)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				updateDoc := map[string]interface{}{
+					"email":  "john.doe@server.com",
+					"mobile": "0123456789",
+				}
+				err = docPlugin.Set(&UserKey1, updateDoc, false)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := docPlugin.Get(&UserKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc.Content).Should(HaveLen(2))
+				Expect(doc.Content["email"]).To(BeEquivalentTo("john.doe@server.com"))
+				Expect(doc.Content["mobile"]).To(BeEquivalentTo("0123456789"))
+			})
+		})
 		When("Valid Sub Collection Set", func() {
 			It("Should store item successfully", func() {
-				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content, false)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Content).To(BeEquivalentTo(Customer1.Orders[0].Content))
+			})
+		})
+		When("Valid Set Merge", func() {
+			It("Should update existing item & add new item successfully", func() {
+				err := docPlugin.Set(&UserKey1, UserItem1, false)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				updateDoc := map[string]interface{}{
+					"email":  "john.doe@server.com",
+					"mobile": "0123456789",
+				}
+				err = docPlugin.Set(&UserKey1, updateDoc, true)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := docPlugin.Get(&UserKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc.Content).Should(HaveLen(6))
+				Expect(doc.Content["firstName"]).To(BeEquivalentTo("John"))
+				Expect(doc.Content["lastName"]).To(BeEquivalentTo("Smith"))
+				Expect(doc.Content["email"]).To(BeEquivalentTo("john.doe@server.com"))
+				Expect(doc.Content["country"]).To(BeEquivalentTo("US"))
+				Expect(doc.Content["age"]).To(BeEquivalentTo("30"))
+				Expect(doc.Content["mobile"]).To(BeEquivalentTo("0123456789"))
+			})
+		})
+		When("Valid Set Merge Empty Doc", func() {
+			It("Should make no changes", func() {
+				err := docPlugin.Set(&UserKey1, UserItem1, false)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				emptyDoc := map[string]interface{}{}
+				err = docPlugin.Set(&UserKey1, emptyDoc, true)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err := docPlugin.Get(&UserKey1)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc.Content).Should(HaveLen(5))
+			})
+		})
+		When("Set Merge with Unknown doc ", func() {
+			It("Should create a new doc", func() {
+				key := sdk.Key{
+					Collection: &sdk.Collection{Name: "users"},
+					Id:         "john.doe@server.com",
+				}
+
+				doc, err := docPlugin.Get(&key)
+				Expect(doc).Should(BeNil())
+				Expect(err).Should(HaveOccurred())
+
+				updateDoc := map[string]interface{}{
+					"email":  "john.doe@server.com",
+					"mobile": "0123456789",
+				}
+				err = docPlugin.Set(&key, updateDoc, true)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				doc, err = docPlugin.Get(&key)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc.Content).Should(HaveLen(2))
+				Expect(doc.Content["email"]).To(BeEquivalentTo("john.doe@server.com"))
+				Expect(doc.Content["mobile"]).To(BeEquivalentTo("0123456789"))
+
+				// TODO: remove boltdb_test AfterEach deletes collections
+				docPlugin.Delete(&key)
 			})
 		})
 	})
@@ -427,7 +511,7 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(&UserKey1, UserItem1)
+				docPlugin.Set(&UserKey1, UserItem1, false)
 
 				err := docPlugin.Delete(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -439,7 +523,7 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 		})
 		When("Valid Sub Collection Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content, false)
 
 				err := docPlugin.Delete(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
