@@ -37,6 +37,7 @@ func (k *Key) String() string {
 }
 
 type Document struct {
+	Key     *Key
 	Content map[string]interface{}
 }
 
