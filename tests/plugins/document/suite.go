@@ -515,15 +515,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["email"]).To(BeEquivalentTo(Customer1.Content["email"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[1].Content["email"]).To(BeEquivalentTo(Customer2.Content["email"]))
+				Expect(result.Documents[1].Key).To(BeEquivalentTo(Customer2.Key))
 				Expect(result.PagingToken).To(BeNil())
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Collection.Name).To(Equal("customers"))
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent).To(BeNil())
-				}
 			})
 		})
 		When("key: {customers, nil}, subcol: '', exp: [country == US]", func() {
@@ -538,14 +533,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["email"]).To(BeEquivalentTo(Customer2.Content["email"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer2.Key))
 				Expect(result.PagingToken).To(BeNil())
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Collection.Name).To(Equal("customers"))
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent).To(BeNil())
-				}
 			})
 		})
 		When("key: {customers, nil}, subcol: '', exp: [country == US, age > 40]", func() {
@@ -575,17 +564,14 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[1].Content["testName"]))
+				Expect(result.Documents[1].Key).To(BeEquivalentTo(Customer1.Orders[1].Key))
+				Expect(result.Documents[1].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[2].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[2].Key).To(BeEquivalentTo(Customer1.Orders[2].Key))
+				Expect(result.Documents[2].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number == 1]", func() {
@@ -604,16 +590,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[0].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[1].Key).To(BeEquivalentTo(Customer2.Orders[0].Key))
+				Expect(result.Documents[1].Key.Collection.Parent).To(BeEquivalentTo(Customer2.Key))
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number == 1]", func() {
@@ -632,15 +613,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number > 1]", func() {
@@ -685,16 +659,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[1].Content["testName"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[1].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[1].Key).To(BeEquivalentTo(Customer1.Orders[2].Key))
+				Expect(result.Documents[1].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
 		When("key: {customers, nil}, subcol: orders, exps: [number < 1]", func() {
@@ -808,16 +777,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[0].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[1].Key).To(BeEquivalentTo(Customer2.Orders[0].Key))
+				Expect(result.Documents[1].Key.Collection.Parent).To(BeEquivalentTo(Customer2.Key))
 			})
 		})
 		When("key: {customers, key1}, subcol: orders, exps: [number <= 1]", func() {
@@ -836,15 +800,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[0].Key.Id).To(Equal(Customer1.Orders[0].Key.Id))
+				Expect(result.Documents[0].Key.Collection.Parent.Id).To(Equal(Customer1.Key))
 			})
 		})
 		When("key {customers, nil}, subcol: orders, exps: [type startsWith scooter]", func() {
@@ -864,15 +821,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(result.Documents).To(HaveLen(2))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
 				Expect(result.Documents[1].Content["testName"]).To(BeEquivalentTo(Customer2.Orders[1].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[0].Key.Collection.Parent.Id).To(Equal(Customer1.Key.Id))
+				Expect(result.Documents[0].Key.Id).To(Equal(Customer1.Orders[2].Key.Id))
+				Expect(result.Documents[1].Key.Collection.Parent.Id).To(Equal(Customer2.Key.Id))
+				Expect(result.Documents[1].Key.Id).To(Equal(Customer2.Orders[1].Key.Id))
 			})
 		})
 		When("key {customers, key1}, subcol: orders, exps: [type startsWith bike/road]", func() {
@@ -891,15 +843,8 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[2].Content["testName"]))
-
-				for _, d := range result.Documents {
-					Expect(d.Key).ToNot(BeNil())
-					Expect(d.Key.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Name).To(Equal("orders"))
-					Expect(d.Key.Collection.Parent).ToNot(BeNil())
-					Expect(d.Key.Collection.Parent.Id).ToNot(Equal(""))
-					Expect(d.Key.Collection.Parent.Collection.Name).To(Equal("customers"))
-				}
+				Expect(result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[2].Key))
+				Expect(result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
 		When("key: {items, nil}, subcol: '', exp: [], limit: 10", func() {
