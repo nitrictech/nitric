@@ -800,7 +800,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
 				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Orders[0].Content["testName"]))
-				Expect(*result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key.Id))
+				Expect(*result.Documents[0].Key).To(BeEquivalentTo(Customer1.Orders[0].Key))
 				Expect(*result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
