@@ -326,8 +326,7 @@ func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
 		Content: doc.Value,
 		Key: &sdk.Key{
 			Collection: c,
-			// TODO: need to split out parent key id...
-			Id: id,
+			Id:         id,
 		},
 	}
 }

@@ -452,7 +452,6 @@ func marshalQueryResult(
 				},
 			}
 		}
-		// Get the sort key as a string
 
 		// Split out sort key value
 		delete(m, ATTRIB_PK)
