@@ -17,15 +17,15 @@ package document
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 // Simple 'users' collection test data
 
-var UserKey1 = sdk.Key{
-	Collection: &sdk.Collection{Name: "users"},
+var UserKey1 = document.Key{
+	Collection: &document.Collection{Name: "users"},
 	Id:         "jsmith@server.com",
 }
 var UserItem1 = map[string]interface{}{
@@ -35,8 +35,8 @@ var UserItem1 = map[string]interface{}{
 	"country":   "US",
 	"age":       "30",
 }
-var UserKey2 = sdk.Key{
-	Collection: &sdk.Collection{Name: "users"},
+var UserKey2 = document.Key{
+	Collection: &document.Collection{Name: "users"},
 	Id:         "j.smithers@yahoo.com",
 }
 var UserItem2 = map[string]interface{}{
@@ -46,8 +46,8 @@ var UserItem2 = map[string]interface{}{
 	"country":   "AU",
 	"age":       "40",
 }
-var UserKey3 = sdk.Key{
-	Collection: &sdk.Collection{Name: "users"},
+var UserKey3 = document.Key{
+	Collection: &document.Collection{Name: "users"},
 	Id:         "pdavis@server.com",
 }
 var UserItem3 = map[string]interface{}{
@@ -60,26 +60,26 @@ var UserItem3 = map[string]interface{}{
 
 // Single Table Design 'customers' collection test data
 
-var CustomersKey = sdk.Key{
-	Collection: &sdk.Collection{Name: "customers"},
+var CustomersKey = document.Key{
+	Collection: &document.Collection{Name: "customers"},
 }
 
-var CustomersColl = sdk.Collection{Name: "customers"}
+var CustomersColl = document.Collection{Name: "customers"}
 
 type Customer struct {
-	Key     sdk.Key
+	Key     document.Key
 	Content map[string]interface{}
 	Orders  []Order
 }
 
 type Order struct {
-	Key     sdk.Key
+	Key     document.Key
 	Content map[string]interface{}
 }
 
 var Customer1 = Customer{
-	Key: sdk.Key{
-		Collection: &sdk.Collection{Name: "customers"},
+	Key: document.Key{
+		Collection: &document.Collection{Name: "customers"},
 		Id:         "1000",
 	},
 	Content: map[string]interface{}{
@@ -92,11 +92,11 @@ var Customer1 = Customer{
 	},
 	Orders: []Order{
 		{
-			Key: sdk.Key{
-				Collection: &sdk.Collection{
+			Key: document.Key{
+				Collection: &document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
-						Collection: &sdk.Collection{Name: "customers"},
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -111,11 +111,11 @@ var Customer1 = Customer{
 			},
 		},
 		{
-			Key: sdk.Key{
-				Collection: &sdk.Collection{
+			Key: document.Key{
+				Collection: &document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
-						Collection: &sdk.Collection{Name: "customers"},
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -130,11 +130,11 @@ var Customer1 = Customer{
 			},
 		},
 		{
-			Key: sdk.Key{
-				Collection: &sdk.Collection{
+			Key: document.Key{
+				Collection: &document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
-						Collection: &sdk.Collection{Name: "customers"},
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
 						Id:         "1000",
 					},
 				},
@@ -152,8 +152,8 @@ var Customer1 = Customer{
 }
 
 var Customer2 = Customer{
-	Key: sdk.Key{
-		Collection: &sdk.Collection{Name: "customers"},
+	Key: document.Key{
+		Collection: &document.Collection{Name: "customers"},
 		Id:         "2000",
 	},
 	Content: map[string]interface{}{
@@ -166,11 +166,11 @@ var Customer2 = Customer{
 	},
 	Orders: []Order{
 		{
-			Key: sdk.Key{
-				Collection: &sdk.Collection{
+			Key: document.Key{
+				Collection: &document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
-						Collection: &sdk.Collection{Name: "customers"},
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
 						Id:         "2000",
 					},
 				},
@@ -185,11 +185,11 @@ var Customer2 = Customer{
 			},
 		},
 		{
-			Key: sdk.Key{
-				Collection: &sdk.Collection{
+			Key: document.Key{
+				Collection: &document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
-						Collection: &sdk.Collection{Name: "customers"},
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
 						Id:         "2000",
 					},
 				},
@@ -207,78 +207,78 @@ var Customer2 = Customer{
 }
 
 type Item struct {
-	Key     sdk.Key
+	Key     document.Key
 	Content map[string]interface{}
 }
 
 var Items = []Item{
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "01"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "01"},
 		Content: map[string]interface{}{"letter": "A"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "02"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "02"},
 		Content: map[string]interface{}{"letter": "B"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "03"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "03"},
 		Content: map[string]interface{}{"letter": "C"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "04"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "04"},
 		Content: map[string]interface{}{"letter": "D"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "05"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "05"},
 		Content: map[string]interface{}{"letter": "E"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "06"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "06"},
 		Content: map[string]interface{}{"letter": "F"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "07"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "07"},
 		Content: map[string]interface{}{"letter": "G"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "08"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "08"},
 		Content: map[string]interface{}{"letter": "H"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "09"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "09"},
 		Content: map[string]interface{}{"letter": "I"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "10"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "10"},
 		Content: map[string]interface{}{"letter": "J"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "11"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "11"},
 		Content: map[string]interface{}{"letter": "K"},
 	},
 	{
-		Key:     sdk.Key{Collection: &sdk.Collection{Name: "items"}, Id: "12"},
+		Key:     document.Key{Collection: &document.Collection{Name: "items"}, Id: "12"},
 		Content: map[string]interface{}{"letter": "L"},
 	},
 }
 
-var ChildItemsCollection = sdk.Collection{
+var ChildItemsCollection = document.Collection{
 	Name: "items",
-	Parent: &sdk.Key{
-		Collection: &sdk.Collection{Name: "parentItems"},
+	Parent: &document.Key{
+		Collection: &document.Collection{Name: "parentItems"},
 		Id:         "1",
 	},
 }
 
 // Test Data Loading Functions ------------------------------------------------
 
-func LoadUsersData(docPlugin sdk.DocumentService) {
+func LoadUsersData(docPlugin document.DocumentService) {
 	docPlugin.Set(&UserKey1, UserItem1)
 	docPlugin.Set(&UserKey2, UserItem2)
 	docPlugin.Set(&UserKey3, UserItem3)
 }
 
-func LoadCustomersData(docPlugin sdk.DocumentService) {
+func LoadCustomersData(docPlugin document.DocumentService) {
 	docPlugin.Set(&Customer1.Key, Customer1.Content)
 	docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
 	docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content)
@@ -289,11 +289,11 @@ func LoadCustomersData(docPlugin sdk.DocumentService) {
 	docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content)
 }
 
-func LoadItemsData(docPlugin sdk.DocumentService) {
+func LoadItemsData(docPlugin document.DocumentService) {
 	for _, item := range Items {
 		docPlugin.Set(&item.Key, item.Content)
 
-		key := sdk.Key{
+		key := document.Key{
 			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
@@ -303,18 +303,18 @@ func LoadItemsData(docPlugin sdk.DocumentService) {
 
 // Unit Test Functions --------------------------------------------------------
 
-func GetTests(docPlugin sdk.DocumentService) {
+func GetTests(docPlugin document.DocumentService) {
 	Context("Get", func() {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Id: "1"}
+				key := document.Key{Id: "1"}
 				_, err := docPlugin.Get(&key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
+				key := document.Key{Collection: &document.Collection{Name: "users"}}
 				_, err := docPlugin.Get(&key)
 				Expect(err).Should(HaveOccurred())
 			})
@@ -344,25 +344,25 @@ func GetTests(docPlugin sdk.DocumentService) {
 	})
 }
 
-func SetTests(docPlugin sdk.DocumentService) {
+func SetTests(docPlugin document.DocumentService) {
 	Context("Set", func() {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Id: "1"}
+				key := document.Key{Id: "1"}
 				err := docPlugin.Set(&key, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
+				key := document.Key{Collection: &document.Collection{Name: "users"}}
 				err := docPlugin.Set(&key, UserItem1)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Nil item map", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}, Id: "1"}
+				key := document.Key{Collection: &document.Collection{Name: "users"}, Id: "1"}
 				err := docPlugin.Set(&key, nil)
 				Expect(err).Should(HaveOccurred())
 			})
@@ -411,18 +411,18 @@ func SetTests(docPlugin sdk.DocumentService) {
 	})
 }
 
-func DeleteTests(docPlugin sdk.DocumentService) {
+func DeleteTests(docPlugin document.DocumentService) {
 	Context("Delete", func() {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Id: "1"}
+				key := document.Key{Id: "1"}
 				err := docPlugin.Delete(&key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
-				key := sdk.Key{Collection: &sdk.Collection{Name: "users"}}
+				key := document.Key{Collection: &document.Collection{Name: "users"}}
 				err := docPlugin.Delete(&key)
 				Expect(err).Should(HaveOccurred())
 			})
@@ -463,25 +463,25 @@ func DeleteTests(docPlugin sdk.DocumentService) {
 	})
 }
 
-func QueryTests(docPlugin sdk.DocumentService) {
+func QueryTests(docPlugin document.DocumentService) {
 	Context("Query", func() {
 		When("Invalid - blank key.Collection.Name", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(&sdk.Collection{}, []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&document.Collection{}, []document.QueryExpression{}, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Invalid - nil expressions argument", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(&sdk.Collection{Name: "users"}, nil, 0, nil)
+				result, err := docPlugin.Query(&document.Collection{Name: "users"}, nil, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Empty database", func() {
 			It("Should return empty list", func() {
-				result, err := docPlugin.Query(&sdk.Collection{Name: "users"}, []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -493,7 +493,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(&sdk.Collection{Name: "users"}, []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -510,7 +510,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 items", func() {
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(&CustomersColl, []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&CustomersColl, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -525,7 +525,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 1 item", func() {
 				LoadCustomersData(docPlugin)
 
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "country", Operator: "==", Value: "US"},
 				}
 				result, err := docPlugin.Query(&CustomersColl, exps, 0, nil)
@@ -541,7 +541,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 0 item", func() {
 				LoadCustomersData(docPlugin)
 
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "country", Operator: "==", Value: "US"},
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
@@ -555,11 +555,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 3 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				result, err := docPlugin.Query(&coll, []sdk.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(&coll, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -578,11 +578,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -601,11 +601,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 1 order", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -621,11 +621,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 3 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -647,11 +647,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -670,11 +670,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -696,11 +696,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 0 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -713,11 +713,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 5 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -739,11 +739,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 3 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -765,11 +765,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 orders", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -788,11 +788,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 1 order", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -808,11 +808,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 2 order", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &CustomersKey,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -831,11 +831,11 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return 1 order", func() {
 				LoadCustomersData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 0, nil)
@@ -851,10 +851,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name: "items",
 				}
-				result, err := docPlugin.Query(&coll, []sdk.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(&coll, []document.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(10))
@@ -868,7 +868,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&coll, []sdk.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(&coll, []document.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -888,10 +888,10 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name: "items",
 				}
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
 				result, err := docPlugin.Query(&coll, exps, 4, nil)
@@ -934,7 +934,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				result, err := docPlugin.Query(&ChildItemsCollection, []sdk.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(&ChildItemsCollection, []document.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(10))
@@ -948,7 +948,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&ChildItemsCollection, []sdk.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(&ChildItemsCollection, []document.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -968,7 +968,7 @@ func QueryTests(docPlugin sdk.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
 				result, err := docPlugin.Query(&ChildItemsCollection, exps, 4, nil)
