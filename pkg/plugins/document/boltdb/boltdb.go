@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/imdario/mergo"
+
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
@@ -96,17 +98,15 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}, merge
 	doc := createDoc(key)
 
 	if merge {
-		if len(content) == 0 {
-			return nil
-		}
-
 		err = db.One(idName, doc.Id, &doc)
 		if err != nil {
 			// If doc not found save will create a new record
 			doc.Value = make(map[string]interface{})
 		}
-		for name, value := range content {
-			doc.Value[name] = value
+
+		err = mergo.Merge(&doc.Value, content, mergo.WithOverride)
+		if err != nil {
+			return err
 		}
 
 	} else {

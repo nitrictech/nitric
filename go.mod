@@ -20,6 +20,7 @@ require (
 	github.com/google/addlicense v0.0.0-20210428195630-6d92264d7170
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nanobox-io/golang-scribble v0.0.0-20190309225732-aa3e7c118975

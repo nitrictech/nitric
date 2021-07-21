@@ -34,6 +34,17 @@ var UserItem1 = map[string]interface{}{
 	"email":     "jsmith@server.com",
 	"country":   "US",
 	"age":       "30",
+	"address": map[string]interface{}{
+		"firstLine":  "Unit A",
+		"secondLine": "10 Pearl Street",
+		"city":       "Boulder",
+		"state":      "CO",
+		"zipCode":    "80302",
+	},
+	"contactPrefs": []string{
+		"email",
+		"phone",
+	},
 }
 var UserKey2 = sdk.Key{
 	Collection: &sdk.Collection{Name: "users"},
@@ -433,19 +444,37 @@ func SetTests(docPlugin sdk.DocumentService) {
 				updateDoc := map[string]interface{}{
 					"email":  "john.doe@server.com",
 					"mobile": "0123456789",
+					"address": map[string]interface{}{
+						"firstLine":  "32 Pearl Street",
+						"secondLine": nil,
+					},
+					"contactPrefs": []string{
+						"mail",
+					},
 				}
 				err = docPlugin.Set(&UserKey1, updateDoc, true)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(doc.Content).Should(HaveLen(6))
+				Expect(doc.Content).Should(HaveLen(8))
 				Expect(doc.Content["firstName"]).To(BeEquivalentTo("John"))
 				Expect(doc.Content["lastName"]).To(BeEquivalentTo("Smith"))
 				Expect(doc.Content["email"]).To(BeEquivalentTo("john.doe@server.com"))
 				Expect(doc.Content["country"]).To(BeEquivalentTo("US"))
 				Expect(doc.Content["age"]).To(BeEquivalentTo("30"))
 				Expect(doc.Content["mobile"]).To(BeEquivalentTo("0123456789"))
+
+				address := doc.Content["address"].(map[string]interface{})
+				Expect(address["firstLine"]).To(BeEquivalentTo("32 Pearl Street"))
+				Expect(address["secondLine"]).To(BeNil())
+				Expect(address["city"]).To(BeEquivalentTo("Boulder"))
+				Expect(address["state"]).To(BeEquivalentTo("CO"))
+				Expect(address["zipCode"]).To(BeEquivalentTo("80302"))
+
+				contactPrefs := doc.Content["contactPrefs"].([]interface{})
+				Expect(contactPrefs[0]).To(BeEquivalentTo("mail"))
+				Expect(contactPrefs).To(HaveLen(1))
 			})
 		})
 		When("Valid Set Merge Empty Doc", func() {
@@ -459,7 +488,7 @@ func SetTests(docPlugin sdk.DocumentService) {
 
 				doc, err := docPlugin.Get(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(doc.Content).Should(HaveLen(5))
+				Expect(doc.Content).Should(HaveLen(7))
 			})
 		})
 		When("Set Merge with Unknown doc ", func() {
@@ -485,9 +514,6 @@ func SetTests(docPlugin sdk.DocumentService) {
 				Expect(doc.Content).Should(HaveLen(2))
 				Expect(doc.Content["email"]).To(BeEquivalentTo("john.doe@server.com"))
 				Expect(doc.Content["mobile"]).To(BeEquivalentTo("0123456789"))
-
-				// TODO: remove boltdb_test AfterEach deletes collections
-				docPlugin.Delete(&key)
 			})
 		})
 	})

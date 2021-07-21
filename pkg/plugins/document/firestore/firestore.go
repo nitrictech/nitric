@@ -67,10 +67,6 @@ func (s *FirestoreDocService) Set(key *sdk.Key, content map[string]interface{}, 
 	doc := s.getDocRef(key)
 
 	if merge {
-		if len(content) == 0 {
-			return nil
-		}
-
 		_, err = doc.Set(s.context, content, firestore.MergeAll)
 		if err != nil {
 			return fmt.Errorf("error updating content: %v", err)
