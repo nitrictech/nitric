@@ -15,38 +15,44 @@
 package main
 
 import (
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"github.com/nitric-dev/membrane/pkg/providers"
 	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
 type AzureServiceFactory struct {
 }
 
-func New() sdk.ServiceFactory {
+func New() providers.ServiceFactory {
 	return &AzureServiceFactory{}
 }
 
 // NewDocumentService - Returns Azure _ based document plugin
-func (p *AzureServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return &sdk.UnimplementedDocumentPlugin{}, nil
 }
 
 // NewEventService - Returns Azure _ based eventing plugin
-func (p *AzureServiceFactory) NewEventService() (sdk.EventService, error) {
+func (p *AzureServiceFactory) NewEventService() (eventing.EventService, error) {
 	return &sdk.UnimplementedEventingPlugin{}, nil
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin
-func (p *AzureServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
+func (p *AzureServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return http_service.New()
 }
 
 // NewQueueService - Returns Azure _ based queue plugin
-func (p *AzureServiceFactory) NewQueueService() (sdk.QueueService, error) {
+func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return &sdk.UnimplementedQueuePlugin{}, nil
 }
 
 // NewStorageService - Returns Azure _ based storage plugin
-func (p *AzureServiceFactory) NewStorageService() (sdk.StorageService, error) {
+func (p *AzureServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return &sdk.UnimplementedStoragePlugin{}, nil
 }

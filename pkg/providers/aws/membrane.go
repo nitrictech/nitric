@@ -16,20 +16,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	ecs_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
+	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
+	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
+	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
+	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
 
 	// Load the appropriate gateway based on the environment.
-	var gatewayPlugin sdk.GatewayService
+	var gatewayPlugin gateway.GatewayService
 	switch gatewayEnv {
 	case "lambda":
 		gatewayPlugin, _ = lambda_service.New()
