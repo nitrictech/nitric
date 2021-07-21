@@ -27,7 +27,6 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 	"go.etcd.io/bbolt"
 )
 
@@ -39,7 +38,7 @@ const partionKeyName = "ParitionKey"
 const sortKeyName = "SortKey"
 
 type BoltDocService struct {
-	sdk.UnimplementedDocumentPlugin
+	document.UnimplementedDocumentPlugin
 	dbDir string
 }
 
@@ -54,7 +53,7 @@ func (d BoltDoc) String() string {
 	return fmt.Sprintf("BoltDoc{Id: %v ParitionKey: %v SortKey: %v Value: %v}\n", d.Id, d.ParitionKey, d.SortKey, d.Value)
 }
 
-func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
@@ -77,7 +76,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	return toSdkDoc(key.Collection, doc), nil
 }
 
-func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
+func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -99,7 +98,7 @@ func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error
 	return db.Save(&doc)
 }
 
-func (s *BoltDocService) Delete(key *sdk.Key) error {
+func (s *BoltDocService) Delete(key *document.Key) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -120,7 +119,7 @@ func (s *BoltDocService) Delete(key *sdk.Key) error {
 	return err
 }
 
-func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
@@ -203,7 +202,7 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	}
 
 	// Process query results, applying value filter expressions and fetch limit
-	documents := make([]sdk.Document, 0)
+	documents := make([]document.Document, 0)
 	scanCount := 0
 	for _, doc := range docs {
 		scanCount += 1
@@ -233,7 +232,7 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 		resultPagingToken[skipTokenName] = fmt.Sprintf("%v", pagingSkip+scanCount)
 	}
 
-	return &sdk.QueryResult{
+	return &document.QueryResult{
 		Documents:   documents,
 		PagingToken: resultPagingToken,
 	}, nil
@@ -256,7 +255,7 @@ func New() (*BoltDocService, error) {
 	return &BoltDocService{dbDir: dbDir}, nil
 }
 
-func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
+func (s *BoltDocService) createdDb(coll document.Collection) (*storm.DB, error) {
 	for coll.Parent != nil {
 		coll = *coll.Parent.Collection
 	}
@@ -272,7 +271,8 @@ func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
 	return db, nil
 }
 
-func createDoc(key *sdk.Key) BoltDoc {
+func createDoc(key *document.Key) BoltDoc {
+
 	parentKey := key.Collection.Parent
 
 	// Top Level Collection
@@ -292,18 +292,18 @@ func createDoc(key *sdk.Key) BoltDoc {
 	}
 }
 
-func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
+func toSdkDoc(col *document.Collection, doc BoltDoc) *document.Document {
 	keys := strings.Split(doc.Id, "_")
 
 	// Translate the boltdb Id into a nitric document key Id
 	var id string
-	var c *sdk.Collection
+	var c *document.Collection
 	if len(keys) > 1 {
 		// sub document
 		id = keys[len(keys)-1]
-		c = &sdk.Collection{
+		c = &document.Collection{
 			Name: col.Name,
-			Parent: &sdk.Key{
+			Parent: &document.Key{
 				Collection: col.Parent.Collection,
 				Id:         keys[0],
 			},
@@ -313,9 +313,9 @@ func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
 		c = col
 	}
 
-	return &sdk.Document{
+	return &document.Document{
 		Content: doc.Value,
-		Key: &sdk.Key{
+		Key: &document.Key{
 			Collection: c,
 			Id:         id,
 		},

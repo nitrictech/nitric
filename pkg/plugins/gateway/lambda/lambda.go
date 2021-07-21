@@ -19,13 +19,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/worker"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 )
 
 type eventType int
@@ -88,7 +90,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 			for _, snsRecord := range snsEvent.Records {
 				messageString := snsRecord.SNS.Message
 				// FIXME: What about non-nitric SNS events???
-				messageJson := &sdk.NitricEvent{}
+				messageJson := &eventing.NitricEvent{}
 
 				// Populate the JSON
 				err = json.Unmarshal([]byte(messageString), messageJson)
@@ -161,7 +163,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 type LambdaGateway struct {
 	pool    worker.WorkerPool
 	runtime LambdaRuntimeHandler
-	sdk.UnimplementedGatewayPlugin
+	gateway.UnimplementedGatewayPlugin
 	finished chan int
 }
 
@@ -243,14 +245,14 @@ func (s *LambdaGateway) Stop() error {
 	return nil
 }
 
-func New() (sdk.GatewayService, error) {
+func New() (gateway.GatewayService, error) {
 	return &LambdaGateway{
 		runtime:  lambda.Start,
 		finished: make(chan int),
 	}, nil
 }
 
-func NewWithRuntime(runtime LambdaRuntimeHandler) (sdk.GatewayService, error) {
+func NewWithRuntime(runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
 	return &LambdaGateway{
 		runtime:  runtime,
 		finished: make(chan int),

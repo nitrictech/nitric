@@ -16,7 +16,8 @@ package sns_service_test
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
+
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -25,7 +26,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
 )
 
 type MockSNSClient struct {
@@ -83,7 +84,7 @@ var _ = Describe("Sns", func() {
 			payload := map[string]interface{}{"Test": "test"}
 
 			It("Should publish without error", func() {
-				err := eventingClient.Publish("test", &sdk.NitricEvent{
+				err := eventingClient.Publish("test", &eventing.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
@@ -101,7 +102,7 @@ var _ = Describe("Sns", func() {
 			payload := map[string]interface{}{"Test": "test"}
 
 			It("Should return an error", func() {
-				err := eventingClient.Publish("test", &sdk.NitricEvent{
+				err := eventingClient.Publish("test", &eventing.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,

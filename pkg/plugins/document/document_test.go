@@ -18,7 +18,6 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -36,14 +35,14 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := document.ValidateKey(&sdk.Key{})
+				err := document.ValidateKey(&document.Key{})
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return error", func() {
-				key := sdk.Key{
-					Collection: &sdk.Collection{Name: "users"},
+				key := document.Key{
+					Collection: &document.Collection{Name: "users"},
 				}
 				err := document.ValidateKey(&key)
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
@@ -51,8 +50,8 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection.Parent.Collection.Name", func() {
 			It("should return error", func() {
-				key := sdk.Key{
-					Collection: &sdk.Collection{Name: "users", Parent: &sdk.Key{}},
+				key := document.Key{
+					Collection: &document.Collection{Name: "users", Parent: &document.Key{}},
 					Id:         "123",
 				}
 				err := document.ValidateKey(&key)
@@ -61,10 +60,10 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection.Parent.Id", func() {
 			It("should return error", func() {
-				key := sdk.Key{
-					Collection: &sdk.Collection{
+				key := document.Key{
+					Collection: &document.Collection{
 						Name:   "orders",
-						Parent: &sdk.Key{Collection: &sdk.Collection{Name: "customers"}},
+						Parent: &document.Key{Collection: &document.Collection{Name: "customers"}},
 					},
 					Id: "123",
 				}
@@ -83,24 +82,24 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := document.ValidateQueryCollection(&sdk.Collection{})
+				err := document.ValidateQueryCollection(&document.Collection{})
 				Expect(err.Error()).To(ContainSubstring("provide non-blank collection.Name"))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return nil", func() {
-				coll := sdk.Collection{Name: "users"}
+				coll := document.Collection{Name: "users"}
 				err := document.ValidateQueryCollection(&coll)
 				Expect(err).To(BeNil())
 			})
 		})
 		When("Blank key.Collection.Parent.Collection.Name", func() {
 			It("should return error", func() {
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name: "users",
-					Parent: &sdk.Key{
+					Parent: &document.Key{
 						Id:         "test-key",
-						Collection: &sdk.Collection{},
+						Collection: &document.Collection{},
 					},
 				}
 				err := document.ValidateQueryCollection(&coll)
@@ -109,11 +108,11 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank collection.Parent.Id", func() {
 			It("should return nil", func() {
-				coll := sdk.Collection{
+				coll := document.Collection{
 					Name: "orders",
-					Parent: &sdk.Key{
+					Parent: &document.Key{
 						Id:         "test-key",
-						Collection: &sdk.Collection{Name: "customers"},
+						Collection: &document.Collection{Name: "customers"},
 					},
 				}
 				err := document.ValidateQueryCollection(&coll)
@@ -133,7 +132,7 @@ var _ = Describe("Document Plugin", func() {
 	When("ExpsSort", func() {
 		When("order is sorted", func() {
 			It("Should not change order", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "A", Operator: "==", Value: "1"},
 					{Operand: "B", Operator: "==", Value: "2"},
 					{Operand: "C", Operator: "==", Value: "3"},
@@ -146,7 +145,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("not order not sorted", func() {
 			It("Should not change order", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "C", Operator: "==", Value: "3"},
 					{Operand: "A", Operator: "==", Value: "1"},
 					{Operand: "B", Operator: "==", Value: "2"},
@@ -159,7 +158,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("not order not sorted", func() {
 			It("Should not change order", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "3"},
 					{Operand: "number", Operator: ">=", Value: "1"},
 					{Operand: "number", Operator: "<=", Value: "2"},
@@ -175,7 +174,7 @@ var _ = Describe("Document Plugin", func() {
 	When("ValidateExpression", func() {
 		When("expression is valid", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "123"},
 				}
 				err := document.ValidateExpressions(exps)
@@ -184,7 +183,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("expressions empty", func() {
 			It("should be valid", func() {
-				err := document.ValidateExpressions([]sdk.QueryExpression{})
+				err := document.ValidateExpressions([]document.QueryExpression{})
 				Expect(err).To(BeNil())
 			})
 		})
@@ -196,7 +195,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("operand not found", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "", Operator: "==", Value: "123"},
 				}
 				err := document.ValidateExpressions(exps)
@@ -205,7 +204,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("operator is blank", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "", Value: "123"},
 				}
 				err := document.ValidateExpressions(exps)
@@ -214,7 +213,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("value is blank", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: ""},
 				}
 				err := document.ValidateExpressions(exps)
@@ -223,7 +222,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("operation is not valid", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "=", Value: "123"},
 				}
 				err := document.ValidateExpressions(exps)
@@ -232,7 +231,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("operation is not valid", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "startWith", Value: "Order#"},
 				}
@@ -242,7 +241,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("inequality query against muliple operations", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},
 					{Operand: "sk", Operator: "startsWith", Value: "Order#"},
 					{Operand: "number", Operator: ">", Value: "1"},
@@ -254,7 +253,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("valid range filter expression", func() {
 			It("expression is valid", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 					{Operand: "number", Operator: "<=", Value: "2"},
 				}
@@ -264,7 +263,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("valid range filter expression in reverse order", func() {
 			It("expression is valid", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 					{Operand: "number", Operator: ">=", Value: "2"},
 				}
@@ -274,7 +273,7 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("invalid valid range filter expression", func() {
 			It("should return error", func() {
-				exps := []sdk.QueryExpression{
+				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 					{Operand: "number", Operator: "<=", Value: "2"},
 				}

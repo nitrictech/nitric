@@ -23,7 +23,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )
@@ -33,10 +32,10 @@ const pagingTokens = "pagingTokens"
 type FirestoreDocService struct {
 	client  *firestore.Client
 	context context.Context
-	sdk.UnimplementedDocumentPlugin
+	document.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error) {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
@@ -49,13 +48,13 @@ func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, fmt.Errorf("error retrieving value: %v", err)
 	}
 
-	return &sdk.Document{
+	return &document.Document{
 		Key:     key,
 		Content: value.Data(),
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{}) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -75,7 +74,7 @@ func (s *FirestoreDocService) Set(key *sdk.Key, value map[string]interface{}) er
 	return nil
 }
 
-func (s *FirestoreDocService) Delete(key *sdk.Key) error {
+func (s *FirestoreDocService) Delete(key *document.Key) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -93,7 +92,7 @@ func (s *FirestoreDocService) Delete(key *sdk.Key) error {
 	return nil
 }
 
-func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *FirestoreDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
@@ -104,8 +103,8 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 		return nil, err
 	}
 
-	queryResult := &sdk.QueryResult{
-		Documents: make([]sdk.Document, 0),
+	queryResult := &document.QueryResult{
+		Documents: make([]document.Document, 0),
 	}
 
 	// Select correct root collection to perform query on
@@ -157,18 +156,18 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 		if err != nil {
 			return nil, fmt.Errorf("error querying value: %v", err)
 		}
-		sdkDoc := sdk.Document{
+		sdkDoc := document.Document{
 			Content: docSnp.Data(),
-			Key: &sdk.Key{
+			Key: &document.Key{
 				Collection: collection,
 				Id:         docSnp.Ref.ID,
 			},
 		}
 
 		if p := docSnp.Ref.Parent.Parent; p != nil {
-			sdkDoc.Key.Collection = &sdk.Collection{
+			sdkDoc.Key.Collection = &document.Collection{
 				Name: collection.Name,
-				Parent: &sdk.Key{
+				Parent: &document.Key{
 					Collection: collection.Parent.Collection,
 					Id:         p.ID,
 				},
@@ -194,7 +193,7 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 	return queryResult, nil
 }
 
-func New() (sdk.DocumentService, error) {
+func New() (document.DocumentService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -213,14 +212,14 @@ func New() (sdk.DocumentService, error) {
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client, ctx context.Context) (sdk.DocumentService, error) {
+func NewWithClient(client *firestore.Client, ctx context.Context) (document.DocumentService, error) {
 	return &FirestoreDocService{
 		client:  client,
 		context: ctx,
 	}, nil
 }
 
-func (s *FirestoreDocService) getDocRef(key *sdk.Key) *firestore.DocumentRef {
+func (s *FirestoreDocService) getDocRef(key *document.Key) *firestore.DocumentRef {
 	parentKey := key.Collection.Parent
 
 	if parentKey == nil {
@@ -234,7 +233,7 @@ func (s *FirestoreDocService) getDocRef(key *sdk.Key) *firestore.DocumentRef {
 	}
 }
 
-func (s *FirestoreDocService) getQueryRoot(collection *sdk.Collection) firestore.Query {
+func (s *FirestoreDocService) getQueryRoot(collection *document.Collection) firestore.Query {
 	parentKey := collection.Parent
 
 	if parentKey == nil {

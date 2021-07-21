@@ -18,20 +18,20 @@ import (
 	"context"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
 type QueueServiceServer struct {
 	pb.UnimplementedQueueServiceServer
-	plugin sdk.QueueService
+	plugin queue.QueueService
 }
 
 func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
 	task := req.GetTask()
 
-	nitricTask := sdk.NitricTask{
+	nitricTask := queue.NitricTask{
 		ID:          task.GetId(),
 		PayloadType: task.GetPayloadType(),
 		Payload:     task.GetPayload().AsMap(),
@@ -47,9 +47,9 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 
 func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	// Translate tasks
-	tasks := make([]sdk.NitricTask, len(req.GetTasks()))
+	tasks := make([]queue.NitricTask, len(req.GetTasks()))
 	for i, task := range req.GetTasks() {
-		tasks[i] = sdk.NitricTask{
+		tasks[i] = queue.NitricTask{
 			ID:          task.GetId(),
 			PayloadType: task.GetPayloadType(),
 			Payload:     task.GetPayload().AsMap(),
@@ -80,7 +80,7 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
 	// Convert gRPC request to plugin params
 	depth := uint32(req.GetDepth())
-	popOptions := sdk.ReceiveOptions{
+	popOptions := queue.ReceiveOptions{
 		QueueName: req.GetQueue(),
 		Depth:     &depth,
 	}
@@ -125,7 +125,7 @@ func (s *QueueServiceServer) Complete(ctx context.Context, req *pb.QueueComplete
 	return &pb.QueueCompleteResponse{}, nil
 }
 
-func NewQueueServiceServer(plugin sdk.QueueService) pb.QueueServiceServer {
+func NewQueueServiceServer(plugin queue.QueueService) pb.QueueServiceServer {
 	return &QueueServiceServer{
 		plugin: plugin,
 	}

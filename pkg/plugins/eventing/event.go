@@ -11,20 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package sdk
+package eventing
 
 // NitricEvent - An event for asynchronous processing and reactive programming
 type NitricEvent struct {
 	ID          string                 `json:"id,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
-	Payload     map[string]interface{} `json:"payload,omitempty"`
-}
-
-// NitricTask - A task for asynchronous processing
-type NitricTask struct {
-	ID          string                 `json:"id,omitempty"`
-	LeaseID     string                 `json:"leaseId,omitempty"`
 	PayloadType string                 `json:"payloadType,omitempty"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
 }

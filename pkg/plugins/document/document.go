@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
 // Map of valid expression operators
@@ -34,7 +33,7 @@ var validOperators = map[string]bool{
 }
 
 // ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
-func ValidateKey(key *sdk.Key) error {
+func ValidateKey(key *Key) error {
 	if key == nil {
 		return plugins.NewInvalidArgError("provide non-nil key")
 	}
@@ -53,7 +52,7 @@ func ValidateKey(key *sdk.Key) error {
 }
 
 // ValidateCollection - validates a collection key, used for operations on a single document/collection e.g. Get, Set, Delete
-func ValidateCollection(collection *sdk.Collection) error {
+func ValidateCollection(collection *Collection) error {
 	if collection == nil {
 		return plugins.NewInvalidArgError("provide non-nil collection")
 	}
@@ -73,7 +72,7 @@ func ValidateCollection(collection *sdk.Collection) error {
 // ValidateQueryKey - Validates a key used for query operations.
 // unique from ValidateKey in that it permits blank key.Id values for wildcard query scenarios.
 // e.g. querying values in a sub-collection for all documents in the parent collection.
-func ValidateQueryKey(key *sdk.Key) error {
+func ValidateQueryKey(key *Key) error {
 	if key == nil {
 		return plugins.NewInvalidArgError("provide non-nil key")
 	}
@@ -90,7 +89,7 @@ func ValidateQueryKey(key *sdk.Key) error {
 
 // ValidateQueryCollection - Validates a collection used for query operations.
 // unique from ValidateCollection in that it calls ValidateQueryKey for the collection.Key
-func ValidateQueryCollection(collection *sdk.Collection) error {
+func ValidateQueryCollection(collection *Collection) error {
 	if collection == nil {
 		return plugins.NewInvalidArgError("provide non-nil collection")
 	}
@@ -119,7 +118,7 @@ func GetEndRangeValue(value string) string {
 }
 
 // ValidateExpressions - Validate the provided query expressions
-func ValidateExpressions(expressions []sdk.QueryExpression) error {
+func ValidateExpressions(expressions []QueryExpression) error {
 	if expressions == nil {
 		return plugins.NewInvalidArgError("provide non-nil query expressions")
 	}
@@ -170,7 +169,7 @@ func ValidateExpressions(expressions []sdk.QueryExpression) error {
 
 // QueryExpression sorting support with sort.Interface
 
-type ExpsSort []sdk.QueryExpression
+type ExpsSort []QueryExpression
 
 func (exps ExpsSort) Len() int {
 	return len(exps)
@@ -205,17 +204,17 @@ func (exps ExpsSort) Swap(i, j int) {
 
 // validateSubCollectionDepth - returns an error if the provided collection exceeds the maximum supported
 // depth for a sub-collection.
-func validateSubCollectionDepth(collection *sdk.Collection) error {
+func validateSubCollectionDepth(collection *Collection) error {
 	coll := collection
 	depth := 0
 	for coll.Parent != nil {
 		depth += 1
 		coll = coll.Parent.Collection
 	}
-	if depth > sdk.MaxSubCollectionDepth {
+	if depth > MaxSubCollectionDepth {
 		return plugins.NewInvalidArgError(fmt.Sprintf(
 			"sub-collections only supported to a depth of %d, found depth of %d for collection %s",
-			sdk.MaxSubCollectionDepth,
+			MaxSubCollectionDepth,
 			depth,
 			collection.Name,
 		))
@@ -225,9 +224,9 @@ func validateSubCollectionDepth(collection *sdk.Collection) error {
 
 // DynamoDB only supports query range operands: >= AND <=
 // For example: WHERE price >= 20.00 AND price <= 50.0
-func hasRangeError(exps []sdk.QueryExpression) error {
+func hasRangeError(exps []QueryExpression) error {
 
-	sortedExps := make([]sdk.QueryExpression, len(exps))
+	sortedExps := make([]QueryExpression, len(exps))
 	copy(sortedExps, exps)
 
 	sort.Sort(ExpsSort(sortedExps))

@@ -17,11 +17,12 @@ package appplatform_service
 
 import (
 	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/valyala/fasthttp"
 )
 
@@ -76,7 +77,7 @@ func (s *HttpGateway) Stop() error {
 
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New() (sdk.GatewayService, error) {
+func New() (gateway.GatewayService, error) {
 	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
 
 	return &HttpGateway{

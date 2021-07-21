@@ -16,20 +16,21 @@ package boltdb_storage_service
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/nitric-dev/membrane/pkg/utils"
+
 	"github.com/asdine/storm"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"go.etcd.io/bbolt"
 )
 
 const DEFAULT_DIR = "nitric/buckets/"
 
 type BoltStorageService struct {
-	sdk.UnimplementedStoragePlugin
+	storage.UnimplementedStoragePlugin
 	dbDir string
 }
 
@@ -125,7 +126,7 @@ func (s *BoltStorageService) Delete(bucket string, key string) error {
 }
 
 // New - Create a new BoltDB Storage plugin
-func New() (sdk.StorageService, error) {
+func New() (storage.StorageService, error) {
 	dbDir := utils.GetEnv("LOCAL_BLOB_DIR", DEFAULT_DIR)
 
 	// Check whether file exists

@@ -15,9 +15,9 @@
 package pubsub_service_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
-	"github.com/nitric-dev/membrane/pkg/sdk"
-	"github.com/nitric-dev/membrane/tests/mocks/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
+	mock_pubsub "github.com/nitric-dev/membrane/tests/mocks/pubsub"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -52,7 +52,7 @@ var _ = Describe("Pubsub Plugin", func() {
 	})
 
 	When("Publishing Messages", func() {
-		event := &sdk.NitricEvent{
+		event := &eventing.NitricEvent{
 			ID:          "Test",
 			PayloadType: "Test",
 			Payload: map[string]interface{}{

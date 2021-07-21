@@ -16,17 +16,22 @@ package membrane
 
 import (
 	"fmt"
-	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	"github.com/nitric-dev/membrane/pkg/worker"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
+
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"google.golang.org/grpc"
 )
 
@@ -39,11 +44,11 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	DocumentPlugin sdk.DocumentService
-	EventingPlugin sdk.EventService
-	StoragePlugin  sdk.StorageService
-	QueuePlugin    sdk.QueueService
-	GatewayPlugin  sdk.GatewayService
+	DocumentPlugin document.DocumentService
+	EventingPlugin eventing.EventService
+	StoragePlugin  storage.StorageService
+	QueuePlugin    queue.QueueService
+	GatewayPlugin  gateway.GatewayService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -73,11 +78,11 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	documentPlugin sdk.DocumentService
-	eventPlugin    sdk.EventService
-	storagePlugin  sdk.StorageService
-	gatewayPlugin  sdk.GatewayService
-	queuePlugin    sdk.QueueService
+	documentPlugin document.DocumentService
+	eventPlugin    eventing.EventService
+	storagePlugin  storage.StorageService
+	gatewayPlugin  gateway.GatewayService
+	queuePlugin    queue.QueueService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -141,14 +146,6 @@ func (s *Membrane) startChildProcess() error {
 	}
 
 	return nil
-}
-
-func (s *Membrane) nitricResponseFromError(err error) *sdk.NitricResponse {
-	return &sdk.NitricResponse{
-		Headers: map[string]string{"Content-Type": "text/plain"},
-		Body:    []byte(err.Error()),
-		Status:  503,
-	}
 }
 
 // Start the membrane

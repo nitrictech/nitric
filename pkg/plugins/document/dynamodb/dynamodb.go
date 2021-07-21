@@ -27,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
 const ATTRIB_PK = "_pk"
@@ -35,11 +34,11 @@ const ATTRIB_SK = "_sk"
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
-	sdk.UnimplementedDocumentPlugin
+	document.UnimplementedDocumentPlugin
 	client dynamodbiface.DynamoDBAPI
 }
 
-func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
+func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return nil, err
@@ -74,13 +73,13 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	delete(itemMap, ATTRIB_PK)
 	delete(itemMap, ATTRIB_SK)
 
-	return &sdk.Document{
+	return &document.Document{
 		Key:     key,
 		Content: itemMap,
 	}, nil
 }
 
-func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error {
+func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -110,7 +109,7 @@ func (s *DynamoDocService) Set(key *sdk.Key, value map[string]interface{}) error
 	return nil
 }
 
-func (s *DynamoDocService) Delete(key *sdk.Key) error {
+func (s *DynamoDocService) Delete(key *document.Key) error {
 	err := document.ValidateKey(key)
 	if err != nil {
 		return err
@@ -137,7 +136,7 @@ func (s *DynamoDocService) Delete(key *sdk.Key) error {
 	return nil
 }
 
-func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.QueryExpression, limit int, pagingToken map[string]string) (*sdk.QueryResult, error) {
+func (s *DynamoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	err := document.ValidateQueryCollection(collection)
 	if err != nil {
 		return nil, err
@@ -148,8 +147,8 @@ func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.Q
 		return nil, err
 	}
 
-	queryResult := &sdk.QueryResult{
-		Documents: make([]sdk.Document, 0),
+	queryResult := &document.QueryResult{
+		Documents: make([]document.Document, 0),
 	}
 
 	// If partion key defined then perform a query
@@ -198,7 +197,7 @@ func (s *DynamoDocService) Query(collection *sdk.Collection, expressions []sdk.Q
 }
 
 // New - Create a new DynamoDB key value plugin implementation
-func New() (sdk.DocumentService, error) {
+func New() (document.DocumentService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -219,7 +218,7 @@ func New() (sdk.DocumentService, error) {
 }
 
 // NewWithClient - Mainly used for testing
-func NewWithClient(client *dynamodb.DynamoDB) (sdk.DocumentService, error) {
+func NewWithClient(client *dynamodb.DynamoDB) (document.DocumentService, error) {
 	return &DynamoDocService{
 		client: client,
 	}, nil
@@ -227,7 +226,7 @@ func NewWithClient(client *dynamodb.DynamoDB) (sdk.DocumentService, error) {
 
 // Private Functions ----------------------------------------------------------
 
-func createKeyMap(key *sdk.Key) map[string]string {
+func createKeyMap(key *document.Key) map[string]string {
 	keyMap := make(map[string]string)
 
 	parentKey := key.Collection.Parent
@@ -244,7 +243,7 @@ func createKeyMap(key *sdk.Key) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, key *document.Key) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
@@ -261,11 +260,11 @@ func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]inter
 }
 
 func (s *DynamoDocService) performQuery(
-	collection *sdk.Collection,
-	expressions []sdk.QueryExpression,
+	collection *document.Collection,
+	expressions []document.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
-	queryResult *sdk.QueryResult) error {
+	queryResult *document.QueryResult) error {
 
 	if collection.Parent == nil {
 		// Should never occur
@@ -339,11 +338,11 @@ func (s *DynamoDocService) performQuery(
 }
 
 func (s *DynamoDocService) performScan(
-	collection *sdk.Collection,
-	expressions []sdk.QueryExpression,
+	collection *document.Collection,
+	expressions []document.QueryExpression,
 	limit int,
 	pagingToken map[string]string,
-	queryResult *sdk.QueryResult) error {
+	queryResult *document.QueryResult) error {
 
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
@@ -417,7 +416,7 @@ func marshalQueryResult(
 	items []map[string]*dynamodb.AttributeValue,
 	lastEvaluatedKey map[string]*dynamodb.AttributeValue,
 	limit int,
-	queryResult *sdk.QueryResult) error {
+	queryResult *document.QueryResult) error {
 
 	// Unmarshal Dynamo response items
 	var valueMaps []map[string]interface{}
@@ -457,8 +456,8 @@ func marshalQueryResult(
 		delete(m, ATTRIB_PK)
 		delete(m, ATTRIB_SK)
 
-		sdkDoc := sdk.Document{
-			Key: &sdk.Key{
+		sdkDoc := document.Document{
+			Key: &document.Key{
 				Collection: c,
 				Id:         id,
 			},
@@ -480,7 +479,7 @@ func marshalQueryResult(
 	return nil
 }
 
-func createFilterExpression(expressions []sdk.QueryExpression) string {
+func createFilterExpression(expressions []document.QueryExpression) string {
 
 	keyExp := ""
 	for i, exp := range expressions {
@@ -513,7 +512,7 @@ func createFilterExpression(expressions []sdk.QueryExpression) string {
 	return keyExp
 }
 
-func isBetweenStart(index int, exps []sdk.QueryExpression) bool {
+func isBetweenStart(index int, exps []document.QueryExpression) bool {
 	if index < (len(exps) - 1) {
 		if exps[index].Operand == exps[index+1].Operand &&
 			exps[index].Operator == ">=" &&
@@ -524,7 +523,7 @@ func isBetweenStart(index int, exps []sdk.QueryExpression) bool {
 	return false
 }
 
-func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
+func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 	if index > 0 && index < len(exps) {
 		if exps[index-1].Operand == exps[index].Operand &&
 			exps[index-1].Operator == ">=" &&
@@ -535,7 +534,7 @@ func isBetweenEnd(index int, exps []sdk.QueryExpression) bool {
 	return false
 }
 
-func getTableName(collection sdk.Collection) *string {
+func getTableName(collection document.Collection) *string {
 	coll := collection
 	for coll.Parent != nil {
 		coll = *coll.Parent.Collection

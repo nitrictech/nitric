@@ -16,11 +16,12 @@ package eventing_service_test
 
 import (
 	"encoding/json"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	eventing_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -90,7 +91,7 @@ var _ = Describe("Eventing", func() {
 		testPayload := map[string]interface{}{
 			"Test": "test",
 		}
-		testEvent := &sdk.NitricEvent{
+		testEvent := &eventing.NitricEvent{
 			ID:          "1234",
 			PayloadType: "Test-Payload",
 			Payload:     testPayload,

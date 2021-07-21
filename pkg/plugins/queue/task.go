@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package queue
 
-import "fmt"
-
-type EventService interface {
-	Publish(topic string, event *NitricEvent) error
-	ListTopics() ([]string, error)
+// FailedTask - A task that has failed to be queued
+type FailedTask struct {
+	Task    *NitricTask
+	Message string
 }
 
-type UnimplementedEventingPlugin struct {
-	EventService
-}
-
-func (*UnimplementedEventingPlugin) Publish(topic string, event *NitricEvent) error {
-	return fmt.Errorf("UNIMPLEMENTED")
-}
-
-func (*UnimplementedEventingPlugin) ListTopics() ([]string, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+// NitricTask - A task for asynchronous processing
+type NitricTask struct {
+	ID          string                 `json:"id,omitempty"`
+	LeaseID     string                 `json:"leaseId,omitempty"`
+	PayloadType string                 `json:"payloadType,omitempty"`
+	Payload     map[string]interface{} `json:"payload,omitempty"`
 }

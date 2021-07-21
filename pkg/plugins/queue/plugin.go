@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package queue
 
 import (
 	"fmt"
 	"strings"
 )
-
-type FailedTask struct {
-	Task    *NitricTask
-	Message string
-}
 
 type SendBatchResponse struct {
 	FailedTasks []*FailedTask

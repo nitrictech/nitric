@@ -18,16 +18,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
 )
 
 type LocalEventService struct {
-	sdk.UnimplementedEventingPlugin
+	eventing.UnimplementedEventingPlugin
 	subscriptions map[string][]string
 	client        LocalHttpEventingClient
 }
@@ -39,7 +40,7 @@ type LocalHttpEventingClient interface {
 }
 
 // Publish a message to a given topic
-func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *LocalEventService) Publish(topic string, event *eventing.NitricEvent) error {
 	requestId := event.ID
 	payloadType := event.PayloadType
 	payload := event.Payload
@@ -96,7 +97,7 @@ func (s *LocalEventService) ListTopics() ([]string, error) {
 }
 
 // Create new Dev EventService
-func New() (sdk.EventService, error) {
+func New() (eventing.EventService, error) {
 	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 
 	tmpSubs := make(map[string][]string)
@@ -114,7 +115,7 @@ func New() (sdk.EventService, error) {
 	}, nil
 }
 
-func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventService, error) {
+func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (eventing.EventService, error) {
 	return &LocalEventService{
 		subscriptions: subs,
 		client:        client,

@@ -16,35 +16,40 @@ package membrane_test
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type MockDocumentServer struct {
-	sdk.UnimplementedDocumentPlugin
+	document.UnimplementedDocumentPlugin
 }
 
 type MockEventingServer struct {
-	sdk.UnimplementedEventingPlugin
+	eventing.UnimplementedEventingPlugin
 }
 
 type MockStorageServiceServer struct {
-	sdk.UnimplementedStoragePlugin
+	storage.UnimplementedStoragePlugin
 }
 
 type MockQueueServiceServer struct {
-	sdk.UnimplementedQueuePlugin
+	queue.UnimplementedQueuePlugin
 }
 
 type MockFunction struct {
@@ -76,7 +81,7 @@ func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
 }
 
 type MockGateway struct {
-	sdk.UnimplementedGatewayPlugin
+	gateway.UnimplementedGatewayPlugin
 	triggers []triggers.Trigger
 	// store responses for inspection
 	responses []*triggers.HttpResponse

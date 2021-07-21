@@ -17,10 +17,12 @@ package sqs_service_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
-	"github.com/nitric-dev/membrane/tests/mocks/sqs"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
+	mocks_sqs "github.com/nitric-dev/membrane/tests/mocks/sqs"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -35,7 +37,7 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_service.NewWithClient(sqsMock)
 
 			It("Should publish the message", func() {
-				_, err := plugin.SendBatch("test", []sdk.NitricTask{
+				_, err := plugin.SendBatch("test", []queue.NitricTask{
 					{
 						ID:          "1234",
 						PayloadType: "test-payload",
@@ -54,7 +56,7 @@ var _ = Describe("Sqs", func() {
 			plugin := sqs_service.NewWithClient(sqsMock)
 
 			It("Should fail to publish the message", func() {
-				_, err := plugin.SendBatch("test", []sdk.NitricTask{
+				_, err := plugin.SendBatch("test", []queue.NitricTask{
 					{
 						ID:          "1234",
 						PayloadType: "test-payload",
@@ -75,7 +77,7 @@ var _ = Describe("Sqs", func() {
 			When("There is a message on the queue", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
-				jsonBytes, _ := json.Marshal(sdk.NitricEvent{
+				jsonBytes, _ := json.Marshal(eventing.NitricEvent{
 					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},
@@ -99,7 +101,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Receive(sdk.ReceiveOptions{
+					msg, err := plugin.Receive(queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -121,7 +123,7 @@ var _ = Describe("Sqs", func() {
 				depth := uint32(10)
 
 				It("Should pop the message", func() {
-					msg, err := plugin.Receive(sdk.ReceiveOptions{
+					msg, err := plugin.Receive(queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -143,7 +145,7 @@ var _ = Describe("Sqs", func() {
 			depth := uint32(10)
 
 			It("Should return an error", func() {
-				_, err := plugin.Receive(sdk.ReceiveOptions{
+				_, err := plugin.Receive(queue.ReceiveOptions{
 					QueueName: "non-existent-queue",
 					Depth:     &depth,
 				})

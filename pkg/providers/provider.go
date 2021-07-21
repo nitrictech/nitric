@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package providers
 
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
-	NewDocumentService() (DocumentService, error)
+	NewDocumentService() (documents.DocumentService, error)
 	NewEventService() (EventService, error)
 	NewGatewayService() (GatewayService, error)
 	NewQueueService() (QueueService, error)
