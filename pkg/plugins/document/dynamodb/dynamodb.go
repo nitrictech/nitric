@@ -17,6 +17,7 @@ package dynamodb_service
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/utils"
@@ -74,6 +75,7 @@ func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	delete(itemMap, ATTRIB_SK)
 
 	return &sdk.Document{
+		Key:     key,
 		Content: itemMap,
 	}, nil
 }
@@ -333,7 +335,7 @@ func (s *DynamoDocService) performQuery(
 		return fmt.Errorf("error performing query %v: %v", input, err)
 	}
 
-	return marshalQueryResult(resp.Items, resp.LastEvaluatedKey, limit, queryResult)
+	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, limit, queryResult)
 }
 
 func (s *DynamoDocService) performScan(
@@ -407,10 +409,11 @@ func (s *DynamoDocService) performScan(
 		return fmt.Errorf("error performing scan %v: %v", input, err)
 	}
 
-	return marshalQueryResult(resp.Items, resp.LastEvaluatedKey, limit, queryResult)
+	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, limit, queryResult)
 }
 
 func marshalQueryResult(
+	collection *sdk.Collection,
 	items []map[string]*dynamodb.AttributeValue,
 	lastEvaluatedKey map[string]*dynamodb.AttributeValue,
 	limit int,
@@ -425,10 +428,40 @@ func marshalQueryResult(
 
 	// Strip keys & append results
 	for _, m := range valueMaps {
+		// Retrieve the original ID on the result
+		var id string
+		var c *sdk.Collection
+		if collection.Parent == nil {
+			// We know this is a root document so its key will be located in PK
+			pk, _ := m[ATTRIB_PK].(string)
+			id = pk
+			c = collection
+		} else {
+			// We know this is a child document so its key will be located in the SK
+			pk, _ := m[ATTRIB_PK].(string)
+			sk, _ := m[ATTRIB_SK].(string)
+			idStr := strings.Split(sk, "#")
+			id = idStr[len(idStr)-1]
+			c = &sdk.Collection{
+				Name: collection.Name,
+				Parent: &sdk.Key{
+					Collection: &sdk.Collection{
+						Name: collection.Parent.Collection.Name,
+					},
+					Id: pk,
+				},
+			}
+		}
+
+		// Split out sort key value
 		delete(m, ATTRIB_PK)
 		delete(m, ATTRIB_SK)
 
 		sdkDoc := sdk.Document{
+			Key: &sdk.Key{
+				Collection: c,
+				Id:         id,
+			},
 			Content: m,
 		}
 		queryResult.Documents = append(queryResult.Documents, sdkDoc)

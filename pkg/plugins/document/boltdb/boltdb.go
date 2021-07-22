@@ -16,12 +16,13 @@ package boltdb_service
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/Knetic/govaluate"
 	"github.com/asdine/storm"
@@ -73,7 +74,7 @@ func (s *BoltDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 		return nil, err
 	}
 
-	return toSdkDoc(doc), nil
+	return toSdkDoc(key.Collection, doc), nil
 }
 
 func (s *BoltDocService) Set(key *sdk.Key, content map[string]interface{}) error {
@@ -205,28 +206,19 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	documents := make([]sdk.Document, 0)
 	scanCount := 0
 	for _, doc := range docs {
+		scanCount += 1
 
 		if filterExp != nil {
-			eval, err := filterExp.Evaluate(doc.Value)
-			if err != nil {
-				//return nil, err
-				//fmt.Printf("failed to evaluate query expression for document. Details: %v\n\tExpression: %v\n\tDocument: %v\n", err, filterExp.String(), doc.Value)
+			include, err := filterExp.Evaluate(doc.Value)
+			if err != nil || !(include.(bool)) {
 				// TODO: determine if skipping failed evaluations is always appropriate.
-				// Treat a failed eval as a mismatch, since it's usually a datatype mismatch or a missing key/prop on the doc, which is essentially a failed match.
+				// 	errors are usually a datatype mismatch or a missing key/prop on the doc, which is essentially a failed match.
+				// Treat a failed or false eval as a mismatch
 				continue
 			}
-			include := eval.(bool)
-			if include {
-				sdkDoc := toSdkDoc(doc)
-				documents = append(documents, *sdkDoc)
-			}
-
-		} else {
-			sdkDoc := toSdkDoc(doc)
-			documents = append(documents, *sdkDoc)
 		}
-
-		scanCount += 1
+		sdkDoc := toSdkDoc(collection, doc)
+		documents = append(documents, *sdkDoc)
 
 		// Break if greater than fetch limit
 		if limit > 0 && len(documents) == limit {
@@ -281,7 +273,6 @@ func (s *BoltDocService) createdDb(coll sdk.Collection) (*storm.DB, error) {
 }
 
 func createDoc(key *sdk.Key) BoltDoc {
-
 	parentKey := key.Collection.Parent
 
 	// Top Level Collection
@@ -301,8 +292,32 @@ func createDoc(key *sdk.Key) BoltDoc {
 	}
 }
 
-func toSdkDoc(doc BoltDoc) *sdk.Document {
+func toSdkDoc(col *sdk.Collection, doc BoltDoc) *sdk.Document {
+	keys := strings.Split(doc.Id, "_")
+
+	// Translate the boltdb Id into a nitric document key Id
+	var id string
+	var c *sdk.Collection
+	if len(keys) > 1 {
+		// sub document
+		id = keys[len(keys)-1]
+		c = &sdk.Collection{
+			Name: col.Name,
+			Parent: &sdk.Key{
+				Collection: col.Parent.Collection,
+				Id:         keys[0],
+			},
+		}
+	} else {
+		id = doc.Id
+		c = col
+	}
+
 	return &sdk.Document{
 		Content: doc.Value,
+		Key: &sdk.Key{
+			Collection: c,
+			Id:         id,
+		},
 	}
 }

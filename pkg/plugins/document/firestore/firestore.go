@@ -17,8 +17,9 @@ package firestore_service
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"strings"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
@@ -49,6 +50,7 @@ func (s *FirestoreDocService) Get(key *sdk.Key) (*sdk.Document, error) {
 	}
 
 	return &sdk.Document{
+		Key:     key,
 		Content: value.Data(),
 	}, nil
 }
@@ -155,7 +157,24 @@ func (s *FirestoreDocService) Query(collection *sdk.Collection, expressions []sd
 		if err != nil {
 			return nil, fmt.Errorf("error querying value: %v", err)
 		}
-		sdkDoc := sdk.Document{Content: docSnp.Data()}
+		sdkDoc := sdk.Document{
+			Content: docSnp.Data(),
+			Key: &sdk.Key{
+				Collection: collection,
+				Id:         docSnp.Ref.ID,
+			},
+		}
+
+		if p := docSnp.Ref.Parent.Parent; p != nil {
+			sdkDoc.Key.Collection = &sdk.Collection{
+				Name: collection.Name,
+				Parent: &sdk.Key{
+					Collection: collection.Parent.Collection,
+					Id:         p.ID,
+				},
+			}
+		}
+
 		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
@@ -220,14 +239,12 @@ func (s *FirestoreDocService) getQueryRoot(collection *sdk.Collection) firestore
 
 	if parentKey == nil {
 		return s.client.Collection(collection.Name).Offset(0)
-
 	} else {
 		if parentKey.Id != "" {
 			return s.client.Collection(parentKey.Collection.Name).
 				Doc(parentKey.Id).
 				Collection(collection.Name).
 				Offset(0)
-
 		} else {
 			// Note there is a risk of subcollection name collison
 			// TODO: future YAML validation could help mitigate this

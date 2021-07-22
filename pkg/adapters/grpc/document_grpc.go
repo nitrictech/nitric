@@ -118,6 +118,7 @@ func documentToWire(doc *sdk.Document) (*pb.Document, error) {
 
 	return &pb.Document{
 		Content: valStruct,
+		Key:     keyToWire(doc.Key),
 	}, nil
 }
 
@@ -134,6 +135,28 @@ func keyFromWire(key *pb.Key) *sdk.Key {
 	}
 
 	return sdkKey
+}
+
+// keyToWire - translates an SDK key to a gRPC key
+func keyToWire(key *sdk.Key) *pb.Key {
+	return &pb.Key{
+		Id:         key.Id,
+		Collection: collectionToWire(key.Collection),
+	}
+}
+
+// collectionToWire - translates a SDK collection to a gRPC collection
+func collectionToWire(col *sdk.Collection) *pb.Collection {
+	if col.Parent != nil {
+		return &pb.Collection{
+			Name:   col.Name,
+			Parent: keyToWire(col.Parent),
+		}
+	} else {
+		return &pb.Collection{
+			Name: col.Name,
+		}
+	}
 }
 
 // collectionFromWire - returns an Membrane SDK Document Collection from the protobuf wire representation
