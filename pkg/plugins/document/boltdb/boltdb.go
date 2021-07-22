@@ -206,28 +206,19 @@ func (s *BoltDocService) Query(collection *sdk.Collection, expressions []sdk.Que
 	documents := make([]sdk.Document, 0)
 	scanCount := 0
 	for _, doc := range docs {
+		scanCount += 1
 
 		if filterExp != nil {
-			eval, err := filterExp.Evaluate(doc.Value)
-			if err != nil {
-				//return nil, err
-				//fmt.Printf("failed to evaluate query expression for document. Details: %v\n\tExpression: %v\n\tDocument: %v\n", err, filterExp.String(), doc.Value)
+			include, err := filterExp.Evaluate(doc.Value)
+			if err != nil || !(include.(bool)) {
 				// TODO: determine if skipping failed evaluations is always appropriate.
-				// Treat a failed eval as a mismatch, since it's usually a datatype mismatch or a missing key/prop on the doc, which is essentially a failed match.
+				// 	errors are usually a datatype mismatch or a missing key/prop on the doc, which is essentially a failed match.
+				// Treat a failed or false eval as a mismatch
 				continue
 			}
-			include := eval.(bool)
-			if include {
-				sdkDoc := toSdkDoc(collection, doc)
-				documents = append(documents, *sdkDoc)
-			}
-
-		} else {
-			sdkDoc := toSdkDoc(collection, doc)
-			documents = append(documents, *sdkDoc)
 		}
-
-		scanCount += 1
+		sdkDoc := toSdkDoc(collection, doc)
+		documents = append(documents, *sdkDoc)
 
 		// Break if greater than fetch limit
 		if limit > 0 && len(documents) == limit {
