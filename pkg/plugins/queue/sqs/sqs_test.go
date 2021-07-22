@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
 	mocks_sqs "github.com/nitric-dev/membrane/tests/mocks/sqs"
 
@@ -77,7 +77,7 @@ var _ = Describe("Sqs", func() {
 			When("There is a message on the queue", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
-				jsonBytes, _ := json.Marshal(eventing.NitricEvent{
+				jsonBytes, _ := json.Marshal(events.NitricEvent{
 					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},

@@ -23,7 +23,7 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
@@ -35,14 +35,14 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	documentPlugin := &document.UnimplementedDocumentPlugin{}
-	eventingPlugin := &eventing.UnimplementedEventingPlugin{}
+	eventsPlugin := &events.UnimplementedeventsPlugin{}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}
 	storagePlugin := &storage.UnimplementedStoragePlugin{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
-		EventingPlugin: eventingPlugin,
+		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,

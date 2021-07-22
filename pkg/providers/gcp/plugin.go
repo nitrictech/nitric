@@ -17,8 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
-	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -40,8 +40,8 @@ func (p *GCPServiceFactory) NewDocumentService() (document.DocumentService, erro
 	return firestore_service.New()
 }
 
-// NewEventService - Returns Google Cloud Pubsub based eventing service
-func (p *GCPServiceFactory) NewEventService() (eventing.EventService, error) {
+// NewEventService - Returns Google Cloud Pubsub based events service
+func (p *GCPServiceFactory) NewEventService() (events.EventService, error) {
 	return pubsub_service.New()
 }
 

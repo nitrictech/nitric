@@ -28,7 +28,7 @@ import (
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
@@ -45,7 +45,7 @@ type MembraneOptions struct {
 	ChildTimeoutSeconds int
 
 	DocumentPlugin document.DocumentService
-	EventingPlugin eventing.EventService
+	EventsPlugin   events.EventService
 	StoragePlugin  storage.StorageService
 	QueuePlugin    queue.QueueService
 	GatewayPlugin  gateway.GatewayService
@@ -79,7 +79,7 @@ type Membrane struct {
 
 	// Configured plugins
 	documentPlugin document.DocumentService
-	eventPlugin    eventing.EventService
+	eventsPlugin   events.EventService
 	storagePlugin  storage.StorageService
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
@@ -111,14 +111,14 @@ func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 	return grpc2.NewDocumentServer(s.documentPlugin)
 }
 
-// Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() v1.EventServiceServer {
-	return grpc2.NewEventServiceServer(s.eventPlugin)
+// Create a new Nitric events Server
+func (s *Membrane) createeventsServer() v1.EventServiceServer {
+	return grpc2.NewEventServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Topic Server
 func (s *Membrane) createTopicServer() v1.TopicServiceServer {
-	return grpc2.NewTopicServiceServer(s.eventPlugin)
+	return grpc2.NewTopicServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Storage Server
@@ -159,8 +159,8 @@ func (s *Membrane) Start() error {
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventingServer := s.createEventingServer()
-	v1.RegisterEventServiceServer(s.grpcServer, eventingServer)
+	eventsServer := s.createeventsServer()
+	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
 
 	topicServer := s.createTopicServer()
 	v1.RegisterTopicServiceServer(s.grpcServer, topicServer)
@@ -316,7 +316,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
+		if options.EventsPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -348,7 +348,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
 		documentPlugin:          options.DocumentPlugin,
-		eventPlugin:             options.EventingPlugin,
+		eventsPlugin:            options.EventsPlugin,
 		storagePlugin:           options.StoragePlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,

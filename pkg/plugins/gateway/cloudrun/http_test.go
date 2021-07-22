@@ -29,7 +29,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/worker"
 	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -115,7 +115,7 @@ var _ = Describe("Http", func() {
 			eventPayload := map[string]interface{}{
 				"Test": "Test",
 			}
-			eventBytes, _ := json.Marshal(&eventing.NitricEvent{
+			eventBytes, _ := json.Marshal(&events.NitricEvent{
 				ID:          "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,

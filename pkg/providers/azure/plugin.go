@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -37,9 +37,9 @@ func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, er
 	return &sdk.UnimplementedDocumentPlugin{}, nil
 }
 
-// NewEventService - Returns Azure _ based eventing plugin
-func (p *AzureServiceFactory) NewEventService() (eventing.EventService, error) {
-	return &sdk.UnimplementedEventingPlugin{}, nil
+// NewEventService - Returns Azure _ based events plugin
+func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
+	return &sdk.UnimplementedeventsPlugin{}, nil
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin

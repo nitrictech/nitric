@@ -11,11 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package eventing
 
-// NitricEvent - An event for asynchronous processing and reactive programming
-type NitricEvent struct {
-	ID          string                 `json:"id,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
-	Payload     map[string]interface{} `json:"payload,omitempty"`
+package events_service_test
+
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func Testevents(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Dev Event Service Suite")
 }

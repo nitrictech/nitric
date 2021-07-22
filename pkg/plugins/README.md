@@ -21,14 +21,14 @@ Official Gateway Plugins:
 * [GCP HTTP](./gateway/cloudrun/README.md) (typically used with Cloud Run)
 * [Dev HTTP](./gateway/dev/README.md) (used for local development)
 
-## Eventing Plugin
+## events Plugin
 
-Eventing plugins are used for communication between services, it exposes a simple publish model that allows [NitricEvent(s)]() to be pushed onto topics. Topic subscriptions are normally defined at deploy time and configured through the [Nitric Stack]() definition file.
+events plugins are used for communication between services, it exposes a simple publish model that allows [NitricEvent(s)]() to be pushed onto topics. Topic subscriptions are normally defined at deploy time and configured through the [Nitric Stack]() definition file.
 
-Official Eventing Plugins:
-* [AWS SNS](./eventing/sns/README.md)
-* [GCP Pubsub](./eventing/pubsub/README.md)
-* [Dev Eventing](./eventing/dev/README.md)
+Official events Plugins:
+* [AWS SNS](./events/sns/README.md)
+* [GCP Pubsub](./events/pubsub/README.md)
+* [Dev events](./events/dev/README.md)
 
 ## Document Plugin
 

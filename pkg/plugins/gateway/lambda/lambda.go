@@ -26,7 +26,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	ep "github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 )
 
@@ -90,7 +90,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 			for _, snsRecord := range snsEvent.Records {
 				messageString := snsRecord.SNS.Message
 				// FIXME: What about non-nitric SNS events???
-				messageJson := &eventing.NitricEvent{}
+				messageJson := &ep.NitricEvent{}
 
 				// Populate the JSON
 				err = json.Unmarshal([]byte(messageString), messageJson)

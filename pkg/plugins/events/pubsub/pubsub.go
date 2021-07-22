@@ -22,13 +22,13 @@ import (
 	ifaces_pubsub "github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )
 
 type PubsubEventService struct {
-	eventing.UnimplementedEventingPlugin
+	events.UnimplementedeventsPlugin
 	client ifaces_pubsub.PubsubClient
 }
 
@@ -53,7 +53,7 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *PubsubEventService) Publish(topic string, event *eventing.NitricEvent) error {
+func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) error {
 	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
@@ -78,7 +78,7 @@ func (s *PubsubEventService) Publish(topic string, event *eventing.NitricEvent) 
 	return nil
 }
 
-func New() (eventing.EventService, error) {
+func New() (events.EventService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -96,7 +96,7 @@ func New() (eventing.EventService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces_pubsub.PubsubClient) (eventing.EventService, error) {
+func NewWithClient(client ifaces_pubsub.PubsubClient) (events.EventService, error) {
 	return &PubsubEventService{
 		client: client,
 	}, nil

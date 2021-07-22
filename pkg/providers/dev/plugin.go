@@ -17,8 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
-	eventing_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -40,9 +40,9 @@ func (p *DevServiceFactory) NewDocumentService() (document.DocumentService, erro
 	return boltdb_service.New()
 }
 
-// NewEventService - Returns local dev eventing plugin
-func (p *DevServiceFactory) NewEventService() (eventing.EventService, error) {
-	return eventing_service.New()
+// NewEventService - Returns local dev events plugin
+func (p *DevServiceFactory) NewEventService() (events.EventService, error) {
+	return events_service.New()
 }
 
 // NewGatewayService - Returns local dev Gateway plugin

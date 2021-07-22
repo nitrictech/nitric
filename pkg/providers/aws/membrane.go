@@ -23,7 +23,7 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	sns_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	ecs_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
 	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
@@ -48,13 +48,13 @@ func main() {
 		gatewayPlugin, _ = ecs_service.New()
 	}
 	documentPlugin, _ := dynamodb_service.New()
-	eventingPlugin, _ := sns_service.New()
+	eventsPlugin, _ := sns_service.New()
 	queuePlugin, _ := sqs_service.New()
 	storagePlugin, _ := s3_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
-		EventingPlugin: eventingPlugin,
+		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,

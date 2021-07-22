@@ -17,8 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
-	sns_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -40,8 +40,8 @@ func (p *AWSServiceFactory) NewDocumentService() (document.DocumentService, erro
 	return dynamodb_service.New()
 }
 
-// NewEventService - Returns AWS SNS based eventing plugin
-func (p *AWSServiceFactory) NewEventService() (eventing.EventService, error) {
+// NewEventService - Returns AWS SNS based events plugin
+func (p *AWSServiceFactory) NewEventService() (events.EventService, error) {
 	return sns_service.New()
 }
 

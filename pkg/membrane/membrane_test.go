@@ -28,7 +28,7 @@ import (
 	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
@@ -40,8 +40,8 @@ type MockDocumentServer struct {
 	document.UnimplementedDocumentPlugin
 }
 
-type MockEventingServer struct {
-	eventing.UnimplementedEventingPlugin
+type MockeventsServer struct {
+	events.UnimplementedeventsPlugin
 }
 
 type MockStorageServiceServer struct {
@@ -173,7 +173,7 @@ var _ = Describe("Membrane", func() {
 
 			When("All plugins are present", func() {
 				mockDocumentServer := &MockDocumentServer{}
-				mockEventingServer := &MockEventingServer{}
+				mockeventsServer := &MockeventsServer{}
 				mockStorageServiceServer := &MockStorageServiceServer{}
 				mockQueueServiceServer := &MockQueueServiceServer{}
 
@@ -183,7 +183,7 @@ var _ = Describe("Membrane", func() {
 					SuppressLogs:            true,
 					GatewayPlugin:           mockGateway,
 					DocumentPlugin:          mockDocumentServer,
-					EventingPlugin:          mockEventingServer,
+					EventsPlugin:            mockeventsServer,
 					StoragePlugin:           mockStorageServiceServer,
 					QueuePlugin:             mockQueueServiceServer,
 					Pool:                    pool,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eventing
+package events
 
 import "fmt"
 
@@ -21,14 +21,14 @@ type EventService interface {
 	ListTopics() ([]string, error)
 }
 
-type UnimplementedEventingPlugin struct {
+type UnimplementedeventsPlugin struct {
 	EventService
 }
 
-func (*UnimplementedEventingPlugin) Publish(topic string, event *NitricEvent) error {
+func (*UnimplementedeventsPlugin) Publish(topic string, event *NitricEvent) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedEventingPlugin) ListTopics() ([]string, error) {
+func (*UnimplementedeventsPlugin) ListTopics() ([]string, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
