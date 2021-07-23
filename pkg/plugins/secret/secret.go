@@ -3,9 +3,9 @@ package secret
 import "fmt"
 
 type Secret struct {
-	Name   string
-	Value  []byte
-	Labels map[string]string
+	Name    string
+	Version string
+	Value   []byte
 }
 
 type SecretService interface {
@@ -14,8 +14,8 @@ type SecretService interface {
 }
 
 type SecretPutResponse struct {
-	Id        string
-	VersionId string
+	Name    string
+	Version string
 }
 
 type UnimplementedSecretPlugin struct {
