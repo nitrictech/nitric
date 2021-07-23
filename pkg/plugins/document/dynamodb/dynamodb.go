@@ -412,7 +412,7 @@ func (s *DynamoDocService) performScan(
 }
 
 func marshalQueryResult(
-	collection *sdk.Collection,
+	collection *document.Collection,
 	items []map[string]*dynamodb.AttributeValue,
 	lastEvaluatedKey map[string]*dynamodb.AttributeValue,
 	limit int,
@@ -429,7 +429,7 @@ func marshalQueryResult(
 	for _, m := range valueMaps {
 		// Retrieve the original ID on the result
 		var id string
-		var c *sdk.Collection
+		var c *document.Collection
 		if collection.Parent == nil {
 			// We know this is a root document so its key will be located in PK
 			pk, _ := m[ATTRIB_PK].(string)
@@ -441,10 +441,10 @@ func marshalQueryResult(
 			sk, _ := m[ATTRIB_SK].(string)
 			idStr := strings.Split(sk, "#")
 			id = idStr[len(idStr)-1]
-			c = &sdk.Collection{
+			c = &document.Collection{
 				Name: collection.Name,
-				Parent: &sdk.Key{
-					Collection: &sdk.Collection{
+				Parent: &document.Key{
+					Collection: &document.Collection{
 						Name: collection.Parent.Collection.Name,
 					},
 					Id: pk,
