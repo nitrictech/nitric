@@ -138,7 +138,7 @@ func keyFromWire(key *pb.Key) *document.Key {
 }
 
 // keyToWire - translates an SDK key to a gRPC key
-func keyToWire(key *sdk.Key) *pb.Key {
+func keyToWire(key *document.Key) *pb.Key {
 	return &pb.Key{
 		Id:         key.Id,
 		Collection: collectionToWire(key.Collection),
@@ -146,7 +146,7 @@ func keyToWire(key *sdk.Key) *pb.Key {
 }
 
 // collectionToWire - translates a SDK collection to a gRPC collection
-func collectionToWire(col *sdk.Collection) *pb.Collection {
+func collectionToWire(col *document.Collection) *pb.Collection {
 	if col.Parent != nil {
 		return &pb.Collection{
 			Name:   col.Name,
