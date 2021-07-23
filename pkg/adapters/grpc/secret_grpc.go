@@ -27,8 +27,8 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 	if err := s.checkPluginRegistered(); err == nil {
 		if r, err := s.secretPlugin.Put(&secret.Secret{}); err == nil {
 			return &pb.SecretPutResponse{
-				Name:      r.Id,
-				VersionId: r.VersionId,
+				Name:      r.Name,
+				VersionId: r.Version,
 			}, nil
 		} else {
 			return nil, err
