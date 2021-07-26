@@ -16,6 +16,7 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"hash/crc64"
 	"sort"
 	"strings"
 
@@ -33,6 +34,7 @@ import (
 
 const ATTRIB_PK = "_pk"
 const ATTRIB_SK = "_sk"
+const ATTRIB_HASH = "_hash"
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
@@ -41,43 +43,16 @@ type DynamoDocService struct {
 }
 
 func (s *DynamoDocService) Get(key *sdk.Key) (*sdk.Document, error) {
-	err := document.ValidateKey(key)
+	doc, err := s.getRawDocument(key)
 	if err != nil {
 		return nil, err
 	}
 
-	keyMap := createKeyMap(key)
-	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal key: %v", key)
-	}
+	delete(doc.Content, ATTRIB_PK)
+	delete(doc.Content, ATTRIB_SK)
+	delete(doc.Content, ATTRIB_HASH)
 
-	input := &dynamodb.GetItemInput{
-		Key:       attributeMap,
-		TableName: getTableName(*key.Collection),
-	}
-
-	result, err := s.client.GetItem(input)
-	if err != nil {
-		return nil, fmt.Errorf("error getting %v : %v", key, err)
-	}
-
-	if result.Item == nil {
-		return nil, fmt.Errorf("value not found: %v", key)
-	}
-
-	var itemMap map[string]interface{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, &itemMap)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling item: %v", err)
-	}
-
-	delete(itemMap, ATTRIB_PK)
-	delete(itemMap, ATTRIB_SK)
-
-	return &sdk.Document{
-		Content: itemMap,
-	}, nil
+	return doc, nil
 }
 
 func (s *DynamoDocService) Set(key *sdk.Key, content map[string]interface{}, merge bool) error {
@@ -90,8 +65,12 @@ func (s *DynamoDocService) Set(key *sdk.Key, content map[string]interface{}, mer
 		return fmt.Errorf("provide non-nil content")
 	}
 
+	input := &dynamodb.PutItemInput{
+		TableName: getTableName(*key.Collection),
+	}
+
 	if merge {
-		doc, err := s.Get(key)
+		doc, err := s.getRawDocument(key)
 		if err != nil && !strings.HasPrefix(err.Error(), "value not found") {
 			return err
 		}
@@ -102,20 +81,36 @@ func (s *DynamoDocService) Set(key *sdk.Key, content map[string]interface{}, mer
 				return err
 			}
 			content = doc.Content
+
+			if hash, found := doc.Content[ATTRIB_HASH]; found {
+				input.ConditionExpression = aws.String("#hash = :hash")
+
+				input.ExpressionAttributeNames = make(map[string]*string)
+				input.ExpressionAttributeNames["#hash"] = aws.String(ATTRIB_HASH)
+
+				input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
+				input.ExpressionAttributeValues[":hash"] = &dynamodb.AttributeValue{
+					S: aws.String(hash.(string)),
+				}
+			}
+
+			delete(content, ATTRIB_PK)
+			delete(content, ATTRIB_SK)
+			delete(content, ATTRIB_HASH)
 		}
 	}
 
 	// Construct DynamoDB attribute value object
-	itemMap := createItemMap(content, key)
+	itemMap, err := createItemMap(content, key)
+	if err != nil {
+		return fmt.Errorf("failed to create document: %v", err)
+	}
 	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
 	if err != nil {
-		return fmt.Errorf("failed to marshal content")
+		return fmt.Errorf("failed to marshal content: %v", err)
 	}
+	input.Item = itemAttributeMap
 
-	input := &dynamodb.PutItemInput{
-		Item:      itemAttributeMap,
-		TableName: getTableName(*key.Collection),
-	}
 	_, err = s.client.PutItem(input)
 	if err != nil {
 		return err
@@ -258,7 +253,7 @@ func createKeyMap(key *sdk.Key) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, key *sdk.Key) (map[string]interface{}, error) {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
@@ -271,7 +266,53 @@ func createItemMap(source map[string]interface{}, key *sdk.Key) map[string]inter
 	newMap[ATTRIB_PK] = keyMap[ATTRIB_PK]
 	newMap[ATTRIB_SK] = keyMap[ATTRIB_SK]
 
-	return newMap
+	// Calculate CRC64 content hash for merge conditional updates
+	contentData := []byte(fmt.Sprintf("%v", source))
+	crcHash := crc64.New(crc64.MakeTable(crc64.ECMA))
+	_, err := crcHash.Write(contentData)
+	if err != nil {
+		return nil, err
+	}
+	newMap[ATTRIB_HASH] = fmt.Sprintf("%x", crcHash.Sum64())
+
+	return newMap, nil
+}
+
+func (s *DynamoDocService) getRawDocument(key *sdk.Key) (*sdk.Document, error) {
+	err := document.ValidateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	keyMap := createKeyMap(key)
+	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal key: %v", key)
+	}
+
+	input := &dynamodb.GetItemInput{
+		Key:       attributeMap,
+		TableName: getTableName(*key.Collection),
+	}
+
+	result, err := s.client.GetItem(input)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %v : %v", key, err)
+	}
+
+	if result.Item == nil {
+		return nil, fmt.Errorf("value not found: %v", key)
+	}
+
+	var itemMap map[string]interface{}
+	err = dynamodbattribute.UnmarshalMap(result.Item, &itemMap)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling item: %v", err)
+	}
+
+	return &sdk.Document{
+		Content: itemMap,
+	}, nil
 }
 
 func (s *DynamoDocService) performQuery(
@@ -443,6 +484,7 @@ func marshalQueryResult(
 	for _, m := range valueMaps {
 		delete(m, ATTRIB_PK)
 		delete(m, ATTRIB_SK)
+		delete(m, ATTRIB_HASH)
 
 		sdkDoc := sdk.Document{
 			Content: m,
