@@ -18,6 +18,7 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
@@ -117,13 +118,7 @@ func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 		Handler: s.httpHandler(pool),
 	}
 
-	go (func() {
-		err := s.server.ListenAndServe(s.address)
-		if err != nil {
-			panic(err)
-		}
-	})()
-	return nil
+	return s.server.ListenAndServe(s.address)
 }
 
 func (s *HttpProxyGateway) Stop() error {
