@@ -25,7 +25,11 @@ func (s *SecretServer) checkPluginRegistered() error {
 
 func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.SecretPutResponse, error) {
 	if err := s.checkPluginRegistered(); err == nil {
-		if r, err := s.secretPlugin.Put(&secret.Secret{}); err == nil {
+		sec := req.GetSecret()
+		if r, err := s.secretPlugin.Put(&secret.Secret{
+			Name:  sec.GetName(),
+			Value: sec.GetValue(),
+		}); err == nil {
 			return &pb.SecretPutResponse{
 				Name:      r.Name,
 				VersionId: r.Version,
