@@ -17,13 +17,14 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/valyala/fasthttp"
 )
 
@@ -155,7 +156,7 @@ func (s *HttpService) Stop() error {
 }
 
 // Create a new HTTP Gateway plugin
-func New() (sdk.GatewayService, error) {
+func New() (gateway.GatewayService, error) {
 	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
 	return &HttpService{

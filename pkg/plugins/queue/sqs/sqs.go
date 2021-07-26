@@ -17,29 +17,30 @@ package sqs_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"strings"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
 type SQSQueueService struct {
-	sdk.UnimplementedQueuePlugin
+	queue.UnimplementedQueuePlugin
 	client sqsiface.SQSAPI
 }
 
 // Get the URL for a given queue name
-func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
+func (s *SQSQueueService) getUrlForQueueName(queueName string) (*string, error) {
 	// TODO: Need to be able to guarantee same accound deployment in this case
 	// In this case it would be preferred to use this method
 	// s.client.GetQueueUrl(&sqs.GetQueueUrlInput{})
 	if out, err := s.client.ListQueues(&sqs.ListQueuesInput{}); err == nil {
 		for _, url := range out.QueueUrls {
-			if strings.HasSuffix(*url, queue) {
+			if strings.HasSuffix(*url, queueName) {
 				return url, nil
 			}
 		}
@@ -47,17 +48,17 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 		return nil, fmt.Errorf("An Unexpected error occurred: %s", err)
 	}
 
-	return nil, fmt.Errorf("Could not find Queue: %s", queue)
+	return nil, fmt.Errorf("Could not find Queue: %s", queueName)
 }
 
-func (s *SQSQueueService) Send(queue string, task sdk.NitricTask) error {
-	tasks := []sdk.NitricTask{task}
-	_, err := s.SendBatch(queue, tasks)
+func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
+	tasks := []queue.NitricTask{task}
+	_, err := s.SendBatch(queueName, tasks)
 	return err
 }
 
-func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
-	if url, err := s.getUrlForQueueName(queue); err == nil {
+func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+	if url, err := s.getUrlForQueueName(queueName); err == nil {
 		entries := make([]*sqs.SendMessageBatchRequestEntry, 0)
 
 		for _, task := range tasks {
@@ -78,11 +79,11 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 			QueueUrl: url,
 		}); err == nil {
 			// process out Failed messages to return to the user...
-			failedTasks := make([]*sdk.FailedTask, 0)
+			failedTasks := make([]*queue.FailedTask, 0)
 			for _, failed := range out.Failed {
 				for _, e := range tasks {
 					if e.ID == *failed.Id {
-						failedTasks = append(failedTasks, &sdk.FailedTask{
+						failedTasks = append(failedTasks, &queue.FailedTask{
 							Task:    &e,
 							Message: *failed.Message,
 						})
@@ -92,7 +93,7 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 				}
 			}
 
-			return &sdk.SendBatchResponse{
+			return &queue.SendBatchResponse{
 				FailedTasks: failedTasks,
 			}, nil
 		} else {
@@ -103,7 +104,7 @@ func (s *SQSQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 	}
 }
 
-func (s *SQSQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
+func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	err := options.Validate()
 	if err != nil {
 		return nil, err
@@ -127,19 +128,19 @@ func (s *SQSQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask,
 		}
 
 		if len(res.Messages) == 0 {
-			return []sdk.NitricTask{}, nil
+			return []queue.NitricTask{}, nil
 		}
 
-		var tasks []sdk.NitricTask
+		var tasks []queue.NitricTask
 		for _, m := range res.Messages {
-			var nitricTask sdk.NitricTask
+			var nitricTask queue.NitricTask
 			bodyBytes := []byte(*m.Body)
 			err := json.Unmarshal(bodyBytes, &nitricTask)
 			if err != nil {
 				// TODO: append error to error list and Nack the message.
 			}
 
-			tasks = append(tasks, sdk.NitricTask{
+			tasks = append(tasks, queue.NitricTask{
 				ID:          nitricTask.ID,
 				Payload:     nitricTask.Payload,
 				PayloadType: nitricTask.PayloadType,
@@ -155,8 +156,8 @@ func (s *SQSQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask,
 }
 
 // Completes a previously popped queue item
-func (s *SQSQueueService) Complete(queue string, leaseId string) error {
-	if url, err := s.getUrlForQueueName(queue); err == nil {
+func (s *SQSQueueService) Complete(q string, leaseId string) error {
+	if url, err := s.getUrlForQueueName(q); err == nil {
 		req := sqs.DeleteMessageInput{
 			QueueUrl:      url,
 			ReceiptHandle: aws.String(leaseId),
@@ -174,7 +175,7 @@ func (s *SQSQueueService) Complete(queue string, leaseId string) error {
 	}
 }
 
-func New() (sdk.QueueService, error) {
+func New() (queue.QueueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -192,7 +193,7 @@ func New() (sdk.QueueService, error) {
 	}, nil
 }
 
-func NewWithClient(client sqsiface.SQSAPI) sdk.QueueService {
+func NewWithClient(client sqsiface.SQSAPI) queue.QueueService {
 	return &SQSQueueService{
 		client: client,
 	}

@@ -15,42 +15,47 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
 type GCPServiceFactory struct {
 }
 
-func New() sdk.ServiceFactory {
+func New() providers.ServiceFactory {
 	return &GCPServiceFactory{}
 }
 
 // NewDocumentService - Returns Google Cloud Firestore based document service
-func (p *GCPServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+func (p *GCPServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return firestore_service.New()
 }
 
-// NewEventService - Returns Google Cloud Pubsub based eventing service
-func (p *GCPServiceFactory) NewEventService() (sdk.EventService, error) {
+// NewEventService - Returns Google Cloud Pubsub based events service
+func (p *GCPServiceFactory) NewEventService() (events.EventService, error) {
 	return pubsub_service.New()
 }
 
 // NewGatewayService - Google Cloud Http Gateway service
-func (p *GCPServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
+func (p *GCPServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return cloudrun_plugin.New()
 }
 
 // NewQueueService - Returns Google Cloud Pubsub based queue service
-func (p *GCPServiceFactory) NewQueueService() (sdk.QueueService, error) {
+func (p *GCPServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return pubsub_queue_service.New()
 }
 
 // NewStorageService - Returns Google Cloud Storage based storage service
-func (p *GCPServiceFactory) NewStorageService() (sdk.StorageService, error) {
+func (p *GCPServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return storage_service.New()
 }

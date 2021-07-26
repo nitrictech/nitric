@@ -16,7 +16,8 @@ package sns_service_test
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
+
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -25,7 +26,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
 type MockSNSClient struct {
@@ -62,12 +63,12 @@ var _ = Describe("Sns", func() {
 
 	Context("Get Topics", func() {
 		When("There are available topics", func() {
-			eventingClient, _ := sns_service.NewWithClient(&MockSNSClient{
+			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
 				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
 			})
 
 			It("Should return the available topics", func() {
-				topics, err := eventingClient.ListTopics()
+				topics, err := eventsClient.ListTopics()
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElements("test"))
@@ -77,13 +78,13 @@ var _ = Describe("Sns", func() {
 
 	Context("Publish", func() {
 		When("Publishing to an available topic", func() {
-			eventingClient, _ := sns_service.NewWithClient(&MockSNSClient{
+			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
 				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
 			})
 			payload := map[string]interface{}{"Test": "test"}
 
 			It("Should publish without error", func() {
-				err := eventingClient.Publish("test", &sdk.NitricEvent{
+				err := eventsClient.Publish("test", &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
@@ -94,14 +95,14 @@ var _ = Describe("Sns", func() {
 		})
 
 		When("Publishing to a non-existent topic", func() {
-			eventingClient, _ := sns_service.NewWithClient(&MockSNSClient{
+			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
 				availableTopics: []*sns.Topic{},
 			})
 
 			payload := map[string]interface{}{"Test": "test"}
 
 			It("Should return an error", func() {
-				err := eventingClient.Publish("test", &sdk.NitricEvent{
+				err := eventsClient.Publish("test", &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,

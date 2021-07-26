@@ -17,18 +17,19 @@ package sns_service
 import (
 	"encoding/json"
 	"fmt"
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
 	"strings"
+
+	utils2 "github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
 type SnsEventService struct {
-	sdk.UnimplementedEventingPlugin
+	events.UnimplementedeventsPlugin
 	client snsiface.SNSAPI
 }
 
@@ -50,7 +51,7 @@ func (s *SnsEventService) getTopicArnFromName(name *string) (*string, error) {
 }
 
 // Publish to a given topic
-func (s *SnsEventService) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error {
 	data, err := json.Marshal(event)
 
 	if err != nil {
@@ -99,7 +100,7 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 }
 
 // Create new SNS event service plugin
-func New() (sdk.EventService, error) {
+func New() (events.EventService, error) {
 	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -117,7 +118,7 @@ func New() (sdk.EventService, error) {
 	}, nil
 }
 
-func NewWithClient(client snsiface.SNSAPI) (sdk.EventService, error) {
+func NewWithClient(client snsiface.SNSAPI) (events.EventService, error) {
 	return &SnsEventService{
 		client: client,
 	}, nil

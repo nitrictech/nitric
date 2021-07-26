@@ -19,16 +19,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -114,7 +115,7 @@ var _ = Describe("Http", func() {
 			eventPayload := map[string]interface{}{
 				"Test": "Test",
 			}
-			eventBytes, _ := json.Marshal(&sdk.NitricEvent{
+			eventBytes, _ := json.Marshal(&events.NitricEvent{
 				ID:          "1234",
 				PayloadType: "Test Payload",
 				Payload:     eventPayload,

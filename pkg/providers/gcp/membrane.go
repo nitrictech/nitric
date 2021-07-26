@@ -16,16 +16,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
+	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
+	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
+	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 )
 
 func main() {
@@ -38,9 +39,9 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to load document plugin:", err.Error())
 	}
-	eventingPlugin, err := pubsub_service.New()
+	eventsPlugin, err := pubsub_service.New()
 	if err != nil {
-		fmt.Println("Failed to load eventing plugin:", err.Error())
+		fmt.Println("Failed to load events plugin:", err.Error())
 	}
 	storagePlugin, err := storage_service.New()
 	if err != nil {
@@ -57,7 +58,7 @@ func main() {
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
-		EventingPlugin: eventingPlugin,
+		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,

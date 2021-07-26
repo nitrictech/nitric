@@ -16,16 +16,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
+	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
+	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
+	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 )
 
 func main() {
@@ -35,14 +36,14 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	documentPlugin, _ := boltdb_service.New()
-	eventingPlugin, _ := eventing_service.New()
+	eventsPlugin, _ := events_service.New()
 	gatewayPlugin, _ := gateway_plugin.New()
 	queuePlugin, _ := queue_service.New()
 	storagePlugin, _ := boltdb_storage_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
-		EventingPlugin: eventingPlugin,
+		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,

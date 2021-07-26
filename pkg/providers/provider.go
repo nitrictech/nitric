@@ -12,15 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package providers
+
+import (
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+)
 
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
-	NewDocumentService() (DocumentService, error)
-	NewEventService() (EventService, error)
-	NewGatewayService() (GatewayService, error)
-	NewQueueService() (QueueService, error)
-	NewStorageService() (StorageService, error)
+	NewDocumentService() (document.DocumentService, error)
+	NewEventService() (events.EventService, error)
+	NewGatewayService() (gateway.GatewayService, error)
+	NewQueueService() (queue.QueueService, error)
+	NewStorageService() (storage.StorageService, error)
 }
 
 // UnimplementedServiceFactory - provides stub methods for a ServiceFactory which return Unimplemented Methods.
@@ -37,26 +45,26 @@ type UnimplementedServiceFactory struct {
 var _ ServiceFactory = (*UnimplementedServiceFactory)(nil)
 
 // NewDocumentService - Unimplemented
-func (p *UnimplementedServiceFactory) NewDocumentService() (DocumentService, error) {
+func (p *UnimplementedServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return nil, nil
 }
 
 // NewEventService - Unimplemented
-func (p *UnimplementedServiceFactory) NewEventService() (EventService, error) {
+func (p *UnimplementedServiceFactory) NewEventService() (events.EventService, error) {
 	return nil, nil
 }
 
 // NewGatewayService - Unimplemented
-func (p *UnimplementedServiceFactory) NewGatewayService() (GatewayService, error) {
+func (p *UnimplementedServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return nil, nil
 }
 
 // NewQueueService - Unimplemented
-func (p *UnimplementedServiceFactory) NewQueueService() (QueueService, error) {
+func (p *UnimplementedServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return nil, nil
 }
 
 // NewStorageService - Unimplemented
-func (p *UnimplementedServiceFactory) NewStorageService() (StorageService, error) {
+func (p *UnimplementedServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return nil, nil
 }

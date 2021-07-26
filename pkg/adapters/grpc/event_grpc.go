@@ -19,13 +19,13 @@ import (
 
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
-// GRPC Interface for registered Nitric Eventing Plugins
+// GRPC Interface for registered Nitric events Plugins
 type EventServiceServer struct {
 	pb.UnimplementedEventServiceServer
-	eventPlugin sdk.EventService
+	eventPlugin events.EventService
 }
 
 func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
@@ -35,7 +35,7 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		ID = uuid.New().String()
 	}
 
-	event := &sdk.NitricEvent{
+	event := &events.NitricEvent{
 		ID:          ID,
 		PayloadType: req.GetEvent().GetPayloadType(),
 		Payload:     req.GetEvent().GetPayload().AsMap(),
@@ -49,15 +49,15 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 	}
 }
 
-func NewEventServiceServer(eventingPlugin sdk.EventService) pb.EventServiceServer {
+func NewEventServiceServer(eventsPlugin events.EventService) pb.EventServiceServer {
 	return &EventServiceServer{
-		eventPlugin: eventingPlugin,
+		eventPlugin: eventsPlugin,
 	}
 }
 
 type TopicServiceServer struct {
 	pb.UnimplementedTopicServiceServer
-	eventPlugin sdk.EventService
+	eventPlugin events.EventService
 }
 
 func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
@@ -77,7 +77,7 @@ func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.To
 	}
 }
 
-func NewTopicServiceServer(eventService sdk.EventService) pb.TopicServiceServer {
+func NewTopicServiceServer(eventService events.EventService) pb.TopicServiceServer {
 	// The external topic/event interfaces are separate. Internally, they're fulfilled together,
 	// so the event plugin is all that's needed for both the Event and Topic servers currently.
 	return &TopicServiceServer{

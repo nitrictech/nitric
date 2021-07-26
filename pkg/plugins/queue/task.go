@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package queue
 
-// NitricEvent - An event for asynchronous processing and reactive programming
-type NitricEvent struct {
-	ID          string                 `json:"id,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
-	Payload     map[string]interface{} `json:"payload,omitempty"`
+// FailedTask - A task that has failed to be queued
+type FailedTask struct {
+	Task    *NitricTask
+	Message string
 }
 
 // NitricTask - A task for asynchronous processing

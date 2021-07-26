@@ -18,13 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
+
+	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/worker"
 	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	ep "github.com/nitric-dev/membrane/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -126,7 +127,7 @@ var _ = Describe("Lambda", func() {
 			}
 			// eventBytes, _ := json.Marshal(&eventPayload)
 
-			event := sdk.NitricEvent{
+			event := ep.NitricEvent{
 				ID:          "test-request-id",
 				PayloadType: "test-payload",
 				Payload:     eventPayload,

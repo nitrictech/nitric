@@ -16,14 +16,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/membrane"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 func main() {
@@ -31,15 +34,15 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	documentPlugin := &sdk.UnimplementedDocumentPlugin{}
-	eventingPlugin := &sdk.UnimplementedEventingPlugin{}
+	documentPlugin := &document.UnimplementedDocumentPlugin{}
+	eventsPlugin := &events.UnimplementedeventsPlugin{}
 	gatewayPlugin, _ := http_service.New()
-	queuePlugin := &sdk.UnimplementedQueuePlugin{}
-	storagePlugin := &sdk.UnimplementedStoragePlugin{}
+	queuePlugin := &queue.UnimplementedQueuePlugin{}
+	storagePlugin := &storage.UnimplementedStoragePlugin{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
-		EventingPlugin: eventingPlugin,
+		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,

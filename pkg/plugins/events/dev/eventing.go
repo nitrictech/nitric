@@ -12,34 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eventing_service
+package events_service
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/utils"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
 type LocalEventService struct {
-	sdk.UnimplementedEventingPlugin
+	events.UnimplementedeventsPlugin
 	subscriptions map[string][]string
-	client        LocalHttpEventingClient
+	client        LocalHttpeventsClient
 }
 
 // Interface for methods utilised by
-// The local pubsub plugin for http eventing
-type LocalHttpEventingClient interface {
+// The local pubsub plugin for http events
+type LocalHttpeventsClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // Publish a message to a given topic
-func (s *LocalEventService) Publish(topic string, event *sdk.NitricEvent) error {
+func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) error {
 	requestId := event.ID
 	payloadType := event.PayloadType
 	payload := event.Payload
@@ -96,7 +97,7 @@ func (s *LocalEventService) ListTopics() ([]string, error) {
 }
 
 // Create new Dev EventService
-func New() (sdk.EventService, error) {
+func New() (events.EventService, error) {
 	localSubscriptions := utils.GetEnv("LOCAL_SUBSCRIPTIONS", "{}")
 
 	tmpSubs := make(map[string][]string)
@@ -114,7 +115,7 @@ func New() (sdk.EventService, error) {
 	}, nil
 }
 
-func NewWithClientAndSubs(client LocalHttpEventingClient, subs map[string][]string) (sdk.EventService, error) {
+func NewWithClientAndSubs(client LocalHttpeventsClient, subs map[string][]string) (events.EventService, error) {
 	return &LocalEventService{
 		subscriptions: subs,
 		client:        client,

@@ -17,10 +17,11 @@ package grpc_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,13 +29,13 @@ import (
 type MockEventService struct {
 	PublishError error
 	PublishTopic string
-	PublishEvent *sdk.NitricEvent
+	PublishEvent *events.NitricEvent
 
 	TopicList      []string
 	TopicListError error
 }
 
-func (m *MockEventService) Publish(topic string, event *sdk.NitricEvent) error {
+func (m *MockEventService) Publish(topic string, event *events.NitricEvent) error {
 	fmt.Printf("Publish called %v", event)
 	m.PublishTopic = topic
 	m.PublishEvent = event

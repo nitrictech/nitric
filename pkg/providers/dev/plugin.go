@@ -15,42 +15,47 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
+	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
 type DevServiceFactory struct {
 }
 
-func New() sdk.ServiceFactory {
+func New() providers.ServiceFactory {
 	return &DevServiceFactory{}
 }
 
 // NewDocumentService - Returns local dev document plugin
-func (p *DevServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+func (p *DevServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return boltdb_service.New()
 }
 
-// NewEventService - Returns local dev eventing plugin
-func (p *DevServiceFactory) NewEventService() (sdk.EventService, error) {
-	return eventing_service.New()
+// NewEventService - Returns local dev events plugin
+func (p *DevServiceFactory) NewEventService() (events.EventService, error) {
+	return events_service.New()
 }
 
 // NewGatewayService - Returns local dev Gateway plugin
-func (p *DevServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
+func (p *DevServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return gateway_plugin.New()
 }
 
 // NewQueueService - Returns local dev queue plugin
-func (p *DevServiceFactory) NewQueueService() (sdk.QueueService, error) {
+func (p *DevServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return queue_service.New()
 }
 
 // NewStorageService - Returns local dev storage plugin
-func (p *DevServiceFactory) NewStorageService() (sdk.StorageService, error) {
+func (p *DevServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return boltdb_storage_service.New()
 }

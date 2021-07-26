@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eventing_service_test
+package events_service_test
 
 import (
 	"encoding/json"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/dev"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type MockHttpClient struct {
-	eventing_service.LocalHttpEventingClient
+	events_service.LocalHttpeventsClient
 	capturedRequests []*http.Request
 }
 
@@ -50,7 +51,7 @@ func (m *MockHttpClient) Do(request *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-var _ = Describe("Eventing", func() {
+var _ = Describe("events", func() {
 	mockHttpClient := &MockHttpClient{}
 
 	AfterEach(func() {
@@ -64,7 +65,7 @@ var _ = Describe("Eventing", func() {
 				"test": {"http://test-endpoint/"},
 			}
 
-			pubsubClient, _ := eventing_service.NewWithClientAndSubs(mockHttpClient, subs)
+			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the available topics", func() {
 				topics, err := pubsubClient.ListTopics()
@@ -75,7 +76,7 @@ var _ = Describe("Eventing", func() {
 
 		When("no topics exist", func() {
 			subs := map[string][]string{}
-			pubsubClient, _ := eventing_service.NewWithClientAndSubs(mockHttpClient, subs)
+			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the no topics", func() {
 				topics, err := pubsubClient.ListTopics()
@@ -90,7 +91,7 @@ var _ = Describe("Eventing", func() {
 		testPayload := map[string]interface{}{
 			"Test": "test",
 		}
-		testEvent := &sdk.NitricEvent{
+		testEvent := &events.NitricEvent{
 			ID:          "1234",
 			PayloadType: "Test-Payload",
 			Payload:     testPayload,
@@ -98,7 +99,7 @@ var _ = Describe("Eventing", func() {
 
 		When("The target topic is not available", func() {
 			subs := map[string][]string{}
-			pubsubClient, _ := eventing_service.NewWithClientAndSubs(mockHttpClient, subs)
+			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should return an error", func() {
 				err := pubsubClient.Publish("test", testEvent)
@@ -111,7 +112,7 @@ var _ = Describe("Eventing", func() {
 				"test": {"http://test-endpoint/"},
 			}
 
-			pubsubClient, _ := eventing_service.NewWithClientAndSubs(mockHttpClient, subs)
+			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
 				err := pubsubClient.Publish("test", testEvent)
@@ -152,7 +153,7 @@ var _ = Describe("Eventing", func() {
 				"test": {},
 			}
 
-			eventPlugin, _ := eventing_service.NewWithClientAndSubs(mockHttpClient, subs)
+			eventPlugin, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
 				err := eventPlugin.Publish("test", testEvent)

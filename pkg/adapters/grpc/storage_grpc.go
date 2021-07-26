@@ -18,13 +18,13 @@ import (
 	"context"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
 type StorageServiceServer struct {
 	pb.UnimplementedStorageServiceServer
-	storagePlugin sdk.StorageService
+	storagePlugin storage.StorageService
 }
 
 func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRequest) (*pb.StorageWriteResponse, error) {
@@ -53,7 +53,7 @@ func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDelete
 	}
 }
 
-func NewStorageServiceServer(storagePlugin sdk.StorageService) pb.StorageServiceServer {
+func NewStorageServiceServer(storagePlugin storage.StorageService) pb.StorageServiceServer {
 	return &StorageServiceServer{
 		storagePlugin: storagePlugin,
 	}

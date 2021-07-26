@@ -16,17 +16,22 @@ package membrane
 
 import (
 	"fmt"
-	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	"github.com/nitric-dev/membrane/pkg/worker"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/worker"
+
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"google.golang.org/grpc"
 )
 
@@ -39,11 +44,11 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	DocumentPlugin sdk.DocumentService
-	EventingPlugin sdk.EventService
-	StoragePlugin  sdk.StorageService
-	QueuePlugin    sdk.QueueService
-	GatewayPlugin  sdk.GatewayService
+	DocumentPlugin document.DocumentService
+	EventsPlugin   events.EventService
+	StoragePlugin  storage.StorageService
+	QueuePlugin    queue.QueueService
+	GatewayPlugin  gateway.GatewayService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -73,11 +78,11 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	documentPlugin sdk.DocumentService
-	eventPlugin    sdk.EventService
-	storagePlugin  sdk.StorageService
-	gatewayPlugin  sdk.GatewayService
-	queuePlugin    sdk.QueueService
+	documentPlugin document.DocumentService
+	eventsPlugin   events.EventService
+	storagePlugin  storage.StorageService
+	gatewayPlugin  gateway.GatewayService
+	queuePlugin    queue.QueueService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -106,14 +111,14 @@ func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 	return grpc2.NewDocumentServer(s.documentPlugin)
 }
 
-// Create a new Nitric Eventing Server
-func (s *Membrane) createEventingServer() v1.EventServiceServer {
-	return grpc2.NewEventServiceServer(s.eventPlugin)
+// Create a new Nitric events Server
+func (s *Membrane) createeventsServer() v1.EventServiceServer {
+	return grpc2.NewEventServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Topic Server
 func (s *Membrane) createTopicServer() v1.TopicServiceServer {
-	return grpc2.NewTopicServiceServer(s.eventPlugin)
+	return grpc2.NewTopicServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Storage Server
@@ -143,14 +148,6 @@ func (s *Membrane) startChildProcess() error {
 	return nil
 }
 
-func (s *Membrane) nitricResponseFromError(err error) *sdk.NitricResponse {
-	return &sdk.NitricResponse{
-		Headers: map[string]string{"Content-Type": "text/plain"},
-		Body:    []byte(err.Error()),
-		Status:  503,
-	}
-}
-
 // Start the membrane
 func (s *Membrane) Start() error {
 	// Search for known plugins
@@ -162,8 +159,8 @@ func (s *Membrane) Start() error {
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventingServer := s.createEventingServer()
-	v1.RegisterEventServiceServer(s.grpcServer, eventingServer)
+	eventsServer := s.createeventsServer()
+	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
 
 	topicServer := s.createTopicServer()
 	v1.RegisterTopicServiceServer(s.grpcServer, topicServer)
@@ -319,7 +316,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if !options.TolerateMissingServices {
-		if options.EventingPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
+		if options.EventsPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
 			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
@@ -351,7 +348,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
 		documentPlugin:          options.DocumentPlugin,
-		eventPlugin:             options.EventingPlugin,
+		eventsPlugin:            options.EventsPlugin,
 		storagePlugin:           options.StoragePlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,

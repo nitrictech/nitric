@@ -18,7 +18,7 @@ import (
 	"context"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -27,7 +27,7 @@ type DocumentServiceServer struct {
 	pb.UnimplementedDocumentServiceServer
 	// TODO: Support multiple plugin registrations
 	// Just need to settle on a way of addressing them on calls
-	documentPlugin sdk.DocumentService
+	documentPlugin document.DocumentService
 }
 
 func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
@@ -72,9 +72,9 @@ func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDele
 
 func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
 	collection := collectionFromWire(req.Collection)
-	expressions := make([]sdk.QueryExpression, len(req.GetExpressions()))
+	expressions := make([]document.QueryExpression, len(req.GetExpressions()))
 	for i, exp := range req.GetExpressions() {
-		expressions[i] = sdk.QueryExpression{
+		expressions[i] = document.QueryExpression{
 			Operand:  exp.GetOperand(),
 			Operator: exp.GetOperator(),
 			Value:    toExpValue(exp.GetValue()),
@@ -104,13 +104,13 @@ func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQuery
 	}, nil
 }
 
-func NewDocumentServer(docPlugin sdk.DocumentService) pb.DocumentServiceServer {
+func NewDocumentServer(docPlugin document.DocumentService) pb.DocumentServiceServer {
 	return &DocumentServiceServer{
 		documentPlugin: docPlugin,
 	}
 }
 
-func documentToWire(doc *sdk.Document) (*pb.Document, error) {
+func documentToWire(doc *document.Document) (*pb.Document, error) {
 	valStruct, err := structpb.NewStruct(doc.Content)
 	if err != nil {
 		return nil, err
@@ -124,12 +124,12 @@ func documentToWire(doc *sdk.Document) (*pb.Document, error) {
 
 // keyFromWire - returns an Membrane SDK Document Key from the protobuf wire representation
 // recursively calls collectionFromWire for the document's collection and parents if present
-func keyFromWire(key *pb.Key) *sdk.Key {
+func keyFromWire(key *pb.Key) *document.Key {
 	if key == nil {
 		return nil
 	}
 
-	sdkKey := &sdk.Key{
+	sdkKey := &document.Key{
 		Collection: collectionFromWire(key.GetCollection()),
 		Id:         key.GetId(),
 	}
@@ -138,7 +138,7 @@ func keyFromWire(key *pb.Key) *sdk.Key {
 }
 
 // keyToWire - translates an SDK key to a gRPC key
-func keyToWire(key *sdk.Key) *pb.Key {
+func keyToWire(key *document.Key) *pb.Key {
 	return &pb.Key{
 		Id:         key.Id,
 		Collection: collectionToWire(key.Collection),
@@ -146,7 +146,7 @@ func keyToWire(key *sdk.Key) *pb.Key {
 }
 
 // collectionToWire - translates a SDK collection to a gRPC collection
-func collectionToWire(col *sdk.Collection) *pb.Collection {
+func collectionToWire(col *document.Collection) *pb.Collection {
 	if col.Parent != nil {
 		return &pb.Collection{
 			Name:   col.Name,
@@ -161,17 +161,17 @@ func collectionToWire(col *sdk.Collection) *pb.Collection {
 
 // collectionFromWire - returns an Membrane SDK Document Collection from the protobuf wire representation
 // recursively calls keyFromWire if the collection is a sub-collection under another key
-func collectionFromWire(coll *pb.Collection) *sdk.Collection {
+func collectionFromWire(coll *pb.Collection) *document.Collection {
 	if coll == nil {
 		return nil
 	}
 
 	if coll.Parent == nil {
-		return &sdk.Collection{
+		return &document.Collection{
 			Name: coll.Name,
 		}
 	} else {
-		return &sdk.Collection{
+		return &document.Collection{
 			Name:   coll.Name,
 			Parent: keyFromWire(coll.Parent),
 		}

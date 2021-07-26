@@ -15,42 +15,47 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/eventing/sns"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
+	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
 type AWSServiceFactory struct {
 }
 
-func New() sdk.ServiceFactory {
+func New() providers.ServiceFactory {
 	return &AWSServiceFactory{}
 }
 
 // NewDocumentService - Return AWS DynamoDB document plugin
-func (p *AWSServiceFactory) NewDocumentService() (sdk.DocumentService, error) {
+func (p *AWSServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return dynamodb_service.New()
 }
 
-// NewEventService - Returns AWS SNS based eventing plugin
-func (p *AWSServiceFactory) NewEventService() (sdk.EventService, error) {
+// NewEventService - Returns AWS SNS based events plugin
+func (p *AWSServiceFactory) NewEventService() (events.EventService, error) {
 	return sns_service.New()
 }
 
 // NewGatewayService - Returns AWS Lambda Gateway plugin
-func (p *AWSServiceFactory) NewGatewayService() (sdk.GatewayService, error) {
+func (p *AWSServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return lambda_service.New()
 }
 
 // NewQueueService - Returns AWS SQS based queue plugin
-func (p *AWSServiceFactory) NewQueueService() (sdk.QueueService, error) {
+func (p *AWSServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return sqs_service.New()
 }
 
 // NewStorageService - Returns AWS S3 based storage plugin
-func (p *AWSServiceFactory) NewStorageService() (sdk.StorageService, error) {
+func (p *AWSServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return s3_service.New()
 }

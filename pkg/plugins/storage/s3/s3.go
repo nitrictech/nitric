@@ -17,16 +17,17 @@ package s3_service
 import (
 	"bytes"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
-	sdk.UnimplementedStoragePlugin
+	storage.UnimplementedStoragePlugin
 	client s3iface.S3API
 }
 
@@ -129,7 +130,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 }
 
 // New creates a new default S3 storage plugin
-func New() (sdk.StorageService, error) {
+func New() (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -149,7 +150,7 @@ func New() (sdk.StorageService, error) {
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(client s3iface.S3API) (sdk.StorageService, error) {
+func NewWithClient(client s3iface.S3API) (storage.StorageService, error) {
 	return &S3StorageService{
 		client: client,
 	}, nil

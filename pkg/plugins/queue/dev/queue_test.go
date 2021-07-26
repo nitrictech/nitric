@@ -16,40 +16,41 @@ package queue_service_test
 
 import (
 	"encoding/json"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 	"os"
 	"strings"
 	"time"
 
+	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
+
 	"github.com/asdine/storm"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.etcd.io/bbolt"
 )
 
-var task1 = sdk.NitricTask{
+var task1 = queue.NitricTask{
 	ID:          "1234",
 	PayloadType: "test-payload",
 	Payload: map[string]interface{}{
 		"Test": "Test 1",
 	},
 }
-var task2 = sdk.NitricTask{
+var task2 = queue.NitricTask{
 	ID:          "2345",
 	PayloadType: "test-payload",
 	Payload: map[string]interface{}{
 		"Test": "Test 3",
 	},
 }
-var task3 = sdk.NitricTask{
+var task3 = queue.NitricTask{
 	ID:          "3456",
 	PayloadType: "test-payload",
 	Payload: map[string]interface{}{
 		"Test": "Test 3",
 	},
 }
-var task4 = sdk.NitricTask{
+var task4 = queue.NitricTask{
 	ID:          "4567",
 	PayloadType: "test-payload",
 	Payload: map[string]interface{}{
@@ -125,7 +126,7 @@ var _ = Describe("Queue", func() {
 
 	Context("SendBatch", func() {
 		When("The queue is empty", func() {
-			tasks := []sdk.NitricTask{task1, task2}
+			tasks := []queue.NitricTask{task1, task2}
 			It("Should store the events in the queue", func() {
 				resp, err := queuePlugin.SendBatch("test", tasks)
 				Expect(resp.FailedTasks).To(BeEmpty())
@@ -141,7 +142,7 @@ var _ = Describe("Queue", func() {
 
 		When("The queue is not empty", func() {
 			It("Should append to the existing queue", func() {
-				batch1 := []sdk.NitricTask{task1, task2}
+				batch1 := []queue.NitricTask{task1, task2}
 				resp, err := queuePlugin.SendBatch("test", batch1)
 				Expect(resp.FailedTasks).To(BeEmpty())
 				Expect(err).ShouldNot(HaveOccurred())
@@ -150,7 +151,7 @@ var _ = Describe("Queue", func() {
 				Expect(storedTasks).NotTo(BeNil())
 				Expect(storedTasks).To(HaveLen(2))
 
-				batch2 := []sdk.NitricTask{task3, task4}
+				batch2 := []queue.NitricTask{task3, task4}
 				resp, err = queuePlugin.SendBatch("test", batch2)
 				Expect(resp.FailedTasks).To(BeEmpty())
 				Expect(err).ShouldNot(HaveOccurred())
@@ -168,7 +169,7 @@ var _ = Describe("Queue", func() {
 		When("The queue is empty", func() {
 			It("Should return an empty slice of queue items", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
+				items, err := queuePlugin.Receive(queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -183,7 +184,7 @@ var _ = Describe("Queue", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
+				items, err := queuePlugin.Receive(queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -202,14 +203,14 @@ var _ = Describe("Queue", func() {
 		When("The queue depth is 15", func() {
 			It("Should return 10 items", func() {
 
-				task := sdk.NitricTask{
+				task := queue.NitricTask{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
 						"Test": "Test",
 					},
 				}
-				tasks := []sdk.NitricTask{}
+				tasks := []queue.NitricTask{}
 
 				// Add 15 items to the queue
 				for i := 0; i < 15; i++ {
@@ -222,7 +223,7 @@ var _ = Describe("Queue", func() {
 				Expect(storedTasks).To(HaveLen(15))
 
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(sdk.ReceiveOptions{
+				items, err := queuePlugin.Receive(queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -252,8 +253,8 @@ var _ = Describe("Queue", func() {
 	})
 })
 
-func GetAllTasks(queue string) []sdk.NitricTask {
-	dbPath := queue_service.DEFAULT_DIR + strings.ToLower(queue) + ".db"
+func GetAllTasks(q string) []queue.NitricTask {
+	dbPath := queue_service.DEFAULT_DIR + strings.ToLower(q) + ".db"
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
@@ -269,9 +270,9 @@ func GetAllTasks(queue string) []sdk.NitricTask {
 		panic(err)
 	}
 
-	tasks := make([]sdk.NitricTask, 0)
+	tasks := make([]queue.NitricTask, 0)
 	for _, item := range items {
-		var task sdk.NitricTask
+		var task queue.NitricTask
 		err := json.Unmarshal(item.Data, &task)
 		if err != nil {
 			panic(err)

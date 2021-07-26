@@ -17,18 +17,19 @@ package storage_service
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
 	"io/ioutil"
 
+	ifaces_gcloud_storage "github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
+
 	"cloud.google.com/go/storage"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	plugin "github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 type StorageStorageService struct {
-	//sdk.UnimplementedStoragePlugin
+	//storage.UnimplementedStoragePlugin
 	client    ifaces_gcloud_storage.StorageClient
 	projectID string
 }
@@ -124,7 +125,7 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 /**
  * Creates a new Storage Plugin for use in GCP
  */
-func New() (sdk.StorageService, error) {
+func New() (plugin.StorageService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, storage.ScopeReadWrite)
@@ -144,7 +145,7 @@ func New() (sdk.StorageService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces_gcloud_storage.StorageClient) (sdk.StorageService, error) {
+func NewWithClient(client ifaces_gcloud_storage.StorageClient) (plugin.StorageService, error) {
 	return &StorageStorageService{
 		client: client,
 	}, nil

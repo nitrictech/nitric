@@ -17,20 +17,21 @@ package queue_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/nitric-dev/membrane/pkg/utils"
+
 	"github.com/asdine/storm"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"go.etcd.io/bbolt"
 )
 
 const DEFAULT_DIR = "nitric/queues/"
 
 type DevQueueService struct {
-	sdk.UnimplementedQueuePlugin
+	queue.UnimplementedQueuePlugin
 	dbDir string
 }
 
@@ -39,7 +40,7 @@ type Item struct {
 	Data []byte
 }
 
-func (s *DevQueueService) Send(queue string, task sdk.NitricTask) error {
+func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
 	if queue == "" {
 		return fmt.Errorf("provide non-blank queue")
 	}
@@ -67,15 +68,15 @@ func (s *DevQueueService) Send(queue string, task sdk.NitricTask) error {
 	return nil
 }
 
-func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.SendBatchResponse, error) {
-	if queue == "" {
+func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+	if q == "" {
 		return nil, fmt.Errorf("provide non-blank queue")
 	}
 	if tasks == nil {
 		return nil, fmt.Errorf("provide non-nil tasks")
 	}
 
-	db, err := s.createDb(queue)
+	db, err := s.createDb(q)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +98,12 @@ func (s *DevQueueService) SendBatch(queue string, tasks []sdk.NitricTask) (*sdk.
 		}
 	}
 
-	return &sdk.SendBatchResponse{
-		FailedTasks: make([]*sdk.FailedTask, 0),
+	return &queue.SendBatchResponse{
+		FailedTasks: make([]*queue.FailedTask, 0),
 	}, nil
 }
 
-func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask, error) {
+func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	if options.QueueName == "" {
 		return nil, fmt.Errorf("provide non-blank options.queue")
 	}
@@ -116,9 +117,9 @@ func (s *DevQueueService) Receive(options sdk.ReceiveOptions) ([]sdk.NitricTask,
 	var items []Item
 	err = db.All(&items, storm.Limit(int(*options.Depth)))
 
-	poppedTasks := make([]sdk.NitricTask, 0)
+	poppedTasks := make([]queue.NitricTask, 0)
 	for _, item := range items {
-		var task sdk.NitricTask
+		var task queue.NitricTask
 		err := json.Unmarshal(item.Data, &task)
 		if err != nil {
 			return nil, err
@@ -145,7 +146,7 @@ func (s *DevQueueService) Complete(queue string, leaseId string) error {
 	return nil
 }
 
-func New() (sdk.QueueService, error) {
+func New() (queue.QueueService, error) {
 	dbDir := utils.GetEnv("LOCAL_QUEUE_DIR", DEFAULT_DIR)
 
 	// Check whether file exists

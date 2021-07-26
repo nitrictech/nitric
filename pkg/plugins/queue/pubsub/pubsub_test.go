@@ -17,11 +17,12 @@ package pubsub_queue_service_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	"github.com/nitric-dev/membrane/tests/mocks/pubsub"
 
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	ifaces_pubsub "github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
+	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
+	mock_pubsub "github.com/nitric-dev/membrane/tests/mocks/pubsub"
+
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
@@ -39,7 +40,7 @@ var _ = Describe("Pubsub", func() {
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 
 			It("Should queue the Nitric Task", func() {
-				err := queuePlugin.Send("test", sdk.NitricTask{
+				err := queuePlugin.Send("test", queue.NitricTask{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -61,7 +62,7 @@ var _ = Describe("Pubsub", func() {
 			})
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 			It("Should return the error that failed to publish", func() {
-				err := queuePlugin.Send("test", sdk.NitricTask{
+				err := queuePlugin.Send("test", queue.NitricTask{
 					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					LeaseID:     "MockId",
@@ -87,7 +88,7 @@ var _ = Describe("Pubsub", func() {
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 
 			It("Should queue the Nitric Task", func() {
-				resp, err := queuePlugin.SendBatch("test", []sdk.NitricTask{{
+				resp, err := queuePlugin.SendBatch("test", []queue.NitricTask{{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -112,7 +113,7 @@ var _ = Describe("Pubsub", func() {
 			})
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 			It("Should return the messages that failed to publish", func() {
-				_, err := queuePlugin.SendBatch("test", []sdk.NitricTask{{
+				_, err := queuePlugin.SendBatch("test", []queue.NitricTask{{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -133,7 +134,7 @@ var _ = Describe("Pubsub", func() {
 			When("There is a message on the queue", func() {
 				mockId := "mockmessageid"
 				mockReceiptHandle := "mockreceipthandle"
-				jsonBytes, _ := json.Marshal(sdk.NitricTask{
+				jsonBytes, _ := json.Marshal(queue.NitricTask{
 					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					Payload:     map[string]interface{}{},
@@ -164,7 +165,7 @@ var _ = Describe("Pubsub", func() {
 				})
 
 				It("Should receive the message", func() {
-					items, err := queuePlugin.Receive(sdk.ReceiveOptions{
+					items, err := queuePlugin.Receive(queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     nil,
 					})
@@ -182,7 +183,7 @@ var _ = Describe("Pubsub", func() {
 			//mockPubsubClient := mocks.NewMockPubsubClient([]string{})
 			//queuePlugin := pubsub_queue_plugin.NewWithClient(mockPubsubClient)
 			//It("Should return the messages that failed to publish", func() {
-			//	_, err := queuePlugin.BatchPush("test", []sdk.NitricTask{{
+			//	_, err := queuePlugin.BatchPush("test", []queue.NitricTask{{
 			//		ID:   "1234",
 			//		PayloadType: "test-payload",
 			//		Payload: map[string]interface{}{

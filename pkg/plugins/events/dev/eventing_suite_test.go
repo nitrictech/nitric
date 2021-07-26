@@ -12,23 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sdk
+package events_service_test
 
-import "fmt"
+import (
+	"testing"
 
-type EventService interface {
-	Publish(topic string, event *NitricEvent) error
-	ListTopics() ([]string, error)
-}
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
 
-type UnimplementedEventingPlugin struct {
-	EventService
-}
-
-func (*UnimplementedEventingPlugin) Publish(topic string, event *NitricEvent) error {
-	return fmt.Errorf("UNIMPLEMENTED")
-}
-
-func (*UnimplementedEventingPlugin) ListTopics() ([]string, error) {
-	return nil, fmt.Errorf("UNIMPLEMENTED")
+func Testevents(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Dev Event Service Suite")
 }

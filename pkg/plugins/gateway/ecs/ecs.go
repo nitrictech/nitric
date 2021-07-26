@@ -18,6 +18,7 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
@@ -27,7 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
-	gw "github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 )
 
 const (
@@ -131,7 +132,7 @@ func (s *HttpProxyGateway) Stop() error {
 }
 
 // Create new AWS HTTP Gateway service
-func New() (gw.GatewayService, error) {
+func New() (gateway.GatewayService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
 
