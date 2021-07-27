@@ -2,20 +2,11 @@ package secret
 
 import "fmt"
 
-type Secret struct {
-	Name    string
-	Version string
-	Value   []byte
-}
-
 type SecretService interface {
-	Put(secret *Secret) (*SecretPutResponse, error)
-	Get(id string, versionId string) (*Secret, error)
-}
-
-type SecretPutResponse struct {
-	Name    string
-	Version string
+	// Put - Creates a new version for a given secret
+	Put(*Secret, []byte) (*SecretPutResponse, error)
+	// Access - Retrieves the value for a given secret version
+	Access(*SecretVersion) (*SecretAccessResponse, error)
 }
 
 type UnimplementedSecretPlugin struct {
@@ -24,10 +15,10 @@ type UnimplementedSecretPlugin struct {
 
 var _ SecretService = (*UnimplementedSecretPlugin)(nil)
 
-func (*UnimplementedSecretPlugin) Put(secret *Secret) (*SecretPutResponse, error) {
+func (*UnimplementedSecretPlugin) Put(secret *Secret, value []byte) (*SecretPutResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedSecretPlugin) Get(id string, versionId string) (*Secret, error) {
+func (*UnimplementedSecretPlugin) Access(version *SecretVersion) (*SecretAccessResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

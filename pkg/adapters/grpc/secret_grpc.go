@@ -25,14 +25,16 @@ func (s *SecretServer) checkPluginRegistered() error {
 
 func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.SecretPutResponse, error) {
 	if err := s.checkPluginRegistered(); err == nil {
-		sec := req.GetSecret()
 		if r, err := s.secretPlugin.Put(&secret.Secret{
-			Name:  sec.GetName(),
-			Value: sec.GetValue(),
-		}); err == nil {
+			Name: req.GetSecret().GetName(),
+		}, req.GetValue()); err == nil {
 			return &pb.SecretPutResponse{
-				Name:      r.Name,
-				VersionId: r.Version,
+				SecretVersion: &pb.SecretVersion{
+					Secret: &pb.Secret{
+						Name: r.SecretVersion.Secret.Name,
+					},
+					Version: r.SecretVersion.Version,
+				},
 			}, nil
 		} else {
 			return nil, err
@@ -42,14 +44,22 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 	}
 }
 
-func (s *SecretServer) Get(ctx context.Context, req *pb.SecretGetRequest) (*pb.SecretGetResponse, error) {
+func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) (*pb.SecretAccessResponse, error) {
 	if err := s.checkPluginRegistered(); err == nil {
-		if s, err := s.secretPlugin.Get(req.GetName(), req.GetVersionId()); err == nil {
-			return &pb.SecretGetResponse{
-				Secret: &pb.Secret{
-					Name:  s.Name,
-					Value: s.Value,
+		if s, err := s.secretPlugin.Access(&secret.SecretVersion{
+			Secret: &secret.Secret{
+				Name: req.GetSecretVersion().GetSecret().GetName(),
+			},
+			Version: req.GetSecretVersion().GetVersion(),
+		}); err == nil {
+			return &pb.SecretAccessResponse{
+				SecretVersion: &pb.SecretVersion{
+					Secret: &pb.Secret{
+						Name: s.SecretVersion.Secret.Name,
+					},
+					Version: s.SecretVersion.Version,
 				},
+				Value: s.Value,
 			}, nil
 		} else {
 			return nil, err
