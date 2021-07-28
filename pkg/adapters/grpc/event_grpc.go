@@ -76,7 +76,7 @@ type TopicServiceServer struct {
 
 func (s *TopicServiceServer) checkPluginRegistered() error {
 	if s.eventPlugin == nil {
-		return status.Errorf(codes.Unimplemented, "Event plugin not registered")
+		return NewPluginNotRegisteredError("Event")
 	}
 
 	return nil

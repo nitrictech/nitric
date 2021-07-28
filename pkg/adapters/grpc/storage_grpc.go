@@ -19,8 +19,6 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
@@ -31,7 +29,7 @@ type StorageServiceServer struct {
 
 func (s *StorageServiceServer) checkPluginRegistered() error {
 	if s.storagePlugin == nil {
-		return status.Errorf(codes.Unimplemented, "Secret plugin not registered")
+		return NewPluginNotRegisteredError("Storage")
 	}
 
 	return nil

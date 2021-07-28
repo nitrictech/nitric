@@ -19,8 +19,6 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -34,7 +32,7 @@ type DocumentServiceServer struct {
 
 func (s *DocumentServiceServer) checkPluginRegistered() error {
 	if s.documentPlugin == nil {
-		return status.Errorf(codes.Unimplemented, "Document plugin not registered")
+		return NewPluginNotRegisteredError("Document")
 	}
 
 	return nil

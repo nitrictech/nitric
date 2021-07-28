@@ -19,8 +19,6 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -32,7 +30,7 @@ type QueueServiceServer struct {
 
 func (s *QueueServiceServer) checkPluginRegistered() error {
 	if s.plugin == nil {
-		return status.Errorf(codes.Unimplemented, "Secret plugin not registered")
+		return NewPluginNotRegisteredError("Queue")
 	}
 
 	return nil
