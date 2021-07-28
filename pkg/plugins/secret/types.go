@@ -21,7 +21,10 @@ type Secret struct {
 
 // SecretVersion - A version of a secret
 type SecretVersion struct {
-	Secret  *Secret
+	Secret *Secret
+
+	// Version - the specific secret version this represents
+	// Specifying "latest" will always retrieve the latest version of the secret
 	Version string
 }
 

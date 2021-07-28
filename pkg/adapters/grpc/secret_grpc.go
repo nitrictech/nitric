@@ -51,7 +51,7 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 				},
 			}, nil
 		} else {
-			return nil, err
+			return nil, NewGrpcError("SecretService.Put", err)
 		}
 	} else {
 		return nil, err
@@ -76,7 +76,7 @@ func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) 
 				Value: s.Value,
 			}, nil
 		} else {
-			return nil, err
+			return nil, NewGrpcError("SecretService.Access", err)
 		}
 	} else {
 		return nil, err
