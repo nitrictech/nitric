@@ -19,6 +19,8 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
@@ -27,7 +29,19 @@ type StorageServiceServer struct {
 	storagePlugin storage.StorageService
 }
 
+func (s *StorageServiceServer) checkPluginRegistered() error {
+	if s.storagePlugin == nil {
+		return status.Errorf(codes.Unimplemented, "Secret plugin not registered")
+	}
+
+	return nil
+}
+
 func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRequest) (*pb.StorageWriteResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	if err := s.storagePlugin.Write(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
 		return &pb.StorageWriteResponse{}, nil
 	} else {
@@ -36,6 +50,10 @@ func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRe
 }
 
 func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*pb.StorageReadResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	if object, err := s.storagePlugin.Read(req.GetBucketName(), req.GetKey()); err == nil {
 		return &pb.StorageReadResponse{
 			Body: object,
@@ -46,6 +64,10 @@ func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequ
 }
 
 func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest) (*pb.StorageDeleteResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {
 		return &pb.StorageDeleteResponse{}, nil
 	} else {

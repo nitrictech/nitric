@@ -19,6 +19,8 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -30,7 +32,19 @@ type DocumentServiceServer struct {
 	documentPlugin document.DocumentService
 }
 
+func (s *DocumentServiceServer) checkPluginRegistered() error {
+	if s.documentPlugin == nil {
+		return status.Errorf(codes.Unimplemented, "Document plugin not registered")
+	}
+
+	return nil
+}
+
 func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequest) (*pb.DocumentGetResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	key := keyFromWire(req.Key)
 
 	doc, err := s.documentPlugin.Get(key)
@@ -49,6 +63,10 @@ func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequ
 }
 
 func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequest) (*pb.DocumentSetResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	key := keyFromWire(req.Key)
 
 	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
@@ -60,6 +78,10 @@ func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequ
 }
 
 func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDeleteRequest) (*pb.DocumentDeleteResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	key := keyFromWire(req.Key)
 
 	err := s.documentPlugin.Delete(key)
@@ -71,6 +93,10 @@ func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDele
 }
 
 func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	collection := collectionFromWire(req.Collection)
 	expressions := make([]document.QueryExpression, len(req.GetExpressions()))
 	for i, exp := range req.GetExpressions() {

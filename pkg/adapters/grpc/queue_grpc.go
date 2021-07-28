@@ -19,6 +19,8 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -28,7 +30,19 @@ type QueueServiceServer struct {
 	plugin queue.QueueService
 }
 
+func (s *QueueServiceServer) checkPluginRegistered() error {
+	if s.plugin == nil {
+		return status.Errorf(codes.Unimplemented, "Secret plugin not registered")
+	}
+
+	return nil
+}
+
 func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest) (*pb.QueueSendResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	task := req.GetTask()
 
 	nitricTask := queue.NitricTask{
@@ -46,6 +60,10 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 }
 
 func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	// Translate tasks
 	tasks := make([]queue.NitricTask, len(req.GetTasks()))
 	for i, task := range req.GetTasks() {
@@ -78,6 +96,10 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 }
 
 func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	// Convert gRPC request to plugin params
 	depth := uint32(req.GetDepth())
 	popOptions := queue.ReceiveOptions{
@@ -111,6 +133,10 @@ func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRe
 }
 
 func (s *QueueServiceServer) Complete(ctx context.Context, req *pb.QueueCompleteRequest) (*pb.QueueCompleteResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	// Convert gRPC request to plugin params
 	queueName := req.GetQueue()
 	leaseId := req.GetLeaseId()
