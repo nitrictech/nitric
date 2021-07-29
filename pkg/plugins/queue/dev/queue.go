@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/asdine/storm"
@@ -124,6 +125,7 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		if err != nil {
 			return nil, err
 		}
+		task.LeaseID = uuid.New().String()
 		poppedTasks = append(poppedTasks, task)
 
 		err = db.DeleteStruct(&item)
