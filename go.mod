@@ -17,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/addlicense v0.0.0-20210428195630-6d92264d7170
+	github.com/google/addlicense v0.0.0-20210727174409-874627749a46
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
