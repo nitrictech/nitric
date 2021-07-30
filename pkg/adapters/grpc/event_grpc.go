@@ -20,8 +20,6 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // GRPC Interface for registered Nitric events Plugins
@@ -32,7 +30,7 @@ type EventServiceServer struct {
 
 func (s *EventServiceServer) checkPluginRegistered() error {
 	if s.eventPlugin == nil {
-		return status.Errorf(codes.Unimplemented, "Event plugin not registered")
+		return NewPluginNotRegisteredError("Event")
 	}
 
 	return nil
