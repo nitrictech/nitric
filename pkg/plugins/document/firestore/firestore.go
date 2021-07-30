@@ -82,12 +82,47 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 
 	doc := s.getDocRef(key)
 
+	// Delete any sub collection documents
+	collsIter := doc.Collections(s.context)
+	for subCol, err := collsIter.Next(); err != iterator.Done; subCol, err = collsIter.Next() {
+		if err != nil {
+			return fmt.Errorf("error deleting value: %v", err)
+		}
+
+		// Loop over sub collection documents, performing batch deletes
+		// up to Firestore's maximum batch size
+		const maxBatchSize = 500
+		for {
+			docsIter := subCol.Limit(maxBatchSize).Documents(s.context)
+			numDeleted := 0
+
+			batch := s.client.Batch()
+			for subDoc, err := docsIter.Next(); err != iterator.Done; subDoc, err = docsIter.Next() {
+				if err != nil {
+					return err
+				}
+
+				batch.Delete(subDoc.Ref)
+				numDeleted++
+			}
+
+			// If no more to delete, completed
+			if numDeleted == 0 {
+				break
+			}
+
+			_, err := batch.Commit(s.context)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Delete document
 	_, err = doc.Delete(s.context)
 	if err != nil {
 		return fmt.Errorf("error deleting value: %v", err)
 	}
-
-	// TODO: delete sub collection records
 
 	return nil
 }
@@ -147,12 +182,7 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	}
 
 	itr := query.Documents(s.context)
-
-	for {
-		docSnp, err := itr.Next()
-		if err == iterator.Done {
-			break
-		}
+	for docSnp, err := itr.Next(); err != iterator.Done; docSnp, err = itr.Next() {
 		if err != nil {
 			return nil, fmt.Errorf("error querying value: %v", err)
 		}

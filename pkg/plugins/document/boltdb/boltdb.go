@@ -113,10 +113,26 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 	doc := createDoc(key)
 
 	err = db.DeleteStruct(&doc)
+	if err != nil {
+		return err
+	}
 
-	// TODO: delete sub collection records
+	// Delete sub collection documents
+	if key.Collection.Parent == nil {
+		childDocs, err := fetchChildDocs(key, db)
+		if err != nil {
+			return err
+		}
 
-	return err
+		for _, childDoc := range childDocs {
+			err = db.DeleteStruct(&childDoc)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
@@ -320,4 +336,19 @@ func toSdkDoc(col *document.Collection, doc BoltDoc) *document.Document {
 			Id:         id,
 		},
 	}
+}
+
+func fetchChildDocs(key *document.Key, db *storm.DB) ([]BoltDoc, error) {
+	var childDocs []BoltDoc
+
+	err := db.Find(partionKeyName, key.Id, &childDocs)
+	if err != nil {
+		if err.Error() == "not found" {
+			return childDocs, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return childDocs, nil
 }

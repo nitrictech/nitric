@@ -455,9 +455,28 @@ func DeleteTests(docPlugin document.DocumentService) {
 			It("Should delete all children", func() {
 				LoadCustomersData(docPlugin)
 
-				err := docPlugin.Delete(&Customer1.Key)
+				col := document.Collection{
+					Name: "orders",
+					Parent: &document.Key{
+						Collection: &document.Collection{
+							Name: "customers",
+						},
+					},
+				}
+
+				result, err := docPlugin.Query(&col, []document.QueryExpression{}, 0, nil)
+				Expect(err).To(BeNil())
+				Expect(result.Documents).To(HaveLen(5))
+
+				err = docPlugin.Delete(&Customer1.Key)
 				Expect(err).ShouldNot(HaveOccurred())
-				// TODO: ensure Customer1.Orders are deleted
+
+				err = docPlugin.Delete(&Customer2.Key)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				result, err = docPlugin.Query(&col, []document.QueryExpression{}, 0, nil)
+				Expect(err).To(BeNil())
+				Expect(result.Documents).To(HaveLen(0))
 			})
 		})
 	})

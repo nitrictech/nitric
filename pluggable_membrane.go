@@ -23,7 +23,12 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/sdk"
+	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"github.com/nitric-dev/membrane/pkg/providers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
@@ -53,12 +58,12 @@ func main() {
 		log.Println(fmt.Sprintf("failed to parse TOLERATE_MISSING_SERVICES environment variable with value [%s], defaulting to false", tolerateMissingServices))
 		tolerateMissing = false
 	}
-	var serviceFactory sdk.ServiceFactory = nil
+	var serviceFactory providers.ServiceFactory = nil
 
 	// Load the Plugin Factory
 	if plug, err := plugin.Open(fmt.Sprintf("%s/%s", pluginDir, serviceFactoryPluginFile)); err == nil {
 		if symbol, err := plug.Lookup("New"); err == nil {
-			if newFunc, ok := symbol.(func() (sdk.ServiceFactory, error)); ok {
+			if newFunc, ok := symbol.(func() (providers.ServiceFactory, error)); ok {
 				if serviceFactoryPlugin, err := newFunc(); err == nil {
 					serviceFactory = serviceFactoryPlugin
 				}
@@ -70,18 +75,18 @@ func main() {
 	}
 
 	// Load the concrete service implementations
-	var documentService sdk.DocumentService = nil
-	var eventingService sdk.EventService = nil
-	var gatewayService sdk.GatewayService = nil
-	var queueService sdk.QueueService = nil
-	var storageService sdk.StorageService = nil
+	var documentService document.DocumentService = nil
+	var eventService events.EventService = nil
+	var gatewayService gateway.GatewayService = nil
+	var queueService queue.QueueService = nil
+	var storageService storage.StorageService = nil
 
 	// Load the document service
 	if documentService, err = serviceFactory.NewDocumentService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the eventing service
-	if eventingService, err = serviceFactory.NewEventService(); err != nil {
+	if eventService, err = serviceFactory.NewEventService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the gateway service
@@ -103,7 +108,7 @@ func main() {
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		DocumentPlugin:          documentService,
-		EventingPlugin:          eventingService,
+		EventsPlugin:            eventService,
 		StoragePlugin:           storageService,
 		GatewayPlugin:           gatewayService,
 		QueuePlugin:             queueService,
