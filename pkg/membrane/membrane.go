@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
 
@@ -49,6 +50,7 @@ type MembraneOptions struct {
 	StoragePlugin  storage.StorageService
 	QueuePlugin    queue.QueueService
 	GatewayPlugin  gateway.GatewayService
+	SecretPlugin   secret.SecretService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -83,6 +85,7 @@ type Membrane struct {
 	storagePlugin  storage.StorageService
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
+	secretPlugin   secret.SecretService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -104,6 +107,10 @@ func (s *Membrane) log(log string) {
 	if !s.suppressLogs {
 		fmt.Println(log)
 	}
+}
+
+func (s *Membrane) CreateSecretServer() v1.SecretServiceServer {
+	return grpc2.NewSecretServer(s.secretPlugin)
 }
 
 // Create a new Nitric Document Server
@@ -154,6 +161,9 @@ func (s *Membrane) Start() error {
 
 	var opts []grpc.ServerOption
 	s.grpcServer = grpc.NewServer(opts...)
+
+	secretServer := s.CreateSecretServer()
+	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
 	// Load & Register the GRPC service plugins
 	documentServer := s.createDocumentServer()
@@ -352,6 +362,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		storagePlugin:           options.StoragePlugin,
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
+		secretPlugin:            options.SecretPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,
