@@ -200,4 +200,6 @@ do-docker: do-docker-static
 generate-mocks:
 	@echo Generating Mock Clients
 	@mkdir -p mocks/mock_secret_manager
+	@mkdir -p mocks/secrets_manager
 	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/mock_secret_manager/mock.go
+	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
