@@ -2,7 +2,9 @@
   <img src="docs/assets/dot-matrix-logo.png" alt="Nitric Logo"/>
 </p>
 
-
+![test status](https://github.com/nitrictech/go-sdk/actions/workflows/test.yaml/badge.svg?branch=main)
+[![codecov](https://codecov.io/gh/nitrictech/membrane/branch/main/graph/badge.svg?token=20TYFIQS2P)](https://codecov.io/gh/nitrictech/membrane)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=nitrictech_membrane&metric=alert_status)](https://sonarcloud.io/dashboard?id=nitrictech_membrane)
 
 Nitric is a portable, provider independent runtime for cloud-native and serverless applications. Using Nitric applications can take advantage of cloud-native services for activities like eventing, queues, compute, CDN, storage, caches, etc. without direct integration to product specific APIs.
 
