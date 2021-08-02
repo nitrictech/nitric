@@ -29,7 +29,7 @@ import (
 type HttpGateway struct {
 	address string
 	server  *fasthttp.Server
-	sdk.UnimplementedGatewayPlugin
+	gateway.UnimplementedGatewayPlugin
 }
 
 func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
