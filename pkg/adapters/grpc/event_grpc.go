@@ -28,7 +28,19 @@ type EventServiceServer struct {
 	eventPlugin events.EventService
 }
 
+func (s *EventServiceServer) checkPluginRegistered() error {
+	if s.eventPlugin == nil {
+		return NewPluginNotRegisteredError("Event")
+	}
+
+	return nil
+}
+
 func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	// auto generate an ID if we did not receive one
 	var ID = req.GetEvent().GetId()
 	if ID == "" {
@@ -60,7 +72,19 @@ type TopicServiceServer struct {
 	eventPlugin events.EventService
 }
 
+func (s *TopicServiceServer) checkPluginRegistered() error {
+	if s.eventPlugin == nil {
+		return NewPluginNotRegisteredError("Event")
+	}
+
+	return nil
+}
+
 func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	if res, err := s.eventPlugin.ListTopics(); err == nil {
 		topics := make([]*pb.NitricTopic, len(res))
 		for i, topicName := range res {

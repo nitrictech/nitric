@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GRPC Utils", func() {
+var _ = Describe("GRPC Errors", func() {
 	Context("GrpcError", func() {
 		When("sdk.IllegalArgumentError", func() {
 			It("Should report GRPC IllegalArgument error", func() {
@@ -37,6 +37,15 @@ var _ = Describe("GRPC Utils", func() {
 				err := fmt.Errorf("internal error")
 				err = grpc.NewGrpcError("BadServer.BadCall", err)
 				Expect(err.Error()).To(ContainSubstring("rpc error: code = Internal desc = BadServer.BadCall: internal error"))
+			})
+		})
+	})
+
+	Context("PluginNotRegisteredError", func() {
+		When("Creating a New PluginNotRegisteredError", func() {
+			It("Should contain the name of the plugin", func() {
+				err := grpc.NewPluginNotRegisteredError("Document")
+				Expect(err.Error()).To(ContainSubstring("rpc error: code = Unimplemented desc = Document plugin not registered"))
 			})
 		})
 	})

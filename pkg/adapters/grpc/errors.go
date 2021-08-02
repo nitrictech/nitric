@@ -28,3 +28,8 @@ func NewGrpcError(operation string, err error) error {
 		return status.Errorf(codes.Internal, "%s: %v", operation, err)
 	}
 }
+
+// Provides generic error for unregistered plugins
+func NewPluginNotRegisteredError(plugin string) error {
+	return status.Errorf(codes.Unimplemented, "%s plugin not registered", plugin)
+}
