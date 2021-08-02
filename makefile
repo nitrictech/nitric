@@ -35,9 +35,14 @@ test-integration: install-tools generate-proto
 	@echo Running integration tests
 	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
 
-# Run all tests
-test: generate-mocks test-adapters test-membrane test-plugins
-	@echo Done.
+# Run the unit tests
+test: install-tools generate-proto
+	@echo Running unit tests
+	@go run github.com/onsi/ginkgo/ginkgo ./pkg/...
+
+test-coverage: install-tools generate-proto
+	@echo Running unit tests
+	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./pkg/...
 
 license-check-dev: dev-static
 	@echo Checking Dev Membrane OSS Licenses
@@ -73,24 +78,6 @@ generate-proto:
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto
-
-# # Build all service factory plugins
-# plugins: aws-plugin gcp-plugin dev-plugin
-# 	@echo Done.
-
-test-plugins: install-tools
-	@echo Testing membrane plugins
-	@go run github.com/onsi/ginkgo/ginkgo -cover ./pkg/plugins/...
-
-# Test the adapters
-test-adapters: install-tools generate-proto
-	@echo Testing gRPC Adapters
-	@go run github.com/onsi/ginkgo/ginkgo -cover ./pkg/adapters/...
-
-# Test the membrane
-test-membrane: install-tools generate-proto 
-	@echo Testing Membrane
-	@go run github.com/onsi/ginkgo/ginkgo -cover ./pkg/membrane/...
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
