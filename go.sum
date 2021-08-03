@@ -155,6 +155,8 @@ github.com/google/addlicense v0.0.0-20210428195630-6d92264d7170 h1:jLUa4MO3autxl
 github.com/google/addlicense v0.0.0-20210428195630-6d92264d7170/go.mod h1:EMjYTRimagHs1FwlIqKyX3wAM0u3rA+McvlIIWmSamA=
 github.com/google/addlicense v0.0.0-20210727174409-874627749a46 h1:1locMH9PVZH3LXvogcvdTxf2/9J4YT/9W3BSXrTN4/U=
 github.com/google/addlicense v0.0.0-20210727174409-874627749a46/go.mod h1:EMjYTRimagHs1FwlIqKyX3wAM0u3rA+McvlIIWmSamA=
+github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b h1:KwI0NOpYd3rzKojfjeRerF7rzjeTwvJARVsgGf5TWmY=
+github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b/go.mod h1:EMjYTRimagHs1FwlIqKyX3wAM0u3rA+McvlIIWmSamA=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0 h1:0udJVsspx3VBr5FwtLhQQtuAsVc79tTq0ocGIPAU6qo=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
