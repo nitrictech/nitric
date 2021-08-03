@@ -22,7 +22,6 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"github.com/nitric-dev/membrane/pkg/providers"
-	"github.com/nitric-dev/membrane/pkg/sdk"
 )
 
 type AzureServiceFactory struct {
@@ -34,12 +33,12 @@ func New() providers.ServiceFactory {
 
 // NewDocumentService - Returns Azure _ based document plugin
 func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, error) {
-	return &sdk.UnimplementedDocumentPlugin{}, nil
+	return &document.UnimplementedDocumentPlugin{}, nil
 }
 
 // NewEventService - Returns Azure _ based events plugin
 func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
-	return &sdk.UnimplementedeventsPlugin{}, nil
+	return &events.UnimplementedeventsPlugin{}, nil
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin
@@ -49,10 +48,10 @@ func (p *AzureServiceFactory) NewGatewayService() (gateway.GatewayService, error
 
 // NewQueueService - Returns Azure _ based queue plugin
 func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
-	return &sdk.UnimplementedQueuePlugin{}, nil
+	return &queue.UnimplementedQueuePlugin{}, nil
 }
 
 // NewStorageService - Returns Azure _ based storage plugin
 func (p *AzureServiceFactory) NewStorageService() (storage.StorageService, error) {
-	return &sdk.UnimplementedStoragePlugin{}, nil
+	return &storage.UnimplementedStoragePlugin{}, nil
 }

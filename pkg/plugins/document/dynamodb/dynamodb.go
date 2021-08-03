@@ -31,6 +31,8 @@ import (
 
 const ATTRIB_PK = "_pk"
 const ATTRIB_SK = "_sk"
+const deleteQueryLimit = int64(1000)
+const maxBatchWrite = 25
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
@@ -121,17 +123,37 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 		return fmt.Errorf("failed to marshal keys: %v", key)
 	}
 
-	input := &dynamodb.DeleteItemInput{
+	deleteInput := &dynamodb.DeleteItemInput{
 		Key:       attributeMap,
 		TableName: getTableName(*key.Collection),
 	}
 
-	_, err = s.client.DeleteItem(input)
+	_, err = s.client.DeleteItem(deleteInput)
 	if err != nil {
 		return fmt.Errorf("error deleting %v item %v : %v", key.Collection, key.Id, err)
 	}
 
-	// TODO: delete sub collection records
+	// Delete sub collection items
+	if key.Collection.Parent == nil {
+
+		var lastEvaluatedKey map[string]*dynamodb.AttributeValue
+		for {
+			queryInput := createDeleteQuery(key, lastEvaluatedKey)
+			resp, err := s.client.Query(queryInput)
+			if err != nil {
+				return fmt.Errorf("error performing delete: %v", err)
+			}
+
+			err = s.processDeleteQuery(key, resp)
+			if err != nil {
+				return fmt.Errorf("error performing delete: %v", err)
+			}
+
+			if len(lastEvaluatedKey) == 0 {
+				break
+			}
+		}
+	}
 
 	return nil
 }
@@ -541,4 +563,65 @@ func getTableName(collection document.Collection) *string {
 	}
 
 	return aws.String(coll.Name)
+}
+
+func createDeleteQuery(key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {
+	limit := int64(deleteQueryLimit)
+
+	return &dynamodb.QueryInput{
+		TableName:              getTableName(*key.Collection),
+		Limit:                  &(limit),
+		Select:                 aws.String(dynamodb.SelectSpecificAttributes),
+		ProjectionExpression:   aws.String("#pk, #sk"),
+		KeyConditionExpression: aws.String("#pk = :pk"),
+		ExpressionAttributeNames: map[string]*string{
+			"#pk": aws.String("_pk"),
+			"#sk": aws.String("_sk"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":pk": {
+				S: aws.String(key.Id),
+			},
+		},
+		ExclusiveStartKey: startKey,
+	}
+}
+
+func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.QueryOutput) error {
+
+	itemIndex := 0
+	for itemIndex < len(resp.Items) {
+
+		batchInput := &dynamodb.BatchWriteItemInput{}
+		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
+		writeRequests := make([]*dynamodb.WriteRequest, 0, maxBatchWrite)
+
+		batchCount := 0
+		for batchCount < maxBatchWrite && itemIndex < len(resp.Items) {
+			item := resp.Items[itemIndex]
+			itemIndex += 1
+
+			writeRequest := dynamodb.WriteRequest{}
+
+			writeRequest.DeleteRequest = &dynamodb.DeleteRequest{
+				Key: map[string]*dynamodb.AttributeValue{
+					ATTRIB_PK: item[ATTRIB_PK],
+					ATTRIB_SK: item[ATTRIB_SK],
+				},
+			}
+			writeRequests = append(writeRequests, &writeRequest)
+
+			batchCount += 1
+		}
+
+		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
+		batchInput.RequestItems[key.Collection.Name] = writeRequests
+
+		_, err := s.client.BatchWriteItem(batchInput)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
