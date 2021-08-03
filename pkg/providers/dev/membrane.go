@@ -27,6 +27,7 @@ import (
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
+	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
 )
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
+	secretPlugin, _ := secret_service.New()
 	documentPlugin, _ := boltdb_service.New()
 	eventsPlugin, _ := events_service.New()
 	gatewayPlugin, _ := gateway_plugin.New()
@@ -47,6 +49,7 @@ func main() {
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
+		SecretPlugin:   secretPlugin,
 	})
 
 	if err != nil {
