@@ -3,6 +3,7 @@ module github.com/nitric-dev/membrane
 go 1.15
 
 require (
+	cloud.google.com/go v0.75.0
 	cloud.google.com/go/firestore v1.5.0
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
@@ -15,14 +16,13 @@ require (
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
+	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/addlicense v0.0.0-20210727174409-874627749a46
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
-	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/nanobox-io/golang-scribble v0.0.0-20190309225732-aa3e7c118975
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.10.1
 	github.com/uw-labs/lichen v0.1.4
@@ -38,5 +38,4 @@ require (
 	google.golang.org/grpc v1.35.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.26.0
-	gopkg.in/yaml.v2 v2.4.0
 )

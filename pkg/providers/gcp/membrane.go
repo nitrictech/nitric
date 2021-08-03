@@ -27,6 +27,7 @@ import (
 	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
 	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
 	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
+	secret_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager"
 )
 
 func main() {
@@ -34,6 +35,11 @@ func main() {
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
+	secretPlugin, err := secret_manager_secret_service.New()
+	if err != nil {
+		fmt.Println("Failed to load secret plugin:", err.Error())
+	}
 
 	documentPlugin, err := firestore_service.New()
 	if err != nil {
@@ -62,6 +68,7 @@ func main() {
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
+		SecretPlugin:   secretPlugin,
 	})
 
 	if err != nil {

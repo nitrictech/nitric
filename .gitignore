@@ -23,3 +23,5 @@ bin/
 
 # Ignore proto generated interfaces
 interfaces/
+
+mocks/
