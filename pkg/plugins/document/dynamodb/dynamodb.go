@@ -35,10 +35,13 @@ const AttribSk = "_sk"
 const deleteQueryLimit = int64(1000)
 const maxBatchWrite = 25
 
+
+
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
 	document.UnimplementedDocumentPlugin
 	client dynamodbiface.DynamoDBAPI
+	tableNameCache map[string]*string
 }
 
 func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
@@ -261,6 +264,7 @@ func New() (document.DocumentService, error) {
 
 	return &DynamoDocService{
 		client: dynamoClient,
+		tableNameCache: map[string]*string{},
 	}, nil
 }
 
@@ -268,6 +272,7 @@ func New() (document.DocumentService, error) {
 func NewWithClient(client *dynamodb.DynamoDB) (document.DocumentService, error) {
 	return &DynamoDocService{
 		client: client,
+		tableNameCache: map[string]*string{},
 	}, nil
 }
 
@@ -590,6 +595,11 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 		coll = *coll.Parent.Collection
 	}
 
+	// Avoid the lookup if the name is already known
+	if cacheName, ok := s.tableNameCache[coll.Name]; ok {
+		return cacheName, nil
+	}
+
 	// TODO: The following method for determining the deployment specific table name from the nitric name is unreliable.
 	//	a new design is in process and will replace this method for locating tables.
 	out, err := s.client.ListTables(&dynamodb.ListTablesInput{})
@@ -600,6 +610,8 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 
 	for _, b := range out.TableNames {
 		if matched, err := regexp.MatchString("^" + coll.Name + "-[a-z0-9]{7}$", aws.StringValue(b)); matched && err == nil {
+			// Cache the found table name to skip the search on subsequent requests.
+			s.tableNameCache[coll.Name] = b
 			return b, nil
 		} else if err != nil {
 			println(err.Error())
