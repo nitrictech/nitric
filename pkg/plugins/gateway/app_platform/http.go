@@ -16,71 +16,12 @@
 package appplatform_service
 
 import (
-	"fmt"
-
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	"github.com/nitric-dev/membrane/pkg/worker"
-
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/valyala/fasthttp"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway/base_http"
 )
-
-type HttpGateway struct {
-	address string
-	server  *fasthttp.Server
-	gateway.UnimplementedGatewayPlugin
-}
-
-func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
-		wrkr, err := pool.GetWorker()
-
-		if err != nil {
-			ctx.Error("Unable to get worker to handle request", 500)
-			return
-		}
-
-		httpTrigger := triggers.FromHttpRequest(ctx)
-		response, err := wrkr.HandleHttpRequest(httpTrigger)
-
-		if err != nil {
-			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
-			return
-		}
-
-		if response.Header != nil {
-			response.Header.CopyTo(&ctx.Response.Header)
-		}
-
-		// Avoid content length header duplication
-		ctx.Response.Header.Del("Content-Length")
-		ctx.Response.SetStatusCode(response.StatusCode)
-		ctx.Response.SetBody(response.Body)
-	}
-}
-
-func (s *HttpGateway) Start(pool worker.WorkerPool) error {
-	s.server = &fasthttp.Server{
-		Handler: httpHandler(pool),
-	}
-
-	return s.server.ListenAndServe(s.address)
-}
-
-func (s *HttpGateway) Stop() error {
-	if s.server != nil {
-		return s.server.Shutdown()
-	}
-	return nil
-}
 
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (gateway.GatewayService, error) {
-	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
-
-	return &HttpGateway{
-		address: address,
-	}, nil
+	return base_http.New(nil)
 }
