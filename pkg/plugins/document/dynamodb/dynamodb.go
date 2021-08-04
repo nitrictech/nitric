@@ -160,7 +160,11 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
 			resp, err := s.client.Query(queryInput)
 			if err != nil {
-				return fmt.Errorf("error performing delete: %v", err)
+				return fmt.Errorf(
+					"error performing delete in table %s for key %s, details: %v",
+					*tableName,
+					key,
+					err)
 			}
 
 			lastEvaluatedKey = resp.LastEvaluatedKey

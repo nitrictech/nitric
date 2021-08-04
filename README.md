@@ -18,11 +18,12 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
   - Queues
   - Key/Value Store
   - Storage & Buckets
+  - Document Store
+  - Secret Store
 
 Additional services on our roadmap include:
 
   - RDS
-  - Document Store
   - Configuration
   - Logging
   - Authentication
