@@ -23,10 +23,14 @@ import (
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
 	if iae, ok := err.(*plugins.InvalidArgumentError); ok {
-		return status.Errorf(codes.InvalidArgument, "%s: %v", operation, iae)
+		return newGrpcErrorWithCode(codes.InvalidArgument, operation, iae)
 	} else {
-		return status.Errorf(codes.Internal, "%s: %v", operation, err)
+		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}
+}
+
+func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
+	return status.Errorf(code, "%s: %v", operation, err)
 }
 
 // Provides generic error for unregistered plugins
