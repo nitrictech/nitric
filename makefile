@@ -36,7 +36,7 @@ test-integration: install-tools generate-proto
 	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
 
 # Run all tests
-test: test-adapters test-membrane test-plugins
+test: generate-mocks test-adapters test-membrane test-plugins
 	@echo Done.
 
 license-check-dev: dev-static
@@ -195,3 +195,9 @@ do-docker: do-docker-static
 # # TODO: Get alpine image generating its own sources
 # membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
 # 	@echo Built Docker Images
+
+# generate mock implementations
+generate-mocks:
+	@echo Generating Mock Clients
+	@mkdir -p mocks/mock_secret_manager
+	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/mock_secret_manager/mock.go
