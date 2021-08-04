@@ -169,7 +169,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 			lastEvaluatedKey = resp.LastEvaluatedKey
 
-			err = s.processDeleteQuery(key, resp)
+			err = s.processDeleteQuery(*tableName, resp)
 			if err != nil {
 				return fmt.Errorf("error performing delete: %v", err)
 			}
@@ -595,7 +595,7 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 	out, err := s.client.ListTables(&dynamodb.ListTablesInput{})
 
 	if err != nil {
-		return nil, fmt.Errorf("encountered an error retrieving the bucket list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the table list: %v", err)
 	}
 
 	for _, b := range out.TableNames {
@@ -632,8 +632,7 @@ func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dy
 	}
 }
 
-func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.QueryOutput) error {
-
+func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.QueryOutput) error {
 	itemIndex := 0
 	for itemIndex < len(resp.Items) {
 
@@ -660,7 +659,7 @@ func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.
 		}
 
 		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
-		batchInput.RequestItems[key.Collection.Name] = writeRequests
+		batchInput.RequestItems[table] = writeRequests
 
 		_, err := s.client.BatchWriteItem(batchInput)
 		if err != nil {
