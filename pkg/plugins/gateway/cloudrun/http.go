@@ -18,6 +18,7 @@ package cloudrun_plugin
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
@@ -100,7 +101,9 @@ func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(pool),
+		IdleTimeout:     time.Second * 1,
+		CloseOnShutdown: true,
+		Handler:         httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)

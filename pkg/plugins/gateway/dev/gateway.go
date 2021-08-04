@@ -18,6 +18,7 @@ package gateway_plugin
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
@@ -94,7 +95,9 @@ func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 func (s *HttpGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: httpHandler(pool),
+		IdleTimeout:     time.Second * 1,
+		CloseOnShutdown: true,
+		Handler:         httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)
@@ -102,6 +105,7 @@ func (s *HttpGateway) Start(pool worker.WorkerPool) error {
 
 func (s *HttpGateway) Stop() error {
 	if s.server != nil {
+		fmt.Println("Shutting down, waiting for open connections: ", s.server.GetOpenConnectionsCount())
 		return s.server.Shutdown()
 	}
 	return nil

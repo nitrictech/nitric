@@ -18,6 +18,7 @@ package ecs_service
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
@@ -115,7 +116,9 @@ func (s *HttpProxyGateway) httpHandler(pool worker.WorkerPool) func(*fasthttp.Re
 func (s *HttpProxyGateway) Start(pool worker.WorkerPool) error {
 	// Start the fasthttp server
 	s.server = &fasthttp.Server{
-		Handler: s.httpHandler(pool),
+		IdleTimeout:     time.Second * 1,
+		CloseOnShutdown: true,
+		Handler:         s.httpHandler(pool),
 	}
 
 	return s.server.ListenAndServe(s.address)
