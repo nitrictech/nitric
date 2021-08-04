@@ -30,6 +30,7 @@ import (
 	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
 	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
 	"github.com/nitric-dev/membrane/pkg/utils"
+	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
 )
 
 func main() {
@@ -47,6 +48,7 @@ func main() {
 	default:
 		gatewayPlugin, _ = ecs_service.New()
 	}
+	secretPlugin, _ := secrets_manager_secret_service.New()
 	documentPlugin, _ := dynamodb_service.New()
 	eventsPlugin, _ := sns_service.New()
 	queuePlugin, _ := sqs_service.New()
@@ -58,6 +60,7 @@ func main() {
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
+		SecretPlugin:   secretPlugin,
 	})
 
 	if err != nil {
