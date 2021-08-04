@@ -26,13 +26,13 @@ const rx = "^\\w+(-\\w+)*$"
 // ValidateSecretName - Validates a secret name
 func ValidateSecretName(secName string) error {
 	if len(secName) == 0 {
-		return plugins.NewInvalidArgError("Secret name must not be blank")
+		return plugins.NewInvalidArgError("provide non-blank secret name")
 	}
 
 	match, _ := regexp.MatchString(rx, secName)
 
 	if !match {
-		return plugins.NewInvalidArgError(fmt.Sprintf("Secret name must match pattern: %s", rx))
+		return plugins.NewInvalidArgError(fmt.Sprintf("provide secret name matching pattern: %s", rx))
 	}
 
 	return nil
