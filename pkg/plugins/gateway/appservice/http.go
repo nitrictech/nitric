@@ -16,24 +16,16 @@ package http_service
 
 import (
 	"encoding/json"
-	"fmt"
-	"time"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitric-dev/membrane/pkg/plugins/gateway/base_http"
 	"github.com/valyala/fasthttp"
 )
-
-// HttpService - The HTTP gateway plugin for Azure
-type HttpService struct {
-	address string
-	server  *fasthttp.Server
-}
 
 func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
@@ -83,85 +75,35 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrk
 	ctx.SuccessString("text/plain", "success")
 }
 
-func handleRequest(ctx *fasthttp.RequestCtx, wrkr worker.Worker) {
-	response, err := wrkr.HandleHttpRequest(triggers.FromHttpRequest(ctx))
+func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
+	eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
-	if err != nil {
-		ctx.Error(fmt.Sprintf("Error Handling Request: %v", err), 500)
-		return
-	}
-	if response.Header != nil {
-		response.Header.VisitAll(func(key []byte, val []byte) {
-			ctx.Response.Header.AddBytesKV(key, val)
-		})
-	}
-
-	// Avoid content length header duplication
-	ctx.Response.Header.Del("Content-Length")
-	ctx.Response.SetStatusCode(response.StatusCode)
-	ctx.Response.SetBody(response.Body)
-}
-
-func httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
-		wrkr, err := pool.GetWorker()
-
-		if err != nil {
-			ctx.Error("Unable to get worker to handle request", 500)
-			return
-		}
-		// Handle Event/Subscription Request Types
-		eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
-
-		// Handle an eventgrid webhook event
-		if eventType != "" {
-			var eventgridEvents []eventgrid.Event
-			bytes := ctx.Request.Body()
-			// TODO: verify topic for validity
-			if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
-				ctx.Error("Invalid event grid types", 400)
-				return
-			}
-
-			// Handle Eventgrid event
-			if eventType == "SubscriptionValidation" {
-				// Validate a subscription
-				handleSubscriptionValidation(ctx, eventgridEvents)
-				return
-			} else if eventType == "Notification" {
-				// Handle notifications
-				handleNotifications(ctx, eventgridEvents, wrkr)
-				return
-			}
+	// Handle an eventgrid webhook event
+	if eventType != "" {
+		var eventgridEvents []eventgrid.Event
+		bytes := ctx.Request.Body()
+		// TODO: verify topic for validity
+		if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
+			ctx.Error("Invalid event grid types", 400)
+			return false
 		}
 
-		// Handle a standard HTTP request
-		handleRequest(ctx, wrkr)
+		// Handle Eventgrid event
+		if eventType == "SubscriptionValidation" {
+			// Validate a subscription
+			handleSubscriptionValidation(ctx, eventgridEvents)
+			return false
+		} else if eventType == "Notification" {
+			// Handle notifications
+			handleNotifications(ctx, eventgridEvents, wrkr)
+			return false
+		}
 	}
-}
 
-func (s *HttpService) Start(pool worker.WorkerPool) error {
-	// Start the fasthttp server
-	s.server = &fasthttp.Server{
-		IdleTimeout:     time.Second * 1,
-		CloseOnShutdown: true,
-		Handler:         httpHandler(pool),
-	}
-	return s.server.ListenAndServe(s.address)
-}
-
-func (s *HttpService) Stop() error {
-	if s.server != nil {
-		return s.server.Shutdown()
-	}
-	return nil
+	return true
 }
 
 // Create a new HTTP Gateway plugin
 func New() (gateway.GatewayService, error) {
-	address := utils.GetEnv("GATEWAY_ADDRESS", "0.0.0.0:9001")
-
-	return &HttpService{
-		address: address,
-	}, nil
+	return base_http.New(middleware)
 }
