@@ -21,7 +21,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins"
 )
 
-const rx = "^\\w+(-\\w+)*$"
+const rx = "^\\w+([.\\-]\\w+)*$"
 
 // ValidateSecretName - Validates a secret name
 func ValidateSecretName(secName string) error {

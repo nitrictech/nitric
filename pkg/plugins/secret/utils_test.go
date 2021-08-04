@@ -41,7 +41,7 @@ var _ = Describe("Secret Plugin Utils", func() {
 			})
 
 			It("error should indicate a secret name matching the valid pattern be provided", func() {
-				Expect(err.Error()).To(Equal("provide secret name matching pattern: ^\\w+(-\\w+)*$"))
+				Expect(err.Error()).To(Equal("provide secret name matching pattern: ^\\w+([.\\-]\\w+)*$"))
 			})
 		})
 
@@ -56,6 +56,14 @@ var _ = Describe("Secret Plugin Utils", func() {
 
 			When("with underscores", func() {
 				err := ValidateSecretName("_TeSt_SeCrEt")
+
+				It("should not return an error", func() {
+					Expect(err).ShouldNot(HaveOccurred())
+				})
+			})
+
+			When("with dots", func() {
+				err := ValidateSecretName("TeSt.SeCrEt")
 
 				It("should not return an error", func() {
 					Expect(err).ShouldNot(HaveOccurred())
