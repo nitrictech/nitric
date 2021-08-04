@@ -19,7 +19,7 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/addlicense v0.0.0-20210727174409-874627749a46
+	github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/mitchellh/mapstructure v1.4.1
