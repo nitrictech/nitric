@@ -16,7 +16,6 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
 
   - Events
   - Queues
-  - Key/Value Store
   - Storage & Buckets
   - Document Store
   - Secret Store
