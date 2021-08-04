@@ -16,6 +16,7 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -29,15 +30,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
-const ATTRIB_PK = "_pk"
-const ATTRIB_SK = "_sk"
+const AttribPk = "_pk"
+const AttribSk = "_sk"
 const deleteQueryLimit = int64(1000)
 const maxBatchWrite = 25
+
+
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
 	document.UnimplementedDocumentPlugin
 	client dynamodbiface.DynamoDBAPI
+	tableNameCache map[string]*string
 }
 
 func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
@@ -52,9 +56,15 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 		return nil, fmt.Errorf("failed to marshal key: %v", key)
 	}
 
+	tableName, err := s.getTableName(*key.Collection)
+
+	if err != nil {
+		return nil, err
+	}
+
 	input := &dynamodb.GetItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(*key.Collection),
+		TableName: tableName,
 	}
 
 	result, err := s.client.GetItem(input)
@@ -72,8 +82,8 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 		return nil, fmt.Errorf("error unmarshalling item: %v", err)
 	}
 
-	delete(itemMap, ATTRIB_PK)
-	delete(itemMap, ATTRIB_SK)
+	delete(itemMap, AttribPk)
+	delete(itemMap, AttribSk)
 
 	return &document.Document{
 		Key:     key,
@@ -98,9 +108,15 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 		return fmt.Errorf("failed to marshal value")
 	}
 
+	tableName, err := s.getTableName(*key.Collection)
+
+	if err != nil {
+		return err
+	}
+
 	input := &dynamodb.PutItemInput{
 		Item:      itemAttributeMap,
-		TableName: getTableName(*key.Collection),
+		TableName: tableName,
 	}
 
 	_, err = s.client.PutItem(input)
@@ -123,9 +139,15 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 		return fmt.Errorf("failed to marshal keys: %v", key)
 	}
 
+	tableName, err := s.getTableName(*key.Collection)
+
+	if err != nil {
+		return err
+	}
+
 	deleteInput := &dynamodb.DeleteItemInput{
 		Key:       attributeMap,
-		TableName: getTableName(*key.Collection),
+		TableName: tableName,
 	}
 
 	_, err = s.client.DeleteItem(deleteInput)
@@ -138,13 +160,19 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 		var lastEvaluatedKey map[string]*dynamodb.AttributeValue
 		for {
-			queryInput := createDeleteQuery(key, lastEvaluatedKey)
+			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
 			resp, err := s.client.Query(queryInput)
 			if err != nil {
-				return fmt.Errorf("error performing delete: %v", err)
+				return fmt.Errorf(
+					"error performing delete in table %s for key %s, details: %v",
+					*tableName,
+					key,
+					err)
 			}
 
-			err = s.processDeleteQuery(key, resp)
+			lastEvaluatedKey = resp.LastEvaluatedKey
+
+			err = s.processDeleteQuery(*tableName, resp)
 			if err != nil {
 				return fmt.Errorf("error performing delete: %v", err)
 			}
@@ -173,7 +201,7 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 		Documents: make([]document.Document, 0),
 	}
 
-	// If partion key defined then perform a query
+	// If partition key defined then perform a query
 	if collection.Parent != nil && collection.Parent.Id != "" {
 		err := s.performQuery(collection, expressions, limit, pagingToken, queryResult)
 		if err != nil {
@@ -236,6 +264,7 @@ func New() (document.DocumentService, error) {
 
 	return &DynamoDocService{
 		client: dynamoClient,
+		tableNameCache: map[string]*string{},
 	}, nil
 }
 
@@ -243,6 +272,7 @@ func New() (document.DocumentService, error) {
 func NewWithClient(client *dynamodb.DynamoDB) (document.DocumentService, error) {
 	return &DynamoDocService{
 		client: client,
+		tableNameCache: map[string]*string{},
 	}, nil
 }
 
@@ -254,12 +284,12 @@ func createKeyMap(key *document.Key) map[string]string {
 	parentKey := key.Collection.Parent
 
 	if parentKey == nil {
-		keyMap[ATTRIB_PK] = key.Id
-		keyMap[ATTRIB_SK] = key.Collection.Name + "#"
+		keyMap[AttribPk] = key.Id
+		keyMap[AttribSk] = key.Collection.Name + "#"
 
 	} else {
-		keyMap[ATTRIB_PK] = parentKey.Id
-		keyMap[ATTRIB_SK] = key.Collection.Name + "#" + key.Id
+		keyMap[AttribPk] = parentKey.Id
+		keyMap[AttribSk] = key.Collection.Name + "#" + key.Id
 	}
 
 	return keyMap
@@ -275,8 +305,8 @@ func createItemMap(source map[string]interface{}, key *document.Key) map[string]
 	keyMap := createKeyMap(key)
 
 	// Add key attributes
-	newMap[ATTRIB_PK] = keyMap[ATTRIB_PK]
-	newMap[ATTRIB_SK] = keyMap[ATTRIB_SK]
+	newMap[AttribPk] = keyMap[AttribPk]
+	newMap[AttribSk] = keyMap[AttribSk]
 
 	return newMap
 }
@@ -296,8 +326,14 @@ func (s *DynamoDocService) performQuery(
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
+	tableName, err := s.getTableName(*collection)
+
+	if err != nil {
+		return err
+	}
+
 	input := &dynamodb.QueryInput{
-		TableName: getTableName(*collection),
+		TableName: tableName,
 	}
 
 	// Configure KeyConditionExpression
@@ -356,7 +392,7 @@ func (s *DynamoDocService) performQuery(
 		return fmt.Errorf("error performing query %v: %v", input, err)
 	}
 
-	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, limit, queryResult)
+	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, queryResult)
 }
 
 func (s *DynamoDocService) performScan(
@@ -369,8 +405,10 @@ func (s *DynamoDocService) performScan(
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
+	tableName, err := s.getTableName(*collection)
+
 	input := &dynamodb.ScanInput{
-		TableName: getTableName(*collection),
+		TableName: tableName,
 	}
 
 	// Filter on SK collection name or sub-collection name
@@ -430,15 +468,10 @@ func (s *DynamoDocService) performScan(
 		return fmt.Errorf("error performing scan %v: %v", input, err)
 	}
 
-	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, limit, queryResult)
+	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey, queryResult)
 }
 
-func marshalQueryResult(
-	collection *document.Collection,
-	items []map[string]*dynamodb.AttributeValue,
-	lastEvaluatedKey map[string]*dynamodb.AttributeValue,
-	limit int,
-	queryResult *document.QueryResult) error {
+func marshalQueryResult(collection *document.Collection, items []map[string]*dynamodb.AttributeValue, lastEvaluatedKey map[string]*dynamodb.AttributeValue, queryResult *document.QueryResult) error {
 
 	// Unmarshal Dynamo response items
 	var valueMaps []map[string]interface{}
@@ -454,13 +487,13 @@ func marshalQueryResult(
 		var c *document.Collection
 		if collection.Parent == nil {
 			// We know this is a root document so its key will be located in PK
-			pk, _ := m[ATTRIB_PK].(string)
+			pk, _ := m[AttribPk].(string)
 			id = pk
 			c = collection
 		} else {
 			// We know this is a child document so its key will be located in the SK
-			pk, _ := m[ATTRIB_PK].(string)
-			sk, _ := m[ATTRIB_SK].(string)
+			pk, _ := m[AttribPk].(string)
+			sk, _ := m[AttribSk].(string)
 			idStr := strings.Split(sk, "#")
 			id = idStr[len(idStr)-1]
 			c = &document.Collection{
@@ -475,8 +508,8 @@ func marshalQueryResult(
 		}
 
 		// Split out sort key value
-		delete(m, ATTRIB_PK)
-		delete(m, ATTRIB_SK)
+		delete(m, AttribPk)
+		delete(m, AttribSk)
 
 		sdkDoc := document.Document{
 			Key: &document.Key{
@@ -556,20 +589,44 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 	return false
 }
 
-func getTableName(collection document.Collection) *string {
+func (s *DynamoDocService) getTableName(collection document.Collection) (*string, error) {
 	coll := collection
 	for coll.Parent != nil {
 		coll = *coll.Parent.Collection
 	}
 
-	return aws.String(coll.Name)
+	// Avoid the lookup if the name is already known
+	if cacheName, ok := s.tableNameCache[coll.Name]; ok {
+		return cacheName, nil
+	}
+
+	// TODO: The following method for determining the deployment specific table name from the nitric name is unreliable.
+	//	a new design is in process and will replace this method for locating tables.
+	out, err := s.client.ListTables(&dynamodb.ListTablesInput{})
+
+	if err != nil {
+		return nil, fmt.Errorf("encountered an error retrieving the table list: %v", err)
+	}
+
+	for _, b := range out.TableNames {
+		if matched, err := regexp.MatchString("^" + coll.Name + "-[a-z0-9]{7}$", aws.StringValue(b)); matched && err == nil {
+			// Cache the found table name to skip the search on subsequent requests.
+			s.tableNameCache[coll.Name] = b
+			return b, nil
+		} else if err != nil {
+			println(err.Error())
+			continue
+		}
+	}
+
+	return nil, fmt.Errorf("dynamodb table for collection name %s not found", coll.Name)
 }
 
-func createDeleteQuery(key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {
-	limit := int64(deleteQueryLimit)
+func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {
+	limit := deleteQueryLimit
 
 	return &dynamodb.QueryInput{
-		TableName:              getTableName(*key.Collection),
+		TableName:              table,
 		Limit:                  &(limit),
 		Select:                 aws.String(dynamodb.SelectSpecificAttributes),
 		ProjectionExpression:   aws.String("#pk, #sk"),
@@ -587,8 +644,7 @@ func createDeleteQuery(key *document.Key, startKey map[string]*dynamodb.Attribut
 	}
 }
 
-func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.QueryOutput) error {
-
+func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.QueryOutput) error {
 	itemIndex := 0
 	for itemIndex < len(resp.Items) {
 
@@ -605,8 +661,8 @@ func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.
 
 			writeRequest.DeleteRequest = &dynamodb.DeleteRequest{
 				Key: map[string]*dynamodb.AttributeValue{
-					ATTRIB_PK: item[ATTRIB_PK],
-					ATTRIB_SK: item[ATTRIB_SK],
+					AttribPk: item[AttribPk],
+					AttribSk: item[AttribSk],
 				},
 			}
 			writeRequests = append(writeRequests, &writeRequest)
@@ -615,7 +671,7 @@ func (s *DynamoDocService) processDeleteQuery(key *document.Key, resp *dynamodb.
 		}
 
 		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
-		batchInput.RequestItems[key.Collection.Name] = writeRequests
+		batchInput.RequestItems[table] = writeRequests
 
 		_, err := s.client.BatchWriteItem(batchInput)
 		if err != nil {

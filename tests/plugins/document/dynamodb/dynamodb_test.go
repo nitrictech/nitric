@@ -28,6 +28,49 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
+var _ = Describe("DynamoDb", func() {
+	defer GinkgoRecover()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "fakeMyKeyId")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "fakeSecretAccessKey")
+	os.Setenv("AWS_REGION", "X")
+
+	// Start Local DynamoDB
+	dynaCmd := startDynamoProcess()
+
+	// Create DynamoDB client
+	db := createDynamoClient()
+
+	BeforeEach(func() {
+		// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
+		createTable(db, "customers-1111111")
+		createTable(db, "users-1111111")
+		createTable(db, "items-1111111")
+		createTable(db, "parentItems-1111111")
+	})
+
+	AfterEach(func() {
+		deleteTable(db, "customers-1111111")
+		deleteTable(db, "users-1111111")
+		deleteTable(db, "items-1111111")
+		deleteTable(db, "parentItems-1111111")
+	})
+
+	AfterSuite(func() {
+		stopDynamoProcess(dynaCmd)
+	})
+
+	docPlugin, err := dynamodb_service.NewWithClient(db)
+	if err != nil {
+		panic(err)
+	}
+
+	test.GetTests(docPlugin)
+	test.SetTests(docPlugin)
+	test.DeleteTests(docPlugin)
+	test.QueryTests(docPlugin)
+})
+
 func startDynamoProcess() *exec.Cmd {
 	// Start Local DynamoDB
 	args := []string{
@@ -87,6 +130,12 @@ func createTable(db *dynamodb.DynamoDB, tableName string) {
 			WriteCapacityUnits: aws.Int64(10),
 		},
 		TableName: aws.String(tableName),
+		Tags: []*dynamodb.Tag{
+			{
+				Key: aws.String("x-nitric-name"),
+				Value: aws.String(tableName),
+			},
+		},
 	}
 	_, err := db.CreateTable(input)
 	if err != nil {
@@ -104,45 +153,3 @@ func deleteTable(db *dynamodb.DynamoDB, tableName string) {
 		panic(fmt.Sprintf("Error calling DeleteTable: %s", err))
 	}
 }
-
-var _ = Describe("DynamoDb", func() {
-	defer GinkgoRecover()
-
-	os.Setenv("AWS_ACCESS_KEY_ID", "fakeMyKeyId")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "fakeSecretAccessKey")
-	os.Setenv("AWS_REGION", "X")
-
-	// Start Local DynamoDB
-	dynaCmd := startDynamoProcess()
-
-	// Create DyanmoDB client
-	db := createDynamoClient()
-
-	BeforeEach(func() {
-		createTable(db, "customers")
-		createTable(db, "users")
-		createTable(db, "items")
-		createTable(db, "parentItems")
-	})
-
-	AfterEach(func() {
-		deleteTable(db, "customers")
-		deleteTable(db, "users")
-		deleteTable(db, "items")
-		deleteTable(db, "parentItems")
-	})
-
-	AfterSuite(func() {
-		stopDynamoProcess(dynaCmd)
-	})
-
-	docPlugin, err := dynamodb_service.NewWithClient(db)
-	if err != nil {
-		panic(err)
-	}
-
-	test.GetTests(docPlugin)
-	test.SetTests(docPlugin)
-	test.DeleteTests(docPlugin)
-	test.QueryTests(docPlugin)
-})
