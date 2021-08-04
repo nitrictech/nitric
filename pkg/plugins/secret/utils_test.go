@@ -29,7 +29,7 @@ var _ = Describe("Secret Plugin Utils", func() {
 			})
 
 			It("should indicate a non-blank secret name be provided", func() {
-				Expect(err.Error()).To(Equal("Secret name must not be blank"))
+				Expect(err.Error()).To(Equal("provide non-blank secret name"))
 			})
 		})
 
@@ -41,7 +41,7 @@ var _ = Describe("Secret Plugin Utils", func() {
 			})
 
 			It("error should indicate a secret name matching the valid pattern be provided", func() {
-				Expect(err.Error()).To(Equal("Secret name must match pattern: ^\\w+(-\\w+)*$"))
+				Expect(err.Error()).To(Equal("provide secret name matching pattern: ^\\w+(-\\w+)*$"))
 			})
 		})
 
