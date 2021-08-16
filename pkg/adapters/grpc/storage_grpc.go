@@ -19,6 +19,7 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"google.golang.org/grpc/codes"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
@@ -40,6 +41,10 @@ func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRe
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Write", err)
+	}
+
 	if err := s.storagePlugin.Write(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
 		return &pb.StorageWriteResponse{}, nil
 	} else {
@@ -50,6 +55,10 @@ func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRe
 func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequest) (*pb.StorageReadResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Read", err)
 	}
 
 	if object, err := s.storagePlugin.Read(req.GetBucketName(), req.GetKey()); err == nil {
@@ -64,6 +73,10 @@ func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequ
 func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDeleteRequest) (*pb.StorageDeleteResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Delete", err)
 	}
 
 	if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {

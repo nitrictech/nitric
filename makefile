@@ -73,11 +73,17 @@ license-header-check:
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
 
+check-gopath:
+ifndef GOPATH
+  $(error GOPATH is undefined)
+endif
+
 # Generate interfaces
-generate-proto:
+generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
+	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto
+	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ${GOPATH}/src/github.com/envoyproxy/protoc-gen-validate
 
 # BEGIN AWS Plugins
 aws-static: generate-proto

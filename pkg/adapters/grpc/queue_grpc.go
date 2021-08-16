@@ -19,6 +19,7 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -41,6 +42,10 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "QueueService.Send", err)
+	}
+
 	task := req.GetTask()
 
 	nitricTask := queue.NitricTask{
@@ -60,6 +65,10 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBatchRequest) (*pb.QueueSendBatchResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "QueueService.SendBatch", err)
 	}
 
 	// Translate tasks
@@ -96,6 +105,10 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRequest) (*pb.QueueReceiveResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "QueueService.Receive", err)
 	}
 
 	// Convert gRPC request to plugin params
@@ -135,6 +148,9 @@ func (s *QueueServiceServer) Complete(ctx context.Context, req *pb.QueueComplete
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "QueueService.Complete", err)
+	}
 	// Convert gRPC request to plugin params
 	queueName := req.GetQueue()
 	leaseId := req.GetLeaseId()
