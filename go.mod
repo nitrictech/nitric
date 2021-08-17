@@ -16,10 +16,11 @@ require (
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.12
+	github.com/envoyproxy/protoc-gen-validate v0.6.1 // indirect
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b
+	github.com/google/addlicense v0.0.0-20210810170408-9cc7ec3e36ab
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/mitchellh/mapstructure v1.4.1

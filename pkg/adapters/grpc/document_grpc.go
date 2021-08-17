@@ -19,6 +19,7 @@ import (
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -43,6 +44,10 @@ func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequ
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "DocumentService.Get", err)
+	}
+
 	key := keyFromWire(req.Key)
 
 	doc, err := s.documentPlugin.Get(key)
@@ -65,6 +70,10 @@ func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequ
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "DocumentService.Set", err)
+	}
+
 	key := keyFromWire(req.Key)
 
 	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
@@ -80,6 +89,10 @@ func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDele
 		return nil, err
 	}
 
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "DocumentService.Delete", err)
+	}
+
 	key := keyFromWire(req.Key)
 
 	err := s.documentPlugin.Delete(key)
@@ -93,6 +106,10 @@ func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDele
 func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQueryRequest) (*pb.DocumentQueryResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "DocumentService.Query", err)
 	}
 
 	collection := collectionFromWire(req.Collection)

@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"google.golang.org/grpc/codes"
 )
 
 // GRPC Interface for registered Nitric events Plugins
@@ -39,6 +40,10 @@ func (s *EventServiceServer) checkPluginRegistered() error {
 func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRequest) (*pb.EventPublishResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "EventService.Publish", err)
 	}
 
 	// auto generate an ID if we did not receive one
@@ -80,9 +85,13 @@ func (s *TopicServiceServer) checkPluginRegistered() error {
 	return nil
 }
 
-func (s *TopicServiceServer) List(context.Context, *pb.TopicListRequest) (*pb.TopicListResponse, error) {
+func (s *TopicServiceServer) List(ctx context.Context, req *pb.TopicListRequest) (*pb.TopicListResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "TopicService.List", err)
 	}
 
 	if res, err := s.eventPlugin.ListTopics(); err == nil {

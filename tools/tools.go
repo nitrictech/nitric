@@ -15,6 +15,7 @@
 package tools
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate"
 	_ "github.com/golang/protobuf/protoc-gen-go"
 	_ "github.com/google/addlicense"
 	_ "github.com/onsi/ginkgo/ginkgo"

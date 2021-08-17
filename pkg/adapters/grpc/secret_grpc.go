@@ -16,7 +16,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
@@ -37,40 +36,12 @@ func (s *SecretServer) checkPluginRegistered() error {
 	return nil
 }
 
-func validateSecret(s *pb.Secret) error {
-	if s == nil {
-		return fmt.Errorf("provide non-nil secret")
-	}
-
-	if err := secret.ValidateSecretName(s.GetName()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func validateSecretVersion(s *pb.SecretVersion) error {
-	if s == nil {
-		return fmt.Errorf("provide non-nil secret version")
-	}
-
-	if len(s.GetVersion()) == 0 {
-		return fmt.Errorf("provide non-blank secret version id")
-	}
-
-	if err := validateSecret(s.GetSecret()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.SecretPutResponse, error) {
 	if err := s.checkPluginRegistered(); err != nil {
 		return nil, err
 	}
 
-	if err := validateSecret(req.GetSecret()); err != nil {
+	if err := req.ValidateAll(); err != nil {
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Put", err)
 	}
 
@@ -95,7 +66,7 @@ func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) 
 		return nil, err
 	}
 
-	if err := validateSecretVersion(req.GetSecretVersion()); err != nil {
+	if err := req.ValidateAll(); err != nil {
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Access", err)
 	}
 
