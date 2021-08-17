@@ -7,7 +7,10 @@ require (
 	cloud.google.com/go/firestore v1.5.0
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
-	github.com/Azure/azure-sdk-for-go v51.3.0+incompatible
+	github.com/Azure/azure-sdk-for-go v56.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go/sdk/armcore v0.8.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.9.2
+	github.com/Azure/azure-sdk-for-go/sdk/keyvault/armkeyvault v0.1.1
 	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/DataDog/zstd v1.4.8 // indirect
@@ -32,8 +35,9 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5
 	google.golang.org/api v0.40.0
 	google.golang.org/genproto v0.0.0-20210222152913-aa3ee6e6a81c
