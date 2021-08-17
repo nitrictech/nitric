@@ -27,6 +27,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
@@ -79,6 +81,12 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 
 // Read - Retrieves an item from a bucket
 func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.Read",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if b, err := s.getBucketByName(bucket); err == nil {
 		resp, err := s.client.GetObject(&s3.GetObjectInput{
 			Bucket: b.Name,
@@ -86,47 +94,88 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 		})
 
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.NotFound,
+				"error retrieving key",
+				err,
+			)
 		}
 
 		defer resp.Body.Close()
 		//TODO: Wrap the possible error from ReadAll
 		return ioutil.ReadAll(resp.Body)
 	} else {
-		return nil, err
+		return nil, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
 }
 
 // Write - Writes an item to a bucket
 func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.Write",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if b, err := s.getBucketByName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
-		_, err := s.client.PutObject(&s3.PutObjectInput{
+		if _, err := s.client.PutObject(&s3.PutObjectInput{
 			Bucket:      b.Name,
 			Body:        bytes.NewReader(object),
 			ContentType: &contentType,
 			Key:         aws.String(key),
-		})
-		return err
+		}); err != nil {
+			return newErr(
+				codes.Internal,
+				"unable to put object",
+				err,
+			)
+		}
 	} else {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
+
+	return nil
 }
 
 // Delete - Deletes an item from a bucket
 func (s *S3StorageService) Delete(bucket string, key string) error {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.Delete",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if b, err := s.getBucketByName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
-		_, err := s.client.DeleteObject(&s3.DeleteObjectInput{
+		if _, err := s.client.DeleteObject(&s3.DeleteObjectInput{
 			Bucket: b.Name,
 			Key:    aws.String(key),
-		})
-
-		return err
+		}); err != nil {
+			return newErr(
+				codes.Internal,
+				"unable to delete object",
+				err,
+			)
+		}
 	} else {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
+
+	return nil
 }
 
 // New creates a new default S3 storage plugin

@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
@@ -38,14 +40,16 @@ func (s *DevSecretService) secretFileName(sec *secret.Secret, v string) string {
 }
 
 func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+	newErr := errors.ErrorsWithScope("DevSecretService.Put")
+
 	if sec == nil {
-		return nil, fmt.Errorf("provide non-empty secret")
+		return nil, newErr(codes.InvalidArgument, "provide non-empty secret", nil)
 	}
 	if len(sec.Name) == 0 {
-		return nil, fmt.Errorf("provide non-blank secret name")
+		return nil, newErr(codes.InvalidArgument, "provide non-blank secret name", nil)
 	}
 	if len(val) == 0 {
-		return nil, fmt.Errorf("provide non-blank secret value")
+		return nil, newErr(codes.InvalidArgument, "provide non-blank secret value", nil)
 	}
 
 	var versionId = uuid.New().String()
@@ -53,7 +57,11 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	// DIR/Name_Version.txt
 	file, err := os.Create(s.secretFileName(sec, versionId))
 	if err != nil {
-		return nil, fmt.Errorf("error creating secret store: %v", err)
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"error creating secret store",
+			err,
+		)
 	}
 	writer := bufio.NewWriter(file)
 	writer.WriteString(string(val))
@@ -62,7 +70,11 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	//Creates a new file as latest
 	latestFile, err := os.Create(s.secretFileName(sec, "latest"))
 	if err != nil {
-		return nil, fmt.Errorf("error creating latest secret: %v", err)
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"error creating latest secret",
+			err,
+		)
 	}
 	latestWriter := bufio.NewWriter(latestFile)
 	latestWriter.WriteString(string(val))
@@ -80,16 +92,30 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 }
 
 func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+	newErr := errors.ErrorsWithScope("DevSecretService.Access")
+
 	if sv.Secret.Name == "" {
-		return nil, fmt.Errorf("provide non-blank name")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank name",
+			nil,
+		)
 	}
 	if sv.Version == "" {
-		return nil, fmt.Errorf("provide non-blank version")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank version",
+			nil,
+		)
 	}
 
 	content, err := ioutil.ReadFile(s.secretFileName(sv.Secret, sv.Version))
 	if err != nil {
-		return nil, fmt.Errorf("error reading secret store: %v", err)
+		return nil, newErr(
+			codes.InvalidArgument,
+			"error reading secret store",
+			err,
+		)
 	}
 
 	splitContent := strings.Split(string(content), ",")

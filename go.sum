@@ -163,6 +163,8 @@ github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b h1:KwI0NOpYd3rzK
 github.com/google/addlicense v0.0.0-20210729153508-ef04bb38a16b/go.mod h1:EMjYTRimagHs1FwlIqKyX3wAM0u3rA+McvlIIWmSamA=
 github.com/google/addlicense v0.0.0-20210810170408-9cc7ec3e36ab h1:+qfOxKbnAqDNCoFUNHxudKs8Z14T5EBYntAeWIeI1eA=
 github.com/google/addlicense v0.0.0-20210810170408-9cc7ec3e36ab/go.mod h1:Sm/DHu7Jk+T5miFHHehdIjbi4M5+dJDRS3Cq0rncIxA=
+github.com/google/addlicense v1.0.0 h1:cqvo5suPWlsk6r6o42Fs2K66xYCl2tnhVPUYoP3EnO4=
+github.com/google/addlicense v1.0.0/go.mod h1:Sm/DHu7Jk+T5miFHHehdIjbi4M5+dJDRS3Cq0rncIxA=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0 h1:0udJVsspx3VBr5FwtLhQQtuAsVc79tTq0ocGIPAU6qo=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=

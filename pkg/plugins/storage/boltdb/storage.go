@@ -23,6 +23,8 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/asdine/storm"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"go.etcd.io/bbolt"
 )
@@ -41,22 +43,48 @@ type Object struct {
 
 // Write - will create a new item or overwrite an existing item in storage
 func (s *BoltStorageService) Write(bucket string, key string, object []byte) error {
+	newErr := errors.ErrorsWithScope(
+		"BoltStorageService.Write",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if bucket == "" {
-		return fmt.Errorf("provide non-blank bucket")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank bucket",
+			nil,
+		)
 	}
 	if key == "" {
-		return fmt.Errorf("provide non-blank key")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank key",
+			nil,
+		)
 	}
 	if object == nil {
-		return fmt.Errorf("provide non-nil object")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-nil object",
+			nil,
+		)
 	}
 	if len(object) == 0 {
-		return fmt.Errorf("provide non-empty object")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-empty object",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(bucket)
 	if err != nil {
-		return err
+		return newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -67,7 +95,11 @@ func (s *BoltStorageService) Write(bucket string, key string, object []byte) err
 
 	err = db.Save(&obj)
 	if err != nil {
-		return fmt.Errorf("Error storing %s : %v", key, err)
+		return newErr(
+			codes.Internal,
+			"error storing object",
+			err,
+		)
 	}
 
 	return nil
@@ -75,16 +107,34 @@ func (s *BoltStorageService) Write(bucket string, key string, object []byte) err
 
 // Read - reads an item from Storage
 func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
+	newErr := errors.ErrorsWithScope(
+		"BoltStorageService.Read",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if bucket == "" {
-		return nil, fmt.Errorf("provide non-blank bucket")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank bucket",
+			nil,
+		)
 	}
 	if key == "" {
-		return nil, fmt.Errorf("provide non-blank key")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank key",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(bucket)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -92,7 +142,11 @@ func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
 	err = db.One("Key", key, &obj)
 	if err != nil {
 		// TODO: not found OK
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"failed to retrieve key",
+			err,
+		)
 	}
 
 	return obj.Data, nil
@@ -100,16 +154,34 @@ func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
 
 // Delete - deletes an item from Storage
 func (s *BoltStorageService) Delete(bucket string, key string) error {
+	newErr := errors.ErrorsWithScope(
+		"BoltStorageService.Delete",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	if bucket == "" {
-		return fmt.Errorf("provide non-blank bucket")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank bucket",
+			nil,
+		)
 	}
 	if key == "" {
-		return fmt.Errorf("provide non-blank key")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank key",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(bucket)
 	if err != nil {
-		return err
+		return newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 

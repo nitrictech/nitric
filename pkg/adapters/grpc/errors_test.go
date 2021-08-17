@@ -18,18 +18,24 @@ import (
 	"fmt"
 
 	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	"github.com/nitric-dev/membrane/pkg/plugins"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("GRPC Errors", func() {
 	Context("GrpcError", func() {
-		When("sdk.IllegalArgumentError", func() {
+		When("plugin.errors.InvalidArgument", func() {
 			It("Should report GRPC IllegalArgument error", func() {
-				err := plugins.NewInvalidArgError("bad param")
-				err = grpc.NewGrpcError("BadServer.BadCall", err)
-				Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = BadServer.BadCall: bad param"))
+				newErr := errors.ErrorsWithScope("test")
+				err := newErr(
+					codes.InvalidArgument,
+					"bad param",
+					nil,
+				)
+				grpcErr := grpc.NewGrpcError("BadServer.BadCall", err)
+				Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = BadServer.BadCall: test([]): bad param"))
 			})
 		})
 		When("Standard Error", func() {

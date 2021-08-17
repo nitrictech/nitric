@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
@@ -52,12 +54,28 @@ func (s *SQSQueueService) getUrlForQueueName(queueName string) (*string, error) 
 }
 
 func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
+	newErr := errors.ErrorsWithScope(
+		"SQSQueueService.Send",
+		fmt.Sprintf("queue=%s", queueName),
+	)
+
 	tasks := []queue.NitricTask{task}
-	_, err := s.SendBatch(queueName, tasks)
-	return err
+	if _, err := s.SendBatch(queueName, tasks); err != nil {
+		return newErr(
+			codes.Internal,
+			"failed to send task",
+			err,
+		)
+	}
+	return nil
 }
 
 func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+	newErr := errors.ErrorsWithScope(
+		"SQSQueueService.SendBatch",
+		fmt.Sprintf("queue=%s", queueName),
+	)
+
 	if url, err := s.getUrlForQueueName(queueName); err == nil {
 		entries := make([]*sqs.SendMessageBatchRequestEntry, 0)
 
@@ -70,7 +88,11 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 				})
 			} else {
 				// TODO: Do we want to just mark this one as having errored?
-				return nil, err
+				return nil, newErr(
+					codes.Internal,
+					"error marshalling task",
+					err,
+				)
 			}
 		}
 
@@ -97,17 +119,33 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 				FailedTasks: failedTasks,
 			}, nil
 		} else {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				"error sending tasks",
+				err,
+			)
 		}
 	} else {
-		return nil, err
+		return nil, newErr(
+			codes.NotFound,
+			"unable to find queue",
+			err,
+		)
 	}
 }
 
 func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
-	err := options.Validate()
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"SQSQueueService.Receive",
+		fmt.Sprintf("options=%v", options),
+	)
+
+	if err := options.Validate(); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid receive options",
+			err,
+		)
 	}
 
 	if url, err := s.getUrlForQueueName(options.QueueName); err == nil {
@@ -124,7 +162,11 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 
 		res, err := s.client.ReceiveMessage(&req)
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve messages: %s", err)
+			return nil, newErr(
+				codes.Internal,
+				"failed to retrieve message",
+				err,
+			)
 		}
 
 		if len(res.Messages) == 0 {
@@ -151,27 +193,42 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		return tasks, nil
 
 	} else {
-		return nil, err
+		return nil, newErr(
+			codes.NotFound,
+			"unable to find queue",
+			err,
+		)
 	}
 }
 
 // Completes a previously popped queue item
 func (s *SQSQueueService) Complete(q string, leaseId string) error {
+	newErr := errors.ErrorsWithScope(
+		"SQSQueueService.Complete",
+		fmt.Sprintf("queue=%s", q),
+	)
+
 	if url, err := s.getUrlForQueueName(q); err == nil {
 		req := sqs.DeleteMessageInput{
 			QueueUrl:      url,
 			ReceiptHandle: aws.String(leaseId),
 		}
 
-		_, err := s.client.DeleteMessage(&req)
-		if err != nil {
-			return fmt.Errorf("failed to complete item: %s", err)
+		if _, err := s.client.DeleteMessage(&req); err != nil {
+			return newErr(
+				codes.Internal,
+				"failed to dequeue task",
+				err,
+			)
 		}
 
 		return nil
-
 	} else {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to find queue",
+			err,
+		)
 	}
 }
 

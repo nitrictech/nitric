@@ -23,6 +23,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
@@ -45,12 +47,20 @@ func generateQueueSubscription(queue string) string {
 }
 
 func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
+	newErr := errors.ErrorsWithScope(
+		"PubsubQueueService.Send",
+		fmt.Sprintf("queue=%s", queue),
+	)
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
 	topic := s.client.Topic(queue)
 
 	if exists, err := topic.Exists(ctx); !exists || err != nil {
-		return fmt.Errorf("Queue: %s does not exist", queue)
+		return newErr(
+			codes.NotFound,
+			fmt.Sprintf("queue not found"),
+			err,
+		)
 	}
 
 	if taskBytes, err := json.Marshal(task); err == nil {
@@ -61,22 +71,39 @@ func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 		result := topic.Publish(ctx, msg)
 
 		if _, err := result.Get(ctx); err != nil {
-			return fmt.Errorf("Error getting result: %v", err)
+			return newErr(
+				codes.Internal,
+				"error retrieving publish result",
+				err,
+			)
 		}
 	} else {
-		return fmt.Errorf("Error marshalling task: %v", err)
+		return newErr(
+			codes.Internal,
+			"error marshalling the task",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *PubsubQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+	newErr := errors.ErrorsWithScope(
+		"PubsubQueueService.SendBatch",
+		fmt.Sprintf("queue=%s", q),
+	)
+
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
 	topic := s.client.Topic(q)
 
 	if exists, err := topic.Exists(ctx); !exists || err != nil {
-		return nil, fmt.Errorf("Queue: %s does not exist", q)
+		return nil, newErr(
+			codes.NotFound,
+			"queue not found",
+			err,
+		)
 	}
 
 	// SendBatch once we've published all tasks to the client
@@ -148,9 +175,17 @@ func (s *PubsubQueueService) getQueueSubscription(q string) (ifaces_pubsub.Subsc
 
 // Receives a collection of tasks off a given queue.
 func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
-	err := options.Validate()
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"PubsubQueueService.Receive",
+		fmt.Sprintf("options=%v", options),
+	)
+
+	if err := options.Validate(); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid receive options provided",
+			err,
+		)
 	}
 
 	ctx := context.Background()
@@ -158,7 +193,11 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 	// Find the generic pull subscription for the provided topic (queue)
 	queueSubscription, err := s.getQueueSubscription(options.QueueName)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.NotFound,
+			"could not find queue subscription",
+			err,
+		)
 	}
 
 	// Using base client, so that asynchronous message acknowledgement can take place without needing to keep messages
@@ -166,7 +205,11 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 	// an independent acknowledge function. It's only provided as a method on message objects.
 	client, err := s.newSubscriberClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pubsub client.\n%s", err)
+		return nil, newErr(
+			codes.Internal,
+			"failed to create subscriber client",
+			err,
+		)
 	}
 	defer client.Close()
 
@@ -178,7 +221,11 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 	res, err := client.Pull(ctx, &req)
 	if err != nil {
 		// TODO: catch standard grpc errors, like NotFound.
-		return nil, fmt.Errorf("failed to pull pubsub messages.\n%s", err)
+		return nil, newErr(
+			codes.Internal,
+			"failed to pull messages",
+			err,
+		)
 	}
 
 	// An empty list is returned from PubSub if no messages are available
@@ -210,12 +257,21 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 
 // Completes a previously popped queue item
 func (s *PubsubQueueService) Complete(q string, leaseId string) error {
+	newErr := errors.ErrorsWithScope(
+		"PubsubQueueService.Complete",
+		fmt.Sprintf("queue=%s", q),
+	)
+
 	ctx := context.Background()
 
 	// Find the generic pull subscription for the provided topic (queue)
 	queueSubscription, err := s.getQueueSubscription(q)
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			"could not find queue subscription",
+			err,
+		)
 	}
 
 	// Using base client, so that asynchronous message acknowledgement can take place without needing to keep messages
@@ -223,7 +279,11 @@ func (s *PubsubQueueService) Complete(q string, leaseId string) error {
 	// the messages or an independent acknowledge function. It's only provided as a method on message objects.
 	client, err := s.newSubscriberClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create pubsub client.\n%s", err)
+		return newErr(
+			codes.Internal,
+			"failed to create subscriberclient",
+			err,
+		)
 	}
 	defer client.Close()
 
@@ -235,7 +295,11 @@ func (s *PubsubQueueService) Complete(q string, leaseId string) error {
 	err = client.Acknowledge(ctx, &req)
 	if err != nil {
 		// TODO: catch standard grpc errors, like NotFound.
-		return fmt.Errorf("failed to complete queue item.\n%s", err)
+		return newErr(
+			codes.Internal,
+			"failed to de-queue task",
+			err,
+		)
 	}
 
 	return nil

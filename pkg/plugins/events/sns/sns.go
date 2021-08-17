@@ -25,6 +25,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
@@ -52,16 +54,29 @@ func (s *SnsEventService) getTopicArnFromName(name *string) (*string, error) {
 
 // Publish to a given topic
 func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error {
+	newErr := errors.ErrorsWithScope(
+		"SnsEventService.Publish",
+		fmt.Sprintf("topic=%s", topic),
+	)
+
 	data, err := json.Marshal(event)
 
 	if err != nil {
-		return fmt.Errorf("Payload marshalling error: %v", err)
+		return newErr(
+			codes.Internal,
+			"error marshalling event payload",
+			err,
+		)
 	}
 
 	topicArn, err := s.getTopicArnFromName(&topic)
 
 	if err != nil {
-		return fmt.Errorf("There was an error resolving the topic ARN for topic: %s, %v", topic, err)
+		return newErr(
+			codes.NotFound,
+			"could not find topic",
+			err,
+		)
 	}
 
 	message := string(data)
@@ -77,17 +92,27 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 	_, err = s.client.Publish(publishInput)
 
 	if err != nil {
-		return fmt.Errorf("Error publishing message: %v", err)
+		return newErr(
+			codes.Internal,
+			"unable to publish message",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *SnsEventService) ListTopics() ([]string, error) {
-	topicsOutput, error := s.client.ListTopics(&sns.ListTopicsInput{})
+	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics")
 
-	if error != nil {
-		return nil, fmt.Errorf("There was an error retrieving SNS topics: %v", error)
+	topicsOutput, err := s.client.ListTopics(&sns.ListTopicsInput{})
+
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"error retrieving topics",
+			err,
+		)
 	}
 
 	var topics []string

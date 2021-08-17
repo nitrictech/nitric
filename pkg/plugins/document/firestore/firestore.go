@@ -20,11 +20,16 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
+
+	grpcCodes "google.golang.org/grpc/codes"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/status"
 )
 
 const pagingTokens = "pagingTokens"
@@ -36,16 +41,33 @@ type FirestoreDocService struct {
 }
 
 func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error) {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"FirestoreDocService.Get",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
 	doc := s.getDocRef(key)
 
 	value, err := doc.Get(s.context)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving value: %v", err)
+		var code = codes.Internal
+		if status.Code(err) == grpcCodes.NotFound {
+			code = codes.NotFound
+		}
+
+		return nil, newErr(
+			code,
+			"unable to retrieve value",
+			err,
+		)
 	}
 
 	return &document.Document{
@@ -55,29 +77,52 @@ func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error)
 }
 
 func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{}) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"FirestoreDocService.Set",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
 	if value == nil {
-		return fmt.Errorf("provide non-nil value")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-nil value",
+			nil,
+		)
 	}
 
 	doc := s.getDocRef(key)
 
-	_, err = doc.Set(s.context, value)
-	if err != nil {
-		return fmt.Errorf("error updating value: %v", err)
+	if _, err := doc.Set(s.context, value); err != nil {
+		return newErr(
+			codes.Internal,
+			"error updating value",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *FirestoreDocService) Delete(key *document.Key) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"FirestoreDocService.Delete",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
 	doc := s.getDocRef(key)
@@ -86,7 +131,11 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	collsIter := doc.Collections(s.context)
 	for subCol, err := collsIter.Next(); err != iterator.Done; subCol, err = collsIter.Next() {
 		if err != nil {
-			return fmt.Errorf("error deleting value: %v", err)
+			return newErr(
+				codes.Internal,
+				"error deleting value",
+				err,
+			)
 		}
 
 		// Loop over sub collection documents, performing batch deletes
@@ -119,23 +168,37 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	}
 
 	// Delete document
-	_, err = doc.Delete(s.context)
-	if err != nil {
-		return fmt.Errorf("error deleting value: %v", err)
+	if _, err := doc.Delete(s.context); err != nil {
+		return newErr(
+			codes.Internal,
+			"error deleting value",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *FirestoreDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	err := document.ValidateQueryCollection(collection)
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"FirestoreDocService.Query",
+		fmt.Sprintf("collection=%v", collection),
+	)
+
+	if err := document.ValidateQueryCollection(collection); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
-	err = document.ValidateExpressions(expressions)
-	if err != nil {
-		return nil, err
+	if err := document.ValidateExpressions(expressions); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid expressions",
+			err,
+		)
 	}
 
 	queryResult := &document.QueryResult{
@@ -184,7 +247,11 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	itr := query.Documents(s.context)
 	for docSnp, err := itr.Next(); err != iterator.Done; docSnp, err = itr.Next() {
 		if err != nil {
-			return nil, fmt.Errorf("error querying value: %v", err)
+			return nil, newErr(
+				codes.Internal,
+				"error querying value",
+				err,
+			)
 		}
 		sdkDoc := document.Document{
 			Content: docSnp.Data(),

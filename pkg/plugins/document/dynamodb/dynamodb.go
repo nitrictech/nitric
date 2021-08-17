@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,25 +37,36 @@ const AttribSk = "_sk"
 const deleteQueryLimit = int64(1000)
 const maxBatchWrite = 25
 
-
-
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
 	document.UnimplementedDocumentPlugin
-	client dynamodbiface.DynamoDBAPI
+	client         dynamodbiface.DynamoDBAPI
 	tableNameCache map[string]*string
 }
 
 func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
+	newErr := errors.ErrorsWithScope(
+		"DynamoDocService.Get",
+		fmt.Sprintf("key=%v", key),
+	)
+
 	err := document.ValidateKey(key)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.InvalidArgument,
+			"Invalid key",
+			err,
+		)
 	}
 
 	keyMap := createKeyMap(key)
 	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal key: %v", key)
+		return nil, newErr(
+			codes.InvalidArgument,
+			"failed to marshal key",
+			err,
+		)
 	}
 
 	tableName, err := s.getTableName(*key.Collection)
@@ -69,17 +82,29 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 
 	result, err := s.client.GetItem(input)
 	if err != nil {
-		return nil, fmt.Errorf("error getting %v : %v", key, err)
+		return nil, newErr(
+			codes.Internal,
+			fmt.Sprintf("error retrieving key %v", key),
+			err,
+		)
 	}
 
 	if result.Item == nil {
-		return nil, fmt.Errorf("%v value not found", key)
+		return nil, newErr(
+			codes.NotFound,
+			fmt.Sprintf("%v not found", key),
+			err,
+		)
 	}
 
 	var itemMap map[string]interface{}
 	err = dynamodbattribute.UnmarshalMap(result.Item, &itemMap)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling item: %v", err)
+		return nil, newErr(
+			codes.Internal,
+			"error unmarshalling item",
+			err,
+		)
 	}
 
 	delete(itemMap, AttribPk)
@@ -92,13 +117,25 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 }
 
 func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"DynamoDocService.Set",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
 	if value == nil {
-		return fmt.Errorf("provide non-nil value")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-nil value",
+			nil,
+		)
 	}
 
 	// Construct DynamoDB attribute value object
@@ -111,7 +148,11 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 	tableName, err := s.getTableName(*key.Collection)
 
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to find table",
+			err,
+		)
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -121,28 +162,48 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 
 	_, err = s.client.PutItem(input)
 	if err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"error putting item",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *DynamoDocService) Delete(key *document.Key) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"DynamoDocService.Delete",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid key",
+			err,
+		)
 	}
 
 	keyMap := createKeyMap(key)
 	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
 	if err != nil {
-		return fmt.Errorf("failed to marshal keys: %v", key)
+		return newErr(
+			codes.InvalidArgument,
+			fmt.Sprintf("failed to marshal keys: %v", key),
+			err,
+		)
 	}
 
 	tableName, err := s.getTableName(*key.Collection)
 
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to find table",
+			err,
+		)
 	}
 
 	deleteInput := &dynamodb.DeleteItemInput{
@@ -152,7 +213,11 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 	_, err = s.client.DeleteItem(deleteInput)
 	if err != nil {
-		return fmt.Errorf("error deleting %v item %v : %v", key.Collection, key.Id, err)
+		return newErr(
+			codes.Internal,
+			fmt.Sprintf("error deleting %v item %v : %v", key.Collection, key.Id, err),
+			err,
+		)
 	}
 
 	// Delete sub collection items
@@ -163,18 +228,22 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
 			resp, err := s.client.Query(queryInput)
 			if err != nil {
-				return fmt.Errorf(
-					"error performing delete in table %s for key %s, details: %v",
-					*tableName,
-					key,
-					err)
+				return newErr(
+					codes.Internal,
+					fmt.Sprintf("error performing delete in table"),
+					err,
+				)
 			}
 
 			lastEvaluatedKey = resp.LastEvaluatedKey
 
 			err = s.processDeleteQuery(*tableName, resp)
 			if err != nil {
-				return fmt.Errorf("error performing delete: %v", err)
+				return newErr(
+					codes.Internal,
+					fmt.Sprintf("error performing delete"),
+					err,
+				)
 			}
 
 			if len(lastEvaluatedKey) == 0 {
@@ -187,14 +256,25 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 }
 
 func (s *DynamoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	err := document.ValidateQueryCollection(collection)
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"DynamoDocService.Query",
+		fmt.Sprintf("collection=%v", collection),
+	)
+
+	if err := document.ValidateQueryCollection(collection); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid collection",
+			err,
+		)
 	}
 
-	err = document.ValidateExpressions(expressions)
-	if err != nil {
-		return nil, err
+	if err := document.ValidateExpressions(expressions); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid expressions",
+			err,
+		)
 	}
 
 	queryResult := &document.QueryResult{
@@ -205,7 +285,11 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 	if collection.Parent != nil && collection.Parent.Id != "" {
 		err := s.performQuery(collection, expressions, limit, pagingToken, queryResult)
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				"query error",
+				err,
+			)
 		}
 
 		remainingLimit := limit - len(queryResult.Documents)
@@ -216,7 +300,11 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 
 			err := s.performQuery(collection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
-				return nil, err
+				return nil, newErr(
+					codes.Internal,
+					"query error",
+					err,
+				)
 			}
 
 			remainingLimit = limit - len(queryResult.Documents)
@@ -225,7 +313,11 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 	} else {
 		err := s.performScan(collection, expressions, limit, pagingToken, queryResult)
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				"scan error",
+				err,
+			)
 		}
 
 		remainingLimit := limit - len(queryResult.Documents)
@@ -236,7 +328,11 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 
 			err := s.performScan(collection, expressions, remainingLimit, queryResult.PagingToken, queryResult)
 			if err != nil {
-				return nil, err
+				return nil, newErr(
+					codes.Internal,
+					"scan error",
+					err,
+				)
 			}
 
 			remainingLimit = limit - len(queryResult.Documents)
@@ -263,7 +359,7 @@ func New() (document.DocumentService, error) {
 	dynamoClient := dynamodb.New(sess)
 
 	return &DynamoDocService{
-		client: dynamoClient,
+		client:         dynamoClient,
 		tableNameCache: map[string]*string{},
 	}, nil
 }
@@ -271,7 +367,7 @@ func New() (document.DocumentService, error) {
 // NewWithClient - Mainly used for testing
 func NewWithClient(client *dynamodb.DynamoDB) (document.DocumentService, error) {
 	return &DynamoDocService{
-		client: client,
+		client:         client,
 		tableNameCache: map[string]*string{},
 	}, nil
 }
@@ -609,7 +705,7 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 	}
 
 	for _, b := range out.TableNames {
-		if matched, err := regexp.MatchString("^" + coll.Name + "-[a-z0-9]{7}$", aws.StringValue(b)); matched && err == nil {
+		if matched, err := regexp.MatchString("^"+coll.Name+"-[a-z0-9]{7}$", aws.StringValue(b)); matched && err == nil {
 			// Cache the found table name to skip the search on subsequent requests.
 			s.tableNameCache[coll.Name] = b
 			return b, nil
