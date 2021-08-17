@@ -179,6 +179,13 @@ do-docker: do-docker-static
 	@echo Built Digital Ocean Docker Images
 # END DigitalOcean Plugins
 
+build-all-binaries: clean generate-proto
+	@echo Building all provider membranes
+	@CGO_ENABLED=0 go build -o bin/membrane-gcp -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane-aws -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
+
 # membrane-docker-alpine: generate-proto
 # 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
 # membrane-docker-debian: generate-proto

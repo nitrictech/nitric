@@ -9,6 +9,9 @@ jobs:
     if: github.event.pull_request.merged == true
     name: Bump Version and Create Release
     runs-on: ubuntu-latest
+    outputs:
+      version_id: ${{ steps.tag_version.outputs.new_tag }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v2
       - name: Bump version and push tag
@@ -17,6 +20,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Create a GitHub release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,4 +29,61 @@ jobs:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
           release_name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: ${{ steps.tag_version.outputs.changelog }}
+
+  add_binaries:
+    needs: version_bump
+    name: Add Binaries to release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@v2-beta      
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+      - name: Install modules
+        run: make install-tools
+      - name: Make binaries
+        run: make build-all-binaries
+      - name: Upload Dev
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          asset_path: ./bin/membrane-dev
+          asset_name: membrane-dev
+          asset_content_type: application/octet-stream
+      - name: Upload AWS
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          asset_path: ./bin/membrane-aws
+          asset_name: membrane-aws
+          asset_content_type: application/octet-stream
+      - name: Upload GCP
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          asset_path: ./bin/membrane-gcp
+          asset_name: membrane-gcp
+          asset_content_type: application/octet-stream
+      - name: Upload Digital Ocean
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          asset_path: ./bin/membrane-do
+          asset_name: membrane-do
+          asset_content_type: application/octet-stream
+      
+      
+      
       
