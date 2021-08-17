@@ -15,15 +15,15 @@
 package grpc
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
-	if iae, ok := err.(*plugins.InvalidArgumentError); ok {
-		return newGrpcErrorWithCode(codes.InvalidArgument, operation, iae)
+	if pe, ok := err.(*errors.PluginError); ok {
+		return newGrpcErrorWithCode(codes.Code(errors.Code(pe)), operation, pe)
 	} else {
 		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}

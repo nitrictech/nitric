@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/Knetic/govaluate"
@@ -54,14 +56,26 @@ func (d BoltDoc) String() string {
 }
 
 func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.Get",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"Invalid Key",
+			err,
+		)
 	}
 
 	db, err := s.createdDb(*key.Collection)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -70,43 +84,83 @@ func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	err = db.One(idName, doc.Id, &doc)
 
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"DB Fetch error",
+			err,
+		)
 	}
 
 	return toSdkDoc(key.Collection, doc), nil
 }
 
 func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.Set",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"Invalid key",
+			err,
+		)
 	}
 
 	if content == nil {
-		return fmt.Errorf("provide non-nil content")
+		return newErr(
+			codes.InvalidArgument,
+			"Invalid content",
+			nil,
+		)
 	}
 
 	db, err := s.createdDb(*key.Collection)
 	if err != nil {
-		return err
+		return newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
 	doc := createDoc(key)
 	doc.Value = content
 
-	return db.Save(&doc)
+	if err := db.Save(&doc); err != nil {
+		return newErr(
+			codes.Internal,
+			"Document save error",
+			err,
+		)
+	}
+
+	return nil
 }
 
 func (s *BoltDocService) Delete(key *document.Key) error {
-	err := document.ValidateKey(key)
-	if err != nil {
-		return err
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.Delete",
+		fmt.Sprintf("key=%v", key),
+	)
+
+	if err := document.ValidateKey(key); err != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"Invalid key",
+			err,
+		)
 	}
 
 	db, err := s.createdDb(*key.Collection)
 	if err != nil {
-		return err
+		return newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -114,20 +168,32 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 
 	err = db.DeleteStruct(&doc)
 	if err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"Deletion error",
+			err,
+		)
 	}
 
 	// Delete sub collection documents
 	if key.Collection.Parent == nil {
 		childDocs, err := fetchChildDocs(key, db)
 		if err != nil {
-			return err
+			return newErr(
+				codes.Internal,
+				"Child Doc fetch error",
+				err,
+			)
 		}
 
 		for _, childDoc := range childDocs {
 			err = db.DeleteStruct(&childDoc)
 			if err != nil {
-				return err
+				return newErr(
+					codes.Internal,
+					"Child Doc deletion error",
+					err,
+				)
 			}
 		}
 	}
@@ -136,19 +202,34 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 }
 
 func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	err := document.ValidateQueryCollection(collection)
-	if err != nil {
-		return nil, err
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.Query",
+		fmt.Sprintf("collection=%v", collection),
+	)
+
+	if err := document.ValidateQueryCollection(collection); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"Invalid Collection",
+			err,
+		)
 	}
 
-	err = document.ValidateExpressions(expressions)
-	if err != nil {
-		return nil, err
+	if err := document.ValidateExpressions(expressions); err != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"Invalid query expressions",
+			err,
+		)
 	}
 
 	db, err := s.createdDb(*collection)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -180,7 +261,11 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 		if val, found := pagingToken[skipTokenName]; found {
 			pagingSkip, err = strconv.Atoi(val)
 			if err != nil {
-				return nil, fmt.Errorf("invalid pagingToken: %v", pagingToken)
+				return nil, newErr(
+					codes.InvalidArgument,
+					"Invalid paging token",
+					err,
+				)
 			}
 			query = query.Skip(pagingSkip)
 		}
@@ -213,7 +298,11 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 	if expStr.Len() > 0 {
 		filterExp, err = govaluate.NewEvaluableExpression(expStr.String())
 		if err != nil {
-			return nil, fmt.Errorf("could not create filter expression: %v, error: %v", expStr.String(), err)
+			return nil, newErr(
+				codes.InvalidArgument,
+				fmt.Sprintf("Unable to create filter expressions from: %s", expStr.String()),
+				err,
+			)
 		}
 	}
 

@@ -23,7 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	secretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
-	"github.com/nitric-dev/membrane/pkg/plugins"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
@@ -35,21 +36,27 @@ type secretsManagerSecretService struct {
 
 func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val []byte) error {
 	if sec == nil {
-		return plugins.NewInvalidArgError("provide non-empty secret")
+		return fmt.Errorf("provide non-empty secret")
 	}
 	if len(sec.Name) == 0 {
-		return plugins.NewInvalidArgError("provide non-empty secret name")
+		return fmt.Errorf("provide non-empty secret name")
 	}
 	if len(val) == 0 {
-		return plugins.NewInvalidArgError("provide non-empty secret value")
+		return fmt.Errorf("provide non-empty secret value")
 	}
 
 	return nil
 }
 
 func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+	newErr := errors.ErrorsWithScope("SecretsManagerSecretService.Put")
+
 	if err := s.validateNewSecret(sec, val); err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid secret",
+			err,
+		)
 	}
 
 	_, err := s.client.GetSecretValue(&secretsmanager.GetSecretValueInput{
@@ -71,7 +78,11 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 				})
 
 				if err != nil {
-					return nil, fmt.Errorf("failed to put secret: %v", err)
+					return nil, newErr(
+						codes.Internal,
+						"failed to create new secret",
+						err,
+					)
 				}
 
 				return &secret.SecretPutResponse{
@@ -84,11 +95,19 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 				}, nil
 			default:
 				// Return the error
-				return nil, fmt.Errorf("failed to retrieve secret: %v", awsErr)
+				return nil, newErr(
+					codes.FailedPrecondition,
+					"failed to retrieve secret container",
+					err,
+				)
 			}
 		} else {
 			// Not an AWS error but still an error...
-			return nil, fmt.Errorf("failed to retrieve secret: %v", err)
+			return nil, newErr(
+				codes.FailedPrecondition,
+				"failed to retrieve secret container",
+				err,
+			)
 		}
 	} else {
 		// Create a new version for an existing secret
@@ -98,7 +117,11 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to put secret: %v", err)
+			return nil, newErr(
+				codes.Internal,
+				"failed to put secret",
+				err,
+			)
 		}
 
 		return &secret.SecretPutResponse{
@@ -113,11 +136,22 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 }
 
 func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+	newErr := errors.ErrorsWithScope("SecretsManagerSecretService.Access")
+
 	if len(sv.Secret.Name) == 0 {
-		return nil, plugins.NewInvalidArgError("provide non-empty secret name")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-empty secret name",
+			nil,
+		)
 	}
+
 	if len(sv.Version) == 0 {
-		return nil, plugins.NewInvalidArgError("provide non-empty version")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-empty version",
+			nil,
+		)
 	}
 
 	//Build the request to get the secret
@@ -134,7 +168,11 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 	result, err := s.client.GetSecretValue(input)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to access secret version: %v", err)
+		return nil, newErr(
+			codes.NotFound,
+			"failed to retrieve secret version",
+			err,
+		)
 	}
 
 	return &secret.SecretAccessResponse{

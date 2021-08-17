@@ -21,11 +21,12 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	gax "github.com/googleapis/gax-go/v2"
-	"github.com/nitric-dev/membrane/pkg/plugins"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"golang.org/x/oauth2/google"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
-	"google.golang.org/grpc/codes"
+	pbcodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -47,13 +48,13 @@ type secretManagerSecretService struct {
 
 func validateNewSecret(sec *secret.Secret, val []byte) error {
 	if sec == nil {
-		return plugins.NewInvalidArgError("provide non-nil secret")
+		return fmt.Errorf("provide non-nil secret")
 	}
 	if len(sec.Name) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret name")
+		return fmt.Errorf("provide non-blank secret name")
 	}
 	if len(val) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret value")
+		return fmt.Errorf("provide non-blank secret value")
 	}
 
 	return nil
@@ -65,7 +66,7 @@ func (s *secretManagerSecretService) getParentName() string {
 
 func (s *secretManagerSecretService) buildSecretName(sec *secret.Secret) (string, error) {
 	if len(sec.Name) == 0 {
-		return "", plugins.NewInvalidArgError("provide non-blank name")
+		return "", fmt.Errorf("provide non-blank name")
 	}
 
 	return fmt.Sprintf("%s/secrets/%s", s.getParentName(), sec.Name), nil
@@ -79,7 +80,7 @@ func (s *secretManagerSecretService) buildSecretVersionName(sv *secret.SecretVer
 	}
 
 	if len(sv.Version) == 0 {
-		return "", plugins.NewInvalidArgError("provide non-blank version")
+		return "", fmt.Errorf("provide non-blank version")
 	}
 
 	return fmt.Sprintf("%s/versions/%s", parent, sv.Version), nil
@@ -101,7 +102,7 @@ func (s *secretManagerSecretService) ensureSecret(sec *secret.Secret) (*secretma
 
 	if err != nil {
 		// check error status, if it was an RPC NOT_FOUND error then continue
-		if s, ok := status.FromError(err); ok && s.Code() != codes.NotFound {
+		if s, ok := status.FromError(err); ok && s.Code() != pbcodes.NotFound {
 			return nil, err
 		} else if !ok {
 			// It wasn't an RPC error so return
@@ -134,15 +135,25 @@ func (s *secretManagerSecretService) ensureSecret(sec *secret.Secret) (*secretma
 
 // Put - Creates a new secret if one doesn't exist, or just adds a new secret version
 func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+	newErr := errors.ErrorsWithScope("SecretManagerSecretService.Put")
+
 	if err := validateNewSecret(sec, val); err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid secret",
+			err,
+		)
 	}
 
 	// ensure the secret container exists...
 	parentSec, err := s.ensureSecret(sec)
 
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"error ensuring secret container exists",
+			err,
+		)
 	}
 
 	verResult, err := s.client.AddSecretVersion(context.TODO(), &secretmanagerpb.AddSecretVersionRequest{
@@ -153,7 +164,11 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to add secret version: %v", err)
+		return nil, newErr(
+			codes.Internal,
+			"failed to add new secret version",
+			err,
+		)
 	}
 
 	versionStringParts := strings.Split(verResult.Name, "/")
@@ -171,10 +186,16 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 
 // Get - Retrieves a secret given a name and a version
 func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+	newErr := errors.ErrorsWithScope("SecretManagerSecretService.Access")
+
 	fullName, err := s.buildSecretVersionName(sv)
 
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid secret version",
+			err,
+		)
 	}
 
 	req := &secretmanagerpb.AccessSecretVersionRequest{
@@ -183,7 +204,11 @@ func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.S
 
 	result, err := s.client.AccessSecretVersion(context.TODO(), req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to access secret version: %v", err)
+		return nil, newErr(
+			codes.Internal,
+			"failed to access secret version",
+			err,
+		)
 	}
 
 	return &secret.SecretAccessResponse{

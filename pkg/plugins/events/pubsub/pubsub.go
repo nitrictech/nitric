@@ -22,6 +22,8 @@ import (
 	ifaces_pubsub "github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
@@ -33,18 +35,17 @@ type PubsubEventService struct {
 }
 
 func (s *PubsubEventService) ListTopics() ([]string, error) {
+	newErr := errors.ErrorsWithScope("PubsubEventService.ListTopics")
 	iter := s.client.Topics(context.TODO())
 
 	var topics []string
-	for {
-
-		topic, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-
+	for topic, err := iter.Next(); err != iterator.Done; topic, err = iter.Next() {
 		if err != nil {
-			return nil, fmt.Errorf("Error retrieving topics %v", err)
+			return nil, newErr(
+				codes.Internal,
+				"error retrieving topics",
+				err,
+			)
 		}
 
 		topics = append(topics, topic.ID())
@@ -54,12 +55,21 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 }
 
 func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) error {
+	newErr := errors.ErrorsWithScope(
+		"PubsubEventService.Publish",
+		fmt.Sprintf("topic=%s", topic),
+	)
+
 	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
 
 	if err != nil {
-		return fmt.Errorf("Payload marshalling error: %v", err)
+		return newErr(
+			codes.Internal,
+			"error marshalling event payload",
+			err,
+		)
 	}
 
 	pubsubTopic := s.client.Topic(topic)
@@ -72,7 +82,11 @@ func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) er
 	})
 
 	if _, err := pubsubTopic.Publish(ctx, msg).Get(ctx); err != nil {
-		return fmt.Errorf("Payload marshalling error: %v", err)
+		return newErr(
+			codes.Internal,
+			"topic publishing error",
+			err,
+		)
 	}
 
 	return nil

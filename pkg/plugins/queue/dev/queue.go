@@ -25,6 +25,8 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/asdine/storm"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"go.etcd.io/bbolt"
 )
@@ -42,19 +44,36 @@ type Item struct {
 }
 
 func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
+	newErr := errors.ErrorsWithScope(
+		"DevQueueService.Send",
+		fmt.Sprintf("queue=%s", queue),
+	)
+
 	if queue == "" {
-		return fmt.Errorf("provide non-blank queue")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank queue",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(queue)
 	if err != nil {
-		return err
+		return newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
 	data, err := json.Marshal(task)
 	if err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"error marshalling task",
+			err,
+		)
 	}
 
 	item := Item{
@@ -63,30 +82,55 @@ func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
 
 	err = db.Save(&item)
 	if err != nil {
-		return fmt.Errorf("Error sending %s : %v", task, err)
+		return newErr(
+			codes.Internal,
+			"error sending task",
+			err,
+		)
 	}
 
 	return nil
 }
 
 func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+	newErr := errors.ErrorsWithScope(
+		"DevQueueService.SendBatch",
+		fmt.Sprintf("queue=%s", q),
+	)
+
 	if q == "" {
-		return nil, fmt.Errorf("provide non-blank queue")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank queue",
+			nil,
+		)
 	}
 	if tasks == nil {
-		return nil, fmt.Errorf("provide non-nil tasks")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-nil tasks",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(q)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
 	for _, task := range tasks {
 		data, err := json.Marshal(task)
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				fmt.Sprintf("error marshalling task: %v", task),
+				err,
+			)
 		}
 
 		item := Item{
@@ -95,7 +139,11 @@ func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.
 
 		err = db.Save(&item)
 		if err != nil {
-			return nil, fmt.Errorf("Error sending %s : %v", task, err)
+			return nil, newErr(
+				codes.Internal,
+				fmt.Sprintf("error sending task: %v", task),
+				err,
+			)
 		}
 	}
 
@@ -105,13 +153,26 @@ func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.
 }
 
 func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+	newErr := errors.ErrorsWithScope(
+		"DevQueueService.Receive",
+		fmt.Sprintf("options=%v", options),
+	)
+
 	if options.QueueName == "" {
-		return nil, fmt.Errorf("provide non-blank options.queue")
+		return nil, newErr(
+			codes.InvalidArgument,
+			"provide non-blank options.queue",
+			nil,
+		)
 	}
 
 	db, err := s.createDb(options.QueueName)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"createDb error",
+			err,
+		)
 	}
 	defer db.Close()
 
@@ -123,14 +184,22 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		var task queue.NitricTask
 		err := json.Unmarshal(item.Data, &task)
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				"error marshalling task",
+				err,
+			)
 		}
 		task.LeaseID = uuid.New().String()
 		poppedTasks = append(poppedTasks, task)
 
 		err = db.DeleteStruct(&item)
 		if err != nil {
-			return nil, err
+			return nil, newErr(
+				codes.Internal,
+				"error de-queuing task",
+				err,
+			)
 		}
 	}
 
@@ -139,11 +208,24 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 
 // Completes a previously popped queue item
 func (s *DevQueueService) Complete(queue string, leaseId string) error {
+	newErr := errors.ErrorsWithScope(
+		"DevQueueService.Complete",
+		fmt.Sprintf("queue=%s", queue),
+	)
+
 	if queue == "" {
-		return fmt.Errorf("provide non-blank queue")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank queue",
+			nil,
+		)
 	}
 	if leaseId == "" {
-		return fmt.Errorf("provide non-blank leaseId")
+		return newErr(
+			codes.InvalidArgument,
+			"provide non-blank leaseId",
+			nil,
+		)
 	}
 	return nil
 }

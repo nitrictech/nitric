@@ -22,6 +22,8 @@ import (
 	ifaces_gcloud_storage "github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
 
 	"cloud.google.com/go/storage"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	plugin "github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
@@ -57,20 +59,38 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
 func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.Read",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	bucketHandle, err := s.getBucketByName(bucket)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
 
 	reader, err := bucketHandle.Object(key).NewReader(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"unable to ger reader for object",
+			err,
+		)
 	}
 	defer reader.Close()
 
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"error reading object stream",
+			err,
+		)
 	}
 
 	return bytes, nil
@@ -80,20 +100,38 @@ func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) 
  * Stores a new Item in a Google Cloud Storage Bucket
  */
 func (s *StorageStorageService) Write(bucket string, key string, object []byte) error {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.Write",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
 
 	writer := bucketHandle.Object(key).NewWriter(context.Background())
 
 	if _, err := writer.Write(object); err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"unable to write object",
+			err,
+		)
 	}
 
 	if err := writer.Close(); err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"error closing object write",
+			err,
+		)
 	}
 
 	return nil
@@ -103,21 +141,33 @@ func (s *StorageStorageService) Write(bucket string, key string, object []byte) 
  * Delete an Item in a Google Cloud Storage Bucket
  */
 func (s *StorageStorageService) Delete(bucket string, key string) error {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.Delete",
+		fmt.Sprintf("bucket=%s", bucket),
+		fmt.Sprintf("key=%s", key),
+	)
+
 	bucketHandle, err := s.getBucketByName(bucket)
 
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
 
 	if err := bucketHandle.Object(key).Delete(context.Background()); err != nil {
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
 		if err != storage.ErrObjectNotExist {
-			return err
+			return newErr(
+				codes.NotFound,
+				"object does not exist",
+				err,
+			)
 		}
 	}
-
-	storage.ErrObjectNotExist.Error()
 
 	return nil
 }

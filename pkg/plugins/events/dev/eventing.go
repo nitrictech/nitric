@@ -24,6 +24,8 @@ import (
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/utils"
 
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 )
 
@@ -41,6 +43,11 @@ type LocalHttpeventsClient interface {
 
 // Publish a message to a given topic
 func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) error {
+	newErr := errors.ErrorsWithScope(
+		"LocalEventService.Publish",
+		fmt.Sprintf("topic=%s", topic),
+	)
+
 	requestId := event.ID
 	payloadType := event.PayloadType
 	payload := event.Payload
@@ -49,7 +56,11 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 	contentType := http.DetectContentType(marshaledPayload)
 
 	if err != nil {
-		return err
+		return newErr(
+			codes.Internal,
+			"error marshalling event payload",
+			err,
+		)
 	}
 
 	if targets, ok := s.subscriptions[topic]; ok {
@@ -67,7 +78,11 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 			res, err := s.client.Do(httpRequest)
 			if err != nil {
 				fmt.Println(err)
-				return err
+				return newErr(
+					codes.Internal,
+					"unable to send message",
+					err,
+				)
 			}
 			if res.StatusCode < 200 || res.StatusCode >= 300 {
 				buf := new(bytes.Buffer)
@@ -79,7 +94,11 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 			}
 		}
 	} else {
-		return fmt.Errorf("No subscription found for %s in %v", topic, s.subscriptions)
+		return newErr(
+			codes.NotFound,
+			fmt.Sprintf("unable to find subscriber for topic"),
+			nil,
+		)
 	}
 
 	return nil

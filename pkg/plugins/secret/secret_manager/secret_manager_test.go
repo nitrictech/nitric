@@ -157,7 +157,7 @@ var _ = Describe("Secret Manager", func() {
 				It("Should return an error", func() {
 					_, err := secretPlugin.Put(nil, testSecretVal)
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(Equal("provide non-nil secret"))
+					Expect(err.Error()).To(ContainSubstring("provide non-nil secret"))
 				})
 			})
 
@@ -171,7 +171,7 @@ var _ = Describe("Secret Manager", func() {
 					_, err := secretPlugin.Put(emptySecretName, testSecretVal)
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(Equal("provide non-blank secret name"))
+					Expect(err.Error()).To(ContainSubstring("provide non-blank secret name"))
 				})
 			})
 
@@ -184,7 +184,7 @@ var _ = Describe("Secret Manager", func() {
 					_, err := secretPlugin.Put(&testSecret, nil)
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(Equal("provide non-blank secret value"))
+					Expect(err.Error()).To(ContainSubstring("provide non-blank secret value"))
 				})
 			})
 		})
@@ -257,7 +257,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(Equal("failed to access secret version: failed to access secret"))
+						Expect(err.Error()).To(ContainSubstring("failed to access secret"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())
@@ -278,7 +278,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(Equal("provide non-blank name"))
+						Expect(err.Error()).To(ContainSubstring("provide non-blank name"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())
@@ -298,7 +298,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(Equal("provide non-blank version"))
+						Expect(err.Error()).To(ContainSubstring("provide non-blank version"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())

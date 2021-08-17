@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/nitric-dev/membrane/pkg/plugins"
 )
 
 // Map of valid expression operators
@@ -35,17 +33,16 @@ var validOperators = map[string]bool{
 // ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
 func ValidateKey(key *Key) error {
 	if key == nil {
-		return plugins.NewInvalidArgError("provide non-nil key")
+		return fmt.Errorf("provide non-nil key")
 	}
 	if key.Id == "" {
-		return plugins.NewInvalidArgError("provide non-blank key.Id")
+		return fmt.Errorf("provide non-blank key.Id")
 	}
 	if key.Collection == nil {
-		return plugins.NewInvalidArgError("provide non-nil key.Collection")
+		return fmt.Errorf("provide non-nil key.Collection")
 	} else {
 		if err := ValidateCollection(key.Collection); err != nil {
-			msg := fmt.Sprintf("invalid collection for document key %s, %v", key.Id, err)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
 		}
 	}
 	return nil
@@ -54,15 +51,14 @@ func ValidateKey(key *Key) error {
 // ValidateCollection - validates a collection key, used for operations on a single document/collection e.g. Get, Set, Delete
 func ValidateCollection(collection *Collection) error {
 	if collection == nil {
-		return plugins.NewInvalidArgError("provide non-nil collection")
+		return fmt.Errorf("provide non-nil collection")
 	}
 	if collection.Name == "" {
-		return plugins.NewInvalidArgError("provide non-blank collection.Name")
+		return fmt.Errorf("provide non-blank collection.Name")
 	}
 	if collection.Parent != nil {
 		if err := ValidateKey(collection.Parent); err != nil {
-			msg := fmt.Sprintf("invalid parent for collection %s, %v", collection.Name, err)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
 
@@ -74,14 +70,13 @@ func ValidateCollection(collection *Collection) error {
 // e.g. querying values in a sub-collection for all documents in the parent collection.
 func ValidateQueryKey(key *Key) error {
 	if key == nil {
-		return plugins.NewInvalidArgError("provide non-nil key")
+		return fmt.Errorf("provide non-nil key")
 	}
 	if key.Collection == nil {
-		return plugins.NewInvalidArgError("provide non-nil key.Collection")
+		return fmt.Errorf("provide non-nil key.Collection")
 	} else {
 		if err := ValidateQueryCollection(key.Collection); err != nil {
-			msg := fmt.Sprintf("invalid collection for document key %s, %v", key.Id, err)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
 		}
 	}
 	return nil
@@ -91,15 +86,14 @@ func ValidateQueryKey(key *Key) error {
 // unique from ValidateCollection in that it calls ValidateQueryKey for the collection.Key
 func ValidateQueryCollection(collection *Collection) error {
 	if collection == nil {
-		return plugins.NewInvalidArgError("provide non-nil collection")
+		return fmt.Errorf("provide non-nil collection")
 	}
 	if collection.Name == "" {
-		return plugins.NewInvalidArgError("provide non-blank collection.Name")
+		return fmt.Errorf("provide non-blank collection.Name")
 	}
 	if collection.Parent != nil {
 		if err := ValidateQueryKey(collection.Parent); err != nil {
-			msg := fmt.Sprintf("invalid parent for collection %s, %v", collection.Name, err)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
 		}
 	}
 	return validateSubCollectionDepth(collection)
@@ -120,23 +114,21 @@ func GetEndRangeValue(value string) string {
 // ValidateExpressions - Validate the provided query expressions
 func ValidateExpressions(expressions []QueryExpression) error {
 	if expressions == nil {
-		return plugins.NewInvalidArgError("provide non-nil query expressions")
+		return fmt.Errorf("provide non-nil query expressions")
 	}
 
 	inequalityProperties := make(map[string]string)
 
 	for _, exp := range expressions {
 		if exp.Operand == "" {
-			return plugins.NewInvalidArgError(fmt.Sprintf("provide non-blank query expression operand: %v", exp))
+			return fmt.Errorf("provide non-blank query expression operand: %v", exp)
 		}
 
 		if _, found := validOperators[exp.Operator]; !found {
-			msg := fmt.Sprintf("provide valid query expression operator [==, <, >, <=, >=, startsWith]: %v", exp.Operator)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("provide valid query expression operator [==, <, >, <=, >=, startsWith]: %v", exp.Operator)
 		}
 		if exp.Value == "" {
-			msg := fmt.Sprintf("provide non-blank query expression value: %v", exp)
-			return plugins.NewInvalidArgError(msg)
+			return fmt.Errorf("provide non-blank query expression value: %v", exp)
 		}
 
 		if exp.Operator != "==" {
@@ -155,8 +147,7 @@ func ValidateExpressions(expressions []QueryExpression) error {
 		}
 		// Firestore does not support inequality expressions on multiple properties.
 		// Firestore requires composite key to be created at deployment time.
-		errMsg := fmt.Sprintf("inequality expressions on multiple properties are not supported: [ %v ]", msg)
-		return plugins.NewInvalidArgError(errMsg)
+		return fmt.Errorf("inequality expressions on multiple properties are not supported: [ %v ]", msg)
 	}
 
 	// DynamoDB range expression compatability check
@@ -212,12 +203,12 @@ func validateSubCollectionDepth(collection *Collection) error {
 		coll = coll.Parent.Collection
 	}
 	if depth > MaxSubCollectionDepth {
-		return plugins.NewInvalidArgError(fmt.Sprintf(
+		return fmt.Errorf(
 			"sub-collections only supported to a depth of %d, found depth of %d for collection %s",
 			MaxSubCollectionDepth,
 			depth,
 			collection.Name,
-		))
+		)
 	}
 	return nil
 }
@@ -241,8 +232,7 @@ func hasRangeError(exps []QueryExpression) error {
 					(exp.Operator == ">=" && nextExp.Operator == "<")) {
 
 				// Range expression combination not supported with DynamoDB, must use >= and <= which maps to DynamoDB BETWEEN
-				msg := fmt.Sprintf("range expression combination not supported (use operators >= and <=) : %v", exp)
-				return plugins.NewInvalidArgError(msg)
+				return fmt.Errorf("range expression combination not supported (use operators >= and <=) : %v", exp)
 			}
 		}
 	}
