@@ -21,7 +21,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/armcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/armkeyvault"
-	"github.com/nitric-dev/membrane/pkg/plugins"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors"
+	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
@@ -45,36 +46,43 @@ type keyVaultSecretService struct {
 
 func validateNewSecret(sec *secret.Secret, val []byte) error {
 	if sec == nil {
-		return plugins.NewInvalidArgError("provide non-nil secret")
+		return fmt.Errorf("provide non-nil secret")
 	}
 	if len(sec.Name) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret name")
+		return fmt.Errorf("provide non-blank secret name")
 	}
 	if len(val) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret value")
+		return fmt.Errorf("provide non-blank secret value")
 	}
 
 	return nil
 }
+
 func validateSecretVersion(sec *secret.SecretVersion) error {
 	if sec == nil {
-		return plugins.NewInvalidArgError("provide non-nil versioned secret")
+		return fmt.Errorf("provide non-nil versioned secret")
 	}
 	if sec.Secret == nil {
-		return plugins.NewInvalidArgError("provide non-nil secret")
+		return fmt.Errorf("provide non-nil secret")
 	}
 	if len(sec.Secret.Name) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret name")
+		return fmt.Errorf("provide non-blank secret name")
 	}
 	if len(sec.Version) == 0 {
-		return plugins.NewInvalidArgError("provide non-blank secret version")
+		return fmt.Errorf("provide non-blank secret version")
 	}
 	return nil
 }
 
 func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Put")
+
 	if err := validateNewSecret(sec, val); err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid secret",
+			err,
+		)
 	}
 	ctx := context.Background()
 	stringVal := string(val[:])
@@ -91,7 +99,11 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error putting secret %v", err)
+		return nil, newErr(
+			codes.Internal,
+			"error putting secret",
+			err,
+		)
 	}
 	return &secret.SecretPutResponse{
 		SecretVersion: &secret.SecretVersion{
@@ -105,8 +117,14 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 
 //GET https://{vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version={api-version}
 func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Access")
+
 	if err := validateSecretVersion(sv); err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"invalid secret version",
+			err,
+		)
 	}
 	ctx := context.Background()
 	result, err := s.client.Get(
@@ -117,7 +135,11 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 		&armkeyvault.SecretsGetOptions{},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error accessing secret %v", err)
+		return nil, newErr(
+			codes.Internal,
+			"failed to access secret",
+			err,
+		)
 	}
 	return &secret.SecretAccessResponse{
 		// Return the original secret version payload
@@ -133,13 +155,19 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 
 // New - Creates a new Nitric secret service with Azure Key Vault Provider
 func New() (secret.SecretService, error) {
+	newErr := errors.ErrorsWithScope("KeyVaultSecretService.New")
+
 	subscriptionId := utils.GetEnv("AZURE_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
 	resouceGroup := utils.GetEnv("AZURE_RESOURCE_GROUP", DEFAULT_RESOURCE_GROUP)
 	vaultName := utils.GetEnv("AZURE_VAULT_NAME", DEFAULT_VAULT_NAME)
 
 	credentials, credentialsError := azidentity.NewDefaultAzureCredential(nil)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("azure credentials error: %v", credentialsError)
+		return nil, newErr(
+			codes.Internal,
+			"azure credentials error",
+			credentialsError,
+		)
 	}
 	conn := armcore.NewDefaultConnection(credentials, nil)
 	client := armkeyvault.NewSecretsClient(conn, subscriptionId)
