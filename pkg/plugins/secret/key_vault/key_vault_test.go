@@ -218,7 +218,7 @@ var _ = Describe("Key Vault", func() {
 					response, err := secretPlugin.Access(testSecretVersion)
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(Equal("error accessing secret secret does not exist"))
+					Expect(err.Error()).To(ContainSubstring("secret does not exist"))
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})
