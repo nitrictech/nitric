@@ -52,7 +52,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
-          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          upload_url: ${{ needs.version_bump.outputs.upload_url }}
           asset_path: ./bin/membrane-dev
           asset_name: membrane-dev
           asset_content_type: application/octet-stream
@@ -61,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
-          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          upload_url: ${{ needs.version_bump.outputs.upload_url }}
           asset_path: ./bin/membrane-aws
           asset_name: membrane-aws
           asset_content_type: application/octet-stream
@@ -70,7 +70,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
-          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          upload_url: ${{ needs.version_bump.outputs.upload_url }}
           asset_path: ./bin/membrane-gcp
           asset_name: membrane-gcp
           asset_content_type: application/octet-stream
@@ -79,11 +79,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
-          upload_url: ${{ jobs.version_bump.outputs.upload_url }}
+          upload_url: ${{ needs.version_bump.outputs.upload_url }}
           asset_path: ./bin/membrane-do
           asset_name: membrane-do
           asset_content_type: application/octet-stream
-      
-      
-      
-      
