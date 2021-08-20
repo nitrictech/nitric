@@ -34,13 +34,17 @@ jobs:
     needs: version_bump
     name: Add Binaries to release
     runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Setup Go
-        uses: actions/setup-go@v2-beta      
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.7     
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
       - name: Install modules
