@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
-const DEFAULT_DIR = ".nitric/secrets/"
+const DEFAULT_DIR = "/nitric/secrets/"
 
 type DevSecretService struct {
 	secret.UnimplementedSecretPlugin
@@ -36,7 +37,8 @@ type DevSecretService struct {
 }
 
 func (s *DevSecretService) secretFileName(sec *secret.Secret, v string) string {
-	return fmt.Sprintf("%s/%s_%s.txt", s.secDir, sec.Name, v)
+	filename := fmt.Sprintf("%s_%s.txt", sec.Name, v)
+	return filepath.Join(s.secDir, filename)
 }
 
 func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
