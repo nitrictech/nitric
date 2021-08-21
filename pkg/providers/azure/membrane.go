@@ -21,12 +21,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	azure_storage_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/azure_storage"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 func main() {
@@ -37,7 +40,7 @@ func main() {
 	documentPlugin := &document.UnimplementedDocumentPlugin{}
 	eventsPlugin := &events.UnimplementedeventsPlugin{}
 	gatewayPlugin, _ := http_service.New()
-	queuePlugin := &queue.UnimplementedQueuePlugin{}
+	queuePlugin, _ := azure_storage_queue_service.New()
 	storagePlugin, _ := azblob_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
