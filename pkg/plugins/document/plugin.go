@@ -32,8 +32,12 @@ type Key struct {
 	Id         string
 }
 
+func (c *Collection) String() string {
+	return fmt.Sprintf("{Name: %s, Parent: %v}", c.Name, c.Parent)
+}
+
 func (k *Key) String() string {
-	return fmt.Sprintf("Key{Collection: %v Id: %v}\n", k.Collection, k.Id)
+	return fmt.Sprintf("{Collection: %v, Id: %s}", k.Collection, k.Id)
 }
 
 type Document struct {
@@ -42,7 +46,7 @@ type Document struct {
 }
 
 func (d *Document) String() string {
-	return fmt.Sprintf("Document{Content: %v}\n", d.Content)
+	return fmt.Sprintf("{Content: %v}", d.Content)
 }
 
 type QueryExpression struct {

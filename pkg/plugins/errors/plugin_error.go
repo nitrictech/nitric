@@ -15,28 +15,26 @@
 package errors
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 )
 
 type PluginError struct {
-	code  codes.Code
-	msg   string
-	cause error
-}
-
-func (p *PluginError) Unwrap() error {
-	return p.cause
+	code    codes.Code `json:"-"`
+	Code    string     `json:"code"`
+	Msg     string     `json:"msg,omitempty"`
+	Cause   string     `json:"cause,omitempty"`
+	Service string     `json:"service,omitempty"`
+	Plugin  string     `json:"plugin,omitempty"`
+	Args    string     `json:"args,omitempty"`
 }
 
 func (p *PluginError) Error() string {
-	if p.cause != nil {
-		// If the wrapped error is an ApiError than these should unwrap
-		return fmt.Sprintf("%s: \n %s", p.msg, p.cause.Error())
-	}
-
-	return fmt.Sprintf("%s", p.msg)
+	p.Code = p.code.String()
+	data, _ := json.Marshal(p)
+	return string(data)
 }
 
 // Code - returns a nitric api error code from an error or Unknown if the error was not a nitric api error
@@ -48,32 +46,20 @@ func Code(e error) codes.Code {
 	return codes.Unknown
 }
 
-// New - Creates a new nitric API error
-func new(c codes.Code, msg string) error {
-	return &PluginError{
-		code: c,
-		msg:  msg,
-	}
-}
-
-// NewWithCause - Creates a new nitric API error with the given error as it's cause
-func newWithCause(c codes.Code, msg string, cause error) error {
-	return &PluginError{
-		code:  c,
-		msg:   msg,
-		cause: cause,
-	}
-}
-
 // ErrorsWithScope - Returns a new reusable error factory with the given scope
 func ErrorsWithScope(s string, ctx ...interface{}) func(c codes.Code, msg string, cause error) error {
 	return func(c codes.Code, msg string, cause error) error {
-		sMsg := fmt.Sprintf("%s(%v): %s", s, ctx, msg)
-
-		if cause == nil {
-			return new(c, sMsg)
+		pe := &PluginError{
+			code:   c,
+			Msg:    msg,
+			Plugin: s,
 		}
-
-		return newWithCause(c, sMsg, cause)
+		if ctx != nil {
+			pe.Args = fmt.Sprintf("%v", ctx)
+		}
+		if cause != nil {
+			pe.Cause = fmt.Sprintf("%v", cause)
+		}
+		return pe
 	}
 }

@@ -15,25 +15,51 @@
 package grpc
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+type grpcError struct {
+	code    codes.Code `json:"-"`
+	Code    string     `json:"code"`
+	Msg     string     `json:"msg,omitempty"`
+	Service string     `json:"service,omitempty"`
+}
+
+func (ge *grpcError) Error() string {
+	ge.Code = fmt.Sprintf("%v", ge.code)
+	data, _ := json.Marshal(ge)
+	return string(data)
+}
+
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
 	if pe, ok := err.(*errors.PluginError); ok {
-		return newGrpcErrorWithCode(codes.Code(errors.Code(pe)), operation, pe)
+		pe.Service = operation
+		return status.Error(codes.Code(errors.Code(pe)), pe.Error())
 	} else {
 		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}
 }
 
 func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
-	return status.Errorf(code, "%s: %v", operation, err)
+	ge := &grpcError{
+		Service: operation,
+		code:    code,
+		Msg:     err.Error(),
+	}
+	return status.Error(code, ge.Error())
 }
 
 // Provides generic error for unregistered plugins
 func NewPluginNotRegisteredError(plugin string) error {
-	return status.Errorf(codes.Unimplemented, "%s plugin not registered", plugin)
+	ge := &grpcError{
+		code: codes.Unimplemented,
+		Msg:  fmt.Sprintf("%s plugin not registered", plugin),
+	}
+	return status.Error(codes.Unimplemented, ge.Error())
 }
