@@ -17,10 +17,10 @@ package key_vault_secret_service
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/armcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/armkeyvault"
+	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
+	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault/keyvaultapi"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
@@ -33,15 +33,11 @@ const DEFAULT_VAULT_NAME = "vault-name"
 
 // KeyVaultClient - iface that exposes utilized subset of generated KeyVaultSecretClient
 // Used with gomock to assert create client -> service interaction in unit tests
-type KeyVaultClient interface {
-	Get(ctx context.Context, resourceGroupName string, vaultName string, secretName string, options *armkeyvault.SecretsGetOptions) (armkeyvault.SecretResponse, error)
-	CreateOrUpdate(ctx context.Context, resourceGroupName string, vaultName string, secretName string, parameters armkeyvault.SecretCreateOrUpdateParameters, options *armkeyvault.SecretsCreateOrUpdateOptions) (armkeyvault.SecretResponse, error)
-}
+
 type keyVaultSecretService struct {
 	secret.UnimplementedSecretPlugin
-	client            KeyVaultClient
-	resourceGroupName string
-	vaultName         string
+	client    keyvaultapi.BaseClientAPI
+	vaultName string
 }
 
 func validateNewSecret(sec *secret.Secret, val []byte) error {
@@ -86,18 +82,16 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 	}
 	ctx := context.Background()
 	stringVal := string(val[:])
-	result, err := s.client.CreateOrUpdate(
+
+	result, err := s.client.SetSecret(
 		ctx,
-		s.resourceGroupName,
-		s.vaultName,
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), //https://myvault.vault.azure.net.
 		sec.Name,
-		armkeyvault.SecretCreateOrUpdateParameters{
-			Properties: &armkeyvault.SecretProperties{
-				Value: &stringVal,
-			},
+		keyvault.SecretSetParameters{
+			Value: &stringVal,
 		},
-		nil,
 	)
+
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -105,17 +99,21 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 			err,
 		)
 	}
+	//Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
+	//Split to get the version
+	versionID := strings.Split(*result.ID, "/")
+
 	return &secret.SecretPutResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sec.Name,
 			},
-			Version: *result.Secret.Properties.SecretURIWithVersion,
+			Version: versionID[len(versionID)-1],
 		},
 	}, nil
 }
 
-//GET https://{vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version={api-version}
+//GET {vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version={api-version}
 func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Access")
 
@@ -126,13 +124,18 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 			err,
 		)
 	}
+
 	ctx := context.Background()
-	result, err := s.client.Get(
+	//Key vault will default to latest if an empty string is provided
+	version := sv.Version
+	if version == "latest" {
+		version = ""
+	}
+	result, err := s.client.GetSecret(
 		ctx,
-		s.resourceGroupName,
-		s.vaultName,
-		sv.Version,
-		&armkeyvault.SecretsGetOptions{},
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), //https://myvault.vault.azure.net.
+		sv.Secret.Name,
+		version,
 	)
 	if err != nil {
 		return nil, newErr(
@@ -141,15 +144,18 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 			err,
 		)
 	}
+	//Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
+	//Split to get the version
+	versionID := strings.Split(*result.ID, "/")
 	return &secret.SecretAccessResponse{
 		// Return the original secret version payload
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: *result.Secret.Properties.SecretURIWithVersion,
+			Version: versionID[len(versionID)-1],
 		},
-		Value: []byte(*result.Secret.Properties.Value),
+		Value: []byte(*result.Value),
 	}, nil
 }
 
@@ -158,23 +164,34 @@ func New() (secret.SecretService, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.New")
 
 	subscriptionId := utils.GetEnv("AZURE_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
-	resouceGroup := utils.GetEnv("AZURE_RESOURCE_GROUP", DEFAULT_RESOURCE_GROUP)
 	vaultName := utils.GetEnv("AZURE_VAULT_NAME", DEFAULT_VAULT_NAME)
 
-	credentials, credentialsError := azidentity.NewDefaultAzureCredential(nil)
-	if credentialsError != nil {
+	if len(subscriptionId) == 0 {
 		return nil, newErr(
-			codes.Internal,
-			"azure credentials error",
-			credentialsError,
+			codes.InvalidArgument,
+			"AZURE_SUBSCRIPTION_ID not configured",
+			fmt.Errorf(""),
 		)
 	}
-	conn := armcore.NewDefaultConnection(credentials, nil)
-	client := armkeyvault.NewSecretsClient(conn, subscriptionId)
+	if len(vaultName) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_VAULT_NAME not configured",
+			fmt.Errorf(""),
+		)
+	}
+
+	client := keyvault.New()
 
 	return &keyVaultSecretService{
-		client:            client,
-		resourceGroupName: resouceGroup,
-		vaultName:         vaultName,
+		client:    client,
+		vaultName: vaultName,
 	}, nil
+}
+
+func NewWithClient(client keyvaultapi.BaseClientAPI) secret.SecretService {
+	return &keyVaultSecretService{
+		client:    client,
+		vaultName: "localvault",
+	}
 }

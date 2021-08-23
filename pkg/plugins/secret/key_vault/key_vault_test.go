@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/armkeyvault"
+	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/golang/mock/gomock"
 	mocks "github.com/nitric-dev/membrane/mocks/mock_key_vault"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
@@ -28,17 +28,13 @@ import (
 
 var _ = Describe("Key Vault", func() {
 	secretName := "secret-name"
-	secretVersion := "secret-name/version-name"
+	secretVersion := "secret-version"
 	secretVal := []byte("Super Secret Message")
+	secretID := "https://localvault.vault.azure.net/secret/secret-name/secret-version"
 	secretString := string(secretVal)
-	mockSecretResponse := armkeyvault.SecretResponse{
-		Secret: &armkeyvault.Secret{
-			Properties: &armkeyvault.SecretProperties{
-				SecretURI:            &secretName,
-				SecretURIWithVersion: &secretVersion,
-				Value:                &secretString,
-			},
-		},
+	mockSecretResponse := keyvault.SecretBundle{
+		ID:    &secretID,
+		Value: &secretString,
 	}
 	testSecret := &secret.Secret{
 		Name: "secret-name",
@@ -51,25 +47,18 @@ var _ = Describe("Key Vault", func() {
 	When("Put", func() {
 		When("Given the Key Vault backend is available", func() {
 			When("Putting a Secret to an existing secret", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
-
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should successfully store a secret", func() {
 					// Assert all methods are called at least their number of times
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					//Mocking expects
-					mockSecretClient.EXPECT().CreateOrUpdate(
+					mockSecretClient.EXPECT().SetSecret(
 						context.Background(),
-						secretPlugin.resourceGroupName,
-						secretPlugin.vaultName,
+						"https://localvault.vault.azure.net",
 						testSecret.Name,
-						gomock.Any(),
 						gomock.Any(),
 					).Return(mockSecretResponse, nil).Times(1)
 
@@ -83,23 +72,17 @@ var _ = Describe("Key Vault", func() {
 			})
 
 			When("Putting a Secret to a non-existent secret", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should successfully store a secret", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					//Mocking expects
-					mockSecretClient.EXPECT().CreateOrUpdate(
+					mockSecretClient.EXPECT().SetSecret(
 						context.Background(),
-						secretPlugin.resourceGroupName,
-						secretPlugin.vaultName,
+						"https://localvault.vault.azure.net",
 						testSecret.Name,
-						gomock.Any(),
 						gomock.Any(),
 					).Return(mockSecretResponse, nil).Times(1)
 
@@ -113,13 +96,9 @@ var _ = Describe("Key Vault", func() {
 			})
 
 			When("Putting a nil secret", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
 					_, err := secretPlugin.Put(nil, secretVal)
@@ -129,13 +108,9 @@ var _ = Describe("Key Vault", func() {
 			})
 
 			When("Putting a secret with an empty name", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
 					_, err := secretPlugin.Put(&secret.Secret{Name: ""}, secretVal)
@@ -145,13 +120,9 @@ var _ = Describe("Key Vault", func() {
 			})
 
 			When("Putting a secret with an empty value", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
 					_, err := secretPlugin.Put(testSecret, nil)
@@ -166,23 +137,18 @@ var _ = Describe("Key Vault", func() {
 		When("Given the Key Vault backend is available", func() {
 			When("The secret store exists", func() {
 				When("The secret exists", func() {
-					crtl := gomock.NewController(GinkgoT())
-					mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-					secretPlugin := &keyVaultSecretService{
-						client:            mockSecretClient,
-						resourceGroupName: "resource-group-name",
-						vaultName:         "vault-name",
-					}
+					ctrl := gomock.NewController(GinkgoT())
+					mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+					secretPlugin := NewWithClient(mockSecretClient)
 
 					It("Should successfully return a secret", func() {
-						defer crtl.Finish()
+						defer ctrl.Finish()
 						//Mocking expects
-						mockSecretClient.EXPECT().Get(
+						mockSecretClient.EXPECT().GetSecret(
 							context.Background(),
-							secretPlugin.resourceGroupName,
-							secretPlugin.vaultName,
+							"https://localvault.vault.azure.net",
+							secretName,
 							secretVersion,
-							gomock.Any(),
 						).Return(mockSecretResponse, nil).Times(1)
 
 						response, err := secretPlugin.Access(testSecretVersion)
@@ -197,23 +163,18 @@ var _ = Describe("Key Vault", func() {
 				})
 			})
 			When("The secret doesn't exist", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should return an error", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
-					mockSecretClient.EXPECT().Get(
+					mockSecretClient.EXPECT().GetSecret(
 						context.Background(),
-						secretPlugin.resourceGroupName,
-						secretPlugin.vaultName,
+						"https://localvault.vault.azure.net",
+						secretName,
 						secretVersion,
-						gomock.Any(),
-					).Return(armkeyvault.SecretResponse{}, fmt.Errorf("secret does not exist")).Times(1)
+					).Return(keyvault.SecretBundle{}, fmt.Errorf("secret does not exist")).Times(1)
 
 					response, err := secretPlugin.Access(testSecretVersion)
 					By("returning an error")
@@ -224,15 +185,12 @@ var _ = Describe("Key Vault", func() {
 				})
 			})
 			When("An empty secret version is provided", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
+
 				It("Should return an error", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					response, err := secretPlugin.Access(nil)
 					By("returning an error")
@@ -242,15 +200,12 @@ var _ = Describe("Key Vault", func() {
 				})
 			})
 			When("An empty secret is provided", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
+
 				It("Should return an error", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: nil, Version: secretVersion})
 					By("returning an error")
@@ -260,15 +215,12 @@ var _ = Describe("Key Vault", func() {
 				})
 			})
 			When("An empty secret name is provided", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
+
 				It("Should return an error", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: &secret.Secret{Name: ""}, Version: secretVersion})
 					By("returning an error")
@@ -278,15 +230,12 @@ var _ = Describe("Key Vault", func() {
 				})
 			})
 			When("An empty version is provided", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(crtl)
-				secretPlugin := &keyVaultSecretService{
-					client:            mockSecretClient,
-					resourceGroupName: "resource-group-name",
-					vaultName:         "vault-name",
-				}
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				secretPlugin := NewWithClient(mockSecretClient)
+
 				It("Should return an error", func() {
-					defer crtl.Finish()
+					defer ctrl.Finish()
 
 					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: testSecret, Version: ""})
 					By("returning an error")
