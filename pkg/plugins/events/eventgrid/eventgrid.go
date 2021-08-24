@@ -18,8 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -27,6 +25,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi"
 	eventgridmgmt "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid"
 	eventgridmgmtapi "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi"
+	"github.com/Azure/go-autorest/autorest/azure"
+	eventgridauth "github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
@@ -39,37 +39,6 @@ type EventGridEventService struct {
 	client        eventgridapi.BaseClientAPI
 	topicClient   eventgridmgmtapi.TopicsClientAPI
 	topicLocation string
-	accessToken   AzureAccessToken
-}
-
-type AzureAccessToken struct {
-	TokenType    string `json:"token_type"`
-	ExpiresIn    string `json:"expires_in"`
-	ExtExpiresIn string `json:"ext_expires_in"`
-	ExpiresOn    string `json:"expires_on"`
-	NotBefore    string `json:"not_before"`
-	Resource     string `json:"resource"`
-	AccessToken  string `json:"access_token"`
-}
-
-func GetToken(tenantId string, clientId string, clientSecret string) (AzureAccessToken, error) {
-	requestAccessTokenUri := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/token", tenantId)
-	requestBody := url.Values{
-		"grant_type":    {"client_credentials"},
-		"client_id":     {clientId},
-		"client_secret": {clientSecret},
-		"resource":      {"https://management.azure.com/"},
-	}
-	resp, err := http.PostForm(requestAccessTokenUri, requestBody)
-	if err != nil {
-		return AzureAccessToken{}, err
-	}
-
-	var result AzureAccessToken
-
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	return result, nil
 }
 
 func (s *EventGridEventService) NitricEventToEvent(topic string, event *events.NitricEvent) ([]eventgrid.Event, error) {
@@ -95,13 +64,10 @@ func (s *EventGridEventService) NitricEventToEvent(topic string, event *events.N
 
 func (s *EventGridEventService) ListTopics() ([]string, error) {
 	newErr := errors.ErrorsWithScope("EventGridEventService.ListTopics")
-	ctx := context.Background()
-	ctx.Value(map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", s.accessToken.TokenType, s.accessToken.AccessToken),
-	})
 
 	pageLength := int32(20)
 
+	ctx := context.Background()
 	results, err := s.topicClient.ListBySubscription(ctx, "", &pageLength)
 
 	if err != nil {
@@ -128,9 +94,6 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope("EventGridEventService.Publish")
 	ctx := context.Background()
-	ctx.Value(map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", s.accessToken.TokenType, s.accessToken.AccessToken),
-	})
 
 	if len(topic) == 0 {
 		return newErr(
@@ -179,31 +142,7 @@ func New() (events.EventService, error) {
 	newErr := errors.ErrorsWithScope("EventGridEventService.New")
 	topicLocation := utils.GetEnv("AZURE_TOPIC_LOCATION", "")
 	subscriptionID := utils.GetEnv("AZURE_SUBSCRIPTION_ID", "")
-	tenantId := utils.GetEnv("AZURE_TENANT_ID", "")
-	clientId := utils.GetEnv("AZURE_CLIENT_ID", "")
-	clientSecret := utils.GetEnv("AZURE_CLIENT_SECRET", "")
 
-	if len(tenantId) == 0 {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"AZURE_TENANT_ID not configured",
-			fmt.Errorf(""),
-		)
-	}
-	if len(clientId) == 0 {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"AZURE_CLIENT_ID not configured",
-			fmt.Errorf(""),
-		)
-	}
-	if len(clientSecret) == 0 {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"AZURE_CLIENT_SECRET not configured",
-			fmt.Errorf(""),
-		)
-	}
 	if len(topicLocation) == 0 {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -218,12 +157,26 @@ func New() (events.EventService, error) {
 			fmt.Errorf(""),
 		)
 	}
-	client := eventgrid.New()
-	topicClient := eventgridmgmt.NewTopicsClient(subscriptionID)
-	accessToken, err := GetToken(tenantId, clientId, clientSecret)
+	env := azure.PublicCloud
+	//Auth requires:
+	//AZURE_TENANT_ID: Your Azure tenant ID
+	//AZURE_CLIENT_ID: Your Azure client ID. This will be an app ID from your AAD.
+	authorizer, err := eventgridauth.NewAuthorizerFromEnvironmentWithResource(env.ResourceIdentifiers.KeyVault)
 	if err != nil {
 		return nil, newErr(
-			codes.Unauthenticated,
+			codes.Internal,
+			"Error authenticating event grid",
+			err,
+		)
+	}
+	client := eventgrid.New()
+	client.Authorizer = authorizer
+
+	topicClient := eventgridmgmt.NewTopicsClient(subscriptionID)
+	topicClient.Authorizer = authorizer
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
 			"Error authenticating event grid",
 			err,
 		)
@@ -232,7 +185,6 @@ func New() (events.EventService, error) {
 		client:        client,
 		topicClient:   topicClient,
 		topicLocation: topicLocation,
-		accessToken:   accessToken,
 	}, nil
 }
 
