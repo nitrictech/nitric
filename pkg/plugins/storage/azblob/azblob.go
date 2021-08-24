@@ -153,10 +153,9 @@ func New() (storage.StorageService, error) {
 	// TODO: Create a default storage account for the stack???
 	// XXX: This will limit a membrane wrapped application
 	// to accessing a single storage account
-	storageAccount := utils.GetEnv("AZURE_STORAGE_ACCOUNT", "")
-
-	if storageAccount == "" {
-		return nil, fmt.Errorf("AZURE_STORAGE_ACCOUNT not configured")
+	storageAccountName := utils.GetEnv(azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV, "")
+	if storageAccountName == "" {
+		return nil, fmt.Errorf("failed to determine Azure Storage Account Name, environment variable %s not set", azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV)
 	}
 
 	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.Storage)
@@ -167,7 +166,7 @@ func New() (storage.StorageService, error) {
 	cTkn := azblob.NewTokenCredential(spt.Token().AccessToken, tokenRefresherFromSpt(spt))
 
 	var accountURL *url.URL
-	if accountURL, err = url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccount)); err != nil {
+	if accountURL, err = url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)); err != nil {
 		return nil, err
 	}
 
