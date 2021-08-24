@@ -35,14 +35,16 @@ var _ = Describe("GRPC Errors", func() {
 					nil,
 				)
 				grpcErr := grpc.NewGrpcError("BadServer.BadCall", err)
-				Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = {\"code\":\"Invalid Argument\",\"msg\":\"bad param\",\"service\":\"BadServer.BadCall\",\"plugin\":\"test\"}"))
+				Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = bad param"))
+				// Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = {\"code\":\"Invalid Argument\",\"msg\":\"bad param\",\"service\":\"BadServer.BadCall\",\"plugin\":\"test\"}"))
 			})
 		})
 		When("Standard Error", func() {
 			It("Should report GRPC Internal error", func() {
 				err := fmt.Errorf("internal error")
 				err = grpc.NewGrpcError("BadServer.BadCall", err)
-				Expect(err.Error()).To(ContainSubstring("rpc error: code = Internal desc = {\"code\":\"Internal\",\"msg\":\"internal error\",\"service\":\"BadServer.BadCall\"}"))
+				Expect(err.Error()).To(ContainSubstring("rpc error: code = Internal desc = internal error"))
+				// Expect(err.Error()).To(ContainSubstring("rpc error: code = Internal desc = {\"code\":\"Internal\",\"msg\":\"internal error\",\"service\":\"BadServer.BadCall\"}"))
 			})
 		})
 	})
@@ -51,7 +53,8 @@ var _ = Describe("GRPC Errors", func() {
 		When("Creating a New PluginNotRegisteredError", func() {
 			It("Should contain the name of the plugin", func() {
 				err := grpc.NewPluginNotRegisteredError("Document")
-				Expect(err.Error()).To(ContainSubstring("rpc error: code = Unimplemented desc = {\"code\":\"Unimplemented\",\"msg\":\"Document plugin not registered\"}"))
+				Expect(err.Error()).To(ContainSubstring("rpc error: code = Unimplemented desc = Document plugin not registered"))
+				// Expect(err.Error()).To(ContainSubstring("rpc error: code = Unimplemented desc = {\"code\":\"Unimplemented\",\"msg\":\"Document plugin not registered\"}"))
 			})
 		})
 	})

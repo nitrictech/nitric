@@ -15,51 +15,73 @@
 package grpc
 
 import (
-	"encoding/json"
 	"fmt"
 
+	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type grpcError struct {
-	code    codes.Code `json:"-"`
-	Code    string     `json:"code"`
-	Msg     string     `json:"msg,omitempty"`
-	Service string     `json:"service,omitempty"`
-}
+// type grpcError struct {
+// 	code    codes.Code `json:"-"`
+// 	Code    string     `json:"code"`
+// 	Msg     string     `json:"msg,omitempty"`
+// 	Service string     `json:"service,omitempty"`
+// }
 
-func (ge *grpcError) Error() string {
-	ge.Code = fmt.Sprintf("%v", ge.code)
-	data, _ := json.Marshal(ge)
-	return string(data)
-}
+// func (ge *grpcError) Error() string {
+// 	ge.Code = fmt.Sprintf("%v", ge.code)
+// 	data, _ := json.Marshal(ge)
+// 	return string(data)
+// }
 
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
 	if pe, ok := err.(*errors.PluginError); ok {
-		pe.Service = operation
-		return status.Error(codes.Code(errors.Code(pe)), pe.Error())
+		code := codes.Code(errors.Code(pe))
+
+		se := &v1.ServiceError{}
+		se.Code = int32(code)
+		se.Status = fmt.Sprintf("%v", se.Code)
+		se.Message = pe.Msg
+		se.Service = pe.Service
+		se.Plugin = pe.Plugin
+		se.Args = pe.Args
+
+		s := status.New(code, pe.Msg)
+		s.WithDetails(se)
+
+		return s.Err()
+
 	} else {
 		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}
 }
 
 func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
-	ge := &grpcError{
-		Service: operation,
-		code:    code,
-		Msg:     err.Error(),
-	}
-	return status.Error(code, ge.Error())
+	se := &v1.ServiceError{}
+	se.Code = int32(code)
+	se.Status = fmt.Sprintf("%v", se.Code)
+	se.Message = err.Error()
+	se.Service = operation
+
+	s := status.New(code, err.Error())
+	s.WithDetails(se)
+
+	return s.Err()
 }
 
 // Provides generic error for unregistered plugins
 func NewPluginNotRegisteredError(plugin string) error {
-	ge := &grpcError{
-		code: codes.Unimplemented,
-		Msg:  fmt.Sprintf("%s plugin not registered", plugin),
-	}
-	return status.Error(codes.Unimplemented, ge.Error())
+
+	se := &v1.ServiceError{}
+	se.Code = int32(codes.Unimplemented)
+	se.Status = fmt.Sprintf("%v", se.Code)
+	se.Message = fmt.Sprintf("%s plugin not registered", plugin)
+
+	s := status.New(codes.Unimplemented, se.Message)
+	s.WithDetails(se)
+
+	return s.Err()
 }

@@ -84,6 +84,7 @@ generate-proto: install-tools check-gopath
 	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ${GOPATH}/src/github.com/envoyproxy/protoc-gen-validate
+	@protoc --go_out=./interfaces/ -I ./contracts/proto ./contracts/proto/error/error.proto
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
