@@ -15,32 +15,36 @@
 package errors
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 )
 
 type PluginError struct {
-	code    codes.Code `json:"-"`
-	Code    string     `json:"code"`
-	Msg     string     `json:"msg,omitempty"`
-	Cause   string     `json:"cause,omitempty"`
-	Service string     `json:"service,omitempty"`
-	Plugin  string     `json:"plugin,omitempty"`
-	Args    string     `json:"args,omitempty"`
+	Code   codes.Code
+	Msg    string
+	Cause  error
+	Plugin string
+	Args   string
+}
+
+func (p *PluginError) Unwrap() error {
+	return p.Cause
 }
 
 func (p *PluginError) Error() string {
-	p.Code = p.code.String()
-	data, _ := json.Marshal(p)
-	return string(data)
+	if p.Cause != nil {
+		// If the wrapped error is an ApiError than these should unwrap
+		return fmt.Sprintf("%s: \n %s", p.Msg, p.Cause.Error())
+	}
+
+	return p.Msg
 }
 
 // Code - returns a nitric api error code from an error or Unknown if the error was not a nitric api error
 func Code(e error) codes.Code {
 	if pe, ok := e.(*PluginError); ok {
-		return pe.code
+		return pe.Code
 	}
 
 	return codes.Unknown
@@ -50,16 +54,14 @@ func Code(e error) codes.Code {
 func ErrorsWithScope(s string, ctx ...interface{}) func(c codes.Code, msg string, cause error) error {
 	return func(c codes.Code, msg string, cause error) error {
 		pe := &PluginError{
-			code:   c,
+			Code:   c,
 			Msg:    msg,
 			Plugin: s,
 		}
 		if ctx != nil {
 			pe.Args = fmt.Sprintf("%v", ctx)
 		}
-		if cause != nil {
-			pe.Cause = fmt.Sprintf("%v", cause)
-		}
+		pe.Cause = cause
 		return pe
 	}
 }

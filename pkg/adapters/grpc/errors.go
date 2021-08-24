@@ -23,34 +23,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// type grpcError struct {
-// 	code    codes.Code `json:"-"`
-// 	Code    string     `json:"code"`
-// 	Msg     string     `json:"msg,omitempty"`
-// 	Service string     `json:"service,omitempty"`
-// }
-
-// func (ge *grpcError) Error() string {
-// 	ge.Code = fmt.Sprintf("%v", ge.code)
-// 	data, _ := json.Marshal(ge)
-// 	return string(data)
-// }
-
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
 	if pe, ok := err.(*errors.PluginError); ok {
 		code := codes.Code(errors.Code(pe))
 
-		se := &v1.ServiceError{}
-		se.Code = int32(code)
-		se.Status = fmt.Sprintf("%v", se.Code)
-		se.Message = pe.Msg
-		se.Service = pe.Service
-		se.Plugin = pe.Plugin
-		se.Args = pe.Args
+		ed := &v1.ErrorDetails{}
+		ed.Message = pe.Msg
+		if pe.Cause != nil {
+			ed.Cause = pe.Cause.Error()
+		}
+		ed.Service = operation
+		ed.Plugin = pe.Plugin
+		ed.Args = pe.Args
 
 		s := status.New(code, pe.Msg)
-		s.WithDetails(se)
+		s, _ = s.WithDetails(ed)
 
 		return s.Err()
 
@@ -60,28 +48,23 @@ func NewGrpcError(operation string, err error) error {
 }
 
 func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
-	se := &v1.ServiceError{}
-	se.Code = int32(code)
-	se.Status = fmt.Sprintf("%v", se.Code)
+	se := &v1.ErrorDetails{}
 	se.Message = err.Error()
 	se.Service = operation
 
 	s := status.New(code, err.Error())
-	s.WithDetails(se)
+	s, _ = s.WithDetails(se)
 
 	return s.Err()
 }
 
 // Provides generic error for unregistered plugins
 func NewPluginNotRegisteredError(plugin string) error {
-
-	se := &v1.ServiceError{}
-	se.Code = int32(codes.Unimplemented)
-	se.Status = fmt.Sprintf("%v", se.Code)
+	se := &v1.ErrorDetails{}
 	se.Message = fmt.Sprintf("%s plugin not registered", plugin)
 
 	s := status.New(codes.Unimplemented, se.Message)
-	s.WithDetails(se)
+	s, _ = s.WithDetails(se)
 
 	return s.Err()
 }
