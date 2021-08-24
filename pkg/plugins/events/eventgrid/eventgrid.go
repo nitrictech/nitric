@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -37,6 +39,37 @@ type EventGridEventService struct {
 	client        eventgridapi.BaseClientAPI
 	topicClient   eventgridmgmtapi.TopicsClientAPI
 	topicLocation string
+	accessToken   AzureAccessToken
+}
+
+type AzureAccessToken struct {
+	TokenType    string `json:"token_type"`
+	ExpiresIn    string `json:"expires_in"`
+	ExtExpiresIn string `json:"ext_expires_in"`
+	ExpiresOn    string `json:"expires_on"`
+	NotBefore    string `json:"not_before"`
+	Resource     string `json:"resource"`
+	AccessToken  string `json:"access_token"`
+}
+
+func GetToken(tenantId string, clientId string, clientSecret string) (AzureAccessToken, error) {
+	requestAccessTokenUri := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/token", tenantId)
+	requestBody := url.Values{
+		"grant_type":    {"client_credentials"},
+		"client_id":     {clientId},
+		"client_secret": {clientSecret},
+		"resource":      {"https://management.azure.com/"},
+	}
+	resp, err := http.PostForm(requestAccessTokenUri, requestBody)
+	if err != nil {
+		return AzureAccessToken{}, err
+	}
+
+	var result AzureAccessToken
+
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	return result, nil
 }
 
 func (s *EventGridEventService) NitricEventToEvent(topic string, event *events.NitricEvent) ([]eventgrid.Event, error) {
@@ -62,7 +95,11 @@ func (s *EventGridEventService) NitricEventToEvent(topic string, event *events.N
 
 func (s *EventGridEventService) ListTopics() ([]string, error) {
 	newErr := errors.ErrorsWithScope("EventGridEventService.ListTopics")
-	ctx := context.TODO()
+	ctx := context.Background()
+	ctx.Value(map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", s.accessToken.TokenType, s.accessToken.AccessToken),
+	})
+
 	pageLength := int32(20)
 
 	results, err := s.topicClient.ListBySubscription(ctx, "", &pageLength)
@@ -90,6 +127,10 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 
 func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope("EventGridEventService.Publish")
+	ctx := context.Background()
+	ctx.Value(map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", s.accessToken.TokenType, s.accessToken.AccessToken),
+	})
 
 	if len(topic) == 0 {
 		return newErr(
@@ -105,7 +146,6 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 			fmt.Errorf("provided invalid event"),
 		)
 	}
-	ctx := context.TODO()
 
 	//Convert topic -> topic1.westus2-1.eventgrid.azure.net
 	topicHostName := fmt.Sprintf("%s.%s.eventgrid.azure.net", topic, strings.ToLower(s.topicLocation))
@@ -139,7 +179,31 @@ func New() (events.EventService, error) {
 	newErr := errors.ErrorsWithScope("EventGridEventService.New")
 	topicLocation := utils.GetEnv("AZURE_TOPIC_LOCATION", "")
 	subscriptionID := utils.GetEnv("AZURE_SUBSCRIPTION_ID", "")
+	tenantId := utils.GetEnv("AZURE_TENANT_ID", "")
+	clientId := utils.GetEnv("AZURE_CLIENT_ID", "")
+	clientSecret := utils.GetEnv("AZURE_CLIENT_SECRET", "")
 
+	if len(tenantId) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_TENANT_ID not configured",
+			fmt.Errorf(""),
+		)
+	}
+	if len(clientId) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_CLIENT_ID not configured",
+			fmt.Errorf(""),
+		)
+	}
+	if len(clientSecret) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_CLIENT_SECRET not configured",
+			fmt.Errorf(""),
+		)
+	}
 	if len(topicLocation) == 0 {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -156,11 +220,19 @@ func New() (events.EventService, error) {
 	}
 	client := eventgrid.New()
 	topicClient := eventgridmgmt.NewTopicsClient(subscriptionID)
-
+	accessToken, err := GetToken(tenantId, clientId, clientSecret)
+	if err != nil {
+		return nil, newErr(
+			codes.Unauthenticated,
+			"Error authenticating event grid",
+			err,
+		)
+	}
 	return &EventGridEventService{
 		client:        client,
 		topicClient:   topicClient,
 		topicLocation: topicLocation,
+		accessToken:   accessToken,
 	}, nil
 }
 
