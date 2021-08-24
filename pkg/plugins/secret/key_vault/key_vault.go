@@ -16,7 +16,10 @@ package key_vault_secret_service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
@@ -27,17 +30,41 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
-const DEFAULT_SUBSCRIPTION_ID = "subscription-id"
-const DEFAULT_RESOURCE_GROUP = "resource-group"
-const DEFAULT_VAULT_NAME = "vault-name"
-
-// KeyVaultClient - iface that exposes utilized subset of generated KeyVaultSecretClient
-// Used with gomock to assert create client -> service interaction in unit tests
-
 type keyVaultSecretService struct {
 	secret.UnimplementedSecretPlugin
-	client    keyvaultapi.BaseClientAPI
-	vaultName string
+	client      keyvaultapi.BaseClientAPI
+	accessToken AzureAccessToken
+	vaultName   string
+}
+
+type AzureAccessToken struct {
+	TokenType    string `json:"token_type"`
+	ExpiresIn    string `json:"expires_in"`
+	ExtExpiresIn string `json:"ext_expires_in"`
+	ExpiresOn    string `json:"expires_on"`
+	NotBefore    string `json:"not_before"`
+	Resource     string `json:"resource"`
+	AccessToken  string `json:"access_token"`
+}
+
+func GetToken(tenantId string, clientId string, clientSecret string) (AzureAccessToken, error) {
+	requestAccessTokenUri := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/token", tenantId)
+	requestBody := url.Values{
+		"grant_type":    {"client_credentials"},
+		"client_id":     {clientId},
+		"client_secret": {clientSecret},
+		"resource":      {"https://management.azure.com/"},
+	}
+	resp, err := http.PostForm(requestAccessTokenUri, requestBody)
+	if err != nil {
+		return AzureAccessToken{}, err
+	}
+
+	var result AzureAccessToken
+
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	return result, nil
 }
 
 func validateNewSecret(sec *secret.Secret, val []byte) error {
@@ -81,6 +108,9 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 		)
 	}
 	ctx := context.Background()
+	ctx.Value(map[string]string{
+		"Authorization": s.accessToken.TokenType + " " + s.accessToken.AccessToken,
+	})
 	stringVal := string(val[:])
 
 	result, err := s.client.SetSecret(
@@ -99,7 +129,7 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 			err,
 		)
 	}
-	//Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
+	//Returned Secret ID: https://myvault.vault.azure.net/secrets/{SECRET_NAME}/{SECRET_VERSION}
 	//Split to get the version
 	versionID := strings.Split(*result.ID, "/")
 
@@ -113,7 +143,6 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 	}, nil
 }
 
-//GET {vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version={api-version}
 func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Access")
 
@@ -126,6 +155,10 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 	}
 
 	ctx := context.Background()
+	ctx.Value(map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", s.accessToken.TokenType, s.accessToken.AccessToken),
+	})
+
 	//Key vault will default to latest if an empty string is provided
 	version := sv.Version
 	if version == "latest" {
@@ -163,8 +196,35 @@ func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 func New() (secret.SecretService, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.New")
 
-	subscriptionId := utils.GetEnv("AZURE_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
-	vaultName := utils.GetEnv("AZURE_VAULT_NAME", DEFAULT_VAULT_NAME)
+	subscriptionId := utils.GetEnv("AZURE_SUBSCRIPTION_ID", "")
+	vaultName := utils.GetEnv("AZURE_VAULT_NAME", "")
+	tenantId := utils.GetEnv("AZURE_TENANT_ID", "")
+	clientId := utils.GetEnv("AZURE_CLIENT_ID", "")
+	clientSecret := utils.GetEnv("AZURE_CLIENT_SECRET", "")
+
+	if len(tenantId) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_TENANT_ID not configured",
+			fmt.Errorf(""),
+		)
+	}
+
+	if len(clientId) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_CLIENT_ID not configured",
+			fmt.Errorf(""),
+		)
+	}
+
+	if len(clientSecret) == 0 {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"AZURE_CLIENT_SECRET not configured",
+			fmt.Errorf(""),
+		)
+	}
 
 	if len(subscriptionId) == 0 {
 		return nil, newErr(
@@ -182,10 +242,18 @@ func New() (secret.SecretService, error) {
 	}
 
 	client := keyvault.New()
-
+	token, err := GetToken(tenantId, clientId, clientSecret)
+	if err != nil {
+		return nil, newErr(
+			codes.Unauthenticated,
+			"Error authenticating key vault",
+			err,
+		)
+	}
 	return &keyVaultSecretService{
-		client:    client,
-		vaultName: vaultName,
+		client:      client,
+		vaultName:   vaultName,
+		accessToken: token,
 	}, nil
 }
 
