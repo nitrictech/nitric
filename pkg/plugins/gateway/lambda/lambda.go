@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
@@ -119,18 +120,24 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		break
 	case httpEvent:
 		evt := &events.APIGatewayV2HTTPRequest{}
-
+		log.Printf("************************************** Look here *******************************")
+		log.Printf("evt data 1 - %v", evt)
 		err = json.Unmarshal(data, evt)
+
+		log.Printf("evt data 2 - %v", string(data))
 
 		if err == nil {
 			// Copy the headers and re-write for the proxy
-			headerCopy := make(map[string]string)
+
+			headerCopy := make(map[string][]string)
+
+			log.Printf("headers - %v", evt.Headers)
 
 			for key, val := range evt.Headers {
 				if strings.ToLower(key) == "host" {
-					headerCopy["x-forwarded-for"] = val
+					headerCopy["x-forwarded-for"] = append(headerCopy["x-forwarded-for"], string(val))
 				} else {
-					headerCopy[key] = val
+					headerCopy[key] = append(headerCopy[key], string(val))
 				}
 			}
 

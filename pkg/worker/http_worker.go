@@ -16,9 +16,10 @@ package worker
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
 	"net"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/triggers"
 
 	"github.com/valyala/fasthttp"
 )
@@ -67,7 +68,9 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	}
 
 	for key, val := range trigger.Header {
-		httpRequest.Header.Set(key, val)
+		for _, v := range val {
+			httpRequest.Header.Add(key, v)
+		}
 	}
 
 	httpRequest.Header.Del("Content-Length")

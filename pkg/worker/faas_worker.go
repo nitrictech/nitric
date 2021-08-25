@@ -16,11 +16,12 @@ package worker
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
 	"io"
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/nitric-dev/membrane/pkg/triggers"
 
 	"github.com/google/uuid"
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
@@ -73,11 +74,18 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 
 	var mimeType string = ""
 	if trigger.Header != nil {
-		mimeType = trigger.Header["Content-Type"]
+		mimeType = trigger.Header["Content-Type"][0]
 	}
 
 	if mimeType == "" {
 		mimeType = http.DetectContentType(trigger.Body)
+	}
+
+	headers := make(map[string]*pb.HeaderValue)
+	for k, v := range trigger.Header {
+		headers[k] = &pb.HeaderValue{
+			Value: v,
+		}
 	}
 
 	triggerRequest := &pb.TriggerRequest{
@@ -88,7 +96,8 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 				Path:        trigger.Path,
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
-				Headers:     trigger.Header,
+				HeadersOld:  trigger.HeaderOld,
+				Headers:     headers,
 				// TODO: Populate path params
 			},
 		},
@@ -122,7 +131,9 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	fasthttpHeader := &fasthttp.ResponseHeader{}
 
 	for key, val := range httpResponse.GetHeaders() {
-		fasthttpHeader.Set(key, val)
+		for _, v := range val.Value {
+			fasthttpHeader.Add(key, v)
+		}
 	}
 
 	response := &triggers.HttpResponse{
