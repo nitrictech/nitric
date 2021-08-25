@@ -36,6 +36,7 @@ const (
 	unknown eventType = iota
 	sns
 	httpEvent
+	xforwardHeader string = "x-forwarded-for"
 )
 
 type LambdaRuntimeHandler func(handler interface{})
@@ -128,8 +129,8 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 			for key, val := range evt.Headers {
 				if strings.ToLower(key) == "host" {
-					headerCopy["x-forwarded-for"] = append(headerCopy["x-forwarded-for"], string(val))
-					headerOld["x-forwarded-for"] = string(val)
+					headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
+					headerOld[xforwardHeader] = string(val)
 				} else {
 					headerCopy[key] = append(headerCopy[key], string(val))
 					headerOld[key] = string(val)

@@ -49,13 +49,8 @@ func FromTriggerResponse(triggerResponse *pb.TriggerResponse) (*HttpResponse, er
 
 		if httpContext.GetHeaders() != nil {
 			for key, val := range httpContext.GetHeaders() {
-				h := val.Value
-				if len(h) == 1 {
-					fasthttpHeader.Set(key, h[0])
-				} else {
-					for _, v := range h {
-						fasthttpHeader.Add(key, v)
-					}
+				for _, v := range val.Value {
+					fasthttpHeader.Add(key, v)
 				}
 			}
 		}
