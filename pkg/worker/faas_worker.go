@@ -73,7 +73,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	ID, returnChan := s.newTicket()
 
 	var mimeType string = ""
-	if trigger.Header != nil {
+	if trigger.Header != nil && len(trigger.Header["Content-Type"]) > 0 {
 		mimeType = trigger.Header["Content-Type"][0]
 	}
 
@@ -86,6 +86,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 		headers[k] = &pb.HeaderValue{
 			Value: v,
 		}
+
 	}
 
 	triggerRequest := &pb.TriggerRequest{
@@ -96,8 +97,8 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 				Path:        trigger.Path,
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
-				HeadersOld:  trigger.HeaderOld,
 				Headers:     headers,
+				HeadersOld:  trigger.HeaderOld,
 				// TODO: Populate path params
 			},
 		},

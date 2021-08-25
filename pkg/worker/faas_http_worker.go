@@ -109,7 +109,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 	}()
 
 	var mimeType string = ""
-	if trigger.Header != nil {
+	if trigger.Header != nil && len(trigger.Header["Content-Type"]) > 0 {
 		mimeType = trigger.Header["Content-Type"][0]
 	}
 
