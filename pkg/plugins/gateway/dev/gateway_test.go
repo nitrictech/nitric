@@ -64,8 +64,10 @@ var _ = Describe("Gateway", func() {
 			request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader(payload))
 
 			request.Header.Add("x-nitric-request-id", "1234")
-			request.Header.Add("x-nitric-payload-type", "test-payload")
+			request.Header.Add("x-nitric-payload-type", "Test-payload")
 			request.Header.Add("User-Agent", "Test")
+			request.Header.Add("Cookie", "test1=testcookie1")
+			request.Header.Add("Cookie", "test2=testcookie2")
 
 			It("should successfully pass on the request", func() {
 				_, err := http.DefaultClient.Do(request)
@@ -90,8 +92,17 @@ var _ = Describe("Gateway", func() {
 				// before we can actually properly assess it
 				By("Preserving the original request Body")
 				Expect(string(handledRequest.Body)).To(Equal("Test"))
+
+				By("Preserving the original requests headers")
+				Expect(string(handledRequest.Header["User-Agent"])).To(Equal([]string{"Test"}))
+				Expect(string(handledRequest.Header["X-Nitric-Request-Id"])).To(Equal([]string{"1234"))
+				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"])).To(Equal([]string{"Test Payload"}))a
+				Expect(string(handledRequest.Header["Cookie"])).To(Equal([]string{"test1=testcookie1", "test2=testcookie2"}))
+
 			})
 		})
+
+		
 		// TODO: Handle cases of missing nitric headers
 		// TODO: Handle cases of other non POST methods
 	})

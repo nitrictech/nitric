@@ -71,6 +71,8 @@ var _ = Describe("Http", func() {
 				request.Header.Add("x-nitric-request-id", "1234")
 				request.Header.Add("x-nitric-payload-type", "Test Payload")
 				request.Header.Add("User-Agent", "Test")
+				request.Header.Add("Cookie", "test1=testcookie1")
+				request.Header.Add("Cookie", "test2=testcookie2")
 				resp, err := http.DefaultClient.Do(request)
 
 				var responseBody = make([]byte, 0)
@@ -99,9 +101,10 @@ var _ = Describe("Http", func() {
 				Expect(streamRead).To(BeEquivalentTo([]byte("Test")))
 
 				By("Preserving the original requests headers")
-				Expect(string(handledRequest.Header["User-Agent"])).To(Equal("Test"))
-				Expect(string(handledRequest.Header["X-Nitric-Request-Id"])).To(Equal("1234"))
-				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"])).To(Equal("Test Payload"))
+				Expect(string(handledRequest.Header["User-Agent"])).To(Equal([]string{"Test"}))
+				Expect(string(handledRequest.Header["X-Nitric-Request-Id"])).To(Equal([]string{"1234"))
+				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"])).To(Equal([]string{"Test Payload"}))a
+				Expect(string(handledRequest.Header["Cookie"])).To(Equal([]string{"test1=testcookie1", "test2=testcookie2"}))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
