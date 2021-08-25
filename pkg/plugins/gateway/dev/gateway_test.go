@@ -17,13 +17,14 @@ package gateway_plugin_test
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
+
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	"github.com/nitric-dev/membrane/pkg/triggers"
 	"github.com/nitric-dev/membrane/pkg/worker"
 	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
-	"net/http"
-	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -94,15 +95,12 @@ var _ = Describe("Gateway", func() {
 				Expect(string(handledRequest.Body)).To(Equal("Test"))
 
 				By("Preserving the original requests headers")
-				Expect(string(handledRequest.Header["User-Agent"])).To(Equal([]string{"Test"}))
-				Expect(string(handledRequest.Header["X-Nitric-Request-Id"])).To(Equal([]string{"1234"))
-				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"])).To(Equal([]string{"Test Payload"}))a
-				Expect(string(handledRequest.Header["Cookie"])).To(Equal([]string{"test1=testcookie1", "test2=testcookie2"}))
-
+				Expect(string(handledRequest.Header["User-Agent"][0])).To(Equal("Test"))
+				Expect(string(handledRequest.Header["X-Nitric-Request-Id"][0])).To(Equal("1234"))
+				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"][0])).To(Equal("Test-payload"))
 			})
 		})
 
-		
 		// TODO: Handle cases of missing nitric headers
 		// TODO: Handle cases of other non POST methods
 	})
