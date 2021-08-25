@@ -130,24 +130,32 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 			// Copy the headers and re-write for the proxy
 
 			headerCopy := make(map[string][]string)
+			headerOld := make(map[string]string)
 
 			log.Printf("headers - %v", evt.Headers)
 
 			for key, val := range evt.Headers {
 				if strings.ToLower(key) == "host" {
 					headerCopy["x-forwarded-for"] = append(headerCopy["x-forwarded-for"], string(val))
+					headerOld["x-forwarded-for"] = string(val)
 				} else {
 					headerCopy[key] = append(headerCopy[key], string(val))
+					headerOld[key] = string(val)
 				}
 			}
 
+			headerCopy["Cookie"] = evt.Cookies
+
+			log.Printf("header copy - %v", headerCopy)
+
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
-				Header: headerCopy,
-				Body:   []byte(evt.Body),
-				Method: evt.RequestContext.HTTP.Method,
-				Path:   evt.RawPath,
-				Query:  evt.QueryStringParameters,
+				Header:    headerCopy,
+				Body:      []byte(evt.Body),
+				Method:    evt.RequestContext.HTTP.Method,
+				Path:      evt.RawPath,
+				Query:     evt.QueryStringParameters,
+				HeaderOld: headerOld,
 			})
 		}
 
