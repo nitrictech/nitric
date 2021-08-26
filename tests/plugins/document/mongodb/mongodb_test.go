@@ -39,7 +39,7 @@ func startMongoImage() *exec.Cmd {
 		"-d",
 		"-p 27017-27019:27017-27019",
 		"--name mongodb-nitric",
-		"mongo:latest",
+		"mongo:4.0",
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", strings.Join(args[:], " "))
