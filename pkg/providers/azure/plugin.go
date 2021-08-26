@@ -16,6 +16,7 @@ package main
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
@@ -31,9 +32,9 @@ func New() providers.ServiceFactory {
 	return &AzureServiceFactory{}
 }
 
-// NewDocumentService - Returns Azure _ based document plugin
+// NewDocumentService - Returns a MongoDB based document service
 func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, error) {
-	return &document.UnimplementedDocumentPlugin{}, nil
+	return mongodb_service.New()
 }
 
 // NewEventService - Returns Azure _ based events plugin

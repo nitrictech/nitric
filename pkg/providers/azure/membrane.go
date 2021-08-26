@@ -22,7 +22,7 @@ import (
 	"syscall"
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -34,7 +34,11 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	documentPlugin := &document.UnimplementedDocumentPlugin{}
+	documentPlugin, err := mongodb_service.New()
+	if err != nil {
+		fmt.Println("Failed to load document plugin:", err.Error())
+	}
+
 	eventsPlugin := &events.UnimplementedeventsPlugin{}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}

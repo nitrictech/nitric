@@ -29,6 +29,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var shell = "/bin/sh"
+
 func startMongoImage() *exec.Cmd {
 	// Run mongodb container
 	args := []string{
@@ -54,6 +56,7 @@ func startMongoImage() *exec.Cmd {
 }
 
 func stopMongoImage(cmd *exec.Cmd) {
+	
     // clean up
 	stopArgs := []string{
 		"docker",
@@ -62,7 +65,7 @@ func stopMongoImage(cmd *exec.Cmd) {
 		"mongodb-nitric",
 	}
 
-	stopCmd := exec.Command("/bin/sh", "-c", strings.Join(stopArgs[:], " "))
+	stopCmd := exec.Command(shell, "-c", strings.Join(stopArgs[:], " "))
 
 	if err := stopCmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error stopping MongoDB container %v : %v", cmd, err))
@@ -75,7 +78,7 @@ func stopMongoImage(cmd *exec.Cmd) {
 		"mongodb-nitric",
 	}
 
-	removeCmd :=  exec.Command("/bin/sh", "-c", strings.Join(removeArgs[:], " "))
+	removeCmd :=  exec.Command(shell, "-c", strings.Join(removeArgs[:], " "))
 
 	if err := removeCmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error removing MongoDB container %v : %v", cmd, err))
