@@ -126,7 +126,7 @@ var _ = Describe("MongoDB", func() {
 		panic(err)
 	}
 
-	docPlugin, err := mongodb_service.NewWithClient(client, "testing", ctx)
+	docPlugin := mongodb_service.NewWithClient(client, "testing", ctx)
 
 	if err != nil {
 		fmt.Printf("NewClient error: %v \n", err)

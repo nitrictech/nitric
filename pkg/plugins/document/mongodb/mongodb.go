@@ -319,7 +319,11 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 	cursor, err := coll.Find(s.context, query, opts)
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating mongo find: %v", err)
+		return nil, newErr(
+			codes.InvalidArgument,
+			"error creating mongo find",
+			err,
+		)
 	}
 
 	defer cursor.Close(s.context)
@@ -415,12 +419,6 @@ func New() (document.DocumentService, error) {
 		return nil, fmt.Errorf("mongodb unable to initialize connection: %v", connectError)
 	}
 
-	pingError := client.Ping(ctx, nil)
-	
-	if pingError != nil {
-		return nil, fmt.Errorf("mongodb unable to connect: %v", pingError)
-	}
-
 	db := client.Database(database)
 
 	return &MongoDocService{
@@ -430,14 +428,14 @@ func New() (document.DocumentService, error) {
 	}, nil
 }
 
-func NewWithClient(client *mongo.Client, database string, ctx context.Context) (document.DocumentService, error) {
+func NewWithClient(client *mongo.Client, database string, ctx context.Context) document.DocumentService {
 	db := client.Database(database)
 
 	return &MongoDocService{
 		client:  client,
 		db: db,
 		context: ctx,
-	}, nil
+	}
 }
 
 func mapKeys(key *document.Key, source map[string]interface{}) map[string]interface{} {
