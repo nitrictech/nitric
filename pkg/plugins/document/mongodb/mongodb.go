@@ -37,6 +37,7 @@ const (
 	// environment variables
 	mongoDBConnectionStringEnvVarName = "MONGODB_CONNECTION_STRING"
 	mongoDBDatabaseEnvVarName         = "MONGODB_DATABASE"
+	mongoDBSetDirectEnvVarName        = "MONGODB_DIRECT"
 )
 
 // Mapping to mongo operators, startsWith will be handled within the function
@@ -398,7 +399,9 @@ func New() (document.DocumentService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI(mongoDBConnectionString).SetDirect(true)
+	mongoDBSetDirect := utils.GetEnv(mongoDBSetDirectEnvVarName, "true")
+
+	clientOptions := options.Client().ApplyURI(mongoDBConnectionString).SetDirect(mongoDBSetDirect == "true")
 
 	client, clientError := mongo.NewClient(clientOptions)
 
@@ -423,7 +426,7 @@ func New() (document.DocumentService, error) {
 	return &MongoDocService{
 		client:  client,
 		db: db,
-		context: ctx,
+		context: context.Background(),
 	}, nil
 }
 
