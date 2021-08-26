@@ -137,8 +137,13 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	fasthttpHeader := &fasthttp.ResponseHeader{}
 
 	for key, val := range httpResponse.GetHeaders() {
-		for _, v := range val.Value {
-			fasthttpHeader.Add(key, v)
+		headerList := val.Value
+		if key == "Set-Cookie" || key == "Cookie" {
+			for _, v := range headerList {
+				fasthttpHeader.Add(key, v)
+			}
+		} else if len(headerList) > 0 {
+			fasthttpHeader.Set(key, headerList[0])
 		}
 	}
 
