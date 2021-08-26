@@ -30,6 +30,7 @@ require (
 	github.com/valyala/fasthttp v1.23.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
+	go.mongodb.org/mongo-driver v1.7.1 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
