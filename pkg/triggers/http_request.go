@@ -33,9 +33,6 @@ type HttpRequest struct {
 	Path string
 	// URL query parameters
 	Query map[string]string
-	// The old request headers (preserving for backwards compatibility)
-	// TODO: Remove in 1.0
-	HeaderOld map[string]string
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
@@ -45,7 +42,6 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
 func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	headerCopy := make(map[string][]string)
-	headerOldCopy := make(map[string]string)
 	queryArgs := make(map[string]string)
 
 	ctx.Request.Header.VisitAll(func(key []byte, val []byte) {
@@ -54,10 +50,8 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 		if strings.ToLower(keyString) == "host" {
 			// Don't copy the host header
 			headerCopy["X-Forwarded-For"] = []string{string(val)}
-			headerOldCopy["X-Forwarded-For"] = string(val)
 		} else {
 			headerCopy[string(key)] = []string{string(val)}
-			headerOldCopy[string(key)] = string(val)
 		}
 	})
 
@@ -70,11 +64,10 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	})
 
 	return &HttpRequest{
-		Header:    headerCopy,
-		HeaderOld: headerOldCopy,
-		Body:      ctx.Request.Body(),
-		Method:    string(ctx.Method()),
-		Path:      string(ctx.Path()),
-		Query:     queryArgs,
+		Header: headerCopy,
+		Body:   ctx.Request.Body(),
+		Method: string(ctx.Method()),
+		Path:   string(ctx.Path()),
+		Query:  queryArgs,
 	}
 }

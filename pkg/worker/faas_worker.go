@@ -82,11 +82,16 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	}
 
 	headers := make(map[string]*pb.HeaderValue)
+	headersOld := make(map[string]string)
 	for k, v := range trigger.Header {
-		headers[k] = &pb.HeaderValue{
-			Value: v,
+		if v != nil {
+			headers[k] = &pb.HeaderValue{
+				Value: v,
+			}
+			if len(v) > 0 {
+				headersOld[k] = v[0]
+			}
 		}
-
 	}
 
 	triggerRequest := &pb.TriggerRequest{
@@ -98,7 +103,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
 				Headers:     headers,
-				HeadersOld:  trigger.HeaderOld,
+				HeadersOld:  headersOld,
 				// TODO: Populate path params
 			},
 		},

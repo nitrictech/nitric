@@ -125,15 +125,12 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		if err == nil {
 			// Copy the headers and re-write for the proxy
 			headerCopy := make(map[string][]string)
-			headerOld := make(map[string]string)
 
 			for key, val := range evt.Headers {
 				if strings.ToLower(key) == "host" {
 					headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
-					headerOld[xforwardHeader] = string(val)
 				} else {
 					headerCopy[key] = append(headerCopy[key], string(val))
-					headerOld[key] = string(val)
 				}
 			}
 
@@ -142,12 +139,11 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header
-				Header:    headerCopy,
-				Body:      []byte(evt.Body),
-				Method:    evt.RequestContext.HTTP.Method,
-				Path:      evt.RawPath,
-				Query:     evt.QueryStringParameters,
-				HeaderOld: headerOld,
+				Header: headerCopy,
+				Body:   []byte(evt.Body),
+				Method: evt.RequestContext.HTTP.Method,
+				Path:   evt.RawPath,
+				Query:  evt.QueryStringParameters,
 			})
 		}
 
