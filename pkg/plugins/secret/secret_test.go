@@ -43,4 +43,21 @@ var _ = Describe("Unimplemented Secret Plugin Tests", func() {
 			})
 		})
 	})
+
+	Context("Secret.String", func() {
+		It("should print ReceiveOptions", func() {
+			secret := &Secret{Name: "secret"}
+			Expect(secret.String()).To(BeEquivalentTo("{Name: secret}"))
+		})
+	})
+
+	Context("SecretVersion.String", func() {
+		It("should print ReceiveOptions", func() {
+			secret := &SecretVersion{
+				Secret:  &Secret{Name: "secret"},
+				Version: "version",
+			}
+			Expect(secret.String()).To(BeEquivalentTo("{Secret: {Name: secret}, Version: version}"))
+		})
+	})
 })
