@@ -3,9 +3,5 @@ threshold: .90
 allow:
   - "MIT"
   - "Apache-2.0"
+  - "BSD-2-Clause"
   - "BSD-3-Clause"
-
-exceptions:
-  # exceptions for "license not permitted" type violations
-  licenseNotPermitted:
-    - path: "github.com/pkg/errors"
