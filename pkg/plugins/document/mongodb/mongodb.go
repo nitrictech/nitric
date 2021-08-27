@@ -38,6 +38,10 @@ const (
 	mongoDBConnectionStringEnvVarName = "MONGODB_CONNECTION_STRING"
 	mongoDBDatabaseEnvVarName         = "MONGODB_DATABASE"
 	mongoDBSetDirectEnvVarName        = "MONGODB_DIRECT"
+
+	primaryKeyAttr = "_id"
+ 	parentKeyAttr = "_parent_id"
+ 	childrenAttr = "_child_colls"
 )
 
 // Mapping to mongo operators, startsWith will be handled within the function
@@ -50,9 +54,7 @@ var mongoOperatorMap = map[string]string{
 	">": "$gt",
 }
 
-var primaryKeyAttr = "_id"
-var parentKeyAttr = "_parent_id"
-var childrenAttr = "_child_colls"
+
 
 type MongoDocService struct {
 	client  *mongo.Client
