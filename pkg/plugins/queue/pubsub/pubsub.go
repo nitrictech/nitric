@@ -49,7 +49,10 @@ func generateQueueSubscription(queue string) string {
 func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Send",
-		fmt.Sprintf("queue=%s", queue),
+		map[string]interface{}{
+			"queue": queue,
+			"task":  task,
+		},
 	)
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	ctx := context.TODO()
@@ -58,7 +61,7 @@ func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 	if exists, err := topic.Exists(ctx); !exists || err != nil {
 		return newErr(
 			codes.NotFound,
-			fmt.Sprintf("queue not found"),
+			"queue not found",
 			err,
 		)
 	}
@@ -91,7 +94,10 @@ func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 func (s *PubsubQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.SendBatch",
-		fmt.Sprintf("queue=%s", q),
+		map[string]interface{}{
+			"queue":     q,
+			"tasks.len": len(tasks),
+		},
 	)
 
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
@@ -177,7 +183,9 @@ func (s *PubsubQueueService) getQueueSubscription(q string) (ifaces_pubsub.Subsc
 func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Receive",
-		fmt.Sprintf("options=%v", options),
+		map[string]interface{}{
+			"options": options,
+		},
 	)
 
 	if err := options.Validate(); err != nil {
@@ -259,7 +267,10 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 func (s *PubsubQueueService) Complete(q string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Complete",
-		fmt.Sprintf("queue=%s", q),
+		map[string]interface{}{
+			"queue":   q,
+			"leaseId": leaseId,
+		},
 	)
 
 	ctx := context.Background()

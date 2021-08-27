@@ -83,8 +83,10 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Read",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	if b, err := s.getBucketByName(bucket); err == nil {
@@ -117,8 +119,11 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Write",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket":     bucket,
+			"key":        key,
+			"object.len": len(object),
+		},
 	)
 
 	if b, err := s.getBucketByName(bucket); err == nil {
@@ -151,8 +156,10 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 func (s *S3StorageService) Delete(bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Delete",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	if b, err := s.getBucketByName(bucket); err == nil {

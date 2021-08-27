@@ -58,7 +58,9 @@ func (d BoltDoc) String() string {
 func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Get",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -97,7 +99,9 @@ func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Set",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -143,7 +147,9 @@ func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) 
 func (s *BoltDocService) Delete(key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Delete",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -204,7 +210,9 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Query",
-		fmt.Sprintf("collection=%v", collection),
+		map[string]interface{}{
+			"collection": collection,
+		},
 	)
 
 	if err := document.ValidateQueryCollection(collection); err != nil {

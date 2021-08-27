@@ -13,9 +13,15 @@
 // limitations under the License.
 package events
 
+import "fmt"
+
 // NitricEvent - An event for asynchronous processing and reactive programming
 type NitricEvent struct {
 	ID          string                 `json:"id,omitempty"`
 	PayloadType string                 `json:"payloadType,omitempty"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
+}
+
+func (e *NitricEvent) String() string {
+	return fmt.Sprintf("{ID: %s, PayloadType: %s}", e.ID, e.PayloadType)
 }

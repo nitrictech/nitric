@@ -15,7 +15,6 @@
 package boltdb_storage_service
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -45,8 +44,11 @@ type Object struct {
 func (s *BoltStorageService) Write(bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltStorageService.Write",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket":     bucket,
+			"key":        key,
+			"object.len": len(object),
+		},
 	)
 
 	if bucket == "" {
@@ -109,8 +111,10 @@ func (s *BoltStorageService) Write(bucket string, key string, object []byte) err
 func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltStorageService.Read",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	if bucket == "" {
@@ -156,8 +160,10 @@ func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
 func (s *BoltStorageService) Delete(bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltStorageService.Delete",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	if bucket == "" {

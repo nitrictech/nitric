@@ -28,7 +28,7 @@ var _ = Describe("GRPC Errors", func() {
 	Context("GrpcError", func() {
 		When("plugin.errors.InvalidArgument", func() {
 			It("Should report GRPC IllegalArgument error", func() {
-				newErr := errors.ErrorsWithScope("test")
+				newErr := errors.ErrorsWithScope("test", nil)
 				err := newErr(
 					codes.InvalidArgument,
 					"bad param",

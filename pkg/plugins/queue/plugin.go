@@ -47,6 +47,10 @@ type ReceiveOptions struct {
 	Depth *uint32 `type:"int" required:"false"`
 }
 
+func (p *ReceiveOptions) String() string {
+	return fmt.Sprintf("{QueueName: %s, Depth: %v}", p.QueueName, p.Depth)
+}
+
 func (p *ReceiveOptions) Validate() error {
 	// Validation
 	var invalidParams []string

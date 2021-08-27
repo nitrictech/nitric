@@ -25,7 +25,7 @@ type PluginError struct {
 	Msg    string
 	Cause  error
 	Plugin string
-	Args   string
+	Args   map[string]interface{}
 }
 
 func (p *PluginError) Unwrap() error {
@@ -51,17 +51,14 @@ func Code(e error) codes.Code {
 }
 
 // ErrorsWithScope - Returns a new reusable error factory with the given scope
-func ErrorsWithScope(s string, ctx ...interface{}) func(c codes.Code, msg string, cause error) error {
-	return func(c codes.Code, msg string, cause error) error {
-		pe := &PluginError{
-			Code:   c,
+func ErrorsWithScope(scope string, args map[string]interface{}) func(c codes.Code, msg string, cause error) error {
+	return func(code codes.Code, msg string, cause error) error {
+		return &PluginError{
+			Code:   code,
 			Msg:    msg,
-			Plugin: s,
+			Cause:  cause,
+			Plugin: scope,
+			Args:   args,
 		}
-		if ctx != nil {
-			pe.Args = fmt.Sprintf("%v", ctx)
-		}
-		pe.Cause = cause
-		return pe
 	}
 }

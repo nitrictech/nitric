@@ -45,7 +45,10 @@ type LocalHttpeventsClient interface {
 func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"LocalEventService.Publish",
-		fmt.Sprintf("topic=%s", topic),
+		map[string]interface{}{
+			"topic": topic,
+			"event": event,
+		},
 	)
 
 	requestId := event.ID
@@ -96,7 +99,7 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 	} else {
 		return newErr(
 			codes.NotFound,
-			fmt.Sprintf("unable to find subscriber for topic"),
+			"unable to find subscriber for topic",
 			nil,
 		)
 	}

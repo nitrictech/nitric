@@ -46,7 +46,10 @@ type Item struct {
 func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Send",
-		fmt.Sprintf("queue=%s", queue),
+		map[string]interface{}{
+			"queue": queue,
+			"task":  task,
+		},
 	)
 
 	if queue == "" {
@@ -95,7 +98,10 @@ func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
 func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.SendBatch",
-		fmt.Sprintf("queue=%s", q),
+		map[string]interface{}{
+			"queue":     q,
+			"tasks.len": len(tasks),
+		},
 	)
 
 	if q == "" {
@@ -155,7 +161,9 @@ func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.
 func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Receive",
-		fmt.Sprintf("options=%v", options),
+		map[string]interface{}{
+			"options": options,
+		},
 	)
 
 	if options.QueueName == "" {
@@ -178,6 +186,13 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 
 	var items []Item
 	err = db.All(&items, storm.Limit(int(*options.Depth)))
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"error reading tasks",
+			err,
+		)
+	}
 
 	poppedTasks := make([]queue.NitricTask, 0)
 	for _, item := range items {
@@ -210,7 +225,10 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 func (s *DevQueueService) Complete(queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Complete",
-		fmt.Sprintf("queue=%s", queue),
+		map[string]interface{}{
+			"queue":   queue,
+			"leaseId": leaseId,
+		},
 	)
 
 	if queue == "" {

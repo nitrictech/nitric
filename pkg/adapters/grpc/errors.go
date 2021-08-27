@@ -33,9 +33,17 @@ func NewGrpcError(operation string, err error) error {
 		if pe.Cause != nil {
 			ed.Cause = pe.Cause.Error()
 		}
-		ed.Service = operation
-		ed.Plugin = pe.Plugin
-		ed.Args = pe.Args
+		ed.Scope = &v1.ErrorScope{
+			Service: operation,
+			Plugin:  pe.Plugin,
+		}
+		if len(pe.Args) > 0 {
+			args := make(map[string]string)
+			for k, v := range pe.Args {
+				args[k] = fmt.Sprintf("%v", v)
+			}
+			ed.Scope.Args = args
+		}
 
 		s := status.New(code, pe.Msg)
 		s, _ = s.WithDetails(ed)
@@ -48,23 +56,25 @@ func NewGrpcError(operation string, err error) error {
 }
 
 func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
-	se := &v1.ErrorDetails{}
-	se.Message = err.Error()
-	se.Service = operation
+	ed := &v1.ErrorDetails{}
+	ed.Message = err.Error()
+	ed.Scope = &v1.ErrorScope{
+		Service: operation,
+	}
 
 	s := status.New(code, err.Error())
-	s, _ = s.WithDetails(se)
+	s, _ = s.WithDetails(ed)
 
 	return s.Err()
 }
 
 // Provides generic error for unregistered plugins
 func NewPluginNotRegisteredError(plugin string) error {
-	se := &v1.ErrorDetails{}
-	se.Message = fmt.Sprintf("%s plugin not registered", plugin)
+	ed := &v1.ErrorDetails{}
+	ed.Message = fmt.Sprintf("%s plugin not registered", plugin)
 
-	s := status.New(codes.Unimplemented, se.Message)
-	s, _ = s.WithDetails(se)
+	s := status.New(codes.Unimplemented, ed.Message)
+	s, _ = s.WithDetails(ed)
 
 	return s.Err()
 }

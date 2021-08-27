@@ -42,7 +42,12 @@ func (s *DevSecretService) secretFileName(sec *secret.Secret, v string) string {
 }
 
 func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	newErr := errors.ErrorsWithScope("DevSecretService.Put")
+	newErr := errors.ErrorsWithScope(
+		"DevSecretService.Put",
+		map[string]interface{}{
+			"secret": sec,
+		},
+	)
 
 	if sec == nil {
 		return nil, newErr(codes.InvalidArgument, "provide non-empty secret", nil)
@@ -94,7 +99,12 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 }
 
 func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	newErr := errors.ErrorsWithScope("DevSecretService.Access")
+	newErr := errors.ErrorsWithScope(
+		"DevSecretService.Access",
+		map[string]interface{}{
+			"version": sv,
+		},
+	)
 
 	if sv.Secret.Name == "" {
 		return nil, newErr(
