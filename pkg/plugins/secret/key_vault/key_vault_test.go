@@ -48,7 +48,7 @@ var _ = Describe("Key Vault", func() {
 		When("Given the Key Vault backend is available", func() {
 			When("Putting a Secret to an existing secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should successfully store a secret", func() {
 					// Assert all methods are called at least their number of times
@@ -73,7 +73,7 @@ var _ = Describe("Key Vault", func() {
 
 			When("Putting a Secret to a non-existent secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should successfully store a secret", func() {
 					defer ctrl.Finish()
@@ -97,7 +97,7 @@ var _ = Describe("Key Vault", func() {
 
 			When("Putting a nil secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
@@ -109,7 +109,7 @@ var _ = Describe("Key Vault", func() {
 
 			When("Putting a secret with an empty name", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
@@ -121,7 +121,7 @@ var _ = Describe("Key Vault", func() {
 
 			When("Putting a secret with an empty value", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
@@ -138,7 +138,7 @@ var _ = Describe("Key Vault", func() {
 			When("The secret store exists", func() {
 				When("The secret exists", func() {
 					ctrl := gomock.NewController(GinkgoT())
-					mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+					mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 					secretPlugin := NewWithClient(mockSecretClient)
 
 					It("Should successfully return a secret", func() {
@@ -164,7 +164,7 @@ var _ = Describe("Key Vault", func() {
 			})
 			When("The secret doesn't exist", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 				It("Should return an error", func() {
 					defer ctrl.Finish()
@@ -186,7 +186,7 @@ var _ = Describe("Key Vault", func() {
 			})
 			When("An empty secret version is provided", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should return an error", func() {
@@ -201,7 +201,7 @@ var _ = Describe("Key Vault", func() {
 			})
 			When("An empty secret is provided", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should return an error", func() {
@@ -216,7 +216,7 @@ var _ = Describe("Key Vault", func() {
 			})
 			When("An empty secret name is provided", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should return an error", func() {
@@ -231,7 +231,7 @@ var _ = Describe("Key Vault", func() {
 			})
 			When("An empty version is provided", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockBaseClientAPI(ctrl)
+				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should return an error", func() {

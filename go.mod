@@ -8,10 +8,7 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
-	github.com/Azure/azure-sdk-for-go/sdk/armcore v0.8.0
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.9.2
-	github.com/Azure/azure-sdk-for-go/sdk/keyvault/armkeyvault v0.1.1
-	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
+	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.8 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect

@@ -21,16 +21,20 @@ import (
 
 	kvauth "github.com/Azure/azure-sdk-for-go/services/keyvault/auth"
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault/keyvaultapi"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
-type keyVaultSecretService struct {
+type KeyVaultClient interface {
+	SetSecret(ctx context.Context, vaultBaseURL string, secretName string, parameters keyvault.SecretSetParameters) (result keyvault.SecretBundle, err error)
+	GetSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string) (result keyvault.SecretBundle, err error)
+}
+
+type KeyVaultSecretService struct {
 	secret.UnimplementedSecretPlugin
-	client    keyvaultapi.BaseClientAPI
+	client    KeyVaultClient
 	vaultName string
 }
 
@@ -64,7 +68,7 @@ func validateSecretVersion(sec *secret.SecretVersion) error {
 	return nil
 }
 
-func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Put")
 
 	if err := validateNewSecret(sec, val); err != nil {
@@ -106,7 +110,7 @@ func (s *keyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 	}, nil
 }
 
-func (s *keyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Access")
 
 	if err := validateSecretVersion(sv); err != nil {
@@ -168,14 +172,14 @@ func New() (secret.SecretService, error) {
 	client := keyvault.New()
 	client.Authorizer = authorizer
 
-	return &keyVaultSecretService{
+	return &KeyVaultSecretService{
 		client:    client,
 		vaultName: vaultName,
 	}, nil
 }
 
-func NewWithClient(client keyvaultapi.BaseClientAPI) secret.SecretService {
-	return &keyVaultSecretService{
+func NewWithClient(client KeyVaultClient) secret.SecretService {
+	return &KeyVaultSecretService{
 		client:    client,
 		vaultName: "localvault",
 	}
