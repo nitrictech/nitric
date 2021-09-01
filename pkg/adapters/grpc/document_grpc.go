@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"context"
+	"io"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
@@ -113,14 +114,8 @@ func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQuery
 	}
 
 	collection := collectionFromWire(req.Collection)
-	expressions := make([]document.QueryExpression, len(req.GetExpressions()))
-	for i, exp := range req.GetExpressions() {
-		expressions[i] = document.QueryExpression{
-			Operand:  exp.GetOperand(),
-			Operator: exp.GetOperator(),
-			Value:    toExpValue(exp.GetValue()),
-		}
-	}
+	expressions := expressionsFromWire(req.GetExpressions())
+
 	limit := int(req.GetLimit())
 	pagingMap := req.GetPagingToken()
 
@@ -143,6 +138,33 @@ func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQuery
 		Documents:   pbDocuments,
 		PagingToken: qr.PagingToken,
 	}, nil
+}
+
+func (s *DocumentServiceServer) QueryStream(req *pb.DocumentQueryStreamRequest, srv pb.DocumentService_QueryStreamServer) error {
+	if err := s.checkPluginRegistered(); err != nil {
+		return err
+	}
+
+	col := collectionFromWire(req.Collection)
+	expressions := expressionsFromWire(req.Expressions)
+
+	next := s.documentPlugin.QueryStream(col, expressions, int(req.Limit))
+
+	for doc, err := next(); err != io.EOF; doc, err = next() {
+		if err != nil {
+			return NewGrpcError("DocumentService.QueryStream", err)
+		}
+
+		if d, docErr := documentToWire(doc); docErr != nil {
+			return NewGrpcError("DocumentService.QueryStream", err)
+		} else {
+			srv.Send(&pb.DocumentQueryStreamResponse{
+				Document: d,
+			})
+		}
+	}
+
+	return nil
 }
 
 func NewDocumentServer(docPlugin document.DocumentService) pb.DocumentServiceServer {
@@ -217,6 +239,19 @@ func collectionFromWire(coll *pb.Collection) *document.Collection {
 			Parent: keyFromWire(coll.Parent),
 		}
 	}
+}
+
+func expressionsFromWire(exps []*pb.Expression) []document.QueryExpression {
+	expressions := make([]document.QueryExpression, len(exps))
+	for i, exp := range exps {
+		expressions[i] = document.QueryExpression{
+			Operand:  exp.GetOperand(),
+			Operator: exp.GetOperator(),
+			Value:    toExpValue(exp.GetValue()),
+		}
+	}
+
+	return expressions
 }
 
 func toExpValue(x *pb.ExpressionValue) interface{} {

@@ -56,6 +56,8 @@ type QueryResult struct {
 	PagingToken map[string]string
 }
 
+type DocumentIterator = func() (*Document, error)
+
 // The base Document Plugin interface
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
@@ -64,6 +66,7 @@ type DocumentService interface {
 	Set(*Key, map[string]interface{}) error
 	Delete(*Key) error
 	Query(*Collection, []QueryExpression, int, map[string]string) (*QueryResult, error)
+	QueryStream(*Collection, []QueryExpression, int) DocumentIterator
 }
 
 type UnimplementedDocumentPlugin struct {
@@ -84,4 +87,10 @@ func (p *UnimplementedDocumentPlugin) Delete(key *Key) error {
 
 func (p *UnimplementedDocumentPlugin) Query(collection *Collection, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (p *UnimplementedDocumentPlugin) QueryStream(collection *Collection, expressions []QueryExpression, limit int) DocumentIterator {
+	return func() (*Document, error) {
+		return nil, fmt.Errorf("UNIMPLEMENTED")
+	}
 }
