@@ -22,7 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+
+	grpcadapters "github.com/nitric-dev/membrane/pkg/adapters/grpc"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/utils"
 	"github.com/nitric-dev/membrane/pkg/worker"
@@ -51,6 +53,7 @@ type MembraneOptions struct {
 	QueuePlugin    queue.QueueService
 	GatewayPlugin  gateway.GatewayService
 	SecretPlugin   secret.SecretService
+	EmailsPlugin   emails.EmailService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -86,6 +89,7 @@ type Membrane struct {
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
 	secretPlugin   secret.SecretService
+	emailsPlugin   emails.EmailService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -110,31 +114,35 @@ func (s *Membrane) log(log string) {
 }
 
 func (s *Membrane) CreateSecretServer() v1.SecretServiceServer {
-	return grpc2.NewSecretServer(s.secretPlugin)
+	return grpcadapters.NewSecretServer(s.secretPlugin)
 }
 
 // Create a new Nitric Document Server
 func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
-	return grpc2.NewDocumentServer(s.documentPlugin)
+	return grpcadapters.NewDocumentServer(s.documentPlugin)
 }
 
 // Create a new Nitric events Server
-func (s *Membrane) createeventsServer() v1.EventServiceServer {
-	return grpc2.NewEventServiceServer(s.eventsPlugin)
+func (s *Membrane) createEventsServer() v1.EventServiceServer {
+	return grpcadapters.NewEventServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Topic Server
 func (s *Membrane) createTopicServer() v1.TopicServiceServer {
-	return grpc2.NewTopicServiceServer(s.eventsPlugin)
+	return grpcadapters.NewTopicServiceServer(s.eventsPlugin)
 }
 
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() v1.StorageServiceServer {
-	return grpc2.NewStorageServiceServer(s.storagePlugin)
+	return grpcadapters.NewStorageServiceServer(s.storagePlugin)
 }
 
 func (s *Membrane) createQueueServer() v1.QueueServiceServer {
-	return grpc2.NewQueueServiceServer(s.queuePlugin)
+	return grpcadapters.NewQueueServiceServer(s.queuePlugin)
+}
+
+func (s *Membrane) createEmailsServer() v1.EmailServiceServer {
+	return grpcadapters.NewEmailServiceServer(s.emailsPlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -169,7 +177,7 @@ func (s *Membrane) Start() error {
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventsServer := s.createeventsServer()
+	eventsServer := s.createEventsServer()
 	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
 
 	topicServer := s.createTopicServer()
@@ -181,9 +189,12 @@ func (s *Membrane) Start() error {
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
 
+	emailServer := s.createEmailsServer()
+	v1.RegisterEmailServiceServer(s.grpcServer, emailServer)
+
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
-		faasServer := grpc2.NewFaasServer(s.pool)
+		faasServer := grpcadapters.NewFaasServer(s.pool)
 		v1.RegisterFaasServiceServer(s.grpcServer, faasServer)
 	}
 	lis, err := net.Listen("tcp", s.serviceAddress)
@@ -363,6 +374,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		secretPlugin:            options.SecretPlugin,
+		emailsPlugin:            options.EmailsPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,

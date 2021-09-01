@@ -21,6 +21,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	ses_service "github.com/nitric-dev/membrane/pkg/plugins/emails/ses"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
@@ -28,9 +30,9 @@ import (
 	ecs_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
 	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
 	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
+	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
 	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
 	"github.com/nitric-dev/membrane/pkg/utils"
-	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
 )
 
 func main() {
@@ -53,6 +55,7 @@ func main() {
 	eventsPlugin, _ := sns_service.New()
 	queuePlugin, _ := sqs_service.New()
 	storagePlugin, _ := s3_service.New()
+	emailPlugin, _ := ses_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
@@ -61,6 +64,7 @@ func main() {
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 		SecretPlugin:   secretPlugin,
+		EmailsPlugin:   emailPlugin,
 	})
 
 	if err != nil {

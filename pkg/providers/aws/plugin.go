@@ -17,6 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+	ses_service "github.com/nitric-dev/membrane/pkg/plugins/emails/ses"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
@@ -58,4 +60,9 @@ func (p *AWSServiceFactory) NewQueueService() (queue.QueueService, error) {
 // NewStorageService - Returns AWS S3 based storage plugin
 func (p *AWSServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return s3_service.New()
+}
+
+// NewEmailService - Returns AWS SES based emails plugin
+func (p *AWSServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return ses_service.New()
 }

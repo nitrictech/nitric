@@ -16,6 +16,7 @@ package main
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
@@ -54,4 +55,9 @@ func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
 // NewStorageService - Returns Azure _ based storage plugin
 func (p *AzureServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return &storage.UnimplementedStoragePlugin{}, nil
+}
+
+// NewEmailService - Returns Azure _ based email plugin
+func (p *AzureServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return &emails.UnimplementedEmailService{}, nil
 }

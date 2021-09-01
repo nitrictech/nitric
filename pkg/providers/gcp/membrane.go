@@ -21,13 +21,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
 	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
 	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 	secret_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager"
+	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 )
 
 func main() {
@@ -61,6 +63,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to load queue plugin:", err.Error())
 	}
+	emailPlugin := &emails.UnimplementedEmailService{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
@@ -69,6 +72,7 @@ func main() {
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
 		SecretPlugin:   secretPlugin,
+		EmailsPlugin:   emailPlugin,
 	})
 
 	if err != nil {

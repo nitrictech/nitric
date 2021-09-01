@@ -16,6 +16,7 @@ package providers
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -29,6 +30,7 @@ type ServiceFactory interface {
 	NewGatewayService() (gateway.GatewayService, error)
 	NewQueueService() (queue.QueueService, error)
 	NewStorageService() (storage.StorageService, error)
+	NewEmailService() (emails.EmailService, error)
 }
 
 // UnimplementedServiceFactory - provides stub methods for a ServiceFactory which return Unimplemented Methods.
@@ -66,5 +68,10 @@ func (p *UnimplementedServiceFactory) NewQueueService() (queue.QueueService, err
 
 // NewStorageService - Unimplemented
 func (p *UnimplementedServiceFactory) NewStorageService() (storage.StorageService, error) {
+	return nil, nil
+}
+
+// NewEmailService - Unimplemented
+func (p *UnimplementedServiceFactory) NewEmailService() (emails.EmailService, error) {
 	return nil, nil
 }

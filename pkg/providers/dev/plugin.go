@@ -17,6 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+	emails_service "github.com/nitric-dev/membrane/pkg/plugins/emails/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
@@ -58,4 +60,9 @@ func (p *DevServiceFactory) NewQueueService() (queue.QueueService, error) {
 // NewStorageService - Returns local dev storage plugin
 func (p *DevServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return boltdb_storage_service.New()
+}
+
+// NewEmailService - Returns local dev email plugin
+func (p *DevServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return emails_service.New()
 }

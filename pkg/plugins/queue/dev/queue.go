@@ -236,7 +236,7 @@ func New() (queue.QueueService, error) {
 	// Check whether file exists
 	_, err := os.Stat(dbDir)
 	if os.IsNotExist(err) {
-		// Make diretory if not present
+		// Make directory if not present
 		err := os.MkdirAll(dbDir, 0777)
 		if err != nil {
 			return nil, err

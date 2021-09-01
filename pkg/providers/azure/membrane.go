@@ -21,6 +21,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
@@ -39,6 +41,7 @@ func main() {
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}
 	storagePlugin := &storage.UnimplementedStoragePlugin{}
+	emailPlugin := &emails.UnimplementedEmailService{}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
@@ -46,6 +49,7 @@ func main() {
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
+		EmailsPlugin:   emailPlugin,
 	})
 
 	if err != nil {

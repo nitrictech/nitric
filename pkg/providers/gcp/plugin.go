@@ -17,6 +17,8 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+	emails_service "github.com/nitric-dev/membrane/pkg/plugins/emails/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
@@ -58,4 +60,9 @@ func (p *GCPServiceFactory) NewQueueService() (queue.QueueService, error) {
 // NewStorageService - Returns Google Cloud Storage based storage service
 func (p *GCPServiceFactory) NewStorageService() (storage.StorageService, error) {
 	return storage_service.New()
+}
+
+// NewEmailService - Returns a Google Cloud Mail API email service
+func (p *GCPServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return emails_service.New()
 }
