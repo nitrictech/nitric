@@ -14,6 +14,7 @@
 package document_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 
 	. "github.com/onsi/ginkgo"
@@ -25,7 +26,8 @@ var _ = Describe("Document Plugin", func() {
 	When("Collection.String", func() {
 		It("should print collection", func() {
 			col := &document.Collection{Name: "customer"}
-			Expect(col.String()).To(BeEquivalentTo("{Name: customer, Parent: <nil>}"))
+			log := grpc.LogArg(col)
+			Expect(log).To(BeEquivalentTo("{Name: customer, Parent: <nil>}"))
 		})
 	})
 
@@ -41,7 +43,8 @@ var _ = Describe("Document Plugin", func() {
 				},
 				Id: "501",
 			}
-			Expect(key.String()).To(BeEquivalentTo("{Collection: {Name: orders, Parent: {Collection: {Name: customers, Parent: <nil>}, Id: user@mail.com}}, Id: 501}"))
+			log := grpc.LogArg(key)
+			Expect(log).To(BeEquivalentTo("{Collection: {Name: orders, Parent: {Collection: {Name: customers, Parent: <nil>}, Id: user@mail.com}}, Id: 501}"))
 		})
 	})
 })

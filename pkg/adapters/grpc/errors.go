@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"fmt"
+	"reflect"
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
@@ -40,7 +41,7 @@ func NewGrpcError(operation string, err error) error {
 		if len(pe.Args) > 0 {
 			args := make(map[string]string)
 			for k, v := range pe.Args {
-				args[k] = fmt.Sprintf("%v", v)
+				args[k] = LogArg(v)
 			}
 			ed.Scope.Args = args
 		}
@@ -77,4 +78,44 @@ func NewPluginNotRegisteredError(plugin string) error {
 	s, _ = s.WithDetails(ed)
 
 	return s.Err()
+}
+
+func LogArg(arg interface{}) string {
+	value := getValue(arg)
+
+	if value.Kind() == reflect.Struct {
+
+		str := "{"
+		for i := 0; i < value.NumField(); i++ {
+
+			fieldType := value.Type().Field(i)
+			tag := fieldType.Tag.Get("log")
+			if tag == "" || tag == "-" {
+				continue
+			}
+
+			if len(str) > 1 {
+				str += ", "
+			}
+
+			field := value.Field(i)
+			str += fieldType.Name + ": " + LogArg(field.Interface())
+		}
+		str += "}"
+
+		return str
+
+	} else {
+		return fmt.Sprintf("%v", arg)
+	}
+}
+
+func getValue(x interface{}) reflect.Value {
+	val := reflect.ValueOf(x)
+
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	return val
 }

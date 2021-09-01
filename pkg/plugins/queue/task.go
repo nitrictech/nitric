@@ -14,8 +14,6 @@
 
 package queue
 
-import "fmt"
-
 // FailedTask - A task that has failed to be queued
 type FailedTask struct {
 	Task    *NitricTask
@@ -24,12 +22,8 @@ type FailedTask struct {
 
 // NitricTask - A task for asynchronous processing
 type NitricTask struct {
-	ID          string                 `json:"id,omitempty"`
-	LeaseID     string                 `json:"leaseId,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
+	ID          string                 `json:"id,omitempty" log:"ID"`
+	LeaseID     string                 `json:"leaseId,omitempty" log:"LeaseID"`
+	PayloadType string                 `json:"payloadType,omitempty" log:"PayLoadType"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
-}
-
-func (t *NitricTask) String() string {
-	return fmt.Sprintf("{ID: %s, LeaseID: %s, PayloadType: %s}", t.ID, t.LeaseID, t.PayloadType)
 }

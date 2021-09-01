@@ -14,6 +14,7 @@
 package events_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 
 	. "github.com/onsi/ginkgo"
@@ -31,7 +32,8 @@ var _ = Describe("Events Plugin", func() {
 					"key": "value",
 				},
 			}
-			Expect(event.String()).To(BeEquivalentTo("{ID: id, PayloadType: payloadtype}"))
+			log := grpc.LogArg(event)
+			Expect(log).To(BeEquivalentTo("{ID: id, PayloadType: payloadtype}"))
 		})
 	})
 })

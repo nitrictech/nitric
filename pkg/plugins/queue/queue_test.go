@@ -14,6 +14,7 @@
 package queue_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,7 +32,8 @@ var _ = Describe("Queue Plugin", func() {
 					"key": "value",
 				},
 			}
-			Expect(task.String()).To(BeEquivalentTo("{ID: id, LeaseID: leaseId, PayloadType: payloadType}"))
+			log := grpc.LogArg(task)
+			Expect(log).To(BeEquivalentTo("{ID: id, LeaseID: leaseId, PayloadType: payloadType}"))
 		})
 	})
 
@@ -41,7 +43,8 @@ var _ = Describe("Queue Plugin", func() {
 			options := &queue.ReceiveOptions{
 				QueueName: "queue",
 			}
-			Expect(options.String()).To(BeEquivalentTo("{QueueName: queue, Depth: <nil>}"))
+			log := grpc.LogArg(options)
+			Expect(log).To(BeEquivalentTo("{QueueName: queue, Depth: <nil>}"))
 		})
 	})
 })

@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secret
+package secret_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Unimplemented Secret Plugin Tests", func() {
-	uisp := &UnimplementedSecretPlugin{}
+	uisp := &secret.UnimplementedSecretPlugin{}
 
 	Context("Put", func() {
 		When("Calling Put on UnimplementedSecretPlugin", func() {
@@ -46,18 +48,20 @@ var _ = Describe("Unimplemented Secret Plugin Tests", func() {
 
 	Context("Secret.String", func() {
 		It("should print ReceiveOptions", func() {
-			secret := &Secret{Name: "secret"}
-			Expect(secret.String()).To(BeEquivalentTo("{Name: secret}"))
+			secret := &secret.Secret{Name: "secret"}
+			log := grpc.LogArg(secret)
+			Expect(log).To(BeEquivalentTo("{Name: secret}"))
 		})
 	})
 
 	Context("SecretVersion.String", func() {
 		It("should print ReceiveOptions", func() {
-			secret := &SecretVersion{
-				Secret:  &Secret{Name: "secret"},
+			secret := &secret.SecretVersion{
+				Secret:  &secret.Secret{Name: "secret"},
 				Version: "version",
 			}
-			Expect(secret.String()).To(BeEquivalentTo("{Secret: {Name: secret}, Version: version}"))
+			log := grpc.LogArg(secret)
+			Expect(log).To(BeEquivalentTo("{Secret: {Name: secret}, Version: version}"))
 		})
 	})
 })

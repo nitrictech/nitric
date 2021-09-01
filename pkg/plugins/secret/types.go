@@ -14,28 +14,18 @@
 
 package secret
 
-import "fmt"
-
 // Secret - Represents a container for secret versions
 type Secret struct {
-	Name string
-}
-
-func (s *Secret) String() string {
-	return fmt.Sprintf("{Name: %s}", s.Name)
+	Name string `log:"Name"`
 }
 
 // SecretVersion - A version of a secret
 type SecretVersion struct {
-	Secret *Secret
+	Secret *Secret `log:"Secret"`
 
 	// Version - the specific secret version this represents
 	// Specifying "latest" will always retrieve the latest version of the secret
-	Version string
-}
-
-func (sv *SecretVersion) String() string {
-	return fmt.Sprintf("{Secret: %v, Version: %s}", sv.Secret, sv.Version)
+	Version string `log:"Version"`
 }
 
 // SecretAccessResponse - Return value for a secret access request
