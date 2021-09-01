@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	utils2 "github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -124,16 +124,16 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-// Create new SNS event service plugin
+// New - Create new SNS event service plugin
 func New() (events.EventService, error) {
-	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
+	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
 	}
 
 	snsClient := sns.New(sess)
