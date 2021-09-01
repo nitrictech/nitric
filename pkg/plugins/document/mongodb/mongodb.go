@@ -40,18 +40,18 @@ const (
 	mongoDBSetDirectEnvVarName        = "MONGODB_DIRECT"
 
 	primaryKeyAttr = "_id"
- 	parentKeyAttr = "_parent_id"
- 	childrenAttr = "_child_colls"
+ 	parentKeyAttr  = "_parent_id"
+ 	childrenAttr   = "_child_colls"
 )
 
 // Mapping to mongo operators, startsWith will be handled within the function
 var mongoOperatorMap = map[string]string{
-	"<": "$lt",
+	"<":  "$lt",
 	"<=": "$lte",
 	"==": "$eq",
 	"!=": "$ne",
-	">=":   "$gte",
-	">": "$gt",
+	">=": "$gte",
+	">":  "$gt",
 }
 
 
