@@ -15,7 +15,6 @@
 package secret_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -43,25 +42,6 @@ var _ = Describe("Unimplemented Secret Plugin Tests", func() {
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("UNIMPLEMENTED"))
 			})
-		})
-	})
-
-	Context("Secret.String", func() {
-		It("should print ReceiveOptions", func() {
-			secret := &secret.Secret{Name: "secret"}
-			log := grpc.LogArg(secret)
-			Expect(log).To(BeEquivalentTo("{Name: secret}"))
-		})
-	})
-
-	Context("SecretVersion.String", func() {
-		It("should print ReceiveOptions", func() {
-			secret := &secret.SecretVersion{
-				Secret:  &secret.Secret{Name: "secret"},
-				Version: "version",
-			}
-			log := grpc.LogArg(secret)
-			Expect(log).To(BeEquivalentTo("{Secret: {Name: secret}, Version: version}"))
 		})
 	})
 })

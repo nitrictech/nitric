@@ -105,6 +105,20 @@ func LogArg(arg interface{}) string {
 
 		return str
 
+	} else if value.Kind() == reflect.Map {
+		str := "{"
+
+		for k, v := range arg.(map[string]interface{}) {
+			if len(str) > 1 {
+				str += ", "
+			}
+			str += fmt.Sprintf("%v", k) + ": " + LogArg(v)
+		}
+
+		str += "}"
+
+		return str
+
 	} else {
 		return fmt.Sprintf("%v", arg)
 	}

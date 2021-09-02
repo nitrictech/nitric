@@ -24,6 +24,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type SecretValue struct {
+	Type   string `log:"Type"`
+	Factor int    `log:"-"`
+	Value  string
+}
+
+type Secret struct {
+	Name    string       `json:"Name" log:"Name"`
+	Version string       `json:"Version" log:"Version"`
+	Value   *SecretValue `json:"Value" log:"Value"`
+}
+
 var _ = Describe("GRPC Errors", func() {
 	Context("GrpcError", func() {
 		When("plugin.errors.InvalidArgument", func() {
@@ -70,31 +82,32 @@ var _ = Describe("GRPC Errors", func() {
 	})
 
 	Context("Logging Arg", func() {
-		When("Sensitive Fields", func() {
-			It("Should contain sensitive fields", func() {
-				v1 := grpc.LogArg("string")
-				Expect(v1).To(BeEquivalentTo("string"))
+		When("string", func() {
+			It("return string value", func() {
+				Expect(grpc.LogArg("string")).To(BeEquivalentTo("string"))
+			})
+		})
 
-				v2 := grpc.LogArg(123)
-				Expect(v2).To(BeEquivalentTo("123"))
+		When("int", func() {
+			It("return string value", func() {
+				Expect(grpc.LogArg(123)).To(BeEquivalentTo("123"))
+			})
+		})
 
-				v3 := grpc.LogArg(true)
-				Expect(v3).To(BeEquivalentTo("true"))
+		When("bool", func() {
+			It("return string value", func() {
+				Expect(grpc.LogArg(true)).To(BeEquivalentTo("true"))
+			})
+		})
 
-				v4 := grpc.LogArg(12.3)
-				Expect(v4).To(BeEquivalentTo("12.3"))
+		When("float", func() {
+			It("return string value", func() {
+				Expect(grpc.LogArg(3.1415)).To(BeEquivalentTo("3.1415"))
+			})
+		})
 
-				type SecretValue struct {
-					Type   string `log:"Type"`
-					Factor int    `log:"-"`
-					Value  string
-				}
-
-				type Secret struct {
-					Name    string       `json:"Name" log:"Name"`
-					Version string       `json:"Version" log:"Version"`
-					Value   *SecretValue `json:"Value" log:"Value"`
-				}
+		When("struct", func() {
+			It("return string value", func() {
 
 				data := Secret{
 					Name:    "name",
@@ -106,8 +119,29 @@ var _ = Describe("GRPC Errors", func() {
 					},
 				}
 
-				v5 := grpc.LogArg(data)
-				Expect(v5).To(BeEquivalentTo("{Name: name, Version: 3, Value: {Type: key}}"))
+				value := grpc.LogArg(data)
+				Expect(value).To(BeEquivalentTo("{Name: name, Version: 3, Value: {Type: key}}"))
+			})
+		})
+
+		When("map", func() {
+			It("return string value", func() {
+				secret := Secret{
+					Name:    "name",
+					Version: "3",
+					Value: &SecretValue{
+						Type:   "key",
+						Factor: 2,
+						Value:  "2a4wijgPq0PpwJ76IjT7&lTBZ$5SGRcq",
+					},
+				}
+
+				valueMap := map[string]interface{}{
+					"key":    "value",
+					"secret": secret,
+				}
+				value := grpc.LogArg(valueMap)
+				Expect(value).To(BeEquivalentTo("{key: value, secret: {Name: name, Version: 3, Value: {Type: key}}}"))
 			})
 		})
 	})
