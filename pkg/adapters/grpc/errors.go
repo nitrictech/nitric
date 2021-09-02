@@ -22,6 +22,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // Provides GRPC error reporting
@@ -32,7 +33,12 @@ func NewGrpcError(operation string, err error) error {
 		ed := &v1.ErrorDetails{}
 		ed.Message = pe.Msg
 		if pe.Cause != nil {
-			ed.Cause = pe.Cause.Error()
+			detailsMap := map[string]interface{}{
+				"cause": pe.Cause.Error(),
+			}
+			if detailsStruct, err := structpb.NewStruct(detailsMap); err == nil {
+				ed.Details = detailsStruct
+			}
 		}
 		ed.Scope = &v1.ErrorScope{
 			Service: operation,
