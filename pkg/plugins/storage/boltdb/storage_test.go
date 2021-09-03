@@ -15,8 +15,10 @@
 package boltdb_storage_service_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	"os"
+
+	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -26,33 +28,32 @@ const BUCKET = "bucket"
 const KEY = "key"
 const DATA = "data"
 
+var local_storage_directory = utils.GetRelativeDevPath(boltdb_storage_service.DEV_SUB_DIRECTORY)
+
 var _ = Describe("Storage", func() {
+	AfterSuite(func() {
+		// Cleanup default secret directory
+		os.RemoveAll(utils.GetDevVolumePath())
+	})
+
 	storagePlugin, err := boltdb_storage_service.New()
 	if err != nil {
 		panic(err)
 	}
 
 	AfterEach(func() {
-		err := os.RemoveAll(boltdb_storage_service.DEFAULT_DIR)
+		err := os.RemoveAll(local_storage_directory)
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = os.Stat(boltdb_storage_service.DEFAULT_DIR)
+		_, err = os.Stat(local_storage_directory)
 		if os.IsNotExist(err) {
-			// Make diretory if not present
-			err := os.Mkdir(boltdb_storage_service.DEFAULT_DIR, 0777)
+			// Make directory if not present
+			err := os.Mkdir(local_storage_directory, 0777)
 			if err != nil {
 				panic(err)
 			}
-		}
-	})
-
-	AfterSuite(func() {
-		err := os.RemoveAll(boltdb_storage_service.DEFAULT_DIR)
-		if err == nil {
-			os.Remove(boltdb_storage_service.DEFAULT_DIR)
-			os.Remove("nitric/")
 		}
 	})
 

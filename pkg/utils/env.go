@@ -14,12 +14,26 @@
 
 package utils
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
-// Retrieve an environment variable with a fallback
+// GetEnv - Retrieve an environment variable with a fallback
 func GetEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return fallback
+}
+
+// GetDevVolumePath - Returns the default directory to be used for local development plugins
+// this directory points at a docker volume, used to share data between running containers.
+func GetDevVolumePath() string {
+	return GetEnv("NITRIC_DEV_VOLUME", "nitric/")
+}
+
+// GetRelativeDevPath - create a path, relative to the Dev Volume
+func GetRelativeDevPath(relativePath string) string {
+	return filepath.Join(GetDevVolumePath(), relativePath)
 }

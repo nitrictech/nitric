@@ -17,6 +17,7 @@ package boltdb_service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,11 +33,11 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-const DEFAULT_DIR = "nitric/collections/"
+const DEV_SUB_DIRECTORY = "./collections/"
 
 const skipTokenName = "skip"
 const idName = "Id"
-const partionKeyName = "ParitionKey"
+const partitionKeyName = "PartitionKey"
 const sortKeyName = "SortKey"
 
 type BoltDocService struct {
@@ -45,14 +46,14 @@ type BoltDocService struct {
 }
 
 type BoltDoc struct {
-	Id          string `storm:"id"`
-	ParitionKey string `storm:"index"`
-	SortKey     string `storm:"index"`
-	Value       map[string]interface{}
+	Id           string `storm:"id"`
+	PartitionKey string `storm:"index"`
+	SortKey      string `storm:"index"`
+	Value        map[string]interface{}
 }
 
 func (d BoltDoc) String() string {
-	return fmt.Sprintf("BoltDoc{Id: %v ParitionKey: %v SortKey: %v Value: %v}\n", d.Id, d.ParitionKey, d.SortKey, d.Value)
+	return fmt.Sprintf("BoltDoc{Id: %v PartitionKey: %v SortKey: %v Value: %v}\n", d.Id, d.PartitionKey, d.SortKey, d.Value)
 }
 
 func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
@@ -244,7 +245,7 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 
 	} else {
 		if parentKey.Id != "" {
-			matchers = append(matchers, q.Eq(partionKeyName, parentKey.Id))
+			matchers = append(matchers, q.Eq(partitionKeyName, parentKey.Id))
 		}
 		matchers = append(matchers, q.Gte(sortKeyName, collection.Name+"#"))
 		matchers = append(matchers, q.Lt(sortKeyName, document.GetEndRangeValue(collection.Name+"#")))
@@ -345,7 +346,7 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 
 // New - Create a new dev KV plugin
 func New() (*BoltDocService, error) {
-	dbDir := utils.GetEnv("LOCAL_DB_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_DB_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)
@@ -365,7 +366,7 @@ func (s *BoltDocService) createdDb(coll document.Collection) (*storm.DB, error) 
 		coll = *coll.Parent.Collection
 	}
 
-	dbPath := s.dbDir + strings.ToLower(coll.Name) + ".db"
+	dbPath := filepath.Join(s.dbDir, strings.ToLower(coll.Name)+".db")
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
@@ -383,16 +384,16 @@ func createDoc(key *document.Key) BoltDoc {
 	// Top Level Collection
 	if parentKey == nil {
 		return BoltDoc{
-			Id:          key.Id,
-			ParitionKey: key.Id,
-			SortKey:     key.Collection.Name + "#",
+			Id:           key.Id,
+			PartitionKey: key.Id,
+			SortKey:      key.Collection.Name + "#",
 		}
 
 	} else {
 		return BoltDoc{
-			Id:          parentKey.Id + "_" + key.Id,
-			ParitionKey: parentKey.Id,
-			SortKey:     key.Collection.Name + "#" + key.Id,
+			Id:           parentKey.Id + "_" + key.Id,
+			PartitionKey: parentKey.Id,
+			SortKey:      key.Collection.Name + "#" + key.Id,
 		}
 	}
 }
@@ -430,7 +431,7 @@ func toSdkDoc(col *document.Collection, doc BoltDoc) *document.Document {
 func fetchChildDocs(key *document.Key, db *storm.DB) ([]BoltDoc, error) {
 	var childDocs []BoltDoc
 
-	err := db.Find(partionKeyName, key.Id, &childDocs)
+	err := db.Find(partitionKeyName, key.Id, &childDocs)
 	if err != nil {
 		if err.Error() == "not found" {
 			return childDocs, nil
