@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,7 +32,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-const DEFAULT_DIR = "nitric/queues/"
+const DEV_SUB_DIRECTORY = "./queues/"
 
 type DevQueueService struct {
 	queue.UnimplementedQueuePlugin
@@ -231,7 +232,7 @@ func (s *DevQueueService) Complete(queue string, leaseId string) error {
 }
 
 func New() (queue.QueueService, error) {
-	dbDir := utils.GetEnv("LOCAL_QUEUE_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_QUEUE_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)
@@ -249,7 +250,7 @@ func New() (queue.QueueService, error) {
 }
 
 func (s *DevQueueService) createDb(queue string) (*storm.DB, error) {
-	dbPath := s.dbDir + strings.ToLower(queue) + ".db"
+	dbPath := filepath.Join(s.dbDir, strings.ToLower(queue)+".db")
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)

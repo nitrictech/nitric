@@ -29,7 +29,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-const DEFAULT_DIR = "nitric/buckets/"
+const DEV_SUB_DIRECTORY = "./buckets/"
 
 type BoltStorageService struct {
 	storage.UnimplementedStoragePlugin
@@ -199,7 +199,7 @@ func (s *BoltStorageService) Delete(bucket string, key string) error {
 
 // New - Create a new BoltDB Storage plugin
 func New() (storage.StorageService, error) {
-	dbDir := utils.GetEnv("LOCAL_BLOB_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_BLOB_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)

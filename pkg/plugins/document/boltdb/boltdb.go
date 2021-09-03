@@ -17,6 +17,7 @@ package boltdb_service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-const DEFAULT_DIR = "/nitric/collections/"
+const DEV_SUB_DIRECTORY = "./collections/"
 
 const skipTokenName = "skip"
 const idName = "Id"
@@ -345,7 +346,7 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 
 // New - Create a new dev KV plugin
 func New() (*BoltDocService, error) {
-	dbDir := utils.GetEnv("LOCAL_DB_DIR", DEFAULT_DIR)
+	dbDir := utils.GetEnv("LOCAL_DB_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
 	// Check whether file exists
 	_, err := os.Stat(dbDir)
@@ -365,7 +366,7 @@ func (s *BoltDocService) createdDb(coll document.Collection) (*storm.DB, error) 
 		coll = *coll.Parent.Collection
 	}
 
-	dbPath := s.dbDir + strings.ToLower(coll.Name) + ".db"
+	dbPath := filepath.Join(s.dbDir, strings.ToLower(coll.Name)+".db")
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)

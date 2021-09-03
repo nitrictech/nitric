@@ -29,7 +29,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
-const DEFAULT_DIR = "/nitric/secrets/"
+const DEV_SUB_DIRECTORY = "./secrets/"
 
 type DevSecretService struct {
 	secret.UnimplementedSecretPlugin
@@ -134,7 +134,7 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 
 //Create new secret store
 func New() (secret.SecretService, error) {
-	secDir := utils.GetEnv("LOCAL_SEC_DIR", DEFAULT_DIR)
+	secDir := utils.GetEnv("LOCAL_SEC_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
 	//Check whether file exists
 	_, err := os.Stat(secDir)

@@ -17,8 +17,11 @@ package queue_service_test
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 
@@ -58,6 +61,8 @@ var task4 = queue.NitricTask{
 	},
 }
 
+var local_queue_directory = utils.GetRelativeDevPath(queue_service.DEV_SUB_DIRECTORY)
+
 var _ = Describe("Queue", func() {
 
 	queuePlugin, err := queue_service.New()
@@ -66,15 +71,15 @@ var _ = Describe("Queue", func() {
 	}
 
 	AfterEach(func() {
-		err := os.RemoveAll(queue_service.DEFAULT_DIR)
+		err := os.RemoveAll(local_queue_directory)
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = os.Stat(queue_service.DEFAULT_DIR)
+		_, err = os.Stat(local_queue_directory)
 		if os.IsNotExist(err) {
 			// Make diretory if not present
-			err := os.Mkdir(queue_service.DEFAULT_DIR, 0777)
+			err := os.Mkdir(local_queue_directory, 0777)
 			if err != nil {
 				panic(err)
 			}
@@ -82,10 +87,10 @@ var _ = Describe("Queue", func() {
 	})
 
 	AfterSuite(func() {
-		err := os.RemoveAll(queue_service.DEFAULT_DIR)
+		err := os.RemoveAll(local_queue_directory)
 		if err == nil {
-			os.Remove(queue_service.DEFAULT_DIR)
-			os.Remove("nitric/")
+			os.Remove(local_queue_directory)
+			os.Remove(utils.GetDevVolumePath())
 		}
 	})
 
@@ -254,7 +259,7 @@ var _ = Describe("Queue", func() {
 })
 
 func GetAllTasks(q string) []queue.NitricTask {
-	dbPath := queue_service.DEFAULT_DIR + strings.ToLower(q) + ".db"
+	dbPath := filepath.Join(local_queue_directory, strings.ToLower(q)+".db")
 
 	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)

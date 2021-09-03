@@ -17,6 +17,8 @@ package secret_service_test
 import (
 	"os"
 
+	"github.com/nitric-dev/membrane/pkg/utils"
+
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	secretPlugin "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
 	. "github.com/onsi/ginkgo"
@@ -24,11 +26,9 @@ import (
 )
 
 var _ = Describe("Dev Secret Manager", func() {
-	os.Setenv("LOCAL_SEC_DIR", "./.nitric/")
-
 	AfterSuite(func() {
-		// Cleanup default secrect directory
-		os.RemoveAll("./.nitric/")
+		// Cleanup default secret directory
+		os.RemoveAll(utils.GetDevVolumePath())
 	})
 
 	testSecret := secret.Secret{
