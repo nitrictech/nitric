@@ -341,6 +341,15 @@ func GetTests(docPlugin document.DocumentService) {
 				Expect(doc.Content).To(BeEquivalentTo(Customer1.Orders[0].Content))
 			})
 		})
+		When("Document Doesn't Exist", func() {
+			It("Should return NotFound error", func() {
+				key := document.Key{Collection: &document.Collection{Name: "items"}, Id: "not-exist"}
+				doc, err := docPlugin.Get(&key)
+				Expect(doc).To(BeNil())
+				Expect(err).Should(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("not found"))
+			})
+		})
 	})
 }
 

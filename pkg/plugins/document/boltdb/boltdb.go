@@ -85,6 +85,13 @@ func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	err = db.One(idName, doc.Id, &doc)
 
 	if err != nil {
+		if err == storm.ErrNotFound {
+			return nil, newErr(
+				codes.NotFound,
+				"document not found",
+				err,
+			)
+		}
 		return nil, newErr(
 			codes.Internal,
 			"DB Fetch error",
