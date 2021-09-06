@@ -7,21 +7,30 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
-func GetServicePrincipalToken() (*adal.ServicePrincipalToken, error) {
+// GetServicePrincipalToken - Retrieves the service principal token from env
+func GetServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error) {
 	config, err := auth.GetSettingsFromEnvironment()
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to retrieve Azure auth settings: %v", err)
+		return nil, fmt.Errorf("failed to retrieve azure auth settings: %v", err)
 	}
 
-	if clientCred, err := config.GetClientCredentials(); err == nil {
+	if fileCred, fileErr := auth.GetSettingsFromFile(); fileErr == nil {
+		return fileCred.ServicePrincipalTokenFromClientCredentialsWithResource(resource)
+	} else if clientCred, clientErr := config.GetClientCredentials(); clientErr == nil {
+		clientCred.Resource = resource
 		return clientCred.ServicePrincipalToken()
-	} else if clientCert, err := config.GetClientCertificate(); err == nil {
+	} else if clientCert, certErr := config.GetClientCertificate(); certErr == nil {
+		clientCert.Resource = resource
 		return clientCert.ServicePrincipalToken()
-	} else if userPass, err := config.GetUsernamePassword(); err == nil {
+	} else if userPass, userErr := config.GetUsernamePassword(); userErr == nil {
+		userPass.Resource = resource
 		return userPass.ServicePrincipalToken()
+	} else {
+		fmt.Printf("error retrieving credentials:\n -> %v\n -> %v\n -> %v\n -> %v\n", fileErr, clientErr, certErr, userErr)
 	}
 
 	msiConf := config.GetMSI()
+	msiConf.Resource = resource
 	return msiConf.ServicePrincipalToken()
 }
