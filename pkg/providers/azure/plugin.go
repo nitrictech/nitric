@@ -21,6 +21,7 @@ import (
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
 	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
@@ -53,5 +54,5 @@ func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
 
 // NewStorageService - Returns Azure _ based storage plugin
 func (p *AzureServiceFactory) NewStorageService() (storage.StorageService, error) {
-	return &storage.UnimplementedStoragePlugin{}, nil
+	return azblob_service.New()
 }

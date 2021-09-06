@@ -26,7 +26,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	eventsPlugin := &events.UnimplementedeventsPlugin{}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}
-	storagePlugin := &storage.UnimplementedStoragePlugin{}
+	storagePlugin, _ := azblob_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
@@ -60,9 +60,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		fmt.Printf("Membrane Error: %v, exiting\n", membraneError)
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		fmt.Printf("Received %v, exiting\n", sigTerm)
 	}
 
 	m.Stop()
