@@ -20,8 +20,6 @@ import (
 	"strings"
 	"time"
 
-	grpcCodes "google.golang.org/grpc/codes"
-
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
@@ -30,7 +28,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -91,8 +88,12 @@ func (s *MongoDocService) Get(key *document.Key) (*document.Document, error) {
 	
 	if err != nil {
 		var code = codes.Internal
-		if status.Code(err) == grpcCodes.NotFound {
-			code = codes.NotFound
+		if err == mongo.ErrNoDocuments {
+			return nil, newErr(
+				codes.NotFound,
+				"document not found",
+				err,
+			)
 		}
 
 		return nil, newErr(
