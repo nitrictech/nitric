@@ -70,9 +70,15 @@ type Customer struct {
 	Key     document.Key
 	Content map[string]interface{}
 	Orders  []Order
+	Reviews []Review
 }
 
 type Order struct {
+	Key     document.Key
+	Content map[string]interface{}
+}
+
+type Review struct {
 	Key     document.Key
 	Content map[string]interface{}
 }
@@ -146,6 +152,24 @@ var Customer1 = Customer{
 				"type":     "scooter/electric",
 				"number":   "3",
 				"price":    "124.95",
+			},
+		},
+	},
+	Reviews: []Review{
+		{
+			Key: document.Key{
+				Collection: &document.Collection{
+					Name: "reviews",
+					Parent: &document.Key{
+						Collection: &document.Collection{Name: "customers"},
+						Id:         "1000",
+					},
+				},
+				Id: "300",
+			},
+			Content: map[string]interface{}{
+				"title": "Good review",
+				"stars":      "5",
 			},
 		},
 	},
@@ -350,6 +374,17 @@ func GetTests(docPlugin document.DocumentService) {
 				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
 		})
+		When("Valid Collection Get when there is a Sub Collection", func() {
+			It("Should store item successfully", func() {
+				docPlugin.Set(&Customer1.Key, Customer1.Content)
+
+				doc, err := docPlugin.Get(&Customer1.Key)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc.Key).To(Equal(&Customer1.Key))
+				Expect(doc.Content).To(BeEquivalentTo(Customer1.Content))
+			})
+		})
 	})
 }
 
@@ -415,6 +450,17 @@ func SetTests(docPlugin document.DocumentService) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Content).To(BeEquivalentTo(Customer1.Orders[0].Content))
+			})
+		})
+		When("Valid Mutliple Sub Collection Set", func() {
+			It("Should store item successfully", func() {
+				err := docPlugin.Set(&Customer1.Reviews[0].Key, Customer1.Reviews[0].Content)
+				Expect(err).ShouldNot(HaveOccurred())
+				
+				doc, err := docPlugin.Get(&Customer1.Reviews[0].Key)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(doc).ToNot(BeNil())
+				Expect(doc.Content).To(BeEquivalentTo(Customer1.Reviews[0].Content))
 			})
 		})
 	})
