@@ -24,7 +24,7 @@ import (
 type HttpRequest struct {
 	// The original Headers
 	// Header *fasthttp.RequestHeader
-	Header map[string]string
+	Header map[string][]string
 	// The original body stream
 	Body []byte
 	// The original method
@@ -41,7 +41,7 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
 func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
-	headerCopy := make(map[string]string)
+	headerCopy := make(map[string][]string)
 	queryArgs := make(map[string]string)
 
 	ctx.Request.Header.VisitAll(func(key []byte, val []byte) {
@@ -49,10 +49,14 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 
 		if strings.ToLower(keyString) == "host" {
 			// Don't copy the host header
-			headerCopy["X-Forwarded-For"] = string(val)
+			headerCopy["X-Forwarded-For"] = []string{string(val)}
 		} else {
-			headerCopy[string(key)] = string(val)
+			headerCopy[string(key)] = []string{string(val)}
 		}
+	})
+
+	ctx.Request.Header.VisitAllCookie(func(key []byte, val []byte) {
+		headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 	})
 
 	ctx.QueryArgs().VisitAll(func(key []byte, val []byte) {

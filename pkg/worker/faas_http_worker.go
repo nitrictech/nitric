@@ -16,10 +16,11 @@ package worker
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/nitric-dev/membrane/pkg/triggers"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
@@ -108,12 +109,19 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 	}()
 
 	var mimeType string = ""
-	if trigger.Header != nil {
-		mimeType = trigger.Header["Content-Type"]
+	if trigger.Header != nil && len(trigger.Header["Content-Type"]) > 0 {
+		mimeType = trigger.Header["Content-Type"][0]
 	}
 
 	if mimeType == "" {
 		mimeType = http.DetectContentType(trigger.Body)
+	}
+
+	headers := make(map[string]*pb.HeaderValue)
+	for k, v := range trigger.Header {
+		headers[k] = &pb.HeaderValue{
+			Value: v,
+		}
 	}
 
 	triggerRequest := &pb.TriggerRequest{
@@ -122,7 +130,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		Context: &pb.TriggerRequest_Http{
 			Http: &pb.HttpTriggerContext{
 				Path:        trigger.Path,
-				Headers:     trigger.Header,
+				Headers:     headers,
 				Method:      trigger.Method,
 				QueryParams: trigger.Query,
 			},
