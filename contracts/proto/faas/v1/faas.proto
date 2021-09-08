@@ -1,0 +1,141 @@
+syntax = "proto3";
+package nitric.faas.v1;
+
+// protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.faas.v1";
+option java_multiple_files = true;
+option java_outer_classname = "NitricFaas";
+option php_namespace = "Nitric\\Proto\\Faas\\V1";
+option csharp_namespace = "Nitric.Proto.Faas.v1";
+
+// Service for streaming communication with gRPC FaaS implementations
+service FaasService {
+  // Begin streaming triggers/response to/from the membrane
+  rpc TriggerStream (stream ClientMessage) returns (stream ServerMessage);
+}
+
+// Messages the client is able to send to the server
+message ClientMessage {
+  // Client message ID, used to pair requests/responses
+  string id = 1;
+
+  oneof content {
+    // Client initialisation request
+    InitRequest init_request = 2;
+
+    // Client responsding with result of
+    // a trigger
+    TriggerResponse trigger_response = 3; 
+  }
+}
+
+// Messages the server is able to send to the client
+message ServerMessage {
+  // Server message ID, used to pair requests/responses
+  string id = 1;
+
+  oneof content {
+    // Server responding
+    // with client configuration details to an
+    // InitRequest
+    InitResponse init_response = 2;
+
+    // Server requesting client to
+    // process a trigger
+    TriggerRequest trigger_request = 3;
+  }
+}
+
+// Placeholder message
+message InitRequest {}
+
+// Placeholder message
+message InitResponse {}
+
+
+// The server has a trigger for the client to handle
+message TriggerRequest {
+  // The data in the trigger
+  bytes data = 1;
+
+  // Should we supply a mime type for the data?
+  // Or rely on context?
+  string mime_type = 2;
+
+  // The context of the trigger
+  oneof context {
+    HttpTriggerContext http = 3;
+    TopicTriggerContext topic = 4;
+  }
+}
+
+message HeaderValue {
+  repeated string value = 1;
+}
+
+message HttpTriggerContext {
+
+  // The request method
+  string method = 1;
+
+  // The path of the request
+  string path = 2;
+
+  // The old request headers (preserving for backwards compatibility)
+  // TODO: Remove in 1.0
+  map<string, string> headers_old = 3 [deprecated=true];
+  
+  // The query params (if parseable by the membrane)
+  map<string, string> query_params = 4;
+
+  // HTTP request headers
+  map<string, HeaderValue> headers = 5;
+}
+
+message TopicTriggerContext {
+  // The topic the message was published for
+  string topic = 1;
+
+  // TODO: Add the event ID to the trigger context here got transactional outbox?
+}
+
+// The worker has successfully processed a trigger
+message TriggerResponse {
+  // The data returned in the response
+  bytes data = 1;
+
+  // The context of the request response
+  // Typically this will be one to one with the Trigger Context
+  // i.e. if you receive http context you may return http context
+  oneof context {
+    // response to a http request
+    HttpResponseContext http = 10;
+    // response to a topic trigger
+    TopicResponseContext topic = 11;
+  }
+}
+
+// Specific HttpResponse message
+// Note this does not have to be handled by the
+// User at all but they will have the option of control
+// If they choose...
+message HttpResponseContext {
+  // Old HTTP response headers (deprecated)
+  // TODO: Remove in 1.0
+  map<string, string> headers_old = 1 [deprecated=true];
+
+  // The HTTP status of the request
+  int32 status = 2;
+
+  // HTTP response headers
+  map<string, HeaderValue> headers = 3;
+}
+
+// Specific event response message
+// We do not accept responses for events
+// only whether or not they were successfully processed
+message TopicResponseContext {
+  // Success status of the handled event
+  bool success = 1;
+}
