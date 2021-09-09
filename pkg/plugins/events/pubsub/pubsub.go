@@ -35,7 +35,7 @@ type PubsubEventService struct {
 }
 
 func (s *PubsubEventService) ListTopics() ([]string, error) {
-	newErr := errors.ErrorsWithScope("PubsubEventService.ListTopics")
+	newErr := errors.ErrorsWithScope("PubsubEventService.ListTopics", nil)
 	iter := s.client.Topics(context.TODO())
 
 	var topics []string
@@ -57,7 +57,10 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubEventService.Publish",
-		fmt.Sprintf("topic=%s", topic),
+		map[string]interface{}{
+			"topic": topic,
+			"event": event,
+		},
 	)
 
 	ctx := context.TODO()

@@ -23,26 +23,18 @@ import "fmt"
 const MaxSubCollectionDepth int = 1
 
 type Collection struct {
-	Name   string
-	Parent *Key
+	Name   string `log:"Name"`
+	Parent *Key   `log:"Parent"`
 }
 
 type Key struct {
-	Collection *Collection
-	Id         string
-}
-
-func (k *Key) String() string {
-	return fmt.Sprintf("Key{Collection: %v Id: %v}\n", k.Collection, k.Id)
+	Collection *Collection `log:"Collection"`
+	Id         string      `log:"Id"`
 }
 
 type Document struct {
 	Key     *Key
 	Content map[string]interface{}
-}
-
-func (d *Document) String() string {
-	return fmt.Sprintf("Document{Content: %v}\n", d.Content)
 }
 
 type QueryExpression struct {

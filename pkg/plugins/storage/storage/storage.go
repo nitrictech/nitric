@@ -61,8 +61,10 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Read",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
@@ -102,8 +104,11 @@ func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) 
 func (s *StorageStorageService) Write(bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Write",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket":     bucket,
+			"key":        key,
+			"object.len": len(object),
+		},
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
@@ -143,8 +148,10 @@ func (s *StorageStorageService) Write(bucket string, key string, object []byte) 
 func (s *StorageStorageService) Delete(bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Delete",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)

@@ -1,0 +1,34 @@
+syntax = "proto3";
+package nitric.error.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.error.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Errors";
+option php_namespace = "Nitric\\Proto\\Error\\V1";
+option csharp_namespace = "Nitric.Proto.Error.v1";
+
+message ErrorScope {
+    // The API service invoked, e.g. 'Service.Method'.
+    string service = 1;
+
+    // The plugin method invoked, e.g. 'PluginService.Method'.
+    string plugin = 2;
+
+    // The plugin method arguments, ensure only non-sensitive data is specified.
+    map<string, string> args = 3;
+}
+
+message ErrorDetails {
+    // The developer error message, explaining the error and ideally solution.
+    string message = 1;
+
+    // The error details.
+    google.protobuf.Struct details = 2;
+
+    // The scope of the error.
+    ErrorScope scope = 3;
+}

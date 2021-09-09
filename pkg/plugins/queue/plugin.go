@@ -39,12 +39,12 @@ type ReceiveOptions struct {
 	// Nitric name for the queue.
 	//
 	// queueName is a required field
-	QueueName string `type:"string" required:"true"`
+	QueueName string `type:"string" required:"true" log:"QueueName"`
 
 	// Max depth of queue messages to receive from the queue.
 	//
 	// If nil or 0, defaults to depth 1.
-	Depth *uint32 `type:"int" required:"false"`
+	Depth *uint32 `type:"int" required:"false" log:"Depth"`
 }
 
 func (p *ReceiveOptions) Validate() error {

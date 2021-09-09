@@ -16,7 +16,6 @@ package grpc_test
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
 
@@ -36,7 +35,6 @@ type MockEventService struct {
 }
 
 func (m *MockEventService) Publish(topic string, event *events.NitricEvent) error {
-	fmt.Printf("Publish called %v", event)
 	m.PublishTopic = topic
 	m.PublishEvent = event
 	return m.PublishError

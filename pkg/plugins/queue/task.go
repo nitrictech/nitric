@@ -22,8 +22,8 @@ type FailedTask struct {
 
 // NitricTask - A task for asynchronous processing
 type NitricTask struct {
-	ID          string                 `json:"id,omitempty"`
-	LeaseID     string                 `json:"leaseId,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
+	ID          string                 `json:"id,omitempty" log:"ID"`
+	LeaseID     string                 `json:"leaseId,omitempty" log:"LeaseID"`
+	PayloadType string                 `json:"payloadType,omitempty" log:"PayLoadType"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
 }

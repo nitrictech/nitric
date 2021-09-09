@@ -56,7 +56,10 @@ func (s *SQSQueueService) getUrlForQueueName(queueName string) (*string, error) 
 func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Send",
-		fmt.Sprintf("queue=%s", queueName),
+		map[string]interface{}{
+			"queue": queueName,
+			"task":  task,
+		},
 	)
 
 	tasks := []queue.NitricTask{task}
@@ -73,7 +76,10 @@ func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.SendBatch",
-		fmt.Sprintf("queue=%s", queueName),
+		map[string]interface{}{
+			"queue":     queueName,
+			"tasks.len": len(tasks),
+		},
 	)
 
 	if url, err := s.getUrlForQueueName(queueName); err == nil {
@@ -137,7 +143,9 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Receive",
-		fmt.Sprintf("options=%v", options),
+		map[string]interface{}{
+			"options": options,
+		},
 	)
 
 	if err := options.Validate(); err != nil {
@@ -205,7 +213,10 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 func (s *SQSQueueService) Complete(q string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Complete",
-		fmt.Sprintf("queue=%s", q),
+		map[string]interface{}{
+			"queue":   q,
+			"leaseId": leaseId,
+		},
 	)
 
 	if url, err := s.getUrlForQueueName(q); err == nil {

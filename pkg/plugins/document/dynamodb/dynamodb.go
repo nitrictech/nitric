@@ -47,7 +47,9 @@ type DynamoDocService struct {
 func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Get",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	err := document.ValidateKey(key)
@@ -119,7 +121,9 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Set",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -175,7 +179,9 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 func (s *DynamoDocService) Delete(key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Delete",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -258,7 +264,9 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 func (s *DynamoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Query",
-		fmt.Sprintf("collection=%v", collection),
+		map[string]interface{}{
+			"collection": collection,
+		},
 	)
 
 	if err := document.ValidateQueryCollection(collection); err != nil {

@@ -56,7 +56,10 @@ func (s *SnsEventService) getTopicArnFromName(name *string) (*string, error) {
 func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"SnsEventService.Publish",
-		fmt.Sprintf("topic=%s", topic),
+		map[string]interface{}{
+			"topic": topic,
+			"event": event,
+		},
 	)
 
 	data, err := json.Marshal(event)
@@ -103,7 +106,7 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 }
 
 func (s *SnsEventService) ListTopics() ([]string, error) {
-	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics")
+	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics", nil)
 
 	topicsOutput, err := s.client.ListTopics(&sns.ListTopicsInput{})
 

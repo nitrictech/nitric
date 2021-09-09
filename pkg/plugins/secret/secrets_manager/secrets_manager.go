@@ -49,7 +49,12 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 }
 
 func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	newErr := errors.ErrorsWithScope("SecretsManagerSecretService.Put")
+	newErr := errors.ErrorsWithScope(
+		"SecretManagerSecretService.Put",
+		map[string]interface{}{
+			"secret": sec,
+		},
+	)
 
 	if err := s.validateNewSecret(sec, val); err != nil {
 		return nil, newErr(
@@ -136,7 +141,12 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 }
 
 func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	newErr := errors.ErrorsWithScope("SecretsManagerSecretService.Access")
+	newErr := errors.ErrorsWithScope(
+		"SecretManagerSecretService.Access",
+		map[string]interface{}{
+			"version": sv,
+		},
+	)
 
 	if len(sv.Secret.Name) == 0 {
 		return nil, newErr(
