@@ -109,7 +109,7 @@ jobs:
         with:
           type: 'tar'
           filename: 'contracts.tgz'
-          path: ./contracts
+          path: contracts
       - name: Upload Contracts
         uses: actions/upload-release-asset@v1
         env:
