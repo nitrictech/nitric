@@ -1,0 +1,107 @@
+syntax = "proto3";
+package nitric.queue.v1;
+
+import "google/protobuf/struct.proto";
+import "validate/validate.proto";
+
+// protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.queue.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Queues";
+option php_namespace = "Nitric\\Proto\\Queue\\V1";
+option csharp_namespace = "Nitric.Proto.Queue.v1";
+
+// The Nitric Queue Service contract
+service QueueService {
+  // Send a single event to a queue
+  rpc Send (QueueSendRequest) returns (QueueSendResponse);
+  // Send multiple events to a queue
+  rpc SendBatch (QueueSendBatchRequest) returns (QueueSendBatchResponse);
+  // Receive event(s) off a queue
+  rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
+  // Complete an event previously popped from a queue
+  rpc Complete (QueueCompleteRequest) returns (QueueCompleteResponse);
+}
+
+// Request to push a single event to a queue
+message QueueSendRequest {
+  // The Nitric name for the queue
+  // this will automatically be resolved to the provider specific queue identifier.
+  string queue = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+  // The task to push to the queue
+  NitricTask task = 2 [(validate.rules).message.required = true];
+}
+
+// Result of pushing a single task to a queue
+message QueueSendResponse {}
+
+message QueueSendBatchRequest {
+  // The Nitric name for the queue
+  // this will automatically be resolved to the provider specific queue identifier.
+  string queue = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+  // Array of tasks to push to the queue
+  repeated NitricTask tasks = 2 [(validate.rules).repeated.min_items = 1];
+}
+
+// Response for sending a collection of tasks
+message QueueSendBatchResponse {
+  // A list of tasks that failed to be queued
+  repeated FailedTask failedTasks = 1;
+}
+
+message QueueReceiveRequest {
+  // The nitric name for the queue
+  // this will automatically be resolved to the provider specific queue identifier.
+  string queue = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+  // The max number of items to pop off the queue, may be capped by provider specific limitations
+  int32 depth = 2;
+}
+
+message QueueReceiveResponse {
+  // Array of tasks popped off the queue
+  repeated NitricTask tasks = 1;
+}
+
+message QueueCompleteRequest {
+  // The nitric name for the queue
+  //  this will automatically be resolved to the provider specific queue identifier.
+  string queue = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+
+  // Lease id of the task to be completed
+  string lease_id = 2 [(validate.rules).string.min_len = 1];
+}
+
+message QueueCompleteResponse {}
+
+message FailedTask {
+  // The task that failed to be pushed
+  NitricTask task = 1;
+  // A message describing the failure
+  string message = 2;
+}
+
+// A task to be sent or received from a queue.
+message NitricTask {
+  // A unique id for the task
+  string id = 1;
+  // The lease id unique to the pop request, this must be used to complete, extend the lease or release the task.
+  string lease_id = 2;
+  // A content hint for the tasks payload
+  string payload_type = 3;
+  // The payload of the task
+  google.protobuf.Struct payload = 4;
+}
+

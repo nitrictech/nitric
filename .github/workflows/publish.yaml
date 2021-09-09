@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
 jobs:
+  # Bump the membrane version
   version_bump:
     if: github.event.pull_request.merged == true
     name: Bump Version and Create Release
@@ -30,6 +31,7 @@ jobs:
           release_name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: ${{ steps.tag_version.outputs.changelog }}
 
+  # Add membrane binaries to the release
   add_binaries:
     needs: version_bump
     name: Add Binaries to release
@@ -87,3 +89,33 @@ jobs:
           asset_path: ./bin/membrane-do
           asset_name: membrane-do
           asset_content_type: application/octet-stream
+
+  # Add contracts to release
+  add_contracts:
+    needs: version_bump
+    name: Add contracts to release
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download validate contract
+        run: |
+          mkdir -p ./contracts/validate
+          curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'tar'
+          filename: 'contracts.tgz'
+          path: ./contracts
+      - name: Upload Contracts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ needs.version_bump.outputs.upload_url }}
+          asset_path: ./contracts.tgz
+          asset_name: contracts.tgz
+          asset_content_type: application/tar+gzip

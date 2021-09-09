@@ -1,0 +1,151 @@
+syntax = "proto3";
+package nitric.document.v1;
+
+import "google/protobuf/struct.proto";
+import "validate/validate.proto";
+
+// protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.document.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Documents";
+option php_namespace = "Nitric\\Proto\\Document\\V1";
+option csharp_namespace = "Nitric.Proto.Document.v1";
+
+// Service for storage and retrieval of simple JSON keyValue
+service DocumentService {
+  // Get an existing document
+  rpc Get (DocumentGetRequest) returns (DocumentGetResponse);
+
+  // Create a new or overwrite an existing document
+  rpc Set (DocumentSetRequest) returns (DocumentSetResponse);
+
+  // Delete an existing document
+  rpc Delete (DocumentDeleteRequest) returns (DocumentDeleteResponse);
+  
+  // Query the document collection (supports pagination)
+  rpc Query (DocumentQueryRequest) returns (DocumentQueryResponse);
+  
+  // Query the document collection (supports streaming)
+  rpc QueryStream (DocumentQueryStreamRequest) returns (stream DocumentQueryStreamResponse);
+}
+
+// Message Types
+
+// Provides a Collection type for storing documents
+message Collection {
+  // The collection name
+  string name = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+
+  // Optional parent key, required when the collection is a sub-collection of another document
+  Key parent = 2;
+}
+
+// Provides a document identifying key type
+message Key {
+  // The item collection
+  Collection collection = 1 [(validate.rules).message.required = true];
+
+  // The items unique id
+  string id = 2 [(validate.rules).string = {
+    min_bytes: 1,
+    max_bytes: 256,
+  }];
+}
+
+// Provides a return document type
+message Document {
+  // The document content (JSON object)
+  google.protobuf.Struct content = 1 [(validate.rules).message.required = true];
+  // The document's unique key, including collection/sub-collections
+  Key key = 2 [(validate.rules).message.required = true];
+}
+
+message ExpressionValue {
+  // The kind of value.
+  oneof kind {
+    // Represents an integer value.
+    int64 int_value = 1;
+    // Represents a double value.
+    double double_value = 2;
+    // Represents a string value.
+    string string_value = 3;
+    // Represents a boolean value.
+    bool bool_value = 4;
+  }
+}
+
+// Provides a query expression type
+message Expression {
+  // The query operand or attribute
+  string operand = 1;
+  // The query operator [ == | < | <= | > | >= | startsWith ]
+  string operator = 2 [(validate.rules).string = {
+    in: ["==", "<", "<=", ">", ">=", "startsWith"]
+  }];
+  // The query expression value
+  ExpressionValue value = 3 [(validate.rules).message.required = true];
+}
+
+// Service Request & Response Messages
+
+message DocumentGetRequest {
+  // Key of the document to retrieve
+  Key key = 1 [(validate.rules).message.required = true];
+}
+
+message DocumentGetResponse {
+  // The retrieved value
+  Document document = 1;
+}
+
+message DocumentSetRequest {
+  // Key of the document to set
+  Key key = 1 [(validate.rules).message.required = true];
+  // The document content to store (JSON object)
+  google.protobuf.Struct content = 3 [(validate.rules).message.required = true];
+}
+
+message DocumentSetResponse {}
+
+message DocumentDeleteRequest {
+  // Key of the document to delete
+  Key key = 1 [(validate.rules).message.required = true];
+}
+
+message DocumentDeleteResponse {}
+
+message DocumentQueryRequest {
+  // The collection to query
+  Collection collection = 1 [(validate.rules).message.required = true];
+  // Optional query expressions
+  repeated Expression expressions = 3;
+  // Optional query fetch limit
+  int32 limit = 4;
+  // Optional query paging continuation token
+  map<string, string> paging_token = 5;
+}
+
+message DocumentQueryResponse {
+  // The retrieved values
+  repeated Document documents = 1;
+  // The query paging continuation token, when empty no further results are available
+  map<string, string> paging_token = 2;
+}
+
+message DocumentQueryStreamRequest {
+  // The collection to query
+  Collection collection = 1 [(validate.rules).message.required = true];
+  // Optional query expressions
+  repeated Expression expressions = 3;
+  // Optional query fetch limit
+  int32 limit = 4;
+}
+
+message DocumentQueryStreamResponse {
+  // The stream document
+  Document document = 1;
+}

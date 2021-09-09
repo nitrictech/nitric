@@ -36,6 +36,7 @@ const (
 	unknown eventType = iota
 	sns
 	httpEvent
+	xforwardHeader string = "x-forwarded-for"
 )
 
 type LambdaRuntimeHandler func(handler interface{})
@@ -119,20 +120,22 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 		break
 	case httpEvent:
 		evt := &events.APIGatewayV2HTTPRequest{}
-
 		err = json.Unmarshal(data, evt)
 
 		if err == nil {
 			// Copy the headers and re-write for the proxy
-			headerCopy := make(map[string]string)
+			headerCopy := make(map[string][]string)
 
 			for key, val := range evt.Headers {
 				if strings.ToLower(key) == "host" {
-					headerCopy["x-forwarded-for"] = val
+					headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
 				} else {
-					headerCopy[key] = val
+					headerCopy[key] = append(headerCopy[key], string(val))
 				}
 			}
+
+			// Copy the cookies over
+			headerCopy["Cookie"] = evt.Cookies
 
 			event.Requests = append(event.Requests, &triggers.HttpRequest{
 				// FIXME: Translate to http.Header

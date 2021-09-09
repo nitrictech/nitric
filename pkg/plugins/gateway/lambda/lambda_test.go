@@ -88,6 +88,7 @@ var _ = Describe("Lambda", func() {
 							Method: "GET",
 						},
 					},
+					Cookies: []string{"test1=testcookie1", "test2=testcookie2"},
 				}},
 			}
 
@@ -107,10 +108,11 @@ var _ = Describe("Lambda", func() {
 				By("Retaining the body")
 				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
 				By("Retaining the Headers")
-				Expect(request.Header["User-Agent"]).To(Equal("Test"))
-				Expect(request.Header["x-nitric-payload-type"]).To(Equal("TestPayload"))
-				Expect(request.Header["x-nitric-request-id"]).To(Equal("test-request-id"))
-				Expect(request.Header["Content-Type"]).To(Equal("text/plain"))
+				Expect(request.Header["User-Agent"][0]).To(Equal("Test"))
+				Expect(request.Header["x-nitric-payload-type"][0]).To(Equal("TestPayload"))
+				Expect(request.Header["x-nitric-request-id"][0]).To(Equal("test-request-id"))
+				Expect(request.Header["Content-Type"][0]).To(Equal("text/plain"))
+				Expect(request.Header["Cookie"]).To(Equal([]string{"test1=testcookie1", "test2=testcookie2"}))
 				By("Retaining the method")
 				Expect(request.Method).To(Equal("GET"))
 				By("Retaining the path")
