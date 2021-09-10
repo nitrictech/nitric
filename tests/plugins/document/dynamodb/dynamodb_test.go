@@ -16,9 +16,12 @@ package dynamodb_service_test
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	"os"
 	"os/exec"
+	"strings"
+	"syscall"
+
+	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
@@ -28,6 +31,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
+const shell = "/bin/sh"
+const containerName = "dynamodb-nitric"
+const port = "8000"
+
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
 
@@ -36,7 +43,7 @@ var _ = Describe("DynamoDb", func() {
 	os.Setenv("AWS_REGION", "X")
 
 	// Start Local DynamoDB
-	dynaCmd := startDynamoProcess()
+	startDynamoContainer()
 
 	// Create DynamoDB client
 	db := createDynamoClient()
@@ -57,7 +64,7 @@ var _ = Describe("DynamoDb", func() {
 	})
 
 	AfterSuite(func() {
-		stopDynamoProcess(dynaCmd)
+		stopDynamoContainer()
 	})
 
 	docPlugin, err := dynamodb_service.NewWithClient(db)
@@ -71,33 +78,64 @@ var _ = Describe("DynamoDb", func() {
 	test.QueryTests(docPlugin)
 })
 
-func startDynamoProcess() *exec.Cmd {
-	// Start Local DynamoDB
+func startDynamoContainer() {
+	// Run dynamodb container
 	args := []string{
-		"-Djava.library.path=/usr/local/dynamodb/DynamoDBLocal_lib",
-		"-jar",
-		"/usr/local/dynamodb/DynamoDBLocal.jar",
-		"-inMemory",
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--name " + containerName,
+		"amazon/dynamodb-local:latest",
 	}
-	cmd := exec.Command("/usr/bin/java", args[:]...)
-	if err := cmd.Start(); err != nil {
-		panic(fmt.Sprintf("Error starting Local DynamoDB %v : %v", cmd, err))
-	}
-	fmt.Printf("Started Local DynamoDB (PID %v) and loading data...\n", cmd.Process.Pid)
 
-	return cmd
+	cmd := exec.Command("/bin/sh", "-c", strings.Join(args[:], " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error running DynamoDB Image %v : %v \n", cmd, err)
+		panic(fmt.Sprintf("Error running DynamoDB Image %v : %v", cmd, err))
+	}
+
+	// Makes process killable
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }
 
-func stopDynamoProcess(cmd *exec.Cmd) {
-	if err := cmd.Process.Kill(); err != nil {
-		fmt.Printf("failed to kill DynamoDB %v : %v \n", cmd.Process.Pid, err)
+func stopDynamoContainer() {
+	// clean up
+	stopArgs := []string{
+		"docker",
+		"container",
+		"stop",
+		containerName,
+	}
+
+	stopCmd := exec.Command(shell, "-c", strings.Join(stopArgs[:], " "))
+
+	if err := stopCmd.Run(); err != nil {
+		fmt.Printf("Error stopping DynamoDB container %v : %v \n", stopCmd, err)
+		panic(fmt.Sprintf("Error stopping DynamoDB container %v : %v", stopCmd, err))
+	}
+
+	removeArgs := []string{
+		"docker",
+		"container",
+		"rm",
+		containerName,
+	}
+
+	removeCmd := exec.Command(shell, "-c", strings.Join(removeArgs[:], " "))
+
+	if err := removeCmd.Run(); err != nil {
+		fmt.Printf("Error removing DynamoDB container %v : %v \n", removeCmd, err)
+		panic(fmt.Sprintf("Error removing DynamoDB container %v : %v", removeCmd, err))
 	}
 }
 
 func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String("x"),
-		Endpoint: aws.String("http://127.0.0.1:8000"),
+		Endpoint: aws.String("http://127.0.0.1:" + port),
 	}))
 
 	return dynamodb.New(sess)
@@ -132,7 +170,7 @@ func createTable(db *dynamodb.DynamoDB, tableName string) {
 		TableName: aws.String(tableName),
 		Tags: []*dynamodb.Tag{
 			{
-				Key: aws.String("x-nitric-name"),
+				Key:   aws.String("x-nitric-name"),
 				Value: aws.String(tableName),
 			},
 		},

@@ -35,11 +35,9 @@ SDKs are available for many languages, providing an idiomatic wrapper around the
 
   - [Node.js](https://github.com/nitrictech/node-sdk)
   - [Python](https://github.com/nitrictech/python-sdk)
-  - [Go](https://github.com/nitrictech/go-sdk)
   - [Java](https://github.com/nitrictech/java-sdk)
-  - [PHP](https://github.com/nitrictech/php-sdk)
-  - [.NET](https://github.com/nitrictech/dotnet-sdk)
-
+  - [Go](https://github.com/nitrictech/go-sdk)
+ 
 > If you have additional languages you would like support for let us know in the issues, we also welcome community contribtions for new language support.
 
 ## Architecture
@@ -83,8 +81,6 @@ provider as an alternative to the fixed set of plugins in the static membranes.
  - Make
  - Docker
  - Google Protocol Buffers Compiler
- - Google Cloud SDK (for Firestore testing)
- - JRE (for DynamoDB testing)
 
 ### Getting Started
 
@@ -93,25 +89,10 @@ provider as an alternative to the fixed set of plugins in the static membranes.
 make install-tools
 ```
 
-#### Install integration testing tools
-```bash
-make install-test-tools
-```
-
 ##### Install Protocol Buffers
 Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
 
 > On MacOS with Homebrew, you can run `brew install protobuf`
-
-##### Install Google Cloud SDK
-Install the Google Cloud SDK following in the instructions at: https://cloud.google.com/sdk/docs/install
-
-#### Install JRE
-Install a Java Runtime Environment (JRE) version 11 or later for your OS. For example on Ubuntu Linux run:
-
-```bash
-sudo apt-get install openjdk-11-jdk
-```
 
 ### Run unit tests
 ```bash
