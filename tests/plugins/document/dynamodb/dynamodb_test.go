@@ -17,6 +17,12 @@ package dynamodb_service_test
 import (
 	"fmt"
 	"os"
+	"time"
+
+	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+
+	"github.com/nitric-dev/membrane/tests/plugins"
+	test "github.com/nitric-dev/membrane/tests/plugins/document"
 
 	. "github.com/onsi/ginkgo"
 
@@ -38,56 +44,78 @@ var _ = Describe("DynamoDb", func() {
 
 	// Start Local DynamoDB
 	// Run dynamodb container
-	// args := []string{
-	// 	"docker",
-	// 	"run",
-	// 	"-d",
-	// 	"-p " + port + ":" + port,
-	// 	"--name " + containerName,
-	// 	"amazon/dynamodb-local:latest",
-	// }
-	// plugins.StartContainer(containerName, args)
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--name " + containerName,
+		"amazon/dynamodb-local:latest",
+	}
+	plugins.StartContainer(containerName, args)
 
 	// // Create DynamoDB client
-	// db := createDynamoClient()
+	db := createDynamoClient()
 
-	// BeforeEach(func() {
-	// 	// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
-	// 	createTable(db, "customers-1111111")
-	// 	createTable(db, "users-1111111")
-	// 	createTable(db, "items-1111111")
-	// 	createTable(db, "parentItems-1111111")
-	// })
+	testConnection(db)
 
-	// AfterEach(func() {
-	// 	deleteTable(db, "customers-1111111")
-	// 	deleteTable(db, "users-1111111")
-	// 	deleteTable(db, "items-1111111")
-	// 	deleteTable(db, "parentItems-1111111")
-	// })
+	BeforeEach(func() {
+		// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
+		createTable(db, "customers-1111111")
+		createTable(db, "users-1111111")
+		createTable(db, "items-1111111")
+		createTable(db, "parentItems-1111111")
+	})
 
-	// AfterSuite(func() {
-	// 	plugins.StopContainer(containerName)
-	// })
+	AfterEach(func() {
+		deleteTable(db, "customers-1111111")
+		deleteTable(db, "users-1111111")
+		deleteTable(db, "items-1111111")
+		deleteTable(db, "parentItems-1111111")
+	})
 
-	// docPlugin, err := dynamodb_service.NewWithClient(db)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	AfterSuite(func() {
+		plugins.StopContainer(containerName)
+	})
 
-	// test.GetTests(docPlugin)
-	// test.SetTests(docPlugin)
-	// test.DeleteTests(docPlugin)
-	// test.QueryTests(docPlugin)
+	docPlugin, err := dynamodb_service.NewWithClient(db)
+	if err != nil {
+		panic(err)
+	}
+
+	test.GetTests(docPlugin)
+	test.SetTests(docPlugin)
+	test.DeleteTests(docPlugin)
+	test.QueryTests(docPlugin)
 })
 
 func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String("x"),
-		Endpoint: aws.String("http://localhost:" + port),
+		Endpoint: aws.String("http://localhost:8000"),
 	}))
 
 	return dynamodb.New(sess)
+}
+
+func testConnection(db *dynamodb.DynamoDB) {
+	input := &dynamodb.ListTablesInput{}
+
+	if _, err := db.ListTables(input); err != nil {
+		// Wait for Java DynamoDB process to get started
+		time.Sleep(2 * time.Second)
+
+		if _, err := db.ListTables(input); err != nil {
+			time.Sleep(4 * time.Second)
+
+			if _, err := db.ListTables(input); err != nil {
+				fmt.Printf("DynamoDB connection error: %v \n", err)
+				panic(err)
+			}
+		} else {
+			return
+		}
+	}
 }
 
 func createTable(db *dynamodb.DynamoDB, tableName string) {
