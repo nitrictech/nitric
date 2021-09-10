@@ -24,9 +24,11 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"github.com/nitric-dev/membrane/pkg/providers"
 	"github.com/nitric-dev/membrane/pkg/utils"
@@ -76,13 +78,19 @@ func main() {
 
 	// Load the concrete service implementations
 	var documentService document.DocumentService = nil
+	var emailService emails.EmailService = nil
 	var eventService events.EventService = nil
 	var gatewayService gateway.GatewayService = nil
 	var queueService queue.QueueService = nil
+	var secretService secret.SecretService = nil
 	var storageService storage.StorageService = nil
 
 	// Load the document service
 	if documentService, err = serviceFactory.NewDocumentService(); err != nil {
+		log.Fatal(err)
+	}
+	// Load the email service
+	if emailService, err = serviceFactory.NewEmailService(); err != nil {
 		log.Fatal(err)
 	}
 	// Load the eventing service
@@ -97,6 +105,10 @@ func main() {
 	if queueService, err = serviceFactory.NewQueueService(); err != nil {
 		log.Fatal(err)
 	}
+	// Load the secret service
+	if secretService, err = serviceFactory.NewSecretService(); err != nil {
+		log.Fatal(err)
+	}
 	// Load the storage service
 	if storageService, err = serviceFactory.NewStorageService(); err != nil {
 		log.Fatal(err)
@@ -108,10 +120,12 @@ func main() {
 		ChildAddress:            childAddress,
 		ChildCommand:            childCommand,
 		DocumentPlugin:          documentService,
+		EmailsPlugin:            emailService,
 		EventsPlugin:            eventService,
-		StoragePlugin:           storageService,
 		GatewayPlugin:           gatewayService,
 		QueuePlugin:             queueService,
+		SecretPlugin:            secretService,
+		StoragePlugin:           storageService,
 		TolerateMissingServices: tolerateMissing,
 	})
 

@@ -17,12 +17,15 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
 	"github.com/nitric-dev/membrane/pkg/providers"
@@ -40,6 +43,11 @@ func (p *GCPServiceFactory) NewDocumentService() (document.DocumentService, erro
 	return firestore_service.New()
 }
 
+// NewEventService - Returns Google Cloud _ based email service
+func (p *GCPServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return &emails.UnimplementedEmailService{}, nil
+}
+
 // NewEventService - Returns Google Cloud Pubsub based events service
 func (p *GCPServiceFactory) NewEventService() (events.EventService, error) {
 	return pubsub_service.New()
@@ -53,6 +61,11 @@ func (p *GCPServiceFactory) NewGatewayService() (gateway.GatewayService, error) 
 // NewQueueService - Returns Google Cloud Pubsub based queue service
 func (p *GCPServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return pubsub_queue_service.New()
+}
+
+// NewStorageService - Returns Google Cloud Storage based secret service
+func (p *GCPServiceFactory) NewSecretService() (secret.SecretService, error) {
+	return secret_service.New()
 }
 
 // NewStorageService - Returns Google Cloud Storage based storage service

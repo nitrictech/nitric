@@ -17,10 +17,12 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"github.com/nitric-dev/membrane/pkg/providers"
 )
@@ -37,6 +39,11 @@ func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, er
 	return mongodb_service.New()
 }
 
+// NewEventService - Returns Azure _ based emails plugin
+func (p *AzureServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return &emails.UnimplementedEmailService{}, nil
+}
+
 // NewEventService - Returns Azure _ based events plugin
 func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
 	return &events.UnimplementedeventsPlugin{}, nil
@@ -50,6 +57,11 @@ func (p *AzureServiceFactory) NewGatewayService() (gateway.GatewayService, error
 // NewQueueService - Returns Azure _ based queue plugin
 func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return &queue.UnimplementedQueuePlugin{}, nil
+}
+
+// NewSecretService - Returns Azure _ based secret plugin
+func (p *AzureServiceFactory) NewSecretService() (secret.SecretService, error) {
+	return &secret.UnimplementedSecretPlugin{}, nil
 }
 
 // NewStorageService - Returns Azure _ based storage plugin

@@ -23,11 +23,12 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	email_service "github.com/nitric-dev/membrane/pkg/plugins/emails/dev"
 	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
+	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 )
 
 func main() {
@@ -38,6 +39,7 @@ func main() {
 
 	secretPlugin, _ := secret_service.New()
 	documentPlugin, _ := boltdb_service.New()
+	emailPlugin, _ := email_service.New()
 	eventsPlugin, _ := events_service.New()
 	gatewayPlugin, _ := gateway_plugin.New()
 	queuePlugin, _ := queue_service.New()
@@ -45,6 +47,7 @@ func main() {
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
+		EmailsPlugin:   emailPlugin,
 		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,

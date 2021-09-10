@@ -17,12 +17,16 @@ package main
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
+	email_service "github.com/nitric-dev/membrane/pkg/plugins/emails/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	"github.com/nitric-dev/membrane/pkg/providers"
@@ -40,12 +44,17 @@ func (p *DevServiceFactory) NewDocumentService() (document.DocumentService, erro
 	return boltdb_service.New()
 }
 
+// NewEmailService - Returns local dev emails plugin
+func (p *DevServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return email_service.New()
+}
+
 // NewEventService - Returns local dev events plugin
 func (p *DevServiceFactory) NewEventService() (events.EventService, error) {
 	return events_service.New()
 }
 
-// NewGatewayService - Returns local dev Gateway plugin
+// NewGatewayService - Returns local dev gateway plugin
 func (p *DevServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
 	return gateway_plugin.New()
 }
@@ -53,6 +62,11 @@ func (p *DevServiceFactory) NewGatewayService() (gateway.GatewayService, error) 
 // NewQueueService - Returns local dev queue plugin
 func (p *DevServiceFactory) NewQueueService() (queue.QueueService, error) {
 	return queue_service.New()
+}
+
+// NewSecretService - Returns local dev secret plugin
+func (p *DevServiceFactory) NewSecretService() (secret.SecretService, error) {
+	return secret_service.New()
 }
 
 // NewStorageService - Returns local dev storage plugin
