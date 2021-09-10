@@ -18,13 +18,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
-	"syscall"
 
 	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 
 	"cloud.google.com/go/firestore"
+	"github.com/nitric-dev/membrane/tests/plugins"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
@@ -32,61 +30,6 @@ import (
 const shell = "/bin/sh"
 const containerName = "firestore-nitric"
 const port = "8080"
-
-func startFirestoreContainer() {
-	// Run dynamodb container
-	args := []string{
-		"docker",
-		"run",
-		"-d",
-		"-p " + port + ":" + port,
-		"--env \"FIRESTORE_PROJECT_ID=dummy-project-id\"",
-		"--name " + containerName,
-		"mtlynch/firestore-emulator-docker",
-	}
-
-	cmd := exec.Command("/bin/sh", "-c", strings.Join(args[:], " "))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error running Firestore Image %v : %v \n", cmd, err)
-		panic(fmt.Sprintf("Error running Firestore Image %v : %v", cmd, err))
-	}
-
-	// Makes process killable
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
-
-func stopFirestoreContainer() {
-	// clean up
-	stopArgs := []string{
-		"docker",
-		"container",
-		"stop",
-		containerName,
-	}
-
-	stopCmd := exec.Command(shell, "-c", strings.Join(stopArgs[:], " "))
-
-	if err := stopCmd.Run(); err != nil {
-		fmt.Printf("Error stopping Firestore container %v : %v \n", stopCmd, err)
-		panic(fmt.Sprintf("Error stopping Firestore container %v : %v", stopCmd, err))
-	}
-
-	removeArgs := []string{
-		"docker",
-		"container",
-		"rm",
-		containerName,
-	}
-
-	removeCmd := exec.Command(shell, "-c", strings.Join(removeArgs[:], " "))
-
-	if err := removeCmd.Run(); err != nil {
-		fmt.Printf("Error removing Firestore container %v : %v \n", removeCmd, err)
-		panic(fmt.Sprintf("Error removing Firestore container %v : %v", removeCmd, err))
-	}
-}
 
 func createFirestoreClient(ctx context.Context) *firestore.Client {
 	client, err := firestore.NewClient(ctx, "test")
@@ -105,13 +48,22 @@ var _ = Describe("Firestore", func() {
 	os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:"+port)
 
 	// Start Firestore Emulator
-	startFirestoreContainer()
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--env \"FIRESTORE_PROJECT_ID=dummy-project-id\"",
+		"--name " + containerName,
+		"mtlynch/firestore-emulator-docker",
+	}
+	plugins.StartContainer(containerName, args)
 
 	ctx := context.Background()
 	db := createFirestoreClient(ctx)
 
 	AfterSuite(func() {
-		stopFirestoreContainer()
+		plugins.StopContainer(containerName)
 	})
 
 	docPlugin, err := firestore_service.NewWithClient(db, ctx)

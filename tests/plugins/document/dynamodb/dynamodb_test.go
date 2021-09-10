@@ -17,12 +17,10 @@ package dynamodb_service_test
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
-	"syscall"
 
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 
+	"github.com/nitric-dev/membrane/tests/plugins"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 
@@ -43,7 +41,16 @@ var _ = Describe("DynamoDb", func() {
 	os.Setenv("AWS_REGION", "X")
 
 	// Start Local DynamoDB
-	startDynamoContainer()
+	// Run dynamodb container
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--name " + containerName,
+		"amazon/dynamodb-local:latest",
+	}
+	plugins.StartContainer(containerName, args)
 
 	// Create DynamoDB client
 	db := createDynamoClient()
@@ -64,7 +71,7 @@ var _ = Describe("DynamoDb", func() {
 	})
 
 	AfterSuite(func() {
-		stopDynamoContainer()
+		plugins.StopContainer(containerName)
 	})
 
 	docPlugin, err := dynamodb_service.NewWithClient(db)
@@ -77,60 +84,6 @@ var _ = Describe("DynamoDb", func() {
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
 })
-
-func startDynamoContainer() {
-	// Run dynamodb container
-	args := []string{
-		"docker",
-		"run",
-		"-d",
-		"-p " + port + ":" + port,
-		"--name " + containerName,
-		"amazon/dynamodb-local:latest",
-	}
-
-	cmd := exec.Command("/bin/sh", "-c", strings.Join(args[:], " "))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error running DynamoDB Image %v : %v \n", cmd, err)
-		panic(fmt.Sprintf("Error running DynamoDB Image %v : %v", cmd, err))
-	}
-
-	// Makes process killable
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
-
-func stopDynamoContainer() {
-	// clean up
-	stopArgs := []string{
-		"docker",
-		"container",
-		"stop",
-		containerName,
-	}
-
-	stopCmd := exec.Command(shell, "-c", strings.Join(stopArgs[:], " "))
-
-	if err := stopCmd.Run(); err != nil {
-		fmt.Printf("Error stopping DynamoDB container %v : %v \n", stopCmd, err)
-		panic(fmt.Sprintf("Error stopping DynamoDB container %v : %v", stopCmd, err))
-	}
-
-	removeArgs := []string{
-		"docker",
-		"container",
-		"rm",
-		containerName,
-	}
-
-	removeCmd := exec.Command(shell, "-c", strings.Join(removeArgs[:], " "))
-
-	if err := removeCmd.Run(); err != nil {
-		fmt.Printf("Error removing DynamoDB container %v : %v \n", removeCmd, err)
-		panic(fmt.Sprintf("Error removing DynamoDB container %v : %v", removeCmd, err))
-	}
-}
 
 func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
