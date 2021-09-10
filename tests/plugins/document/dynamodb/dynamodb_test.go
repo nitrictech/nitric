@@ -18,10 +18,6 @@ import (
 	"fmt"
 	"os"
 
-	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-
-	"github.com/nitric-dev/membrane/tests/plugins"
-	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -42,47 +38,47 @@ var _ = Describe("DynamoDb", func() {
 
 	// Start Local DynamoDB
 	// Run dynamodb container
-	args := []string{
-		"docker",
-		"run",
-		"-d",
-		"-p " + port + ":" + port,
-		"--name " + containerName,
-		"amazon/dynamodb-local:latest",
-	}
-	plugins.StartContainer(containerName, args)
+	// args := []string{
+	// 	"docker",
+	// 	"run",
+	// 	"-d",
+	// 	"-p " + port + ":" + port,
+	// 	"--name " + containerName,
+	// 	"amazon/dynamodb-local:latest",
+	// }
+	// plugins.StartContainer(containerName, args)
 
-	// Create DynamoDB client
-	db := createDynamoClient()
+	// // Create DynamoDB client
+	// db := createDynamoClient()
 
-	BeforeEach(func() {
-		// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
-		createTable(db, "customers-1111111")
-		createTable(db, "users-1111111")
-		createTable(db, "items-1111111")
-		createTable(db, "parentItems-1111111")
-	})
+	// BeforeEach(func() {
+	// 	// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
+	// 	createTable(db, "customers-1111111")
+	// 	createTable(db, "users-1111111")
+	// 	createTable(db, "items-1111111")
+	// 	createTable(db, "parentItems-1111111")
+	// })
 
-	AfterEach(func() {
-		deleteTable(db, "customers-1111111")
-		deleteTable(db, "users-1111111")
-		deleteTable(db, "items-1111111")
-		deleteTable(db, "parentItems-1111111")
-	})
+	// AfterEach(func() {
+	// 	deleteTable(db, "customers-1111111")
+	// 	deleteTable(db, "users-1111111")
+	// 	deleteTable(db, "items-1111111")
+	// 	deleteTable(db, "parentItems-1111111")
+	// })
 
-	AfterSuite(func() {
-		plugins.StopContainer(containerName)
-	})
+	// AfterSuite(func() {
+	// 	plugins.StopContainer(containerName)
+	// })
 
-	docPlugin, err := dynamodb_service.NewWithClient(db)
-	if err != nil {
-		panic(err)
-	}
+	// docPlugin, err := dynamodb_service.NewWithClient(db)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	test.GetTests(docPlugin)
-	test.SetTests(docPlugin)
-	test.DeleteTests(docPlugin)
-	test.QueryTests(docPlugin)
+	// test.GetTests(docPlugin)
+	// test.SetTests(docPlugin)
+	// test.DeleteTests(docPlugin)
+	// test.QueryTests(docPlugin)
 })
 
 func createDynamoClient() *dynamodb.DynamoDB {
