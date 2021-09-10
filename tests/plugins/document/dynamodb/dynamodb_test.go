@@ -88,7 +88,7 @@ var _ = Describe("DynamoDb", func() {
 func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String("x"),
-		Endpoint: aws.String("http://127.0.0.1:" + port),
+		Endpoint: aws.String("http://localhost:" + port),
 	}))
 
 	return dynamodb.New(sess)
