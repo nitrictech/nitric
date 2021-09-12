@@ -21,11 +21,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	azqueue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/azqueue"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
 	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
 )
@@ -45,7 +46,7 @@ func main() {
 		fmt.Println("Failed to load event plugin:", err.Error())
 	}
 	gatewayPlugin, _ := http_service.New()
-	queuePlugin := &queue.UnimplementedQueuePlugin{}
+	queuePlugin, _ := azqueue_service.New()
 	storagePlugin, _ := azblob_service.New()
 	secretPlugin, err := key_vault.New()
 	if err != nil {
