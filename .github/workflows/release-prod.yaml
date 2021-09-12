@@ -1,0 +1,35 @@
+name: Production Release
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'main'
+jobs:
+  # Bump the membrane version
+  version_bump:
+    if: github.event.pull_request.merged == true
+    name: Bump Version and Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      version_id: ${{ steps.tag_version.outputs.new_tag }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.5
+        with:
+          # Use GITHUB_TOKEN here to prevent further workflows
+          # generated on 'tag' action
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create a GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          # Use NITRIC_BOT_TOKEN here to
+          # trigger release 'published' workflows
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
