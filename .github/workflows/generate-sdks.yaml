@@ -15,5 +15,9 @@ jobs:
           token: ${{ secrets.NITRIC_BOT_TOKEN }}
           repository: nitrictech/base-sdk
           event-type: generate
-          client-payload: '{ "prerelease": ${{ github.event.release.prerelease }}, "version": "${{ github.event.release.tag_name }}" }'
+          client-payload: >
+            {
+              "prerelease": ${{ github.event.release.prerelease }}, 
+              "tag_name": "${{ github.event.release.tag_name }}"
+            }
   
