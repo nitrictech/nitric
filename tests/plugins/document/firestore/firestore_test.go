@@ -17,43 +17,19 @@ package firestore_service_test
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 	"os"
-	"os/exec"
-	"syscall"
+
+	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
 
 	"cloud.google.com/go/firestore"
+	"github.com/nitric-dev/membrane/tests/plugins"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 
-func startFirestoreProcess() *exec.Cmd {
-	// Start Local DynamoDB
-	os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8080")
-
-	// Create Firestore Process
-	args := []string{
-		"beta",
-		"emulators",
-		"firestore",
-		"start",
-		"--host-port=localhost:8080",
-	}
-	cmd := exec.Command("gcloud", args[:]...)
-	if err := cmd.Start(); err != nil {
-		panic(fmt.Sprintf("Error starting Firestore Emulator %v : %v", cmd, err))
-	}
-	// Makes process killable
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	return cmd
-}
-
-func stopFirestoreProcess(cmd *exec.Cmd) {
-	if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-		fmt.Printf("\nFailed to kill Firestore %v : %v \n", cmd.Process.Pid, err)
-	}
-}
+const shell = "/bin/sh"
+const containerName = "firestore-nitric"
+const port = "8080"
 
 func createFirestoreClient(ctx context.Context) *firestore.Client {
 	client, err := firestore.NewClient(ctx, "test")
@@ -68,14 +44,26 @@ func createFirestoreClient(ctx context.Context) *firestore.Client {
 var _ = Describe("Firestore", func() {
 	defer GinkgoRecover()
 
+	// Start Local DynamoDB
+	os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:"+port)
+
 	// Start Firestore Emulator
-	firestoreCmd := startFirestoreProcess()
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--env \"FIRESTORE_PROJECT_ID=dummy-project-id\"",
+		"--name " + containerName,
+		"mtlynch/firestore-emulator-docker",
+	}
+	plugins.StartContainer(containerName, args)
 
 	ctx := context.Background()
 	db := createFirestoreClient(ctx)
 
 	AfterSuite(func() {
-		stopFirestoreProcess(firestoreCmd)
+		plugins.StopContainer(containerName)
 	})
 
 	docPlugin, err := firestore_service.NewWithClient(db, ctx)

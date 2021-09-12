@@ -58,18 +58,5 @@ jobs:
         go-version: 1.16.7    
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
-    - name: Install modules
-      run: make install-tools
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'adopt'
-    - name: Setup local DynamoDB
-      run: make install-test-tools
-    - name: Setup Cloud SDK
-      uses: google-github-actions/setup-gcloud@master
-    - name: Install Google Cloud SDK components
-      run: yes | gcloud components install beta cloud-firestore-emulator
     - name: Run Integration Tests
       run: make test-integration

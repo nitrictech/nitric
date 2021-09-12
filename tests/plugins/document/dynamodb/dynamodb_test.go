@@ -16,17 +16,24 @@ package dynamodb_service_test
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
 	"os"
-	"os/exec"
+	"time"
 
+	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+
+	"github.com/nitric-dev/membrane/tests/plugins"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
+
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
+
+const shell = "/bin/sh"
+const containerName = "dynamodb-nitric"
+const port = "8000"
 
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
@@ -36,10 +43,21 @@ var _ = Describe("DynamoDb", func() {
 	os.Setenv("AWS_REGION", "X")
 
 	// Start Local DynamoDB
-	dynaCmd := startDynamoProcess()
+	// Run dynamodb container
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p " + port + ":" + port,
+		"--name " + containerName,
+		"amazon/dynamodb-local:latest",
+	}
+	plugins.StartContainer(containerName, args)
 
-	// Create DynamoDB client
+	// // Create DynamoDB client
 	db := createDynamoClient()
+
+	testConnection(db)
 
 	BeforeEach(func() {
 		// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
@@ -57,7 +75,7 @@ var _ = Describe("DynamoDb", func() {
 	})
 
 	AfterSuite(func() {
-		stopDynamoProcess(dynaCmd)
+		plugins.StopContainer(containerName)
 	})
 
 	docPlugin, err := dynamodb_service.NewWithClient(db)
@@ -71,36 +89,33 @@ var _ = Describe("DynamoDb", func() {
 	test.QueryTests(docPlugin)
 })
 
-func startDynamoProcess() *exec.Cmd {
-	// Start Local DynamoDB
-	args := []string{
-		"-Djava.library.path=/usr/local/dynamodb/DynamoDBLocal_lib",
-		"-jar",
-		"/usr/local/dynamodb/DynamoDBLocal.jar",
-		"-inMemory",
-	}
-	cmd := exec.Command("/usr/bin/java", args[:]...)
-	if err := cmd.Start(); err != nil {
-		panic(fmt.Sprintf("Error starting Local DynamoDB %v : %v", cmd, err))
-	}
-	fmt.Printf("Started Local DynamoDB (PID %v) and loading data...\n", cmd.Process.Pid)
-
-	return cmd
-}
-
-func stopDynamoProcess(cmd *exec.Cmd) {
-	if err := cmd.Process.Kill(); err != nil {
-		fmt.Printf("failed to kill DynamoDB %v : %v \n", cmd.Process.Pid, err)
-	}
-}
-
 func createDynamoClient() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String("x"),
-		Endpoint: aws.String("http://127.0.0.1:8000"),
+		Endpoint: aws.String("http://localhost:8000"),
 	}))
 
 	return dynamodb.New(sess)
+}
+
+func testConnection(db *dynamodb.DynamoDB) {
+	input := &dynamodb.ListTablesInput{}
+
+	if _, err := db.ListTables(input); err != nil {
+		// Wait for Java DynamoDB process to get started
+		time.Sleep(2 * time.Second)
+
+		if _, err := db.ListTables(input); err != nil {
+			time.Sleep(4 * time.Second)
+
+			if _, err := db.ListTables(input); err != nil {
+				fmt.Printf("DynamoDB connection error: %v \n", err)
+				panic(err)
+			}
+		} else {
+			return
+		}
+	}
 }
 
 func createTable(db *dynamodb.DynamoDB, tableName string) {
@@ -132,7 +147,7 @@ func createTable(db *dynamodb.DynamoDB, tableName string) {
 		TableName: aws.String(tableName),
 		Tags: []*dynamodb.Tag{
 			{
-				Key: aws.String("x-nitric-name"),
+				Key:   aws.String("x-nitric-name"),
 				Value: aws.String(tableName),
 			},
 		},
