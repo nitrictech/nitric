@@ -37,11 +37,18 @@ func AdaptMessageIdUrl(c azqueue.MessageIDURL) AzqueueMessageIdUrlIface {
 	return messageIdUrl{c}
 }
 
+func AdaptDequeueMessagesResponse(c azqueue.DequeuedMessagesResponse) DequeueMessagesResponseIface {
+	return dequeueMessagesResponse{c}
+}
+
 type (
-	serviceUrl   struct{ c azqueue.ServiceURL }
-	queueUrl     struct{ c azqueue.QueueURL }
-	messageUrl   struct{ c azqueue.MessagesURL }
-	messageIdUrl struct{ c azqueue.MessageIDURL }
+	serviceUrl              struct{ c azqueue.ServiceURL }
+	queueUrl                struct{ c azqueue.QueueURL }
+	messageUrl              struct{ c azqueue.MessagesURL }
+	messageIdUrl            struct{ c azqueue.MessageIDURL }
+	dequeueMessagesResponse struct {
+		c azqueue.DequeuedMessagesResponse
+	}
 )
 
 func (c serviceUrl) NewQueueURL(queueName string) AzqueueQueueUrlIface {
@@ -56,8 +63,12 @@ func (c messageUrl) Enqueue(ctx context.Context, messageText string, visibilityT
 	return c.c.Enqueue(ctx, messageText, visibilityTimeout, timeToLive)
 }
 
-func (c messageUrl) Dequeue(ctx context.Context, maxMessages int32, visibilityTimeout time.Duration) (*azqueue.DequeuedMessagesResponse, error) {
-	return c.c.Dequeue(ctx, maxMessages, visibilityTimeout)
+func (c messageUrl) Dequeue(ctx context.Context, maxMessages int32, visibilityTimeout time.Duration) (DequeueMessagesResponseIface, error) {
+	resp, err := c.c.Dequeue(ctx, maxMessages, visibilityTimeout)
+	if err != nil {
+		return nil, err
+	}
+	return AdaptDequeueMessagesResponse(*resp), nil
 }
 
 func (c messageUrl) NewMessageIDURL(messageId azqueue.MessageID) AzqueueMessageIdUrlIface {
@@ -66,4 +77,12 @@ func (c messageUrl) NewMessageIDURL(messageId azqueue.MessageID) AzqueueMessageI
 
 func (c messageIdUrl) Delete(ctx context.Context, popReceipt azqueue.PopReceipt) (*azqueue.MessageIDDeleteResponse, error) {
 	return c.c.Delete(ctx, popReceipt)
+}
+
+func (c dequeueMessagesResponse) NumMessages() int32 {
+	return c.c.NumMessages()
+}
+
+func (c dequeueMessagesResponse) Message(index int32) *azqueue.DequeuedMessage {
+	return c.c.Message(index)
 }

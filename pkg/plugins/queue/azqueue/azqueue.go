@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package azure_storage_queue_service
+package azqueue_service
 
 import (
 	"context"
@@ -38,25 +38,25 @@ import (
 // Set to 30 seconds,
 const defaultVisibilityTimeout = 30 * time.Second
 
-type AzureStorageQueueService struct {
+type AzqueueQueueService struct {
 	client azqueueserviceiface.AzqueueServiceUrlIface
 }
 
 // Returns an adapted azqueue MessagesUrl, which is a client for interacting with messages in a specific queue
-func (s *AzureStorageQueueService) getMessagesUrl(queue string) azqueueserviceiface.AzqueueMessageUrlIface {
+func (s *AzqueueQueueService) getMessagesUrl(queue string) azqueueserviceiface.AzqueueMessageUrlIface {
 	qUrl := s.client.NewQueueURL(queue)
 	// Get a new messages URL (used to interact with messages in the queue)
 	return qUrl.NewMessageURL()
 }
 
 // Returns an adapted azqueue MessageIdUrl, which is a client for interacting with a specific message (task) in a specific queue
-func (s *AzureStorageQueueService) getMessageIdUrl(queue string, messageId azqueue.MessageID) azqueueserviceiface.AzqueueMessageIdUrlIface {
+func (s *AzqueueQueueService) getMessageIdUrl(queue string, messageId azqueue.MessageID) azqueueserviceiface.AzqueueMessageIdUrlIface {
 	mUrl := s.getMessagesUrl(queue)
 
 	return mUrl.NewMessageIDURL(messageId)
 }
 
-func (s *AzureStorageQueueService) Send(queue string, task queue.NitricTask) error {
+func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueService.Send",
 		fmt.Sprintf("queue=%s", queue),
@@ -85,7 +85,7 @@ func (s *AzureStorageQueueService) Send(queue string, task queue.NitricTask) err
 	return nil
 }
 
-func (s *AzureStorageQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (s *AzqueueQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	failedTasks := make([]*queue.FailedTask, 0)
 
 	for _, task := range tasks {
@@ -132,9 +132,9 @@ func leaseFromString(leaseID string) (*AzureQueueItemLease, error) {
 }
 
 // Receive - Receives a collection of tasks off a given queue.
-func (s *AzureStorageQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
-		"AzureStorageQueueService.Receive",
+		"AzqueueQueueService.Receive",
 		fmt.Sprintf("options=%v", options),
 	)
 
@@ -199,9 +199,9 @@ func (s *AzureStorageQueueService) Receive(options queue.ReceiveOptions) ([]queu
 }
 
 // Complete - Completes a previously popped queue item
-func (s *AzureStorageQueueService) Complete(queue string, leaseId string) error {
+func (s *AzqueueQueueService) Complete(queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
-		"AzureStorageQueueService.Complete",
+		"AzqueueQueueService.Complete",
 		fmt.Sprintf("queue=%s", queue),
 	)
 
@@ -269,13 +269,13 @@ func New() (queue.QueueService, error) {
 	pipeline := azqueue.NewPipeline(cTkn, azqueue.PipelineOptions{})
 	client := azqueue.NewServiceURL(*accountURL, pipeline)
 
-	return &AzureStorageQueueService{
+	return &AzqueueQueueService{
 		client: azqueueserviceiface.AdaptServiceUrl(client),
 	}, nil
 }
 
 func NewWithClient(client azqueueserviceiface.AzqueueServiceUrlIface) queue.QueueService {
-	return &AzureStorageQueueService{
+	return &AzqueueQueueService{
 		client: client,
 	}
 }

@@ -31,10 +31,15 @@ type AzqueueQueueUrlIface interface {
 
 type AzqueueMessageUrlIface interface {
 	Enqueue(ctx context.Context, messageText string, visibilityTimeout time.Duration, timeToLive time.Duration) (*azqueue.EnqueueMessageResponse, error)
-	Dequeue(ctx context.Context, maxMessages int32, visibilityTimeout time.Duration) (*azqueue.DequeuedMessagesResponse, error)
+	Dequeue(ctx context.Context, maxMessages int32, visibilityTimeout time.Duration) (DequeueMessagesResponseIface, error)
 	NewMessageIDURL(messageId azqueue.MessageID) AzqueueMessageIdUrlIface
 }
 
 type AzqueueMessageIdUrlIface interface {
 	Delete(ctx context.Context, popReceipt azqueue.PopReceipt) (*azqueue.MessageIDDeleteResponse, error)
+}
+
+type DequeueMessagesResponseIface interface {
+	NumMessages() int32
+	Message(index int32) *azqueue.DequeuedMessage
 }
