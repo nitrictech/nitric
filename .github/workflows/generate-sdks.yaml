@@ -13,7 +13,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.NITRIC_BOT_TOKEN }}
-          repository: nitrictech/base-sdk
+          repository: nitrictech/apis
           event-type: generate
           client-payload: >
             {
