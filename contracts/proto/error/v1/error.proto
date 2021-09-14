@@ -1,8 +1,6 @@
 syntax = "proto3";
 package nitric.error.v1;
 
-import "google/protobuf/struct.proto";
-
 // protoc plugin options for code generation
 option go_package = "nitric/v1;v1";
 option java_package = "io.nitric.proto.error.v1";
@@ -26,8 +24,8 @@ message ErrorDetails {
     // The developer error message, explaining the error and ideally solution.
     string message = 1;
 
-    // The error details.
-    google.protobuf.Struct details = 2;
+    // The error root cause.
+    string cause = 2;
 
     // The scope of the error.
     ErrorScope scope = 3;
