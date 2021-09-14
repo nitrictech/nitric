@@ -29,6 +29,7 @@ import (
 
 	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -46,11 +47,12 @@ type MembraneOptions struct {
 	ChildTimeoutSeconds int
 
 	DocumentPlugin document.DocumentService
+	EmailsPlugin   emails.EmailService
 	EventsPlugin   events.EventService
-	StoragePlugin  storage.StorageService
 	QueuePlugin    queue.QueueService
 	GatewayPlugin  gateway.GatewayService
 	SecretPlugin   secret.SecretService
+	StoragePlugin  storage.StorageService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -81,11 +83,12 @@ type Membrane struct {
 
 	// Configured plugins
 	documentPlugin document.DocumentService
+	emailPlugin    emails.EmailService
 	eventsPlugin   events.EventService
-	storagePlugin  storage.StorageService
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
 	secretPlugin   secret.SecretService
+	storagePlugin  storage.StorageService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -109,18 +112,24 @@ func (s *Membrane) log(log string) {
 	}
 }
 
-func (s *Membrane) CreateSecretServer() v1.SecretServiceServer {
-	return grpc2.NewSecretServer(s.secretPlugin)
-}
-
 // Create a new Nitric Document Server
 func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 	return grpc2.NewDocumentServer(s.documentPlugin)
 }
 
-// Create a new Nitric events Server
-func (s *Membrane) createeventsServer() v1.EventServiceServer {
+// Create a new Nitric Email Server
+func (s *Membrane) createEmailServer() v1.EmailServiceServer {
+	return grpc2.NewEmailServiceServer(s.emailPlugin)
+}
+
+// Create a new Nitric Events Server
+func (s *Membrane) createEventsServer() v1.EventServiceServer {
 	return grpc2.NewEventServiceServer(s.eventsPlugin)
+}
+
+// Create a new Nitric Queue Server
+func (s *Membrane) createQueueServer() v1.QueueServiceServer {
+	return grpc2.NewQueueServiceServer(s.queuePlugin)
 }
 
 // Create a new Nitric Topic Server
@@ -128,13 +137,14 @@ func (s *Membrane) createTopicServer() v1.TopicServiceServer {
 	return grpc2.NewTopicServiceServer(s.eventsPlugin)
 }
 
+// Create a new Nitric Secret Server
+func (s *Membrane) CreateSecretServer() v1.SecretServiceServer {
+	return grpc2.NewSecretServer(s.secretPlugin)
+}
+
 // Create a new Nitric Storage Server
 func (s *Membrane) createStorageServer() v1.StorageServiceServer {
 	return grpc2.NewStorageServiceServer(s.storagePlugin)
-}
-
-func (s *Membrane) createQueueServer() v1.QueueServiceServer {
-	return grpc2.NewQueueServiceServer(s.queuePlugin)
 }
 
 func (s *Membrane) startChildProcess() error {
@@ -162,24 +172,27 @@ func (s *Membrane) Start() error {
 	var opts []grpc.ServerOption
 	s.grpcServer = grpc.NewServer(opts...)
 
-	secretServer := s.CreateSecretServer()
-	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
-
 	// Load & Register the GRPC service plugins
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventsServer := s.createeventsServer()
+	emailServer := s.createEmailServer()
+	v1.RegisterEmailServiceServer(s.grpcServer, emailServer)
+
+	eventsServer := s.createEventsServer()
 	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
+
+	queueServer := s.createQueueServer()
+	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
 
 	topicServer := s.createTopicServer()
 	v1.RegisterTopicServiceServer(s.grpcServer, topicServer)
 
+	secretServer := s.CreateSecretServer()
+	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
+
 	storageServer := s.createStorageServer()
 	v1.RegisterStorageServiceServer(s.grpcServer, storageServer)
-
-	queueServer := s.createQueueServer()
-	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
 
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
@@ -358,11 +371,12 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		childCommand:            options.ChildCommand,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
 		documentPlugin:          options.DocumentPlugin,
+		emailPlugin:             options.EmailsPlugin,
 		eventsPlugin:            options.EventsPlugin,
-		storagePlugin:           options.StoragePlugin,
-		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
+		queuePlugin:             options.QueuePlugin,
 		secretPlugin:            options.SecretPlugin,
+		storagePlugin:           options.StoragePlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,

@@ -23,14 +23,15 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+	ses_service "github.com/nitric-dev/membrane/pkg/plugins/emails/ses"
 	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	ecs_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
 	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
 	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
+	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
 	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
 	"github.com/nitric-dev/membrane/pkg/utils"
-	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
 )
 
 func main() {
@@ -48,19 +49,21 @@ func main() {
 	default:
 		gatewayPlugin, _ = ecs_service.New()
 	}
-	secretPlugin, _ := secrets_manager_secret_service.New()
 	documentPlugin, _ := dynamodb_service.New()
+	emailPlugin, _ := ses_service.New()
 	eventsPlugin, _ := sns_service.New()
 	queuePlugin, _ := sqs_service.New()
+	secretPlugin, _ := secrets_manager_secret_service.New()
 	storagePlugin, _ := s3_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
+		EmailsPlugin:   emailPlugin,
 		EventsPlugin:   eventsPlugin,
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
-		StoragePlugin:  storagePlugin,
 		SecretPlugin:   secretPlugin,
+		StoragePlugin:  storagePlugin,
 	})
 
 	if err != nil {

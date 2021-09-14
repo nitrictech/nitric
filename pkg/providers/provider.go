@@ -16,18 +16,22 @@ package providers
 
 import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitric-dev/membrane/pkg/plugins/emails"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.
 type ServiceFactory interface {
 	NewDocumentService() (document.DocumentService, error)
+	NewEmailService() (emails.EmailService, error)
 	NewEventService() (events.EventService, error)
 	NewGatewayService() (gateway.GatewayService, error)
 	NewQueueService() (queue.QueueService, error)
+	NewSecretService() (secret.SecretService, error)
 	NewStorageService() (storage.StorageService, error)
 }
 
@@ -49,6 +53,11 @@ func (p *UnimplementedServiceFactory) NewDocumentService() (document.DocumentSer
 	return nil, nil
 }
 
+// NewEmailService - Unimplemented
+func (p *UnimplementedServiceFactory) NewEmailService() (emails.EmailService, error) {
+	return nil, nil
+}
+
 // NewEventService - Unimplemented
 func (p *UnimplementedServiceFactory) NewEventService() (events.EventService, error) {
 	return nil, nil
@@ -61,6 +70,11 @@ func (p *UnimplementedServiceFactory) NewGatewayService() (gateway.GatewayServic
 
 // NewQueueService - Unimplemented
 func (p *UnimplementedServiceFactory) NewQueueService() (queue.QueueService, error) {
+	return nil, nil
+}
+
+// NewSecretService - Unimplemented
+func (p *UnimplementedServiceFactory) NewSecretService() (secret.SecretService, error) {
 	return nil, nil
 }
 
