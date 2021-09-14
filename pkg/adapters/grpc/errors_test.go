@@ -141,7 +141,8 @@ var _ = Describe("GRPC Errors", func() {
 					"secret": secret,
 				}
 				value := grpc.LogArg(valueMap)
-				Expect(value).To(BeEquivalentTo("{key: value, secret: {Name: name, Version: 3, Value: {Type: key}}}"))
+				Expect(value).To(ContainSubstring("secret: {Name: name, Version: 3, Value: {Type: key}}"))
+				Expect(value).To(ContainSubstring("key: value"))
 			})
 		})
 	})
