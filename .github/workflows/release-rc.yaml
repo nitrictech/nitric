@@ -15,6 +15,8 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v5.5
@@ -25,9 +27,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           release_branches: main,develop
 
-      - name: Calculate SHORT_SHA
+      - name: Calculate RC number
         id: vars
-        run: echo "::set-output name=sha_short::$(echo ${GITHUB_SHA} | cut -c1-8)"
+        run: echo "::set-output name=rc_num::$(git rev-list --merges --count origin/develop...origin/main)"
 
       - name: Create a GitHub release
         id: create_release
@@ -38,6 +40,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
           prerelease: true
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.sha_short }}
-          release_name: Release ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.sha_short }}
-          body: ${{ steps.tag_version.outputs.changelog }}-rc.${{ steps.vars.outputs.sha_short }}
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
+          body: ${{ steps.tag_version.outputs.changelog }}-rc.${{ steps.vars.outputs.rc_num }}
