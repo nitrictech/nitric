@@ -216,14 +216,7 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 	return nil
 }
 
-func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"BoltDocService.Query",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
-
+func (s *BoltDocService) query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string, newErr errors.ErrorFactory) (*document.QueryResult, error) {
 	if err := document.ValidateQueryCollection(collection); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,

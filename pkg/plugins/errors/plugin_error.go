@@ -50,8 +50,10 @@ func Code(e error) codes.Code {
 	return codes.Unknown
 }
 
+type ErrorFactory = func(c codes.Code, msg string, cause error) error
+
 // ErrorsWithScope - Returns a new reusable error factory with the given scope
-func ErrorsWithScope(scope string, args map[string]interface{}) func(c codes.Code, msg string, cause error) error {
+func ErrorsWithScope(scope string, args map[string]interface{}) ErrorFactory {
 	return func(code codes.Code, msg string, cause error) error {
 		return &PluginError{
 			Code:   code,
