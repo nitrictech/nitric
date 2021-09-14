@@ -21,6 +21,8 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"github.com/nitric-dev/membrane/pkg/providers"
 )
@@ -30,6 +32,10 @@ type AzureServiceFactory struct {
 
 func New() providers.ServiceFactory {
 	return &AzureServiceFactory{}
+}
+
+func (p *AzureServiceFactory) NewSecretService() (secret.SecretService, error) {
+	return key_vault.New()
 }
 
 // NewDocumentService - Returns a MongoDB based document service
