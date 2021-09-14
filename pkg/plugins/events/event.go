@@ -15,7 +15,7 @@ package events
 
 // NitricEvent - An event for asynchronous processing and reactive programming
 type NitricEvent struct {
-	ID          string                 `json:"id,omitempty"`
-	PayloadType string                 `json:"payloadType,omitempty"`
+	ID          string                 `json:"id,omitempty" log:"ID"`
+	PayloadType string                 `json:"payloadType,omitempty" log:"PayloadType"`
 	Payload     map[string]interface{} `json:"payload,omitempty"`
 }

@@ -43,7 +43,9 @@ type FirestoreDocService struct {
 func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Get",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -79,7 +81,9 @@ func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error)
 func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Set",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -114,7 +118,9 @@ func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{
 func (s *FirestoreDocService) Delete(key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Delete",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -182,7 +188,9 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 func (s *FirestoreDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Query",
-		fmt.Sprintf("collection=%v", collection),
+		map[string]interface{}{
+			"collection": collection,
+		},
 	)
 
 	if err := document.ValidateQueryCollection(collection); err != nil {

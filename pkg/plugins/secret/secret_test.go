@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secret
+package secret_test
 
 import (
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Unimplemented Secret Plugin Tests", func() {
-	uisp := &UnimplementedSecretPlugin{}
+	uisp := &secret.UnimplementedSecretPlugin{}
 
 	Context("Put", func() {
 		When("Calling Put on UnimplementedSecretPlugin", func() {
