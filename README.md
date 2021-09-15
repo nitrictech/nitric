@@ -24,10 +24,9 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
 
 Additional services on our roadmap include:
 
-  - RDS
-  - Configuration
-  - Logging
   - Authentication
+  - Email
+  - Logging
 
 > If you have any requests or suggestions let us know in the issues.
 
@@ -77,7 +76,7 @@ provider as an alternative to the fixed set of plugins in the static membranes.
 
 ### Requirements
  - Git
- - Golang
+ - Golang (1.16)
  - Make
  - Docker
  - Google Protocol Buffers Compiler
@@ -96,7 +95,7 @@ Download the Google Protobuf Compiler (standalone binary called `protoc`) from h
 
 ### Run unit tests
 ```bash
-make tests
+make test
 ```
 ### Run integration tests
 ```bash
