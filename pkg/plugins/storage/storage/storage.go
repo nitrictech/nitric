@@ -31,7 +31,7 @@ import (
 )
 
 type StorageStorageService struct {
-	//storage.UnimplementedStoragePlugin
+	plugin.UnimplementedStoragePlugin
 	client    ifaces_gcloud_storage.StorageClient
 	projectID string
 }
