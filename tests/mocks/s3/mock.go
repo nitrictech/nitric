@@ -30,7 +30,7 @@ type MockBucket struct {
 	Tags map[string]string
 }
 
-// MockS3Client - Provides and S3API complient mock interface
+// MockS3Client - Provides an S3API compliant mock interface
 type MockS3Client struct {
 	sync.RWMutex
 	s3iface.S3API

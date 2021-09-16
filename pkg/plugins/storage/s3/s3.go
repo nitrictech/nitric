@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/nitric-dev/membrane/pkg/utils"
 
@@ -33,13 +34,13 @@ import (
 )
 
 const (
-	// AWS API neglects to include a constant for this error code.
+	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
 	ErrCodeNoSuchTagSet = "NoSuchTagSet"
 )
 
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
-	storage.UnimplementedStoragePlugin
+	//storage.UnimplementedStoragePlugin
 	client s3iface.S3API
 }
 
@@ -183,6 +184,60 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 	}
 
 	return nil
+}
+
+// PreSignUrl - generates a signed URL which can be used to perform direct operations on a file
+// useful for large file uploads/downloads so they can bypass application code and work directly with S3
+func (s *S3StorageService) PreSignUrl(bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.PreSignUrl",
+		map[string]interface{}{
+			"bucket":    bucket,
+			"key":       key,
+			"operation": operation.String(),
+		},
+	)
+
+	if b, err := s.getBucketByName(bucket); err == nil {
+		switch operation {
+		case storage.READ:
+			req, _ := s.client.GetObjectRequest(&s3.GetObjectInput{
+				Bucket: b.Name,
+				Key:    aws.String(key),
+			})
+			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			if err != nil {
+				return "", newErr(
+					codes.Internal,
+					"failed to generate pre-signed READ URL",
+					err,
+				)
+			}
+			return url, err
+		case storage.WRITE:
+			req, _ := s.client.PutObjectRequest(&s3.PutObjectInput{
+				Bucket: b.Name,
+				Key:    aws.String(key),
+			})
+			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			if err != nil {
+				return "", newErr(
+					codes.Internal,
+					"failed to generate pre-signed WRITE URL",
+					err,
+				)
+			}
+			return url, err
+		default:
+			return "", fmt.Errorf("requested operation not supported for pre-signed AWS S3 urls")
+		}
+	} else {
+		return "", newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
 }
 
 // New creates a new default S3 storage plugin

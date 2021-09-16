@@ -16,10 +16,23 @@ package storage
 
 import "fmt"
 
+type Operation int
+
+const (
+	READ  Operation = iota
+	WRITE           = iota
+)
+
+func (op Operation) String() string {
+	// The order of this array must match the iota order above.
+	return [2]string{"READ", "WRITE"}[op]
+}
+
 type StorageService interface {
 	Read(bucket string, key string) ([]byte, error)
 	Write(bucket string, key string, object []byte) error
 	Delete(bucket string, key string) error
+	PreSignUrl(bucket string, key string, operation Operation, expiry uint32) (string, error)
 }
 
 type UnimplementedStoragePlugin struct{}
@@ -36,4 +49,8 @@ func (*UnimplementedStoragePlugin) Write(bucket string, key string, object []byt
 
 func (*UnimplementedStoragePlugin) Delete(bucket string, key string) error {
 	return fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (*UnimplementedStoragePlugin) PreSignUrl(bucket string, key string, operation Operation, expiry uint32) (string, error) {
+	return "", fmt.Errorf("UNIMPLEMENTED")
 }
