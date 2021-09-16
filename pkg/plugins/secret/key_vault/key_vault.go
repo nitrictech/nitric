@@ -40,6 +40,13 @@ type KeyVaultSecretService struct {
 	vaultName string
 }
 
+// versionIdFromUrl - Extracts a secret version ID from a full secret version URL
+// the expected versionUrl format is https://{VAULT_NAME}.vault.azure.net/secrets/{SECRET_NAME}/{SECRET_VERSION}
+func versionIdFromUrl(versionUrl string) string {
+	urlParts := strings.Split(versionUrl, "/")
+	return urlParts[len(urlParts)-1]
+}
+
 func validateNewSecret(sec *secret.Secret, val []byte) error {
 	if sec == nil {
 		return fmt.Errorf("provide non-nil secret")
@@ -108,16 +115,13 @@ func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 			err,
 		)
 	}
-	//Returned Secret ID: https://myvault.vault.azure.net/secrets/{SECRET_NAME}/{SECRET_VERSION}
-	//Split to get the version
-	versionID := strings.Split(*result.ID, "/")
 
 	return &secret.SecretPutResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sec.Name,
 			},
-			Version: versionID[len(versionID)-1],
+			Version: versionIdFromUrl(*result.ID),
 		},
 	}, nil
 }
@@ -163,14 +167,13 @@ func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 	}
 	//Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
 	//Split to get the version
-	versionID := strings.Split(*result.ID, "/")
 	return &secret.SecretAccessResponse{
 		// Return the original secret version payload
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: versionID[len(versionID)-1],
+			Version: versionIdFromUrl(*result.ID),
 		},
 		Value: []byte(*result.Value),
 	}, nil
