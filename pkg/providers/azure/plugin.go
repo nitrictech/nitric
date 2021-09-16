@@ -18,6 +18,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
@@ -45,7 +46,7 @@ func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, er
 
 // NewEventService - Returns Azure _ based events plugin
 func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
-	return &events.UnimplementedeventsPlugin{}, nil
+	return event_grid.New()
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin
