@@ -364,7 +364,7 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 	return s.query(collection, expressions, limit, pagingToken, newErr)
 }
 
-func (s *BoltDocService) Stream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+func (s *BoltDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.QueryStream",
 		map[string]interface{}{
