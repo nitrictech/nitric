@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"strings"
 
-	kvauth "github.com/Azure/azure-sdk-for-go/services/keyvault/auth"
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	azureutils "github.com/nitric-dev/membrane/pkg/providers/azure/utils"
 	"github.com/nitric-dev/membrane/pkg/utils"
 )
 
@@ -69,15 +71,25 @@ func validateSecretVersion(sec *secret.SecretVersion) error {
 }
 
 func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Put")
-
+	validationErr := errors.ErrorsWithScope(
+		"KeyVaultSecretService.Put",
+		map[string]interface{}{
+			"secret": "nil",
+		},
+	)
 	if err := validateNewSecret(sec, val); err != nil {
-		return nil, newErr(
+		return nil, validationErr(
 			codes.InvalidArgument,
 			"invalid secret",
 			err,
 		)
 	}
+	newErr := errors.ErrorsWithScope(
+		"KeyVaultSecretService.Put",
+		map[string]interface{}{
+			"secret": sec.Name,
+		},
+	)
 	stringVal := string(val[:])
 
 	result, err := s.client.SetSecret(
@@ -111,15 +123,25 @@ func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 }
 
 func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	newErr := errors.ErrorsWithScope("KeyVaultSecretService.Access")
-
+	validationErr := errors.ErrorsWithScope(
+		"KeyVaultSecretService.Access",
+		map[string]interface{}{
+			"secret-version": "nil",
+		},
+	)
 	if err := validateSecretVersion(sv); err != nil {
-		return nil, newErr(
+		return nil, validationErr(
 			codes.Internal,
 			"invalid secret version",
 			err,
 		)
 	}
+	newErr := errors.ErrorsWithScope(
+		"KeyVaultSecretService.Access",
+		map[string]interface{}{
+			"secret-version": sv.Secret.Name,
+		},
+	)
 
 	//Key vault will default to latest if an empty string is provided
 	version := sv.Version
@@ -164,13 +186,13 @@ func New() (secret.SecretService, error) {
 	//Auth requires:
 	//AZURE_TENANT_ID: Your Azure tenant ID
 	//AZURE_CLIENT_ID: Your Azure client ID. This will be an app ID from your AAD.
-	authorizer, err := kvauth.NewAuthorizerFromEnvironment()
+	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.KeyVault)
 	if err != nil {
 		return nil, err
 	}
 
 	client := keyvault.New()
-	client.Authorizer = authorizer
+	client.Authorizer = autorest.NewBearerAuthorizer(spt)
 
 	return &KeyVaultSecretService{
 		client:    client,
