@@ -162,8 +162,13 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		)
 	}
 
-	if result.StatusCode != 200 {
-		return err
+	statusCode := fmt.Sprint(result.StatusCode)
+	if strings.Split(statusCode, "")[0] != "2" {
+		return newErr(
+			codes.Internal,
+			"returned non 200 status code",
+			fmt.Errorf(""),
+		)
 	}
 	return nil
 }

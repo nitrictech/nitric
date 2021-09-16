@@ -16,7 +16,6 @@ package eventgrid_service_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	eventgridmgmt "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid"
@@ -30,6 +29,23 @@ import (
 )
 
 var _ = Describe("Event Grid Plugin", func() {
+	topicName := "Test"
+	topicEndpoint := "https://Test.local1-test.eventgrid.azure.net/api/events"
+	topicListResponsePage := eventgridmgmt.NewTopicsListResultPage(
+		eventgridmgmt.TopicsListResult{
+			Value: &[]eventgridmgmt.Topic{
+				{
+					Name: &topicName,
+					TopicProperties: &eventgridmgmt.TopicProperties{
+						Endpoint: &topicEndpoint,
+					},
+				},
+			},
+		},
+		func(context.Context, eventgridmgmt.TopicsListResult) (eventgridmgmt.TopicsListResult, error) {
+			return eventgridmgmt.TopicsListResult{}, nil
+		},
+	)
 	When("Listing Available Topics", func() {
 		When("There are no topics available", func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -55,20 +71,6 @@ var _ = Describe("Event Grid Plugin", func() {
 			eventgridClient := mock_eventgrid.NewMockBaseClientAPI(ctrl)
 			topicClient := mock_eventgrid.NewMockTopicsClientAPI(ctrl)
 			eventgridPlugin, _ := eventgrid_service.NewWithClient(eventgridClient, topicClient)
-
-			topicName := "Test"
-			topicListResponsePage := eventgridmgmt.NewTopicsListResultPage(
-				eventgridmgmt.TopicsListResult{
-					Value: &[]eventgridmgmt.Topic{
-						{
-							Name: &topicName,
-						},
-					},
-				},
-				func(context.Context, eventgridmgmt.TopicsListResult) (eventgridmgmt.TopicsListResult, error) {
-					return eventgridmgmt.TopicsListResult{}, nil
-				},
-			)
 
 			topicClient.EXPECT().ListBySubscription(
 				gomock.Any(),
@@ -99,11 +101,11 @@ var _ = Describe("Event Grid Plugin", func() {
 			topicClient := mock_eventgrid.NewMockTopicsClientAPI(ctrl)
 			eventgridPlugin, _ := eventgrid_service.NewWithClient(eventgridClient, topicClient)
 
-			eventgridClient.EXPECT().PublishEvents(
+			topicClient.EXPECT().ListBySubscription(
 				gomock.Any(),
-				"Test.local1-test.eventgrid.azure.net",
+				"",
 				gomock.Any(),
-			).Return(autorest.Response{}, fmt.Errorf("Topic does not exist")).Times(1)
+			).Return(eventgridmgmt.TopicsListResultPage{}, nil).Times(1)
 
 			It("should return an error", func() {
 				err := eventgridPlugin.Publish("Test", event)
@@ -111,7 +113,7 @@ var _ = Describe("Event Grid Plugin", func() {
 			})
 		})
 
-		When("To a topic that is unauthorised", func() {
+		When("publishing to a topic that is unauthorised", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			eventgridClient := mock_eventgrid.NewMockBaseClientAPI(ctrl)
 			topicClient := mock_eventgrid.NewMockTopicsClientAPI(ctrl)
@@ -123,9 +125,14 @@ var _ = Describe("Event Grid Plugin", func() {
 				gomock.Any(),
 			).Return(autorest.Response{
 				&http.Response{
-					StatusCode: 404,
+					StatusCode: 403,
 				},
 			}, nil).Times(1)
+			topicClient.EXPECT().ListBySubscription(
+				gomock.Any(),
+				"",
+				gomock.Any(),
+			).Return(topicListResponsePage, nil).Times(1)
 
 			It("should return an error", func() {
 				err := eventgridPlugin.Publish("Test", event)
@@ -145,9 +152,14 @@ var _ = Describe("Event Grid Plugin", func() {
 				gomock.Any(),
 			).Return(autorest.Response{
 				&http.Response{
-					StatusCode: 200,
+					StatusCode: 202,
 				},
 			}, nil).Times(1)
+			topicClient.EXPECT().ListBySubscription(
+				gomock.Any(),
+				"",
+				gomock.Any(),
+			).Return(topicListResponsePage, nil).Times(1)
 
 			It("should successfully publish the message", func() {
 				err := eventgridPlugin.Publish("Test", event)
@@ -164,7 +176,7 @@ var _ = Describe("Event Grid Plugin", func() {
 			It("should return an error", func() {
 				err := eventgridPlugin.Publish("", event)
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).Should(ContainSubstring("provide non-blank topic"))
+				Expect(err.Error()).Should(ContainSubstring("provided invalid topic"))
 			})
 		})
 
@@ -177,7 +189,7 @@ var _ = Describe("Event Grid Plugin", func() {
 			It("should return an error", func() {
 				err := eventgridPlugin.Publish("Test", nil)
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).Should(ContainSubstring("provide non-nil event"))
+				Expect(err.Error()).Should(ContainSubstring("provided invalid event"))
 			})
 		})
 	})
