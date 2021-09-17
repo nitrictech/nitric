@@ -391,7 +391,7 @@ func (s *BoltDocService) QueryStream(collection *document.Collection, expression
 
 	return func() (*document.Document, error) {
 		// check the iteration state
-		if tmpLimit == 0 {
+		if tmpLimit == 0 && limit > 0 {
 			// we've reached the limit of reading
 			return nil, io.EOF
 		} else if pagingToken != nil && len(documents) == 0 {
