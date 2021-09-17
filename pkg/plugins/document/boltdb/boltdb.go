@@ -373,11 +373,21 @@ func (s *BoltDocService) QueryStream(collection *document.Collection, expression
 	)
 
 	var tmpLimit = limit
-	res, fetchErr := s.query(collection, expressions, limit, nil, newErr)
+	var documents []document.Document
+	var pagingToken map[string]string
 
 	// Initial fetch
-	var documents []document.Document = res.Documents
-	var pagingToken = res.PagingToken
+	res, fetchErr := s.query(collection, expressions, limit, nil, newErr)
+
+	if fetchErr != nil {
+		// Return an error only iterator if the initial fetch failed
+		return func() (*document.Document, error) {
+			return nil, fetchErr
+		}
+	}
+
+	documents = res.Documents
+	pagingToken = res.PagingToken
 
 	return func() (*document.Document, error) {
 		// check the iteration state
