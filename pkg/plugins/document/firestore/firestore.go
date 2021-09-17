@@ -17,6 +17,7 @@ package firestore_service
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
@@ -185,6 +186,35 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	return nil
 }
 
+//
+func (s *FirestoreDocService) buildQuery(collection *document.Collection, expressions []document.QueryExpression, limit int) (query firestore.Query, orderBy string) {
+	// Select correct root collection to perform query on
+	query = s.getQueryRoot(collection)
+
+	for _, exp := range expressions {
+		expOperand := exp.Operand
+		if exp.Operator == "startsWith" {
+			expVal := fmt.Sprintf("%v", exp.Value)
+			endRangeValue := document.GetEndRangeValue(expVal)
+			query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
+
+		} else {
+			query = query.Where(expOperand, exp.Operator, exp.Value)
+		}
+
+		if exp.Operator != "==" && limit > 0 && orderBy == "" {
+			query = query.OrderBy(expOperand, firestore.Asc)
+			orderBy = expOperand
+		}
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	return
+}
+
 func (s *FirestoreDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Query",
@@ -214,41 +244,17 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	}
 
 	// Select correct root collection to perform query on
-	query := s.getQueryRoot(collection)
+	query, orderBy := s.buildQuery(collection, expressions, limit)
 
-	var orderByAttrib string
+	if len(pagingToken) > 0 {
+		query = query.OrderBy(firestore.DocumentID, firestore.Asc)
 
-	for _, exp := range expressions {
-		expOperand := exp.Operand
-		if exp.Operator == "startsWith" {
-			expVal := fmt.Sprintf("%v", exp.Value)
-			endRangeValue := document.GetEndRangeValue(expVal)
-			query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
-
-		} else {
-			query = query.Where(expOperand, exp.Operator, exp.Value)
-		}
-
-		if exp.Operator != "==" && limit > 0 && orderByAttrib == "" {
-			query = query.OrderBy(expOperand, firestore.Asc)
-			orderByAttrib = expOperand
-		}
-	}
-
-	if limit > 0 {
-		query = query.Limit(limit)
-
-		if len(pagingToken) > 0 {
-			query = query.OrderBy(firestore.DocumentID, firestore.Asc)
-
-			if tokens, ok := pagingToken[pagingTokens]; ok {
-				var vals []interface{}
-				for _, v := range strings.Split(tokens, "|") {
-					vals = append(vals, v)
-				}
-				query = query.StartAfter(vals...)
-
+		if tokens, ok := pagingToken[pagingTokens]; ok {
+			var vals []interface{}
+			for _, v := range strings.Split(tokens, "|") {
+				vals = append(vals, v)
 			}
+			query = query.StartAfter(vals...)
 		}
 	}
 
@@ -261,31 +267,15 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 				err,
 			)
 		}
-		sdkDoc := document.Document{
-			Content: docSnp.Data(),
-			Key: &document.Key{
-				Collection: collection,
-				Id:         docSnp.Ref.ID,
-			},
-		}
 
-		if p := docSnp.Ref.Parent.Parent; p != nil {
-			sdkDoc.Key.Collection = &document.Collection{
-				Name: collection.Name,
-				Parent: &document.Key{
-					Collection: collection.Parent.Collection,
-					Id:         p.ID,
-				},
-			}
-		}
-
+		sdkDoc := docSnpToDocument(collection, docSnp)
 		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
 		if limit > 0 && len(queryResult.Documents) == limit {
 			tokens := ""
-			if orderByAttrib != "" {
-				tokens = fmt.Sprintf("%v", docSnp.Data()[orderByAttrib]) + "|"
+			if orderBy != "" {
+				tokens = fmt.Sprintf("%v", docSnp.Data()[orderBy]) + "|"
 			}
 			tokens += docSnp.Ref.ID
 
@@ -296,6 +286,75 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	}
 
 	return queryResult, nil
+}
+
+func (s *FirestoreDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+	newErr := errors.ErrorsWithScope(
+		"FirestoreDocService.QueryStream",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	colErr := document.ValidateQueryCollection(collection)
+	expErr := document.ValidateExpressions(expressions)
+
+	if colErr != nil || expErr != nil {
+		// Return an error only iterator
+		return func() (*document.Document, error) {
+			return nil, newErr(
+				codes.InvalidArgument,
+				"invalid arguments",
+				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+			)
+		}
+	}
+
+	query, _ := s.buildQuery(collection, expressions, limit)
+
+	iter := query.Documents(s.context)
+
+	return func() (*document.Document, error) {
+		docSnp, err := iter.Next()
+
+		if err != nil {
+			if err == iterator.Done {
+				return nil, io.EOF
+			}
+
+			return nil, newErr(
+				codes.Internal,
+				"error querying value",
+				err,
+			)
+		}
+
+		sdkDoc := docSnpToDocument(collection, docSnp)
+
+		return &sdkDoc, nil
+	}
+}
+
+func docSnpToDocument(col *document.Collection, snp *firestore.DocumentSnapshot) document.Document {
+	sdkDoc := document.Document{
+		Content: snp.Data(),
+		Key: &document.Key{
+			Collection: col,
+			Id:         snp.Ref.ID,
+		},
+	}
+
+	if p := snp.Ref.Parent.Parent; p != nil {
+		sdkDoc.Key.Collection = &document.Collection{
+			Name: col.Name,
+			Parent: &document.Key{
+				Collection: col.Parent.Collection,
+				Id:         p.ID,
+			},
+		}
+	}
+
+	return sdkDoc
 }
 
 func New() (document.DocumentService, error) {
