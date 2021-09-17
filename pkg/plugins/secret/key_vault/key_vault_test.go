@@ -20,7 +20,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitric-dev/membrane/mocks/mock_key_vault"
+	mocks "github.com/nitric-dev/membrane/mocks/key_vault"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
