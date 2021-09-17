@@ -61,18 +61,6 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 				Expect(err).ToNot(Equal(io.EOF))
 			})
 		})
-		When("Empty database", func() {
-			It("Should return io.EOF", func() {
-				iter := docPlugin.QueryStream(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0)
-
-				Expect(iter).ToNot(BeNil())
-
-				doc, err := iter()
-				Expect(doc).To(BeNil())
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(Equal(io.EOF))
-			})
-		})
 
 		// Query Tests
 		When("key: {users}, subcol: '', exp: []", func() {
@@ -82,14 +70,11 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 
 				iter := docPlugin.QueryStream(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0)
 
-				for {
-					d, err := iter()
+				docs := unwrapIter(iter)
 
-					if err != nil {
-						Expect(err).To(Equal(io.EOF))
-						break
-					}
+				Expect(docs).To(HaveLen(3))
 
+				for _, d := range docs {
 					Expect(d.Key).ToNot(BeNil())
 					Expect(d.Key.Collection.Name).To(Equal("users"))
 					Expect(d.Key.Id).ToNot(Equal(""))
