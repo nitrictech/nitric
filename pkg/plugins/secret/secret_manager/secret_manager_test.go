@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitric-dev/membrane/mocks/mock_secret_manager"
+	mocks "github.com/nitric-dev/membrane/mocks/secret_manager"
 	"github.com/nitric-dev/membrane/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

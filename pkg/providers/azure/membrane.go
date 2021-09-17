@@ -26,6 +26,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
@@ -43,6 +44,10 @@ func main() {
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}
 	storagePlugin := &storage.UnimplementedStoragePlugin{}
+	secretPlugin, err := key_vault.New()
+	if err != nil {
+		fmt.Println("Failed to load secret plugin:", err.Error())
+	}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,
@@ -50,6 +55,7 @@ func main() {
 		GatewayPlugin:  gatewayPlugin,
 		QueuePlugin:    queuePlugin,
 		StoragePlugin:  storagePlugin,
+		SecretPlugin:   secretPlugin,
 	})
 
 	if err != nil {

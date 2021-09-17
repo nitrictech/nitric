@@ -34,4 +34,14 @@ make azure-docker-debian
 
 > __Note:__ Separate distributions required between glibc/musl as dynamic linker is used for golang plugin support
 
+### Credentials
+AZURE_CLIENT_ID
+AZURE_CLIENT_SECRET
+AZURE_TENANT_ID
+
+AZURE_SUBSCRIPTION_ID
+AZURE_RESOURCE_GROUP
+
+#### Key Vault
+AZURE_VAULT_NAME
 
