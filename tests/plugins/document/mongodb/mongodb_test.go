@@ -88,4 +88,5 @@ var _ = Describe("MongoDB", func() {
 	test.SetTests(docPlugin)
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
+	test.QueryStreamTests(docPlugin)
 })
