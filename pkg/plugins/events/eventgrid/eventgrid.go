@@ -76,7 +76,7 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *EventGridEventService) GetTopicEndpoint(topicName string) (string, error) {
+func (s *EventGridEventService) getTopicEndpoint(topicName string) (string, error) {
 	ctx := context.Background()
 	pageLength := int32(10)
 	results, err := s.topicClient.ListBySubscription(ctx, "", &pageLength)
@@ -96,24 +96,25 @@ func (s *EventGridEventService) GetTopicEndpoint(topicName string) (string, erro
 	return "", fmt.Errorf("topic with provided name could not be found")
 }
 
-func (s *EventGridEventService) NitricEventToEvent(topic string, event *events.NitricEvent) ([]eventgrid.Event, error) {
-	payload, err := json.Marshal(event.Payload)
-	if err != nil {
-		return nil, err
-	}
-	dataVersion := "1.0"
-	azureEvent := []eventgrid.Event{
-		{
+func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events []*events.NitricEvent) ([]eventgrid.Event, error) {
+	var azureEvents []eventgrid.Event
+	for _, event := range events {
+		payload, err := json.Marshal(event.Payload)
+		if err != nil {
+			return nil, err
+		}
+		dataVersion := "1.0"
+		azureEvents = append(azureEvents, eventgrid.Event{
 			ID:          &event.ID,
 			Data:        &payload,
 			EventType:   &event.PayloadType,
 			Subject:     &topic,
 			EventTime:   &date.Time{time.Now()},
 			DataVersion: &dataVersion,
-		},
+		})
 	}
 
-	return azureEvent, nil
+	return azureEvents, nil
 }
 
 func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent) error {
@@ -129,22 +130,22 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		return newErr(
 			codes.InvalidArgument,
 			"provided invalid topic",
-			fmt.Errorf(""),
+			fmt.Errorf("non-blank topic is required"),
 		)
 	}
 	if event == nil {
 		return newErr(
 			codes.InvalidArgument,
 			"provided invalid event",
-			fmt.Errorf(""),
+			fmt.Errorf("non-nil event is required"),
 		)
 	}
 
-	topicHostName, err := s.GetTopicEndpoint(topic)
+	topicHostName, err := s.getTopicEndpoint(topic)
 	if err != nil {
 		return err
 	}
-	eventToPublish, err := s.NitricEventToEvent(topicHostName, event)
+	eventToPublish, err := s.nitricEventsToAzureEvents(topicHostName, []*events.NitricEvent{event})
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -162,8 +163,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		)
 	}
 
-	statusCode := fmt.Sprint(result.StatusCode)
-	if strings.Split(statusCode, "")[0] != "2" {
+	if result.StatusCode <= 200 || result.StatusCode >= 300 {
 		return newErr(
 			codes.Internal,
 			"returned non 200 status code",
