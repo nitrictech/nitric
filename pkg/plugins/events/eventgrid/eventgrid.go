@@ -163,11 +163,11 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		)
 	}
 
-	if result.StatusCode <= 200 || result.StatusCode >= 300 {
+	if result.StatusCode < 200 || result.StatusCode >= 300 {
 		return newErr(
 			codes.Internal,
 			"returned non 200 status code",
-			fmt.Errorf(""),
+			fmt.Errorf(result.Status),
 		)
 	}
 	return nil
