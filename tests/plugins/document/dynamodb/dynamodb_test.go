@@ -87,6 +87,7 @@ var _ = Describe("DynamoDb", func() {
 	test.SetTests(docPlugin)
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
+	test.QueryStreamTests(docPlugin)
 })
 
 func createDynamoClient() *dynamodb.DynamoDB {
