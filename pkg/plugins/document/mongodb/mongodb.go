@@ -306,19 +306,11 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 		},
 	)
 
-	if err := document.ValidateQueryCollection(collection); err != nil {
+	if colErr, expErr := document.ValidateQueryCollection(collection), document.ValidateExpressions(expressions); colErr != nil || expErr != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
-			"invalid key",
-			err,
-		)
-	}
-
-	if err := document.ValidateExpressions(expressions); err != nil {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"invalid expressions",
-			err,
+			"invalid arguments",
+			fmt.Errorf("collection: %v, expressions%v", colErr, expErr),
 		)
 	}
 
