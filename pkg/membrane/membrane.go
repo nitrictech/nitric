@@ -119,7 +119,7 @@ func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 }
 
 // Create a new Nitric events Server
-func (s *Membrane) createeventsServer() v1.EventServiceServer {
+func (s *Membrane) createEventsServer() v1.EventServiceServer {
 	return grpc2.NewEventServiceServer(s.eventsPlugin)
 }
 
@@ -166,7 +166,7 @@ func (s *Membrane) Start() error {
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventsServer := s.createeventsServer()
+	eventsServer := s.createEventsServer()
 	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
 
 	topicServer := s.createTopicServer()

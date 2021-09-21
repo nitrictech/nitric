@@ -23,7 +23,7 @@ import (
 
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
@@ -40,7 +40,10 @@ func main() {
 		fmt.Println("Failed to load document plugin:", err.Error())
 	}
 
-	eventsPlugin := &events.UnimplementedeventsPlugin{}
+	eventsPlugin, err := event_grid.New()
+	if err != nil {
+		fmt.Println("Failed to load event plugin:", err.Error())
+	}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin := &queue.UnimplementedQueuePlugin{}
 	storagePlugin := &storage.UnimplementedStoragePlugin{}
