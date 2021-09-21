@@ -16,6 +16,7 @@ package dynamodb_service
 
 import (
 	"fmt"
+	"io"
 	"regexp"
 	"sort"
 	"strings"
@@ -236,7 +237,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 			if err != nil {
 				return newErr(
 					codes.Internal,
-					fmt.Sprintf("error performing delete in table"),
+					"error performing delete in table",
 					err,
 				)
 			}
@@ -247,7 +248,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 			if err != nil {
 				return newErr(
 					codes.Internal,
-					fmt.Sprintf("error performing delete"),
+					"error performing delete",
 					err,
 				)
 			}
@@ -278,22 +279,6 @@ func (s *DynamoDocService) query(collection *document.Collection, expressions []
 		queryResult.PagingToken = res.PagingToken
 	}
 
-	remainingLimit := limit - len(queryResult.Documents)
-
-	// If more results available, perform additional queries
-	for remainingLimit > 0 &&
-		(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
-
-		if res, err := resFunc(collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
-			return nil, err
-		} else {
-			queryResult.Documents = append(queryResult.Documents, res.Documents...)
-			queryResult.PagingToken = res.PagingToken
-		}
-
-		remainingLimit = limit - len(queryResult.Documents)
-	}
-
 	return queryResult, nil
 }
 
@@ -321,14 +306,115 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 		)
 	}
 
-	if res, err := s.query(collection, expressions, limit, pagingToken); err != nil {
+	queryResult, err := s.query(collection, expressions, limit, pagingToken)
+	if err != nil {
 		return nil, newErr(
 			codes.Internal,
 			"query error",
 			err,
 		)
-	} else {
-		return res, nil
+	}
+
+	remainingLimit := limit - len(queryResult.Documents)
+
+	// If more results available, perform additional queries
+	for remainingLimit > 0 &&
+		(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
+
+		if res, err := s.query(collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
+			return nil, newErr(
+				codes.Internal,
+				"query error",
+				err,
+			)
+		} else {
+			queryResult.Documents = append(queryResult.Documents, res.Documents...)
+			queryResult.PagingToken = res.PagingToken
+		}
+
+		remainingLimit = limit - len(queryResult.Documents)
+	}
+
+	return queryResult, nil
+}
+
+func (s *DynamoDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+	newErr := errors.ErrorsWithScope(
+		"DynamoDocService.QueryStream",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	colErr := document.ValidateQueryCollection(collection)
+	expErr := document.ValidateExpressions(expressions)
+
+	if colErr != nil || expErr != nil {
+		// Return an error only iterator
+		return func() (*document.Document, error) {
+			return nil, newErr(
+				codes.InvalidArgument,
+				"invalid arguments",
+				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+			)
+		}
+	}
+
+	var tmpLimit = limit
+	var documents []document.Document
+	var pagingToken map[string]string
+
+	// Initial fetch
+	res, fetchErr := s.query(collection, expressions, tmpLimit, nil)
+
+	if fetchErr != nil {
+		// Return an error only iterator if the initial fetch failed
+		return func() (*document.Document, error) {
+			return nil, newErr(
+				codes.Internal,
+				"query error",
+				fetchErr,
+			)
+		}
+	}
+
+	documents = res.Documents
+	pagingToken = res.PagingToken
+
+	return func() (*document.Document, error) {
+		// check the iteration state
+		if tmpLimit <= 0 && limit > 0 {
+			// we've reached the limit of reading
+			return nil, io.EOF
+		} else if pagingToken != nil && len(documents) == 0 {
+			// we've run out of documents and have more pages to read
+			res, fetchErr = s.query(collection, expressions, tmpLimit, pagingToken)
+			documents = res.Documents
+			pagingToken = res.PagingToken
+		} else if pagingToken == nil && len(documents) == 0 {
+			// we're all out of documents and pages before hitting the limit
+			return nil, io.EOF
+		}
+
+		// We received an error fetching the docs
+		if fetchErr != nil {
+			return nil, newErr(
+				codes.Internal,
+				"query error",
+				fetchErr,
+			)
+		}
+
+		if len(documents) == 0 {
+			return nil, io.EOF
+		}
+
+		// pop the first element
+		var doc document.Document
+		doc, documents = documents[0], documents[1:]
+		tmpLimit = tmpLimit - 1
+
+		return &doc, nil
 	}
 }
 
@@ -499,6 +585,9 @@ func (s *DynamoDocService) performScan(
 	sort.Sort(document.ExpsSort(expressions))
 
 	tableName, err := s.getTableName(*collection)
+	if err != nil {
+		return nil, err
+	}
 
 	input := &dynamodb.ScanInput{
 		TableName: tableName,
