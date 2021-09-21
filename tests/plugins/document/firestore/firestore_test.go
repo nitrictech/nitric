@@ -75,4 +75,5 @@ var _ = Describe("Firestore", func() {
 	test.SetTests(docPlugin)
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
+	test.QueryStreamTests(docPlugin)
 })
