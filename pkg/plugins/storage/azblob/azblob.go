@@ -36,6 +36,7 @@ import (
 // AzblobStorageService - Nitric membrane storage plugin implementation for Azure Storage
 type AzblobStorageService struct {
 	client azblob_service_iface.AzblobServiceUrlIface
+	storage.UnimplementedStoragePlugin
 }
 
 func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_service_iface.AzblobBlockBlobUrlIface {
@@ -47,8 +48,10 @@ func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_serv
 func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Read",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 	// Get the bucket for this bucket name
 	blob := a.getBlobUrl(bucket, key)
@@ -79,8 +82,10 @@ func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 func (a *AzblobStorageService) Write(bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Write",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	blob := a.getBlobUrl(bucket, key)
@@ -108,8 +113,10 @@ func (a *AzblobStorageService) Write(bucket string, key string, object []byte) e
 func (a *AzblobStorageService) Delete(bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Delete",
-		fmt.Sprintf("bucket=%s", bucket),
-		fmt.Sprintf("key=%s", key),
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
 	)
 
 	// Get the bucket for this bucket name
@@ -153,9 +160,9 @@ func New() (storage.StorageService, error) {
 	// TODO: Create a default storage account for the stack???
 	// XXX: This will limit a membrane wrapped application
 	// to accessing a single storage account
-	storageAccountName := utils.GetEnv(azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV, "")
-	if storageAccountName == "" {
-		return nil, fmt.Errorf("failed to determine Azure Storage Account Name, environment variable %s not set", azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV)
+	blobEndpoint := utils.GetEnv(azureutils.AZURE_STORAGE_BLOB_ENDPOINT, "")
+	if blobEndpoint == "" {
+		return nil, fmt.Errorf("failed to determine Azure Storage Blob endpoint, environment variable %s not set", azureutils.AZURE_STORAGE_BLOB_ENDPOINT)
 	}
 
 	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.Storage)
@@ -166,7 +173,7 @@ func New() (storage.StorageService, error) {
 	cTkn := azblob.NewTokenCredential(spt.Token().AccessToken, tokenRefresherFromSpt(spt))
 
 	var accountURL *url.URL
-	if accountURL, err = url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)); err != nil {
+	if accountURL, err = url.Parse(blobEndpoint); err != nil {
 		return nil, err
 	}
 

@@ -58,8 +58,10 @@ func (s *AzqueueQueueService) getMessageIdUrl(queue string, messageId azqueue.Me
 
 func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
-		"AzqueueService.Send",
-		fmt.Sprintf("queue=%s", queue),
+		"AzqueueQueueService.Send",
+		map[string]interface{}{
+			"queue": queue,
+		},
 	)
 
 	messages := s.getMessagesUrl(queue)
@@ -135,7 +137,9 @@ func leaseFromString(leaseID string) (*AzureQueueItemLease, error) {
 func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueQueueService.Receive",
-		fmt.Sprintf("options=%v", options),
+		map[string]interface{}{
+			"options": options,
+		},
 	)
 
 	if err := options.Validate(); err != nil {
@@ -202,7 +206,10 @@ func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nit
 func (s *AzqueueQueueService) Complete(queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueQueueService.Complete",
-		fmt.Sprintf("queue=%s", queue),
+		map[string]interface{}{
+			"queue":   queue,
+			"leaseId": leaseId,
+		},
 	)
 
 	lease, err := leaseFromString(leaseId)
@@ -249,9 +256,9 @@ func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azqueue.TokenRefresh
 
 // New - Constructs a new Azure Storage Queues client with defaults
 func New() (queue.QueueService, error) {
-	storageAccountName := utils.GetEnv(azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV, "")
-	if storageAccountName == "" {
-		return nil, fmt.Errorf("failed to determine Azure Storage Account Name, environment variable %s not set", azureutils.AZURE_STORAGE_ACCOUNT_NAME_ENV)
+	queueUrl := utils.GetEnv(azureutils.AZURE_STORAGE_QUEUE_ENDPOINT, "")
+	if queueUrl == "" {
+		return nil, fmt.Errorf("failed to determine Azure Storage Queue endpoint, environment variable %s not set", azureutils.AZURE_STORAGE_QUEUE_ENDPOINT)
 	}
 
 	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.Storage)
@@ -262,7 +269,7 @@ func New() (queue.QueueService, error) {
 	cTkn := azqueue.NewTokenCredential(spt.Token().AccessToken, tokenRefresherFromSpt(spt))
 
 	var accountURL *url.URL
-	if accountURL, err = url.Parse(fmt.Sprintf("https://%s.queue.core.windows.net", storageAccountName)); err != nil {
+	if accountURL, err = url.Parse(queueUrl); err != nil {
 		return nil, err
 	}
 

@@ -16,15 +16,10 @@ package azqueue_service
 
 import (
 	"fmt"
-	//"bytes"
-	//"fmt"
 	"time"
 
 	azqueue2 "github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-
-	//"io/ioutil"
-	//"strings"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
