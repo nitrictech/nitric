@@ -51,6 +51,15 @@ jobs:
           asset_path: ./bin/membrane-gcp
           asset_name: membrane-gcp
           asset_content_type: application/octet-stream
+      - name: Upload Azure
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-azure
+          asset_name: membrane-azure
+          asset_content_type: application/octet-stream
       - name: Upload Digital Ocean
         uses: actions/upload-release-asset@v1
         env:
