@@ -390,15 +390,28 @@ func (s *MongoDocService) QueryStream(collection *document.Collection, expressio
 
 		if cursor.Next(s.context) {
 			// return the next document
-			return mongoDocToDocument(collection, cursor)
+			doc, err := mongoDocToDocument(collection, cursor)
+
+			if err != nil {
+				return nil, newErr(
+					codes.Internal,
+					"error decoding mongo document",
+					err,
+				)
+			}
+
+			return doc, nil
 		} else {
 			// there was an error
 			// Close the cursor
 			cursor.Close(s.context)
 
-			// Examine the cursors error to see if it's exhausted
 			if cursor.Err() != nil {
-				return nil, cursor.Err()
+				return nil, newErr(
+					codes.Internal,
+					"mongo cursor error",
+					cursor.Err(),
+				)
 			} else {
 				return nil, io.EOF
 			}
@@ -409,10 +422,8 @@ func (s *MongoDocService) QueryStream(collection *document.Collection, expressio
 func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*document.Document, error) {
 	var docSnap map[string]interface{}
 
-	err := cursor.Decode(&docSnap)
-
-	if err != nil {
-		return nil, fmt.Errorf("error decoding mongo document")
+	if err := cursor.Decode(&docSnap); err != nil {
+		return nil, err
 	}
 
 	id := docSnap[primaryKeyAttr].(string)
