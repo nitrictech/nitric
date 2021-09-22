@@ -17,6 +17,7 @@ package mongodb_service
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -237,32 +238,7 @@ func (s *MongoDocService) Delete(key *document.Key) error {
 	return nil
 }
 
-func (s *MongoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.Query",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
-
-	if err := document.ValidateQueryCollection(collection); err != nil {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"invalid key",
-			err,
-		)
-	}
-
-	if err := document.ValidateExpressions(expressions); err != nil {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"invalid expressions",
-			err,
-		)
-	}
-
-	var orderByAttrib string
-
+func (s *MongoDocService) getCursor(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (cursor *mongo.Cursor, orderBy string, err error) {
 	coll := s.getCollection(&document.Key{Collection: collection})
 
 	query := bson.M{}
@@ -311,17 +287,38 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 			}
 		}
 
-		if exp.Operator != "==" && limit > 0 && orderByAttrib == "" {
+		if exp.Operator != "==" && limit > 0 && orderBy == "" {
 			opts.SetSort(bson.D{{expOperand, 1}})
-			orderByAttrib = expOperand
+			orderBy = expOperand
 		}
+	}
+
+	cursor, err = coll.Find(s.context, query, opts)
+
+	return
+}
+
+func (s *MongoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+	newErr := errors.ErrorsWithScope(
+		"MongoDocService.Query",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	if colErr, expErr := document.ValidateQueryCollection(collection), document.ValidateExpressions(expressions); colErr != nil || expErr != nil {
+		return nil, newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("collection: %v, expressions%v", colErr, expErr),
+		)
 	}
 
 	queryResult := &document.QueryResult{
 		Documents: make([]document.Document, 0),
 	}
 
-	cursor, err := coll.Find(s.context, query, opts)
+	cursor, orderBy, err := s.getCursor(collection, expressions, limit, pagingToken)
 
 	if err != nil {
 		return nil, newErr(
@@ -333,54 +330,25 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 
 	defer cursor.Close(s.context)
 	for cursor.Next(s.context) {
-		var docSnap map[string]interface{}
-
-		err := cursor.Decode(&docSnap)
+		sdkDoc, err := mongoDocToDocument(collection, cursor)
 
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
-				"error querying value",
+				"error decoding mongo document",
 				err,
 			)
 		}
 
-		id := docSnap[primaryKeyAttr].(string)
-
-		// remove id from content
-		delete(docSnap, primaryKeyAttr)
-
-		sdkDoc := document.Document{
-			Content: docSnap,
-			Key: &document.Key{
-				Collection: collection,
-				Id:         id,
-			},
-		}
-
-		if docSnap[parentKeyAttr] != nil {
-			parentId := docSnap[parentKeyAttr].(string)
-
-			sdkDoc.Key.Collection = &document.Collection{
-				Name: collection.Name,
-				Parent: &document.Key{
-					Collection: collection.Parent.Collection,
-					Id:         parentId,
-				},
-			}
-
-			delete(docSnap, parentKeyAttr)
-		}
-
-		queryResult.Documents = append(queryResult.Documents, sdkDoc)
+		queryResult.Documents = append(queryResult.Documents, *sdkDoc)
 
 		// If query limit configured determine continue tokens
 		if limit > 0 && len(queryResult.Documents) == limit {
 			tokens := ""
-			if orderByAttrib != "" {
-				tokens = fmt.Sprintf("%v", docSnap[orderByAttrib]) + "|"
+			if orderBy != "" {
+				tokens = fmt.Sprintf("%v", sdkDoc.Content[orderBy]) + "|"
 			}
-			tokens += id
+			tokens += sdkDoc.Key.Id
 
 			queryResult.PagingToken = map[string]string{
 				"pagingTokens": tokens,
@@ -389,6 +357,103 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 	}
 
 	return queryResult, nil
+}
+
+func (s *MongoDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+	newErr := errors.ErrorsWithScope(
+		"MongoDocService.QueryStream",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	colErr := document.ValidateQueryCollection(collection)
+	expErr := document.ValidateExpressions(expressions)
+
+	if colErr != nil || expErr != nil {
+		// Return an error only iterator
+		return func() (*document.Document, error) {
+			return nil, newErr(
+				codes.InvalidArgument,
+				"invalid arguments",
+				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+			)
+		}
+	}
+
+	cursor, _, cursorErr := s.getCursor(collection, expressions, limit, nil)
+
+	return func() (*document.Document, error) {
+		if cursorErr != nil {
+			return nil, cursorErr
+		}
+
+		if cursor.Next(s.context) {
+			// return the next document
+			doc, err := mongoDocToDocument(collection, cursor)
+
+			if err != nil {
+				return nil, newErr(
+					codes.Internal,
+					"error decoding mongo document",
+					err,
+				)
+			}
+
+			return doc, nil
+		} else {
+			// there was an error
+			// Close the cursor
+			cursor.Close(s.context)
+
+			if cursor.Err() != nil {
+				return nil, newErr(
+					codes.Internal,
+					"mongo cursor error",
+					cursor.Err(),
+				)
+			} else {
+				return nil, io.EOF
+			}
+		}
+	}
+}
+
+func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*document.Document, error) {
+	var docSnap map[string]interface{}
+
+	if err := cursor.Decode(&docSnap); err != nil {
+		return nil, err
+	}
+
+	id := docSnap[primaryKeyAttr].(string)
+
+	// remove id from content
+	delete(docSnap, primaryKeyAttr)
+
+	sdkDoc := document.Document{
+		Content: docSnap,
+		Key: &document.Key{
+			Collection: coll,
+			Id:         id,
+		},
+	}
+
+	if docSnap[parentKeyAttr] != nil {
+		parentId := docSnap[parentKeyAttr].(string)
+
+		sdkDoc.Key.Collection = &document.Collection{
+			Name: coll.Name,
+			Parent: &document.Key{
+				Collection: coll.Parent.Collection,
+				Id:         parentId,
+			},
+		}
+
+		delete(docSnap, parentKeyAttr)
+	}
+
+	return &sdkDoc, nil
 }
 
 func New() (document.DocumentService, error) {
