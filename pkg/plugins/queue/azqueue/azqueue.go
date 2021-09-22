@@ -61,6 +61,7 @@ func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
 		"AzqueueQueueService.Send",
 		map[string]interface{}{
 			"queue": queue,
+			"task":  task,
 		},
 	)
 
