@@ -8,10 +8,13 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
+	github.com/Azure/azure-storage-blob-go v0.14.0
+	github.com/Azure/azure-storage-queue-go v0.0.0-20191125232315-636801874cdd
 	github.com/Azure/go-autorest/autorest v0.11.18
-	github.com/Azure/go-autorest/autorest/adal v0.9.13 // indirect
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.8 // indirect
-	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.9.14
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.8
+	github.com/Azure/go-autorest/autorest/azure/cli v0.4.3 // indirect
+	github.com/Azure/go-autorest/autorest/date v0.3.0
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/DataDog/zstd v1.4.8 // indirect
@@ -25,7 +28,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/addlicense v1.0.0
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.2.0
 	github.com/googleapis/gax-go/v2 v2.0.5
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/onsi/ginkgo v1.16.4
@@ -34,7 +37,7 @@ require (
 	github.com/valyala/fasthttp v1.23.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
-	go.mongodb.org/mongo-driver v1.7.1 // indirect
+	go.mongodb.org/mongo-driver v1.7.1
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99

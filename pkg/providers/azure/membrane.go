@@ -21,13 +21,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	azqueue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/azqueue"
+
 	"github.com/nitric-dev/membrane/pkg/membrane"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
 )
 
 func main() {
@@ -45,8 +46,8 @@ func main() {
 		fmt.Println("Failed to load event plugin:", err.Error())
 	}
 	gatewayPlugin, _ := http_service.New()
-	queuePlugin := &queue.UnimplementedQueuePlugin{}
-	storagePlugin := &storage.UnimplementedStoragePlugin{}
+	queuePlugin, _ := azqueue_service.New()
+	storagePlugin, _ := azblob_service.New()
 	secretPlugin, err := key_vault.New()
 	if err != nil {
 		fmt.Println("Failed to load secret plugin:", err.Error())
@@ -73,9 +74,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		fmt.Printf("Membrane Error: %v, exiting\n", membraneError)
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		fmt.Printf("Received %v, exiting\n", sigTerm)
 	}
 
 	m.Stop()
