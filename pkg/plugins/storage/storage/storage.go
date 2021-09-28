@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	ifaces_gcloud_storage "github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
+	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"cloud.google.com/go/storage"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
@@ -177,6 +179,64 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 	}
 
 	return nil
+}
+
+func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation plugin.Operation, expiry uint32) (string, error) {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.PreSignUrl",
+		map[string]interface{}{
+			"bucket":    bucket,
+			"key":       key,
+			"operation": operation.String(),
+		},
+	)
+	if expiry > 604800 {
+		return "", newErr(
+			codes.InvalidArgument,
+			"expiry time can't be longer than 604800 seconds (7 days)",
+			fmt.Errorf("%v", expiry),
+		)
+	}
+	serviceAccount := utils.GetEnv("SERVICE_ACCOUNT_LOCATION", "")
+	if len(serviceAccount) == 0 {
+		return "", newErr(
+			codes.InvalidArgument,
+			"provide non-blank service account config file",
+			fmt.Errorf("%s", serviceAccount),
+		)
+	}
+	jsonKey, err := ioutil.ReadFile(serviceAccount)
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"error reading service account config file at given SERVICE_ACCOUNT_LOCATION",
+			err,
+		)
+	}
+	conf, err := google.JWTConfigFromJSON(jsonKey)
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"error getting JWT from service account JSON",
+			err,
+		)
+	}
+	opts := &storage.SignedURLOptions{
+		Scheme:         storage.SigningSchemeV4,
+		Method:         []string{"GET", "PUT"}[operation],
+		GoogleAccessID: conf.Email,
+		PrivateKey:     conf.PrivateKey,
+		Expires:        time.Now().Add(time.Duration(expiry) * time.Second),
+	}
+	url, err := storage.SignedURL(bucket, key, opts)
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"error getting signed url",
+			err,
+		)
+	}
+	return url, nil
 }
 
 /**
