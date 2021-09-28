@@ -221,9 +221,14 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 			err,
 		)
 	}
+	var headers []string
+	if operation == 1 { // If its a put operation, need to add additional headers
+		headers = append(headers, "Content-Type:application/octet-stream")
+	}
 	opts := &storage.SignedURLOptions{
 		Scheme:         storage.SigningSchemeV4,
 		Method:         []string{"GET", "PUT"}[operation],
+		Headers:        headers,
 		GoogleAccessID: conf.Email,
 		PrivateKey:     conf.PrivateKey,
 		Expires:        time.Now().Add(time.Duration(expiry) * time.Second),
