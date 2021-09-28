@@ -25,6 +25,9 @@ const (
 
 func (op Operation) String() string {
 	// The order of this array must match the iota order above.
+	if op != WRITE && op != READ {
+		return "READ"
+	}
 	return [2]string{"READ", "WRITE"}[op]
 }
 

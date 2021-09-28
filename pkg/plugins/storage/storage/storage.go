@@ -28,14 +28,31 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
 	plugin "github.com/nitric-dev/membrane/pkg/plugins/storage"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
+
+type StorageUtils interface {
+	JWTConfigFromJSON(jsonKey []byte) (*jwt.Config, error)
+	SignedURL(bucket string, key string, opts *storage.SignedURLOptions) (string, error)
+}
+
+type StorageStorageUtils struct{}
+
+func (u *StorageStorageUtils) JWTConfigFromJSON(jsonKey []byte) (*jwt.Config, error) {
+	return google.JWTConfigFromJSON(jsonKey)
+}
+
+func (u *StorageStorageUtils) SignedURL(bucket string, key string, opts *storage.SignedURLOptions) (string, error) {
+	return storage.SignedURL(bucket, key, opts)
+}
 
 type StorageStorageService struct {
 	plugin.UnimplementedStoragePlugin
 	client    ifaces_gcloud_storage.StorageClient
 	projectID string
+	utils     StorageUtils
 }
 
 func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_storage.BucketHandle, error) {
@@ -190,19 +207,33 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 			"operation": operation.String(),
 		},
 	)
+	if len(bucket) == 0 {
+		return "", newErr(
+			codes.InvalidArgument,
+			"provide non-blank bucket",
+			fmt.Errorf(""),
+		)
+	}
+	if len(key) == 0 {
+		return "", newErr(
+			codes.InvalidArgument,
+			"provide non-blank key",
+			fmt.Errorf(""),
+		)
+	}
 	if expiry > 604800 {
 		return "", newErr(
 			codes.InvalidArgument,
 			"expiry time can't be longer than 604800 seconds (7 days)",
-			fmt.Errorf("%v", expiry),
+			fmt.Errorf("expiry provided: %d", expiry),
 		)
 	}
 	serviceAccount := utils.GetEnv("SERVICE_ACCOUNT_LOCATION", "")
 	if len(serviceAccount) == 0 {
 		return "", newErr(
 			codes.InvalidArgument,
-			"provide non-blank service account config file",
-			fmt.Errorf("%s", serviceAccount),
+			"provide non-blank service account config path",
+			fmt.Errorf("path provided: %s", serviceAccount),
 		)
 	}
 	jsonKey, err := ioutil.ReadFile(serviceAccount)
@@ -213,7 +244,7 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 			err,
 		)
 	}
-	conf, err := google.JWTConfigFromJSON(jsonKey)
+	conf, err := s.utils.JWTConfigFromJSON(jsonKey)
 	if err != nil {
 		return "", newErr(
 			codes.Internal,
@@ -222,8 +253,10 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 		)
 	}
 	var headers []string
-	if operation == 1 { // If its a put operation, need to add additional headers
+	if operation == plugin.WRITE { // If its a put operation, need to add additional headers
 		headers = append(headers, "Content-Type:application/octet-stream")
+	} else {
+		operation = plugin.READ
 	}
 	opts := &storage.SignedURLOptions{
 		Scheme:         storage.SigningSchemeV4,
@@ -233,7 +266,7 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 		PrivateKey:     conf.PrivateKey,
 		Expires:        time.Now().Add(time.Duration(expiry) * time.Second),
 	}
-	url, err := storage.SignedURL(bucket, key, opts)
+	url, err := s.utils.SignedURL(bucket, key, opts)
 	if err != nil {
 		return "", newErr(
 			codes.Internal,
@@ -264,11 +297,20 @@ func New() (plugin.StorageService, error) {
 	return &StorageStorageService{
 		client:    ifaces_gcloud_storage.AdaptStorageClient(client),
 		projectID: credentials.ProjectID,
+		utils:     &StorageStorageUtils{},
 	}, nil
 }
 
 func NewWithClient(client ifaces_gcloud_storage.StorageClient) (plugin.StorageService, error) {
 	return &StorageStorageService{
 		client: client,
+		utils:  &StorageStorageUtils{},
+	}, nil
+}
+
+func NewWithUtils(client ifaces_gcloud_storage.StorageClient, storageUtils StorageUtils) (plugin.StorageService, error) {
+	return &StorageStorageService{
+		client: client,
+		utils:  storageUtils,
 	}, nil
 }
