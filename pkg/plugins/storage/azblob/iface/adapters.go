@@ -17,6 +17,7 @@ package azblob_service_iface
 import (
 	"context"
 	"io"
+	"net/url"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 )
@@ -43,7 +44,7 @@ func (c serviceUrl) NewContainerURL(bucket string) AzblobContainerUrlIface {
 	return AdaptContainerUrl(c.c.NewContainerURL(bucket))
 }
 
-func (c serviceUrl) GetUserDelegationCredential(ctx context.Context, info azblob.KeyInfo, timeout *int32, requestID *string) (azblob.UserDelegationCredential, error) {
+func (c serviceUrl) GetUserDelegationCredential(ctx context.Context, info azblob.KeyInfo, timeout *int32, requestID *string) (azblob.StorageAccountCredential, error) {
 	return c.c.GetUserDelegationCredential(ctx, info, timeout, requestID)
 }
 
@@ -53,6 +54,10 @@ func (c containerUrl) NewBlockBlobURL(blob string) AzblobBlockBlobUrlIface {
 
 func (c blobUrl) Download(ctx context.Context, offset int64, count int64, bac azblob.BlobAccessConditions, f bool, cpk azblob.ClientProvidedKeyOptions) (AzblobDownloadResponse, error) {
 	return c.c.Download(ctx, offset, count, bac, f, cpk)
+}
+
+func (c blobUrl) Url() url.URL {
+	return c.c.URL()
 }
 
 func (c blobUrl) Upload(ctx context.Context, r io.ReadSeeker, h azblob.BlobHTTPHeaders, m azblob.Metadata, bac azblob.BlobAccessConditions, att azblob.AccessTierType, btm azblob.BlobTagsMap, cpk azblob.ClientProvidedKeyOptions) (*azblob.BlockBlobUploadResponse, error) {

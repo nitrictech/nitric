@@ -147,9 +147,10 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 		},
 	)
 
-	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(bucket, key))
-	validDuration := time.Now().UTC().Add(expiry * uint32(time.Second))
-	cred, err := s.client.GetUserDelegationCredential(context.TODO(), azblob.NewKeyInfo(currentTime, validDuration, nil, nil))
+	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(bucket, key).Url())
+	currentTime := time.Now().UTC()
+	validDuration := currentTime.Add(time.Duration(expiry) * time.Second)
+	cred, err := s.client.GetUserDelegationCredential(context.TODO(), azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
 
 	if err != nil {
 		return "", newErr(
@@ -161,7 +162,7 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 
 	sigOpts := azblob.BlobSASSignatureValues{
 		Protocol:   azblob.SASProtocolHTTPS,
-		ExpiryTime: time.Now().UTC().Add(expiry * uint32(time.Second)),
+		ExpiryTime: validDuration,
 		Permissions: azblob.BlobSASPermissions{
 			Read:  operation == storage.READ,
 			Write: operation == storage.WRITE,

@@ -16,8 +16,10 @@ package azblob_service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -26,7 +28,30 @@ import (
 	. "github.com/onsi/gomega"
 
 	mock_azblob "github.com/nitric-dev/membrane/mocks/azblob"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
+
+type mockStorageCredential struct {
+	azblob.StorageAccountCredential
+}
+
+//AccountName() string
+//	ComputeHMACSHA256(message string) (base64String string)
+//	getUDKParams() *UserDelegationKey
+
+func (m *mockStorageCredential) AccountName() string {
+	return "mock-account-name"
+}
+
+func (m *mockStorageCredential) ComputeHMACSHA256(message string) (base64String string) {
+	base64String = "mock-string"
+
+	return
+}
+
+func (m *mockStorageCredential) getUDKParams() *azblob.UserDelegationKey {
+	return &azblob.UserDelegationKey{}
+}
 
 var _ = Describe("Azblob", func() {
 	//Context("New", func() {
@@ -258,5 +283,61 @@ var _ = Describe("Azblob", func() {
 				crtl.Finish()
 			})
 		})
+	})
+
+	Context("PresignUrl", func() {
+		When("User delegation credentials are accessible", func() {
+			crtl := gomock.NewController(GinkgoT())
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)
+			mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(crtl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should return a presigned url", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("Retrieving the blob url of the requested object")
+				mockContainer.EXPECT().NewBlockBlobURL("my-blob").Times(1).Return(mockBlob)
+
+				By("Retrieving user delegation credentials")
+				mockAzblob.EXPECT().GetUserDelegationCredential(
+					context.TODO(), gomock.Any(), gomock.Any(), nil,
+				).Return(
+					&mockStorageCredential{},
+					nil,
+				)
+
+				u, _ := url.Parse("https://fake-account.com/my-bucket/my-blob")
+				By("Getting the URL")
+				mockBlob.EXPECT().Url().Return(*u)
+
+				url, err := storagePlugin.PreSignUrl("my-bucket", "my-blob", storage.READ, 3600)
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Returning a pre-signed URL")
+				Expect(url).ToNot(Equal(""))
+			})
+		})
+
+		//When("retrieving user delegation credentials fails", func() {
+		//	crtl := gomock.NewController(GinkgoT())
+		//	mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
+		//	mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)
+		//	mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(crtl)
+
+		//	storagePlugin := &AzblobStorageService{
+		//		client: mockAzblob,
+		//	}
+
+		//	It("should return an error", func() {
+
+		//	})
+		//})
 	})
 })
