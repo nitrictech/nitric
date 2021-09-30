@@ -25,6 +25,7 @@ import (
 // for azblob.ServiceUrl
 type AzblobServiceUrlIface interface {
 	NewContainerURL(string) AzblobContainerUrlIface
+	GetUserDelegationCredential(ctx context.Context, info azblob.KeyInfo, timeout *int32, requestID *string) (azblob.UserDelegationCredential, error)
 }
 
 // AzblobContainerUrlIface - Mockable client interface

@@ -43,6 +43,10 @@ func (c serviceUrl) NewContainerURL(bucket string) AzblobContainerUrlIface {
 	return AdaptContainerUrl(c.c.NewContainerURL(bucket))
 }
 
+func (c serviceUrl) GetUserDelegationCredential(ctx context.Context, info azblob.KeyInfo, timeout *int32, requestID *string) (azblob.UserDelegationCredential, error) {
+	return c.c.GetUserDelegationCredential(ctx, info, timeout, requestID)
+}
+
 func (c containerUrl) NewBlockBlobURL(blob string) AzblobBlockBlobUrlIface {
 	return AdaptBlobUrl(c.c.NewBlockBlobURL(blob))
 }
