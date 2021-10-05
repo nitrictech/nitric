@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/triggers"
@@ -137,14 +138,19 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 			// Copy the cookies over
 			headerCopy["Cookie"] = evt.Cookies
 
-			event.Requests = append(event.Requests, &triggers.HttpRequest{
-				// FIXME: Translate to http.Header
-				Header: headerCopy,
-				Body:   []byte(evt.Body),
-				Method: evt.RequestContext.HTTP.Method,
-				Path:   evt.RawPath,
-				Query:  evt.QueryStringParameters,
-			})
+			// Parse the raw query string
+			qVals, err := url.ParseQuery(evt.RawQueryString)
+
+			if err == nil {
+				event.Requests = append(event.Requests, &triggers.HttpRequest{
+					// FIXME: Translate to http.Header
+					Header: headerCopy,
+					Body:   []byte(evt.Body),
+					Method: evt.RequestContext.HTTP.Method,
+					Path:   evt.RawPath,
+					Query:  qVals,
+				})
+			}
 		}
 
 		break
