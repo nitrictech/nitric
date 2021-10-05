@@ -62,7 +62,7 @@ func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) 
 	}()
 
 	if s.responseQueue[ID] == nil {
-		return nil, fmt.Errorf("Attempted to resolve ticket that does not exist!")
+		return nil, fmt.Errorf("attempted to resolve ticket that does not exist!")
 	}
 
 	return s.responseQueue[ID], nil
@@ -94,17 +94,30 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 		}
 	}
 
+	query := make(map[string]*pb.QueryValue)
+	queryOld := make(map[string]string)
+	for k, v := range trigger.Query {
+		if v != nil {
+			query[k] = &pb.QueryValue{
+				Value: v,
+			}
+			if len(v) > 0 {
+				queryOld[k] = v[0]
+			}
+		}
+	}
+
 	triggerRequest := &pb.TriggerRequest{
 		Data:     trigger.Body,
 		MimeType: mimeType,
 		Context: &pb.TriggerRequest_Http{
 			Http: &pb.HttpTriggerContext{
-				Path:        trigger.Path,
-				Method:      trigger.Method,
-				QueryParams: trigger.Query,
-				Headers:     headers,
-				HeadersOld:  headersOld,
-				// TODO: Populate path params
+				Path:           trigger.Path,
+				Method:         trigger.Method,
+				QueryParams:    query,
+				QueryParamsOld: queryOld,
+				Headers:        headers,
+				HeadersOld:     headersOld,
 			},
 		},
 	}
@@ -131,7 +144,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	httpResponse := triggerResponse.GetHttp()
 
 	if httpResponse == nil {
-		return nil, fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
+		return nil, fmt.Errorf("fatal: Error handling event, incorrect response received from function")
 	}
 
 	fasthttpHeader := &fasthttp.ResponseHeader{}

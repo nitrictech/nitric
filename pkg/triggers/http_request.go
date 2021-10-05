@@ -22,8 +22,6 @@ import (
 
 // HttpRequest - Storage information that captures a HTTP Request
 type HttpRequest struct {
-	// The original Headers
-	// Header *fasthttp.RequestHeader
 	Header map[string][]string
 	// The original body stream
 	Body []byte
@@ -32,7 +30,7 @@ type HttpRequest struct {
 	// The original path
 	Path string
 	// URL query parameters
-	Query map[string]string
+	Query map[string][]string
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
@@ -42,7 +40,7 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
 func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	headerCopy := make(map[string][]string)
-	queryArgs := make(map[string]string)
+	queryArgs := make(map[string][]string)
 
 	ctx.Request.Header.VisitAll(func(key []byte, val []byte) {
 		keyString := string(key)
@@ -60,7 +58,13 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 	})
 
 	ctx.QueryArgs().VisitAll(func(key []byte, val []byte) {
-		queryArgs[string(key)] = string(val)
+		k := string(key)
+
+		if queryArgs[k] == nil {
+			queryArgs[k] = make([]string, 0)
+		}
+
+		queryArgs[k] = append(queryArgs[k], string(val))
 	})
 
 	return &HttpRequest{
