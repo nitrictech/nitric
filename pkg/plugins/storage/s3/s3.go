@@ -49,10 +49,17 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
 
 	if err != nil {
-		return nil, fmt.Errorf("Encountered an error retrieving the bucket list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the bucket list: %v", err)
 	}
 
 	for _, b := range out.Buckets {
+		// Exact match bucket names required for minio
+		// Need to see if we can somehow tag, but directory names
+		// follow bucket names at the moment
+		if *b.Name == bucket {
+			return b, nil
+		}
+
 		// TODO: This could be rather slow, it's interesting that they don't return this in the list buckets output
 		tagout, err := s.client.GetBucketTagging(&s3.GetBucketTaggingInput{
 			Bucket: b.Name,
@@ -76,7 +83,7 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Unable to find bucket with name: %s", bucket)
+	return nil, fmt.Errorf("unable to find bucket with name: %s", bucket)
 }
 
 // Read - Retrieves an item from a bucket
@@ -249,7 +256,7 @@ func New() (storage.StorageService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
 	}
 
 	s3Client := s3.New(sess)

@@ -1,4 +1,4 @@
-package storage_service
+package minio_storage_service
 
 import (
 	"fmt"
@@ -70,7 +70,11 @@ func New() (storage.StorageService, error) {
 		DisableSSL:       aws.Bool(true),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error creating new session")
+	}
 
 	s3Client := s3.New(newSession)
 
