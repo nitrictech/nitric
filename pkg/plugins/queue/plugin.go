@@ -77,6 +77,7 @@ type UnimplementedQueuePlugin struct {
 // Ensure UnimplementedQueuePlugin conforms to QueueService interface
 var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
+// TODO: replace NitricTask and []NitricTask with pointers
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
 func (*UnimplementedQueuePlugin) Send(queue string, task NitricTask) error {
 	return fmt.Errorf("UNIMPLEMENTED")
