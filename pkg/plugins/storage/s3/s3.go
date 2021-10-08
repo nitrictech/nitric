@@ -60,7 +60,6 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
-				// Table not found,  try to create and put again
 				if awsErr.Code() == ErrCodeNoSuchTagSet {
 					// Ignore buckets with no tags, check the next bucket
 					continue

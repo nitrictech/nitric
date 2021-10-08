@@ -56,7 +56,6 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
-				// Table not found,  try to create and put again
 				if awsErr.Code() == ErrCodeNoSuchTagSet {
 					// Ignore queues with no tags, check the next queue
 					continue
