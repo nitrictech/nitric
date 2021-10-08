@@ -68,6 +68,14 @@ func configFromEnv() (*minioConfig, error) {
 	}, nil
 }
 
+func nameSelector(nitricName string, bucket *s3.Bucket) (bool, error) {
+	if *bucket.Name == nitricName {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func New() (storage.StorageService, error) {
 
 	conf, err := configFromEnv()
@@ -87,10 +95,10 @@ func New() (storage.StorageService, error) {
 	newSession, err := session.NewSession(s3Config)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error creating new session")
+		return nil, fmt.Errorf("error creating new session")
 	}
 
 	s3Client := s3.New(newSession)
 
-	return s3_service.NewWithClient(s3Client)
+	return s3_service.NewWithClient(s3Client, s3_service.WithSelector(nameSelector))
 }
