@@ -155,6 +155,10 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 			for _, v := range headerList {
 				fasthttpHeader.Add(key, v)
 			}
+		} else if key == "Content-Type" {
+			for _, v := range headerList {
+				fasthttpHeader.SetContentType(v)
+			}
 		} else if len(headerList) > 0 {
 			fasthttpHeader.Set(key, headerList[0])
 		}
