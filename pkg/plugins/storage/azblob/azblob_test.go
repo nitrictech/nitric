@@ -31,28 +31,6 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
-type mockStorageCredential struct {
-	azblob.StorageAccountCredential
-}
-
-//AccountName() string
-//	ComputeHMACSHA256(message string) (base64String string)
-//	getUDKParams() *UserDelegationKey
-
-func (m *mockStorageCredential) AccountName() string {
-	return "mock-account-name"
-}
-
-func (m *mockStorageCredential) ComputeHMACSHA256(message string) (base64String string) {
-	base64String = "mock-string"
-
-	return
-}
-
-func (m *mockStorageCredential) getUDKParams() *azblob.UserDelegationKey {
-	return &azblob.UserDelegationKey{}
-}
-
 var _ = Describe("Azblob", func() {
 	//Context("New", func() {
 	//	When("", func() {
