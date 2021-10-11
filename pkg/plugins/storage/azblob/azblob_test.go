@@ -16,8 +16,10 @@ package azblob_service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -26,6 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	mock_azblob "github.com/nitric-dev/membrane/mocks/azblob"
+	"github.com/nitric-dev/membrane/pkg/plugins/storage"
 )
 
 var _ = Describe("Azblob", func() {
@@ -256,6 +259,86 @@ var _ = Describe("Azblob", func() {
 				Expect(err).To(HaveOccurred())
 
 				crtl.Finish()
+			})
+		})
+	})
+
+	Context("PresignUrl", func() {
+		When("User delegation credentials are accessible", func() {
+			crtl := gomock.NewController(GinkgoT())
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)
+			mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(crtl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should return a presigned url", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("Retrieving the blob url of the requested object")
+				mockContainer.EXPECT().NewBlockBlobURL("my-blob").Times(1).Return(mockBlob)
+
+				By("Retrieving user delegation credentials")
+				mockAzblob.EXPECT().GetUserDelegationCredential(
+					context.TODO(), gomock.Any(), gomock.Any(), nil,
+				).Return(
+					azblob.NewUserDelegationCredential("mock-account-name", azblob.UserDelegationKey{}),
+					nil,
+				)
+
+				u, _ := url.Parse("https://fake-account.com/my-bucket/my-blob")
+				By("Getting the URL")
+				mockBlob.EXPECT().Url().Return(*u)
+
+				url, err := storagePlugin.PreSignUrl("my-bucket", "my-blob", storage.READ, 3600)
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Returning a pre-signed URL from the computed blob URL")
+				Expect(url).To(ContainSubstring("https://fake-account.com/my-bucket/my-blob"))
+			})
+		})
+
+		When("retrieving user delegation credentials fails", func() {
+			crtl := gomock.NewController(GinkgoT())
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)
+			mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(crtl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should return an error", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("Retrieving the blob url of the requested object")
+				mockContainer.EXPECT().NewBlockBlobURL("my-blob").Times(1).Return(mockBlob)
+
+				By("Failing to retrieve user delegation credentials")
+				mockAzblob.EXPECT().GetUserDelegationCredential(
+					context.TODO(), gomock.Any(), gomock.Any(), nil,
+				).Return(
+					nil,
+					fmt.Errorf("mock-error"),
+				)
+
+				u, _ := url.Parse("https://fake-account.com/my-bucket/my-blob")
+				By("Getting the URL")
+				mockBlob.EXPECT().Url().Return(*u)
+
+				url, err := storagePlugin.PreSignUrl("my-bucket", "my-blob", storage.READ, 3600)
+
+				By("Not returning a url")
+				Expect(url).To(Equal(""))
+
+				By("Returning an error")
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})

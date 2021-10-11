@@ -137,6 +137,56 @@ func (a *AzblobStorageService) Delete(bucket string, key string) error {
 	return nil
 }
 
+func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
+	newErr := errors.ErrorsWithScope(
+		"AzblobStorageService.PreSignUrl",
+		map[string]interface{}{
+			"bucket":    bucket,
+			"key":       key,
+			"operation": operation.String(),
+		},
+	)
+
+	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(bucket, key).Url())
+	currentTime := time.Now().UTC()
+	validDuration := currentTime.Add(time.Duration(expiry) * time.Second)
+	cred, err := s.client.GetUserDelegationCredential(context.TODO(), azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
+
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"could not get user delegation credential",
+			err,
+		)
+	}
+
+	sigOpts := azblob.BlobSASSignatureValues{
+		Protocol:   azblob.SASProtocolHTTPS,
+		ExpiryTime: validDuration,
+		Permissions: azblob.BlobSASPermissions{
+			Read:  operation == storage.READ,
+			Write: operation == storage.WRITE,
+		}.String(),
+		BlobName:      key,
+		ContainerName: bucket,
+	}
+
+	queryParams, err := sigOpts.NewSASQueryParameters(cred)
+
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"error signing query params for URL",
+			err,
+		)
+	}
+
+	blobUrlParts.SAS = queryParams
+	url := blobUrlParts.URL()
+
+	return url.String(), nil
+}
+
 const expiryBuffer = 2 * time.Minute
 
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {
