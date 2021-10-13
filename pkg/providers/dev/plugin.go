@@ -24,7 +24,7 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
+	minio_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/minio"
 	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
@@ -57,5 +57,5 @@ func (p *DevServiceFactory) NewQueueService() (queue.QueueService, error) {
 
 // NewStorageService - Returns local dev storage plugin
 func (p *DevServiceFactory) NewStorageService() (storage.StorageService, error) {
-	return boltdb_storage_service.New()
+	return minio_storage_service.New()
 }

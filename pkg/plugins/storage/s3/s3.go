@@ -41,7 +41,36 @@ const (
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
 	//storage.UnimplementedStoragePlugin
-	client s3iface.S3API
+	client   s3iface.S3API
+	selector BucketSelector
+}
+
+type BucketSelector = func(nitricName string, b *s3.Bucket) (bool, error)
+
+func (s *S3StorageService) tagSelector(name string, bucket *s3.Bucket) (bool, error) {
+	// TODO: This could be rather slow, it's interesting that they don't return this in the list buckets output
+	tagout, err := s.client.GetBucketTagging(&s3.GetBucketTaggingInput{
+		Bucket: bucket.Name,
+	})
+
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			// Table not found,  try to create and put again
+			if awsErr.Code() == ErrCodeNoSuchTagSet {
+				// Ignore buckets with no tags, check the next bucket
+				return false, nil
+			}
+		}
+		return false, err
+	}
+
+	for _, tag := range tagout.TagSet {
+		if *tag.Key == "x-nitric-name" && *tag.Value == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // getBucketByName - Finds and returns a bucket by it's Nitric name
@@ -49,34 +78,31 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
 
 	if err != nil {
-		return nil, fmt.Errorf("Encountered an error retrieving the bucket list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the bucket list: %v", err)
 	}
 
 	for _, b := range out.Buckets {
-		// TODO: This could be rather slow, it's interesting that they don't return this in the list buckets output
-		tagout, err := s.client.GetBucketTagging(&s3.GetBucketTaggingInput{
-			Bucket: b.Name,
-		})
+		var selected bool = false
+		var selectErr error = nil
 
-		if err != nil {
-			if awsErr, ok := err.(awserr.Error); ok {
-				if awsErr.Code() == ErrCodeNoSuchTagSet {
-					// Ignore buckets with no tags, check the next bucket
-					continue
-				}
-				return nil, err
-			}
+		if s.selector == nil {
+			// if selector is undefined us the default selector
+			selected, selectErr = s.tagSelector(bucket, b)
+		} else {
+			// Use provided selector if one available
+			selected, selectErr = s.selector(bucket, b)
+		}
+
+		if selectErr != nil {
 			return nil, err
 		}
 
-		for _, tag := range tagout.TagSet {
-			if *tag.Key == "x-nitric-name" && *tag.Value == bucket {
-				return b, nil
-			}
+		if selected {
+			return b, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Unable to find bucket with name: %s", bucket)
+	return nil, fmt.Errorf("unable to find bucket with name: %s", bucket)
 }
 
 // Read - Retrieves an item from a bucket
@@ -249,7 +275,7 @@ func New() (storage.StorageService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
 	}
 
 	s3Client := s3.New(sess)
@@ -260,8 +286,14 @@ func New() (storage.StorageService, error) {
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(client s3iface.S3API) (storage.StorageService, error) {
-	return &S3StorageService{
+func NewWithClient(client s3iface.S3API, opts ...S3StorageServiceOption) (storage.StorageService, error) {
+	s3Client := &S3StorageService{
 		client: client,
-	}, nil
+	}
+
+	for _, o := range opts {
+		o.Apply(s3Client)
+	}
+
+	return s3Client, nil
 }
