@@ -256,7 +256,7 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 			ID:          nitricTask.ID,
 			Payload:     nitricTask.Payload,
 			PayloadType: nitricTask.PayloadType,
-			LeaseID:     nitricTask.LeaseID,
+			LeaseID:     m.AckId,
 		})
 	}
 
