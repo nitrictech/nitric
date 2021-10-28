@@ -81,8 +81,9 @@ var _ = Describe("Lambda", func() {
 						"x-nitric-request-id":   "test-request-id",
 						"Content-Type":          "text/plain",
 					},
-					RawPath: "/test/test",
-					Body:    "Test Payload",
+					RawPath:        "/test/test",
+					RawQueryString: "key=test&key2=test1&key=test2",
+					Body:           "Test Payload",
 					RequestContext: events.APIGatewayV2HTTPRequestContext{
 						HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
 							Method: "GET",
@@ -117,6 +118,10 @@ var _ = Describe("Lambda", func() {
 				Expect(request.Method).To(Equal("GET"))
 				By("Retaining the path")
 				Expect(request.Path).To(Equal("/test/test"))
+
+				By("Retaining the query parameters")
+				Expect(request.Query["key"]).To(BeEquivalentTo([]string{"test", "test2"}))
+				Expect(request.Query["key2"]).To(BeEquivalentTo([]string{"test1"}))
 			})
 		})
 	})

@@ -1,0 +1,41 @@
+name: Release Contracts
+on:
+  release:
+    types: [published]
+
+jobs:
+  # Bump the membrane version
+  contract_release:
+    name: Add contracts to release
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      # Add validate contract to the released contracts
+      - name: Download validate contract
+        run: |
+          mkdir -p ./contracts/validate
+          curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
+      
+      # Tarball the contracts repository
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'tar'
+          filename: 'contracts.tgz'
+          path: contracts
+
+      # Upload contract tarball to the releases
+      - name: Upload Contracts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./contracts.tgz
+          asset_name: contracts.tgz
+          asset_content_type: application/tar+gzip
+  

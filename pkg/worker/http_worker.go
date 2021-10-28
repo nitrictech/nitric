@@ -64,7 +64,9 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	httpRequest.SetRequestURI(address)
 
 	for key, val := range trigger.Query {
-		httpRequest.URI().QueryArgs().Add(key, val)
+		for _, v := range val {
+			httpRequest.URI().QueryArgs().Add(key, v)
+		}
 	}
 
 	for key, val := range trigger.Header {

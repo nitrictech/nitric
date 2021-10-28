@@ -1,0 +1,45 @@
+name: Release Candidate
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'develop'
+jobs:
+  # Bump the membrane version
+  version_bump:
+    if: github.event.pull_request.merged == true
+    name: Bump Version and Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      version_id: ${{ steps.tag_version.outputs.new_tag }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v5.5
+        with:
+          # Don't commit tag
+          # this will be done as part of the release
+          dry_run: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: main,develop
+
+      - name: Calculate RC number
+        id: vars
+        run: echo "::set-output name=rc_num::$(git rev-list --merges --count origin/develop...origin/main)"
+
+      - name: Create a GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          # Use NITRIC_BOT_TOKEN here to
+          # trigger release 'published' workflows
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          prerelease: true
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
+          body: ${{ steps.tag_version.outputs.changelog }}-rc.${{ steps.vars.outputs.rc_num }}

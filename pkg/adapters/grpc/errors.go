@@ -15,6 +15,10 @@
 package grpc
 
 import (
+	"fmt"
+	"reflect"
+
+	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,17 +27,109 @@ import (
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
 	if pe, ok := err.(*errors.PluginError); ok {
-		return newGrpcErrorWithCode(codes.Code(errors.Code(pe)), operation, pe)
+		code := codes.Code(errors.Code(pe))
+
+		ed := &v1.ErrorDetails{}
+		ed.Message = pe.Msg
+		if pe.Cause != nil {
+			ed.Cause = pe.Cause.Error()
+		}
+		ed.Scope = &v1.ErrorScope{
+			Service: operation,
+			Plugin:  pe.Plugin,
+		}
+		if len(pe.Args) > 0 {
+			args := make(map[string]string)
+			for k, v := range pe.Args {
+				args[k] = LogArg(v)
+			}
+			ed.Scope.Args = args
+		}
+
+		s := status.New(code, pe.Msg)
+		s, _ = s.WithDetails(ed)
+
+		return s.Err()
+
 	} else {
 		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}
 }
 
 func newGrpcErrorWithCode(code codes.Code, operation string, err error) error {
-	return status.Errorf(code, "%s: %v", operation, err)
+	ed := &v1.ErrorDetails{}
+	ed.Message = err.Error()
+	ed.Scope = &v1.ErrorScope{
+		Service: operation,
+	}
+
+	s := status.New(code, err.Error())
+	s, _ = s.WithDetails(ed)
+
+	return s.Err()
 }
 
 // Provides generic error for unregistered plugins
 func NewPluginNotRegisteredError(plugin string) error {
-	return status.Errorf(codes.Unimplemented, "%s plugin not registered", plugin)
+	ed := &v1.ErrorDetails{}
+	ed.Message = fmt.Sprintf("%s plugin not registered", plugin)
+
+	s := status.New(codes.Unimplemented, ed.Message)
+	s, _ = s.WithDetails(ed)
+
+	return s.Err()
+}
+
+func LogArg(arg interface{}) string {
+	value := getValue(arg)
+
+	if value.Kind() == reflect.Struct {
+
+		str := "{"
+		for i := 0; i < value.NumField(); i++ {
+
+			fieldType := value.Type().Field(i)
+			tag := fieldType.Tag.Get("log")
+			if tag == "" || tag == "-" {
+				continue
+			}
+
+			if len(str) > 1 {
+				str += ", "
+			}
+
+			field := value.Field(i)
+			str += fieldType.Name + ": " + LogArg(field.Interface())
+		}
+		str += "}"
+
+		return str
+
+	} else if value.Kind() == reflect.Map {
+		str := "{"
+
+		for k, v := range arg.(map[string]interface{}) {
+			if len(str) > 1 {
+				str += ", "
+			}
+			str += fmt.Sprintf("%v", k) + ": " + LogArg(v)
+		}
+
+		str += "}"
+
+		return str
+
+	} else {
+		return fmt.Sprintf("%v", arg)
+	}
+}
+
+func getValue(x interface{}) reflect.Value {
+	val := reflect.ValueOf(x)
+
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	return val
 }

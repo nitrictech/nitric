@@ -135,7 +135,12 @@ func (s *secretManagerSecretService) ensureSecret(sec *secret.Secret) (*secretma
 
 // Put - Creates a new secret if one doesn't exist, or just adds a new secret version
 func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	newErr := errors.ErrorsWithScope("SecretManagerSecretService.Put")
+	newErr := errors.ErrorsWithScope(
+		"SecretManagerSecretService.Put",
+		map[string]interface{}{
+			"secret": sec,
+		},
+	)
 
 	if err := validateNewSecret(sec, val); err != nil {
 		return nil, newErr(
@@ -186,7 +191,12 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 
 // Get - Retrieves a secret given a name and a version
 func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	newErr := errors.ErrorsWithScope("SecretManagerSecretService.Access")
+	newErr := errors.ErrorsWithScope(
+		"SecretManagerSecretService.Access",
+		map[string]interface{}{
+			"version": sv,
+		},
+	)
 
 	fullName, err := s.buildSecretVersionName(sv)
 

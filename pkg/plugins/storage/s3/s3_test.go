@@ -15,8 +15,17 @@
 package s3_service_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	"github.com/nitric-dev/membrane/tests/mocks/s3"
+	"fmt"
+	"net/http"
+	"net/url"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/golang/mock/gomock"
+	mock_s3iface "github.com/nitric-dev/membrane/mocks/s3"
+	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
+	mock_s3 "github.com/nitric-dev/membrane/tests/mocks/s3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -129,6 +138,78 @@ var _ = Describe("S3", func() {
 			When("The bucket doesn't exist", func() {
 
 			})
+		})
+	})
+	When("PreSignUrl", func() {
+		When("The bucket exists", func() {
+			// Set up a mock bucket, with a single item
+			storage := make(map[string]map[string][]byte)
+			storage["test-bucket"] = make(map[string][]byte)
+			crtl := gomock.NewController(GinkgoT())
+			mockStorageClient := mock_s3iface.NewMockS3API(crtl)
+			storagePlugin, _ := s3_service.NewWithClient(mockStorageClient)
+
+			When("A URL is requested for a known operation", func() {
+				It("Should successfully generate the URL", func() {
+
+					By("Calling ListBuckets to map the bucket name")
+					mockStorageClient.EXPECT().ListBuckets(gomock.Any()).Times(1).Return(&s3.ListBucketsOutput{
+						Buckets: []*s3.Bucket{{
+							Name: aws.String("test-bucket-aaa111"),
+						}},
+					}, nil)
+
+					mockStorageClient.EXPECT().GetBucketTagging(gomock.Any()).Times(1).Return(&s3.GetBucketTaggingOutput{TagSet: []*s3.Tag{{
+						Key:   aws.String("x-nitric-name"),
+						Value: aws.String("test-bucket"),
+					}}}, nil)
+
+					presign := 0
+					mockStorageClient.EXPECT().PutObjectRequest(&s3.PutObjectInput{
+						Bucket: aws.String("test-bucket-aaa111"), // the real bucket name should be provided here, not the nitric name
+						Key:    aws.String("test-key"),
+					}).Times(1).Return(&request.Request{
+						Operation: &request.Operation{
+							Name:       "",
+							HTTPMethod: "",
+							HTTPPath:   "",
+							Paginator:  nil,
+							// Unfortunately, PutObjectRequest returns a struct, instead of an interface,
+							// so we can't really mock it. However, if this BeforePresignFn returns an error
+							// it currently prevents the rest of the presign call and returns a blank url string.
+							// this is good enough to perform basic testing.
+							BeforePresignFn: func(r *request.Request) error {
+								presign += 1
+								return fmt.Errorf("test error")
+							},
+						},
+						HTTPRequest: &http.Request{Host: "", URL: &url.URL{
+							Scheme:      "",
+							Opaque:      "",
+							User:        nil,
+							Host:        "aws.example.com",
+							Path:        "",
+							RawPath:     "",
+							ForceQuery:  false,
+							RawQuery:    "",
+							Fragment:    "",
+							RawFragment: "",
+						}},
+					}, nil)
+
+					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", 1, uint32(60))
+					By("Returning an error")
+					// We always get an error due to inability to replace the Request with a mock
+					Expect(err).Should(HaveOccurred())
+
+					By("Returning a blank url")
+					// always blank - it's the best we can do without a real mock.
+					Expect(url).To(Equal(""))
+				})
+			})
+		})
+		When("The bucket doesn't exist", func() {
+
 		})
 	})
 })

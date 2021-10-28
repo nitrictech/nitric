@@ -21,59 +21,46 @@ import (
 )
 
 type PluginError struct {
-	code  codes.Code
-	msg   string
-	cause error
+	Code   codes.Code
+	Msg    string
+	Cause  error
+	Plugin string
+	Args   map[string]interface{}
 }
 
 func (p *PluginError) Unwrap() error {
-	return p.cause
+	return p.Cause
 }
 
 func (p *PluginError) Error() string {
-	if p.cause != nil {
+	if p.Cause != nil {
 		// If the wrapped error is an ApiError than these should unwrap
-		return fmt.Sprintf("%s: \n %s", p.msg, p.cause.Error())
+		return fmt.Sprintf("%s: \n %s", p.Msg, p.Cause.Error())
 	}
 
-	return fmt.Sprintf("%s", p.msg)
+	return fmt.Sprintf("%s", p.Msg)
 }
 
 // Code - returns a nitric api error code from an error or Unknown if the error was not a nitric api error
 func Code(e error) codes.Code {
 	if pe, ok := e.(*PluginError); ok {
-		return pe.code
+		return pe.Code
 	}
 
 	return codes.Unknown
 }
 
-// New - Creates a new nitric API error
-func new(c codes.Code, msg string) error {
-	return &PluginError{
-		code: c,
-		msg:  msg,
-	}
-}
-
-// NewWithCause - Creates a new nitric API error with the given error as it's cause
-func newWithCause(c codes.Code, msg string, cause error) error {
-	return &PluginError{
-		code:  c,
-		msg:   msg,
-		cause: cause,
-	}
-}
+type ErrorFactory = func(c codes.Code, msg string, cause error) error
 
 // ErrorsWithScope - Returns a new reusable error factory with the given scope
-func ErrorsWithScope(s string, ctx ...interface{}) func(c codes.Code, msg string, cause error) error {
-	return func(c codes.Code, msg string, cause error) error {
-		sMsg := fmt.Sprintf("%s(%v): %s", s, ctx, msg)
-
-		if cause == nil {
-			return new(c, sMsg)
+func ErrorsWithScope(scope string, args map[string]interface{}) ErrorFactory {
+	return func(code codes.Code, msg string, cause error) error {
+		return &PluginError{
+			Code:   code,
+			Msg:    msg,
+			Cause:  cause,
+			Plugin: scope,
+			Args:   args,
 		}
-
-		return newWithCause(c, sMsg, cause)
 	}
 }

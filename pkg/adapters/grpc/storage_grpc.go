@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
@@ -83,6 +84,39 @@ func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDelete
 		return &pb.StorageDeleteResponse{}, nil
 	} else {
 		return nil, NewGrpcError("StorageService.Delete", err)
+	}
+}
+
+func convertOperation(operation pb.StoragePreSignUrlRequest_Operation) (storage.Operation, error) {
+	if operation == pb.StoragePreSignUrlRequest_READ {
+		return storage.READ, nil
+	} else if operation == pb.StoragePreSignUrlRequest_WRITE {
+		return storage.WRITE, nil
+	}
+	return 0, fmt.Errorf("unknown storage operation, supported operations are READ and WRITE")
+}
+
+func (s *StorageServiceServer) PreSignUrl(ctx context.Context, req *pb.StoragePreSignUrlRequest) (*pb.StoragePreSignUrlResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.PreSignUrl", err)
+	}
+
+	intendedOp, err := convertOperation(req.GetOperation())
+	// For safety, don't set a default operation (like read). Only perform known operations
+	if err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.PreSignUrl", err)
+	}
+
+	if url, err := s.storagePlugin.PreSignUrl(req.GetBucketName(), req.GetKey(), intendedOp, req.GetExpiry()); err == nil {
+		return &pb.StoragePreSignUrlResponse{
+			Url: url,
+		}, nil
+	} else {
+		return nil, NewGrpcError("StorageService.PreSignUrl", err)
 	}
 }
 

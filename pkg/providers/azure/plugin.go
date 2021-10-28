@@ -18,10 +18,14 @@ import (
 	"github.com/nitric-dev/membrane/pkg/plugins/document"
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
 	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
 	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
 	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
 	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
 	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
 	"github.com/nitric-dev/membrane/pkg/providers"
 )
 
@@ -32,6 +36,10 @@ func New() providers.ServiceFactory {
 	return &AzureServiceFactory{}
 }
 
+func (p *AzureServiceFactory) NewSecretService() (secret.SecretService, error) {
+	return key_vault.New()
+}
+
 // NewDocumentService - Returns a MongoDB based document service
 func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, error) {
 	return mongodb_service.New()
@@ -39,7 +47,7 @@ func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, er
 
 // NewEventService - Returns Azure _ based events plugin
 func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
-	return &events.UnimplementedeventsPlugin{}, nil
+	return event_grid.New()
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin
@@ -54,5 +62,5 @@ func (p *AzureServiceFactory) NewQueueService() (queue.QueueService, error) {
 
 // NewStorageService - Returns Azure _ based storage plugin
 func (p *AzureServiceFactory) NewStorageService() (storage.StorageService, error) {
-	return &storage.UnimplementedStoragePlugin{}, nil
+	return azblob_service.New()
 }

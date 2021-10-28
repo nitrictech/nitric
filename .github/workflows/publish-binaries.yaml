@@ -1,0 +1,71 @@
+name: Release Binaries
+on:
+  release:
+    types: [published]
+
+jobs:
+  add_binaries:
+    name: Add Binaries to release
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.7     
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+      - name: Install modules
+        run: make install-tools
+      - name: Make binaries
+        run: make build-all-binaries
+      - name: Upload Dev
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-dev
+          asset_name: membrane-dev
+          asset_content_type: application/octet-stream
+      - name: Upload AWS
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-aws
+          asset_name: membrane-aws
+          asset_content_type: application/octet-stream
+      - name: Upload GCP
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-gcp
+          asset_name: membrane-gcp
+          asset_content_type: application/octet-stream
+      - name: Upload Azure
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-azure
+          asset_name: membrane-azure
+          asset_content_type: application/octet-stream
+      - name: Upload Digital Ocean
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/membrane-do
+          asset_name: membrane-do
+          asset_content_type: application/octet-stream

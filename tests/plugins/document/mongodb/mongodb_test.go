@@ -17,73 +17,16 @@ package mongodb_service_test
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
-	"syscall"
 
 	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
+	"github.com/nitric-dev/membrane/tests/plugins"
 	test "github.com/nitric-dev/membrane/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var shell = "/bin/sh"
-
-func startMongoImage() *exec.Cmd {
-	// Run mongodb container
-	args := []string{
-		"docker",
-		"run",
-		"-d",
-		"-p 27017-27019:27017-27019",
-		"--name mongodb-nitric",
-		"mongo:4.0",
-	}
-
-	cmd := exec.Command("/bin/sh", "-c", strings.Join(args[:], " "))
-	cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		panic(fmt.Sprintf("Error running MongoDB Image %v : %v", cmd, err))
-	}
-
-	// Makes process killable
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	return cmd
-}
-
-func stopMongoImage(cmd *exec.Cmd) {
-	
-    // clean up
-	stopArgs := []string{
-		"docker",
-		"container",
-		"stop",
-		"mongodb-nitric",
-	}
-
-	stopCmd := exec.Command(shell, "-c", strings.Join(stopArgs[:], " "))
-
-	if err := stopCmd.Run(); err != nil {
-		panic(fmt.Sprintf("Error stopping MongoDB container %v : %v", cmd, err))
-	}
-
-	removeArgs := []string{
-		"docker",
-		"container",
-		"rm",
-		"mongodb-nitric",
-	}
-
-	removeCmd :=  exec.Command(shell, "-c", strings.Join(removeArgs[:], " "))
-
-	if err := removeCmd.Run(); err != nil {
-		panic(fmt.Sprintf("Error removing MongoDB container %v : %v", cmd, err))
-	}
-}
+const containerName = "mongodb-nitric"
 
 func createMongoClient(ctx context.Context) (*mongo.Client, error) {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetDirect(true)
@@ -92,7 +35,7 @@ func createMongoClient(ctx context.Context) (*mongo.Client, error) {
 	if clientError != nil {
 		return nil, fmt.Errorf("mongodb error creating client: %v", clientError)
 	}
-	
+
 	connectError := client.Connect(ctx)
 
 	if connectError != nil {
@@ -100,11 +43,11 @@ func createMongoClient(ctx context.Context) (*mongo.Client, error) {
 	}
 
 	pingError := client.Ping(ctx, nil)
-	
+
 	if pingError != nil {
 		return nil, fmt.Errorf("mongodb unable to connect: %v", pingError)
 	}
-	
+
 	return client, nil
 }
 
@@ -112,10 +55,18 @@ var _ = Describe("MongoDB", func() {
 	defer GinkgoRecover()
 
 	// Start Mongo
-	mongoCmd := startMongoImage()
+	args := []string{
+		"docker",
+		"run",
+		"-d",
+		"-p 27017-27019:27017-27019",
+		"--name " + containerName,
+		"mongo:4.0",
+	}
+	plugins.StartContainer(containerName, args)
 
 	AfterSuite(func() {
-		stopMongoImage(mongoCmd)
+		plugins.StopContainer(containerName)
 	})
 
 	ctx := context.Background()
@@ -134,7 +85,8 @@ var _ = Describe("MongoDB", func() {
 	}
 
 	test.GetTests(docPlugin)
-    test.SetTests(docPlugin)
+	test.SetTests(docPlugin)
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
+	test.QueryStreamTests(docPlugin)
 })

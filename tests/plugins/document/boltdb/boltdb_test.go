@@ -48,4 +48,5 @@ var _ = Describe("Bolt", func() {
 	test.SetTests(docPlugin)
 	test.DeleteTests(docPlugin)
 	test.QueryTests(docPlugin)
+	test.QueryStreamTests(docPlugin)
 })

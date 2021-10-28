@@ -1,0 +1,23 @@
+name: Generate SDKs
+on:
+  release:
+    types: [published]
+
+jobs:
+  # Bump the membrane version
+  generate_sdks:
+    name: Signal base SDK repo for auto regen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Signal base SDK repo
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.NITRIC_BOT_TOKEN }}
+          repository: nitrictech/apis
+          event-type: generate
+          client-payload: >
+            {
+              "prerelease": ${{ github.event.release.prerelease }}, 
+              "tag_name": "${{ github.event.release.tag_name }}"
+            }
+  

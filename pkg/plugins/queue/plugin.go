@@ -39,12 +39,12 @@ type ReceiveOptions struct {
 	// Nitric name for the queue.
 	//
 	// queueName is a required field
-	QueueName string `type:"string" required:"true"`
+	QueueName string `type:"string" required:"true" log:"QueueName"`
 
 	// Max depth of queue messages to receive from the queue.
 	//
 	// If nil or 0, defaults to depth 1.
-	Depth *uint32 `type:"int" required:"false"`
+	Depth *uint32 `type:"int" required:"false" log:"Depth"`
 }
 
 func (p *ReceiveOptions) Validate() error {
@@ -77,6 +77,7 @@ type UnimplementedQueuePlugin struct {
 // Ensure UnimplementedQueuePlugin conforms to QueueService interface
 var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
+// TODO: replace NitricTask and []NitricTask with pointers
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
 func (*UnimplementedQueuePlugin) Send(queue string, task NitricTask) error {
 	return fmt.Errorf("UNIMPLEMENTED")

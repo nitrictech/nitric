@@ -3,7 +3,7 @@
 </p>
 
 ![test status](https://github.com/nitrictech/go-sdk/actions/workflows/test.yaml/badge.svg?branch=main)
-[![codecov](https://codecov.io/gh/nitrictech/membrane/branch/main/graph/badge.svg?token=20TYFIQS2P)](https://codecov.io/gh/nitrictech/membrane)
+[![codecov](https://codecov.io/gh/nitrictech/nitric/branch/develop/graph/badge.svg?token=20TYFIQS2P)](https://codecov.io/gh/nitrictech/nitric)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=nitrictech_membrane&metric=alert_status)](https://sonarcloud.io/dashboard?id=nitrictech_membrane)
 
 Nitric is a portable, provider independent runtime for cloud-native and serverless applications. Using Nitric applications can take advantage of cloud-native services for activities like eventing, queues, compute, CDN, storage, caches, etc. without direct integration to product specific APIs.
@@ -24,10 +24,9 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
 
 Additional services on our roadmap include:
 
-  - RDS
-  - Configuration
-  - Logging
   - Authentication
+  - Email
+  - Logging
 
 > If you have any requests or suggestions let us know in the issues.
 
@@ -35,11 +34,9 @@ SDKs are available for many languages, providing an idiomatic wrapper around the
 
   - [Node.js](https://github.com/nitrictech/node-sdk)
   - [Python](https://github.com/nitrictech/python-sdk)
-  - [Go](https://github.com/nitrictech/go-sdk)
   - [Java](https://github.com/nitrictech/java-sdk)
-  - [PHP](https://github.com/nitrictech/php-sdk)
-  - [.NET](https://github.com/nitrictech/dotnet-sdk)
-
+  - [Go](https://github.com/nitrictech/go-sdk)
+ 
 > If you have additional languages you would like support for let us know in the issues, we also welcome community contribtions for new language support.
 
 ## Architecture
@@ -79,12 +76,10 @@ provider as an alternative to the fixed set of plugins in the static membranes.
 
 ### Requirements
  - Git
- - Golang
+ - Golang (1.16)
  - Make
  - Docker
  - Google Protocol Buffers Compiler
- - Google Cloud SDK (for Firestore testing)
- - JRE (for DynamoDB testing)
 
 ### Getting Started
 
@@ -93,29 +88,14 @@ provider as an alternative to the fixed set of plugins in the static membranes.
 make install-tools
 ```
 
-#### Install integration testing tools
-```bash
-make install-test-tools
-```
-
 ##### Install Protocol Buffers
 Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
 
 > On MacOS with Homebrew, you can run `brew install protobuf`
 
-##### Install Google Cloud SDK
-Install the Google Cloud SDK following in the instructions at: https://cloud.google.com/sdk/docs/install
-
-#### Install JRE
-Install a Java Runtime Environment (JRE) version 11 or later for your OS. For example on Ubuntu Linux run:
-
-```bash
-sudo apt-get install openjdk-11-jdk
-```
-
 ### Run unit tests
 ```bash
-make tests
+make test
 ```
 ### Run integration tests
 ```bash

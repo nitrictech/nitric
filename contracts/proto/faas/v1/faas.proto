@@ -74,6 +74,10 @@ message HeaderValue {
   repeated string value = 1;
 }
 
+message QueryValue {
+  repeated string value = 1;
+}
+
 message HttpTriggerContext {
 
   // The request method
@@ -86,11 +90,15 @@ message HttpTriggerContext {
   // TODO: Remove in 1.0
   map<string, string> headers_old = 3 [deprecated=true];
   
-  // The query params (if parseable by the membrane)
-  map<string, string> query_params = 4;
+  // The old query params (preserving for backwards compatibility)
+  // TODO: Remove in 1.0
+  map<string, string> query_params_old = 4  [deprecated=true];
 
   // HTTP request headers
   map<string, HeaderValue> headers = 5;
+
+  // HTTP Query params
+  map<string, QueryValue> query_params = 6;
 }
 
 message TopicTriggerContext {

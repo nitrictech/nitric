@@ -109,7 +109,7 @@ func (s *Membrane) log(log string) {
 	}
 }
 
-func (s *Membrane) CreateSecretServer() v1.SecretServiceServer {
+func (s *Membrane) createSecretServer() v1.SecretServiceServer {
 	return grpc2.NewSecretServer(s.secretPlugin)
 }
 
@@ -119,7 +119,7 @@ func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
 }
 
 // Create a new Nitric events Server
-func (s *Membrane) createeventsServer() v1.EventServiceServer {
+func (s *Membrane) createEventsServer() v1.EventServiceServer {
 	return grpc2.NewEventServiceServer(s.eventsPlugin)
 }
 
@@ -162,14 +162,11 @@ func (s *Membrane) Start() error {
 	var opts []grpc.ServerOption
 	s.grpcServer = grpc.NewServer(opts...)
 
-	secretServer := s.CreateSecretServer()
-	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
-
 	// Load & Register the GRPC service plugins
 	documentServer := s.createDocumentServer()
 	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
 
-	eventsServer := s.createeventsServer()
+	eventsServer := s.createEventsServer()
 	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
 
 	topicServer := s.createTopicServer()
@@ -180,6 +177,9 @@ func (s *Membrane) Start() error {
 
 	queueServer := s.createQueueServer()
 	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
+
+	secretServer := s.createSecretServer()
+	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {

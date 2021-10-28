@@ -18,14 +18,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
+	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitric-dev/membrane/pkg/worker"
+	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	. "github.com/onsi/ginkgo"
@@ -88,11 +89,12 @@ var _ = Describe("Http", func() {
 		When("With a SubscriptionValidation event", func() {
 			It("Should return the provided validation code", func() {
 				validationCode := "test"
+				payload := map[string]string{
+					"ValidationCode": validationCode,
+				}
 				evt := []eventgrid.Event{
 					{
-						Data: eventgrid.SubscriptionValidationEventData{
-							ValidationCode: &validationCode,
-						},
+						Data: payload,
 					},
 				}
 

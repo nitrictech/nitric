@@ -16,6 +16,7 @@ package boltdb_service
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -59,7 +60,9 @@ func (d BoltDoc) String() string {
 func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Get",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -105,7 +108,9 @@ func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Set",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -151,7 +156,9 @@ func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) 
 func (s *BoltDocService) Delete(key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Delete",
-		fmt.Sprintf("key=%v", key),
+		map[string]interface{}{
+			"key": key,
+		},
 	)
 
 	if err := document.ValidateKey(key); err != nil {
@@ -209,12 +216,7 @@ func (s *BoltDocService) Delete(key *document.Key) error {
 	return nil
 }
 
-func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"BoltDocService.Query",
-		fmt.Sprintf("collection=%v", collection),
-	)
-
+func (s *BoltDocService) query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string, newErr errors.ErrorFactory) (*document.QueryResult, error) {
 	if err := document.ValidateQueryCollection(collection); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -349,6 +351,71 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 		Documents:   documents,
 		PagingToken: resultPagingToken,
 	}, nil
+}
+
+func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.Query",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	return s.query(collection, expressions, limit, pagingToken, newErr)
+}
+
+func (s *BoltDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+	newErr := errors.ErrorsWithScope(
+		"BoltDocService.QueryStream",
+		map[string]interface{}{
+			"collection": collection,
+		},
+	)
+
+	var tmpLimit = limit
+	var documents []document.Document
+	var pagingToken map[string]string
+
+	// Initial fetch
+	res, fetchErr := s.query(collection, expressions, limit, nil, newErr)
+
+	if fetchErr != nil {
+		// Return an error only iterator if the initial fetch failed
+		return func() (*document.Document, error) {
+			return nil, fetchErr
+		}
+	}
+
+	documents = res.Documents
+	pagingToken = res.PagingToken
+
+	return func() (*document.Document, error) {
+		// check the iteration state
+		if tmpLimit == 0 && limit > 0 {
+			// we've reached the limit of reading
+			return nil, io.EOF
+		} else if pagingToken != nil && len(documents) == 0 {
+			// we've run out of documents and have more pages to read
+			res, fetchErr = s.query(collection, expressions, tmpLimit, pagingToken, newErr)
+			documents = res.Documents
+			pagingToken = res.PagingToken
+		} else if pagingToken == nil && len(documents) == 0 {
+			// we're all out of documents and pages before hitting the limit
+			return nil, io.EOF
+		}
+
+		// We received an error fetching the docs
+		if fetchErr != nil {
+			return nil, fetchErr
+		}
+
+		// pop the first element
+		var doc document.Document
+		doc, documents = documents[0], documents[1:]
+		tmpLimit = tmpLimit - 1
+
+		return &doc, nil
+	}
 }
 
 // New - Create a new dev KV plugin

@@ -26,8 +26,8 @@ import (
 	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
 	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
 	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
 	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
+	minio_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/minio"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 	eventsPlugin, _ := events_service.New()
 	gatewayPlugin, _ := gateway_plugin.New()
 	queuePlugin, _ := queue_service.New()
-	storagePlugin, _ := boltdb_storage_service.New()
+	storagePlugin, _ := minio_storage_service.New()
 
 	m, err := membrane.New(&membrane.MembraneOptions{
 		DocumentPlugin: documentPlugin,

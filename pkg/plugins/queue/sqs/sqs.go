@@ -17,7 +17,6 @@ package sqs_service
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/nitric-dev/membrane/pkg/plugins/errors"
 	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
@@ -25,9 +24,15 @@ import (
 	"github.com/nitric-dev/membrane/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+)
+
+const (
+	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
+	ErrCodeNoSuchTagSet = "NoSuchTagSet"
 )
 
 type SQSQueueService struct {
@@ -36,27 +41,46 @@ type SQSQueueService struct {
 }
 
 // Get the URL for a given queue name
-func (s *SQSQueueService) getUrlForQueueName(queueName string) (*string, error) {
-	// TODO: Need to be able to guarantee same accound deployment in this case
-	// In this case it would be preferred to use this method
-	// s.client.GetQueueUrl(&sqs.GetQueueUrlInput{})
-	if out, err := s.client.ListQueues(&sqs.ListQueuesInput{}); err == nil {
-		for _, url := range out.QueueUrls {
-			if strings.HasSuffix(*url, queueName) {
-				return url, nil
-			}
-		}
-	} else {
-		return nil, fmt.Errorf("An Unexpected error occurred: %s", err)
+func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
+	out, err := s.client.ListQueues(&sqs.ListQueuesInput{})
+
+	if err != nil {
+		return nil, fmt.Errorf("Encountered an error retrieving the queue list: %v", err)
 	}
 
-	return nil, fmt.Errorf("Could not find Queue: %s", queueName)
+	for _, q := range out.QueueUrls {
+		// TODO: This could be rather slow, it's interesting that they don't return this in the list queues output
+		tagout, err := s.client.ListQueueTags(&sqs.ListQueueTagsInput{
+			QueueUrl: q,
+		})
+
+		if err != nil {
+			if awsErr, ok := err.(awserr.Error); ok {
+				if awsErr.Code() == ErrCodeNoSuchTagSet {
+					// Ignore queues with no tags, check the next queue
+					continue
+				}
+				return nil, err
+			}
+			return nil, err
+		}
+
+		for k, v := range tagout.Tags {
+			if k == "x-nitric-name" && *v == queue {
+				return q, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("Unable to find queue with name: %s", queue)
 }
 
 func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Send",
-		fmt.Sprintf("queue=%s", queueName),
+		map[string]interface{}{
+			"queue": queueName,
+			"task":  task,
+		},
 	)
 
 	tasks := []queue.NitricTask{task}
@@ -73,7 +97,10 @@ func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.SendBatch",
-		fmt.Sprintf("queue=%s", queueName),
+		map[string]interface{}{
+			"queue":     queueName,
+			"tasks.len": len(tasks),
+		},
 	)
 
 	if url, err := s.getUrlForQueueName(queueName); err == nil {
@@ -137,7 +164,9 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Receive",
-		fmt.Sprintf("options=%v", options),
+		map[string]interface{}{
+			"options": options,
+		},
 	)
 
 	if err := options.Validate(); err != nil {
@@ -205,7 +234,10 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 func (s *SQSQueueService) Complete(q string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Complete",
-		fmt.Sprintf("queue=%s", q),
+		map[string]interface{}{
+			"queue":   q,
+			"leaseId": leaseId,
+		},
 	)
 
 	if url, err := s.getUrlForQueueName(q); err == nil {

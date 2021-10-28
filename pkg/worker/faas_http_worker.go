@@ -124,6 +124,13 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		}
 	}
 
+	query := make(map[string]*pb.QueryValue)
+	for k, v := range trigger.Query {
+		query[k] = &pb.QueryValue{
+			Value: v,
+		}
+	}
+
 	triggerRequest := &pb.TriggerRequest{
 		Data:     trigger.Body,
 		MimeType: mimeType,
@@ -132,7 +139,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 				Path:        trigger.Path,
 				Headers:     headers,
 				Method:      trigger.Method,
-				QueryParams: trigger.Query,
+				QueryParams: query,
 			},
 		},
 	}
