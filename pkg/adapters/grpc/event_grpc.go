@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"google.golang.org/grpc/codes"
 )
 

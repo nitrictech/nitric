@@ -15,18 +15,18 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
-	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
-	"github.com/nitric-dev/membrane/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	event_grid "github.com/nitrictech/nitric/pkg/plugins/events/eventgrid"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
+	key_vault "github.com/nitrictech/nitric/pkg/plugins/secret/key_vault"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	azblob_service "github.com/nitrictech/nitric/pkg/plugins/storage/azblob"
+	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type AzureServiceFactory struct {

@@ -24,12 +24,12 @@ import (
 	"os"
 	"time"
 
-	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

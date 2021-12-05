@@ -21,9 +21,9 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	gax "github.com/googleapis/gax-go/v2"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"golang.org/x/oauth2/google"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	pbcodes "google.golang.org/grpc/codes"

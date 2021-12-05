@@ -15,9 +15,9 @@
 package pubsub_service_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
-	mock_pubsub "github.com/nitric-dev/membrane/tests/mocks/pubsub"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	pubsub_service "github.com/nitrictech/nitric/pkg/plugins/events/pubsub"
+	mock_pubsub "github.com/nitrictech/nitric/tests/mocks/pubsub"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

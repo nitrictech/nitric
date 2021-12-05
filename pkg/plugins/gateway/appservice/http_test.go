@@ -23,10 +23,10 @@ import (
 	"os"
 	"time"
 
-	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	. "github.com/onsi/ginkgo"

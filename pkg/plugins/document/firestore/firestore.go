@@ -20,9 +20,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 
 	grpcCodes "google.golang.org/grpc/codes"
 

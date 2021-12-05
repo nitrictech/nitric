@@ -21,10 +21,10 @@ import (
 	"os"
 	"time"
 
-	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+	gateway_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/dev"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

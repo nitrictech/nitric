@@ -21,12 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/utils"
 
-	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
+	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
 
 	"github.com/asdine/storm"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.etcd.io/bbolt"

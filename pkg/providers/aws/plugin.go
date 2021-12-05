@@ -15,17 +15,17 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	"github.com/nitric-dev/membrane/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
+	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type AWSServiceFactory struct {

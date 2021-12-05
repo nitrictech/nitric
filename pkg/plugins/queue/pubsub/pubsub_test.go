@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ifaces_pubsub "github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
-	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	mock_pubsub "github.com/nitric-dev/membrane/tests/mocks/pubsub"
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
+	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
+	mock_pubsub "github.com/nitrictech/nitric/tests/mocks/pubsub"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"

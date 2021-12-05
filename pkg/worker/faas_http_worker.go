@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/triggers"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/protobuf/encoding/protojson"
 )

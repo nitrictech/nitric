@@ -27,8 +27,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	mock_azblob "github.com/nitric-dev/membrane/mocks/azblob"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	mock_azblob "github.com/nitrictech/nitric/mocks/azblob"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
 )
 
 var _ = Describe("Azblob", func() {

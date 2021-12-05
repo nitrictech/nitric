@@ -17,14 +17,14 @@ package mock_pubsub
 import (
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
 	"strconv"
 	"time"
 
 	"github.com/googleapis/gax-go/v2"
+	"google.golang.org/api/iterator"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
-	"google.golang.org/api/iterator"
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
 )
 
 type MockPubsubClient struct {

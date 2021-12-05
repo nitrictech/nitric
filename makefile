@@ -201,12 +201,12 @@ generate-mocks:
 	@mkdir -p mocks/azblob
 	@mkdir -p mocks/mock_event_grid
 	@mkdir -p mocks/azqueue
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go

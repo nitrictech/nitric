@@ -28,11 +28,11 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	azureutils "github.com/nitric-dev/membrane/pkg/providers/azure/utils"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 type EventGridEventService struct {

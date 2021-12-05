@@ -17,7 +17,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 )
 
 type PluginError struct {

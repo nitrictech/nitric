@@ -15,17 +15,17 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	minio_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/minio"
-	"github.com/nitric-dev/membrane/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	boltdb_service "github.com/nitrictech/nitric/pkg/plugins/document/boltdb"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	events_service "github.com/nitrictech/nitric/pkg/plugins/events/dev"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	gateway_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/dev"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	minio_storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/minio"
+	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type DevServiceFactory struct {

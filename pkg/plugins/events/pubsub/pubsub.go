@@ -19,12 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ifaces_pubsub "github.com/nitric-dev/membrane/pkg/ifaces/pubsub"
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 )

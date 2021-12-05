@@ -17,10 +17,10 @@ package grpc_test
 import (
 	"context"
 
-	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
+	"github.com/nitrictech/nitric/pkg/adapters/grpc"
 
-	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

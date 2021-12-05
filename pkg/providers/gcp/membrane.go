@@ -21,13 +21,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
-	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
-	secret_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager"
+	"github.com/nitrictech/nitric/pkg/membrane"
+	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
+	pubsub_service "github.com/nitrictech/nitric/pkg/plugins/events/pubsub"
+	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
+	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
+	secret_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager"
+	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
 )
 
 func main() {

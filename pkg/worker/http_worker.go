@@ -19,7 +19,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/triggers"
 
 	"github.com/valyala/fasthttp"
 )

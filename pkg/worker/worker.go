@@ -17,9 +17,10 @@ package worker
 import (
 	"bytes"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/triggers"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 type Worker interface {

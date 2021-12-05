@@ -15,7 +15,7 @@
 package secret_test
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

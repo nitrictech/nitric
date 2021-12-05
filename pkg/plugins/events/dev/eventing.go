@@ -21,12 +21,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/utils"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 )
 
 type LocalEventService struct {

@@ -22,17 +22,17 @@ import (
 	"strconv"
 	"strings"
 
-	grpc2 "github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	"github.com/nitric-dev/membrane/pkg/worker"
+	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/worker"
 
-	v1 "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	"google.golang.org/grpc"
 )
 

@@ -16,12 +16,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/app_platform"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/nitrictech/nitric/pkg/membrane"
+	appplatform_service "github.com/nitrictech/nitric/pkg/plugins/gateway/app_platform"
 )
 
 func main() {
