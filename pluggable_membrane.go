@@ -75,11 +75,11 @@ func main() {
 	}
 
 	// Load the concrete service implementations
-	var documentService document.DocumentService = nil
-	var eventService events.EventService = nil
-	var gatewayService gateway.GatewayService = nil
-	var queueService queue.QueueService = nil
-	var storageService storage.StorageService = nil
+	var documentService document.DocumentService
+	var eventService events.EventService
+	var gatewayService gateway.GatewayService
+	var queueService queue.QueueService
+	var storageService storage.StorageService
 
 	// Load the document service
 	if documentService, err = serviceFactory.NewDocumentService(); err != nil {

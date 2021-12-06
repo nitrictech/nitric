@@ -82,8 +82,8 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	}
 
 	for _, b := range out.Buckets {
-		var selected bool = false
-		var selectErr error = nil
+		var selected bool
+		var selectErr error
 
 		if s.selector == nil {
 			// if selector is undefined us the default selector
