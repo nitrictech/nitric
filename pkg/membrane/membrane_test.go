@@ -60,7 +60,6 @@ type MockFunction struct {
 }
 
 func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
-
 	if m.requests == nil {
 		m.requests = make([]*http.Request, 0)
 	}

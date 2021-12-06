@@ -281,7 +281,6 @@ func (s *MongoDocService) getCursor(collection *document.Collection, expressions
 			}
 
 			query[expOperand] = startsWith
-
 		} else {
 			query[expOperand] = bson.D{
 				{s.getOperator(exp.Operator), exp.Value},

@@ -178,12 +178,10 @@ type LambdaGateway struct {
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-
 	for _, request := range event.Requests {
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
-
 				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
 					Http: httpEvent,
 				})

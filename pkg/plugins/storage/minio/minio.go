@@ -78,7 +78,6 @@ func nameSelector(nitricName string, bucket *s3.Bucket) (bool, error) {
 }
 
 func New() (storage.StorageService, error) {
-
 	conf, err := configFromEnv()
 
 	if err != nil {

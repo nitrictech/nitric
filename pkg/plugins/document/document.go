@@ -168,10 +168,8 @@ func (exps ExpsSort) Len() int {
 
 // Less - Sort by Operand then Operator then Value
 func (exps ExpsSort) Less(i, j int) bool {
-
 	operandCompare := strings.Compare(exps[i].Operand, exps[j].Operand)
 	if operandCompare == 0 {
-
 		// Reverse operator comparison for to support range expressions
 		operatorCompare := strings.Compare(exps[j].Operator, exps[i].Operator)
 		if operatorCompare == 0 {
@@ -179,11 +177,9 @@ func (exps ExpsSort) Less(i, j int) bool {
 			jVal := fmt.Sprintf("%v", exps[2].Value)
 
 			return strings.Compare(iVal, jVal) < 0
-
 		} else {
 			return operatorCompare < 0
 		}
-
 	} else {
 		return operandCompare < 0
 	}
@@ -216,7 +212,6 @@ func validateSubCollectionDepth(collection *Collection) error {
 // DynamoDB only supports query range operands: >= AND <=
 // For example: WHERE price >= 20.00 AND price <= 50.0
 func hasRangeError(exps []QueryExpression) error {
-
 	sortedExps := make([]QueryExpression, len(exps))
 	copy(sortedExps, exps)
 
@@ -230,7 +225,6 @@ func hasRangeError(exps []QueryExpression) error {
 				((exp.Operator == ">" && nextExp.Operator == "<") ||
 					(exp.Operator == ">" && nextExp.Operator == "<=") ||
 					(exp.Operator == ">=" && nextExp.Operator == "<")) {
-
 				// Range expression combination not supported with DynamoDB, must use >= and <= which maps to DynamoDB BETWEEN
 				return fmt.Errorf("range expression combination not supported (use operators >= and <=) : %v", exp)
 			}

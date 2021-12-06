@@ -220,7 +220,6 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		}
 
 		return tasks, nil
-
 	} else {
 		return nil, newErr(
 			codes.NotFound,

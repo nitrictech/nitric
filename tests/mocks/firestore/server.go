@@ -80,7 +80,6 @@ func (m *MockFirestoreServer) ClearStore() {
 }
 
 func (m *MockFirestoreServer) BatchGetDocuments(req *pb.BatchGetDocumentsRequest, stream pb.Firestore_BatchGetDocumentsServer) error {
-
 	for _, docName := range req.GetDocuments() {
 		parts := strings.Split(docName, "/")
 		collection := parts[len(parts)-2]

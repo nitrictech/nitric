@@ -3,10 +3,10 @@ run:
 
 linters:
   disable-all: true
-  enable: [
-    "goimports",
-    "gofmt",
-  ]
+  enable:
+  - goimports
+  - gofmt
+  - whitespace
 
 linters-settings:
   goimports:

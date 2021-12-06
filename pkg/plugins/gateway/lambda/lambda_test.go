@@ -41,7 +41,6 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 	// cast the function type to what we know it will be
 	typedFunc := handler.(func(ctx context.Context, event lambda_service.Event) (interface{}, error))
 	for _, event := range m.eventQueue {
-
 		bytes, _ := json.Marshal(event)
 		evt := lambda_service.Event{}
 

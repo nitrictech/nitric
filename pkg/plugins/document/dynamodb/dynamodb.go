@@ -229,7 +229,6 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 	// Delete sub collection items
 	if key.Collection.Parent == nil {
-
 		var lastEvaluatedKey map[string]*dynamodb.AttributeValue
 		for {
 			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
@@ -320,7 +319,6 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 	// If more results available, perform additional queries
 	for remainingLimit > 0 &&
 		(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
-
 		if res, err := s.query(collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -458,7 +456,6 @@ func createKeyMap(key *document.Key) map[string]string {
 	if parentKey == nil {
 		keyMap[AttribPk] = key.Id
 		keyMap[AttribSk] = key.Collection.Name + "#"
-
 	} else {
 		keyMap[AttribPk] = parentKey.Id
 		keyMap[AttribSk] = key.Collection.Name + "#" + key.Id
@@ -496,7 +493,6 @@ func (s *DynamoDocService) performQuery(
 	limit int,
 	pagingToken map[string]string,
 ) (*document.QueryResult, error) {
-
 	if collection.Parent == nil {
 		// Should never occur
 		return nil, fmt.Errorf("cannot perform query without partion key defined")
@@ -580,7 +576,6 @@ func (s *DynamoDocService) performScan(
 	limit int,
 	pagingToken map[string]string,
 ) (*document.QueryResult, error) {
-
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
@@ -720,7 +715,6 @@ func marshalQueryResult(collection *document.Collection, items []map[string]*dyn
 }
 
 func createFilterExpression(expressions []document.QueryExpression) string {
-
 	keyExp := ""
 	for i, exp := range expressions {
 		if keyExp != "" {
@@ -730,19 +724,15 @@ func createFilterExpression(expressions []document.QueryExpression) string {
 		if isBetweenStart(i, expressions) {
 			// #{exp.operand} BETWEEN :{exp.operand}{exp.index})
 			keyExp += fmt.Sprintf("#%v BETWEEN :%s%d", exp.Operand, exp.Operand, i)
-
 		} else if isBetweenEnd(i, expressions) {
 			// AND :{exp.operand}{exp.index})
 			keyExp += fmt.Sprintf(":%s%d", exp.Operand, i)
-
 		} else if exp.Operator == "startsWith" {
 			// begins_with(#{exp.operand}, :{exp.operand}{exp.index})
 			keyExp += fmt.Sprintf("begins_with(#%s, :%s%d)", exp.Operand, exp.Operand, i)
-
 		} else if exp.Operator == "==" {
 			// #{exp.operand} = :{exp.operand}{exp.index}
 			keyExp += fmt.Sprintf("#%s = :%s%d", exp.Operand, exp.Operand, i)
-
 		} else {
 			// #{exp.operand} {exp.operator} :{exp.operand}{exp.index}
 			keyExp += fmt.Sprintf("#%s %s :%s%d", exp.Operand, exp.Operator, exp.Operand, i)
@@ -832,7 +822,6 @@ func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dy
 func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.QueryOutput) error {
 	itemIndex := 0
 	for itemIndex < len(resp.Items) {
-
 		batchInput := &dynamodb.BatchWriteItemInput{}
 		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
 		writeRequests := make([]*dynamodb.WriteRequest, 0, maxBatchWrite)

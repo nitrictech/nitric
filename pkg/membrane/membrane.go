@@ -281,7 +281,6 @@ func (s *Membrane) Stop() {
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
-
 	// Get unset options from env or defaults
 	if options.ServiceAddress == "" {
 		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
