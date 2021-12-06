@@ -44,14 +44,13 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 		bytes, _ := json.Marshal(event)
 		evt := lambda_service.Event{}
 
-		json.Unmarshal(bytes, &evt)
+		err := json.Unmarshal(bytes, &evt)
+		Expect(err).To(BeNil())
+
 		// Unmarshal the thing into the event type we expect...
 		// TODO: Do something with out results here...
-		_, err := typedFunc(context.TODO(), evt)
-
-		if err != nil {
-			// Print the error?
-		}
+		_, err = typedFunc(context.TODO(), evt)
+		Expect(err).To(BeNil())
 	}
 }
 

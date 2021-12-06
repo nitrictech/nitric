@@ -1,5 +1,7 @@
 run:
   timeout: "5m"
+  skip-files:
+    - tools/tools.go
 
 linters:
   disable-all: true
@@ -7,6 +9,7 @@ linters:
   - goimports
   - gofmt
   - whitespace
+  - staticcheck
 
 linters-settings:
   goimports:

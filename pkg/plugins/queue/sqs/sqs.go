@@ -208,7 +208,11 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 			bodyBytes := []byte(*m.Body)
 			err := json.Unmarshal(bodyBytes, &nitricTask)
 			if err != nil {
-				// TODO: append error to error list and Nack the message.
+				return nil, newErr(
+					codes.Internal,
+					"failed unmarshalling body",
+					err,
+				)
 			}
 
 			tasks = append(tasks, queue.NitricTask{

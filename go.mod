@@ -34,6 +34,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
+	github.com/pkg/errors v0.9.1
 	github.com/uw-labs/lichen v0.1.4
 	github.com/valyala/fasthttp v1.30.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect

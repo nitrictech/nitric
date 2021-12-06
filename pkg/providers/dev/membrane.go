@@ -32,7 +32,7 @@ import (
 
 func main() {
 	// Setup signal interrupt handling for graceful shutdown
-	term := make(chan os.Signal)
+	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 

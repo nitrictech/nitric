@@ -19,6 +19,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -54,14 +55,13 @@ func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 
 	// TODO: Handle response or error and respond appropriately
 	err := fasthttp.Do(httpRequest, &resp)
-
-	if &resp != nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
+	if err == nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
-	} else if &resp != nil {
-		return fmt.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
 	}
-
-	return fmt.Errorf("Error processing event: %s", err.Error())
+	if err != nil {
+		return errors.Wrapf(err, "Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
+	}
+	return errors.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.

@@ -68,6 +68,7 @@ var _ = Describe("Http", func() {
 
 			It("Should be handled successfully", func() {
 				request, err := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader([]byte("Test")))
+				Expect(err).To(BeNil())
 				request.Header.Add("x-nitric-request-id", "1234")
 				request.Header.Add("x-nitric-payload-type", "Test Payload")
 				request.Header.Add("User-Agent", "Test")
@@ -139,8 +140,10 @@ var _ = Describe("Http", func() {
 
 			It("Should handle the event successfully", func() {
 				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payloadBytes))
+				Expect(err).To(BeNil())
 				request.Header.Add("Content-Type", "application/json")
 				resp, err := http.DefaultClient.Do(request)
+				Expect(err).To(BeNil())
 				responseBody, _ := ioutil.ReadAll(resp.Body)
 
 				By("Not returning an error")
