@@ -21,12 +21,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	mock_nitric "github.com/nitrictech/nitric/mocks/nitric"
 	mock_sync "github.com/nitrictech/nitric/mocks/sync"
 	"github.com/nitrictech/nitric/pkg/triggers"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("grpcWorkerBase", func() {

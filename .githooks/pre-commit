@@ -5,32 +5,19 @@ if [[ "$STAGED_GO_FILES" = "" ]]; then
   exit 0
 fi
 
-PASS=true
-
-for FILE in $STAGED_GO_FILES
-do
-  go run golang.org/x/tools/cmd/goimports -w $FILE
-
-# TODO: Add golint
-#  golint "-set_exit_status" $FILE
-#  if [[ $? == 1 ]]; then
-#    PASS=false
-#  fi
-
-# TODO: Add go vet
-#  go vet $FILE
-#  if [[ $? != 0 ]]; then
-#    PASS=false
-#  fi
-
-  gofmt -s -w $FILE
-done
-
-if ! $PASS; then
+# first try and use lint to fix issues
+go run github.com/golangci/golangci-lint/cmd/golangci-lint run --fix
+if [[ $? == 1 ]]; then
   printf "COMMIT FAILED\n"
   exit 1
-else
-  printf "COMMIT SUCCEEDED\n"
 fi
 
+# if it is still not good, then fail the commit.
+go run github.com/golangci/golangci-lint/cmd/golangci-lint run
+if [[ $? == 1 ]]; then
+  printf "COMMIT FAILED\n"
+  exit 1
+fi
+
+printf "COMMIT SUCCEEDED\n"
 exit 0

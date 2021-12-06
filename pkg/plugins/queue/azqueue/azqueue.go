@@ -21,18 +21,16 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	azqueueserviceiface "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface"
-	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
-
-	"github.com/nitrictech/nitric/pkg/utils"
-
-	"github.com/Azure/azure-storage-queue-go/azqueue"
 
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	azqueueserviceiface "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface"
+	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 // Set to 30 seconds,

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/valyala/fasthttp"
+
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
-
-	"github.com/nitrictech/nitric/pkg/plugins/gateway"
-	"github.com/valyala/fasthttp"
 )
 
 type HttpMiddleware func(*fasthttp.RequestCtx, worker.WorkerPool) bool

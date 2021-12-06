@@ -21,13 +21,14 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	gax "github.com/googleapis/gax-go/v2"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"golang.org/x/oauth2/google"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	pbcodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 )
 
 // SecretManagerClient - iface that exposes utilized subset of generated SecretManagerServiceClient

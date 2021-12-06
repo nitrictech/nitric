@@ -22,13 +22,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type eventType int

@@ -19,9 +19,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-
 	"github.com/valyala/fasthttp"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 // A Nitric HTTP worker

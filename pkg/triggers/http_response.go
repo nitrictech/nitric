@@ -17,8 +17,9 @@ package triggers
 import (
 	"fmt"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
+
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
 // HttpRequest - Storage information that captures a HTTP Request

@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 
 	"cloud.google.com/go/storage"
+
 	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
 )
 

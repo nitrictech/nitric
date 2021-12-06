@@ -16,10 +16,11 @@ package worker
 
 import (
 	"github.com/golang/mock/gomock"
-	mock "github.com/nitrictech/nitric/mocks/worker"
-	"github.com/nitrictech/nitric/pkg/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	mock "github.com/nitrictech/nitric/mocks/worker"
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 var _ = Describe("SubscriptionWorker", func() {

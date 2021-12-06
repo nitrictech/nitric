@@ -17,9 +17,10 @@ package document_suite
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/pkg/plugins/document"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/plugins/document"
 )
 
 func QueryTests(docPlugin document.DocumentService) {

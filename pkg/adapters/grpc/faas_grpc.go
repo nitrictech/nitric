@@ -17,9 +17,10 @@ package grpc
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/pkg/worker"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/nitrictech/nitric/pkg/worker"
 
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )

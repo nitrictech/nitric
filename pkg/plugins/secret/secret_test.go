@@ -15,9 +15,10 @@
 package secret_test
 
 import (
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 )
 
 var _ = Describe("Unimplemented Secret Plugin Tests", func() {

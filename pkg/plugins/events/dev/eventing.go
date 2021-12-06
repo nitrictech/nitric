@@ -21,12 +21,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 type LocalEventService struct {

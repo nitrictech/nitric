@@ -20,10 +20,12 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitrictech/nitric/mocks/key_vault"
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	mocks "github.com/nitrictech/nitric/mocks/key_vault"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 )
 
 var _ = Describe("Key Vault", func() {

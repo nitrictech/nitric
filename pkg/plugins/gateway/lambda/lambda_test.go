@@ -19,15 +19,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/aws/aws-lambda-go/events"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
-
-	"github.com/aws/aws-lambda-go/events"
-	ep "github.com/nitrictech/nitric/pkg/plugins/events"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 type MockLambdaRuntime struct {

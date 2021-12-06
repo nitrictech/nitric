@@ -19,15 +19,15 @@ import (
 	"fmt"
 	"strings"
 
-	utils2 "github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	utils2 "github.com/nitrictech/nitric/pkg/utils"
 )
 
 type SnsEventService struct {

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
+	"github.com/valyala/fasthttp"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/valyala/fasthttp"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {

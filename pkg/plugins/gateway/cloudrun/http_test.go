@@ -24,14 +24,14 @@ import (
 	"os"
 	"time"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
-
-	"github.com/nitrictech/nitric/pkg/plugins/events"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"

@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"reflect"
 
-	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
 )
 
 // Provides GRPC error reporting

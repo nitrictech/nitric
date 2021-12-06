@@ -22,11 +22,12 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/valyala/fasthttp"
+
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/errors"
 	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/valyala/fasthttp"
 )
 
 type GrpcWorker interface {

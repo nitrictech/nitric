@@ -21,14 +21,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/plugins/document"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/pkg/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const (

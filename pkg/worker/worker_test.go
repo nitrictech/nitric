@@ -15,9 +15,10 @@
 package worker
 
 import (
-	"github.com/nitrictech/nitric/pkg/triggers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 var _ = Describe("Worker", func() {

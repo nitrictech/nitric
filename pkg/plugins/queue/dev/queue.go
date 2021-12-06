@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/asdine/storm"
+	"github.com/google/uuid"
+	"go.etcd.io/bbolt"
+
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
-	"go.etcd.io/bbolt"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const DEV_SUB_DIRECTORY = "./queues/"

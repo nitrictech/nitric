@@ -20,8 +20,9 @@ import (
 	boltdb_service "github.com/nitrictech/nitric/pkg/plugins/document/boltdb"
 	"github.com/nitrictech/nitric/pkg/utils"
 
-	test "github.com/nitrictech/nitric/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
+
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
 var _ = Describe("Bolt", func() {

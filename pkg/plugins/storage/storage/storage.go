@@ -19,15 +19,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
-
 	"cloud.google.com/go/storage"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+
+	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
 )
 
 type StorageStorageService struct {

@@ -18,16 +18,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const (

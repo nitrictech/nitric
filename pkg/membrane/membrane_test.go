@@ -22,18 +22,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/membrane"
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
+	"github.com/nitrictech/nitric/pkg/membrane"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 )
 
 type MockDocumentServer struct {
