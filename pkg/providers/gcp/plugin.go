@@ -15,17 +15,17 @@
 package main
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	pubsub_service "github.com/nitric-dev/membrane/pkg/plugins/events/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	cloudrun_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/cloudrun"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	pubsub_queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/pubsub"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
-	"github.com/nitric-dev/membrane/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	pubsub_service "github.com/nitrictech/nitric/pkg/plugins/events/pubsub"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
+	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type GCPServiceFactory struct {

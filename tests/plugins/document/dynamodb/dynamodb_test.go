@@ -19,10 +19,10 @@ import (
 	"os"
 	"time"
 
-	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
+	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
 
-	"github.com/nitric-dev/membrane/tests/plugins"
-	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	"github.com/nitrictech/nitric/tests/plugins"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 
 	. "github.com/onsi/ginkgo"
 

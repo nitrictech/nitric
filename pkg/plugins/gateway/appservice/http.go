@@ -17,13 +17,13 @@ package http_service
 import (
 	"encoding/json"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/base_http"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	"github.com/valyala/fasthttp"
 )
 

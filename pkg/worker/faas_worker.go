@@ -21,10 +21,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/triggers"
 
 	"github.com/google/uuid"
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 )
 

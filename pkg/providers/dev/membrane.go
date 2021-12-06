@@ -21,13 +21,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
-	gateway_plugin "github.com/nitric-dev/membrane/pkg/plugins/gateway/dev"
-	queue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/dev"
-	secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/dev"
-	minio_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/minio"
+	"github.com/nitrictech/nitric/pkg/membrane"
+	boltdb_service "github.com/nitrictech/nitric/pkg/plugins/document/boltdb"
+	events_service "github.com/nitrictech/nitric/pkg/plugins/events/dev"
+	gateway_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/dev"
+	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
+	secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/dev"
+	minio_storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/minio"
 )
 
 func main() {

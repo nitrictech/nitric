@@ -19,9 +19,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	events_service "github.com/nitric-dev/membrane/pkg/plugins/events/dev"
+	events_service "github.com/nitrictech/nitric/pkg/plugins/events/dev"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -16,9 +16,10 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/worker"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/worker"
+
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
 type FaasServer struct {

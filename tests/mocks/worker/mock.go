@@ -15,7 +15,7 @@
 package worker_mocks
 
 import (
-	triggers2 "github.com/nitric-dev/membrane/pkg/triggers"
+	triggers2 "github.com/nitrictech/nitric/pkg/triggers"
 )
 
 type MockWorkerOptions struct {

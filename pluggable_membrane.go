@@ -22,14 +22,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
-	"github.com/nitric-dev/membrane/pkg/providers"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/membrane"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 // Pluggable version of the Nitric membrane

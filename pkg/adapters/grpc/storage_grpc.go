@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	"google.golang.org/grpc/codes"
 )
 

@@ -17,7 +17,7 @@ package document_suite
 import (
 	"io"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

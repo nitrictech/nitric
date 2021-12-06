@@ -15,7 +15,7 @@
 package document_suite
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
 )
 
 // Simple 'users' collection test data

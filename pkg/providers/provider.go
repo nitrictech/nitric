@@ -15,11 +15,11 @@
 package providers
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/document"
-	"github.com/nitric-dev/membrane/pkg/plugins/events"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
-	"github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
 )
 
 // ServiceFactory - interface for Service Factory Plugins, which instantiate provider specific service implementations.

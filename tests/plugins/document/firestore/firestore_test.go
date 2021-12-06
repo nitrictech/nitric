@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	firestore_service "github.com/nitric-dev/membrane/pkg/plugins/document/firestore"
+	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
 
 	"cloud.google.com/go/firestore"
-	"github.com/nitric-dev/membrane/tests/plugins"
-	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	"github.com/nitrictech/nitric/tests/plugins"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 

@@ -17,7 +17,7 @@ package triggers
 import (
 	"fmt"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 )
 

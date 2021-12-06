@@ -17,8 +17,8 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"google.golang.org/grpc/codes"
 )
 

@@ -16,8 +16,8 @@
 package appplatform_service
 
 import (
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway/base_http"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 )
 
 // Create new HTTP gateway
