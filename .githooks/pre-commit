@@ -9,7 +9,7 @@ PASS=true
 
 for FILE in $STAGED_GO_FILES
 do
-  goimports -w $FILE
+  go run golang.org/x/tools/cmd/goimports -w $FILE
 
 # TODO: Add golint
 #  golint "-set_exit_status" $FILE
