@@ -8,20 +8,28 @@ fmt:
 
 lint:
 	@echo Formatting Code
-	@golint ./...
+	@go run golang.org/x/lint/golint ./...
 
 install:
 	@echo installing go dependencies
 	@go mod download
 
-install-tools: install
-	@echo Installing tools from tools.go
-	@cat ./tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go get %
+install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
 
-clean:
+${GOPATH}/bin/protoc-gen-go:
+	go get github.com/golang/protobuf/protoc-gen-go
+
+${GOPATH}/bin/protoc-gen-go-grpc:
+	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
+${GOPATH}/bin/protoc-gen-validate:
+	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
+
+clean: check-gopath
 	@rm -rf ./bin/
 	@rm -rf ./lib/
 	@rm -rf ./interfaces/
+	@rm -f ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate:
 
 # Run the integration tests
 test-integration: install-tools generate-proto
@@ -39,29 +47,29 @@ test-coverage: install-tools generate-mocks generate-proto
 
 license-check-dev: dev-static
 	@echo Checking Dev Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-aws: aws-static
 	@echo Checking AWS Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-gcp: gcp-static
 	@echo Checking GCP Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 license-header-add:
 	@echo Add License Headers to Source Files
-	@addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 
 license-header-check:
 	@echo Checking License Headers to Source Files
-	@addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
@@ -74,7 +82,6 @@ endif
 # Generate interfaces
 generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
-	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 	@mkdir -p ./interfaces/
 	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ${GOPATH}/src/github.com/envoyproxy/protoc-gen-validate
 
