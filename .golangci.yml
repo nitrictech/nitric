@@ -10,6 +10,7 @@ linters:
   - gofmt
   - whitespace
   - staticcheck
+  - structcheck
 
 linters-settings:
   goimports:

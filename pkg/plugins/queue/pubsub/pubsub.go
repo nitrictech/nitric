@@ -37,7 +37,6 @@ type PubsubQueueService struct {
 	client              ifaces_pubsub.PubsubClient
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)
 	projectId           string
-	messages            []*pubsub.Message
 }
 
 // TODO: clearly document the reason for this subscription.
