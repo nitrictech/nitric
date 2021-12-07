@@ -6,13 +6,21 @@
 [![codecov](https://codecov.io/gh/nitrictech/nitric/branch/develop/graph/badge.svg?token=20TYFIQS2P)](https://codecov.io/gh/nitrictech/nitric)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=nitrictech_membrane&metric=alert_status)](https://sonarcloud.io/dashboard?id=nitrictech_membrane)
 
-Nitric is a portable, provider independent runtime for cloud-native and serverless applications. Using Nitric applications can take advantage of cloud-native services for activities like eventing, queues, compute, CDN, storage, caches, etc. without direct integration to product specific APIs.
+[Nitric](https://nitric.io) is a portable, provider independent runtime for cloud-native and serverless applications. Using Nitric, applications take advantage of cloud-native services for activities like eventing, queues, compute, CDN, storage, caches, etc. without direct integration to cloud specific APIs.
 
-This decoupling enables applications to remain portable between cloud-providers and alternate deployment options such as Kubernetes or stand-alone servers, from a single application codebase. Nitric also takes an _intention based design_ approach to applications, where services and their resources are described in terms of how they should behave, allowing Nitric to ensure that behavior across a variety of providers and services.
+This decoupling enables applications to remain portable between cloud-providers and alternate deployment options such as Kubernetes or stand-alone servers, from a single application codebase.
 
-[Read the docs](https://nitric.io/docs) to get started.
+## Documentation
 
-# Nitric Membrane
+The full documentation is available at [nitric.io/docs](https://nitric.io/docs)
+
+We also have a [getting started guide](https://nitric.io/docs/getting-started/multi-cloud) for AWS, Google Cloud and Azure
+
+## Status
+
+Nitric is currently in Public Preview, anyone can use or deploy applications, but work remains and changes are likely
+
+## Nitric Membrane
 
 The Membrane is at the heart of the solution. Nitric applications communicate with the Membrane via gRPC to access the following services in a provider agnostic way:
 
