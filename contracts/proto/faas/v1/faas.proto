@@ -99,6 +99,9 @@ message HttpTriggerContext {
 
   // HTTP Query params
   map<string, QueryValue> query_params = 6;
+
+  // HTTP Path parameters
+  map<string, string> path_params = 7;
 }
 
 message TopicTriggerContext {

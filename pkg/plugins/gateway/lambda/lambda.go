@@ -149,6 +149,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 					Method: evt.RequestContext.HTTP.Method,
 					Path:   evt.RawPath,
 					Query:  qVals,
+					Params: evt.PathParameters,
 				})
 			}
 		}

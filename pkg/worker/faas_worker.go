@@ -118,6 +118,7 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 				QueryParamsOld: queryOld,
 				Headers:        headers,
 				HeadersOld:     headersOld,
+				PathParams:     trigger.Params,
 			},
 		},
 	}

@@ -15,8 +15,10 @@
 package triggers
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -29,12 +31,33 @@ type HttpRequest struct {
 	Method string
 	// The original path
 	Path string
+	// Extracted params (if configured) from the path
+	Params map[string]string
 	// URL query parameters
 	Query map[string][]string
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
 	return TriggerType_Request
+}
+
+const paramToken = ":"
+
+func parsePathParams(exp string, path string) (map[string]string, error) {
+	pathParts := strings.Split(path, "/")
+	expPathParts := strings.Split(exp, "/")
+	params := make(map[string]string)
+
+	for i, s := range expPathParts {
+		if strings.HasPrefix(s, paramToken) {
+			paramName := strings.Replace(s, paramToken, "", -1)
+			params[paramName] = pathParts[i]
+		} else if pathParts[i] != expPathParts[i] {
+			return nil, fmt.Errorf("unable to match path")
+		}
+	}
+
+	return params, nil
 }
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
@@ -67,11 +90,21 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 		queryArgs[k] = append(queryArgs[k], string(val))
 	})
 
+	// Get gateway path if one is configured to parse on
+	gwPath := utils.GetEnv("GW_PATH", "")
+
+	var params = make(map[string]string)
+	if gwPath != "" {
+		// Check if we should parse path params
+		params, _ = parsePathParams(gwPath, string(ctx.Path()))
+	}
+
 	return &HttpRequest{
 		Header: headerCopy,
 		Body:   ctx.Request.Body(),
 		Method: string(ctx.Method()),
 		Path:   string(ctx.Path()),
 		Query:  queryArgs,
+		Params: params,
 	}
 }

@@ -59,7 +59,6 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	if jsonData, err := protojson.Marshal(triggerRequest); err == nil {
-		fmt.Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)
@@ -67,7 +66,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 		err := fasthttp.Do(request, response)
 
 		if err != nil {
-			return fmt.Errorf("Function request failed")
+			return fmt.Errorf("function request failed")
 		}
 
 		// Response body should contain an instance of triggerResponse
@@ -140,6 +139,7 @@ func (h *FaasHttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 				Headers:     headers,
 				Method:      trigger.Method,
 				QueryParams: query,
+				PathParams:  trigger.Params,
 			},
 		},
 	}
@@ -189,7 +189,7 @@ func NewFaasHttpWorker(address string) (*FaasHttpWorker, error) {
 				time.Sleep(pollInterval)
 				waitedTime += pollInterval
 			} else {
-				return nil, fmt.Errorf("Unable to dial http worker, does it expose a http server at: %s?", address)
+				return nil, fmt.Errorf("unable to dial http worker, does it expose a http server at: %s?", address)
 			}
 		}
 	}
