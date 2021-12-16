@@ -48,6 +48,10 @@ func parsePathParams(exp string, path string) (map[string]string, error) {
 	expPathParts := strings.Split(exp, "/")
 	params := make(map[string]string)
 
+	if len(pathParts) != len(expPathParts) {
+		return nil, fmt.Errorf("path segment count mismatch")
+	}
+
 	for i, s := range expPathParts {
 		if strings.HasPrefix(s, paramToken) {
 			paramName := strings.Replace(s, paramToken, "", -1)
