@@ -18,13 +18,15 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 type WorkerPool interface {
 	// WaitForMinimumWorkers - A blocking method
 	WaitForMinimumWorkers(timeout int) error
 	GetWorkerCount() int
-	GetWorker() (Worker, error)
+	GetWorker(*GetWorkerOptions) (Worker, error)
 	AddWorker(Worker) error
 	RemoveWorker(Worker) error
 	Monitor() error
@@ -48,6 +50,47 @@ func (p *ProcessPool) GetWorkerCount() int {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 	return len(p.workers)
+}
+
+func prepend(slice []Worker, elems ...Worker) []Worker {
+	return append(elems, slice...)
+}
+
+// return route workers
+func (p *ProcessPool) getHttpWorkers() []Worker {
+	hws := make([]Worker, 0)
+
+	for _, w := range p.workers {
+		switch w.(type) {
+		case *RouteWorker:
+			hws = prepend(hws, w)
+			break
+		case *FaasWorker:
+			hws = append(hws, w)
+			break
+		case *HttpWorker:
+			hws = append(hws, w)
+		}
+	}
+
+	return hws
+}
+
+// return route workers
+func (p *ProcessPool) getEventWorkers() []Worker {
+	hws := make([]Worker, 0)
+
+	for _, w := range p.workers {
+		switch w.(type) {
+		case *FaasWorker:
+			hws = append(hws, w)
+			break
+		case *HttpWorker:
+			hws = append(hws, w)
+		}
+	}
+
+	return hws
 }
 
 // GetMinWorkers - return the minimum number of workers for this pool
@@ -92,16 +135,37 @@ func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
 	return nil
 }
 
+type GetWorkerOptions struct {
+	Http  *triggers.HttpRequest
+	Event *triggers.Event
+}
+
 // GetWorker - Retrieves a worker from this pool
-func (p *ProcessPool) GetWorker() (Worker, error) {
+func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	if len(p.workers) > 0 {
-		return p.workers[0], nil
-	} else {
-		return nil, fmt.Errorf("no workers available in this pool")
+	if opts.http != nil {
+		ws := p.getHttpWorkers()
+
+		for _, w := range ws {
+			if w.HandlesHttpRequest(opts.http) {
+				return w, nil
+			}
+		}
 	}
+
+	if opts.event != nil {
+		ws := p.getEventWorkers()
+
+		for _, w := range ws {
+			if w.HandlesEvent(opts.event) {
+				return w, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no valid workers available")
 }
 
 // RemoveWorker - Removes the given worker from this pool

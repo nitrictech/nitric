@@ -19,6 +19,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -28,9 +29,10 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
+// RouteWorker - Worker representation for an http api route handler
+type RouteWorker struct {
+	method string
+	path   string
 	// gRPC Stream for this worker
 	stream pb.FaasService_TriggerStreamServer
 	// Response channels for this worker
@@ -40,7 +42,7 @@ type FaasWorker struct {
 
 // newTicket - Generates a request/response ID and response channel
 // for the requesting thread to wait on
-func (s *FaasWorker) newTicket() (string, chan *pb.TriggerResponse) {
+func (s *RouteWorker) newTicket() (string, chan *pb.TriggerResponse) {
 	s.responseQueueLock.Lock()
 	defer s.responseQueueLock.Unlock()
 
@@ -54,7 +56,7 @@ func (s *FaasWorker) newTicket() (string, chan *pb.TriggerResponse) {
 
 // resolveTicket - Retrieves a response channel from the queue for
 // the given ID and removes the entry from the map
-func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
+func (s *RouteWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
 	s.responseQueueLock.Lock()
 	defer func() {
 		delete(s.responseQueue, ID)
@@ -68,15 +70,40 @@ func (s *FaasWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) 
 	return s.responseQueue[ID], nil
 }
 
-func (s *FaasWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+// slashSplitter - used to split strings, with the same output regardless of leading or trailing slashes
+// e.g - strings.FieldsFunc("/one/two/three/", f) == strings.FieldsFunc("/one/two/three", f) == strings.FieldsFunc("one/two/three", f) == ["one" "two" "three"]
+func slashSplitter(c rune) bool {
+	return c == '/'
+}
+
+func (s *RouteWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	// Add path and method matching
+	if strings.ToLower(s.method) != strings.ToLower(trigger.Method) {
+		return false
+	}
+
+	requestPathSegments := strings.FieldsFunc(trigger.Path, slashSplitter)
+	pathSegments := strings.FieldsFunc(s.path, slashSplitter)
+
+	// TODO: Filter for trailing/leading slashes
+	if len(requestPathSegments) != len(pathSegments) {
+		return false
+	}
+
+	for i, p := range pathSegments {
+		if !strings.HasPrefix(p, ":") && p != requestPathSegments[i] {
+			return false
+		}
+	}
+
 	return true
 }
 
-func (s *FaasWorker) HandlesEvent(trigger *triggers.Event) bool {
-	return true
+func (s *RouteWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return false
 }
 
-func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 
@@ -179,57 +206,12 @@ func (s *FaasWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 	return response, nil
 }
 
-func (s *FaasWorker) HandleEvent(trigger *triggers.Event) error {
-	// Generate an ID here
-	ID, returnChan := s.newTicket()
-	triggerRequest := &pb.TriggerRequest{
-		Data:     trigger.Payload,
-		MimeType: http.DetectContentType(trigger.Payload),
-		Context: &pb.TriggerRequest_Topic{
-			Topic: &pb.TopicTriggerContext{
-				Topic: trigger.Topic,
-				// FIXME: Add missing fields here...
-			},
-		},
-	}
-
-	// construct the message
-	message := &pb.ServerMessage{
-		Id: ID,
-		Content: &pb.ServerMessage_TriggerRequest{
-			TriggerRequest: triggerRequest,
-		},
-	}
-
-	// send the message
-	err := s.stream.Send(message)
-
-	if err != nil {
-		// There was an error enqueuing the message
-		return err
-	}
-
-	// wait for the response
-	// FIXME: Need to handle timeouts here...
-	response := <-returnChan
-
-	topic := response.GetTopic()
-
-	if topic == nil {
-		// Fatal error in this case
-		// We don't have the correct response type for this handler
-		return fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
-	}
-
-	if topic.GetSuccess() {
-		return nil
-	}
-
-	return fmt.Errorf("Error ocurred handling the event")
+func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
+	return fmt.Errorf("route workers cannot handle events")
 }
 
 // listen
-func (s *FaasWorker) Listen(errchan chan error) {
+func (s *RouteWorker) Listen(errchan chan error) {
 	// Listen for responses
 	for {
 		msg, err := s.stream.Recv()
@@ -272,10 +254,17 @@ func (s *FaasWorker) Listen(errchan chan error) {
 	}
 }
 
+type RouteWorkerOptions struct {
+	path   string
+	method string
+}
+
 // Package private method
 // Only a pool may create a new faas worker
-func NewFaasWorker(stream pb.FaasService_TriggerStreamServer) *FaasWorker {
-	return &FaasWorker{
+func NewRouteWorker(stream pb.FaasService_TriggerStreamServer, opts *RouteWorkerOptions) *RouteWorker {
+	return &RouteWorker{
+		path:              opts.path,
+		method:            opts.method,
 		stream:            stream,
 		responseQueueLock: sync.Mutex{},
 		responseQueue:     make(map[string]chan *pb.TriggerResponse),

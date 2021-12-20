@@ -1,0 +1,100 @@
+syntax = "proto3";
+package nitric.resource.v1;
+
+import "validate/validate.proto";
+
+//protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.resource.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Resources";
+option php_namespace = "Nitric\\Proto\\Resource\\V1";
+option csharp_namespace = "Nitric.Proto.Resource.v1";
+
+// Nitric Resource Service
+// The service definition exists to allow a nitric application to declare peripheral dependencies
+service ResourceService {
+  // Declare a resource for the nitric application
+	// At Deploy time this will create resources as part of the nitric stacks dependency graph
+	// At runtime
+  rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
+}
+
+// Message to declare a resource for a nitric stack/application
+message ResourceDeclareRequest {
+  // Base resource properties
+  // Name is a unique identifier for this resource in the stack 
+  // NOTE: name is unique to a type of resource e.g. Bucket or Topic
+  string name = 1;
+
+  // Available resources
+  oneof resource {
+    // Api resource
+    // Api api = 10;
+    // Route resource (child of Api)
+    // Route route = 11;
+    // Schedule resource
+    // Schedule schedule = 12;
+    // Topic resource
+    Topic topic = 10;
+    // Subscription resource (child of topic)
+    // Subscription subscription = 14;
+    // Queue Resource
+    Queue queue = 11;
+    // Collection resource
+    Collection collection = 12;
+    // Bucket resource
+    Bucket bucket = 13;
+  }
+}
+
+// Api resource declaration
+//message Api {
+  
+//}
+
+//// Route resource definition
+//message Route {
+//  // The API that this route belongs to
+//  // Api api = 1;
+//  string api = 1;
+//  // The path of the route
+//  string path = 2;
+//}
+
+// Schedule resource definition
+//message Schedule {
+
+//}
+
+// Topic resource definition
+message Topic {
+
+}
+
+// Queue resource definition
+message Queue {
+
+}
+
+// Subscription resource definition
+//message Subscription {
+//  string topic = 1;
+//}
+
+// Collection resource declaration
+message Collection {
+
+}
+
+// Bucket resource declaration
+message Bucket {
+
+}
+
+
+
+// Result from putting the secret to a Secret Store
+message ResourceDeclareResponse {
+  
+}

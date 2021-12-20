@@ -36,7 +36,7 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
+func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	bodyBytes := ctx.Request.Body()
 
 	// Check if the payload contains a pubsub event
@@ -51,6 +51,15 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
 			Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
 			// Set the payload
 			Payload: pubsubEvent.Message.Data,
+		}
+
+		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
+			Event: event,
+		})
+
+		if err != nil {
+			ctx.Error("Could not find handle for event", 500)
+			return false
 		}
 
 		if err := wrkr.HandleEvent(event); err == nil {
