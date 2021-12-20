@@ -52,6 +52,7 @@ message ServerMessage {
 message RouteWorker {
   string api = 1;
   string path = 2;
+  repeated string methods = 3;
 }
 
 message SubscriptionWorker {

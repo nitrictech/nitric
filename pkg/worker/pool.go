@@ -145,21 +145,21 @@ func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	if opts.http != nil {
+	if opts.Http != nil {
 		ws := p.getHttpWorkers()
 
 		for _, w := range ws {
-			if w.HandlesHttpRequest(opts.http) {
+			if w.HandlesHttpRequest(opts.Http) {
 				return w, nil
 			}
 		}
 	}
 
-	if opts.event != nil {
+	if opts.Event != nil {
 		ws := p.getEventWorkers()
 
 		for _, w := range ws {
-			if w.HandlesEvent(opts.event) {
+			if w.HandlesEvent(opts.Event) {
 				return w, nil
 			}
 		}
@@ -200,6 +200,8 @@ func (p *ProcessPool) AddWorker(wrkr Worker) error {
 	}
 
 	p.workers = append(p.workers, wrkr)
+
+	fmt.Printf("new Worker in pool: %d workers available\n", len(p.workers))
 
 	return nil
 }

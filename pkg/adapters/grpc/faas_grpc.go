@@ -18,13 +18,14 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/pkg/worker"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
 type FaasServer struct {
 	pb.UnimplementedFaasServiceServer
-	// srv  pb.Faas_TriggerStreamServer
 	pool worker.WorkerPool
 }
 
@@ -32,8 +33,26 @@ type FaasServer struct {
 // A reference to this stream will be passed on to a new worker instance
 // This represents a new server that is ready to begin processing
 func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
-	// Create a new worker
-	wrkr := worker.NewFaasWorker(stream)
+	cm, err := stream.Recv()
+	ir := cm.GetInitRequest()
+
+	if ir == nil {
+		// SHUT IT DOWN!!!!
+		return status.Error(codes.FailedPrecondition, "first message must be InitRequest")
+	}
+
+	var wrkr worker.GrpcWorker = nil
+
+	if route := ir.GetRoute(); route != nil {
+		// Create a new route worker
+		wrkr = worker.NewRouteWorker(stream, &worker.RouteWorkerOptions{
+			Path:    route.Path,
+			Methods: route.Methods,
+		})
+	} else {
+		// XXX: Catch all worker type
+		wrkr = worker.NewFaasWorker(stream)
+	}
 
 	// Add it to our new pool
 	if err := s.pool.AddWorker(wrkr); err != nil {
@@ -50,7 +69,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	go wrkr.Listen(errchan)
 
 	// block here on error returned from the worker
-	err := <-errchan
+	err = <-errchan
 	fmt.Println("FaaS stream closed, removing worker")
 
 	// Worker is done so we can remove it from the pool

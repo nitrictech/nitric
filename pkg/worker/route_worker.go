@@ -31,8 +31,8 @@ import (
 
 // RouteWorker - Worker representation for an http api route handler
 type RouteWorker struct {
-	method string
-	path   string
+	methods []string
+	path    string
 	// gRPC Stream for this worker
 	stream pb.FaasService_TriggerStreamServer
 	// Response channels for this worker
@@ -77,10 +77,13 @@ func slashSplitter(c rune) bool {
 }
 
 func (s *RouteWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
-	// Add path and method matching
-	if strings.ToLower(s.method) != strings.ToLower(trigger.Method) {
-		return false
+
+	for _, m := range s.methods {
+		if strings.ToLower(m) != strings.ToLower(trigger.Method) {
+			return false
+		}
 	}
+	// Add path and method matching
 
 	requestPathSegments := strings.FieldsFunc(trigger.Path, slashSplitter)
 	pathSegments := strings.FieldsFunc(s.path, slashSplitter)
@@ -255,16 +258,16 @@ func (s *RouteWorker) Listen(errchan chan error) {
 }
 
 type RouteWorkerOptions struct {
-	path   string
-	method string
+	Path    string
+	Methods []string
 }
 
 // Package private method
 // Only a pool may create a new faas worker
 func NewRouteWorker(stream pb.FaasService_TriggerStreamServer, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
-		path:              opts.path,
-		method:            opts.method,
+		path:              opts.Path,
+		methods:           opts.Methods,
 		stream:            stream,
 		responseQueueLock: sync.Mutex{},
 		responseQueue:     make(map[string]chan *pb.TriggerResponse),

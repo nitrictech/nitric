@@ -36,15 +36,15 @@ message ResourceDeclareRequest {
     // Schedule resource
     // Schedule schedule = 12;
     // Topic resource
-    Topic topic = 10;
+    TopicResource topic = 10;
     // Subscription resource (child of topic)
     // Subscription subscription = 14;
     // Queue Resource
-    Queue queue = 11;
+    QueueResource queue = 11;
     // Collection resource
-    Collection collection = 12;
+    CollectionResource collection = 12;
     // Bucket resource
-    Bucket bucket = 13;
+    BucketResource bucket = 13;
   }
 }
 
@@ -68,12 +68,12 @@ message ResourceDeclareRequest {
 //}
 
 // Topic resource definition
-message Topic {
+message TopicResource {
 
 }
 
 // Queue resource definition
-message Queue {
+message QueueResource {
 
 }
 
@@ -83,12 +83,12 @@ message Queue {
 //}
 
 // Collection resource declaration
-message Collection {
+message CollectionResource {
 
 }
 
 // Bucket resource declaration
-message Bucket {
+message BucketResource {
 
 }
 

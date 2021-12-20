@@ -339,7 +339,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
 		}
 
-		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "1")
+		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "100")
 		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
 		if err != nil || minWorkers < 0 {
 			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)
