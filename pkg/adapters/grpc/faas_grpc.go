@@ -49,6 +49,10 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Path:    route.Path,
 			Methods: route.Methods,
 		})
+	} else if schedule := ir.GetSchedule(); schedule != nil {
+		wrkr = worker.NewScheduleWorker(stream, &worker.ScheduleWorkerOptions{
+			Description: schedule.GetKey(),
+		})
 	} else {
 		// XXX: Catch all worker type
 		wrkr = worker.NewFaasWorker(stream)
