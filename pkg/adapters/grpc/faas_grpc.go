@@ -34,10 +34,16 @@ type FaasServer struct {
 // This represents a new server that is ready to begin processing
 func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
 	cm, err := stream.Recv()
+
+	if err != nil {
+		return status.Errorf(codes.Internal, "error reading message from stream: %v", err)
+	}
+
 	ir := cm.GetInitRequest()
 
 	if ir == nil {
 		// SHUT IT DOWN!!!!
+		// The first message must be an init request from the prospective FaaS worker
 		return status.Error(codes.FailedPrecondition, "first message must be InitRequest")
 	}
 
@@ -49,9 +55,13 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Path:    route.Path,
 			Methods: route.Methods,
 		})
+	} else if subscription := ir.GetSubscription(); subscription != nil {
+		wrkr = worker.NewSubscriptionWorker(stream, &worker.SubscriptionWorkerOptions{
+			Topic: subscription.Topic,
+		})
 	} else if schedule := ir.GetSchedule(); schedule != nil {
 		wrkr = worker.NewScheduleWorker(stream, &worker.ScheduleWorkerOptions{
-			Description: schedule.GetKey(),
+			Key: schedule.Key,
 		})
 	} else {
 		// XXX: Catch all worker type
