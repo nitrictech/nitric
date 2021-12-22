@@ -25,7 +25,7 @@ import (
 	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
 	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
-	ecs_service "github.com/nitrictech/nitric/pkg/plugins/gateway/ecs"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
 	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secrets_manager"
@@ -46,7 +46,7 @@ func main() {
 	case "lambda":
 		gatewayPlugin, _ = lambda_service.New()
 	default:
-		gatewayPlugin, _ = ecs_service.New()
+		gatewayPlugin, _ = base_http.New(nil)
 	}
 	secretPlugin, _ := secrets_manager_secret_service.New()
 	documentPlugin, _ := dynamodb_service.New()
