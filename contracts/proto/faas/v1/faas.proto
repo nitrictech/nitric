@@ -49,7 +49,7 @@ message ServerMessage {
   }
 }
 
-message RouteWorker {
+message ApiWorker {
   string api = 1;
   string path = 2;
   repeated string methods = 3;
@@ -89,7 +89,7 @@ message InitRequest {
 
   // The type of worker we are registering
   oneof Worker {
-    RouteWorker route = 10;
+    ApiWorker api = 10;
     SubscriptionWorker subscription = 11;
     ScheduleWorker schedule = 12;
   }

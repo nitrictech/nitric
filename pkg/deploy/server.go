@@ -33,8 +33,8 @@ func (s *DeployServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) 
 	}
 
 	switch w := ir.Worker.(type) {
-	case *pb.InitRequest_Route:
-		s.app.AddApiHandler(w.Route)
+	case *pb.InitRequest_Api:
+		s.app.AddApiHandler(w.Api)
 	case *pb.InitRequest_Schedule:
 		s.app.AddScheduleHandler(w.Schedule)
 	case *pb.InitRequest_Subscription:
@@ -51,15 +51,15 @@ func (s *DeployServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) 
 // Declare - Accepts resource declarations and adds them to the Nitric App
 func (s *DeployServer) Declare(ctx context.Context, req *pb.ResourceDeclareRequest) (*pb.ResourceDeclareResponse, error) {
 
-	switch r := req.Resource.(type) {
-	case *pb.ResourceDeclareRequest_Bucket:
-		s.app.AddBucket(r.Bucket)
-	case *pb.ResourceDeclareRequest_Collection:
-		s.app.AddCollection(r.Collection)
-	case *pb.ResourceDeclareRequest_Queue:
-		s.app.AddQueue(r.Queue)
-	case *pb.ResourceDeclareRequest_Topic:
-		s.app.AddTopic(r.Topic)
+	switch req.Resource.Type {
+	case pb.ResourceType_Bucket:
+		s.app.AddBucket(req.Resource.Name, req.GetBucket())
+	case pb.ResourceType_Collection:
+		s.app.AddCollection(req.Resource.Name, req.GetCollection())
+	case pb.ResourceType_Queue:
+		s.app.AddQueue(req.Resource.Name, req.GetQueue())
+	case pb.ResourceType_Topic:
+		s.app.AddTopic(req.Resource.Name, req.GetTopic())
 	}
 
 	return &pb.ResourceDeclareResponse{}, nil

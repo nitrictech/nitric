@@ -49,11 +49,11 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 
 	var wrkr worker.GrpcWorker = nil
 
-	if route := ir.GetRoute(); route != nil {
+	if api := ir.GetApi(); api != nil {
 		// Create a new route worker
 		wrkr = worker.NewRouteWorker(stream, &worker.RouteWorkerOptions{
-			Path:    route.Path,
-			Methods: route.Methods,
+			Path:    api.Path,
+			Methods: api.Methods,
 		})
 	} else if subscription := ir.GetSubscription(); subscription != nil {
 		wrkr = worker.NewSubscriptionWorker(stream, &worker.SubscriptionWorkerOptions{

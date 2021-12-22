@@ -48,15 +48,24 @@ message ResourceDeclareRequest {
 
   oneof config {
     PolicyResource policy = 10;
+    BucketResource bucket = 11;
+    QueueResource queue = 12;
+    TopicResource topic = 13;
+    CollectionResource collection = 14;
   }
 }
 
+message BucketResource {}
+message QueueResource {}
+message TopicResource {}
+message CollectionResource {}
+
 enum Action {
-  // Bucket Permissions: 1XX
-  BucketFileList = 100;
-  BucketFileGet = 101;
-  BucketFilePut = 102;
-  BucketFileDelete = 103;
+  // Bucket Permissions: 0XX
+  BucketFileList = 0;
+  BucketFileGet = 1;
+  BucketFilePut = 2;
+  BucketFileDelete = 3;
 
   // Topic Permissions: 2XX
   TopicList = 200;

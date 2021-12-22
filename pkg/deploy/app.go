@@ -9,40 +9,37 @@ import (
 // Collections and stores information about a nitric application
 // And it's dependencies
 type App struct {
-	apis          map[string]*ApiBuilder
-	subscriptions map[string]*Subscription
-	schedules     map[string]*Schedule
-	buckets       map[string]*Bucket
-	topics        map[string]*Topic
-	collections   map[string]*Collection
-	queues        map[string]*Queue
+	apis          map[string][]*pb.ApiWorker
+	subscriptions map[string]*pb.SubscriptionWorker
+	schedules     map[string]*pb.ScheduleWorker
+	buckets       map[string]*pb.BucketResource
+	topics        map[string]*pb.TopicResource
+	collections   map[string]*pb.CollectionResource
+	queues        map[string]*pb.QueueResource
+	policies      []*pb.PolicyResource
 }
 
-func (a *App) AddApiHandler(rw *pb.RouteWorker) {
-	if a.apis[rw.Api] != nil {
-		a.apis[rw.Api] = NewApiBuilder()
+func (a *App) AddPolicy(p *pb.PolicyResource) {
+	a.policies = append(a.policies, p)
+}
+
+func (a *App) AddApiHandler(aw *pb.ApiWorker) {
+	if a.apis[aw.Api] != nil {
+		a.apis[aw.Api] = make([]*pb.ApiWorker, 0)
 	}
 
-	a.apis[rw.Api].AddRouteHandler(rw.Api, &RouteHandler{
-		path: rw.Path,
-		methods: rw.Methods,
-	})
-
+	a.apis[aw.Api] = append(a.apis[aw.Api], aw)
 }
 
 func (a *App) AddSubscriptionHandler(sw *pb.SubscriptionWorker) error {
-	// See if there is a topic publish permission for this application already
-	if a.topics[sw.Topic] != nil {
-
-	}
-
+	// TODO: Determine if this subscription handler has a write policy to the same topic
 	if a.subscriptions[sw.Topic] != nil {
 		// return a new error
 		return fmt.Errorf("subscription already declared for topic %s, only one subscription per topic is allowed per application", sw.Topic)
 	}
 
 	// This maps to a trigger worker for this application
-	a.subscriptions[sw.Topic] = &Subscription{}
+	a.subscriptions[sw.Topic] = sw
 
 	return nil
 }
@@ -52,54 +49,36 @@ func (a *App) AddScheduleHandler(sw *pb.ScheduleWorker) error {
 		return fmt.Errorf("schedule %s already exists", sw.Key)
 	}
 
-	a.schedules[sw.Key] = &Schedule{}
+	a.schedules[sw.Key] = sw
 
 	return nil
 }
 
-func (a *App) AddBucket(b *pb.BucketResource) {
-	if a.buckets[b.Name] != nil {
-
-	}
-
-	// TODO: Handle duplicate resource declarations (either by merge or failure)
+func (a *App) AddBucket(name string, b *pb.BucketResource) {
+	a.buckets[name] = b
 }
 
-func (a *App) AddTopic(t *pb.TopicResource) {
-	if a.topics[t.Name] != nil {
-
-	}
-
-	// TODO: Handle duplicate resource declarations (either by merge or failure)
+func (a *App) AddTopic(name string, t *pb.TopicResource) {
+	a.topics[name] = t
 }
 
-func (a *App) AddCollection(c *pb.CollectionResource) {
-	if a.collections[c.Name] != nil {
-
-	}
+func (a *App) AddCollection(name string, c *pb.CollectionResource) {
+	a.collections[name] = c
 }
 
-func (a *App) AddQueue(q *pb.QueueResource) {
-	queue := a.queues[q.Name]
-
-	if queue == nil {
-		// Handle error or merging
-		queue = &Queue{}
-	}
-
-	// Add permissions
-
-	// Update queue reference
-	a.queues[c.Name] = queue
+func (a *App) AddQueue(name string, q *pb.QueueResource) {
+	a.queues[name] = q
+}
 
 func NewApp() *App {
 	return &App{
-		apis:          make(map[string]*ApiBuilder),
-		subscriptions: make(map[string]*Subscription),
-		schedules:     make(map[string]*Schedule),
-		buckets:       make(map[string]*Bucket),
-		topics:        make(map[string]*Topic),
-		collections:   make(map[string]*Collection),
-		queues:        make(map[string]*Queue),
+		apis:          make(map[string][]*pb.ApiWorker),
+		subscriptions: make(map[string]*pb.SubscriptionWorker),
+		schedules:     make(map[string]*pb.ScheduleWorker),
+		buckets:       make(map[string]*pb.BucketResource),
+		topics:        make(map[string]*pb.TopicResource),
+		collections:   make(map[string]*pb.CollectionResource),
+		queues:        make(map[string]*pb.QueueResource),
+		policies:      make([]*pb.PolicyResource, 0),
 	}
 }
