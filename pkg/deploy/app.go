@@ -19,6 +19,19 @@ type App struct {
 	policies      []*pb.PolicyResource
 }
 
+func (a *App) String() string {
+	return fmt.Sprintf(`
+	  apis: %+v,
+	  subscriptions: %+v,
+		schedules: %+v,
+		buckets: %+v,
+		topics: %+v,
+		collections: %+v,
+		queues: %+v,
+		policies: %+v,
+	`, a.apis, a.subscriptions, a.schedules, a.buckets, a.topics, a.queues, a.collections, a.policies)
+}
+
 func (a *App) AddPolicy(p *pb.PolicyResource) {
 	a.policies = append(a.policies, p)
 }

@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"google.golang.org/grpc/codes"
@@ -44,6 +45,8 @@ func (s *DeployServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) 
 		// XXX: No-op for now. This can be handled exclusively at runtime
 	}
 
+	fmt.Println(s.app.String())
+
 	// Close the stream, once we've recieved the InitRequest
 	return nil
 }
@@ -61,6 +64,8 @@ func (s *DeployServer) Declare(ctx context.Context, req *pb.ResourceDeclareReque
 	case pb.ResourceType_Topic:
 		s.app.AddTopic(req.Resource.Name, req.GetTopic())
 	}
+
+	fmt.Println(s.app.String())
 
 	return &pb.ResourceDeclareResponse{}, nil
 }
