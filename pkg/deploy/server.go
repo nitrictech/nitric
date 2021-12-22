@@ -9,16 +9,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type DeployServer struct {
-	app *App
+type Server struct {
+	function *Function
 	pb.UnimplementedFaasServiceServer
 	pb.UnimplementedResourceServiceServer
 }
 
-// Starts a new stream
-// The deploy server will collect information from stream InitRequests and
-// Immediately terminate the stream
-func (s *DeployServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
+// TriggerStream - Starts a new FaaS server stream
+//
+// The deployment server collects information from stream InitRequests, then immediately terminates the stream
+// This behavior captures enough information to identify function handlers, without executing the handler code
+// during the build process.
+func (s *Server) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
 	cm, err := stream.Recv()
 
 	if err != nil {
@@ -35,44 +37,44 @@ func (s *DeployServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) 
 
 	switch w := ir.Worker.(type) {
 	case *pb.InitRequest_Api:
-		s.app.AddApiHandler(w.Api)
+		s.function.AddApiHandler(w.Api)
 	case *pb.InitRequest_Schedule:
-		s.app.AddScheduleHandler(w.Schedule)
+		s.function.AddScheduleHandler(w.Schedule)
 	case *pb.InitRequest_Subscription:
-		s.app.AddSubscriptionHandler(w.Subscription)
+		s.function.AddSubscriptionHandler(w.Subscription)
 	default:
 		// treat as normal function worker
 		// XXX: No-op for now. This can be handled exclusively at runtime
 	}
 
-	fmt.Println(s.app.String())
+	fmt.Println(s.function.String())
 
 	// Close the stream, once we've recieved the InitRequest
 	return nil
 }
 
-// Declare - Accepts resource declarations and adds them to the Nitric App
-func (s *DeployServer) Declare(ctx context.Context, req *pb.ResourceDeclareRequest) (*pb.ResourceDeclareResponse, error) {
+// Declare - Accepts resource declarations, adding them as dependencies to the Function
+func (s *Server) Declare(ctx context.Context, req *pb.ResourceDeclareRequest) (*pb.ResourceDeclareResponse, error) {
 
 	switch req.Resource.Type {
 	case pb.ResourceType_Bucket:
-		s.app.AddBucket(req.Resource.Name, req.GetBucket())
+		s.function.AddBucket(req.Resource.Name, req.GetBucket())
 	case pb.ResourceType_Collection:
-		s.app.AddCollection(req.Resource.Name, req.GetCollection())
+		s.function.AddCollection(req.Resource.Name, req.GetCollection())
 	case pb.ResourceType_Queue:
-		s.app.AddQueue(req.Resource.Name, req.GetQueue())
+		s.function.AddQueue(req.Resource.Name, req.GetQueue())
 	case pb.ResourceType_Topic:
-		s.app.AddTopic(req.Resource.Name, req.GetTopic())
+		s.function.AddTopic(req.Resource.Name, req.GetTopic())
 	}
 
-	fmt.Println(s.app.String())
+	fmt.Println(s.function.String())
 
 	return &pb.ResourceDeclareResponse{}, nil
 }
 
-// Create a new DeployServer
-func New(app *App) *DeployServer {
-	return &DeployServer{
-		app: app,
+// New - Creates a new deployment server
+func New(function *Function) *Server {
+	return &Server{
+		function: function,
 	}
 }

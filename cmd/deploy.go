@@ -11,7 +11,7 @@ import (
 
 func main() {
 	srv := grpc.NewServer()
-	dSrv := deploy.New(deploy.NewApp())
+	dSrv := deploy.New(deploy.NewFunction())
 
 	v1.RegisterResourceServiceServer(srv, dSrv)
 	v1.RegisterFaasServiceServer(srv, dSrv)
