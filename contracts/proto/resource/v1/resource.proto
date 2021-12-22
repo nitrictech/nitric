@@ -69,12 +69,26 @@ message ResourceDeclareRequest {
 
 // Topic resource definition
 message TopicResource {
+  string name = 1;
 
+  enum TopicPermission {
+    PUBLISH = 0;
+    SUBSCRIBE = 1;
+  }
+
+  repeated TopicPermission permission = 2;
 }
 
 // Queue resource definition
 message QueueResource {
+  string name = 1;
 
+  enum QueuePermission {
+    SEND = 0;
+    RECEIVE = 1;
+  }
+
+  repeated QueuePermission permission = 2;
 }
 
 // Subscription resource definition
@@ -84,12 +98,27 @@ message QueueResource {
 
 // Collection resource declaration
 message CollectionResource {
+  string name = 1;
 
+  enum CollectionPermission {
+    READ = 0;
+    WRITE = 1;
+    DELETE = 2;
+  }
+
+  repeated CollectionPermission permission = 2;
 }
 
 // Bucket resource declaration
 message BucketResource {
+  string name = 1;
 
+  enum BucketPermission {
+    READ = 0;
+    WRITE = 1;
+  }
+
+  repeated BucketPermission permission = 2;
 }
 
 
