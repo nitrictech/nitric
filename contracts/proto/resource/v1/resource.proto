@@ -20,110 +20,62 @@ service ResourceService {
   rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
 }
 
-// Message to declare a resource for a nitric stack/application
+message PolicyResource {
+  repeated Resource principals = 1;
+  repeated Action actions = 2;
+  repeated Resource resources = 3;
+}
+
+enum ResourceType {
+  Api = 0;
+  Function = 1;
+  Bucket = 2;
+  Queue = 3;
+  Topic = 4;
+  Schedule = 5;
+  Subscription = 6;
+  Collection = 7;
+  Policy = 8;
+}
+
+message Resource {
+  ResourceType type = 1;
+  string name = 2;
+}
+
 message ResourceDeclareRequest {
-  // Base resource properties
-  // Name is a unique identifier for this resource in the stack 
-  // NOTE: name is unique to a type of resource e.g. Bucket or Topic
-  string name = 1;
+  Resource resource = 1;
 
-  // Available resources
-  oneof resource {
-    // Api resource
-    // Api api = 10;
-    // Route resource (child of Api)
-    // Route route = 11;
-    // Schedule resource
-    // Schedule schedule = 12;
-    // Topic resource
-    TopicResource topic = 10;
-    // Subscription resource (child of topic)
-    // Subscription subscription = 14;
-    // Queue Resource
-    QueueResource queue = 11;
-    // Collection resource
-    CollectionResource collection = 12;
-    // Bucket resource
-    BucketResource bucket = 13;
+  oneof config {
+    PolicyResource policy = 10;
   }
 }
 
-// Api resource declaration
-//message Api {
-  
-//}
+enum Action {
+  // Bucket Permissions: 1XX
+  BucketFileList = 100;
+  BucketFileGet = 101;
+  BucketFilePut = 102;
+  BucketFileDelete = 103;
 
-//// Route resource definition
-//message Route {
-//  // The API that this route belongs to
-//  // Api api = 1;
-//  string api = 1;
-//  // The path of the route
-//  string path = 2;
-//}
+  // Topic Permissions: 2XX
+  TopicList = 200;
+  TopicDetail = 201;
+  TopicEventPublish = 202;
 
-// Schedule resource definition
-//message Schedule {
+  // Queue Permissions: 3XX
+  QueueSend = 300;
+  QueueReceive = 301;
+  QueueList = 302;
+  QueueDetail = 303;
 
-//}
-
-// Topic resource definition
-message TopicResource {
-  string name = 1;
-
-  enum TopicPermission {
-    PUBLISH = 0;
-    SUBSCRIBE = 1;
-  }
-
-  repeated TopicPermission permission = 2;
+  // Collection Permissions: 4XX
+  CollectionDocumentRead = 400;
+  CollectionDocumentWrite = 401;
+  CollectionDocumentDelete = 402;
+  CollectionQuery = 403;
+  CollectionList = 404;
 }
-
-// Queue resource definition
-message QueueResource {
-  string name = 1;
-
-  enum QueuePermission {
-    SEND = 0;
-    RECEIVE = 1;
-  }
-
-  repeated QueuePermission permission = 2;
-}
-
-// Subscription resource definition
-//message Subscription {
-//  string topic = 1;
-//}
-
-// Collection resource declaration
-message CollectionResource {
-  string name = 1;
-
-  enum CollectionPermission {
-    READ = 0;
-    WRITE = 1;
-    DELETE = 2;
-  }
-
-  repeated CollectionPermission permission = 2;
-}
-
-// Bucket resource declaration
-message BucketResource {
-  string name = 1;
-
-  enum BucketPermission {
-    READ = 0;
-    WRITE = 1;
-  }
-
-  repeated BucketPermission permission = 2;
-}
-
-
 
 // Result from putting the secret to a Secret Store
-message ResourceDeclareResponse {
-  
-}
+message ResourceDeclareResponse {}
