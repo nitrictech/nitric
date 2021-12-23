@@ -2,14 +2,70 @@ package deploy
 
 import (
 	"fmt"
+	"strings"
 	"sync"
+
+	"github.com/nitrictech/nitric/pkg/utils"
 
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
+type Api struct {
+	workers []*pb.ApiWorker
+	lock    sync.RWMutex
+}
+
+func (a *Api) String() string {
+	return fmt.Sprintf("workers: %+v", a.workers)
+}
+
+func newApi() *Api {
+	return &Api{
+		workers: make([]*pb.ApiWorker, 0),
+	}
+}
+
+func normalizePath(path string) string {
+	parts := utils.SplitPath(path)
+	for i, part := range parts {
+		if strings.HasPrefix(part, ":") {
+			parts[i] = ":param"
+			continue
+		}
+		parts[i] = strings.ToLower(part)
+	}
+	return strings.Join(parts, "/")
+}
+
+func matchingWorkers(a *pb.ApiWorker, b *pb.ApiWorker) bool {
+	if normalizePath(a.GetPath()) == normalizePath(b.GetPath()) {
+		for _, aMethod := range a.GetMethods() {
+			for _, bMethod := range b.GetMethods() {
+				if aMethod == bMethod {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (a *Api) AddWorker(worker *pb.ApiWorker) error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	// Ensure the worker is unique
+	for _, existing := range a.workers {
+		if matchingWorkers(existing, worker) {
+			return fmt.Errorf("overlapping worker %v already registered, can't add new worker %v", existing, worker)
+		}
+	}
+	a.workers = append(a.workers, worker)
+	return nil
+}
+
 // Function - Stores information about a Nitric Function, and it's dependencies
 type Function struct {
-	apis          map[string][]*pb.ApiWorker
+	apis          map[string]*Api
 	subscriptions map[string]*pb.SubscriptionWorker
 	schedules     map[string]*pb.ScheduleWorker
 	buckets       map[string]*pb.BucketResource
@@ -17,7 +73,7 @@ type Function struct {
 	collections   map[string]*pb.CollectionResource
 	queues        map[string]*pb.QueueResource
 	policies      []*pb.PolicyResource
-	lock		sync.RWMutex
+	lock          sync.RWMutex
 }
 
 func (a *Function) String() string {
@@ -40,14 +96,14 @@ func (a *Function) AddPolicy(p *pb.PolicyResource) {
 	a.policies = append(a.policies, p)
 }
 
-func (a *Function) AddApiHandler(aw *pb.ApiWorker) {
+func (a *Function) AddApiHandler(aw *pb.ApiWorker) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	if a.apis[aw.Api] != nil {
-		a.apis[aw.Api] = make([]*pb.ApiWorker, 0)
+	if a.apis[aw.Api] == nil {
+		a.apis[aw.Api] = newApi()
 	}
 
-	a.apis[aw.Api] = append(a.apis[aw.Api], aw)
+	return a.apis[aw.Api].AddWorker(aw)
 }
 
 // AddSubscriptionHandler - registers a handler in the function that subscribes to a topic of events
@@ -110,7 +166,7 @@ func (a *Function) AddQueue(name string, q *pb.QueueResource) {
 // NewFunction - creates a new Nitric Function, ready to register handlers and dependencies.
 func NewFunction() *Function {
 	return &Function{
-		apis:          make(map[string][]*pb.ApiWorker),
+		apis:          make(map[string]*Api),
 		subscriptions: make(map[string]*pb.SubscriptionWorker),
 		schedules:     make(map[string]*pb.ScheduleWorker),
 		buckets:       make(map[string]*pb.BucketResource),
