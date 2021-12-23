@@ -16,7 +16,9 @@ type Stack struct {
 
 // Produce an open api v3 spec for the requests API name
 func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
-	doc := &openapi3.T{}
+	doc := &openapi3.T{
+		Paths: make(openapi3.Paths),
+	}
 
 	doc.Info = &openapi3.Info{
 		Title:   api,
