@@ -69,6 +69,13 @@ func (s *Server) Declare(ctx context.Context, req *pb.ResourceDeclareRequest) (*
 
 	fmt.Println(s.function.String())
 
+	tmpStack := &Stack{functions: []*Function{s.function}}
+	for a, _ := range s.function.apis {
+		if spec, _ := tmpStack.GetApiSpec(a); spec != nil {
+			fmt.Println("oaiSpec", spec)
+		}
+	}
+
 	return &pb.ResourceDeclareResponse{}, nil
 }
 
