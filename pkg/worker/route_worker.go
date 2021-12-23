@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nitrictech/nitric/pkg/utils"
+
 	"github.com/nitrictech/nitric/pkg/triggers"
 
 	"github.com/google/uuid"
@@ -70,12 +72,6 @@ func (s *RouteWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error)
 	return s.responseQueue[ID], nil
 }
 
-// slashSplitter - used to split strings, with the same output regardless of leading or trailing slashes
-// e.g - strings.FieldsFunc("/one/two/three/", f) == strings.FieldsFunc("/one/two/three", f) == strings.FieldsFunc("one/two/three", f) == ["one" "two" "three"]
-func slashSplitter(c rune) bool {
-	return c == '/'
-}
-
 func (s *RouteWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
 
 	for _, m := range s.methods {
@@ -85,8 +81,8 @@ func (s *RouteWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
 	}
 	// Add path and method matching
 
-	requestPathSegments := strings.FieldsFunc(trigger.Path, slashSplitter)
-	pathSegments := strings.FieldsFunc(s.path, slashSplitter)
+	requestPathSegments := utils.SplitPath(trigger.Path)
+	pathSegments := utils.SplitPath(s.path)
 
 	// TODO: Filter for trailing/leading slashes
 	if len(requestPathSegments) != len(pathSegments) {
