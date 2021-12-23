@@ -71,8 +71,10 @@ func (s *Server) Declare(ctx context.Context, req *pb.ResourceDeclareRequest) (*
 
 	tmpStack := &Stack{functions: []*Function{s.function}}
 	for a, _ := range s.function.apis {
-		if spec, _ := tmpStack.GetApiSpec(a); spec != nil {
+		if spec, e := tmpStack.GetApiSpec(a); spec != nil {
 			fmt.Println("oaiSpec", spec)
+		} else {
+			fmt.Println("specErr", e.Error())
 		}
 	}
 
