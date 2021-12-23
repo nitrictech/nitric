@@ -78,7 +78,8 @@ func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 
 			// See if the path already exists
 			doc.AddOperation(normalizedPath, m, &openapi3.Operation{
-				Responses: openapi3.NewResponses(),
+				OperationID: normalizedPath + m,
+				Responses:   openapi3.NewResponses(),
 			})
 		}
 	}
