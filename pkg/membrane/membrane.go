@@ -181,6 +181,9 @@ func (s *Membrane) Start() error {
 	secretServer := s.createSecretServer()
 	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
+	// TODO: Implement based on resource resolution plugins
+	v1.RegisterResourceServiceServer(s.grpcServer, &grpc2.ResourcesServiceServer{})
+
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
 		faasServer := grpc2.NewFaasServer(s.pool)
