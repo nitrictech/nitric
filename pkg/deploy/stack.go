@@ -14,6 +14,7 @@ type Stack struct {
 	functions []*Function
 }
 
+// Produce an open api v3 spec for the requests API name
 func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 	doc := &openapi3.T{}
 
@@ -29,7 +30,8 @@ func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 
 	// Collect all workers
 	for _, f := range s.functions {
-		workers = append(workers, f.apis[api]...)
+
+		workers = append(workers, f.apis[api].workers...)
 	}
 
 	// loop over workers to build new api specification
@@ -67,6 +69,8 @@ func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 		for _, m := range w.Methods {
 			if pathItem.Operations() != nil && pathItem.Operations()[m] != nil {
 				// If the operation already exists we should fail
+				// NOTE: This should not happen as operations are stored in a map
+				// in the api state for functions
 				return nil, fmt.Errorf("found conflicting operations")
 			}
 
