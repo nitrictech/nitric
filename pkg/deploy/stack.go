@@ -41,7 +41,7 @@ func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 	// to ensure we don't have conflicts
 	for _, w := range workers {
 		params := make(openapi3.Parameters, 0)
-		normalizedPath := "/"
+		normalizedPath := ""
 		for _, p := range strings.Split(w.Path, "/") {
 			if strings.HasPrefix(p, ":") {
 				paramName := strings.Replace(p, ":", "", -1)
@@ -65,7 +65,7 @@ func (s *Stack) GetApiSpec(api string) (*openapi3.T, error) {
 				Parameters: params,
 			}
 			// Add the path item to the document
-			doc.Paths[w.Path] = pathItem
+			doc.Paths[normalizedPath] = pathItem
 		}
 
 		for _, m := range w.Methods {
