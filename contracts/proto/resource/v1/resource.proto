@@ -1,0 +1,90 @@
+syntax = "proto3";
+package nitric.resource.v1;
+
+import "validate/validate.proto";
+
+//protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.resource.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Resources";
+option php_namespace = "Nitric\\Proto\\Resource\\V1";
+option csharp_namespace = "Nitric.Proto.Resource.v1";
+
+// Nitric Resource Service
+// The service definition exists to allow a nitric application to declare peripheral dependencies
+service ResourceService {
+  // Declare a resource for the nitric application
+	// At Deploy time this will create resources as part of the nitric stacks dependency graph
+	// At runtime
+  rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
+}
+
+message PolicyResource {
+  repeated Resource principals = 1;
+  repeated Action actions = 2;
+  repeated Resource resources = 3;
+}
+
+enum ResourceType {
+  Api = 0;
+  Function = 1;
+  Bucket = 2;
+  Queue = 3;
+  Topic = 4;
+  Schedule = 5;
+  Subscription = 6;
+  Collection = 7;
+  Policy = 8;
+}
+
+message Resource {
+  ResourceType type = 1;
+  string name = 2;
+}
+
+message ResourceDeclareRequest {
+  Resource resource = 1;
+
+  oneof config {
+    PolicyResource policy = 10;
+    BucketResource bucket = 11;
+    QueueResource queue = 12;
+    TopicResource topic = 13;
+    CollectionResource collection = 14;
+  }
+}
+
+message BucketResource {}
+message QueueResource {}
+message TopicResource {}
+message CollectionResource {}
+
+enum Action {
+  // Bucket Permissions: 0XX
+  BucketFileList = 0;
+  BucketFileGet = 1;
+  BucketFilePut = 2;
+  BucketFileDelete = 3;
+
+  // Topic Permissions: 2XX
+  TopicList = 200;
+  TopicDetail = 201;
+  TopicEventPublish = 202;
+
+  // Queue Permissions: 3XX
+  QueueSend = 300;
+  QueueReceive = 301;
+  QueueList = 302;
+  QueueDetail = 303;
+
+  // Collection Permissions: 4XX
+  CollectionDocumentRead = 400;
+  CollectionDocumentWrite = 401;
+  CollectionDocumentDelete = 402;
+  CollectionQuery = 403;
+  CollectionList = 404;
+}
+
+// Result from putting the secret to a Secret Store
+message ResourceDeclareResponse {}
