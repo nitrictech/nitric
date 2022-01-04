@@ -15,8 +15,8 @@ option csharp_namespace = "Nitric.Proto.Resource.v1";
 // The service definition exists to allow a nitric application to declare peripheral dependencies
 service ResourceService {
   // Declare a resource for the nitric application
-	// At Deploy time this will create resources as part of the nitric stacks dependency graph
-	// At runtime
+  // At Deploy time this will create resources as part of the nitric stacks dependency graph
+  // At runtime
   rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
 }
 
@@ -86,5 +86,4 @@ enum Action {
   CollectionList = 404;
 }
 
-// Result from putting the secret to a Secret Store
 message ResourceDeclareResponse {}
