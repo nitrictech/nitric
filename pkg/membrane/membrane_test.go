@@ -92,12 +92,13 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 	// Spy on the mock gateway
 	gw.responses = make([]*triggers.HttpResponse, 0)
 
-	wrkr, _ := pool.GetWorker()
-
 	gw.started = true
 	if gw.triggers != nil {
 		for _, trigger := range gw.triggers {
 			if s, ok := trigger.(*triggers.HttpRequest); ok {
+				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
+					Http: s,
+				})
 				resp, err := wrkr.HandleHttpRequest(s)
 
 				if err != nil {
@@ -109,6 +110,10 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 					gw.responses = append(gw.responses, resp)
 				}
 			} else if s, ok := trigger.(*triggers.Event); ok {
+				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
+					Event: s,
+				})
+
 				wrkr.HandleEvent(s)
 			}
 		}

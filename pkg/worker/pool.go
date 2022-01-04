@@ -63,12 +63,10 @@ func (p *ProcessPool) getHttpWorkers() []Worker {
 	for _, w := range p.workers {
 		switch w.(type) {
 		case *RouteWorker:
+			// Prioritise Route Workers
 			hws = prepend(hws, w)
 			break
-		case *FaasWorker:
-			hws = append(hws, w)
-			break
-		case *HttpWorker:
+		default:
 			hws = append(hws, w)
 		}
 	}
@@ -82,10 +80,10 @@ func (p *ProcessPool) getEventWorkers() []Worker {
 
 	for _, w := range p.workers {
 		switch w.(type) {
-		case *FaasWorker:
-			hws = append(hws, w)
+		case *RouteWorker:
+			// Ignore route workers
 			break
-		case *HttpWorker:
+		default:
 			hws = append(hws, w)
 		}
 	}

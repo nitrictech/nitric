@@ -42,7 +42,9 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 			Payload: payload,
 		}
 
-		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{})
+		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{
+			Event: evt,
+		})
 
 		if err != nil {
 			ctx.Error("No worker available to handle event", 500)
