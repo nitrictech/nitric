@@ -25,3 +25,5 @@ bin/
 interfaces/
 
 mocks/
+
+contracts/validate
