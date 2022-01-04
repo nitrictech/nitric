@@ -21,16 +21,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	dynamodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/dynamodb"
-	sns_service "github.com/nitric-dev/membrane/pkg/plugins/events/sns"
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
-	ecs_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/ecs"
-	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	sqs_service "github.com/nitric-dev/membrane/pkg/plugins/queue/sqs"
-	s3_service "github.com/nitric-dev/membrane/pkg/plugins/storage/s3"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	secrets_manager_secret_service "github.com/nitric-dev/membrane/pkg/plugins/secret/secrets_manager"
+	"github.com/nitrictech/nitric/pkg/membrane"
+	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
+	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	ecs_service "github.com/nitrictech/nitric/pkg/plugins/gateway/ecs"
+	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
+	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
+	secrets_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secrets_manager"
+	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 func main() {

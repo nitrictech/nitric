@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/utils"
-	"github.com/nitric-dev/membrane/pkg/worker"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/worker"
 
-	"github.com/nitric-dev/membrane/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/valyala/fasthttp"
 )
 

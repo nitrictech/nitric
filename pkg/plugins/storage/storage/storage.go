@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	ifaces_gcloud_storage "github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
+	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
 
 	"cloud.google.com/go/storage"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	plugin "github.com/nitric-dev/membrane/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"

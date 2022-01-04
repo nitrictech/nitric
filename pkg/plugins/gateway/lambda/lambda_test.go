@@ -19,13 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	lambda_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/lambda"
-	"github.com/nitric-dev/membrane/pkg/triggers"
-	"github.com/nitric-dev/membrane/pkg/worker"
-	mock_worker "github.com/nitric-dev/membrane/tests/mocks/worker"
+	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 
 	"github.com/aws/aws-lambda-go/events"
-	ep "github.com/nitric-dev/membrane/pkg/plugins/events"
+	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -21,14 +21,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	azqueue_service "github.com/nitric-dev/membrane/pkg/plugins/queue/azqueue"
+	azqueue_service "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue"
 
-	"github.com/nitric-dev/membrane/pkg/membrane"
-	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
-	event_grid "github.com/nitric-dev/membrane/pkg/plugins/events/eventgrid"
-	http_service "github.com/nitric-dev/membrane/pkg/plugins/gateway/appservice"
-	key_vault "github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault"
-	azblob_service "github.com/nitric-dev/membrane/pkg/plugins/storage/azblob"
+	"github.com/nitrictech/nitric/pkg/membrane"
+	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
+	event_grid "github.com/nitrictech/nitric/pkg/plugins/events/eventgrid"
+	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
+	key_vault "github.com/nitrictech/nitric/pkg/plugins/secret/key_vault"
+	azblob_service "github.com/nitrictech/nitric/pkg/plugins/storage/azblob"
 )
 
 func main() {

@@ -17,10 +17,10 @@ package boltdb_service_test
 import (
 	"os"
 
-	boltdb_service "github.com/nitric-dev/membrane/pkg/plugins/document/boltdb"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	boltdb_service "github.com/nitrictech/nitric/pkg/plugins/document/boltdb"
+	"github.com/nitrictech/nitric/pkg/utils"
 
-	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 )
 

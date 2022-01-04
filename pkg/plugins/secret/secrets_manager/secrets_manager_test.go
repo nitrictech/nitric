@@ -21,8 +21,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	secretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitric-dev/membrane/mocks/secrets_manager"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	mocks "github.com/nitrictech/nitric/mocks/secrets_manager"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

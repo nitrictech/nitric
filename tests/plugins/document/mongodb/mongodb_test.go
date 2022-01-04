@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	mongodb_service "github.com/nitric-dev/membrane/pkg/plugins/document/mongodb"
-	"github.com/nitric-dev/membrane/tests/plugins"
-	test "github.com/nitric-dev/membrane/tests/plugins/document"
+	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
+	"github.com/nitrictech/nitric/tests/plugins"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

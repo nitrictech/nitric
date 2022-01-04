@@ -17,8 +17,8 @@ package boltdb_storage_service_test
 import (
 	"os"
 
-	boltdb_storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/boltdb"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	boltdb_storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/boltdb"
+	"github.com/nitrictech/nitric/pkg/utils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

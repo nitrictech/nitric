@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/nitric-dev/membrane/pkg/ifaces/gcloud_storage"
 	"io/ioutil"
 
 	"cloud.google.com/go/storage"
+	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
 )
 
 type MockStorageClient struct {

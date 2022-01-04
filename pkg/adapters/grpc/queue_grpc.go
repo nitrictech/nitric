@@ -17,8 +17,8 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/nitric-dev/membrane/interfaces/nitric/v1"
-	"github.com/nitric-dev/membrane/pkg/plugins/queue"
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 )

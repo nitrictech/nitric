@@ -15,8 +15,8 @@
 package storage_service_test
 
 import (
-	storage_service "github.com/nitric-dev/membrane/pkg/plugins/storage/storage"
-	mock_gcp_storage "github.com/nitric-dev/membrane/tests/mocks/gcp_storage"
+	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
+	mock_gcp_storage "github.com/nitrictech/nitric/tests/mocks/gcp_storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

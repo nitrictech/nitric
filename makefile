@@ -8,20 +8,33 @@ fmt:
 
 lint:
 	@echo Formatting Code
-	@golint ./...
+	@go run golang.org/x/lint/golint ./...
 
 install:
 	@echo installing go dependencies
 	@go mod download
 
-install-tools: install
-	@echo Installing tools from tools.go
-	@cat ./tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go get %
+fetch-validate:
+	@echo fetching envoyproxy validate contract
+	@mkdir -p ./contracts/validate
+	@curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
 
-clean:
+install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
+
+${GOPATH}/bin/protoc-gen-go:
+	go get github.com/golang/protobuf/protoc-gen-go
+
+${GOPATH}/bin/protoc-gen-go-grpc:
+	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
+${GOPATH}/bin/protoc-gen-validate:
+	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
+
+clean: check-gopath
 	@rm -rf ./bin/
 	@rm -rf ./lib/
 	@rm -rf ./interfaces/
+	@rm -f ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate:
 
 # Run the integration tests
 test-integration: install-tools generate-proto
@@ -39,29 +52,29 @@ test-coverage: install-tools generate-mocks generate-proto
 
 license-check-dev: dev-static
 	@echo Checking Dev Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-aws: aws-static
 	@echo Checking AWS Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-gcp: gcp-static
 	@echo Checking GCP Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
-	@lichen --config=./lichen.yaml ./bin/membrane
+	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 license-header-add:
 	@echo Add License Headers to Source Files
-	@addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 
 license-header-check:
 	@echo Checking License Headers to Source Files
-	@addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
@@ -72,11 +85,10 @@ ifndef GOPATH
 endif
 
 # Generate interfaces
-generate-proto: install-tools check-gopath
+generate-proto: install-tools check-gopath fetch-validate
 	@echo Generating Proto Sources
-	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ${GOPATH}/src/github.com/envoyproxy/protoc-gen-validate
+	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
@@ -201,12 +213,12 @@ generate-mocks:
 	@mkdir -p mocks/azblob
 	@mkdir -p mocks/mock_event_grid
 	@mkdir -p mocks/azqueue
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
-	@go run github.com/golang/mock/mockgen github.com/nitric-dev/membrane/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go

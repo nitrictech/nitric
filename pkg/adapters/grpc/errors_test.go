@@ -17,9 +17,9 @@ package grpc_test
 import (
 	"fmt"
 
-	"github.com/nitric-dev/membrane/pkg/adapters/grpc"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/adapters/grpc"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

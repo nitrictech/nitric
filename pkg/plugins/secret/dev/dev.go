@@ -23,10 +23,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors"
-	"github.com/nitric-dev/membrane/pkg/plugins/errors/codes"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
-	"github.com/nitric-dev/membrane/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const DEV_SUB_DIRECTORY = "./secrets/"

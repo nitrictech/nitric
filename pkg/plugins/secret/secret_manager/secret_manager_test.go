@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitric-dev/membrane/mocks/secret_manager"
-	"github.com/nitric-dev/membrane/pkg/plugins/secret"
+	mocks "github.com/nitrictech/nitric/mocks/secret_manager"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
