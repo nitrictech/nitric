@@ -14,6 +14,11 @@ install:
 	@echo installing go dependencies
 	@go mod download
 
+fetch-validate:
+	@echo fetching envoyproxy validate contract
+	@mkdir -p ./contracts/validate
+	@curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
+
 install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
 
 ${GOPATH}/bin/protoc-gen-go:
@@ -80,10 +85,10 @@ ifndef GOPATH
 endif
 
 # Generate interfaces
-generate-proto: install-tools check-gopath
+generate-proto: install-tools check-gopath fetch-validate
 	@echo Generating Proto Sources
 	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ${GOPATH}/src/github.com/envoyproxy/protoc-gen-validate
+	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
