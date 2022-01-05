@@ -82,9 +82,6 @@ message ScheduleCron {
 // This message will contain information on the type of triggers that
 // a worker is capable of handling
 message InitRequest {
-  // The worker identifier
-  string id = 1;
-
   // The type of worker we are registering
   oneof Worker {
     ApiWorker api = 10;
