@@ -27,7 +27,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
+func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 	var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 	// Handle Event/Subscription Request Types
@@ -36,11 +36,22 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
 		requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 		payload := ctx.Request.Body()
 
-		err := wrkr.HandleEvent(&triggers.Event{
+		evt := &triggers.Event{
 			ID:      requestId,
 			Topic:   trigger,
 			Payload: payload,
+		}
+
+		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{
+			Event: evt,
 		})
+
+		if err != nil {
+			ctx.Error("No worker available to handle event", 500)
+			return false
+		}
+
+		err = wrkr.HandleEvent(evt)
 
 		if err != nil {
 			fmt.Println(err)

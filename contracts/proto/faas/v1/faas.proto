@@ -22,6 +22,8 @@ message ClientMessage {
 
   oneof content {
     // Client initialisation request
+    // A worker will not be eligible for triggers
+    // until it has identified itself
     InitRequest init_request = 2;
 
     // Client responsding with result of
@@ -139,6 +141,9 @@ message HttpTriggerContext {
 
   // HTTP Query params
   map<string, QueryValue> query_params = 6;
+
+  // HTTP Path parameters
+  map<string, string> path_params = 7;
 }
 
 message TopicTriggerContext {

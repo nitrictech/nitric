@@ -29,6 +29,14 @@ type HttpWorker struct {
 	address string
 }
 
+func (s *HttpWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	return true
+}
+
+func (s *HttpWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return true
+}
+
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)

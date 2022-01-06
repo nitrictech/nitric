@@ -26,6 +26,8 @@ import (
 type Worker interface {
 	HandleEvent(trigger *triggers.Event) error
 	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+	HandlesHttpRequest(trigger *triggers.HttpRequest) bool
+	HandlesEvent(trigger *triggers.Event) bool
 }
 
 type UnimplementedWorker struct{}
