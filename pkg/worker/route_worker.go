@@ -16,7 +16,6 @@ package worker
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/nitrictech/nitric/pkg/utils"
@@ -24,7 +23,6 @@ import (
 	"github.com/nitrictech/nitric/pkg/triggers"
 
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
-	"github.com/valyala/fasthttp"
 )
 
 // RouteWorker - Worker representation for an http api route handler
@@ -56,7 +54,21 @@ func (s *RouteWorker) extractPathParams(trigger *triggers.HttpRequest) (map[stri
 	return params, nil
 }
 
+func (s *RouteWorker) hasMethod(method string) bool {
+	for _, m := range s.methods {
+		if method == m {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *RouteWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	if !s.hasMethod(trigger.Method) {
+		return false
+	}
+
 	_, err := s.extractPathParams(trigger)
 
 	return err == nil
@@ -67,113 +79,15 @@ func (s *RouteWorker) HandlesEvent(trigger *triggers.Event) bool {
 }
 
 func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	// Generate an ID here
-	ID, returnChan := s.newTicket()
-
-	var mimeType string = ""
-	if trigger.Header != nil && len(trigger.Header["Content-Type"]) > 0 {
-		mimeType = trigger.Header["Content-Type"][0]
-	}
-
-	if mimeType == "" {
-		mimeType = http.DetectContentType(trigger.Body)
-	}
-
-	headers := make(map[string]*pb.HeaderValue)
-	headersOld := make(map[string]string)
-	for k, v := range trigger.Header {
-		if v != nil {
-			headers[k] = &pb.HeaderValue{
-				Value: v,
-			}
-			if len(v) > 0 {
-				headersOld[k] = v[0]
-			}
-		}
-	}
-
-	query := make(map[string]*pb.QueryValue)
-	queryOld := make(map[string]string)
-	for k, v := range trigger.Query {
-		if v != nil {
-			query[k] = &pb.QueryValue{
-				Value: v,
-			}
-			if len(v) > 0 {
-				queryOld[k] = v[0]
-			}
-		}
-	}
-
 	params, err := s.extractPathParams(trigger)
 
 	if err != nil {
 		return nil, err
 	}
 
-	triggerRequest := &pb.TriggerRequest{
-		Data:     trigger.Body,
-		MimeType: mimeType,
-		Context: &pb.TriggerRequest_Http{
-			Http: &pb.HttpTriggerContext{
-				Path:           trigger.Path,
-				Method:         trigger.Method,
-				QueryParams:    query,
-				QueryParamsOld: queryOld,
-				Headers:        headers,
-				HeadersOld:     headersOld,
-				PathParams:     params,
-			},
-		},
-	}
+	trigger.Params = params
 
-	// construct the message
-	message := &pb.ServerMessage{
-		Id: ID,
-		Content: &pb.ServerMessage_TriggerRequest{
-			TriggerRequest: triggerRequest,
-		},
-	}
-
-	// send the message
-	err = s.send(message)
-
-	if err != nil {
-		// There was an error enqueuing the message
-		return nil, err
-	}
-
-	// wait for the response
-	triggerResponse := <-returnChan
-
-	httpResponse := triggerResponse.GetHttp()
-
-	if httpResponse == nil {
-		return nil, fmt.Errorf("fatal: Error handling event, incorrect response received from function")
-	}
-
-	fasthttpHeader := &fasthttp.ResponseHeader{}
-
-	for key, val := range httpResponse.GetHeaders() {
-		headerList := val.Value
-		if key == "Set-Cookie" || key == "Cookie" {
-			for _, v := range headerList {
-				fasthttpHeader.Add(key, v)
-			}
-		} else if len(headerList) > 0 {
-			fasthttpHeader.Set(key, headerList[0])
-		}
-	}
-
-	response := &triggers.HttpResponse{
-		Body: triggerResponse.Data,
-		// No need to worry about integer truncation
-		// as this should be a HTTP status code...
-		StatusCode: int(httpResponse.Status),
-		Header:     fasthttpHeader,
-	}
-
-	return response, nil
+	return s.GrpcWorker.HandleHttpRequest(trigger)
 }
 
 func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {

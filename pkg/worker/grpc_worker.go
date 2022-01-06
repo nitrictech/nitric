@@ -31,9 +31,6 @@ import (
 type GrpcWorker interface {
 	Worker
 	Listen(chan error)
-	send(*v1.ServerMessage) error
-	newTicket() (string, chan *v1.TriggerResponse)
-	resolveTicket(ID string) (chan *v1.TriggerResponse, error)
 }
 
 type grpcWorkerBase struct {
@@ -176,6 +173,7 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 				QueryParamsOld: queryOld,
 				Headers:        headers,
 				HeadersOld:     headersOld,
+				PathParams:     trigger.Params,
 			},
 		},
 	}

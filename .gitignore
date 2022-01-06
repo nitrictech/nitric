@@ -26,4 +26,7 @@ interfaces/
 
 mocks/
 
+# Ignore generated mocks
+*.mock.go
+
 contracts/validate

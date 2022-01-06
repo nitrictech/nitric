@@ -16,7 +16,6 @@ package worker
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 
@@ -42,55 +41,6 @@ func (s *ScheduleWorker) HandlesEvent(trigger *triggers.Event) bool {
 func (s *ScheduleWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	return nil, fmt.Errorf("schedule workers cannot handle HTTP requests")
-}
-
-func (s *ScheduleWorker) HandleEvent(trigger *triggers.Event) error {
-	// Generate an ID here
-	ID, returnChan := s.newTicket()
-	triggerRequest := &pb.TriggerRequest{
-		Data:     trigger.Payload,
-		MimeType: http.DetectContentType(trigger.Payload),
-		Context: &pb.TriggerRequest_Topic{
-			Topic: &pb.TopicTriggerContext{
-				Topic: trigger.Topic,
-				// FIXME: Add missing fields here...
-			},
-		},
-	}
-
-	// construct the message
-	message := &pb.ServerMessage{
-		Id: ID,
-		Content: &pb.ServerMessage_TriggerRequest{
-			TriggerRequest: triggerRequest,
-		},
-	}
-
-	// send the message
-	err := s.send(message)
-
-	if err != nil {
-		// There was an error enqueuing the message
-		return err
-	}
-
-	// wait for the response
-	// FIXME: Need to handle timeouts here...
-	response := <-returnChan
-
-	topic := response.GetTopic()
-
-	if topic == nil {
-		// Fatal error in this case
-		// We don't have the correct response type for this handler
-		return fmt.Errorf("fatal: Error handling event, incorrect response received from function")
-	}
-
-	if topic.GetSuccess() {
-		return nil
-	}
-
-	return fmt.Errorf("error ocurred handling the event")
 }
 
 type ScheduleWorkerOptions struct {

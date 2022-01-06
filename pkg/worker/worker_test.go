@@ -36,7 +36,5 @@ var _ = Describe("Worker", func() {
 				Expect(err).Should(HaveOccurred())
 			})
 		})
-
 	})
-
 })

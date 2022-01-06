@@ -31,6 +31,8 @@ type HttpRequest struct {
 	Path string
 	// URL query parameters
 	Query map[string][]string
+	// Path parameters
+	Params map[string]string
 }
 
 func (*HttpRequest) GetTriggerType() TriggerType {
