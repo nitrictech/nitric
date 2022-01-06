@@ -32,14 +32,22 @@ type Worker interface {
 
 type UnimplementedWorker struct{}
 
+func (*UnimplementedWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return false
+}
+
+func (*UnimplementedWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	return false
+}
+
 func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
-	return fmt.Errorf("UNIMPLEMENTED")
+	return fmt.Errorf("worker does not handle events")
 }
 
 func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
 	return &http.Response{
 		Status:     "Unimplemented",
 		StatusCode: 501,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("HTTP Handler Unimplemented"))),
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("worker does not handle HTTP requets"))),
 	}
 }
