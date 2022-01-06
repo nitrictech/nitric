@@ -16,17 +16,13 @@ package worker
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/nitrictech/nitric/pkg/utils"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 
-	"github.com/google/uuid"
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 )
@@ -35,41 +31,8 @@ import (
 type RouteWorker struct {
 	methods []string
 	path    string
-	// gRPC Stream for this worker
-	stream pb.FaasService_TriggerStreamServer
-	// Response channels for this worker
-	responseQueueLock sync.Mutex
-	responseQueue     map[string]chan *pb.TriggerResponse
-}
 
-// newTicket - Generates a request/response ID and response channel
-// for the requesting thread to wait on
-func (s *RouteWorker) newTicket() (string, chan *pb.TriggerResponse) {
-	s.responseQueueLock.Lock()
-	defer s.responseQueueLock.Unlock()
-
-	ID := uuid.New().String()
-	responseChan := make(chan *pb.TriggerResponse)
-
-	s.responseQueue[ID] = responseChan
-
-	return ID, responseChan
-}
-
-// resolveTicket - Retrieves a response channel from the queue for
-// the given ID and removes the entry from the map
-func (s *RouteWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
-	s.responseQueueLock.Lock()
-	defer func() {
-		delete(s.responseQueue, ID)
-		s.responseQueueLock.Unlock()
-	}()
-
-	if s.responseQueue[ID] == nil {
-		return nil, fmt.Errorf("attempted to resolve ticket that does not exist!")
-	}
-
-	return s.responseQueue[ID], nil
+	GrpcWorker
 }
 
 func (s *RouteWorker) extractPathParams(trigger *triggers.HttpRequest) (map[string]string, error) {
@@ -173,7 +136,7 @@ func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	}
 
 	// send the message
-	err = s.stream.Send(message)
+	err = s.send(message)
 
 	if err != nil {
 		// There was an error enqueuing the message
@@ -217,50 +180,6 @@ func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("route workers cannot handle events")
 }
 
-// listen
-func (s *RouteWorker) Listen(errchan chan error) {
-	// Listen for responses
-	for {
-		msg, err := s.stream.Recv()
-
-		if err != nil {
-			if err == io.EOF {
-				// return will close stream from server side
-				log.Println("exit")
-			}
-			if err != nil {
-				log.Printf("received error %v", err)
-			}
-
-			errchan <- err
-			break
-		}
-
-		if msg.GetInitRequest() != nil {
-			fmt.Println("Received init request from worker")
-			// FIXME: This appears to not work with the PHP runtime?
-			//s.stream.Send(&pb.ServerMessage{
-			//	Content: &pb.ServerMessage_InitResponse{
-			//		InitResponse: &pb.InitResponse{},
-			//	},
-			//})
-			continue
-		}
-
-		// Load the response channel and delete its map key reference
-		if val, err := s.resolveTicket(msg.GetId()); err == nil {
-			// For now assume this is a trigger response...
-			response := msg.GetTriggerResponse()
-			// Write the response the the waiting recipient
-			val <- response
-		} else {
-			fmt.Println("Fatal: FaaS Worker in bad state closing stream: ", msg.GetId())
-			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
-			break
-		}
-	}
-}
-
 type RouteWorkerOptions struct {
 	Path    string
 	Methods []string
@@ -270,10 +189,8 @@ type RouteWorkerOptions struct {
 // Only a pool may create a new faas worker
 func NewRouteWorker(stream pb.FaasService_TriggerStreamServer, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
-		path:              opts.Path,
-		methods:           opts.Methods,
-		stream:            stream,
-		responseQueueLock: sync.Mutex{},
-		responseQueue:     make(map[string]chan *pb.TriggerResponse),
+		path:       opts.Path,
+		methods:    opts.Methods,
+		GrpcWorker: NewGrpcListener(stream),
 	}
 }

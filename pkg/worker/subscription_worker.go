@@ -16,55 +16,17 @@ package worker
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"net/http"
-	"sync"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 
-	"github.com/google/uuid"
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
 // RouteWorker - Worker representation for an http api route handler
 type SubscriptionWorker struct {
 	topic string
-	// gRPC Stream for this worker
-	stream pb.FaasService_TriggerStreamServer
-	// Response channels for this worker
-	responseQueueLock sync.Mutex
-	responseQueue     map[string]chan *pb.TriggerResponse
-}
-
-// newTicket - Generates a request/response ID and response channel
-// for the requesting thread to wait on
-func (s *SubscriptionWorker) newTicket() (string, chan *pb.TriggerResponse) {
-	s.responseQueueLock.Lock()
-	defer s.responseQueueLock.Unlock()
-
-	ID := uuid.New().String()
-	responseChan := make(chan *pb.TriggerResponse)
-
-	s.responseQueue[ID] = responseChan
-
-	return ID, responseChan
-}
-
-// resolveTicket - Retrieves a response channel from the queue for
-// the given ID and removes the entry from the map
-func (s *SubscriptionWorker) resolveTicket(ID string) (chan *pb.TriggerResponse, error) {
-	s.responseQueueLock.Lock()
-	defer func() {
-		delete(s.responseQueue, ID)
-		s.responseQueueLock.Unlock()
-	}()
-
-	if s.responseQueue[ID] == nil {
-		return nil, fmt.Errorf("attempted to resolve ticket that does not exist")
-	}
-
-	return s.responseQueue[ID], nil
+	GrpcWorker
 }
 
 func (s *SubscriptionWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
@@ -72,12 +34,7 @@ func (s *SubscriptionWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) b
 }
 
 func (s *SubscriptionWorker) HandlesEvent(trigger *triggers.Event) bool {
-	// TODO: Determine if event should be handled by using convention for
-	// this schedule
-	if trigger.Topic == s.topic {
-		return true
-	}
-	return false
+	return trigger.Topic == s.topic
 }
 
 func (s *SubscriptionWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
@@ -108,7 +65,7 @@ func (s *SubscriptionWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	// send the message
-	err := s.stream.Send(message)
+	err := s.send(message)
 
 	if err != nil {
 		// There was an error enqueuing the message
@@ -134,44 +91,6 @@ func (s *SubscriptionWorker) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("error ocurred handling the event")
 }
 
-// listen
-func (s *SubscriptionWorker) Listen(errchan chan error) {
-	// Listen for responses
-	for {
-		msg, err := s.stream.Recv()
-
-		if err != nil {
-			if err == io.EOF {
-				// return will close stream from server side
-				log.Println("exit")
-			}
-			if err != nil {
-				log.Printf("received error %v", err)
-			}
-
-			errchan <- err
-			break
-		}
-
-		if msg.GetInitRequest() != nil {
-			errchan <- fmt.Errorf("init request recieved during runtime, exiting")
-			break
-		}
-
-		// Load the response channel and delete its map key reference
-		if val, err := s.resolveTicket(msg.GetId()); err == nil {
-			// For now assume this is a trigger response...
-			response := msg.GetTriggerResponse()
-			// Write the response the the waiting recipient
-			val <- response
-		} else {
-			fmt.Println("fatal: FaaS Worker in bad state closing stream: ", msg.GetId())
-			errchan <- fmt.Errorf("fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
-			break
-		}
-	}
-}
-
 type SubscriptionWorkerOptions struct {
 	Topic string
 }
@@ -180,9 +99,7 @@ type SubscriptionWorkerOptions struct {
 // Only a pool may create a new faas worker
 func NewSubscriptionWorker(stream pb.FaasService_TriggerStreamServer, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
 	return &SubscriptionWorker{
-		topic:             opts.Topic,
-		stream:            stream,
-		responseQueueLock: sync.Mutex{},
-		responseQueue:     make(map[string]chan *pb.TriggerResponse),
+		topic:      opts.Topic,
+		GrpcWorker: NewGrpcListener(stream),
 	}
 }
