@@ -15,10 +15,7 @@
 package worker
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
@@ -44,10 +41,6 @@ func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("worker does not handle events")
 }
 
-func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
-	return &http.Response{
-		Status:     "Unimplemented",
-		StatusCode: 501,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("worker does not handle HTTP requets"))),
-	}
+func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+	return nil, fmt.Errorf("worker does not handle http requests")
 }
