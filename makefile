@@ -46,7 +46,7 @@ test: install-tools generate-mocks generate-proto
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo ./pkg/...
 
-test-coverage: install-tools generate-mocks generate-proto
+test-coverage: install-tools generate-proto generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./pkg/...
 
