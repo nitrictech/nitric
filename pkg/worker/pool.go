@@ -41,7 +41,7 @@ type ProcessPoolOptions struct {
 type ProcessPool struct {
 	minWorkers int
 	maxWorkers int
-	workerLock sync.Mutex
+	workerLock sync.Locker
 	workers    []Worker
 	poolErr    chan error
 }
@@ -62,6 +62,10 @@ func (p *ProcessPool) getHttpWorkers() []Worker {
 
 	for _, w := range p.workers {
 		switch w.(type) {
+		case *ScheduleWorker:
+			break
+		case *SubscriptionWorker:
+			break
 		case *RouteWorker:
 			// Prioritise Route Workers
 			hws = prepend(hws, w)
@@ -83,6 +87,10 @@ func (p *ProcessPool) getEventWorkers() []Worker {
 		case *RouteWorker:
 			// Ignore route workers
 			break
+		case *ScheduleWorker:
+			hws = prepend(hws, w)
+		case *SubscriptionWorker:
+			hws = prepend(hws, w)
 		default:
 			hws = append(hws, w)
 		}
@@ -213,7 +221,7 @@ func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 	return &ProcessPool{
 		minWorkers: opts.MinWorkers,
 		maxWorkers: opts.MaxWorkers,
-		workerLock: sync.Mutex{},
+		workerLock: &sync.Mutex{},
 		workers:    make([]Worker, 0),
 		poolErr:    make(chan error),
 	}
