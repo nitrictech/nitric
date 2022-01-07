@@ -36,7 +36,7 @@ type GrpcWorker interface {
 type grpcWorkerBase struct {
 	stream v1.FaasService_TriggerStreamServer
 	// Response channels for this worker
-	responseQueueLock sync.Mutex
+	responseQueueLock sync.Locker
 	responseQueue     map[string]chan *v1.TriggerResponse
 }
 
@@ -279,7 +279,7 @@ func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 func NewGrpcListener(stream pb.FaasService_TriggerStreamServer) *grpcWorkerBase {
 	return &grpcWorkerBase{
 		stream:            stream,
-		responseQueueLock: sync.Mutex{},
+		responseQueueLock: &sync.Mutex{},
 		responseQueue:     make(map[string]chan *pb.TriggerResponse),
 	}
 }
