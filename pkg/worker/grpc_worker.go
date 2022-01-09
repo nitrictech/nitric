@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/errors"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/valyala/fasthttp"
 )
@@ -108,8 +109,9 @@ func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 			// Write the response the the waiting recipient
 			val <- response
 		} else {
-			fmt.Println("Fatal: FaaS Worker in bad state closing stream: ", msg.GetId())
-			errchan <- fmt.Errorf("Fatal: FaaS Worker in bad state closing stream! %v", msg.GetId())
+			err := errors.Fatal("FaaS Worker in bad state closing stream: " + msg.GetId())
+			fmt.Println(err.Error())
+			errchan <- err
 			break
 		}
 	}
