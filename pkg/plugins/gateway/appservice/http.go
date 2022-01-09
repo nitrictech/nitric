@@ -45,7 +45,7 @@ func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.E
 }
 
 func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
-	// TODO: As we are batch handling events in azure
+	// TODO: As we are batch handling events
 	// how do we notify of failed event handling?
 	for _, event := range events {
 		// XXX: Assume we have a nitric event for now

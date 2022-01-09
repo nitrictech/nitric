@@ -18,11 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/utils"
-
-	"github.com/nitrictech/nitric/pkg/triggers"
-
 	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 // RouteWorker - Worker representation for an http api route handler
