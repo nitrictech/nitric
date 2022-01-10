@@ -1,3 +1,5 @@
+package grpc
+
 // Copyright 2021 Nitric Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,21 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
-
 import (
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"context"
+
+	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
 )
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
-	GrpcWorker
+type ResourcesServiceServer struct {
+	v1.UnimplementedResourceServiceServer
 }
 
-// NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(stream pb.FaasService_TriggerStreamServer) *FaasWorker {
-	return &FaasWorker{
-		GrpcWorker: NewGrpcListener(stream),
-	}
+func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
+	// Currently a no-op at runtime
+	// TODO: Implement a strategy pattern for resolving resources, by their declared resource name in nitric
+	return &v1.ResourceDeclareResponse{}, nil
+}
+
+func NewResourcesServiceServer() v1.ResourceServiceServer {
+	return &ResourcesServiceServer{}
 }

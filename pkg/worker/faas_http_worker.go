@@ -34,6 +34,14 @@ type FaasHttpWorker struct {
 
 var METHOD_TYPE = []byte("POST")
 
+func (s *FaasHttpWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	return true
+}
+
+func (s *FaasHttpWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return true
+}
+
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s", h.address)

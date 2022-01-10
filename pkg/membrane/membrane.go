@@ -181,6 +181,9 @@ func (s *Membrane) Start() error {
 	secretServer := s.createSecretServer()
 	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
+	// TODO: Implement based on resource resolution plugins
+	v1.RegisterResourceServiceServer(s.grpcServer, &grpc2.ResourcesServiceServer{})
+
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
 		faasServer := grpc2.NewFaasServer(s.pool)
@@ -339,7 +342,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
 		}
 
-		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "1")
+		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "100")
 		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
 		if err != nil || minWorkers < 0 {
 			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)

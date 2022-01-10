@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package errors
 
-import (
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
-)
+import "fmt"
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
-	GrpcWorker
+type FatalError struct {
+	msg string
 }
 
-// NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(stream pb.FaasService_TriggerStreamServer) *FaasWorker {
-	return &FaasWorker{
-		GrpcWorker: NewGrpcListener(stream),
-	}
+func (fe *FatalError) Error() string {
+	return fmt.Sprintf("fatal: %s", fe.msg)
+}
+
+var _ error = &FatalError{}
+
+func Fatal(msg string) *FatalError {
+	return &FatalError{msg: msg}
 }

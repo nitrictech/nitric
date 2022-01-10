@@ -39,6 +39,14 @@ func (m *MockWorker) HandleEvent(trigger *triggers2.Event) error {
 	return m.eventError
 }
 
+func (m *MockWorker) HandlesEvent(trigger *triggers2.Event) bool {
+	return true
+}
+
+func (m *MockWorker) HandlesHttpRequest(trigger *triggers2.HttpRequest) bool {
+	return true
+}
+
 func (m *MockWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
 	m.ReceivedRequests = append(m.ReceivedRequests, trigger)
 
