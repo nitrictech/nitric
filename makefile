@@ -9,6 +9,9 @@ init: install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
+.PHONY: check fmt lint
+check: lint test
+
 fmt:
 	@echo Formatting Code
 	$(GOLANGCI_LINT) run --fix
@@ -90,6 +93,9 @@ check-gopath:
 ifndef GOPATH
   $(error GOPATH is undefined)
 endif
+
+.PHONY: generate generate-proto generate-mocks
+generate: generate-proto generate-mocks
 
 # Generate interfaces
 generate-proto: install-tools check-gopath fetch-validate
