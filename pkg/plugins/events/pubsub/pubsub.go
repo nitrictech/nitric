@@ -19,14 +19,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
-
 	"cloud.google.com/go/pubsub"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iterator"
+
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/iterator"
 )
 
 type PubsubEventService struct {

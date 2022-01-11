@@ -22,9 +22,10 @@ import (
 	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
 
 	"cloud.google.com/go/firestore"
+	. "github.com/onsi/ginkgo"
+
 	"github.com/nitrictech/nitric/tests/plugins"
 	test "github.com/nitrictech/nitric/tests/plugins/document"
-	. "github.com/onsi/ginkgo"
 )
 
 const shell = "/bin/sh"

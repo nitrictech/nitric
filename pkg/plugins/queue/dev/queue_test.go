@@ -21,15 +21,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/utils"
-
-	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
-
-	"github.com/asdine/storm"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/asdine/storm"
 	"go.etcd.io/bbolt"
+
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 var task1 = queue.NitricTask{

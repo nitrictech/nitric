@@ -22,18 +22,18 @@ import (
 	"strconv"
 	"strings"
 
-	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
-	"github.com/nitrictech/nitric/pkg/utils"
-	"github.com/nitrictech/nitric/pkg/worker"
+	"google.golang.org/grpc"
 
 	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
-	"google.golang.org/grpc"
+	"github.com/nitrictech/nitric/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type MembraneOptions struct {
@@ -281,7 +281,6 @@ func (s *Membrane) Stop() {
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
-
 	// Get unset options from env or defaults
 	if options.ServiceAddress == "" {
 		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")

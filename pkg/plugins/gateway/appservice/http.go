@@ -17,14 +17,14 @@ package http_service
 import (
 	"encoding/json"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
+	"github.com/valyala/fasthttp"
+
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/valyala/fasthttp"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {

@@ -197,7 +197,6 @@ func (s *FirestoreDocService) buildQuery(collection *document.Collection, expres
 			expVal := fmt.Sprintf("%v", exp.Value)
 			endRangeValue := document.GetEndRangeValue(expVal)
 			query = query.Where(expOperand, ">=", exp.Value).Where(expOperand, "<", endRangeValue)
-
 		} else {
 			query = query.Where(expOperand, exp.Operator, exp.Value)
 		}
@@ -388,7 +387,6 @@ func (s *FirestoreDocService) getDocRef(key *document.Key) *firestore.DocumentRe
 
 	if parentKey == nil {
 		return s.client.Collection(key.Collection.Name).Doc(key.Id)
-
 	} else {
 		return s.client.Collection(parentKey.Collection.Name).
 			Doc(parentKey.Id).

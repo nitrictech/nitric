@@ -20,11 +20,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 // A Nitric HTTP worker

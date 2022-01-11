@@ -19,11 +19,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	events_service "github.com/nitrictech/nitric/pkg/plugins/events/dev"
-
-	"github.com/nitrictech/nitric/pkg/plugins/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/plugins/events"
+	events_service "github.com/nitrictech/nitric/pkg/plugins/events/dev"
 )
 
 type MockHttpClient struct {

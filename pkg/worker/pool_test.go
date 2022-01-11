@@ -19,11 +19,12 @@ import (
 	"sync"
 
 	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	mock_sync "github.com/nitrictech/nitric/mocks/sync"
 	mock_worker "github.com/nitrictech/nitric/mocks/worker"
 	"github.com/nitrictech/nitric/pkg/triggers"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ProcessPool", func() {

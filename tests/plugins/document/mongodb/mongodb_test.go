@@ -18,12 +18,13 @@ import (
 	"context"
 	"fmt"
 
-	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
-	"github.com/nitrictech/nitric/tests/plugins"
-	test "github.com/nitrictech/nitric/tests/plugins/document"
 	. "github.com/onsi/ginkgo"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
+	"github.com/nitrictech/nitric/tests/plugins"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
 const containerName = "mongodb-nitric"

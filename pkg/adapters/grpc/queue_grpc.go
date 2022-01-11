@@ -17,10 +17,11 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins

@@ -17,16 +17,16 @@ package sns_service_test
 import (
 	"fmt"
 
-	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
 )
 
 type MockSNSClient struct {

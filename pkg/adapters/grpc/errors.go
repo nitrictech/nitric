@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"reflect"
 
-	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
 )
 
 // Provides GRPC error reporting
@@ -50,7 +51,6 @@ func NewGrpcError(operation string, err error) error {
 		s, _ = s.WithDetails(ed)
 
 		return s.Err()
-
 	} else {
 		return newGrpcErrorWithCode(codes.Internal, operation, err)
 	}
@@ -84,10 +84,8 @@ func LogArg(arg interface{}) string {
 	value := getValue(arg)
 
 	if value.Kind() == reflect.Struct {
-
 		str := "{"
 		for i := 0; i < value.NumField(); i++ {
-
 			fieldType := value.Type().Field(i)
 			tag := fieldType.Tag.Get("log")
 			if tag == "" || tag == "-" {
@@ -104,7 +102,6 @@ func LogArg(arg interface{}) string {
 		str += "}"
 
 		return str
-
 	} else if value.Kind() == reflect.Map {
 		str := "{"
 
@@ -118,7 +115,6 @@ func LogArg(arg interface{}) string {
 		str += "}"
 
 		return str
-
 	} else {
 		return fmt.Sprintf("%v", arg)
 	}

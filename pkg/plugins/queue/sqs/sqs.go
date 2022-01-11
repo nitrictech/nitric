@@ -18,16 +18,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const (
@@ -208,7 +208,11 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 			bodyBytes := []byte(*m.Body)
 			err := json.Unmarshal(bodyBytes, &nitricTask)
 			if err != nil {
-				// TODO: append error to error list and Nack the message.
+				return nil, newErr(
+					codes.Internal,
+					"failed unmarshalling body",
+					err,
+				)
 			}
 
 			tasks = append(tasks, queue.NitricTask{
@@ -220,7 +224,6 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		}
 
 		return tasks, nil
-
 	} else {
 		return nil, newErr(
 			codes.NotFound,

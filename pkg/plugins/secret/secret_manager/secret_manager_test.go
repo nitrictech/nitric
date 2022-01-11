@@ -18,13 +18,14 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitrictech/nitric/mocks/secret_manager"
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	mocks "github.com/nitrictech/nitric/mocks/secret_manager"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 )
 
 var _ = Describe("Secret Manager", func() {

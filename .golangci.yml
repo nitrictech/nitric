@@ -1,0 +1,24 @@
+run:
+  timeout: "5m"
+  skip-files:
+  - tools/tools.go
+
+linters:
+  disable-all: true
+  enable:
+  - goimports
+  - gofmt
+  - whitespace
+  - staticcheck
+  - structcheck
+  - ineffassign
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/nitrictech
+  govet:
+    check-shadowing: false
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

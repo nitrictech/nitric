@@ -1,14 +1,24 @@
+ifeq (/,${HOME})
+GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache/
+else
+GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
+endif
+GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
+
 init: install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
+.PHONY: check fmt lint
+check: lint test
+
 fmt:
 	@echo Formatting Code
-	@gofmt -s -w ./**/*.go
+	$(GOLANGCI_LINT) run --fix
 
 lint:
-	@echo Formatting Code
-	@go run golang.org/x/lint/golint ./...
+	@echo Linting Code
+	$(GOLANGCI_LINT) run
 
 install:
 	@echo installing go dependencies
@@ -21,13 +31,13 @@ fetch-validate:
 
 install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
 
-${GOPATH}/bin/protoc-gen-go:
+${GOPATH}/bin/protoc-gen-go: go.sum
 	go get github.com/golang/protobuf/protoc-gen-go
 
-${GOPATH}/bin/protoc-gen-go-grpc:
+${GOPATH}/bin/protoc-gen-go-grpc: go.sum
 	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
-${GOPATH}/bin/protoc-gen-validate:
+${GOPATH}/bin/protoc-gen-validate: go.sum
 	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 
 clean: check-gopath
@@ -83,6 +93,9 @@ check-gopath:
 ifndef GOPATH
   $(error GOPATH is undefined)
 endif
+
+.PHONY: generate generate-proto generate-mocks
+generate: generate-proto generate-mocks
 
 # Generate interfaces
 generate-proto: install-tools check-gopath fetch-validate

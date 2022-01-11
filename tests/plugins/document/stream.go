@@ -17,9 +17,10 @@ package document_suite
 import (
 	"io"
 
-	"github.com/nitrictech/nitric/pkg/plugins/document"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/nitrictech/nitric/pkg/plugins/document"
 )
 
 func unwrapIter(iter document.DocumentIterator) []*document.Document {

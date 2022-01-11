@@ -22,13 +22,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type eventType int
@@ -178,12 +178,10 @@ type LambdaGateway struct {
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-
 	for _, request := range event.Requests {
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
-
 				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
 					Http: httpEvent,
 				})

@@ -23,14 +23,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
-
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
