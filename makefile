@@ -100,8 +100,8 @@ generate: generate-proto generate-mocks
 # Generate interfaces
 generate-proto: install-tools check-gopath fetch-validate
 	@echo Generating Proto Sources
-	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
+	@mkdir -p ./pkg/api/
+	@protoc --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
@@ -229,7 +229,7 @@ generate-mocks:
 	@mkdir -p mocks/worker
 	@mkdir -p mocks/nitric
 	@mkdir -p mocks/sync
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/interfaces/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
@@ -241,3 +241,5 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+
+generate-sources: generate-proto generate-mocks

@@ -19,7 +19,7 @@ import (
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
 // RouteWorker - Worker representation for an http api route handler

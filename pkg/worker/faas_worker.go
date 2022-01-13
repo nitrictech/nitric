@@ -15,7 +15,7 @@
 package worker
 
 import (
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
 // FaasWorker

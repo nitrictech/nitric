@@ -20,13 +20,3 @@
 bin/
 
 *.coverprofile
-
-# Ignore proto generated interfaces
-interfaces/
-
-mocks/
-
-# Ignore generated mocks
-*.mock.go
-
-contracts/validate
