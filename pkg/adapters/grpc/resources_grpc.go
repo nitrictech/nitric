@@ -17,7 +17,7 @@ package grpc
 import (
 	"context"
 
-	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
 type ResourcesServiceServer struct {

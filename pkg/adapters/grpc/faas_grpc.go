@@ -17,7 +17,7 @@ package grpc
 import (
 	"fmt"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
 

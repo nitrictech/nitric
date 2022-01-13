@@ -23,7 +23,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 

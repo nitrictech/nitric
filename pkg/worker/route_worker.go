@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
