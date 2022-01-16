@@ -25,10 +25,17 @@ import (
 
 // RouteWorker - Worker representation for an http api route handler
 type RouteWorker struct {
+	api     string
 	methods []string
 	path    string
 
 	GrpcWorker
+}
+
+// Api - Retrieve the name of the API this
+// route worker was registered for
+func (s *RouteWorker) Api() string {
+	return s.api
 }
 
 func (s *RouteWorker) extractPathParams(trigger *triggers.HttpRequest) (map[string]string, error) {
@@ -93,6 +100,7 @@ func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
 }
 
 type RouteWorkerOptions struct {
+	Api     string
 	Path    string
 	Methods []string
 }
@@ -101,6 +109,7 @@ type RouteWorkerOptions struct {
 // Only a pool may create a new faas worker
 func NewRouteWorker(stream pb.FaasService_TriggerStreamServer, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
+		api:        opts.Api,
 		path:       opts.Path,
 		methods:    opts.Methods,
 		GrpcWorker: NewGrpcListener(stream),

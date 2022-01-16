@@ -52,6 +52,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	if api := ir.GetApi(); api != nil {
 		// Create a new route worker
 		wrkr = worker.NewRouteWorker(stream, &worker.RouteWorkerOptions{
+			Api:     api.Api,
 			Path:    api.Path,
 			Methods: api.Methods,
 		})
