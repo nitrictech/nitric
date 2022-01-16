@@ -142,8 +142,20 @@ func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
 }
 
 type GetWorkerOptions struct {
-	Http  *triggers.HttpRequest
-	Event *triggers.Event
+	Http   *triggers.HttpRequest
+	Event  *triggers.Event
+	Filter func(w Worker) bool
+}
+
+func filterWorkers(ws []Worker, f func(w Worker) bool) []Worker {
+	newWs := make([]Worker, 0)
+	for _, w := range ws {
+		if f(w) {
+			newWs = append(newWs, w)
+		}
+	}
+
+	return newWs
 }
 
 // GetWorker - Retrieves a worker from this pool
@@ -154,6 +166,10 @@ func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
 	if opts.Http != nil {
 		ws := p.getHttpWorkers()
 
+		if opts.Filter != nil {
+			ws = filterWorkers(ws, opts.Filter)
+		}
+
 		for _, w := range ws {
 			if w.HandlesHttpRequest(opts.Http) {
 				return w, nil
@@ -163,6 +179,10 @@ func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
 
 	if opts.Event != nil {
 		ws := p.getEventWorkers()
+
+		if opts.Filter != nil {
+			ws = filterWorkers(ws, opts.Filter)
+		}
 
 		for _, w := range ws {
 			if w.HandlesEvent(opts.Event) {
