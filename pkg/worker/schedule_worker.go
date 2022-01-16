@@ -28,6 +28,10 @@ type ScheduleWorker struct {
 	GrpcWorker
 }
 
+func (s *ScheduleWorker) Key() string {
+	return s.key
+}
+
 func (s *ScheduleWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
 	return false
 }
