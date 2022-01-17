@@ -16,6 +16,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 
@@ -32,10 +33,14 @@ func (s *ScheduleWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool 
 	return false
 }
 
+// ScheduleKeyToTopicName - converts a schedule description to a name for a topic
+// e.g. "Prune Customer Orders" -> "prune-customer-orders"
+func ScheduleKeyToTopicName(key string) string {
+	return strings.ToLower(strings.ReplaceAll(key, " ", "-"))
+}
+
 func (s *ScheduleWorker) HandlesEvent(trigger *triggers.Event) bool {
-	// TODO: Determine if event should be handled by using convention for
-	// this schedule
-	return false
+	return ScheduleKeyToTopicName(s.key) == trigger.Topic
 }
 
 func (s *ScheduleWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
