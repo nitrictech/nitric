@@ -170,10 +170,6 @@ func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 	if opts.Http != nil {
 		ws := p.getHttpWorkers()
 
-		if opts.Filter != nil {
-			ws = filterWorkers(ws, opts.Filter)
-		}
-
 		for _, w := range ws {
 			if w.HandlesHttpRequest(opts.Http) {
 				workers = append(workers, w)
@@ -184,15 +180,15 @@ func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 	if opts.Event != nil {
 		ws := p.getEventWorkers()
 
-		if opts.Filter != nil {
-			ws = filterWorkers(ws, opts.Filter)
-		}
-
 		for _, w := range ws {
 			if w.HandlesEvent(opts.Event) {
 				workers = append(workers, w)
 			}
 		}
+	}
+
+	if opts.Filter != nil {
+		workers = filterWorkers(workers, opts.Filter)
 	}
 
 	return workers
