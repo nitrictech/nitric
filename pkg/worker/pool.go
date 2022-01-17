@@ -27,6 +27,7 @@ type WorkerPool interface {
 	WaitForMinimumWorkers(timeout int) error
 	GetWorkerCount() int
 	GetWorker(*GetWorkerOptions) (Worker, error)
+	GetWorkers(*GetWorkerOptions) []Worker
 	AddWorker(Worker) error
 	RemoveWorker(Worker) error
 	Monitor() error
@@ -156,6 +157,41 @@ func filterWorkers(ws []Worker, f func(w Worker) bool) []Worker {
 	}
 
 	return newWs
+}
+
+// GetWorkers - return a slice of all workers matching the input options.
+// useful for retrieving a list of all topic subscribers (for example)
+func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
+	p.workerLock.Lock()
+	defer p.workerLock.Unlock()
+
+	workers := make([]Worker, 0)
+
+	if opts.Http != nil {
+		ws := p.getHttpWorkers()
+
+		for _, w := range ws {
+			if w.HandlesHttpRequest(opts.Http) {
+				workers = append(workers, w)
+			}
+		}
+	}
+
+	if opts.Event != nil {
+		ws := p.getEventWorkers()
+
+		for _, w := range ws {
+			if w.HandlesEvent(opts.Event) {
+				workers = append(workers, w)
+			}
+		}
+	}
+
+	if opts.Filter != nil {
+		workers = filterWorkers(workers, opts.Filter)
+	}
+
+	return workers
 }
 
 // GetWorker - Retrieves a worker from this pool
