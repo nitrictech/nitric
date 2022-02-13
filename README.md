@@ -100,6 +100,7 @@ make install-tools
 Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
 
 > On MacOS with Homebrew, you can run `brew install protobuf`
+> On Fedora, run `sudo dnf install -y protobuf protobuf-compiler protobuf-devel`
 
 ### Run unit tests
 ```bash
