@@ -256,8 +256,6 @@ func (p *ProcessPool) AddWorker(wrkr Worker) error {
 
 	p.workers = append(p.workers, wrkr)
 
-	fmt.Printf("new Worker in pool: %d workers available\n", len(p.workers))
-
 	return nil
 }
 
