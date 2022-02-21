@@ -249,7 +249,7 @@ var _ = Describe("Membrane", func() {
 			It("Should return an error", func() {
 				err := membrane.Start()
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Could not listen"))
+				Expect(err.Error()).To(ContainSubstring("could not listen"))
 			})
 		})
 	})

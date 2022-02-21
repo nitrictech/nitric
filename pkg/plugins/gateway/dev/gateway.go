@@ -17,6 +17,7 @@ package gateway_plugin
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/valyala/fasthttp"
@@ -54,7 +55,7 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 		err = wrkr.HandleEvent(evt)
 
 		if err != nil {
-			fmt.Println(err)
+			log.Default().Println(err)
 			ctx.Error(fmt.Sprintf("Error processing event. Details: %s", err), 500)
 		} else {
 			ctx.SuccessString("text/plain", "Successfully Handled the Event")

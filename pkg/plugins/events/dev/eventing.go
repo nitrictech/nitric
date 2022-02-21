@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -66,7 +67,7 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 	}
 
 	if targets, ok := s.subscriptions[topic]; ok {
-		fmt.Println(fmt.Sprintf("Publishing event to: %s", targets))
+		log.Default().Println(fmt.Sprintf("Publishing event to: %s", targets))
 		for _, target := range targets {
 			httpRequest, _ := http.NewRequest("POST", target, bytes.NewReader(marshaledPayload))
 
@@ -79,7 +80,7 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 			// Call the target
 			res, err := s.client.Do(httpRequest)
 			if err != nil {
-				fmt.Println(err)
+				log.Default().Println(err)
 				return newErr(
 					codes.Internal,
 					"unable to send message",
@@ -92,7 +93,7 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 				body := buf.String()
 				// TODO: Think about dead-letter functionality for these failed subscribers.
 				// Just log failed delivery of events, since a single receiver failing to process an event wouldn't be an error in a cloud service.
-				fmt.Println(fmt.Sprintf("Failed to publish event to %s\nStatus Code: %v\n%s", target, res.StatusCode, body))
+				log.Default().Println(fmt.Sprintf("Failed to publish event to %s\nStatus Code: %v\n%s", target, res.StatusCode, body))
 			}
 		}
 	} else {

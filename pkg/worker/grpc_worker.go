@@ -24,7 +24,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 
-	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/errors"
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -94,7 +93,7 @@ func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 		}
 
 		if msg.GetInitRequest() != nil {
-			fmt.Println("Received init request from worker")
+			log.Default().Println("Received init request from worker")
 			gwb.stream.Send(&v1.ServerMessage{
 				Content: &v1.ServerMessage_InitResponse{
 					InitResponse: &v1.InitResponse{},
@@ -111,7 +110,7 @@ func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 			val <- response
 		} else {
 			err := errors.Fatal("FaaS Worker in bad state closing stream: " + msg.GetId())
-			fmt.Println(err.Error())
+			log.Default().Println(err.Error())
 			errchan <- err
 			break
 		}
@@ -139,11 +138,11 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		mimeType = http.DetectContentType(trigger.Body)
 	}
 
-	headers := make(map[string]*pb.HeaderValue)
+	headers := make(map[string]*v1.HeaderValue)
 	headersOld := make(map[string]string)
 	for k, v := range trigger.Header {
 		if v != nil {
-			headers[k] = &pb.HeaderValue{
+			headers[k] = &v1.HeaderValue{
 				Value: v,
 			}
 			if len(v) > 0 {
@@ -152,11 +151,11 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		}
 	}
 
-	query := make(map[string]*pb.QueryValue)
+	query := make(map[string]*v1.QueryValue)
 	queryOld := make(map[string]string)
 	for k, v := range trigger.Query {
 		if v != nil {
-			query[k] = &pb.QueryValue{
+			query[k] = &v1.QueryValue{
 				Value: v,
 			}
 			if len(v) > 0 {
@@ -165,11 +164,11 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 		}
 	}
 
-	triggerRequest := &pb.TriggerRequest{
+	triggerRequest := &v1.TriggerRequest{
 		Data:     trigger.Body,
 		MimeType: mimeType,
-		Context: &pb.TriggerRequest_Http{
-			Http: &pb.HttpTriggerContext{
+		Context: &v1.TriggerRequest_Http{
+			Http: &v1.HttpTriggerContext{
 				Path:           trigger.Path,
 				Method:         trigger.Method,
 				QueryParams:    query,
@@ -182,9 +181,9 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 	}
 
 	// construct the message
-	message := &pb.ServerMessage{
+	message := &v1.ServerMessage{
 		Id: ID,
-		Content: &pb.ServerMessage_TriggerRequest{
+		Content: &v1.ServerMessage_TriggerRequest{
 			TriggerRequest: triggerRequest,
 		},
 	}
@@ -233,11 +232,11 @@ func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*trig
 func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
-	triggerRequest := &pb.TriggerRequest{
+	triggerRequest := &v1.TriggerRequest{
 		Data:     trigger.Payload,
 		MimeType: http.DetectContentType(trigger.Payload),
-		Context: &pb.TriggerRequest_Topic{
-			Topic: &pb.TopicTriggerContext{
+		Context: &v1.TriggerRequest_Topic{
+			Topic: &v1.TopicTriggerContext{
 				Topic: trigger.Topic,
 				// FIXME: Add missing fields here...
 			},
@@ -245,9 +244,9 @@ func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	// construct the message
-	message := &pb.ServerMessage{
+	message := &v1.ServerMessage{
 		Id: ID,
-		Content: &pb.ServerMessage_TriggerRequest{
+		Content: &v1.ServerMessage_TriggerRequest{
 			TriggerRequest: triggerRequest,
 		},
 	}
@@ -279,10 +278,10 @@ func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("Error ocurred handling the event")
 }
 
-func NewGrpcListener(stream pb.FaasService_TriggerStreamServer) *grpcWorkerBase {
+func NewGrpcListener(stream v1.FaasService_TriggerStreamServer) *grpcWorkerBase {
 	return &grpcWorkerBase{
 		stream:            stream,
 		responseQueueLock: &sync.Mutex{},
-		responseQueue:     make(map[string]chan *pb.TriggerResponse),
+		responseQueue:     make(map[string]chan *v1.TriggerResponse),
 	}
 }

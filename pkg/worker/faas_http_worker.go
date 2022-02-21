@@ -16,6 +16,7 @@ package worker
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -67,7 +68,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	if jsonData, err := protojson.Marshal(triggerRequest); err == nil {
-		fmt.Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
+		log.Default().Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)

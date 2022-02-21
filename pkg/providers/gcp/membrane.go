@@ -38,28 +38,28 @@ func main() {
 
 	secretPlugin, err := secret_manager_secret_service.New()
 	if err != nil {
-		fmt.Println("Failed to load secret plugin:", err.Error())
+		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
 	documentPlugin, err := firestore_service.New()
 	if err != nil {
-		fmt.Println("Failed to load document plugin:", err.Error())
+		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 	eventsPlugin, err := pubsub_service.New()
 	if err != nil {
-		fmt.Println("Failed to load events plugin:", err.Error())
+		log.Default().Println("Failed to load events plugin:", err.Error())
 	}
 	storagePlugin, err := storage_service.New()
 	if err != nil {
-		fmt.Println("Failed to load storage plugin:", err.Error())
+		log.Default().Println("Failed to load storage plugin:", err.Error())
 	}
 	gatewayPlugin, err := cloudrun_plugin.New()
 	if err != nil {
-		fmt.Println("Failed to load gateway plugin:", err.Error())
+		log.Default().Println("Failed to load gateway plugin:", err.Error())
 	}
 	queuePlugin, err := pubsub_queue_service.New()
 	if err != nil {
-		fmt.Println("Failed to load queue plugin:", err.Error())
+		log.Default().Println("Failed to load queue plugin:", err.Error())
 	}
 
 	m, err := membrane.New(&membrane.MembraneOptions{
@@ -83,9 +83,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		log.Default().Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		log.Default().Println(fmt.Sprintf("Received %v, exiting", sigTerm))
 	}
 
 	m.Stop()

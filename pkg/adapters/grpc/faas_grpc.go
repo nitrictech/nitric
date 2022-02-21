@@ -15,13 +15,13 @@
 package grpc
 
 import (
-	"fmt"
+	"log"
 
-	"github.com/nitrictech/nitric/pkg/worker"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type FaasServer struct {
@@ -85,7 +85,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 
 	// block here on error returned from the worker
 	err = <-errchan
-	fmt.Println("FaaS stream closed, removing worker")
+	log.Default().Println("FaaS stream closed, removing worker")
 
 	// Worker is done so we can remove it from the pool
 	s.pool.RemoveWorker(wrkr)

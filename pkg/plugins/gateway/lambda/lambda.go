@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
@@ -255,7 +256,7 @@ func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 func (s *LambdaGateway) Stop() error {
 	// XXX: This is a NO_OP Process, as this is a pull based system
 	// We don't need to stop listening to anything
-	fmt.Println("gateway 'Stop' called, waiting for lambda runtime to finish")
+	log.Default().Println("gateway 'Stop' called, waiting for lambda runtime to finish")
 	// Lambda can't be stopped, need to wait for it to finish
 	<-s.finished
 	return nil
