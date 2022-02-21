@@ -46,7 +46,7 @@ func main() {
 	} else {
 		childCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
 		if len(childCommand) > 0 {
-			fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
+			log.Default().Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
 		}
 	}
 

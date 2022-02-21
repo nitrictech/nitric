@@ -38,19 +38,19 @@ func main() {
 
 	documentPlugin, err := mongodb_service.New()
 	if err != nil {
-		fmt.Println("Failed to load document plugin:", err.Error())
+		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
 	eventsPlugin, err := event_grid.New()
 	if err != nil {
-		fmt.Println("Failed to load event plugin:", err.Error())
+		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin, _ := azqueue_service.New()
 	storagePlugin, _ := azblob_service.New()
 	secretPlugin, err := key_vault.New()
 	if err != nil {
-		fmt.Println("Failed to load secret plugin:", err.Error())
+		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
 	m, err := membrane.New(&membrane.MembraneOptions{

@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -64,7 +63,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		log.Default().Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
 	errChan := make(chan error)
@@ -75,9 +74,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		log.Default().Printf("Membrane Error: %v, exiting\n", membraneError)
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		log.Default().Printf("Received %v, exiting\n", sigTerm)
 	}
 
 	m.Stop()

@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"time"
 
@@ -240,7 +241,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azqueue.TokenRefresher {
 	return func(credential azqueue.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			fmt.Println("Error refreshing token: ", err)
+			log.Default().Println("Error refreshing token: ", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)

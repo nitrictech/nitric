@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"time"
 
@@ -193,7 +194,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {
 	return func(credential azblob.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			fmt.Println("Error refreshing token: ", err)
+			log.Default().Println("Error refreshing token: ", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)
