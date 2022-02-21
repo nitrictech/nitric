@@ -28,6 +28,10 @@ type SubscriptionWorker struct {
 	GrpcWorker
 }
 
+func (s *SubscriptionWorker) Topic() string {
+	return s.topic
+}
+
 func (s *SubscriptionWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
 	return false
 }
