@@ -39,6 +39,10 @@ func ScheduleKeyToTopicName(key string) string {
 	return strings.ToLower(strings.ReplaceAll(key, " ", "-"))
 }
 
+func (s *ScheduleWorker) Key() string {
+	return s.key
+}
+
 func (s *ScheduleWorker) HandlesEvent(trigger *triggers.Event) bool {
 	return ScheduleKeyToTopicName(s.key) == trigger.Topic
 }
