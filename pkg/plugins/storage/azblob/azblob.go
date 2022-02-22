@@ -19,12 +19,14 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
@@ -192,7 +194,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {
 	return func(credential azblob.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			fmt.Println("Error refreshing token: ", err)
+			log.Default().Println("Error refreshing token: ", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)

@@ -18,15 +18,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
-	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
-	mock_pubsub "github.com/nitrictech/nitric/tests/mocks/pubsub"
-
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
+	mock_pubsub "github.com/nitrictech/nitric/tests/mocks/pubsub"
 )
 
 var _ = Describe("Pubsub", func() {

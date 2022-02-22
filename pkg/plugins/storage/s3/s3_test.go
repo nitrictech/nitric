@@ -23,11 +23,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	mock_s3iface "github.com/nitrictech/nitric/mocks/s3"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
 	mock_s3 "github.com/nitrictech/nitric/tests/mocks/s3"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("S3", func() {

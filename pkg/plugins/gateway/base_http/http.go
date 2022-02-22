@@ -19,15 +19,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/valyala/fasthttp"
+
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
-
-	"github.com/nitrictech/nitric/pkg/plugins/gateway"
-	"github.com/valyala/fasthttp"
 )
 
-type HttpMiddleware func(*fasthttp.RequestCtx, worker.Worker) bool
+type HttpMiddleware func(*fasthttp.RequestCtx, worker.WorkerPool) bool
 
 type BaseHttpGateway struct {
 	address string
@@ -42,15 +42,8 @@ type BaseHttpGateway struct {
 
 func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
-		wrkr, err := pool.GetWorker()
-
-		if err != nil {
-			ctx.Error("Unable to get worker to handle request", 500)
-			return
-		}
-
 		if s.mw != nil {
-			if !s.mw(ctx, wrkr) {
+			if !s.mw(ctx, pool) {
 				// middleware has indicated that is has processed the request
 				// so we can exit here
 				return
@@ -58,6 +51,15 @@ func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp
 		}
 
 		httpTrigger := triggers.FromHttpRequest(ctx)
+		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
+			Http: httpTrigger,
+		})
+
+		if err != nil {
+			ctx.Error("Unable to get worker to handle request", 500)
+			return
+		}
+
 		response, err := wrkr.HandleHttpRequest(httpTrigger)
 
 		if err != nil {

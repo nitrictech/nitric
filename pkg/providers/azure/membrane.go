@@ -32,25 +32,25 @@ import (
 )
 
 func main() {
-	term := make(chan os.Signal)
+	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	documentPlugin, err := mongodb_service.New()
 	if err != nil {
-		fmt.Println("Failed to load document plugin:", err.Error())
+		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
 	eventsPlugin, err := event_grid.New()
 	if err != nil {
-		fmt.Println("Failed to load event plugin:", err.Error())
+		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
 	gatewayPlugin, _ := http_service.New()
 	queuePlugin, _ := azqueue_service.New()
 	storagePlugin, _ := azblob_service.New()
 	secretPlugin, err := key_vault.New()
 	if err != nil {
-		fmt.Println("Failed to load secret plugin:", err.Error())
+		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
 	m, err := membrane.New(&membrane.MembraneOptions{

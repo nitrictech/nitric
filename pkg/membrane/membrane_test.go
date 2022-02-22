@@ -22,18 +22,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/membrane"
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
+	"github.com/nitrictech/nitric/pkg/membrane"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
+	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 )
 
 type MockDocumentServer struct {
@@ -60,7 +60,6 @@ type MockFunction struct {
 }
 
 func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
-
 	if m.requests == nil {
 		m.requests = make([]*http.Request, 0)
 	}
@@ -92,12 +91,13 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 	// Spy on the mock gateway
 	gw.responses = make([]*triggers.HttpResponse, 0)
 
-	wrkr, _ := pool.GetWorker()
-
 	gw.started = true
 	if gw.triggers != nil {
 		for _, trigger := range gw.triggers {
 			if s, ok := trigger.(*triggers.HttpRequest); ok {
+				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
+					Http: s,
+				})
 				resp, err := wrkr.HandleHttpRequest(s)
 
 				if err != nil {
@@ -109,6 +109,10 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 					gw.responses = append(gw.responses, resp)
 				}
 			} else if s, ok := trigger.(*triggers.Event); ok {
+				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
+					Event: s,
+				})
+
 				wrkr.HandleEvent(s)
 			}
 		}
@@ -245,7 +249,7 @@ var _ = Describe("Membrane", func() {
 			It("Should return an error", func() {
 				err := membrane.Start()
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Could not listen"))
+				Expect(err.Error()).To(ContainSubstring("could not listen"))
 			})
 		})
 	})

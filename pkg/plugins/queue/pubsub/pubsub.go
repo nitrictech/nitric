@@ -19,17 +19,17 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
-
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
-	"github.com/nitrictech/nitric/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+
+	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
+	"github.com/nitrictech/nitric/pkg/plugins/errors"
+	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 )
 
 type PubsubQueueService struct {
@@ -37,7 +37,6 @@ type PubsubQueueService struct {
 	client              ifaces_pubsub.PubsubClient
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)
 	projectId           string
-	messages            []*pubsub.Message
 }
 
 // TODO: clearly document the reason for this subscription.

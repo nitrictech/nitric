@@ -19,13 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/asdine/storm"
+	"go.etcd.io/bbolt"
+
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
-	"go.etcd.io/bbolt"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const DEV_SUB_DIRECTORY = "./buckets/"

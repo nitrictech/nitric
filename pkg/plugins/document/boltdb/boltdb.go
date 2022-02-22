@@ -251,7 +251,6 @@ func (s *BoltDocService) query(collection *document.Collection, expressions []do
 
 	if parentKey == nil {
 		matchers = append(matchers, q.Eq(sortKeyName, collection.Name+"#"))
-
 	} else {
 		if parentKey.Id != "" {
 			matchers = append(matchers, q.Eq(partitionKeyName, parentKey.Id))
@@ -452,7 +451,6 @@ func (s *BoltDocService) createdDb(coll document.Collection) (*storm.DB, error) 
 }
 
 func createDoc(key *document.Key) BoltDoc {
-
 	parentKey := key.Collection.Parent
 
 	// Top Level Collection
@@ -462,7 +460,6 @@ func createDoc(key *document.Key) BoltDoc {
 			PartitionKey: key.Id,
 			SortKey:      key.Collection.Name + "#",
 		}
-
 	} else {
 		return BoltDoc{
 			Id:           parentKey.Id + "_" + key.Id,

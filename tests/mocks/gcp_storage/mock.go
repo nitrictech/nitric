@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 
 	"cloud.google.com/go/storage"
+
 	ifaces_gcloud_storage "github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage"
 )
 
@@ -103,7 +104,6 @@ func (s *MockObjectHandle) NewReader(ctx context.Context) (ifaces_gcloud_storage
 			} else {
 				return nil, fmt.Errorf("cannot read object with key %s from bucket %s, not found in storage %v", s.bucket, s.name, store)
 			}
-
 		}
 	}
 
@@ -149,7 +149,6 @@ func (s *MockWriter) Write(p []byte) (n int, err error) {
 	}
 
 	return -1, fmt.Errorf("Cannot not write to bucket that does not exist")
-
 }
 
 func (s *MockWriter) Close() error {

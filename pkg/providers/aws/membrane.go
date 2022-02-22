@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -25,7 +24,7 @@ import (
 	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
 	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
-	ecs_service "github.com/nitrictech/nitric/pkg/plugins/gateway/ecs"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
 	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secrets_manager"
@@ -34,7 +33,7 @@ import (
 )
 
 func main() {
-	term := make(chan os.Signal)
+	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
@@ -46,7 +45,7 @@ func main() {
 	case "lambda":
 		gatewayPlugin, _ = lambda_service.New()
 	default:
-		gatewayPlugin, _ = ecs_service.New()
+		gatewayPlugin, _ = base_http.New(nil)
 	}
 	secretPlugin, _ := secrets_manager_secret_service.New()
 	documentPlugin, _ := dynamodb_service.New()
@@ -64,7 +63,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		log.Default().Fatalf("There was an error initialising the membrane server: %v", err)
 	}
 
 	errChan := make(chan error)
@@ -75,9 +74,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		log.Default().Printf("Membrane Error: %v, exiting\n", membraneError)
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		log.Default().Printf("Received %v, exiting\n", sigTerm)
 	}
 
 	m.Stop()

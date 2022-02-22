@@ -25,11 +25,7 @@ type MockScribble struct {
 	// ReadAll(string) ([]string, error)
 	// Write(string, string, interface{}) error
 	// Delete(string, string) error
-	store      map[string]map[string][]byte
-	readErr    error
-	readAllErr error
-	writeErr   error
-	deleteErr  error
+	store map[string]map[string][]byte
 }
 
 func (m *MockScribble) ensureCollectionExists(collection string) {

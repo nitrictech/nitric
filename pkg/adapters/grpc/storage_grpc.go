@@ -18,9 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	"google.golang.org/grpc/codes"
+
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/plugins/storage"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins

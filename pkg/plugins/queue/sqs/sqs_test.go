@@ -20,11 +20,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/golang/mock/gomock"
-	mocks_sqs "github.com/nitrictech/nitric/mocks/sqs"
 
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	mocks_sqs "github.com/nitrictech/nitric/mocks/sqs"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 )
 
 var _ = Describe("Sqs", func() {

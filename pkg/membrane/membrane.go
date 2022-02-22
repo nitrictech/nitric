@@ -15,25 +15,27 @@
 package membrane
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
-	"github.com/nitrictech/nitric/pkg/plugins/secret"
-	"github.com/nitrictech/nitric/pkg/utils"
-	"github.com/nitrictech/nitric/pkg/worker"
+	"google.golang.org/grpc"
 
-	v1 "github.com/nitrictech/nitric/interfaces/nitric/v1"
+	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
+	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
-	"google.golang.org/grpc"
+	"github.com/nitrictech/nitric/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type MembraneOptions struct {
@@ -103,9 +105,9 @@ type Membrane struct {
 	pool worker.WorkerPool
 }
 
-func (s *Membrane) log(log string) {
+func (s *Membrane) log(msg string) {
 	if !s.suppressLogs {
-		fmt.Println(log)
+		log.Default().Println(msg)
 	}
 }
 
@@ -141,7 +143,7 @@ func (s *Membrane) startChildProcess() error {
 	// TODO: This is a detached process
 	// so it will continue to run until even after the membrane dies
 
-	fmt.Println(fmt.Sprintf("Starting Child Process"))
+	log.Default().Println("Starting Child Process")
 	childProcess := exec.Command(s.childCommand[0], s.childCommand[1:]...)
 	childProcess.Stdout = os.Stdout
 	childProcess.Stderr = os.Stderr
@@ -149,7 +151,7 @@ func (s *Membrane) startChildProcess() error {
 
 	// Actual panic here, we don't want to start if our userland code cannot successfully start
 	if applicationError != nil {
-		return fmt.Errorf("There was an error starting the child process: %v", applicationError)
+		return fmt.Errorf("there was an error starting the child process: %w", applicationError)
 	}
 
 	return nil
@@ -181,6 +183,9 @@ func (s *Membrane) Start() error {
 	secretServer := s.createSecretServer()
 	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
+	// TODO: Implement based on resource resolution plugins
+	v1.RegisterResourceServiceServer(s.grpcServer, &grpc2.ResourcesServiceServer{})
+
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
 		faasServer := grpc2.NewFaasServer(s.pool)
@@ -188,7 +193,7 @@ func (s *Membrane) Start() error {
 	}
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
-		return fmt.Errorf("Could not listen on configured service address: %v", err)
+		return fmt.Errorf("could not listen on configured service address: %w", err)
 	}
 
 	s.log("Registered Gateway Plugin")
@@ -278,7 +283,6 @@ func (s *Membrane) Stop() {
 
 // Create a new Membrane server
 func New(options *MembraneOptions) (*Membrane, error) {
-
 	// Get unset options from env or defaults
 	if options.ServiceAddress == "" {
 		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
@@ -296,7 +300,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		} else {
 			options.ChildCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
 			if len(options.ChildCommand) > 0 {
-				fmt.Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
+				log.Default().Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
 			}
 		}
 	}
@@ -322,12 +326,12 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	}
 
 	if options.GatewayPlugin == nil {
-		return nil, fmt.Errorf("Missing gateway plugin, Gateway plugin must not be nil")
+		return nil, errors.New("missing gateway plugin, Gateway plugin must not be nil")
 	}
 
 	if !options.TolerateMissingServices {
 		if options.EventsPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
-			return nil, fmt.Errorf("Missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
+			return nil, errors.New("missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
 		}
 	}
 
@@ -339,7 +343,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
 		}
 
-		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "1")
+		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "100")
 		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
 		if err != nil || minWorkers < 0 {
 			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)

@@ -17,17 +17,18 @@ package gateway_plugin
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
+	"github.com/valyala/fasthttp"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/valyala/fasthttp"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
-func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
+func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 	var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 	// Handle Event/Subscription Request Types
@@ -36,14 +37,25 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
 		requestId := string(ctx.Request.Header.Peek("x-nitric-request-id"))
 		payload := ctx.Request.Body()
 
-		err := wrkr.HandleEvent(&triggers.Event{
+		evt := &triggers.Event{
 			ID:      requestId,
 			Topic:   trigger,
 			Payload: payload,
+		}
+
+		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{
+			Event: evt,
 		})
 
 		if err != nil {
-			fmt.Println(err)
+			ctx.Error("No worker available to handle event", 500)
+			return false
+		}
+
+		err = wrkr.HandleEvent(evt)
+
+		if err != nil {
+			log.Default().Println(err)
 			ctx.Error(fmt.Sprintf("Error processing event. Details: %s", err), 500)
 		} else {
 			ctx.SuccessString("text/plain", "Successfully Handled the Event")

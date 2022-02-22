@@ -26,7 +26,7 @@ import (
 )
 
 func main() {
-	term := make(chan os.Signal)
+	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
@@ -50,9 +50,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		fmt.Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
+		log.Default().Println(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
 	case sigTerm := <-term:
-		fmt.Println(fmt.Sprintf("Received %v, exiting", sigTerm))
+		log.Default().Println(fmt.Sprintf("Received %v, exiting", sigTerm))
 	}
 
 	m.Stop()

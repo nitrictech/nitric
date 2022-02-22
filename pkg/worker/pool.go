@@ -18,13 +18,16 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 type WorkerPool interface {
 	// WaitForMinimumWorkers - A blocking method
 	WaitForMinimumWorkers(timeout int) error
 	GetWorkerCount() int
-	GetWorker() (Worker, error)
+	GetWorker(*GetWorkerOptions) (Worker, error)
+	GetWorkers(*GetWorkerOptions) []Worker
 	AddWorker(Worker) error
 	RemoveWorker(Worker) error
 	Monitor() error
@@ -39,7 +42,7 @@ type ProcessPoolOptions struct {
 type ProcessPool struct {
 	minWorkers int
 	maxWorkers int
-	workerLock sync.Mutex
+	workerLock sync.Locker
 	workers    []Worker
 	poolErr    chan error
 }
@@ -48,6 +51,53 @@ func (p *ProcessPool) GetWorkerCount() int {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 	return len(p.workers)
+}
+
+func prepend(slice []Worker, elems ...Worker) []Worker {
+	return append(elems, slice...)
+}
+
+// return route workers
+func (p *ProcessPool) getHttpWorkers() []Worker {
+	hws := make([]Worker, 0)
+
+	for _, w := range p.workers {
+		switch w.(type) {
+		case *ScheduleWorker:
+			break
+		case *SubscriptionWorker:
+			break
+		case *RouteWorker:
+			// Prioritise Route Workers
+			hws = prepend(hws, w)
+			break
+		default:
+			hws = append(hws, w)
+		}
+	}
+
+	return hws
+}
+
+// return route workers
+func (p *ProcessPool) getEventWorkers() []Worker {
+	hws := make([]Worker, 0)
+
+	for _, w := range p.workers {
+		switch w.(type) {
+		case *RouteWorker:
+			// Ignore route workers
+			break
+		case *ScheduleWorker:
+			hws = prepend(hws, w)
+		case *SubscriptionWorker:
+			hws = prepend(hws, w)
+		default:
+			hws = append(hws, w)
+		}
+	}
+
+	return hws
 }
 
 // GetMinWorkers - return the minimum number of workers for this pool
@@ -92,16 +142,85 @@ func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
 	return nil
 }
 
-// GetWorker - Retrieves a worker from this pool
-func (p *ProcessPool) GetWorker() (Worker, error) {
+type GetWorkerOptions struct {
+	Http   *triggers.HttpRequest
+	Event  *triggers.Event
+	Filter func(w Worker) bool
+}
+
+func filterWorkers(ws []Worker, f func(w Worker) bool) []Worker {
+	newWs := make([]Worker, 0)
+	for _, w := range ws {
+		if f(w) {
+			newWs = append(newWs, w)
+		}
+	}
+
+	return newWs
+}
+
+// GetWorkers - return a slice of all workers matching the input options.
+// useful for retrieving a list of all topic subscribers (for example)
+func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	if len(p.workers) > 0 {
-		return p.workers[0], nil
-	} else {
-		return nil, fmt.Errorf("no workers available in this pool")
+	workers := make([]Worker, len(p.workers))
+	workers = append(workers, p.workers...)
+
+	if opts.Http != nil {
+		workers = filterWorkers(workers, func(w Worker) bool {
+			return w.HandlesHttpRequest(opts.Http)
+		})
 	}
+
+	if opts.Event != nil {
+		workers = filterWorkers(workers, func(w Worker) bool {
+			return w.HandlesEvent(opts.Event)
+		})
+	}
+
+	if opts.Filter != nil {
+		workers = filterWorkers(workers, opts.Filter)
+	}
+
+	return workers
+}
+
+// GetWorker - Retrieves a worker from this pool
+func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
+	p.workerLock.Lock()
+	defer p.workerLock.Unlock()
+
+	if opts.Http != nil {
+		ws := p.getHttpWorkers()
+
+		if opts.Filter != nil {
+			ws = filterWorkers(ws, opts.Filter)
+		}
+
+		for _, w := range ws {
+			if w.HandlesHttpRequest(opts.Http) {
+				return w, nil
+			}
+		}
+	}
+
+	if opts.Event != nil {
+		ws := p.getEventWorkers()
+
+		if opts.Filter != nil {
+			ws = filterWorkers(ws, opts.Filter)
+		}
+
+		for _, w := range ws {
+			if w.HandlesEvent(opts.Event) {
+				return w, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no valid workers available")
 }
 
 // RemoveWorker - Removes the given worker from this pool
@@ -149,7 +268,7 @@ func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 	return &ProcessPool{
 		minWorkers: opts.MinWorkers,
 		maxWorkers: opts.MaxWorkers,
-		workerLock: sync.Mutex{},
+		workerLock: &sync.Mutex{},
 		workers:    make([]Worker, 0),
 		poolErr:    make(chan error),
 	}

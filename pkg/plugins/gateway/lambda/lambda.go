@@ -19,16 +19,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 type eventType int
@@ -97,6 +98,7 @@ func (event *Event) UnmarshalJSON(data []byte) error {
 				// Populate the JSON
 				err = json.Unmarshal([]byte(messageString), messageJson)
 
+				// TODO: fix this if supporting multiple stacks in the same account
 				topicArn := snsRecord.SNS.TopicArn
 				topicParts := strings.Split(topicArn, ":")
 				trigger := topicParts[len(topicParts)-1]
@@ -177,16 +179,16 @@ type LambdaGateway struct {
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-	wrkr, err := s.pool.GetWorker()
-
-	if err != nil {
-		return nil, fmt.Errorf("Unable to get worker to handle events")
-	}
-
 	for _, request := range event.Requests {
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
+				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
+					Http: httpEvent,
+				})
+				if err != nil {
+					return nil, fmt.Errorf("Unable to get worker to handle http trigger")
+				}
 				response, err := wrkr.HandleHttpRequest(httpEvent)
 
 				if err != nil {
@@ -222,6 +224,12 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 			break
 		case triggers.TriggerType_Subscription:
 			if event, ok := request.(*triggers.Event); ok {
+				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
+					Event: event,
+				})
+				if err != nil {
+					return nil, fmt.Errorf("Unable to get worker to event trigger")
+				}
 				if err := wrkr.HandleEvent(event); err != nil {
 					return nil, err
 				}
@@ -248,7 +256,7 @@ func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 func (s *LambdaGateway) Stop() error {
 	// XXX: This is a NO_OP Process, as this is a pull based system
 	// We don't need to stop listening to anything
-	fmt.Println("gateway 'Stop' called, waiting for lambda runtime to finish")
+	log.Default().Println("gateway 'Stop' called, waiting for lambda runtime to finish")
 	// Lambda can't be stopped, need to wait for it to finish
 	<-s.finished
 	return nil

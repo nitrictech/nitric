@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
 	"github.com/nitrictech/nitric/pkg/utils"
@@ -77,7 +78,6 @@ func nameSelector(nitricName string, bucket *s3.Bucket) (bool, error) {
 }
 
 func New() (storage.StorageService, error) {
-
 	conf, err := configFromEnv()
 
 	if err != nil {

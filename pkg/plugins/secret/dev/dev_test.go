@@ -17,12 +17,12 @@ package secret_service_test
 import (
 	"os"
 
-	"github.com/nitrictech/nitric/pkg/utils"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	secretPlugin "github.com/nitrictech/nitric/pkg/plugins/secret/dev"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 var _ = Describe("Dev Secret Manager", func() {

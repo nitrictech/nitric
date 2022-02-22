@@ -21,16 +21,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/utils"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 const (
@@ -82,8 +82,8 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 	}
 
 	for _, b := range out.Buckets {
-		var selected bool = false
-		var selectErr error = nil
+		var selected bool
+		var selectErr error
 
 		if s.selector == nil {
 			// if selector is undefined us the default selector

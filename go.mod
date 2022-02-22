@@ -3,9 +3,10 @@ module github.com/nitrictech/nitric
 go 1.15
 
 require (
-	cloud.google.com/go v0.75.0
-	cloud.google.com/go/firestore v1.5.0
-	cloud.google.com/go/pubsub v1.3.1
+	cloud.google.com/go/firestore v1.6.0
+	cloud.google.com/go/kms v1.1.0 // indirect
+	cloud.google.com/go/pubsub v1.5.0
+	cloud.google.com/go/secretmanager v1.0.0
 	cloud.google.com/go/storage v1.10.0
 	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.13.0
@@ -22,29 +23,29 @@ require (
 	github.com/Sereal/Sereal v0.0.0-20200820125258-a016b7cda3f3 // indirect
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
-	github.com/aws/aws-sdk-go v1.36.12
+	github.com/aws/aws-sdk-go v1.36.30
 	github.com/envoyproxy/protoc-gen-validate v0.6.2
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/golang/snappy v0.0.3 // indirect
+	github.com/golangci/golangci-lint v1.43.0
 	github.com/google/addlicense v1.0.0
-	github.com/google/uuid v1.2.0
-	github.com/googleapis/gax-go/v2 v2.0.5
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/google/uuid v1.3.0
+	github.com/googleapis/gax-go/v2 v2.1.1
+	github.com/lyft/protoc-gen-star v0.6.0 // indirect
+	github.com/mitchellh/mapstructure v1.4.2
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/gomega v1.16.0
+	github.com/pkg/errors v0.9.1
 	github.com/uw-labs/lichen v0.1.4
-	github.com/valyala/fasthttp v1.23.0
+	github.com/valyala/fasthttp v1.30.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
-	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
-	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99
-	golang.org/x/tools v0.1.8
-	google.golang.org/api v0.40.0
-	google.golang.org/genproto v0.0.0-20210222152913-aa3ee6e6a81c
-	google.golang.org/grpc v1.35.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
+	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	google.golang.org/api v0.58.0
+	google.golang.org/genproto v0.0.0-20211018162055-cf77aa76bad2
+	google.golang.org/grpc v1.40.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.27.1
 )

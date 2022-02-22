@@ -18,21 +18,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"time"
 
+	"github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	azqueueserviceiface "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface"
-	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
-
-	"github.com/nitrictech/nitric/pkg/utils"
-
-	"github.com/Azure/azure-storage-queue-go/azqueue"
 
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	azqueueserviceiface "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface"
+	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 // Set to 30 seconds,
@@ -242,7 +241,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azqueue.TokenRefresher {
 	return func(credential azqueue.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			fmt.Println("Error refreshing token: ", err)
+			log.Default().Println("Error refreshing token: ", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)

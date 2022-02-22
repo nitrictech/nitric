@@ -19,16 +19,15 @@ import (
 	"os"
 	"time"
 
-	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
-
-	"github.com/nitrictech/nitric/tests/plugins"
-	test "github.com/nitrictech/nitric/tests/plugins/document"
-
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+
+	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
+	"github.com/nitrictech/nitric/tests/plugins"
+	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
 const shell = "/bin/sh"

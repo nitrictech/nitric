@@ -17,14 +17,14 @@ package http_service
 import (
 	"encoding/json"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-	"github.com/nitrictech/nitric/pkg/worker"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
+	"github.com/valyala/fasthttp"
+
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/valyala/fasthttp"
+	"github.com/nitrictech/nitric/pkg/triggers"
+	"github.com/nitrictech/nitric/pkg/worker"
 )
 
 func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
@@ -44,8 +44,8 @@ func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.E
 	ctx.Success("application/json", responseBody)
 }
 
-func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrkr worker.Worker) {
-	// FIXME: As we are batch handling events in azure
+func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
+	// TODO: As we are batch handling events
 	// how do we notify of failed event handling?
 	for _, event := range events {
 		// XXX: Assume we have a nitric event for now
@@ -61,13 +61,23 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrk
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		// FIXME: Handle error
-		wrkr.HandleEvent(&triggers.Event{
+		evt := &triggers.Event{
 			// FIXME: Check if ID is nil
 			ID:      *event.ID,
 			Topic:   *event.Topic,
 			Payload: payloadBytes,
+		}
+
+		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
+			Event: evt,
 		})
+
+		if err != nil {
+			// TODO: Handle error
+			continue
+		}
+		// FIXME: Handle error
+		wrkr.HandleEvent(evt)
 	}
 
 	// Return 200 OK (TODO: Determine how we could mark individual events for failure)
@@ -75,7 +85,7 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, wrk
 	ctx.SuccessString("text/plain", "success")
 }
 
-func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
+func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
 	// Handle an eventgrid webhook event
@@ -95,7 +105,7 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.Worker) bool {
 			return false
 		} else if eventType == "Notification" {
 			// Handle notifications
-			handleNotifications(ctx, eventgridEvents, wrkr)
+			handleNotifications(ctx, eventgridEvents, pool)
 			return false
 		}
 	}

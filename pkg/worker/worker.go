@@ -15,10 +15,7 @@
 package worker
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
@@ -26,18 +23,24 @@ import (
 type Worker interface {
 	HandleEvent(trigger *triggers.Event) error
 	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+	HandlesHttpRequest(trigger *triggers.HttpRequest) bool
+	HandlesEvent(trigger *triggers.Event) bool
 }
 
 type UnimplementedWorker struct{}
 
-func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
-	return fmt.Errorf("UNIMPLEMENTED")
+func (*UnimplementedWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return false
 }
 
-func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) *http.Response {
-	return &http.Response{
-		Status:     "Unimplemented",
-		StatusCode: 501,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("HTTP Handler Unimplemented"))),
-	}
+func (*UnimplementedWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	return false
+}
+
+func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
+	return fmt.Errorf("worker does not handle events")
+}
+
+func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+	return nil, fmt.Errorf("worker does not handle http requests")
 }

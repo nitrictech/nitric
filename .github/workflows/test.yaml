@@ -15,16 +15,26 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.16.7    
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
+      with:
+        version: 3.19.1
     - name: Install modules
       run: make install-tools
     - name: Check Source License Headers
       run: make license-header-check
+    - name: Generate Sources
+      run: make generate-sources
+    - name: Check generated sources
+      run: |
+        git add .
+        git diff --cached --quiet
     - name: Run Tests
       run: make test-coverage       
     - name: Check Dependency Licenses

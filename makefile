@@ -1,14 +1,24 @@
+ifeq (/,${HOME})
+GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache/
+else
+GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
+endif
+GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
+
 init: install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
+.PHONY: check fmt lint
+check: lint test
+
 fmt:
 	@echo Formatting Code
-	@gofmt -s -w ./**/*.go
+	$(GOLANGCI_LINT) run --fix
 
 lint:
-	@echo Formatting Code
-	@go run golang.org/x/lint/golint ./...
+	@echo Linting Code
+	$(GOLANGCI_LINT) run
 
 install:
 	@echo installing go dependencies
@@ -21,13 +31,13 @@ fetch-validate:
 
 install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
 
-${GOPATH}/bin/protoc-gen-go:
+${GOPATH}/bin/protoc-gen-go: go.sum
 	go get github.com/golang/protobuf/protoc-gen-go
 
-${GOPATH}/bin/protoc-gen-go-grpc:
+${GOPATH}/bin/protoc-gen-go-grpc: go.sum
 	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
-${GOPATH}/bin/protoc-gen-validate:
+${GOPATH}/bin/protoc-gen-validate: go.sum
 	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 
 clean: check-gopath
@@ -46,7 +56,7 @@ test: install-tools generate-mocks generate-proto
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo ./pkg/...
 
-test-coverage: install-tools generate-mocks generate-proto
+test-coverage: install-tools generate-proto generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./pkg/...
 
@@ -84,11 +94,14 @@ ifndef GOPATH
   $(error GOPATH is undefined)
 endif
 
+.PHONY: generate generate-proto generate-mocks
+generate: generate-proto generate-mocks
+
 # Generate interfaces
 generate-proto: install-tools check-gopath fetch-validate
 	@echo Generating Proto Sources
-	@mkdir -p ./interfaces/
-	@protoc --go_out=./interfaces/ --validate_out="lang=go:./interfaces/" --go-grpc_out=./interfaces/ -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
+	@mkdir -p ./pkg/api/
+	@protoc --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
@@ -213,12 +226,20 @@ generate-mocks:
 	@mkdir -p mocks/azblob
 	@mkdir -p mocks/mock_event_grid
 	@mkdir -p mocks/azqueue
+	@mkdir -p mocks/worker
+	@mkdir -p mocks/nitric
+	@mkdir -p mocks/sync
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
+	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
+	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker GrpcWorker > mocks/worker/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+
+generate-sources: generate-proto generate-mocks

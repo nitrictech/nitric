@@ -19,13 +19,13 @@ import (
 	"time"
 
 	azqueue2 "github.com/Azure/azure-storage-queue-go/azqueue"
-	"github.com/nitrictech/nitric/pkg/plugins/queue"
-
 	"github.com/golang/mock/gomock"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	mock_azqueue "github.com/nitrictech/nitric/mocks/azqueue"
+	"github.com/nitrictech/nitric/pkg/plugins/queue"
 )
 
 var _ = Describe("Azqueue", func() {

@@ -16,15 +16,16 @@ package worker
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/nitrictech/nitric/pkg/triggers"
-
-	pb "github.com/nitrictech/nitric/interfaces/nitric/v1"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
 // A Nitric HTTP worker
@@ -33,6 +34,14 @@ type FaasHttpWorker struct {
 }
 
 var METHOD_TYPE = []byte("POST")
+
+func (s *FaasHttpWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+	return true
+}
+
+func (s *FaasHttpWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return true
+}
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
@@ -59,7 +68,7 @@ func (h *FaasHttpWorker) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	if jsonData, err := protojson.Marshal(triggerRequest); err == nil {
-		fmt.Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
+		log.Default().Println(fmt.Sprintf("Membrane receieved event:\n%s", string(jsonData)))
 		request.Header.SetContentType("application/json")
 		request.SetBody(jsonData)
 		request.SetRequestURI(address)

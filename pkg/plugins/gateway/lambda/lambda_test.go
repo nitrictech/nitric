@@ -19,15 +19,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/aws/aws-lambda-go/events"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
-
-	"github.com/aws/aws-lambda-go/events"
-	ep "github.com/nitrictech/nitric/pkg/plugins/events"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 type MockLambdaRuntime struct {
@@ -40,18 +41,16 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 	// cast the function type to what we know it will be
 	typedFunc := handler.(func(ctx context.Context, event lambda_service.Event) (interface{}, error))
 	for _, event := range m.eventQueue {
-
 		bytes, _ := json.Marshal(event)
 		evt := lambda_service.Event{}
 
-		json.Unmarshal(bytes, &evt)
+		err := json.Unmarshal(bytes, &evt)
+		Expect(err).To(BeNil())
+
 		// Unmarshal the thing into the event type we expect...
 		// TODO: Do something with out results here...
-		_, err := typedFunc(context.TODO(), evt)
-
-		if err != nil {
-			// Print the error?
-		}
+		_, err = typedFunc(context.TODO(), evt)
+		Expect(err).To(BeNil())
 	}
 }
 

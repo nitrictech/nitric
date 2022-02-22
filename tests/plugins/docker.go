@@ -25,7 +25,6 @@ import (
 const shell = "/bin/sh"
 
 func StartContainer(containerName string, args []string) {
-
 	cmd := exec.Command(shell, "-c", strings.Join(args[:], " "))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

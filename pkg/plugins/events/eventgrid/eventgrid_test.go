@@ -21,11 +21,12 @@ import (
 	eventgridmgmt "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	mock_eventgrid "github.com/nitrictech/nitric/mocks/mock_event_grid"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	eventgrid_service "github.com/nitrictech/nitric/pkg/plugins/events/eventgrid"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Event Grid Plugin", func() {
