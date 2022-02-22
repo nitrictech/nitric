@@ -52,6 +52,10 @@ func (b bucketHandle) Object(name string) ObjectHandle {
 	return objectHandle{b.BucketHandle.Object(name)}
 }
 
+func (b bucketHandle) SignedURL(object string, opts *storage.SignedURLOptions) (string, error) {
+	return b.BucketHandle.SignedURL(object, opts)
+}
+
 func (o objectHandle) Key(encryptionKey []byte) ObjectHandle {
 	return objectHandle{o.ObjectHandle.Key(encryptionKey)}
 }

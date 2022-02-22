@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
 	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
 	mock_gcp_storage "github.com/nitrictech/nitric/tests/mocks/gcp_storage"
 )
@@ -161,6 +162,78 @@ var _ = Describe("Storage", func() {
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
+			})
+		})
+	})
+
+	Context("SignedUrl", func() {
+		When("The bucket exists", func() {
+			When("The item exists", func() {
+				storage := make(map[string]map[string][]byte)
+				storage["test-bucket"] = make(map[string][]byte)
+				storage["test-bucket"]["test-key"] = []byte("Test")
+				mockStorageClient := mock_gcp_storage.NewStorageClient([]string{"test-bucket"}, &storage)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("Should return a signed url for reading", func() {
+					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 60)
+					By("Returning a signed url")
+					Expect(url).ShouldNot(BeNil())
+
+					By("Not returning an error")
+					Expect(err).Should(BeNil())
+				})
+
+				It("Should return a signed url for writing", func() {
+					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.WRITE, 60)
+					By("Returning a signed url")
+					Expect(url).ShouldNot(BeNil())
+
+					By("Not returning an error")
+					Expect(err).Should(BeNil())
+				})
+			})
+			When("The item doesn't exist", func() {
+				storage := make(map[string]map[string][]byte)
+				mockStorageClient := mock_gcp_storage.NewStorageClient([]string{"test-bucket"}, &storage)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("Should return an error", func() {
+					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 60)
+					By("Returning an error")
+					Expect(err).ShouldNot(BeNil())
+
+					By("Returning an empty url")
+					Expect(url).Should(BeEmpty())
+				})
+			})
+			When("The expiry is invalid", func() {
+				storage := make(map[string]map[string][]byte)
+				mockStorageClient := mock_gcp_storage.NewStorageClient([]string{"test-bucket"}, &storage)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("Should return an error", func() {
+					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 605000)
+					By("Returning an error")
+					Expect(err).ShouldNot(BeNil())
+
+					By("Returning an empty url")
+					Expect(url).Should(BeEmpty())
+				})
+			})
+		})
+		When("The bucket doesn't exist", func() {
+			storage := make(map[string]map[string][]byte)
+			mockStorageClient := mock_gcp_storage.NewStorageClient([]string{}, &storage)
+			storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+			It("Should return an error", func() {
+				url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 60)
+				By("Returning an error")
+				Expect(err).ShouldNot(BeNil())
+
+				By("Returning an empty url")
+				Expect(url).Should(BeEmpty())
 			})
 		})
 	})

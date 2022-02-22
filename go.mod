@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/kms v1.1.0 // indirect
 	cloud.google.com/go/pubsub v1.5.0
 	cloud.google.com/go/secretmanager v1.0.0
-	cloud.google.com/go/storage v1.10.0
+	cloud.google.com/go/storage v1.21.0
 	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.13.0
 	github.com/Azure/azure-storage-queue-go v0.0.0-20191125232315-636801874cdd
@@ -41,11 +41,11 @@ require (
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
-	google.golang.org/api v0.58.0
-	google.golang.org/genproto v0.0.0-20211018162055-cf77aa76bad2
-	google.golang.org/grpc v1.40.0
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	google.golang.org/api v0.69.0
+	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
+	google.golang.org/grpc v1.44.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.27.1
 )

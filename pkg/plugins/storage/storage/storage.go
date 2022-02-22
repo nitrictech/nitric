@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
@@ -177,6 +178,48 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 	}
 
 	return nil
+}
+
+func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation plugin.Operation, expiry uint32) (string, error) {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.PreSignedUrl",
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
+	)
+
+	bucketHandle, err := s.getBucketByName(bucket)
+
+	if err != nil {
+		return "", newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
+
+	var method = "GET"
+	if operation == plugin.WRITE {
+		method = "PUT"
+	}
+
+	opts := &storage.SignedURLOptions{
+		Scheme:  storage.SigningSchemeV4,
+		Method:  method,
+		Expires: time.Now().Add(time.Duration(expiry) * time.Second),
+	}
+
+	signedUrl, err := bucketHandle.SignedURL(key, opts)
+	if err != nil {
+		return "", newErr(
+			codes.Internal,
+			"failed to create signed url",
+			err,
+		)
+	}
+
+	return signedUrl, nil
 }
 
 /**
