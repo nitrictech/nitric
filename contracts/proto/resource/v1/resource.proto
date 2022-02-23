@@ -36,6 +36,7 @@ enum ResourceType {
   Subscription = 6;
   Collection = 7;
   Policy = 8;
+  Secret = 9;
 }
 
 message Resource {
@@ -52,6 +53,7 @@ message ResourceDeclareRequest {
     QueueResource queue = 12;
     TopicResource topic = 13;
     CollectionResource collection = 14;
+    SecretResource secret = 15;
   }
 }
 
@@ -59,6 +61,7 @@ message BucketResource {}
 message QueueResource {}
 message TopicResource {}
 message CollectionResource {}
+message SecretResource {}
 
 enum Action {
   // Bucket Permissions: 0XX
@@ -84,6 +87,10 @@ enum Action {
   CollectionDocumentDelete = 402;
   CollectionQuery = 403;
   CollectionList = 404;
+
+  // Secret Permissions: 5XX
+  SecretPut = 500;
+  SecretAccess = 501;
 }
 
 message ResourceDeclareResponse {}
