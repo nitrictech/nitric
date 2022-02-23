@@ -232,9 +232,9 @@ func New() (plugin.StorageService, error) {
 	if credentialsError != nil {
 		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
 	}
-	// Get the
-	client, err := storage.NewClient(ctx, option.WithCredentials(credentials))
 
+	// Get the client credentials
+	client, err := storage.NewClient(ctx, option.WithCredentials(credentials))
 	if err != nil {
 		return nil, fmt.Errorf("storage client error: %v", err)
 	}
