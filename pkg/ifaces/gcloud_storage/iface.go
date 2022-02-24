@@ -34,7 +34,6 @@ type ObjectHandle interface {
 	NewWriter(context.Context) Writer
 	NewReader(context.Context) (Reader, error)
 	Delete(ctx context.Context) error
-
 	// embedToIncludeNewMethods()
 }
 
@@ -46,6 +45,7 @@ type BucketIterator interface {
 
 type BucketHandle interface {
 	Object(string) ObjectHandle
+	SignedURL(string, *storage.SignedURLOptions) (string, error)
 
 	// embedToIncludeNewMethods()
 }

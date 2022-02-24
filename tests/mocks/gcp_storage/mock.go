@@ -79,6 +79,25 @@ func (s *MockBucketHandle) Object(name string) ifaces_gcloud_storage.ObjectHandl
 	}
 }
 
+func (s *MockBucketHandle) SignedURL(object string, opts *storage.SignedURLOptions) (string, error) {
+	if opts.Expires.Second() > 604800 {
+		return "", fmt.Errorf("expiry cannot be greater than a week")
+	}
+	for _, b := range s.client.buckets {
+		if s.name == b {
+			store := *s.client.storage
+
+			if data, ok := store[s.name][object]; ok {
+				return string(data), nil
+			} else {
+				return "", fmt.Errorf("cannot read object with key %s from bucket %s, not found in storage %v", s.name, object, store)
+			}
+		}
+	}
+
+	return "", fmt.Errorf("cannot not read from bucket that does not exist")
+}
+
 type MockObjectHandle struct {
 	//ifaces.ObjectHandle
 	bucket string
