@@ -23,7 +23,6 @@ import (
 	"github.com/nitrictech/nitric/pkg/membrane"
 	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
 	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
-	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
 	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
@@ -39,28 +38,23 @@ func main() {
 
 	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
 
+	membraneOpts := membrane.DefaultMembraneOptions()
+
 	// Load the appropriate gateway based on the environment.
-	var gatewayPlugin gateway.GatewayService
 	switch gatewayEnv {
 	case "lambda":
-		gatewayPlugin, _ = lambda_service.New()
+		membraneOpts.GatewayPlugin, _ = lambda_service.New()
 	default:
-		gatewayPlugin, _ = base_http.New(nil)
+		membraneOpts.GatewayPlugin, _ = base_http.New(nil)
 	}
-	secretPlugin, _ := secrets_manager_secret_service.New()
-	documentPlugin, _ := dynamodb_service.New()
-	eventsPlugin, _ := sns_service.New()
-	queuePlugin, _ := sqs_service.New()
-	storagePlugin, _ := s3_service.New()
 
-	m, err := membrane.New(&membrane.MembraneOptions{
-		DocumentPlugin: documentPlugin,
-		EventsPlugin:   eventsPlugin,
-		GatewayPlugin:  gatewayPlugin,
-		QueuePlugin:    queuePlugin,
-		StoragePlugin:  storagePlugin,
-		SecretPlugin:   secretPlugin,
-	})
+	membraneOpts.SecretPlugin, _ = secrets_manager_secret_service.New()
+	membraneOpts.DocumentPlugin, _ = dynamodb_service.New()
+	membraneOpts.EventsPlugin, _ = sns_service.New()
+	membraneOpts.QueuePlugin, _ = sqs_service.New()
+	membraneOpts.StoragePlugin, _ = s3_service.New()
+
+	m, err := membrane.New(membraneOpts)
 
 	if err != nil {
 		log.Default().Fatalf("There was an error initialising the membrane server: %v", err)

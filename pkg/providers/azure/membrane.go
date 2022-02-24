@@ -32,35 +32,31 @@ import (
 )
 
 func main() {
+	var err error
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	documentPlugin, err := mongodb_service.New()
+	membraneOpts := membrane.DefaultMembraneOptions()
+
+	membraneOpts.DocumentPlugin, err = mongodb_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
-	eventsPlugin, err := event_grid.New()
+	membraneOpts.EventsPlugin, err = event_grid.New()
 	if err != nil {
 		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
-	gatewayPlugin, _ := http_service.New()
-	queuePlugin, _ := azqueue_service.New()
-	storagePlugin, _ := azblob_service.New()
-	secretPlugin, err := key_vault.New()
+	membraneOpts.GatewayPlugin, _ = http_service.New()
+	membraneOpts.QueuePlugin, _ = azqueue_service.New()
+	membraneOpts.StoragePlugin, _ = azblob_service.New()
+	membraneOpts.SecretPlugin, err = key_vault.New()
 	if err != nil {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
-	m, err := membrane.New(&membrane.MembraneOptions{
-		DocumentPlugin: documentPlugin,
-		EventsPlugin:   eventsPlugin,
-		GatewayPlugin:  gatewayPlugin,
-		QueuePlugin:    queuePlugin,
-		StoragePlugin:  storagePlugin,
-		SecretPlugin:   secretPlugin,
-	})
+	m, err := membrane.New(membraneOpts)
 
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)

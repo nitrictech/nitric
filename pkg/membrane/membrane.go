@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 
 	"google.golang.org/grpc"
 
@@ -290,19 +289,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 
 	if options.ChildAddress == "" {
 		options.ChildAddress = utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	}
-
-	// Pull child command from command line args or environment variable if not provided.
-	if len(options.ChildCommand) < 1 {
-		// Get the command line arguments, minus the program name in index 0.
-		if len(os.Args) > 1 && len(os.Args[1:]) > 0 {
-			options.ChildCommand = os.Args[1:]
-		} else {
-			options.ChildCommand = strings.Fields(utils.GetEnv("INVOKE", ""))
-			if len(options.ChildCommand) > 0 {
-				log.Default().Println("Warning: use of INVOKE environment variable is deprecated and may be removed in a future version")
-			}
-		}
 	}
 
 	if !options.TolerateMissingServices {
