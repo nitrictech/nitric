@@ -32,44 +32,44 @@ import (
 
 func main() {
 	// Setup signal interrupt handling for graceful shutdown
+	var err error
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	secretPlugin, err := secret_manager_secret_service.New()
+	membraneOpts := membrane.DefaultMembraneOptions()
+
+	membraneOpts.SecretPlugin, err = secret_manager_secret_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
-	documentPlugin, err := firestore_service.New()
+	membraneOpts.DocumentPlugin, err = firestore_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
-	eventsPlugin, err := pubsub_service.New()
+
+	membraneOpts.EventsPlugin, err = pubsub_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load events plugin:", err.Error())
 	}
-	storagePlugin, err := storage_service.New()
+
+	membraneOpts.StoragePlugin, err = storage_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load storage plugin:", err.Error())
 	}
-	gatewayPlugin, err := cloudrun_plugin.New()
+
+	membraneOpts.GatewayPlugin, err = cloudrun_plugin.New()
 	if err != nil {
 		log.Default().Println("Failed to load gateway plugin:", err.Error())
 	}
-	queuePlugin, err := pubsub_queue_service.New()
+
+	membraneOpts.QueuePlugin, err = pubsub_queue_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load queue plugin:", err.Error())
 	}
 
-	m, err := membrane.New(&membrane.MembraneOptions{
-		DocumentPlugin: documentPlugin,
-		EventsPlugin:   eventsPlugin,
-		GatewayPlugin:  gatewayPlugin,
-		QueuePlugin:    queuePlugin,
-		StoragePlugin:  storagePlugin,
-		SecretPlugin:   secretPlugin,
-	})
+	m, err := membrane.New(membraneOpts)
 
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
