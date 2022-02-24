@@ -165,7 +165,7 @@ func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	workers := make([]Worker, len(p.workers))
+	workers := make([]Worker, 0, len(p.workers))
 	workers = append(workers, p.workers...)
 
 	if opts.Http != nil {
