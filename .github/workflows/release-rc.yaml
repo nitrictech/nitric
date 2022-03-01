@@ -1,13 +1,12 @@
 name: Release Candidate
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
-      - 'develop'
+      - develop
+
 jobs:
   # Bump the membrane version
   version_bump:
-    if: github.event.pull_request.merged == true
     name: Bump Version and Create Release
     runs-on: ubuntu-latest
     outputs:
