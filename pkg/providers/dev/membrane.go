@@ -36,21 +36,16 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	secretPlugin, _ := secret_service.New()
-	documentPlugin, _ := boltdb_service.New()
-	eventsPlugin, _ := events_service.New()
-	gatewayPlugin, _ := gateway_plugin.New()
-	queuePlugin, _ := queue_service.New()
-	storagePlugin, _ := minio_storage_service.New()
+	membraneOpts := membrane.DefaultMembraneOptions()
 
-	m, err := membrane.New(&membrane.MembraneOptions{
-		DocumentPlugin: documentPlugin,
-		EventsPlugin:   eventsPlugin,
-		GatewayPlugin:  gatewayPlugin,
-		QueuePlugin:    queuePlugin,
-		StoragePlugin:  storagePlugin,
-		SecretPlugin:   secretPlugin,
-	})
+	membraneOpts.SecretPlugin, _ = secret_service.New()
+	membraneOpts.DocumentPlugin, _ = boltdb_service.New()
+	membraneOpts.EventsPlugin, _ = events_service.New()
+	membraneOpts.GatewayPlugin, _ = gateway_plugin.New()
+	membraneOpts.QueuePlugin, _ = queue_service.New()
+	membraneOpts.StoragePlugin, _ = minio_storage_service.New()
+
+	m, err := membrane.New(membraneOpts)
 
 	if err != nil {
 		log.Fatalf("There was an error initialising the membraneServer server: %v", err)

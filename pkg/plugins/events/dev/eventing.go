@@ -67,7 +67,6 @@ func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) err
 	}
 
 	if targets, ok := s.subscriptions[topic]; ok {
-		log.Default().Println(fmt.Sprintf("Publishing event to: %s", targets))
 		for _, target := range targets {
 			httpRequest, _ := http.NewRequest("POST", target, bytes.NewReader(marshaledPayload))
 

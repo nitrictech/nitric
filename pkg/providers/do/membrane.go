@@ -30,13 +30,12 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	gatewayPlugin, _ := appplatform_service.New()
+	membraneOpts := membrane.DefaultMembraneOptions()
 
-	m, err := membrane.New(&membrane.MembraneOptions{
-		GatewayPlugin: gatewayPlugin,
-		// FIXME: Hardcode as true as we don't have plugins for other services for digital ocean yet...
-		TolerateMissingServices: true,
-	})
+	membraneOpts.GatewayPlugin, _ = appplatform_service.New()
+	membraneOpts.TolerateMissingServices = true
+
+	m, err := membrane.New(membraneOpts)
 
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)

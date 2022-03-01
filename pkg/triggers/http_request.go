@@ -73,7 +73,7 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 		Header: headerCopy,
 		Body:   ctx.Request.Body(),
 		Method: string(ctx.Method()),
-		Path:   string(ctx.Path()),
+		Path:   string(ctx.URI().PathOriginal()),
 		Query:  queryArgs,
 	}
 }

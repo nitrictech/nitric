@@ -121,21 +121,22 @@ func (p *ProcessPool) Monitor() error {
 
 // WaitForMinimumWorkers - Waits for the configured minimum number of workers to be available in this pool
 func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
-	maxWaitTime := time.Duration(timeout) * time.Second
-	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
-	pollInterval := time.Duration(15) * time.Millisecond
+	waitUntil := time.Now().Add(time.Duration(timeout) * time.Second)
+	ticker := time.NewTicker(time.Duration(5) * time.Millisecond)
 
-	var waitedTime = time.Duration(0)
+	// stop the ticker on exit
+	defer ticker.Stop()
+
 	for {
 		if p.GetWorkerCount() >= p.minWorkers {
 			break
-		} else {
-			if waitedTime < maxWaitTime {
-				time.Sleep(pollInterval)
-				waitedTime += pollInterval
-			} else {
-				return fmt.Errorf("available workers below required minimum of %d, %d available, timedout waiting for more workers", p.minWorkers, p.GetWorkerCount())
-			}
+		}
+
+		// wait for the next tick
+		time := <-ticker.C
+
+		if time.After(waitUntil) {
+			return fmt.Errorf("available workers below required minimum of %d, %d available, timed out waiting for more workers", p.minWorkers, p.GetWorkerCount())
 		}
 	}
 
@@ -165,8 +166,7 @@ func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	workers := make([]Worker, len(p.workers))
-	workers = append(workers, p.workers...)
+	workers := append([]Worker{}, p.workers...)
 
 	if opts.Http != nil {
 		workers = filterWorkers(workers, func(w Worker) bool {
