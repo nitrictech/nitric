@@ -16,7 +16,6 @@ package grpc
 
 import (
 	"context"
-	"log"
 
 	"github.com/google/uuid"
 
@@ -114,7 +113,6 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 			FailedTasks: failedTasks,
 		}, nil
 	} else {
-		log.Default().Println(err.Error())
 		return nil, NewGrpcError("QueueService.SendBatch", err)
 	}
 }
