@@ -16,6 +16,9 @@ package grpc
 
 import (
 	"context"
+	"log"
+
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -49,8 +52,14 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 
 	task := req.GetTask()
 
+	// auto generate an ID if we did not receive one
+	var ID = task.GetId()
+	if ID == "" {
+		ID = uuid.New().String()
+	}
+
 	nitricTask := queue.NitricTask{
-		ID:          task.GetId(),
+		ID:          ID,
 		PayloadType: task.GetPayloadType(),
 		Payload:     task.GetPayload().AsMap(),
 	}
@@ -75,8 +84,14 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 	// Translate tasks
 	tasks := make([]queue.NitricTask, len(req.GetTasks()))
 	for i, task := range req.GetTasks() {
+		// auto generate an ID if we did not receive one
+		var ID = task.GetId()
+		if ID == "" {
+			ID = uuid.New().String()
+		}
+
 		tasks[i] = queue.NitricTask{
-			ID:          task.GetId(),
+			ID:          ID,
 			PayloadType: task.GetPayloadType(),
 			Payload:     task.GetPayload().AsMap(),
 		}
@@ -99,6 +114,7 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 			FailedTasks: failedTasks,
 		}, nil
 	} else {
+		log.Default().Println(err.Error())
 		return nil, NewGrpcError("QueueService.SendBatch", err)
 	}
 }
