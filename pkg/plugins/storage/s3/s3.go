@@ -94,7 +94,7 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 		}
 
 		if selectErr != nil {
-			return nil, err
+			return nil, selectErr
 		}
 
 		if selected {
