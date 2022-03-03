@@ -33,6 +33,7 @@ import (
 const (
 	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
 	ErrCodeNoSuchTagSet = "NoSuchTagSet"
+	ErrCodeAccessDenied = "AccessDenied"
 )
 
 type SQSQueueService struct {
@@ -58,6 +59,10 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 			if awsErr, ok := err.(awserr.Error); ok {
 				if awsErr.Code() == ErrCodeNoSuchTagSet {
 					// Ignore queues with no tags, check the next queue
+					continue
+				}
+				if awsErr.Code() == ErrCodeAccessDenied {
+					// Ignore queues with inaccessible tags, check the next queue
 					continue
 				}
 				return nil, err

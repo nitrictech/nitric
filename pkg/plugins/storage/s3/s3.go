@@ -36,6 +36,7 @@ import (
 const (
 	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
 	ErrCodeNoSuchTagSet = "NoSuchTagSet"
+	ErrCodeAccessDenied = "AccessDenied"
 )
 
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
@@ -58,6 +59,10 @@ func (s *S3StorageService) tagSelector(name string, bucket *s3.Bucket) (bool, er
 			// Table not found,  try to create and put again
 			if awsErr.Code() == ErrCodeNoSuchTagSet {
 				// Ignore buckets with no tags, check the next bucket
+				return false, nil
+			}
+			if awsErr.Code() == ErrCodeAccessDenied {
+				// Ignore buckets with inaccessible tags, check the next bucket
 				return false, nil
 			}
 		}
@@ -83,18 +88,13 @@ func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
 
 	for _, b := range out.Buckets {
 		var selected bool
-		var selectErr error
 
 		if s.selector == nil {
 			// if selector is undefined us the default selector
-			selected, selectErr = s.tagSelector(bucket, b)
+			selected, _ = s.tagSelector(bucket, b)
 		} else {
 			// Use provided selector if one available
-			selected, selectErr = s.selector(bucket, b)
-		}
-
-		if selectErr != nil {
-			return nil, err
+			selected, _ = s.selector(bucket, b)
 		}
 
 		if selected {
