@@ -36,15 +36,20 @@ var _ AwsProvider = &awsProviderImpl{}
 func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, error) {
 	if a.cache[typ] == nil {
 		resources := make(map[string]string)
+		tagFilters := []*resourcegroupstaggingapi.TagFilter{{
+			Key: aws.String("x-nitric-name"),
+		}}
+
+		if a.stack != "" {
+			tagFilters = append(tagFilters, &resourcegroupstaggingapi.TagFilter{
+				Key:    aws.String("x-nitric-stack"),
+				Values: []*string{aws.String(a.stack)},
+			})
+		}
 
 		out, err := a.client.GetResources(&resourcegroupstaggingapi.GetResourcesInput{
 			ResourceTypeFilters: []*string{aws.String(typ)},
-			TagFilters: []*resourcegroupstaggingapi.TagFilter{{
-				Key:    aws.String("x-nitric-stack"),
-				Values: []*string{aws.String(a.stack)},
-			}, {
-				Key: aws.String("x-nitric-name"),
-			}},
+			TagFilters:          tagFilters,
 		})
 
 		if err != nil {
@@ -68,6 +73,7 @@ func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, erro
 
 func New() (AwsProvider, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+	stack := utils.GetEnv("NITRIC_STACK", "")
 
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
@@ -80,6 +86,7 @@ func New() (AwsProvider, error) {
 	client := resourcegroupstaggingapi.New(sess)
 
 	return &awsProviderImpl{
+		stack:  stack,
 		client: client,
 		cache:  make(map[AwsResource]map[string]string),
 	}, nil
