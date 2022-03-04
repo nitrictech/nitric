@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -30,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -43,66 +44,30 @@ const (
 type S3StorageService struct {
 	//storage.UnimplementedStoragePlugin
 	client   s3iface.S3API
+	provider core.AwsProvider
 	selector BucketSelector
 }
 
-type BucketSelector = func(nitricName string, b *s3.Bucket) (bool, error)
+type BucketSelector = func(nitricName string) (*string, error)
 
-func (s *S3StorageService) tagSelector(name string, bucket *s3.Bucket) (bool, error) {
-	// TODO: This could be rather slow, it's interesting that they don't return this in the list buckets output
-	tagout, err := s.client.GetBucketTagging(&s3.GetBucketTaggingInput{
-		Bucket: bucket.Name,
-	})
+func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
+	if s.selector != nil {
+		return s.selector(bucket)
+	}
+
+	buckets, err := s.provider.GetResources(core.AwsResource_Bucket)
 
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			// Table not found,  try to create and put again
-			if awsErr.Code() == ErrCodeNoSuchTagSet {
-				// Ignore buckets with no tags, check the next bucket
-				return false, nil
-			}
-			if awsErr.Code() == ErrCodeAccessDenied {
-				// Ignore buckets with inaccessible tags, check the next bucket
-				return false, nil
-			}
-		}
-		return false, err
+		return nil, fmt.Errorf("error getting bucket list: %v", err)
 	}
 
-	for _, tag := range tagout.TagSet {
-		if *tag.Key == "x-nitric-name" && *tag.Value == name {
-			return true, nil
-		}
+	if bucketArn, ok := buckets[bucket]; ok {
+		bucketName := strings.Split(bucketArn, ":::")[1]
+
+		return aws.String(bucketName), nil
 	}
 
-	return false, nil
-}
-
-// getBucketByName - Finds and returns a bucket by it's Nitric name
-func (s *S3StorageService) getBucketByName(bucket string) (*s3.Bucket, error) {
-	out, err := s.client.ListBuckets(&s3.ListBucketsInput{})
-
-	if err != nil {
-		return nil, fmt.Errorf("encountered an error retrieving the bucket list: %v", err)
-	}
-
-	for _, b := range out.Buckets {
-		var selected bool
-
-		if s.selector == nil {
-			// if selector is undefined us the default selector
-			selected, _ = s.tagSelector(bucket, b)
-		} else {
-			// Use provided selector if one available
-			selected, _ = s.selector(bucket, b)
-		}
-
-		if selected {
-			return b, nil
-		}
-	}
-
-	return nil, fmt.Errorf("unable to find bucket with name: %s", bucket)
+	return nil, fmt.Errorf("bucket %s does not exist", bucket)
 }
 
 // Read - Retrieves an item from a bucket
@@ -115,9 +80,9 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 		},
 	)
 
-	if b, err := s.getBucketByName(bucket); err == nil {
+	if b, err := s.getBucketName(bucket); err == nil {
 		resp, err := s.client.GetObject(&s3.GetObjectInput{
-			Bucket: b.Name,
+			Bucket: b,
 			Key:    aws.String(key),
 		})
 
@@ -152,11 +117,11 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 		},
 	)
 
-	if b, err := s.getBucketByName(bucket); err == nil {
+	if b, err := s.getBucketName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
 		if _, err := s.client.PutObject(&s3.PutObjectInput{
-			Bucket:      b.Name,
+			Bucket:      b,
 			Body:        bytes.NewReader(object),
 			ContentType: &contentType,
 			Key:         aws.String(key),
@@ -188,10 +153,10 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 		},
 	)
 
-	if b, err := s.getBucketByName(bucket); err == nil {
+	if b, err := s.getBucketName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
 		if _, err := s.client.DeleteObject(&s3.DeleteObjectInput{
-			Bucket: b.Name,
+			Bucket: b,
 			Key:    aws.String(key),
 		}); err != nil {
 			return newErr(
@@ -223,11 +188,11 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 		},
 	)
 
-	if b, err := s.getBucketByName(bucket); err == nil {
+	if b, err := s.getBucketName(bucket); err == nil {
 		switch operation {
 		case storage.READ:
 			req, _ := s.client.GetObjectRequest(&s3.GetObjectInput{
-				Bucket: b.Name,
+				Bucket: b,
 				Key:    aws.String(key),
 			})
 			url, err := req.Presign(time.Duration(expiry) * time.Second)
@@ -241,7 +206,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 			return url, err
 		case storage.WRITE:
 			req, _ := s.client.PutObjectRequest(&s3.PutObjectInput{
-				Bucket: b.Name,
+				Bucket: b,
 				Key:    aws.String(key),
 			})
 			url, err := req.Presign(time.Duration(expiry) * time.Second)
@@ -266,7 +231,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 }
 
 // New creates a new default S3 storage plugin
-func New() (storage.StorageService, error) {
+func New(provider core.AwsProvider) (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -281,14 +246,16 @@ func New() (storage.StorageService, error) {
 	s3Client := s3.New(sess)
 
 	return &S3StorageService{
-		client: s3Client,
+		client:   s3Client,
+		provider: provider,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(client s3iface.S3API, opts ...S3StorageServiceOption) (storage.StorageService, error) {
+func NewWithClient(provider core.AwsProvider, client s3iface.S3API, opts ...S3StorageServiceOption) (storage.StorageService, error) {
 	s3Client := &S3StorageService{
-		client: client,
+		client:   client,
+		provider: provider,
 	}
 
 	for _, o := range opts {

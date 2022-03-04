@@ -28,6 +28,7 @@ import (
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -43,20 +44,11 @@ const (
 
 type LambdaRuntimeHandler func(handler interface{})
 
-//Event incoming event
-type Event struct {
-	Requests []triggers.Trigger
-}
-
-func (event *Event) getEventType(data []byte) eventType {
-	tmp := make(map[string]interface{})
-	// Unmarshal so we can get just enough info about the type of event to fully deserialize it
-	json.Unmarshal(data, &tmp)
-
+func getEventType(request map[string]interface{}) eventType {
 	// If our event is a HTTP request
-	if _, ok := tmp["rawPath"]; ok {
+	if _, ok := request["rawPath"]; ok {
 		return httpEvent
-	} else if records, ok := tmp["Records"]; ok {
+	} else if records, ok := request["Records"]; ok {
 		recordsList, _ := records.([]interface{})
 		record, _ := recordsList[0].(map[string]interface{})
 		// We have some kind of event here...
@@ -77,109 +69,121 @@ func (event *Event) getEventType(data []byte) eventType {
 	return unknown
 }
 
-// implement the unmarshal interface in order to handle multiple event types
-func (event *Event) UnmarshalJSON(data []byte) error {
-	var err error
+func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
+	topics, err := s.provider.GetResources(core.AwsResource_Topic)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving topics: %v", err)
+	}
 
-	event.Requests = make([]triggers.Trigger, 0)
+	for name, arn := range topics {
+		if arn == topicArn {
+			return name, nil
+		}
+	}
 
-	switch event.getEventType(data) {
+	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
+}
+
+func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]triggers.Trigger, error) {
+	bytes, _ := json.Marshal(data)
+	trigs := make([]triggers.Trigger, 0)
+
+	switch getEventType(data) {
 	case sns:
 		snsEvent := &events.SNSEvent{}
-		err = json.Unmarshal(data, snsEvent)
-
-		if err == nil {
-			// Map over the records and return
+		if err := json.Unmarshal(bytes, snsEvent); err == nil {
 			for _, snsRecord := range snsEvent.Records {
 				messageString := snsRecord.SNS.Message
 				// FIXME: What about non-nitric SNS events???
 				messageJson := &ep.NitricEvent{}
+				var payloadBytes []byte
+				var id string
 
 				// Populate the JSON
-				err = json.Unmarshal([]byte(messageString), messageJson)
+				if err := json.Unmarshal([]byte(messageString), messageJson); err == nil {
+					payloadMap := messageJson.Payload
+					id = messageJson.ID
+					payloadBytes, _ = json.Marshal(&payloadMap)
+				} else {
+					// just try to capture the raw message
+					payloadBytes = []byte(messageString)
+					id = snsRecord.SNS.MessageID
+				}
 
-				// TODO: fix this if supporting multiple stacks in the same account
-				topicArn := snsRecord.SNS.TopicArn
-				topicParts := strings.Split(topicArn, ":")
-				trigger := topicParts[len(topicParts)-1]
-				// get the topic name from the full ARN.
-				// Get the topic name from the arn
+				tName, err := s.getTopicNameForArn(snsRecord.SNS.TopicArn)
 
 				if err == nil {
-					// Decode the message to see if it's a Nitric message
-					payloadMap := messageJson.Payload
-					payloadBytes, err := json.Marshal(&payloadMap)
-
-					if err == nil {
-						event.Requests = append(event.Requests, &triggers.Event{
-							ID:      messageJson.ID,
-							Topic:   trigger,
-							Payload: payloadBytes,
-						})
-					}
+					trigs = append(trigs, &triggers.Event{
+						ID:      id,
+						Topic:   tName,
+						Payload: payloadBytes,
+					})
+				} else {
+					log.Default().Printf("unable to find nitric topic: %v", err)
 				}
 			}
 		}
-		break
 	case httpEvent:
 		evt := &events.APIGatewayV2HTTPRequest{}
-		err = json.Unmarshal(data, evt)
 
-		if err == nil {
-			// Copy the headers and re-write for the proxy
-			headerCopy := make(map[string][]string)
-
-			for key, val := range evt.Headers {
-				if strings.ToLower(key) == "host" {
-					headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
-				} else {
-					headerCopy[key] = append(headerCopy[key], string(val))
-				}
-			}
-
-			// Copy the cookies over
-			headerCopy["Cookie"] = evt.Cookies
-
-			// Parse the raw query string
-			qVals, err := url.ParseQuery(evt.RawQueryString)
-
-			if err == nil {
-				event.Requests = append(event.Requests, &triggers.HttpRequest{
-					// FIXME: Translate to http.Header
-					Header: headerCopy,
-					Body:   []byte(evt.Body),
-					Method: evt.RequestContext.HTTP.Method,
-					Path:   evt.RawPath,
-					Query:  qVals,
-				})
-			}
-		}
-
-		break
-	default:
-		jsonEvent := make(map[string]interface{})
-
-		err = json.Unmarshal(data, &jsonEvent)
+		err := json.Unmarshal(bytes, evt)
 
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("unable to unmarshal httpEvent: %v", err)
 		}
 
-		err = fmt.Errorf("Unhandled Event Type: %v", data)
+		// Copy the headers and re-write for the proxy
+		headerCopy := make(map[string][]string)
+
+		for key, val := range evt.Headers {
+			if strings.ToLower(key) == "host" {
+				headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
+			} else {
+				headerCopy[key] = append(headerCopy[key], string(val))
+			}
+		}
+
+		// Copy the cookies over
+		headerCopy["Cookie"] = evt.Cookies
+
+		// Parse the raw query string
+		qVals, err := url.ParseQuery(evt.RawQueryString)
+
+		if err != nil {
+			return nil, fmt.Errorf("error parsing query for httpEvent: %v", err)
+		}
+
+		trigs = append(trigs, &triggers.HttpRequest{
+			// FIXME: Translate to http.Header
+			Header: headerCopy,
+			Body:   []byte(evt.Body),
+			Method: evt.RequestContext.HTTP.Method,
+			Path:   evt.RawPath,
+			Query:  qVals,
+		})
+	default:
+		return nil, fmt.Errorf("unhandled event type %v", data)
 	}
 
-	return err
+	return trigs, nil
 }
 
 type LambdaGateway struct {
-	pool    worker.WorkerPool
-	runtime LambdaRuntimeHandler
+	pool     worker.WorkerPool
+	provider core.AwsProvider
+	runtime  LambdaRuntimeHandler
 	gateway.UnimplementedGatewayPlugin
 	finished chan int
 }
 
-func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, error) {
-	for _, request := range event.Requests {
+func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{}) (interface{}, error) {
+	trigs, err := s.triggersFromRequest(data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, request := range trigs {
 		switch request.GetTriggerType() {
 		case triggers.TriggerType_Request:
 			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
@@ -187,7 +191,7 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 					Http: httpEvent,
 				})
 				if err != nil {
-					return nil, fmt.Errorf("Unable to get worker to handle http trigger")
+					return nil, fmt.Errorf("unable to get worker to handle http trigger")
 				}
 				response, err := wrkr.HandleHttpRequest(httpEvent)
 
@@ -219,24 +223,22 @@ func (s *LambdaGateway) handle(ctx context.Context, event Event) (interface{}, e
 					IsBase64Encoded: true,
 				}, nil
 			} else {
-				return nil, fmt.Errorf("Error!: Found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
+				return nil, fmt.Errorf("found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
 			}
-			break
 		case triggers.TriggerType_Subscription:
 			if event, ok := request.(*triggers.Event); ok {
 				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
 					Event: event,
 				})
 				if err != nil {
-					return nil, fmt.Errorf("Unable to get worker to event trigger")
+					return nil, fmt.Errorf("unable to get worker to event trigger")
 				}
 				if err := wrkr.HandleEvent(event); err != nil {
 					return nil, err
 				}
 			} else {
-				return nil, fmt.Errorf("Error!: Found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
+				return nil, fmt.Errorf("found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
 			}
-			break
 		}
 	}
 	return nil, nil
@@ -262,15 +264,17 @@ func (s *LambdaGateway) Stop() error {
 	return nil
 }
 
-func New() (gateway.GatewayService, error) {
+func New(provider core.AwsProvider) (gateway.GatewayService, error) {
 	return &LambdaGateway{
+		provider: provider,
 		runtime:  lambda.Start,
 		finished: make(chan int),
 	}, nil
 }
 
-func NewWithRuntime(runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
+func NewWithRuntime(provider core.AwsProvider, runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
 	return &LambdaGateway{
+		provider: provider,
 		runtime:  runtime,
 		finished: make(chan int),
 	}, nil

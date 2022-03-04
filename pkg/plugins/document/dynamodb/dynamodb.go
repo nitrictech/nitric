@@ -17,13 +17,13 @@ package dynamodb_service
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -41,8 +41,8 @@ const maxBatchWrite = 25
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
 	document.UnimplementedDocumentPlugin
-	client         dynamodbiface.DynamoDBAPI
-	tableNameCache map[string]*string
+	client   dynamodbiface.DynamoDBAPI
+	provider core.AwsProvider
 }
 
 func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
@@ -417,7 +417,7 @@ func (s *DynamoDocService) QueryStream(collection *document.Collection, expressi
 }
 
 // New - Create a new DynamoDB key value plugin implementation
-func New() (document.DocumentService, error) {
+func New(provider core.AwsProvider) (document.DocumentService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
@@ -433,16 +433,16 @@ func New() (document.DocumentService, error) {
 	dynamoClient := dynamodb.New(sess)
 
 	return &DynamoDocService{
-		client:         dynamoClient,
-		tableNameCache: map[string]*string{},
+		client:   dynamoClient,
+		provider: provider,
 	}, nil
 }
 
 // NewWithClient - Mainly used for testing
-func NewWithClient(client *dynamodb.DynamoDB) (document.DocumentService, error) {
+func NewWithClient(provider core.AwsProvider, client *dynamodb.DynamoDB) (document.DocumentService, error) {
 	return &DynamoDocService{
-		client:         client,
-		tableNameCache: map[string]*string{},
+		provider: provider,
+		client:   client,
 	}, nil
 }
 
@@ -765,36 +765,25 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 }
 
 func (s *DynamoDocService) getTableName(collection document.Collection) (*string, error) {
-	coll := collection
-	for coll.Parent != nil {
-		coll = *coll.Parent.Collection
-	}
-
-	// Avoid the lookup if the name is already known
-	if cacheName, ok := s.tableNameCache[coll.Name]; ok {
-		return cacheName, nil
-	}
-
-	// TODO: The following method for determining the deployment specific table name from the nitric name is unreliable.
-	//	a new design is in process and will replace this method for locating tables.
-	out, err := s.client.ListTables(&dynamodb.ListTablesInput{})
+	tables, err := s.provider.GetResources(core.AwsResource_Collection)
 
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the table list: %v", err)
 	}
 
-	for _, b := range out.TableNames {
-		if matched, err := regexp.MatchString("^"+coll.Name+"-[a-z0-9]{7}$", aws.StringValue(b)); matched && err == nil {
-			// Cache the found table name to skip the search on subsequent requests.
-			s.tableNameCache[coll.Name] = b
-			return b, nil
-		} else if err != nil {
-			println(err.Error())
-			continue
-		}
+	coll := collection
+	for coll.Parent != nil {
+		coll = *coll.Parent.Collection
 	}
 
-	return nil, fmt.Errorf("dynamodb table for collection name %s not found", coll.Name)
+	if table, ok := tables[coll.Name]; ok {
+		tableName := strings.Split(table, "/")[1]
+
+		// split the table arn to get the name
+		return aws.String(tableName), nil
+	}
+
+	return nil, fmt.Errorf("collection %s does not exit", coll.Name)
 }
 
 func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {

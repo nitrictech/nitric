@@ -15,100 +15,103 @@
 package sns_service_test
 
 import (
-	"fmt"
+	"encoding/json"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	provider_mocks "github.com/nitrictech/nitric/mocks/provider"
+	sns_mock "github.com/nitrictech/nitric/mocks/sns"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 )
-
-type MockSNSClient struct {
-	snsiface.SNSAPI
-	// Available topics
-	availableTopics []*sns.Topic
-}
-
-func (m *MockSNSClient) ListTopics(input *sns.ListTopicsInput) (*sns.ListTopicsOutput, error) {
-	return &sns.ListTopicsOutput{
-		Topics: m.availableTopics,
-	}, nil
-}
-
-func (m *MockSNSClient) Publish(input *sns.PublishInput) (*sns.PublishOutput, error) {
-	topicArn := input.TopicArn
-
-	var topic *sns.Topic
-	for _, t := range m.availableTopics {
-		if topicArn == t.TopicArn {
-			topic = t
-			break
-		}
-	}
-
-	if topic == nil {
-		return nil, awserr.New(sns.ErrCodeNotFoundException, "Topic not found", fmt.Errorf("Topic does not exist"))
-	}
-
-	return &sns.PublishOutput{}, nil
-}
 
 var _ = Describe("Sns", func() {
 
 	Context("Get Topics", func() {
 		When("There are available topics", func() {
-			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
-				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
-			})
+			ctrl := gomock.NewController(GinkgoT())
+			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
+			snsMock := sns_mock.NewMockSNSAPI(ctrl)
+
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
 
 			It("Should return the available topics", func() {
+				By("Topics being available")
+				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+					"test": "arn:test",
+				}, nil)
+
 				topics, err := eventsClient.ListTopics()
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElements("test"))
+
+				ctrl.Finish()
 			})
 		})
 	})
 
 	Context("Publish", func() {
 		When("Publishing to an available topic", func() {
-			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
-				availableTopics: []*sns.Topic{{TopicArn: aws.String("test")}},
-			})
+			ctrl := gomock.NewController(GinkgoT())
+			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
+			snsMock := sns_mock.NewMockSNSAPI(ctrl)
+
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
 			payload := map[string]interface{}{"Test": "test"}
+			testEvent := &events.NitricEvent{
+				ID:          "testing",
+				PayloadType: "Test Payload",
+				Payload:     payload,
+			}
+
+			data, _ := json.Marshal(testEvent)
+			stringData := string(data)
 
 			It("Should publish without error", func() {
-				err := eventsClient.Publish("test", &events.NitricEvent{
-					ID:          "testing",
-					PayloadType: "Test Payload",
-					Payload:     payload,
+				By("Retrieving a list of topics")
+				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+					"test": "arn:test",
+				}, nil)
+
+				By("Publishing the message to the topic")
+				snsMock.EXPECT().Publish(&sns.PublishInput{
+					TopicArn: aws.String("arn:test"),
+					Message:  aws.String(stringData),
 				})
+
+				err := eventsClient.Publish("test", testEvent)
 
 				Expect(err).To(BeNil())
 			})
 		})
 
 		When("Publishing to a non-existent topic", func() {
-			eventsClient, _ := sns_service.NewWithClient(&MockSNSClient{
-				availableTopics: []*sns.Topic{},
-			})
+			ctrl := gomock.NewController(GinkgoT())
+			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
+			snsMock := sns_mock.NewMockSNSAPI(ctrl)
+
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
 
 			payload := map[string]interface{}{"Test": "test"}
 
 			It("Should return an error", func() {
+				By("Returning no topics")
+				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
+
 				err := eventsClient.Publish("test", &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
 				})
 
-				Expect(err.Error()).To(ContainSubstring("Unable to find topic"))
+				Expect(err.Error()).To(ContainSubstring("could not find topic"))
 			})
 		})
 	})

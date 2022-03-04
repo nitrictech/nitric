@@ -222,6 +222,7 @@ generate-mocks:
 	@mkdir -p mocks/secrets_manager
 	@mkdir -p mocks/key_vault
 	@mkdir -p mocks/s3
+	@mkdir -p mocks/sns
 	@mkdir -p mocks/sqs
 	@mkdir -p mocks/azblob
 	@mkdir -p mocks/mock_event_grid
@@ -229,6 +230,9 @@ generate-mocks:
 	@mkdir -p mocks/worker
 	@mkdir -p mocks/nitric
 	@mkdir -p mocks/sync
+	@mkdir -p mocks/provider
+	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager SecretManagerClient > mocks/secret_manager/mock.go
