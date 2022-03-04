@@ -83,11 +83,11 @@ var _ = Describe("DynamoDb", func() {
 	ctrl := gomock.NewController(GinkgoT())
 	provider := mock_provider.NewMockAwsProvider(ctrl)
 
-	provider.EXPECT().GetResources(core.AwsResource_Collection).Return(map[string]string{
-		"customers-1111111":   "arn:${Partition}:dynamodb:${Region}:${Account}:table/customers-1111111",
-		"users-1111111":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/users-1111111",
-		"items-1111111":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/items-1111111",
-		"parentItems-1111111": "arn:${Partition}:dynamodb:${Region}:${Account}:table/parentItems-1111111",
+	provider.EXPECT().GetResources(core.AwsResource_Collection).AnyTimes().Return(map[string]string{
+		"customers":   "arn:${Partition}:dynamodb:${Region}:${Account}:table/customers-1111111",
+		"users":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/users-1111111",
+		"items":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/items-1111111",
+		"parentItems": "arn:${Partition}:dynamodb:${Region}:${Account}:table/parentItems-1111111",
 	}, nil)
 
 	docPlugin, err := dynamodb_service.NewWithClient(provider, db)
