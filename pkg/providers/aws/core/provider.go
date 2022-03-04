@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface"
 
 	"github.com/nitrictech/nitric/pkg/utils"
 )
@@ -41,7 +42,7 @@ type AwsProvider interface {
 // Aws core utility provider
 type awsProviderImpl struct {
 	stack  string
-	client *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
+	client resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
 	cache  map[AwsResource]map[string]string
 }
 
