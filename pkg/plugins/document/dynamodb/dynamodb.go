@@ -783,7 +783,7 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 		return aws.String(tableName), nil
 	}
 
-	return nil, fmt.Errorf("collection %s does not exit", coll.Name)
+	return nil, fmt.Errorf("collection %s does not exist", coll.Name)
 }
 
 func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {
