@@ -88,7 +88,7 @@ var _ = Describe("DynamoDb", func() {
 		"users-1111111":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/users-1111111",
 		"items-1111111":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/items-1111111",
 		"parentItems-1111111": "arn:${Partition}:dynamodb:${Region}:${Account}:table/parentItems-1111111",
-	})
+	}, nil)
 
 	docPlugin, err := dynamodb_service.NewWithClient(provider, db)
 	if err != nil {
