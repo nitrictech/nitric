@@ -20,9 +20,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/golang/mock/gomock"
-	mocks "github.com/nitrictech/nitric/mocks/resourcetaggingapi"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	mocks "github.com/nitrictech/nitric/mocks/resourcetaggingapi"
 )
 
 var _ = Describe("AwsProvider", func() {
