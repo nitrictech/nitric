@@ -1000,3 +1000,365 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StoragePreSignUrlResponseValidationError{}
+
+// Validate checks the field values on StorageListFilesRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StorageListFilesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageListFilesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StorageListFilesRequestMultiError, or nil if none found.
+func (m *StorageListFilesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageListFilesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(m.GetBucketName()) > 256 {
+		err := StorageListFilesRequestValidationError{
+			field:  "BucketName",
+			reason: "value length must be at most 256 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !_StorageListFilesRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
+		err := StorageListFilesRequestValidationError{
+			field:  "BucketName",
+			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return StorageListFilesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageListFilesRequestMultiError is an error wrapping multiple validation
+// errors returned by StorageListFilesRequest.ValidateAll() if the designated
+// constraints aren't met.
+type StorageListFilesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageListFilesRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageListFilesRequestMultiError) AllErrors() []error { return m }
+
+// StorageListFilesRequestValidationError is the validation error returned by
+// StorageListFilesRequest.Validate if the designated constraints aren't met.
+type StorageListFilesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageListFilesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageListFilesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageListFilesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageListFilesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageListFilesRequestValidationError) ErrorName() string {
+	return "StorageListFilesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StorageListFilesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageListFilesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageListFilesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageListFilesRequestValidationError{}
+
+var _StorageListFilesRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
+
+// Validate checks the field values on File with the rules defined in the proto
+// definition for this message. If any rules are violated, the first error
+// encountered is returned, or nil if there are no violations.
+func (m *File) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on File with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in FileMultiError, or nil if none found.
+func (m *File) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *File) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Key
+
+	if len(errors) > 0 {
+		return FileMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileMultiError is an error wrapping multiple validation errors returned by
+// File.ValidateAll() if the designated constraints aren't met.
+type FileMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileMultiError) AllErrors() []error { return m }
+
+// FileValidationError is the validation error returned by File.Validate if the
+// designated constraints aren't met.
+type FileValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileValidationError) ErrorName() string { return "FileValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FileValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFile.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileValidationError{}
+
+// Validate checks the field values on StorageListFilesResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StorageListFilesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageListFilesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StorageListFilesResponseMultiError, or nil if none found.
+func (m *StorageListFilesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageListFilesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetFiles() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, StorageListFilesResponseValidationError{
+						field:  fmt.Sprintf("Files[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, StorageListFilesResponseValidationError{
+						field:  fmt.Sprintf("Files[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return StorageListFilesResponseValidationError{
+					field:  fmt.Sprintf("Files[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return StorageListFilesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageListFilesResponseMultiError is an error wrapping multiple validation
+// errors returned by StorageListFilesResponse.ValidateAll() if the designated
+// constraints aren't met.
+type StorageListFilesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageListFilesResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageListFilesResponseMultiError) AllErrors() []error { return m }
+
+// StorageListFilesResponseValidationError is the validation error returned by
+// StorageListFilesResponse.Validate if the designated constraints aren't met.
+type StorageListFilesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageListFilesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageListFilesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageListFilesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageListFilesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageListFilesResponseValidationError) ErrorName() string {
+	return "StorageListFilesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StorageListFilesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageListFilesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageListFilesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageListFilesResponseValidationError{}

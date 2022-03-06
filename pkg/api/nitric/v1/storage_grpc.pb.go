@@ -30,6 +30,8 @@ type StorageServiceClient interface {
 	Delete(ctx context.Context, in *StorageDeleteRequest, opts ...grpc.CallOption) (*StorageDeleteResponse, error)
 	// Generate a pre-signed URL for direct operations on an item
 	PreSignUrl(ctx context.Context, in *StoragePreSignUrlRequest, opts ...grpc.CallOption) (*StoragePreSignUrlResponse, error)
+	// List files currently in the bucket
+	ListFiles(ctx context.Context, in *StorageListFilesRequest, opts ...grpc.CallOption) (*StorageListFilesResponse, error)
 }
 
 type storageServiceClient struct {
@@ -76,6 +78,15 @@ func (c *storageServiceClient) PreSignUrl(ctx context.Context, in *StoragePreSig
 	return out, nil
 }
 
+func (c *storageServiceClient) ListFiles(ctx context.Context, in *StorageListFilesRequest, opts ...grpc.CallOption) (*StorageListFilesResponse, error) {
+	out := new(StorageListFilesResponse)
+	err := c.cc.Invoke(ctx, "/nitric.storage.v1.StorageService/ListFiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageServiceServer is the server API for StorageService service.
 // All implementations must embed UnimplementedStorageServiceServer
 // for forward compatibility
@@ -88,6 +99,8 @@ type StorageServiceServer interface {
 	Delete(context.Context, *StorageDeleteRequest) (*StorageDeleteResponse, error)
 	// Generate a pre-signed URL for direct operations on an item
 	PreSignUrl(context.Context, *StoragePreSignUrlRequest) (*StoragePreSignUrlResponse, error)
+	// List files currently in the bucket
+	ListFiles(context.Context, *StorageListFilesRequest) (*StorageListFilesResponse, error)
 	mustEmbedUnimplementedStorageServiceServer()
 }
 
@@ -106,6 +119,9 @@ func (UnimplementedStorageServiceServer) Delete(context.Context, *StorageDeleteR
 }
 func (UnimplementedStorageServiceServer) PreSignUrl(context.Context, *StoragePreSignUrlRequest) (*StoragePreSignUrlResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PreSignUrl not implemented")
+}
+func (UnimplementedStorageServiceServer) ListFiles(context.Context, *StorageListFilesRequest) (*StorageListFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
 }
 func (UnimplementedStorageServiceServer) mustEmbedUnimplementedStorageServiceServer() {}
 
@@ -192,6 +208,24 @@ func _StorageService_PreSignUrl_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageService_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StorageListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).ListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.storage.v1.StorageService/ListFiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).ListFiles(ctx, req.(*StorageListFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StorageService_ServiceDesc is the grpc.ServiceDesc for StorageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,6 +248,10 @@ var StorageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PreSignUrl",
 			Handler:    _StorageService_PreSignUrl_Handler,
+		},
+		{
+			MethodName: "ListFiles",
+			Handler:    _StorageService_ListFiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
