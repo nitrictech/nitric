@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="docs/assets/nitric-logo.svg" width="120" alt="Nitric Logo"/>
+  <a href="https://nitric.io">
+    <img src="docs/assets/nitric-logo.svg" width="120" alt="Nitric Logo"/>
+  </a>
 </p>
 
 <p align="center">
