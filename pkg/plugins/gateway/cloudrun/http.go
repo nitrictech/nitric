@@ -21,6 +21,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
+	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -45,12 +46,28 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	var pubsubEvent PubSubMessage
 	if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 		// We have an event from pubsub here...
-		event := &triggers.Event{
-			ID: pubsubEvent.Message.ID,
-			// Set the topic
-			Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
-			// Set the payload
-			Payload: pubsubEvent.Message.Data,
+
+		// need to determine if the underlying data is a nitric event
+		var event *triggers.Event
+		messageJson := &ep.NitricEvent{}
+		// Check if it's a nitric event
+		if err := json.Unmarshal(pubsubEvent.Message.Data, messageJson); err == nil && messageJson.ID != "" {
+			// reserialize the nitric event payload
+			payload, _ := json.Marshal(messageJson.Payload)
+
+			event = &triggers.Event{
+				ID:      messageJson.ID,
+				Topic:   pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Payload: payload,
+			}
+		} else {
+			event = &triggers.Event{
+				ID: pubsubEvent.Message.ID,
+				// Set the topic
+				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
+				// Set the original full payload payload
+				Payload: pubsubEvent.Message.Data,
+			}
 		}
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
