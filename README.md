@@ -1,10 +1,24 @@
 <p align="center">
-  <img src="docs/assets/dot-matrix-logo.png" alt="Nitric Logo"/>
+  <img src="docs/assets/nitric-logo.svg" width="120" alt="Nitric Logo"/>
 </p>
 
-![test status](https://github.com/nitrictech/go-sdk/actions/workflows/test.yaml/badge.svg?branch=main)
-[![codecov](https://codecov.io/gh/nitrictech/nitric/branch/develop/graph/badge.svg?token=20TYFIQS2P)](https://codecov.io/gh/nitrictech/nitric)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=nitrictech_membrane&metric=alert_status)](https://sonarcloud.io/dashboard?id=nitrictech_membrane)
+<p align="center">
+  A fast & fun way to build portable cloud-native applications
+</p>
+
+<p align="center">
+  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?sort=semver">
+  <img alt="GitHub" src="https://img.shields.io/github/license/nitrictech/nitric">
+  <!-- <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/nitrictech/cli/total"> -->
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/nitrictech/nitric/Tests?label=build">
+  <img alt="codecov" src="https://codecov.io/gh/nitrictech/nitric/branch/develop/graph/badge.svg?token=20TYFIQS2P">
+  <!-- <a href="" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a> -->
+  <a href="https://twitter.com/nitric_io">
+    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/nitric_io?label=Follow&style=social">
+  </a>
+</p>
+
+## About Nitric
 
 [Nitric](https://nitric.io) is a provider independent framework and runtime for cloud-native and serverless applications. Using Nitric, applications take advantage of cloud-native services for events, queues, compute, APIs, storage, and documents without direct integration to cloud specific APIs.
 
