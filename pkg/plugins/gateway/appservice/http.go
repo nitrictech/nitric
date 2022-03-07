@@ -21,6 +21,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/valyala/fasthttp"
 
+	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -61,11 +62,23 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, poo
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		evt := &triggers.Event{
-			// FIXME: Check if ID is nil
-			ID:      *event.ID,
-			Topic:   *event.Topic,
-			Payload: payloadBytes,
+		nitricEvt := &ep.NitricEvent{}
+		var evt *triggers.Event
+		// attempt to deserialize as a nitric event
+		if err := json.Unmarshal(payloadBytes, nitricEvt); err == nil && nitricEvt.ID != "" {
+			payload, _ := json.Marshal(nitricEvt.Payload)
+			evt = &triggers.Event{
+				ID:      nitricEvt.ID,
+				Topic:   *event.Topic,
+				Payload: payload,
+			}
+		} else {
+			evt = &triggers.Event{
+				// FIXME: Check if ID is nil
+				ID:      *event.ID,
+				Topic:   *event.Topic,
+				Payload: payloadBytes,
+			}
 		}
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
