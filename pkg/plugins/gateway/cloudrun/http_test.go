@@ -125,6 +125,8 @@ var _ = Describe("Http", func() {
 				Payload:     eventPayload,
 			})
 
+			pBytes, _ := json.Marshal(eventPayload)
+
 			b64Event := base64.StdEncoding.EncodeToString(eventBytes)
 
 			payloadBytes, _ := json.Marshal(&map[string]interface{}{
@@ -154,14 +156,14 @@ var _ = Describe("Http", func() {
 
 				handledEvent := mockHandler.ReceivedEvents[0]
 
-				By("Passing through the pubsub message ID")
-				Expect(handledEvent.ID).To(Equal("test"))
+				By("Passing through nitric event ID")
+				Expect(handledEvent.ID).To(Equal("1234"))
 
 				By("Extracting the topic name from the subscription")
 				Expect(handledEvent.Topic).To(Equal("test"))
 
 				By("Passing through the published message data")
-				Expect(handledEvent.Payload).To(BeEquivalentTo(eventBytes))
+				Expect(handledEvent.Payload).To(BeEquivalentTo(pBytes))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
