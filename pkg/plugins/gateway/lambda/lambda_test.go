@@ -20,12 +20,15 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mock_provider "github.com/nitrictech/nitric/mocks/provider"
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	lambda_service "github.com/nitrictech/nitric/pkg/plugins/gateway/lambda"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
@@ -39,10 +42,10 @@ type MockLambdaRuntime struct {
 
 func (m *MockLambdaRuntime) Start(handler interface{}) {
 	// cast the function type to what we know it will be
-	typedFunc := handler.(func(ctx context.Context, event lambda_service.Event) (interface{}, error))
+	typedFunc := handler.(func(ctx context.Context, data map[string]interface{}) (interface{}, error))
 	for _, event := range m.eventQueue {
 		bytes, _ := json.Marshal(event)
-		evt := lambda_service.Event{}
+		evt := map[string]interface{}{}
 
 		err := json.Unmarshal(bytes, &evt)
 		Expect(err).To(BeNil())
@@ -56,6 +59,7 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 
 var _ = Describe("Lambda", func() {
 	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+
 	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
 		ReturnHttp: &triggers.HttpResponse{
 			Body:       []byte("success"),
@@ -70,6 +74,8 @@ var _ = Describe("Lambda", func() {
 
 	Context("Http Events", func() {
 		When("Sending a compliant HTTP Event", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
 
 			runtime := MockLambdaRuntime{
 				// Setup mock events for our runtime to process...
@@ -92,7 +98,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, _ := lambda_service.NewWithRuntime(runtime.Start)
+			client, _ := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
@@ -127,6 +133,9 @@ var _ = Describe("Lambda", func() {
 
 	Context("SNS Events", func() {
 		When("The Lambda Gateway receives SNS events", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+
 			topicName := "MyTopic"
 			eventPayload := map[string]interface{}{
 				"test": "test",
@@ -158,9 +167,14 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, _ := lambda_service.NewWithRuntime(runtime.Start)
+			client, _ := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
 
 			It("The gateway should translate into a standard NitricRequest", func() {
+				By("having the topic available")
+				mockProvider.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+					"MyTopic": "some:arbitrary:topic:arn:MyTopic",
+				}, nil)
+
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request

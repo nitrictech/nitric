@@ -28,6 +28,7 @@ import (
 	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secrets_manager"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -40,19 +41,26 @@ func main() {
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 
+	provider, err := core.New()
+
+	if err != nil {
+		log.Fatalf("could not create aws provider: %v", err)
+		return
+	}
+
 	// Load the appropriate gateway based on the environment.
 	switch gatewayEnv {
 	case "lambda":
-		membraneOpts.GatewayPlugin, _ = lambda_service.New()
+		membraneOpts.GatewayPlugin, _ = lambda_service.New(provider)
 	default:
 		membraneOpts.GatewayPlugin, _ = base_http.New(nil)
 	}
 
-	membraneOpts.SecretPlugin, _ = secrets_manager_secret_service.New()
-	membraneOpts.DocumentPlugin, _ = dynamodb_service.New()
-	membraneOpts.EventsPlugin, _ = sns_service.New()
-	membraneOpts.QueuePlugin, _ = sqs_service.New()
-	membraneOpts.StoragePlugin, _ = s3_service.New()
+	membraneOpts.SecretPlugin, _ = secrets_manager_secret_service.New(provider)
+	membraneOpts.DocumentPlugin, _ = dynamodb_service.New(provider)
+	membraneOpts.EventsPlugin, _ = sns_service.New(provider)
+	membraneOpts.QueuePlugin, _ = sqs_service.New(provider)
+	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 
 	m, err := membrane.New(membraneOpts)
 

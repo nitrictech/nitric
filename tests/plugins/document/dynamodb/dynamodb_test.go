@@ -19,13 +19,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 
+	mock_provider "github.com/nitrictech/nitric/mocks/provider"
 	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/tests/plugins"
 	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
@@ -77,7 +80,17 @@ var _ = Describe("DynamoDb", func() {
 		plugins.StopContainer(containerName)
 	})
 
-	docPlugin, err := dynamodb_service.NewWithClient(db)
+	ctrl := gomock.NewController(GinkgoT())
+	provider := mock_provider.NewMockAwsProvider(ctrl)
+
+	provider.EXPECT().GetResources(core.AwsResource_Collection).AnyTimes().Return(map[string]string{
+		"customers":   "arn:${Partition}:dynamodb:${Region}:${Account}:table/customers-1111111",
+		"users":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/users-1111111",
+		"items":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/items-1111111",
+		"parentItems": "arn:${Partition}:dynamodb:${Region}:${Account}:table/parentItems-1111111",
+	}, nil)
+
+	docPlugin, err := dynamodb_service.NewWithClient(provider, db)
 	if err != nil {
 		panic(err)
 	}

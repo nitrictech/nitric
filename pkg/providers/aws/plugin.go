@@ -26,36 +26,46 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
 	"github.com/nitrictech/nitric/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 )
 
 type AWSServiceFactory struct {
+	provider core.AwsProvider
 }
 
-func New() providers.ServiceFactory {
-	return &AWSServiceFactory{}
+func New() (providers.ServiceFactory, error) {
+	provider, err := core.New()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &AWSServiceFactory{
+		provider: provider,
+	}, nil
 }
 
 // NewDocumentService - Return AWS DynamoDB document plugin
 func (p *AWSServiceFactory) NewDocumentService() (document.DocumentService, error) {
-	return dynamodb_service.New()
+	return dynamodb_service.New(p.provider)
 }
 
 // NewEventService - Returns AWS SNS based events plugin
 func (p *AWSServiceFactory) NewEventService() (events.EventService, error) {
-	return sns_service.New()
+	return sns_service.New(p.provider)
 }
 
 // NewGatewayService - Returns AWS Lambda Gateway plugin
 func (p *AWSServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
-	return lambda_service.New()
+	return lambda_service.New(p.provider)
 }
 
 // NewQueueService - Returns AWS SQS based queue plugin
 func (p *AWSServiceFactory) NewQueueService() (queue.QueueService, error) {
-	return sqs_service.New()
+	return sqs_service.New(p.provider)
 }
 
 // NewStorageService - Returns AWS S3 based storage plugin
 func (p *AWSServiceFactory) NewStorageService() (storage.StorageService, error) {
-	return s3_service.New()
+	return s3_service.New(p.provider)
 }

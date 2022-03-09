@@ -17,9 +17,9 @@ package sqs_service
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
@@ -27,6 +27,7 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -38,45 +39,37 @@ const (
 
 type SQSQueueService struct {
 	queue.UnimplementedQueuePlugin
-	client sqsiface.SQSAPI
+	provder core.AwsProvider
+	client  sqsiface.SQSAPI
 }
 
 // Get the URL for a given queue name
 func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
-	out, err := s.client.ListQueues(&sqs.ListQueuesInput{})
+	queues, err := s.provder.GetResources(core.AwsResource_Queue)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving queue list")
+	}
+
+	queueArn, ok := queues[queue]
+
+	if !ok {
+		return nil, fmt.Errorf("queue %s does not exist", queue)
+	}
+
+	arnParts := strings.Split(queueArn, ":")
+	accountId := arnParts[4]
+	queueName := arnParts[5]
+
+	out, err := s.client.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName:              aws.String(queueName),
+		QueueOwnerAWSAccountId: aws.String(accountId),
+	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Encountered an error retrieving the queue list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the queue list: %v", err)
 	}
 
-	for _, q := range out.QueueUrls {
-		// TODO: This could be rather slow, it's interesting that they don't return this in the list queues output
-		tagout, err := s.client.ListQueueTags(&sqs.ListQueueTagsInput{
-			QueueUrl: q,
-		})
-
-		if err != nil {
-			if awsErr, ok := err.(awserr.Error); ok {
-				if awsErr.Code() == ErrCodeNoSuchTagSet {
-					// Ignore queues with no tags, check the next queue
-					continue
-				}
-				if awsErr.Code() == ErrCodeAccessDenied {
-					// Ignore queues with inaccessible tags, check the next queue
-					continue
-				}
-				return nil, err
-			}
-			return nil, err
-		}
-
-		for k, v := range tagout.Tags {
-			if k == "x-nitric-name" && *v == queue {
-				return q, nil
-			}
-		}
-	}
-	return nil, fmt.Errorf("Unable to find queue with name: %s", queue)
+	return out.QueueUrl, nil
 }
 
 func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
@@ -272,7 +265,7 @@ func (s *SQSQueueService) Complete(q string, leaseId string) error {
 	}
 }
 
-func New() (queue.QueueService, error) {
+func New(provider core.AwsProvider) (queue.QueueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -286,12 +279,14 @@ func New() (queue.QueueService, error) {
 	client := sqs.New(sess)
 
 	return &SQSQueueService{
-		client: client,
+		client:  client,
+		provder: provider,
 	}, nil
 }
 
-func NewWithClient(client sqsiface.SQSAPI) queue.QueueService {
+func NewWithClient(provider core.AwsProvider, client sqsiface.SQSAPI) queue.QueueService {
 	return &SQSQueueService{
-		client: client,
+		client:  client,
+		provder: provider,
 	}
 }

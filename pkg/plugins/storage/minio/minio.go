@@ -69,12 +69,8 @@ func configFromEnv() (*minioConfig, error) {
 	}, nil
 }
 
-func nameSelector(nitricName string, bucket *s3.Bucket) (bool, error) {
-	if *bucket.Name == nitricName {
-		return true, nil
-	}
-
-	return false, nil
+func nameSelector(nitricName string) (*string, error) {
+	return &nitricName, nil
 }
 
 func New() (storage.StorageService, error) {
@@ -100,5 +96,5 @@ func New() (storage.StorageService, error) {
 
 	s3Client := s3.New(newSession)
 
-	return s3_service.NewWithClient(s3Client, s3_service.WithSelector(nameSelector))
+	return s3_service.NewWithClient(nil, s3Client, s3_service.WithSelector(nameSelector))
 }
