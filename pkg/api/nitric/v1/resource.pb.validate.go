@@ -545,6 +545,37 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 			}
 		}
 
+	case *ResourceDeclareRequest_Function:
+
+		if all {
+			switch v := interface{}(m.GetFunction()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "Function",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "Function",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetFunction()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceDeclareRequestValidationError{
+					field:  "Function",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -1128,6 +1159,110 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SecretResourceValidationError{}
+
+// Validate checks the field values on FunctionResource with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *FunctionResource) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FunctionResource with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FunctionResourceMultiError, or nil if none found.
+func (m *FunctionResource) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FunctionResource) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Memory
+
+	if len(errors) > 0 {
+		return FunctionResourceMultiError(errors)
+	}
+
+	return nil
+}
+
+// FunctionResourceMultiError is an error wrapping multiple validation errors
+// returned by FunctionResource.ValidateAll() if the designated constraints
+// aren't met.
+type FunctionResourceMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FunctionResourceMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FunctionResourceMultiError) AllErrors() []error { return m }
+
+// FunctionResourceValidationError is the validation error returned by
+// FunctionResource.Validate if the designated constraints aren't met.
+type FunctionResourceValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FunctionResourceValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FunctionResourceValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FunctionResourceValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FunctionResourceValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FunctionResourceValidationError) ErrorName() string { return "FunctionResourceValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FunctionResourceValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFunctionResource.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FunctionResourceValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FunctionResourceValidationError{}
 
 // Validate checks the field values on ResourceDeclareResponse with the rules
 // defined in the proto definition for this message. If any rules are

@@ -54,6 +54,7 @@ message ResourceDeclareRequest {
     TopicResource topic = 13;
     CollectionResource collection = 14;
     SecretResource secret = 15;
+    FunctionResource function = 16;
   }
 }
 
@@ -62,6 +63,16 @@ message QueueResource {}
 message TopicResource {}
 message CollectionResource {}
 message SecretResource {}
+
+// Allow a function to define its own configuration
+message FunctionResource {
+  // name of the function resource (defaults based on file name)
+  string name = 1;
+  // The desired memory of the function in mebibytes
+  // the default will be the minimum available on the provider
+  // being deployed to
+  int32 memory = 2;
+}
 
 enum Action {
   // Bucket Permissions: 0XX
