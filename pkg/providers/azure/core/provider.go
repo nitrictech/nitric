@@ -1,26 +1,86 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
 type AzProvider interface {
+	GetResources(AzResource) (map[string]AzGenericResource, error)
 	SubscriptionId() string
 	ResourceGroupName() string
 	ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error)
 }
 
+type AzResource = string
+
+const (
+	AzResource_Topic AzResource = "Microsoft.Eventgrid/topics"
+	// Collections are handled by mongodb in azure
+	// AzResource_Collection AzResource = "TODO"
+	AzResource_Queue  AzResource = "Microsoft.Storage/storageAccounts/queueServices"
+	AzResource_Bucket AzResource = "Microsoft.Storage/storageAccounts/blobServices"
+	AzResource_Secret AzResource = "Microsoft.KeyVault/vaults/secrets"
+)
+
+type AzGenericResource struct {
+	Name string
+	Type string
+}
+
+type azResourceCache = map[AzResource]map[string]AzGenericResource
+
 type azProviderImpl struct {
-	env    auth.EnvironmentSettings
-	subId  string
-	rgName string
+	env     auth.EnvironmentSettings
+	rclient resources.Client
+	subId   string
+	rgName  string
+	cache   azResourceCache
+}
+
+func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResource, error) {
+	filter := fmt.Sprintf("resourceType eq %s", r)
+
+	if _, ok := p.cache[r]; !ok {
+		// populate the cache
+		results, err := p.rclient.ListByResourceGroupComplete(context.TODO(), p.rgName, filter, "", nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		p.cache[r] = map[string]AzGenericResource{}
+
+		for results.NotDone() {
+			// TODO: Determine if iterator needs to be advanced first or last
+			err := results.NextWithContext(context.TODO())
+
+			if err != nil {
+				return nil, err
+			}
+
+			resource := results.Value()
+			if tagV, ok := resource.Tags["x-nitric-name"]; ok && tagV != nil {
+				// Add it to the cache
+				p.cache[r][*tagV] = AzGenericResource{
+					Name: *resource.Name,
+					Type: *resource.Type,
+				}
+			}
+		}
+	}
+
+	// otherwise return the results
+	return p.cache[r], nil
 }
 
 func (p *azProviderImpl) ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error) {
+
 	if fileCred, fileErr := auth.GetSettingsFromFile(); fileErr == nil {
 		return fileCred.ServicePrincipalTokenFromClientCredentialsWithResource(resource)
 	} else if clientCred, clientErr := p.env.GetClientCredentials(); clientErr == nil {
