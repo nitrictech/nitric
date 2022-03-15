@@ -22,6 +22,7 @@ import (
 	"syscall"
 
 	azqueue_service "github.com/nitrictech/nitric/pkg/plugins/queue/azqueue"
+	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 
 	"github.com/nitrictech/nitric/pkg/membrane"
 	mongodb_service "github.com/nitrictech/nitric/pkg/plugins/document/mongodb"
@@ -37,6 +38,12 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
+	provider, err := core.New()
+
+	if err != nil {
+		log.Fatalf("could not create core azure provider: %v", err)
+	}
+
 	membraneOpts := membrane.DefaultMembraneOptions()
 
 	membraneOpts.DocumentPlugin, err = mongodb_service.New()
@@ -44,7 +51,7 @@ func main() {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
-	membraneOpts.EventsPlugin, err = event_grid.New()
+	membraneOpts.EventsPlugin, err = event_grid.New(provider)
 	if err != nil {
 		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
