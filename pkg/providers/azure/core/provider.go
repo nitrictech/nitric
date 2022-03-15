@@ -132,5 +132,6 @@ func New() (*azProviderImpl, error) {
 		rgName: rgName,
 		subId:  subId,
 		env:    config,
+		cache:  make(map[string]map[string]AzGenericResource),
 	}, nil
 }
