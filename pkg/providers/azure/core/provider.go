@@ -29,8 +29,9 @@ const (
 )
 
 type AzGenericResource struct {
-	Name string
-	Type string
+	Name     string
+	Type     string
+	Location string
 }
 
 type azResourceCache = map[AzResource]map[string]AzGenericResource
@@ -68,8 +69,9 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 			if tagV, ok := resource.Tags["x-nitric-name"]; ok && tagV != nil {
 				// Add it to the cache
 				p.cache[r][*tagV] = AzGenericResource{
-					Name: *resource.Name,
-					Type: *resource.Type,
+					Name:     *resource.Name,
+					Type:     *resource.Type,
+					Location: *resource.Location,
 				}
 			}
 		}
@@ -80,7 +82,6 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 }
 
 func (p *azProviderImpl) ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error) {
-
 	if fileCred, fileErr := auth.GetSettingsFromFile(); fileErr == nil {
 		return fileCred.ServicePrincipalTokenFromClientCredentialsWithResource(resource)
 	} else if clientCred, clientErr := p.env.GetClientCredentials(); clientErr == nil {
