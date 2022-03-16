@@ -108,6 +108,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 	}
 
 	topicHostName := fmt.Sprintf("%s.%s.eventgrid.azure.net", t.Name, t.Location)
+	topicHostName := fmt.Sprintf("%s.%s-1.eventgrid.azure.net", t.Name, t.Location)
 
 	eventToPublish, err := s.nitricEventsToAzureEvents(topicHostName, []*events.NitricEvent{event})
 	if err != nil {
