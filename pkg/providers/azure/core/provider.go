@@ -45,7 +45,7 @@ type azProviderImpl struct {
 }
 
 func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResource, error) {
-	filter := fmt.Sprintf("resourceType eq %s", r)
+	filter := fmt.Sprintf("resourceType eq '%s'", r)
 
 	if _, ok := p.cache[r]; !ok {
 		// populate the cache
