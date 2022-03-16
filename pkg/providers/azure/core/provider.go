@@ -128,10 +128,22 @@ func New() (*azProviderImpl, error) {
 		return nil, err
 	}
 
-	return &azProviderImpl{
+	prov := &azProviderImpl{
 		rgName: rgName,
 		subId:  subId,
 		env:    config,
 		cache:  make(map[string]map[string]AzGenericResource),
-	}, nil
+	}
+
+	rclient := resources.NewClient(subId)
+	spt, err := prov.ServicePrincipalToken("https://management.azure.com")
+
+	if err != nil {
+		return nil, err
+	}
+
+	rclient.Authorizer = autorest.NewBearerAuthorizer(spt)
+	prov.rclient = rclient
+
+	return prov, nil
 }
