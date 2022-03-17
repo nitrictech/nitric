@@ -231,6 +231,44 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 	}
 }
 
+func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.ListFiles",
+		map[string]interface{}{
+			"bucket": bucket,
+		},
+	)
+
+	if b, err := s.getBucketName(bucket); err == nil {
+		objects, err := s.client.ListObjects(&s3.ListObjectsInput{
+			Bucket: b,
+		})
+
+		if err != nil {
+			return nil, newErr(
+				codes.Internal,
+				"unable to fetch file list",
+				err,
+			)
+		}
+
+		files := make([]*storage.FileInfo, 0, len(objects.Contents))
+		for _, o := range objects.Contents {
+			files = append(files, &storage.FileInfo{
+				Key: *o.Key,
+			})
+		}
+
+		return files, nil
+	} else {
+		return nil, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
+}
+
 // New creates a new default S3 storage plugin
 func New(provider core.AwsProvider) (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
