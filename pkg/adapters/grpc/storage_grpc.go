@@ -121,6 +121,32 @@ func (s *StorageServiceServer) PreSignUrl(ctx context.Context, req *pb.StoragePr
 	}
 }
 
+func (s *StorageServiceServer) ListFiles(ctx context.Context, req *pb.StorageListFilesRequest) (*pb.StorageListFilesResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.ListFiles", err)
+	}
+
+	if files, err := s.storagePlugin.ListFiles(req.BucketName); err == nil {
+		pbFiles := make([]*pb.File, 0, len(files))
+
+		for _, file := range files {
+			pbFiles = append(pbFiles, &pb.File{
+				Key: file.Key,
+			})
+		}
+
+		return &pb.StorageListFilesResponse{
+			Files: pbFiles,
+		}, nil
+	} else {
+		return nil, NewGrpcError("StorageServer.ListFiles", err)
+	}
+}
+
 func NewStorageServiceServer(storagePlugin storage.StorageService) pb.StorageServiceServer {
 	return &StorageServiceServer{
 		storagePlugin: storagePlugin,

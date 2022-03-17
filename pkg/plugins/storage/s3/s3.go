@@ -46,6 +46,7 @@ type S3StorageService struct {
 	client   s3iface.S3API
 	provider core.AwsProvider
 	selector BucketSelector
+	storage.UnimplementedStoragePlugin
 }
 
 type BucketSelector = func(nitricName string) (*string, error)
