@@ -58,7 +58,7 @@ func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
 
 // NewGatewayService - Returns Azure _ Gateway plugin
 func (p *AzureServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
-	return http_service.New()
+	return http_service.New(p.provider)
 }
 
 // NewQueueService - Returns Azure _ based queue plugin

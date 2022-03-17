@@ -16,7 +16,6 @@ package eventgrid_service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -33,8 +32,7 @@ import (
 
 type EventGridEventService struct {
 	events.UnimplementedeventsPlugin
-	client eventgridapi.BaseClientAPI
-	// topicClient eventgridmgmtapi.TopicsClientAPI
+	client   eventgridapi.BaseClientAPI
 	provider core.AzProvider
 }
 
@@ -63,14 +61,14 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events []*events.NitricEvent) ([]eventgrid.Event, error) {
 	var azureEvents []eventgrid.Event
 	for _, event := range events {
-		payload, err := json.Marshal(event.Payload)
-		if err != nil {
-			return nil, err
-		}
+		// payload, err := json.Marshal(event.Payload)
+		// if err != nil {
+		// 	return nil, err
+		// }
 		dataVersion := "1.0"
 		azureEvents = append(azureEvents, eventgrid.Event{
 			ID:          &event.ID,
-			Data:        &payload,
+			Data:        event.Payload, // &payload,
 			EventType:   &event.PayloadType,
 			Subject:     &topic,
 			EventTime:   &date.Time{time.Now()},
@@ -93,7 +91,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 	if err != nil {
 		return newErr(
 			codes.NotFound,
-			fmt.Sprintf("unable to find topic %s", topic),
+			fmt.Sprintf("unable to find topic %s: %v", topic, err),
 			err,
 		)
 	}
@@ -107,8 +105,9 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		)
 	}
 
-	topicHostName := fmt.Sprintf("%s.%s.eventgrid.azure.net", t.Name, t.Location)
+	// TODO: Determine correctness of availability zone in endpoint hostname
 	topicHostName := fmt.Sprintf("%s.%s-1.eventgrid.azure.net", t.Name, t.Location)
+	fmt.Println("topic host name is", topicHostName)
 
 	eventToPublish, err := s.nitricEventsToAzureEvents(topicHostName, []*events.NitricEvent{event})
 	if err != nil {
@@ -135,6 +134,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 			fmt.Errorf(result.Status),
 		)
 	}
+
 	return nil
 }
 

@@ -24,11 +24,14 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mock_provider "github.com/nitrictech/nitric/mocks/provider"
 	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
+	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
@@ -52,7 +55,19 @@ var _ = Describe("Http", func() {
 		},
 	})
 	pool.AddWorker(mockHandler)
-	httpPlugin, _ := http_service.New()
+
+	ctrl := gomock.NewController(GinkgoT())
+	provider := mock_provider.NewMockAzProvider(ctrl)
+
+	provider.EXPECT().GetResources(core.AzResource_Topic).AnyTimes().Return(map[string]core.AzGenericResource{
+		"test": {
+			Name:     "test",
+			Type:     "topic",
+			Location: "eastus2",
+		},
+	}, nil)
+
+	httpPlugin, _ := http_service.New(provider)
 	// Run on a non-blocking thread
 	go (httpPlugin.Start)(pool)
 

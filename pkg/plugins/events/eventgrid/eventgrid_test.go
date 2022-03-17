@@ -115,7 +115,7 @@ var _ = Describe("Event Grid Plugin", func() {
 				By("publish events returning an unauthorized error")
 				eventgridClient.EXPECT().PublishEvents(
 					gomock.Any(),
-					fmt.Sprintf("%s.%s.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
+					fmt.Sprintf("%s.%s-1.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
 					gomock.Any(),
 				).Return(autorest.Response{
 					&http.Response{
@@ -145,7 +145,7 @@ var _ = Describe("Event Grid Plugin", func() {
 				By("the eventgrid client publishing to the returned topic")
 				eventgridClient.EXPECT().PublishEvents(
 					gomock.Any(),
-					fmt.Sprintf("%s.%s.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
+					fmt.Sprintf("%s.%s-1.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
 					gomock.Any(),
 				).Return(autorest.Response{
 					&http.Response{
