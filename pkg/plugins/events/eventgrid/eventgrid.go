@@ -61,14 +61,10 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events []*events.NitricEvent) ([]eventgrid.Event, error) {
 	var azureEvents []eventgrid.Event
 	for _, event := range events {
-		// payload, err := json.Marshal(event.Payload)
-		// if err != nil {
-		// 	return nil, err
-		// }
 		dataVersion := "1.0"
 		azureEvents = append(azureEvents, eventgrid.Event{
 			ID:          &event.ID,
-			Data:        event.Payload, // &payload,
+			Data:        event.Payload,
 			EventType:   &event.PayloadType,
 			Subject:     &topic,
 			EventTime:   &date.Time{time.Now()},
