@@ -45,6 +45,7 @@ type BucketIterator interface {
 
 type BucketHandle interface {
 	Object(string) ObjectHandle
+	Objects(context.Context, *storage.Query) *storage.ObjectIterator
 	SignedURL(string, *storage.SignedURLOptions) (string, error)
 
 	// embedToIncludeNewMethods()
