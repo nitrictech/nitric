@@ -27,13 +27,19 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	azblob_service "github.com/nitrictech/nitric/pkg/plugins/storage/azblob"
 	"github.com/nitrictech/nitric/pkg/providers"
+	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 )
 
 type AzureServiceFactory struct {
+	provider core.AzProvider
 }
 
 func New() providers.ServiceFactory {
-	return &AzureServiceFactory{}
+	provider, _ := core.New()
+
+	return &AzureServiceFactory{
+		provider: provider,
+	}
 }
 
 func (p *AzureServiceFactory) NewSecretService() (secret.SecretService, error) {
@@ -47,12 +53,12 @@ func (p *AzureServiceFactory) NewDocumentService() (document.DocumentService, er
 
 // NewEventService - Returns Azure _ based events plugin
 func (p *AzureServiceFactory) NewEventService() (events.EventService, error) {
-	return event_grid.New()
+	return event_grid.New(p.provider)
 }
 
 // NewGatewayService - Returns Azure _ Gateway plugin
 func (p *AzureServiceFactory) NewGatewayService() (gateway.GatewayService, error) {
-	return http_service.New()
+	return http_service.New(p.provider)
 }
 
 // NewQueueService - Returns Azure _ based queue plugin
