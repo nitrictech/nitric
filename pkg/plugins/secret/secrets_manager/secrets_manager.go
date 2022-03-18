@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	secretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
@@ -27,12 +26,14 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 type secretsManagerSecretService struct {
 	secret.UnimplementedSecretPlugin
-	client secretsmanageriface.SecretsManagerAPI
+	client   secretsmanageriface.SecretsManagerAPI
+	provider core.AwsProvider
 }
 
 func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val []byte) error {
@@ -47,6 +48,20 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 	}
 
 	return nil
+}
+
+func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
+	secrets, err := s.provider.GetResources(core.AwsResource_Secret)
+
+	if err != nil {
+		return "", fmt.Errorf("error retrieving secrets list: %v", err)
+	}
+
+	if secret, ok := secrets[sec]; ok {
+		return secret, nil
+	}
+
+	return "", fmt.Errorf("secret %s does not exist", sec)
 }
 
 func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
@@ -65,80 +80,29 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		)
 	}
 
-	_, err := s.client.GetSecretValue(&secretsmanager.GetSecretValueInput{
-		SecretId: &sec.Name,
+	secretId, err := s.getSecretId(sec.Name)
+
+	if err != nil {
+		return nil, newErr(codes.NotFound, "unable to find secret", err)
+	}
+
+	result, err := s.client.PutSecretValue(&secretsmanager.PutSecretValueInput{
+		SecretId:     aws.String(secretId),
+		SecretBinary: val,
 	})
 
-	// There was not existing secret value
-	// Need to determine if non-existent
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			// process SDK error
-
-			switch awsErr.Code() {
-			case secretsmanager.ErrCodeResourceNotFoundException:
-				// Create the secret
-				result, err := s.client.CreateSecret(&secretsmanager.CreateSecretInput{
-					Name:         aws.String(sec.Name),
-					SecretBinary: val,
-				})
-
-				if err != nil {
-					return nil, newErr(
-						codes.Internal,
-						"failed to create new secret",
-						err,
-					)
-				}
-
-				return &secret.SecretPutResponse{
-					SecretVersion: &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: aws.StringValue(result.Name),
-						},
-						Version: aws.StringValue(result.VersionId),
-					},
-				}, nil
-			default:
-				// Return the error
-				return nil, newErr(
-					codes.FailedPrecondition,
-					"failed to retrieve secret container",
-					err,
-				)
-			}
-		} else {
-			// Not an AWS error but still an error...
-			return nil, newErr(
-				codes.FailedPrecondition,
-				"failed to retrieve secret container",
-				err,
-			)
-		}
-	} else {
-		// Create a new version for an existing secret
-		result, err := s.client.PutSecretValue(&secretsmanager.PutSecretValueInput{
-			SecretId:     aws.String(sec.Name),
-			SecretBinary: val,
-		})
-
-		if err != nil {
-			return nil, newErr(
-				codes.Internal,
-				"failed to put secret",
-				err,
-			)
-		}
-
-		return &secret.SecretPutResponse{
-			SecretVersion: &secret.SecretVersion{
-				Secret: &secret.Secret{
-					Name: aws.StringValue(result.Name),
-				},
-				Version: aws.StringValue(result.VersionId),
-			},
-		}, nil
+		return nil, newErr(codes.Internal, "unable to put secret", err)
 	}
+
+	return &secret.SecretPutResponse{
+		SecretVersion: &secret.SecretVersion{
+			Secret: &secret.Secret{
+				Name: sec.Name,
+			},
+			Version: aws.StringValue(result.VersionId),
+		},
+	}, nil
 }
 
 func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
@@ -165,9 +129,15 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 		)
 	}
 
+	secretId, err := s.getSecretId(sv.Secret.Name)
+
+	if err != nil {
+		return nil, newErr(codes.NotFound, "could not find secret", err)
+	}
+
 	//Build the request to get the secret
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(sv.Secret.Name),
+		SecretId: aws.String(secretId),
 	}
 
 	// If the requested version is latest then we want
@@ -189,7 +159,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 	return &secret.SecretAccessResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
-				Name: aws.StringValue(result.Name),
+				Name: sv.Secret.Name,
 			},
 			Version: aws.StringValue(result.VersionId),
 		},
@@ -198,7 +168,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 }
 
 //Gets a new Secrets Manager Client
-func New() (secret.SecretService, error) {
+func New(provider core.AwsProvider) (secret.SecretService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -212,6 +182,7 @@ func New() (secret.SecretService, error) {
 	client := secretsmanager.New(sess)
 
 	return &secretsManagerSecretService{
-		client: client,
+		client:   client,
+		provider: provider,
 	}, nil
 }

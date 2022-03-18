@@ -16,30 +16,24 @@ package eventgrid_service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid"
 	"github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi"
-	eventgridmgmt "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid"
-	eventgridmgmtapi "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
-	azureutils "github.com/nitrictech/nitric/pkg/providers/azure/utils"
-	"github.com/nitrictech/nitric/pkg/utils"
+	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 )
 
 type EventGridEventService struct {
 	events.UnimplementedeventsPlugin
-	client      eventgridapi.BaseClientAPI
-	topicClient eventgridmgmtapi.TopicsClientAPI
+	client   eventgridapi.BaseClientAPI
+	provider core.AzProvider
 }
 
 func (s *EventGridEventService) ListTopics() ([]string, error) {
@@ -49,65 +43,28 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 			"list": "topics",
 		},
 	)
-	//Set the topic page length
-	pageLength := int32(10)
 
-	ctx := context.Background()
-	results, err := s.topicClient.ListBySubscription(ctx, "", &pageLength)
+	topics, err := s.provider.GetResources(core.AzResource_Topic)
 
 	if err != nil {
-		return nil, newErr(
-			codes.Internal,
-			"error listing by subscription",
-			err,
-		)
+		return nil, newErr(codes.Internal, "unable to retrieve topic list", err)
 	}
 
-	var topics []string
-
-	//Iterate over the topic pages adding their names to the topics slice
-	for results.NotDone() {
-		topicsList := results.Values()
-		for _, topic := range topicsList {
-			topics = append(topics, *topic.Name)
-		}
-		results.NextWithContext(ctx)
+	topicsList := make([]string, 0, len(topics))
+	for t := range topics {
+		topicsList = append(topicsList, t)
 	}
 
-	return topics, nil
-}
-
-func (s *EventGridEventService) getTopicEndpoint(topicName string) (string, error) {
-	ctx := context.Background()
-	pageLength := int32(10)
-	results, err := s.topicClient.ListBySubscription(ctx, "", &pageLength)
-	if err != nil {
-		return "", fmt.Errorf(err.Error())
-	}
-
-	for results.NotDone() {
-		topicsList := results.Values()
-		for _, topic := range topicsList {
-			if *topic.Name == topicName {
-				return strings.TrimSuffix(strings.TrimPrefix(*topic.Endpoint, "https://"), "/api/events"), nil
-			}
-		}
-		results.Next()
-	}
-	return "", fmt.Errorf("topic with provided name could not be found")
+	return topicsList, nil
 }
 
 func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events []*events.NitricEvent) ([]eventgrid.Event, error) {
 	var azureEvents []eventgrid.Event
 	for _, event := range events {
-		payload, err := json.Marshal(event.Payload)
-		if err != nil {
-			return nil, err
-		}
 		dataVersion := "1.0"
 		azureEvents = append(azureEvents, eventgrid.Event{
 			ID:          &event.ID,
-			Data:        &payload,
+			Data:        event.Payload,
 			EventType:   &event.PayloadType,
 			Subject:     &topic,
 			EventTime:   &date.Time{time.Now()},
@@ -125,27 +82,29 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 			"topic": topic,
 		},
 	)
-	ctx := context.Background()
 
-	if len(topic) == 0 {
-		return newErr(
-			codes.InvalidArgument,
-			"provided invalid topic",
-			fmt.Errorf("non-blank topic is required"),
-		)
-	}
-	if event == nil {
-		return newErr(
-			codes.InvalidArgument,
-			"provided invalid event",
-			fmt.Errorf("non-nil event is required"),
-		)
-	}
-
-	topicHostName, err := s.getTopicEndpoint(topic)
+	topics, err := s.provider.GetResources(core.AzResource_Topic)
 	if err != nil {
-		return err
+		return newErr(
+			codes.NotFound,
+			fmt.Sprintf("unable to find topic %s: %v", topic, err),
+			err,
+		)
 	}
+
+	t, ok := topics[topic]
+	if !ok {
+		return newErr(
+			codes.NotFound,
+			fmt.Sprintf("topic %s does not exist", topic),
+			err,
+		)
+	}
+
+	// TODO: Determine correctness of availability zone in endpoint hostname
+	topicHostName := fmt.Sprintf("%s.%s-1.eventgrid.azure.net", t.Name, t.Location)
+	fmt.Println("topic host name is", topicHostName)
+
 	eventToPublish, err := s.nitricEventsToAzureEvents(topicHostName, []*events.NitricEvent{event})
 	if err != nil {
 		return newErr(
@@ -155,7 +114,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 		)
 	}
 
-	result, err := s.client.PublishEvents(ctx, topicHostName, eventToPublish)
+	result, err := s.client.PublishEvents(context.TODO(), topicHostName, eventToPublish)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -171,40 +130,29 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 			fmt.Errorf(result.Status),
 		)
 	}
+
 	return nil
 }
 
-func New() (events.EventService, error) {
-	subscriptionID := utils.GetEnv("AZURE_SUBSCRIPTION_ID", "")
-	if len(subscriptionID) == 0 {
-		return nil, fmt.Errorf("AZURE_SUBSCRIPTION_ID not configured")
-	}
-
+func New(provider core.AzProvider) (events.EventService, error) {
 	//Get the event grid token, using the event grid resource endpoint
-	spt, err := azureutils.GetServicePrincipalToken("https://eventgrid.azure.net")
+	spt, err := provider.ServicePrincipalToken("https://eventgrid.azure.net")
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating event grid client: %v", err.Error())
 	}
-	//Get the event grid management token using the resource management endpoint
-	mgmtspt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceManagerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error authenticating event grid management client: %v", err.Error())
-	}
+
 	client := eventgrid.New()
 	client.Authorizer = autorest.NewBearerAuthorizer(spt)
 
-	topicClient := eventgridmgmt.NewTopicsClient(subscriptionID)
-	topicClient.Authorizer = autorest.NewBearerAuthorizer(mgmtspt)
-
 	return &EventGridEventService{
-		client:      client,
-		topicClient: topicClient,
+		provider: provider,
+		client:   client,
 	}, nil
 }
 
-func NewWithClient(client eventgridapi.BaseClientAPI, topicClient eventgridmgmtapi.TopicsClientAPI) (events.EventService, error) {
+func NewWithClient(provider core.AzProvider, client eventgridapi.BaseClientAPI) (events.EventService, error) {
 	return &EventGridEventService{
-		client:      client,
-		topicClient: topicClient,
+		client:   client,
+		provider: provider,
 	}, nil
 }

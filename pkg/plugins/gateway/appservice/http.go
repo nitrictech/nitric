@@ -16,6 +16,8 @@ package http_service
 
 import (
 	"encoding/json"
+	"log"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/mitchellh/mapstructure"
@@ -23,11 +25,16 @@ import (
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
+	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
 
-func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
+type azMiddleware struct {
+	provider core.AzProvider
+}
+
+func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
 	var validateData eventgrid.SubscriptionValidationEventData
 	if err := mapstructure.Decode(subPayload.Data, &validateData); err != nil {
@@ -40,11 +47,10 @@ func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.E
 	}
 
 	responseBody, _ := json.Marshal(response)
-
 	ctx.Success("application/json", responseBody)
 }
 
-func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
+func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
 	// TODO: As we are batch handling events
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -61,10 +67,30 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, poo
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		evt := &triggers.Event{
-			// FIXME: Check if ID is nil
+		var evt *triggers.Event
+		topics, err := a.provider.GetResources(core.AzResource_Topic)
+
+		if err != nil {
+			log.Default().Println("could not get topic resources")
+			continue
+		}
+
+		topicName := ""
+		for name, t := range topics {
+			if strings.HasSuffix(*event.Topic, t.Name) {
+				topicName = name
+			}
+		}
+
+		if topicName == "" {
+			log.Default().Println("could not resolve nitric name for topic", *event.Topic)
+			continue
+		}
+
+		// Just extract the payload from the event type (payload from nitric event is directly mapped)
+		evt = &triggers.Event{
 			ID:      *event.ID,
-			Topic:   *event.Topic,
+			Topic:   topicName,
 			Payload: payloadBytes,
 		}
 
@@ -73,6 +99,7 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, poo
 		})
 
 		if err != nil {
+			log.Default().Println("could not get worker for topic: ", topicName)
 			// TODO: Handle error
 			continue
 		}
@@ -85,7 +112,7 @@ func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, poo
 	ctx.SuccessString("text/plain", "success")
 }
 
-func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
+func (a *azMiddleware) middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
 	// Handle an eventgrid webhook event
@@ -101,11 +128,11 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		// Handle Eventgrid event
 		if eventType == "SubscriptionValidation" {
 			// Validate a subscription
-			handleSubscriptionValidation(ctx, eventgridEvents)
+			a.handleSubscriptionValidation(ctx, eventgridEvents)
 			return false
 		} else if eventType == "Notification" {
 			// Handle notifications
-			handleNotifications(ctx, eventgridEvents, pool)
+			a.handleNotifications(ctx, eventgridEvents, pool)
 			return false
 		}
 	}
@@ -114,6 +141,10 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 }
 
 // Create a new HTTP Gateway plugin
-func New() (gateway.GatewayService, error) {
-	return base_http.New(middleware)
+func New(provider core.AzProvider) (gateway.GatewayService, error) {
+	mw := &azMiddleware{
+		provider: provider,
+	}
+
+	return base_http.New(mw.middleware)
 }

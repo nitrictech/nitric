@@ -17,7 +17,6 @@ package sns_service
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -27,29 +26,18 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	utils2 "github.com/nitrictech/nitric/pkg/utils"
 )
 
 type SnsEventService struct {
 	events.UnimplementedeventsPlugin
-	client snsiface.SNSAPI
+	client   snsiface.SNSAPI
+	provider core.AwsProvider
 }
 
-// Retrieve the topicArn for a given named nitric topic
-func (s *SnsEventService) getTopicArnFromName(name *string) (*string, error) {
-	topicsOutput, error := s.client.ListTopics(&sns.ListTopicsInput{})
-
-	if error != nil {
-		return nil, fmt.Errorf("There was an error retrieving SNS topics: %v", error)
-	}
-
-	for _, t := range topicsOutput.Topics {
-		if strings.Contains(*t.TopicArn, *name) {
-			return t.TopicArn, nil
-		}
-	}
-
-	return nil, fmt.Errorf("Unable to find topic with name: %s", *name)
+func (s *SnsEventService) getTopics() (map[string]string, error) {
+	return s.provider.GetResources(core.AwsResource_Topic)
 }
 
 // Publish to a given topic
@@ -72,20 +60,30 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 		)
 	}
 
-	topicArn, err := s.getTopicArnFromName(&topic)
+	topics, err := s.getTopics()
 
 	if err != nil {
 		return newErr(
+			codes.Internal,
+			"error finding topics",
+			err,
+		)
+	}
+
+	topicArn, ok := topics[topic]
+
+	if !ok {
+		return newErr(
 			codes.NotFound,
 			"could not find topic",
-			err,
+			nil,
 		)
 	}
 
 	message := string(data)
 
 	publishInput := &sns.PublishInput{
-		TopicArn: topicArn,
+		TopicArn: aws.String(topicArn),
 		Message:  &message,
 		// MessageStructure: json is for an AWS specific JSON format,
 		// which sends different messages to different subscription types. Don't use it.
@@ -108,7 +106,7 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 func (s *SnsEventService) ListTopics() ([]string, error) {
 	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics", nil)
 
-	topicsOutput, err := s.client.ListTopics(&sns.ListTopicsInput{})
+	topics, err := s.getTopics()
 
 	if err != nil {
 		return nil, newErr(
@@ -118,17 +116,17 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 		)
 	}
 
-	var topics []string
-	for _, t := range topicsOutput.Topics {
+	topicNames := make([]string, 0, len(topics))
+	for name := range topics {
 		// TODO: Extract topic name from ARN
-		topics = append(topics, *t.TopicArn)
+		topicNames = append(topicNames, name)
 	}
 
-	return topics, nil
+	return topicNames, nil
 }
 
 // Create new SNS event service plugin
-func New() (events.EventService, error) {
+func New(provider core.AwsProvider) (events.EventService, error) {
 	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
 
 	sess, sessionError := session.NewSession(&aws.Config{
@@ -136,18 +134,20 @@ func New() (events.EventService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
 	}
 
 	snsClient := sns.New(sess)
 
 	return &SnsEventService{
-		client: snsClient,
+		client:   snsClient,
+		provider: provider,
 	}, nil
 }
 
-func NewWithClient(client snsiface.SNSAPI) (events.EventService, error) {
+func NewWithClient(provider core.AwsProvider, client snsiface.SNSAPI) (events.EventService, error) {
 	return &SnsEventService{
-		client: client,
+		provider: provider,
+		client:   client,
 	}, nil
 }
