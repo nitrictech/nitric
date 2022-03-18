@@ -73,7 +73,6 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 		p.cache[r] = map[string]AzGenericResource{}
 
 		for results.NotDone() {
-			// TODO: Determine if iterator needs to be advanced first or last
 			err := results.NextWithContext(context.TODO())
 
 			if err != nil {
