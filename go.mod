@@ -33,6 +33,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.1.1
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.2
+	github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
 	github.com/pkg/errors v0.9.1

@@ -700,6 +700,10 @@ github.com/nishanths/exhaustive v0.2.3/go.mod h1:bhIX678Nx8inLM9PbpvK1yv6oGtoP8B
 github.com/nishanths/predeclared v0.0.0-20190419143655-18a43bb90ffc/go.mod h1:62PewwiQTlm/7Rj+cxVYqZvDIUc+JjZq6GHAC1fsObQ=
 github.com/nishanths/predeclared v0.2.1 h1:1TXtjmy4f3YCFjTxRd8zcFHOmoUir+gp0ESzjFzG2sw=
 github.com/nishanths/predeclared v0.2.1/go.mod h1:HvkGJcA3naj4lOwnFXFDkFxVtSqQMB9sbB1usJ+xjQE=
+github.com/nitrictech/protoutils v0.0.0-20220321023444-e6f044548b72 h1:r1ZFNDD3y2yhcXSgE/gf2t0IqroEoEqy46RWGPpf8iQ=
+github.com/nitrictech/protoutils v0.0.0-20220321023444-e6f044548b72/go.mod h1:foTDKqoQFITPHBz73s77dyIE9SRN2ZLO3HoTydxauiw=
+github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27 h1:9TRWFdhnlG1E4yIPGDZwgfXd7KXRGEUOCNrbS7/pexY=
+github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27/go.mod h1:foTDKqoQFITPHBz73s77dyIE9SRN2ZLO3HoTydxauiw=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
