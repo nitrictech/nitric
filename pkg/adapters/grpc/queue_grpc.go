@@ -20,10 +20,10 @@ import (
 	"github.com/google/uuid"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
+	"github.com/nitrictech/protoutils"
 )
 
 // GRPC Interface for registered Nitric Storage Plugins
@@ -99,7 +99,7 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 	if resp, err := s.plugin.SendBatch(req.GetQueue(), tasks); err == nil {
 		failedTasks := make([]*pb.FailedTask, len(resp.FailedTasks))
 		for i, failedTask := range resp.FailedTasks {
-			st, _ := structpb.NewStruct(failedTask.Task.Payload)
+			st, _ := protoutils.NewStruct(failedTask.Task.Payload)
 			failedTasks[i] = &pb.FailedTask{
 				Message: failedTask.Message,
 				Task: &pb.NitricTask{
@@ -142,7 +142,7 @@ func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRe
 	// Convert the NitricTasks to the gRPC type
 	grpcTasks := make([]*pb.NitricTask, 0, len(tasks))
 	for _, task := range tasks {
-		st, _ := structpb.NewStruct(task.Payload)
+		st, _ := protoutils.NewStruct(task.Payload)
 		grpcTasks = append(grpcTasks, &pb.NitricTask{
 			Id:          task.ID,
 			Payload:     st,

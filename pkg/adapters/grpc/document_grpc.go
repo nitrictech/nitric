@@ -19,10 +19,10 @@ import (
 	"io"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/protoutils"
 )
 
 // DocumentServiceServer - GRPC Interface for registered Nitric Document Plugin
@@ -175,7 +175,7 @@ func NewDocumentServer(docPlugin document.DocumentService) pb.DocumentServiceSer
 }
 
 func documentToWire(doc *document.Document) (*pb.Document, error) {
-	valStruct, err := structpb.NewStruct(doc.Content)
+	valStruct, err := protoutils.NewStruct(doc.Content)
 	if err != nil {
 		return nil, err
 	}
