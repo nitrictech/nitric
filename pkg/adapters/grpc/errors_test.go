@@ -51,6 +51,18 @@ var _ = Describe("GRPC Errors", func() {
 				Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = bad param"))
 			})
 		})
+		When("plugin.errors.InvalidArgument with cause", func() {
+			It("Should report GRPC IllegalArgument error", func() {
+				newErr := errors.ErrorsWithScope("test", nil)
+				err := newErr(
+					codes.InvalidArgument,
+					"bad param",
+					fmt.Errorf("incorrect format"),
+				)
+				grpcErr := grpc.NewGrpcError("BadServer.BadCall", err)
+				Expect(grpcErr.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = bad param\nincorrect format"))
+			})
+		})
 		When("plugin.errors.InvalidArgument args", func() {
 			It("Should report GRPC IllegalArgument error with args", func() {
 				args := map[string]interface{}{"key": "value"}

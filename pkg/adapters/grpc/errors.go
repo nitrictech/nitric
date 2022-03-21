@@ -39,6 +39,9 @@ func NewGrpcError(operation string, err error) error {
 			Service: operation,
 			Plugin:  pe.Plugin,
 		}
+		if pe.Cause != nil {
+			ed.Cause = pe.Cause.Error()
+		}
 		if len(pe.Args) > 0 {
 			args := make(map[string]string)
 			for k, v := range pe.Args {
