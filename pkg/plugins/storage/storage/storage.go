@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
@@ -228,7 +229,11 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 func New() (plugin.StorageService, error) {
 	ctx := context.Background()
 
-	credentials, credentialsError := google.FindDefaultCredentials(ctx, storage.ScopeReadWrite)
+	credentials, credentialsError := google.FindDefaultCredentials(ctx,
+		storage.ScopeReadWrite,
+		// required for signing blob urls
+		iamcredentials.CloudPlatformScope,
+	)
 	if credentialsError != nil {
 		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
 	}
