@@ -5,7 +5,10 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-init: install-tools
+
+include tools/tools.mk
+
+init: check-gopath go-mod-download install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
@@ -20,25 +23,9 @@ lint:
 	@echo Linting Code
 	$(GOLANGCI_LINT) run
 
-install:
+go-mod-download:
 	@echo installing go dependencies
 	@go mod download
-
-fetch-validate:
-	@echo fetching envoyproxy validate contract
-	@mkdir -p ./contracts/validate
-	@curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
-
-install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
-
-${GOPATH}/bin/protoc-gen-go: go.sum
-	go get github.com/golang/protobuf/protoc-gen-go
-
-${GOPATH}/bin/protoc-gen-go-grpc: go.sum
-	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
-
-${GOPATH}/bin/protoc-gen-validate: go.sum
-	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 
 clean: check-gopath
 	@rm -rf ./bin/
@@ -101,7 +88,7 @@ generate: generate-proto generate-mocks
 generate-proto: install-tools check-gopath fetch-validate
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
-	@protoc --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
+	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto

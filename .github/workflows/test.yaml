@@ -20,11 +20,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16.7    
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: 3.19.1
+        go-version: 1.16.14
     - name: Install modules
       run: make install-tools
     - name: Check Source License Headers
@@ -59,8 +55,8 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16.7    
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
+        go-version: 1.16.14 
+    - name: Install modules
+      run: make install-tools
     - name: Run Integration Tests
       run: make test-integration
