@@ -15,12 +15,14 @@ init: check-gopath go-mod-download install-tools
 .PHONY: check fmt lint
 check: lint test
 
+sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
+
 fmt:
-	@echo Formatting Code
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run --fix
 
 lint:
-	@echo Linting Code
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
 
 go-mod-download:
@@ -62,16 +64,6 @@ license-check-gcp: gcp-static
 license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
-
-sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
-
-license-header-add:
-	@echo Add License Headers to Source Files
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-
-license-header-check:
-	@echo Checking License Headers to Source Files
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
