@@ -77,7 +77,7 @@ endif
 generate: generate-proto generate-mocks
 
 # Generate interfaces
-generate-proto: install-tools check-gopath fetch-validate
+generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
 	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts

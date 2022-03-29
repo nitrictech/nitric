@@ -41,9 +41,9 @@ PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_PLATFORM).zip
 PROTOC_DOWNLOAD := $(PROTOC_RELEASES_PATH)/v$(PROTOC_VERSION)/$(PROTOC_ZIP)
 PROTOC := $(TOOLS_BIN)/protoc
 
-install-tools: $(PROTOC) ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
+install-tools: $(PROTOC) ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate ./contracts/validate/validate.proto
 
-fetch-validate:
+./contracts/validate/validate.proto:
 	@echo fetching envoyproxy validate contract
 	@mkdir -p ./contracts/validate
 	@curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
