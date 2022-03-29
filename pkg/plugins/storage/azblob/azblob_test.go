@@ -40,7 +40,7 @@ var _ = Describe("Azblob", func() {
 	//})
 
 	Context("Read", func() {
-		When("Azure returns a successfuly response", func() {
+		When("Azure returns a successfully response", func() {
 			crtl := gomock.NewController(GinkgoT())
 			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
 			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)

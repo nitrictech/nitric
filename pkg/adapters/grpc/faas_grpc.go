@@ -88,8 +88,10 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	log.Default().Println("FaaS stream closed, removing worker")
 
 	// Worker is done so we can remove it from the pool
-	s.pool.RemoveWorker(wrkr)
-
+	rwErr := s.pool.RemoveWorker(wrkr)
+	if err == nil {
+		err = rwErr
+	}
 	return err
 }
 

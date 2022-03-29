@@ -28,7 +28,6 @@ import (
 	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
-const shell = "/bin/sh"
 const containerName = "firestore-nitric"
 const port = "8080"
 

@@ -25,14 +25,9 @@ import (
 	queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/dev"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	minio_storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/minio"
-	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type DevServiceFactory struct {
-}
-
-func New() providers.ServiceFactory {
-	return &DevServiceFactory{}
 }
 
 // NewDocumentService - Returns local dev document plugin

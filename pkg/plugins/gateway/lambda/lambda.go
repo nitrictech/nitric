@@ -137,9 +137,9 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 
 		for key, val := range evt.Headers {
 			if strings.ToLower(key) == "host" {
-				headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], string(val))
+				headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], val)
 			} else {
-				headerCopy[key] = append(headerCopy[key], string(val))
+				headerCopy[key] = append(headerCopy[key], val)
 			}
 		}
 

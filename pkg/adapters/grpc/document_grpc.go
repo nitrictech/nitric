@@ -159,9 +159,12 @@ func (s *DocumentServiceServer) QueryStream(req *pb.DocumentQueryStreamRequest, 
 		if d, docErr := documentToWire(doc); docErr != nil {
 			return NewGrpcError("DocumentService.QueryStream", err)
 		} else {
-			srv.Send(&pb.DocumentQueryStreamResponse{
+			err = srv.Send(&pb.DocumentQueryStreamResponse{
 				Document: d,
 			})
+			if err != nil {
+				return NewGrpcError("DocumentService.QueryStream", err)
+			}
 		}
 	}
 

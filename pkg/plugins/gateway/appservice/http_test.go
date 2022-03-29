@@ -30,6 +30,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	mock_provider "github.com/nitrictech/nitric/mocks/provider"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	http_service "github.com/nitrictech/nitric/pkg/plugins/gateway/appservice"
 	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -54,7 +55,8 @@ var _ = Describe("Http", func() {
 			StatusCode: 200,
 		},
 	})
-	pool.AddWorker(mockHandler)
+	err := pool.AddWorker(mockHandler)
+	Expect(err).To(BeNil())
 
 	ctrl := gomock.NewController(GinkgoT())
 	provider := mock_provider.NewMockAzProvider(ctrl)
@@ -67,9 +69,12 @@ var _ = Describe("Http", func() {
 		},
 	}, nil)
 
-	httpPlugin, _ := http_service.New(provider)
+	httpPlugin, err := http_service.New(provider)
+	Expect(err).To(BeNil())
 	// Run on a non-blocking thread
-	go (httpPlugin.Start)(pool)
+	go func(gw gateway.GatewayService) {
+		_ = gw.Start(pool)
+	}(httpPlugin)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
@@ -114,10 +119,13 @@ var _ = Describe("Http", func() {
 					},
 				}
 
-				requestBody, _ := json.Marshal(evt)
-				request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte(requestBody)))
+				requestBody, err := json.Marshal(evt)
+				Expect(err).To(BeNil())
+				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "SubscriptionValidation")
-				resp, _ := http.DefaultClient.Do(request)
+				resp, err := http.DefaultClient.Do(request)
+				Expect(err).To(BeNil())
 
 				By("Not invoking the nitric application")
 				Expect(mockHandler.ReceivedRequests).To(BeEmpty())
@@ -127,8 +135,12 @@ var _ = Describe("Http", func() {
 
 				By("Containing the provided validation code")
 				var respEvt eventgrid.SubscriptionValidationResponse
-				bytes, _ := ioutil.ReadAll(resp.Body)
-				json.Unmarshal(bytes, &respEvt)
+				bytes, err := ioutil.ReadAll(resp.Body)
+				Expect(err).To(BeNil())
+
+				err = json.Unmarshal(bytes, &respEvt)
+				Expect(err).To(BeNil())
+
 				Expect(*respEvt.ValidationResponse).To(BeEquivalentTo(validationCode))
 			})
 		})
@@ -149,8 +161,10 @@ var _ = Describe("Http", func() {
 					},
 				}
 
-				requestBody, _ := json.Marshal(evt)
-				request, _ := http.NewRequest("POST", gatewayUrl, bytes.NewReader([]byte(requestBody)))
+				requestBody, err := json.Marshal(evt)
+				Expect(err).To(BeNil())
+				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "Notification")
 				_, _ = http.DefaultClient.Do(request)
 

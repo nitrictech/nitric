@@ -33,7 +33,6 @@ import (
 	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
-const shell = "/bin/sh"
 const containerName = "dynamodb-nitric"
 const port = "8000"
 

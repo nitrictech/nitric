@@ -136,7 +136,7 @@ func ValidateExpressions(expressions []QueryExpression) error {
 		}
 	}
 
-	// Firestore inequality compatability check
+	// Firestore inequality compatibility check
 	if len(inequalityProperties) > 1 {
 		msg := ""
 		for prop, exp := range inequalityProperties {
@@ -150,7 +150,7 @@ func ValidateExpressions(expressions []QueryExpression) error {
 		return fmt.Errorf("inequality expressions on multiple properties are not supported: [ %v ]", msg)
 	}
 
-	// DynamoDB range expression compatability check
+	// DynamoDB range expression compatibility check
 	if err := hasRangeError(expressions); err != nil {
 		return err
 	}

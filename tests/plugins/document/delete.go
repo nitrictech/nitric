@@ -39,9 +39,10 @@ func DeleteTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(&UserKey1, UserItem1)
+				Expect(err).ShouldNot(HaveOccurred())
 
-				err := docPlugin.Delete(&UserKey1)
+				err = docPlugin.Delete(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&UserKey1)
@@ -51,9 +52,10 @@ func DeleteTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Sub Collection Delete", func() {
 			It("Should delete item successfully", func() {
-				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				Expect(err).ShouldNot(HaveOccurred())
 
-				err := docPlugin.Delete(&Customer1.Orders[0].Key)
+				err = docPlugin.Delete(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)

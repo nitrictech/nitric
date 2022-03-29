@@ -94,11 +94,14 @@ func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 
 		if msg.GetInitRequest() != nil {
 			log.Default().Println("Received init request from worker")
-			gwb.stream.Send(&v1.ServerMessage{
+			err = gwb.stream.Send(&v1.ServerMessage{
 				Content: &v1.ServerMessage_InitResponse{
 					InitResponse: &v1.InitResponse{},
 				},
 			})
+			if err != nil {
+				log.Printf("send error %v", err)
+			}
 			continue
 		}
 
@@ -275,7 +278,7 @@ func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 		return nil
 	}
 
-	return fmt.Errorf("Error ocurred handling the event")
+	return fmt.Errorf("Error occurred handling the event")
 }
 
 func NewGrpcListener(stream v1.FaasService_TriggerStreamServer) *grpcWorkerBase {

@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package utils
 
-// AZURE_STORAGE_BLOB_ENDPOINT - Endpoint for azblob storage plugin
-const AZURE_STORAGE_BLOB_ENDPOINT = "AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT"
-
-// AZURE_STORAGE_BLOB_ENDPOINT - Endpoint for azqueue queue plugin
-const AZURE_STORAGE_QUEUE_ENDPOINT = "AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT"
-
-// AZURE_RESOURCE_GROUP_NAME - The name of this instances Azure resource group
-const AZURE_RESOURCE_GROUP = "AZURE_RESOURCE_GROUP"
-
-// AZURE_SUBSCRIPTION_ID - The subscription this azure resource belongs to
-const AZURE_SUBSCRIPTION_ID = "AZURE_SUBSCRIPTION_ID"
+func Must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

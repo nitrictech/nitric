@@ -182,7 +182,8 @@ var _ = Describe("ProcessPool", func() {
 						err = pp.WaitForMinimumWorkers(100)
 					}()
 
-					pp.AddWorker(&FaasWorker{})
+					err = pp.AddWorker(&FaasWorker{})
+					Expect(err).To(BeNil())
 
 					By("waiting for the worker")
 					wg.Wait()
