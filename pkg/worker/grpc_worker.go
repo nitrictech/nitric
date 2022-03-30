@@ -22,10 +22,10 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
 
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/errors"
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
@@ -65,7 +65,7 @@ func (s *grpcWorkerBase) resolveTicket(ID string) (chan *v1.TriggerResponse, err
 	}()
 
 	if s.responseQueue[ID] == nil {
-		return nil, fmt.Errorf("attempted to resolve ticket that does not exist!")
+		return nil, fmt.Errorf("attempted to resolve ticket that does not exist")
 	}
 
 	return s.responseQueue[ID], nil
@@ -78,18 +78,15 @@ func (gwb *grpcWorkerBase) send(msg *v1.ServerMessage) error {
 func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 	for {
 		msg, err := gwb.stream.Recv()
-
 		if err != nil {
 			if err == io.EOF {
 				// return will close stream from server side
 				log.Println("exit")
 			}
-			if err != nil {
-				log.Printf("received error %v", err)
-			}
+			log.Printf("received error %v", err)
 
 			errchan <- err
-			break
+			return
 		}
 
 		if msg.GetInitRequest() != nil {
@@ -100,23 +97,23 @@ func (gwb *grpcWorkerBase) Listen(errchan chan error) {
 				},
 			})
 			if err != nil {
-				log.Printf("send error %v", err)
+				log.Default().Printf("send error %v", err)
 			}
 			continue
 		}
 
 		// Load the response channel and delete its map key reference
-		if val, err := gwb.resolveTicket(msg.GetId()); err == nil {
-			// For now assume this is a trigger response...
-			response := msg.GetTriggerResponse()
-			// Write the response the the waiting recipient
-			val <- response
-		} else {
-			err := errors.Fatal("FaaS Worker in bad state closing stream: " + msg.GetId())
+		val, err := gwb.resolveTicket(msg.GetId())
+		if err != nil {
+			err = errors.WithMessage(err, "Fatal: FaaS Worker in bad state closing stream: "+msg.GetId())
 			log.Default().Println(err.Error())
 			errchan <- err
-			break
+			return
 		}
+		// For now assume this is a trigger response...
+		response := msg.GetTriggerResponse()
+		// Write the response the the waiting recipient
+		val <- response
 	}
 }
 
