@@ -58,20 +58,6 @@ var _ = Describe("Storage", func() {
 	})
 
 	Context("Write", func() {
-		Context("When bucket is blank", func() {
-			It("Should return an error", func() {
-				err := storagePlugin.Write("", KEY, []byte(DATA))
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("When key is blank", func() {
-			It("Should return an error", func() {
-				err := storagePlugin.Write(BUCKET, "", []byte(DATA))
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
 		Context("When object is nil", func() {
 			It("Should return an error", func() {
 				err := storagePlugin.Write(BUCKET, KEY, nil)
@@ -100,22 +86,6 @@ var _ = Describe("Storage", func() {
 	})
 
 	Context("Read", func() {
-		Context("When bucket is blank", func() {
-			It("Should return an error", func() {
-				data, err := storagePlugin.Read("", KEY)
-				Expect(data).To(BeNil())
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("When key is blank", func() {
-			It("Should return an error", func() {
-				data, err := storagePlugin.Read(BUCKET, "")
-				Expect(data).To(BeNil())
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
 		Context("Valid read operation", func() {
 			It("Should read the provided byte array", func() {
 				err := storagePlugin.Write(BUCKET, KEY, []byte(DATA))
@@ -138,20 +108,6 @@ var _ = Describe("Storage", func() {
 	})
 
 	Context("Delete", func() {
-		Context("When bucket is blank", func() {
-			It("Should return an error", func() {
-				err := storagePlugin.Delete("", KEY)
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("When key is blank", func() {
-			It("Should return an error", func() {
-				err := storagePlugin.Delete(BUCKET, "")
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
 		Context("Valid delete operation", func() {
 			It("Should read the provided byte array", func() {
 				err := storagePlugin.Write(BUCKET, KEY, []byte(DATA))
@@ -169,5 +125,4 @@ var _ = Describe("Storage", func() {
 			})
 		})
 	})
-
 })

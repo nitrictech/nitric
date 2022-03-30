@@ -51,20 +51,6 @@ func (s *BoltStorageService) Write(bucket string, key string, object []byte) err
 		},
 	)
 
-	if bucket == "" {
-		return newErr(
-			codes.InvalidArgument,
-			"provide non-blank bucket",
-			nil,
-		)
-	}
-	if key == "" {
-		return newErr(
-			codes.InvalidArgument,
-			"provide non-blank key",
-			nil,
-		)
-	}
 	if object == nil {
 		return newErr(
 			codes.InvalidArgument,
@@ -117,21 +103,6 @@ func (s *BoltStorageService) Read(bucket string, key string) ([]byte, error) {
 		},
 	)
 
-	if bucket == "" {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"provide non-blank bucket",
-			nil,
-		)
-	}
-	if key == "" {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"provide non-blank key",
-			nil,
-		)
-	}
-
 	db, err := s.createDb(bucket)
 	if err != nil {
 		return nil, newErr(
@@ -165,21 +136,6 @@ func (s *BoltStorageService) Delete(bucket string, key string) error {
 			"key":    key,
 		},
 	)
-
-	if bucket == "" {
-		return newErr(
-			codes.InvalidArgument,
-			"provide non-blank bucket",
-			nil,
-		)
-	}
-	if key == "" {
-		return newErr(
-			codes.InvalidArgument,
-			"provide non-blank key",
-			nil,
-		)
-	}
 
 	db, err := s.createDb(bucket)
 	if err != nil {
