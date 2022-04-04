@@ -127,9 +127,9 @@ func (p *azProviderImpl) ResourceGroupName() string {
 var _ AzProvider = &azProviderImpl{}
 
 func New() (*azProviderImpl, error) {
-	rgName := os.Getenv(AZURE_RESOUCE_GROUP)
+	rgName := os.Getenv(AZURE_RESOURCE_GROUP)
 	if rgName == "" {
-		return nil, fmt.Errorf("envvar %s is not set", AZURE_RESOUCE_GROUP)
+		return nil, fmt.Errorf("envvar %s is not set", AZURE_RESOURCE_GROUP)
 	}
 
 	subId := os.Getenv(AZURE_SUBSCRIPTION_ID)

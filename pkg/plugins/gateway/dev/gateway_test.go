@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	gateway_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/dev"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -45,17 +46,22 @@ var _ = Describe("Gateway", func() {
 			StatusCode: 200,
 		},
 	})
-	pool.AddWorker(mockHandler)
+	err := pool.AddWorker(mockHandler)
+	Expect(err).To(BeNil())
 
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
-	gateway, _ := gateway_plugin.New()
+	gws, err := gateway_plugin.New()
+	Expect(err).To(BeNil())
 
 	AfterEach(func() {
 		mockHandler.Reset()
 	})
 
-	// Start the gatewat on a seperate thread so it doesn't block the tests...
-	go (gateway.Start)(pool)
+	// Start the gatewat on a separate thread so it doesn't block the tests...
+	go func(gw gateway.GatewayService) {
+		_ = gw.Start(pool)
+	}(gws)
+
 	// FIXME: Update gateway to block on channel...
 	time.Sleep(500 * time.Millisecond)
 
@@ -95,9 +101,9 @@ var _ = Describe("Gateway", func() {
 				Expect(string(handledRequest.Body)).To(Equal("Test"))
 
 				By("Preserving the original requests headers")
-				Expect(string(handledRequest.Header["User-Agent"][0])).To(Equal("Test"))
-				Expect(string(handledRequest.Header["X-Nitric-Request-Id"][0])).To(Equal("1234"))
-				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"][0])).To(Equal("Test-payload"))
+				Expect(handledRequest.Header["User-Agent"][0]).To(Equal("Test"))
+				Expect(handledRequest.Header["X-Nitric-Request-Id"][0]).To(Equal("1234"))
+				Expect(handledRequest.Header["X-Nitric-Payload-Type"][0]).To(Equal("Test-payload"))
 			})
 		})
 

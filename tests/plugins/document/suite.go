@@ -16,6 +16,7 @@ package document_suite
 
 import (
 	"github.com/nitrictech/nitric/pkg/plugins/document"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 // Simple 'users' collection test data
@@ -293,31 +294,31 @@ var ChildItemsCollection = document.Collection{
 // Test Data Loading Functions ------------------------------------------------
 
 func LoadUsersData(docPlugin document.DocumentService) {
-	docPlugin.Set(&UserKey1, UserItem1)
-	docPlugin.Set(&UserKey2, UserItem2)
-	docPlugin.Set(&UserKey3, UserItem3)
+	utils.Must(docPlugin.Set(&UserKey1, UserItem1))
+	utils.Must(docPlugin.Set(&UserKey2, UserItem2))
+	utils.Must(docPlugin.Set(&UserKey3, UserItem3))
 }
 
 func LoadCustomersData(docPlugin document.DocumentService) {
-	docPlugin.Set(&Customer1.Key, Customer1.Content)
-	docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
-	docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content)
-	docPlugin.Set(&Customer1.Orders[2].Key, Customer1.Orders[2].Content)
+	utils.Must(docPlugin.Set(&Customer1.Key, Customer1.Content))
+	utils.Must(docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content))
+	utils.Must(docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content))
+	utils.Must(docPlugin.Set(&Customer1.Orders[2].Key, Customer1.Orders[2].Content))
 
-	docPlugin.Set(&Customer2.Key, Customer2.Content)
-	docPlugin.Set(&Customer2.Orders[0].Key, Customer2.Orders[0].Content)
-	docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content)
+	utils.Must(docPlugin.Set(&Customer2.Key, Customer2.Content))
+	utils.Must(docPlugin.Set(&Customer2.Orders[0].Key, Customer2.Orders[0].Content))
+	utils.Must(docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content))
 }
 
 func LoadItemsData(docPlugin document.DocumentService) {
 	for _, item := range Items {
-		docPlugin.Set(&item.Key, item.Content)
+		utils.Must(docPlugin.Set(&item.Key, item.Content))
 
 		key := document.Key{
 			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
-		docPlugin.Set(&key, item.Content)
+		utils.Must(docPlugin.Set(&key, item.Content))
 	}
 }
 

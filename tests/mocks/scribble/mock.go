@@ -68,9 +68,7 @@ func (m *MockScribble) Read(collection string, key string, v interface{}) error 
 	}
 
 	if item, ok := m.store[collection][key]; ok {
-		json.Unmarshal(item, &v)
-
-		return nil
+		return json.Unmarshal(item, &v)
 	}
 
 	// TODO: This should produce the same error as stat()

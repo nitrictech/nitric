@@ -163,7 +163,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 			},
 			Version: aws.StringValue(result.VersionId),
 		},
-		Value: []byte(result.SecretBinary),
+		Value: result.SecretBinary,
 	}, nil
 }
 

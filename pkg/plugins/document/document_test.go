@@ -239,7 +239,7 @@ var _ = Describe("Document Plugin", func() {
 				Expect(err).ToNot(BeNil())
 			})
 		})
-		When("inequality query against muliple operations", func() {
+		When("inequality query against multiple operations", func() {
 			It("should return error", func() {
 				exps := []document.QueryExpression{
 					{Operand: "pk", Operator: "==", Value: "Customer#1000"},

@@ -12,6 +12,12 @@ linters:
   - staticcheck
   - structcheck
   - ineffassign
+  - varcheck
+  - unused
+  - deadcode
+  - misspell
+  - unconvert
+  - errcheck
 
 linters-settings:
   goimports:

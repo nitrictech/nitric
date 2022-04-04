@@ -58,7 +58,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						}, nil,
 					)
 
-					By("The put operation suceeding")
+					By("The put operation succeeding")
 					mockSecretClient.EXPECT().PutSecretValue(
 						gomock.AssignableToTypeOf(&secretsmanager.PutSecretValueInput{}),
 					).Return(&secretsmanager.PutSecretValueOutput{

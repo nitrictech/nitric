@@ -16,11 +16,9 @@ package membrane_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,30 +51,6 @@ type MockQueueServiceServer struct {
 }
 
 type MockFunction struct {
-	// Records the requests that its received for later inspection
-	requests []*http.Request
-	// Returns a fixed HTTP response
-	response *http.Response
-}
-
-func (m *MockFunction) handler(rw http.ResponseWriter, req *http.Request) {
-	if m.requests == nil {
-		m.requests = make([]*http.Request, 0)
-	}
-
-	m.requests = append(m.requests, req)
-
-	for key, value := range m.response.Header {
-		rw.Header().Add(key, strings.Join(value, ""))
-	}
-	rw.WriteHeader(m.response.StatusCode)
-
-	var rBody []byte = nil
-	if m.response.Body != nil {
-		rBody, _ = ioutil.ReadAll(m.response.Body)
-	}
-
-	rw.Write(rBody)
 }
 
 type MockGateway struct {
@@ -109,11 +83,17 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 					gw.responses = append(gw.responses, resp)
 				}
 			} else if s, ok := trigger.(*triggers.Event); ok {
-				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
+				wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 					Event: s,
 				})
+				if err != nil {
+					return err
+				}
 
-				wrkr.HandleEvent(s)
+				err = wrkr.HandleEvent(s)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -124,7 +104,8 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 
 var _ = Describe("Membrane", func() {
 	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
-	pool.AddWorker(mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{}))
+	err := pool.AddWorker(mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{}))
+	Expect(err).Should(Not(HaveOccurred()))
 
 	BeforeSuite(func() {
 		os.Args = []string{}
@@ -283,7 +264,7 @@ var _ = Describe("Membrane", func() {
 			When("There is a worker available in the pool", func() {
 				BeforeEach(func() {
 					go (func() {
-						http.ListenAndServe(fmt.Sprintf("localhost:8081"), nil)
+						_ = http.ListenAndServe("localhost:8081", nil)
 					})()
 				})
 

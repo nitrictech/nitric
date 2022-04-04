@@ -39,7 +39,8 @@ func GetTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(&UserKey1, UserItem1)
+				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -50,7 +51,8 @@ func GetTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Sub Collection Get", func() {
 			It("Should store item successfully", func() {
-				docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -70,7 +72,8 @@ func GetTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Collection Get when there is a Sub Collection", func() {
 			It("Should store item successfully", func() {
-				docPlugin.Set(&Customer1.Key, Customer1.Content)
+				err := docPlugin.Set(&Customer1.Key, Customer1.Content)
+				Expect(err).ShouldNot(HaveOccurred())
 
 				doc, err := docPlugin.Get(&Customer1.Key)
 				Expect(err).ShouldNot(HaveOccurred())

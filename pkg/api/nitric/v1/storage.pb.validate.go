@@ -79,7 +79,16 @@ func (m *StorageWriteRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for Key
+	if utf8.RuneCountInString(m.GetKey()) < 1 {
+		err := StorageWriteRequestValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Body
 
@@ -311,7 +320,16 @@ func (m *StorageReadRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for Key
+	if utf8.RuneCountInString(m.GetKey()) < 1 {
+		err := StorageReadRequestValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return StorageReadRequestMultiError(errors)
@@ -543,7 +561,16 @@ func (m *StorageDeleteRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for Key
+	if utf8.RuneCountInString(m.GetKey()) < 1 {
+		err := StorageDeleteRequestValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return StorageDeleteRequestMultiError(errors)
@@ -751,9 +778,38 @@ func (m *StoragePreSignUrlRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for BucketName
+	if len(m.GetBucketName()) > 256 {
+		err := StoragePreSignUrlRequestValidationError{
+			field:  "BucketName",
+			reason: "value length must be at most 256 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Key
+	if !_StoragePreSignUrlRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
+		err := StoragePreSignUrlRequestValidationError{
+			field:  "BucketName",
+			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetKey()) < 1 {
+		err := StoragePreSignUrlRequestValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Operation
 
@@ -838,6 +894,8 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StoragePreSignUrlRequestValidationError{}
+
+var _StoragePreSignUrlRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on StoragePreSignUrlResponse with the rules
 // defined in the proto definition for this message. If any rules are

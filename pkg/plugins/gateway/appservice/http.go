@@ -103,8 +103,13 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			// TODO: Handle error
 			continue
 		}
-		// FIXME: Handle error
-		wrkr.HandleEvent(evt)
+
+		err = wrkr.HandleEvent(evt)
+		if err != nil {
+			log.Default().Println("could not handle event: ", evt)
+			// TODO: Handle error
+			continue
+		}
 	}
 
 	// Return 200 OK (TODO: Determine how we could mark individual events for failure)

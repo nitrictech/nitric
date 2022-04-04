@@ -17,6 +17,7 @@ package grpc
 import (
 	"log"
 
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -88,8 +89,14 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	log.Default().Println("FaaS stream closed, removing worker")
 
 	// Worker is done so we can remove it from the pool
-	s.pool.RemoveWorker(wrkr)
+	rwErr := s.pool.RemoveWorker(wrkr)
+	if rwErr != nil {
+		if err != nil {
+			return errors.Wrap(err, rwErr.Error())
+		}
 
+		return rwErr
+	}
 	return err
 }
 

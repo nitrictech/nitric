@@ -200,7 +200,10 @@ func (s *Membrane) Start() error {
 	// Start the gRPC server
 	go (func() {
 		s.log(fmt.Sprintf("Services listening on: %s", s.serviceAddress))
-		s.grpcServer.Serve(lis)
+		err := s.grpcServer.Serve(lis)
+		if err != nil {
+			s.log(fmt.Sprintf("grpc serve %v", err))
+		}
 	})()
 
 	// Start our child process
@@ -276,7 +279,7 @@ func (s *Membrane) Start() error {
 }
 
 func (s *Membrane) Stop() {
-	s.gatewayPlugin.Stop()
+	_ = s.gatewayPlugin.Stop()
 	s.grpcServer.Stop()
 }
 

@@ -49,7 +49,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		})
 		When("Putting a secret to an existing secret", func() {
 			secretPlugin, _ := secretPlugin.New()
-			It("Should succesfully store a secret", func() {
+			It("Should successfully store a secret", func() {
 				response, err := secretPlugin.Put(&testSecret, testSecretVal)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())

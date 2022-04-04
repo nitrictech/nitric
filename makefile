@@ -15,12 +15,14 @@ init: check-gopath go-mod-download install-tools
 .PHONY: check fmt lint
 check: lint test
 
+sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
+
 fmt:
-	@echo Formatting Code
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run --fix
 
 lint:
-	@echo Linting Code
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
 
 go-mod-download:
@@ -63,16 +65,6 @@ license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
-sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
-
-license-header-add:
-	@echo Add License Headers to Source Files
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-
-license-header-check:
-	@echo Checking License Headers to Source Files
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
 
@@ -85,7 +77,7 @@ endif
 generate: generate-proto generate-mocks
 
 # Generate interfaces
-generate-proto: install-tools check-gopath fetch-validate
+generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
 	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
@@ -229,6 +221,10 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/document DocumentService > mocks/document/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret SecretService > mocks/secret/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage StorageService > mocks/storage/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue QueueService > mocks/queue/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker GrpcWorker > mocks/worker/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go

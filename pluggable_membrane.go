@@ -120,5 +120,8 @@ func main() {
 	}
 
 	// Start the Membrane server
-	membraneServer.Start()
+	err = membraneServer.Start()
+	if err != nil {
+		log.Printf("There was an error Starting the membraneServer server: %v", err)
+	}
 }

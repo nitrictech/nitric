@@ -26,20 +26,11 @@ import (
 	key_vault "github.com/nitrictech/nitric/pkg/plugins/secret/key_vault"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	azblob_service "github.com/nitrictech/nitric/pkg/plugins/storage/azblob"
-	"github.com/nitrictech/nitric/pkg/providers"
 	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 )
 
 type AzureServiceFactory struct {
 	provider core.AzProvider
-}
-
-func New() providers.ServiceFactory {
-	provider, _ := core.New()
-
-	return &AzureServiceFactory{
-		provider: provider,
-	}
 }
 
 func (p *AzureServiceFactory) NewSecretService() (secret.SecretService, error) {

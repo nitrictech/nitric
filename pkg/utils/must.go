@@ -12,20 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package utils
 
-import "fmt"
-
-type FatalError struct {
-	msg string
-}
-
-func (fe *FatalError) Error() string {
-	return fmt.Sprintf("fatal: %s", fe.msg)
-}
-
-var _ error = &FatalError{}
-
-func Fatal(msg string) *FatalError {
-	return &FatalError{msg: msg}
+func Must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

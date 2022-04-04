@@ -25,14 +25,9 @@ import (
 	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
-	"github.com/nitrictech/nitric/pkg/providers"
 )
 
 type GCPServiceFactory struct {
-}
-
-func New() providers.ServiceFactory {
-	return &GCPServiceFactory{}
 }
 
 // NewDocumentService - Returns Google Cloud Firestore based document service

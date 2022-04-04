@@ -132,7 +132,7 @@ var _ = Describe("grpcWorkerBase", func() {
 
 	Context("Listen", func() {
 
-		When("recieving valid trigger responses", func() {
+		When("receiving valid trigger responses", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			errChan := make(chan error)
@@ -175,7 +175,7 @@ var _ = Describe("grpcWorkerBase", func() {
 			})
 		})
 
-		When("recieving invalid trigger responses", func() {
+		When("receiving invalid trigger responses", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			errChan := make(chan error)
@@ -212,7 +212,7 @@ var _ = Describe("grpcWorkerBase", func() {
 			})
 		})
 
-		When("recieving an error", func() {
+		When("receiving an error", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			mockErr := fmt.Errorf("mock error")
@@ -242,7 +242,7 @@ var _ = Describe("grpcWorkerBase", func() {
 			})
 		})
 
-		When("recieving io.EOF", func() {
+		When("receiving io.EOF", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 
@@ -315,7 +315,7 @@ var _ = Describe("grpcWorkerBase", func() {
 			})
 		})
 
-		PWhen("the worker sucessfully responds", func() {
+		PWhen("the worker successfully responds", func() {
 			// TODO
 		})
 
@@ -342,7 +342,7 @@ var _ = Describe("grpcWorkerBase", func() {
 			})
 		})
 
-		PWhen("the worker sucessfully responds", func() {
+		PWhen("the worker successfully responds", func() {
 			// TODO
 		})
 	})

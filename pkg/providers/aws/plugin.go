@@ -25,24 +25,11 @@ import (
 	sqs_service "github.com/nitrictech/nitric/pkg/plugins/queue/sqs"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
-	"github.com/nitrictech/nitric/pkg/providers"
 	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 )
 
 type AWSServiceFactory struct {
 	provider core.AwsProvider
-}
-
-func New() (providers.ServiceFactory, error) {
-	provider, err := core.New()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &AWSServiceFactory{
-		provider: provider,
-	}, nil
 }
 
 // NewDocumentService - Return AWS DynamoDB document plugin
