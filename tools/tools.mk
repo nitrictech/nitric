@@ -12,7 +12,7 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
-        UNAME_P := $(shell uname -p)
+        UNAME_P := $(shell uname -m)
 	ifeq ($(UNAME_P),x86_64)
 	    PROTOC_PLATFORM := linux-x86_64
 	endif
