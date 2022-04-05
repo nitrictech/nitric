@@ -5,7 +5,6 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-
 include tools/tools.mk
 
 init: check-gopath go-mod-download install-tools
@@ -91,17 +90,6 @@ aws-static: generate-proto
 aws-static-xp: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# aws-plugin:
-# 	@echo Building AWS Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/aws.so ./providers/aws/plugin.go
-
-aws-docker-static:
-	@docker build . -f ./pkg/providers/aws/aws.dockerfile -t nitricimages/membrane-aws
-
-aws-docker: aws-docker-static
-	@echo Built AWS Docker Images
 # END AWS Plugins
 
 # BEGIN Azure Plugins
@@ -113,17 +101,6 @@ azure-static: generate-proto
 azure-static-xp: generate-proto
 	@echo Building static Azure membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# azure-plugin:
-# 	@echo Building Azure Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/azure.so ./pkg/providers/azure/plugin.go
-
-azure-docker-static:
-	@docker build . -f ./pkg/providers/azure/azure.dockerfile -t nitricimages/membrane-azure
-
-azure-docker: azure-docker-static # azure-docker-alpine azure-docker-debian
-	@echo Built Azure Docker Images
 # END Azure Plugins
 
 gcp-static: generate-proto
@@ -134,17 +111,6 @@ gcp-static: generate-proto
 gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# gcp-plugin:
-# 	@echo Building GCP Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/gcp.so ./providers/gcp/plugin.go
-
-gcp-docker-static:
-	@docker build . -f ./pkg/providers/gcp/gcp.dockerfile -t nitricimages/membrane-gcp
-
-gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
-	@echo Built GCP Docker Images
 # END GCP Plugins
 
 # BEGIN Local Plugins
@@ -152,28 +118,11 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 dev-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# dev-plugin:
-# 	@echo Building Dev Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/dev.so ./pkg/providers/dev/plugin.go
-
-dev-docker-static:
-	@docker build . -f ./pkg/providers/dev/dev.dockerfile -t nitricimages/membrane-local
-
-dev-docker: dev-docker-static
-	@echo Built Local Docker Images
 # END Local Plugins
 
 # BEGIN DigitalOcean Plugins
 do-static: generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
-
-do-docker-static:
-	@docker build . -f ./pkg/providers/do/do.dockerfile -t nitricimages/membrane-do
-
-do-docker: do-docker-static
-	@echo Built Digital Ocean Docker Images
 # END DigitalOcean Plugins
 
 build-all-binaries: clean generate-proto
@@ -183,16 +132,6 @@ build-all-binaries: clean generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane-azure -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
 	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
 	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
-
-# membrane-docker-alpine: generate-proto
-# 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
-# membrane-docker-debian: generate-proto
-# 	@docker build . -f debian.dockerfile -t nitric:membrane-debian
-
-# # Generate proto files locally before building docker images
-# # TODO: Get alpine image generating its own sources
-# membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
-# 	@echo Built Docker Images
 
 # generate mock implementations
 generate-mocks:
