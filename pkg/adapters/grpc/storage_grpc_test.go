@@ -200,4 +200,41 @@ var _ = Describe("GRPC Storage", func() {
 			})
 		})
 	})
+
+	Context("List", func() {
+		When("plugin not registered", func() {
+			ss := &grpc.StorageServiceServer{}
+			resp, err := ss.ListFiles(context.Background(), &v1.StorageListFilesRequest{})
+			It("Should report an error", func() {
+				Expect(err.Error()).Should(ContainSubstring("Storage plugin not registered"))
+				Expect(resp).Should(BeNil())
+			})
+		})
+
+		When("request not valid", func() {
+			g := gomock.NewController(GinkgoT())
+			mockSS := mock_storage.NewMockStorageService(g)
+			resp, err := grpc.NewStorageServiceServer(mockSS).ListFiles(context.Background(), &v1.StorageListFilesRequest{})
+
+			It("Should report an error", func() {
+				Expect(err.Error()).Should(ContainSubstring("invalid StorageListFilesRequest.BucketName"))
+				Expect(resp).Should(BeNil())
+			})
+		})
+
+		When("request is valid", func() {
+			g := gomock.NewController(GinkgoT())
+			mockSS := mock_storage.NewMockStorageService(g)
+
+			mockSS.EXPECT().ListFiles("bucky").Return([]*storage.FileInfo{}, nil)
+
+			_, err := grpc.NewStorageServiceServer(mockSS).ListFiles(context.Background(), &v1.StorageListFilesRequest{
+				BucketName: "bucky",
+			})
+
+			It("Should succeed", func() {
+				Expect(err).Should(BeNil())
+			})
+		})
+	})
 })
