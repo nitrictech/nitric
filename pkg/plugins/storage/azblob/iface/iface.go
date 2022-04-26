@@ -32,6 +32,7 @@ type AzblobServiceUrlIface interface {
 // AzblobContainerUrlIface - Mockable client interface
 // for azblob.ContainerUrl
 type AzblobContainerUrlIface interface {
+	ListBlobsFlatSegment(ctx context.Context, marker azblob.Marker, o azblob.ListBlobsSegmentOptions) (*azblob.ListBlobsFlatSegmentResponse, error)
 	NewBlockBlobURL(string) AzblobBlockBlobUrlIface
 }
 

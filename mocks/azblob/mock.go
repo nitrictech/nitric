@@ -90,6 +90,21 @@ func (m *MockAzblobContainerUrlIface) EXPECT() *MockAzblobContainerUrlIfaceMockR
 	return m.recorder
 }
 
+// ListBlobsFlatSegment mocks base method.
+func (m *MockAzblobContainerUrlIface) ListBlobsFlatSegment(arg0 context.Context, arg1 azblob.Marker, arg2 azblob.ListBlobsSegmentOptions) (*azblob.ListBlobsFlatSegmentResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListBlobsFlatSegment", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*azblob.ListBlobsFlatSegmentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListBlobsFlatSegment indicates an expected call of ListBlobsFlatSegment.
+func (mr *MockAzblobContainerUrlIfaceMockRecorder) ListBlobsFlatSegment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBlobsFlatSegment", reflect.TypeOf((*MockAzblobContainerUrlIface)(nil).ListBlobsFlatSegment), arg0, arg1, arg2)
+}
+
 // NewBlockBlobURL mocks base method.
 func (m *MockAzblobContainerUrlIface) NewBlockBlobURL(arg0 string) azblob_service_iface.AzblobBlockBlobUrlIface {
 	m.ctrl.T.Helper()

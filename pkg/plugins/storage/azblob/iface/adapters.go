@@ -27,6 +27,8 @@ func AdaptServiceUrl(c azblob.ServiceURL) AzblobServiceUrlIface {
 }
 
 func AdaptContainerUrl(c azblob.ContainerURL) AzblobContainerUrlIface {
+	// c.ListBlobsFlatSegment()
+
 	return containerUrl{c}
 }
 
@@ -50,6 +52,10 @@ func (c serviceUrl) GetUserDelegationCredential(ctx context.Context, info azblob
 
 func (c containerUrl) NewBlockBlobURL(blob string) AzblobBlockBlobUrlIface {
 	return AdaptBlobUrl(c.c.NewBlockBlobURL(blob))
+}
+
+func (c containerUrl) ListBlobsFlatSegment(ctx context.Context, marker azblob.Marker, o azblob.ListBlobsSegmentOptions) (*azblob.ListBlobsFlatSegmentResponse, error) {
+	return c.c.ListBlobsFlatSegment(ctx, marker, o)
 }
 
 func (c blobUrl) Download(ctx context.Context, offset int64, count int64, bac azblob.BlobAccessConditions, f bool, cpk azblob.ClientProvidedKeyOptions) (AzblobDownloadResponse, error) {

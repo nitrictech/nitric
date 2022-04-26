@@ -41,10 +41,12 @@ type AzblobStorageService struct {
 	storage.UnimplementedStoragePlugin
 }
 
+func (a *AzblobStorageService) getContainerUrl(bucket string) azblob_service_iface.AzblobContainerUrlIface {
+	return a.client.NewContainerURL(bucket)
+}
+
 func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_service_iface.AzblobBlockBlobUrlIface {
-	cUrl := a.client.NewContainerURL(bucket)
-	// Get a new blob for the key name
-	return cUrl.NewBlockBlobURL(key)
+	return a.getContainerUrl(bucket).NewBlockBlobURL(key)
 }
 
 func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
@@ -187,6 +189,41 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	url := blobUrlParts.URL()
 
 	return url.String(), nil
+}
+
+func (s *AzblobStorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+	newErr := errors.ErrorsWithScope(
+		"AzblobStorageService.ListFiles",
+		map[string]interface{}{
+			"bucket": bucket,
+		},
+	)
+
+	cUrl := s.getContainerUrl(bucket)
+	files := make([]*storage.FileInfo, 0)
+
+	resp, err := cUrl.ListBlobsFlatSegment(context.TODO(), azblob.Marker{}, azblob.ListBlobsSegmentOptions{})
+
+	if err != nil {
+		return nil, newErr(codes.Internal, "error listing files", err)
+	}
+
+	// enumerate over pages
+	for resp.NextMarker.NotDone() {
+		for _, segment := range resp.Segment.BlobItems {
+			files = append(files, &storage.FileInfo{
+				Key: segment.Name,
+			})
+		}
+
+		resp, err = cUrl.ListBlobsFlatSegment(context.TODO(), resp.NextMarker, azblob.ListBlobsSegmentOptions{})
+
+		if err != nil {
+			return nil, newErr(codes.Internal, "error listing files", err)
+		}
+	}
+
+	return files, nil
 }
 
 const expiryBuffer = 2 * time.Minute
