@@ -202,24 +202,22 @@ func (s *AzblobStorageService) ListFiles(bucket string) ([]*storage.FileInfo, er
 	cUrl := s.getContainerUrl(bucket)
 	files := make([]*storage.FileInfo, 0)
 
-	resp, err := cUrl.ListBlobsFlatSegment(context.TODO(), azblob.Marker{}, azblob.ListBlobsSegmentOptions{})
-
-	if err != nil {
-		return nil, newErr(codes.Internal, "error listing files", err)
-	}
-
-	// enumerate over pages
-	for resp.NextMarker.NotDone() {
-		for _, segment := range resp.Segment.BlobItems {
-			files = append(files, &storage.FileInfo{
-				Key: segment.Name,
-			})
-		}
-
-		resp, err = cUrl.ListBlobsFlatSegment(context.TODO(), resp.NextMarker, azblob.ListBlobsSegmentOptions{})
-
+	// List the blob(s) in our container; since a container may hold millions of blobs, this is done 1 segment at a time.
+	for marker := (azblob.Marker{}); marker.NotDone(); { // The parens around Marker{} are required to avoid compiler error.
+		// Get a result segment starting with the blob indicated by the current Marker.
+		listBlob, err := cUrl.ListBlobsFlatSegment(context.TODO(), marker, azblob.ListBlobsSegmentOptions{})
 		if err != nil {
 			return nil, newErr(codes.Internal, "error listing files", err)
+		}
+		// IMPORTANT: ListBlobs returns the start of the next segment; you MUST use this to get
+		// the next segment (after processing the current result segment).
+		marker = listBlob.NextMarker
+
+		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
+		for _, blobInfo := range listBlob.Segment.BlobItems {
+			files = append(files, &storage.FileInfo{
+				Key: blobInfo.Name,
+			})
 		}
 	}
 
