@@ -172,6 +172,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient > mocks/gcp_storage/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
 
 generate-sources: generate-proto generate-mocks

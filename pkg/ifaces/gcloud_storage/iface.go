@@ -39,9 +39,13 @@ type BucketIterator interface {
 	Next() (*storage.BucketAttrs, error)
 }
 
+type ObjectIterator interface {
+	Next() (*storage.ObjectAttrs, error)
+}
+
 type BucketHandle interface {
 	Object(string) ObjectHandle
-	Objects(context.Context, *storage.Query) *storage.ObjectIterator
+	Objects(context.Context, *storage.Query) ObjectIterator
 	SignedURL(string, *storage.SignedURLOptions) (string, error)
 }
 

@@ -20,12 +20,13 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
-	storage_mock "github.com/nitrictech/nitric/mocks/gcp_storage"
-	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
-	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/iterator"
+
+	storage_mock "github.com/nitrictech/nitric/mocks/gcp_storage"
+	plugin "github.com/nitrictech/nitric/pkg/plugins/storage"
+	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
 )
 
 var _ = Describe("Storage", func() {
@@ -423,6 +424,73 @@ var _ = Describe("Storage", func() {
 
 				By("Returning an empty url")
 				Expect(url).Should(BeEmpty())
+			})
+		})
+	})
+
+	Context("ListFiles", func() {
+		When("The bucket exists", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+			mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+			mockObjectIterator := storage_mock.NewMockObjectIterator(ctrl)
+			mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+			storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+			It("Should return the files on the bucket", func() {
+				By("the bucket existing")
+				gomock.InOrder(
+					mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+						Labels: map[string]string{
+							"x-nitric-name": "test-bucket",
+						},
+						Name: "my-bucket-1234",
+					}, nil),
+					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+				mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+				By("the bucket containing files")
+				mockBucket.EXPECT().Objects(gomock.Any(), gomock.Any()).Return(mockObjectIterator)
+				gomock.InOrder(
+					mockObjectIterator.EXPECT().Next().Return(&storage.ObjectAttrs{
+						Name: "test-file",
+					}, nil),
+					mockObjectIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+
+				files, err := storagePlugin.ListFiles("test-bucket")
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Returning a single file")
+				Expect(files).To(HaveLen(1))
+
+				By("The file having the returned name")
+				Expect(files[0].Key).To(Equal("test-file"))
+			})
+		})
+
+		When("The bucket does not exist", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+			mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+			storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+			It("Should return an error", func() {
+				By("the bucket not existing")
+				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
+				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+
+				files, err := storagePlugin.ListFiles("test-bucket")
+
+				By("returning nil files")
+				Expect(files).To(BeNil())
+
+				By("returning an error")
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})

@@ -52,7 +52,7 @@ func (b bucketHandle) Object(name string) ObjectHandle {
 	return objectHandle{b.BucketHandle.Object(name)}
 }
 
-func (b bucketHandle) Objects(ctx context.Context, q *storage.Query) *storage.ObjectIterator {
+func (b bucketHandle) Objects(ctx context.Context, q *storage.Query) ObjectIterator {
 	return b.BucketHandle.Objects(ctx, q)
 }
 
