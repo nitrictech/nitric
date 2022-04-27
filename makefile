@@ -139,6 +139,7 @@ generate-mocks:
 	@mkdir -p mocks/secret_manager
 	@mkdir -p mocks/secrets_manager
 	@mkdir -p mocks/key_vault
+	@mkdir -p mocks/storage
 	@mkdir -p mocks/s3
 	@mkdir -p mocks/sns
 	@mkdir -p mocks/sqs
@@ -150,6 +151,7 @@ generate-mocks:
 	@mkdir -p mocks/sync
 	@mkdir -p mocks/provider
 	@mkdir -p mocks/resourcetaggingapi
+	@mkdir -p mocks/gcp_storage
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
@@ -170,5 +172,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient > mocks/gcp_storage/mock.go
 
 generate-sources: generate-proto generate-mocks

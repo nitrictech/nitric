@@ -52,7 +52,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %v", bucket, err)
 			}
 
-			if name, ok := b.Labels["x-nitric.name"]; ok {
+			if name, ok := b.Labels["x-nitric-name"]; ok {
 				s.cache[name] = s.client.Bucket(b.Name)
 			}
 		}
