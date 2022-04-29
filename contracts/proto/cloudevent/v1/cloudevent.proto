@@ -1,0 +1,52 @@
+// TODO: Remove and replace with correct CloudEvent spec integration once
+// This is a copy of: https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.proto
+// https://github.com/cloudevents/spec/issues/756 has been implemented
+syntax = "proto3";
+package nitric.cloudevent.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// protoc plugin options for code generation
+option go_package = "nitric/v1;v1";
+option java_package = "io.nitric.proto.cloudevent.v1";
+option java_multiple_files = true;
+option java_outer_classname = "CloudEvent";
+option php_namespace = "Nitric\\Proto\\CloudEvent\\V1";
+option csharp_namespace = "Nitric.Proto.CloudEvent.v1";
+
+message CloudEvent {
+  // -- CloudEvent Context Attributes
+
+  // Required Attributes
+  string id = 1;
+  string source = 2; // URI-reference
+  string spec_version = 3;
+  string type = 4;
+
+  // Optional & Extension Attributes
+  map<string, CloudEventAttributeValue> attributes = 5;
+
+  // -- CloudEvent Data (Bytes, Text, or Proto)
+  oneof data {
+    bytes binary_data = 6;
+    string text_data = 7;
+    google.protobuf.Any proto_data = 8;
+  }
+
+  /**
+    * The CloudEvent specification defines
+    * seven attribute value types...
+    */
+  message CloudEventAttributeValue {
+    oneof attr {
+      bool ce_boolean = 1;
+      int32 ce_integer = 2;
+      string ce_string = 3;
+      bytes ce_bytes = 4;
+      string ce_uri = 5;
+      string ce_uri_ref = 6;
+      google.protobuf.Timestamp ce_timestamp = 7;
+    }
+  }
+}

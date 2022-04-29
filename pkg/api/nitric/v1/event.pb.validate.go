@@ -79,17 +79,6 @@ func (m *EventPublishRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if m.GetEvent() == nil {
-		err := EventPublishRequestValidationError{
-			field:  "Event",
-			reason: "value is required",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetEvent()).(type) {
 		case interface{ ValidateAll() error }:
@@ -773,3 +762,262 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = NitricEventValidationError{}
+
+// Validate checks the field values on PublishCloudEventRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *PublishCloudEventRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PublishCloudEventRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// PublishCloudEventRequestMultiError, or nil if none found.
+func (m *PublishCloudEventRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PublishCloudEventRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(m.GetTopic()) > 256 {
+		err := PublishCloudEventRequestValidationError{
+			field:  "Topic",
+			reason: "value length must be at most 256 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !_PublishCloudEventRequest_Topic_Pattern.MatchString(m.GetTopic()) {
+		err := PublishCloudEventRequestValidationError{
+			field:  "Topic",
+			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetCloudEvent()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PublishCloudEventRequestValidationError{
+					field:  "CloudEvent",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PublishCloudEventRequestValidationError{
+					field:  "CloudEvent",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCloudEvent()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PublishCloudEventRequestValidationError{
+				field:  "CloudEvent",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return PublishCloudEventRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// PublishCloudEventRequestMultiError is an error wrapping multiple validation
+// errors returned by PublishCloudEventRequest.ValidateAll() if the designated
+// constraints aren't met.
+type PublishCloudEventRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PublishCloudEventRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PublishCloudEventRequestMultiError) AllErrors() []error { return m }
+
+// PublishCloudEventRequestValidationError is the validation error returned by
+// PublishCloudEventRequest.Validate if the designated constraints aren't met.
+type PublishCloudEventRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PublishCloudEventRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PublishCloudEventRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PublishCloudEventRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PublishCloudEventRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PublishCloudEventRequestValidationError) ErrorName() string {
+	return "PublishCloudEventRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e PublishCloudEventRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPublishCloudEventRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PublishCloudEventRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PublishCloudEventRequestValidationError{}
+
+var _PublishCloudEventRequest_Topic_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
+
+// Validate checks the field values on PublishCloudEventResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *PublishCloudEventResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PublishCloudEventResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// PublishCloudEventResponseMultiError, or nil if none found.
+func (m *PublishCloudEventResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PublishCloudEventResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	if len(errors) > 0 {
+		return PublishCloudEventResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// PublishCloudEventResponseMultiError is an error wrapping multiple validation
+// errors returned by PublishCloudEventResponse.ValidateAll() if the
+// designated constraints aren't met.
+type PublishCloudEventResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PublishCloudEventResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PublishCloudEventResponseMultiError) AllErrors() []error { return m }
+
+// PublishCloudEventResponseValidationError is the validation error returned by
+// PublishCloudEventResponse.Validate if the designated constraints aren't met.
+type PublishCloudEventResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PublishCloudEventResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PublishCloudEventResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PublishCloudEventResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PublishCloudEventResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PublishCloudEventResponseValidationError) ErrorName() string {
+	return "PublishCloudEventResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e PublishCloudEventResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPublishCloudEventResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PublishCloudEventResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PublishCloudEventResponseValidationError{}

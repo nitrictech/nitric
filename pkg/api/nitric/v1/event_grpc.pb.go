@@ -22,8 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
+	// Deprecated: Do not use.
 	// Publishes an message to a given topic
 	Publish(ctx context.Context, in *EventPublishRequest, opts ...grpc.CallOption) (*EventPublishResponse, error)
+	// Publishes a cloud event to a given topic
+	PublishCloudEvent(ctx context.Context, in *PublishCloudEventRequest, opts ...grpc.CallOption) (*PublishCloudEventResponse, error)
 }
 
 type eventServiceClient struct {
@@ -34,9 +37,19 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 	return &eventServiceClient{cc}
 }
 
+// Deprecated: Do not use.
 func (c *eventServiceClient) Publish(ctx context.Context, in *EventPublishRequest, opts ...grpc.CallOption) (*EventPublishResponse, error) {
 	out := new(EventPublishResponse)
 	err := c.cc.Invoke(ctx, "/nitric.event.v1.EventService/Publish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eventServiceClient) PublishCloudEvent(ctx context.Context, in *PublishCloudEventRequest, opts ...grpc.CallOption) (*PublishCloudEventResponse, error) {
+	out := new(PublishCloudEventResponse)
+	err := c.cc.Invoke(ctx, "/nitric.event.v1.EventService/PublishCloudEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +60,11 @@ func (c *eventServiceClient) Publish(ctx context.Context, in *EventPublishReques
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
 type EventServiceServer interface {
+	// Deprecated: Do not use.
 	// Publishes an message to a given topic
 	Publish(context.Context, *EventPublishRequest) (*EventPublishResponse, error)
+	// Publishes a cloud event to a given topic
+	PublishCloudEvent(context.Context, *PublishCloudEventRequest) (*PublishCloudEventResponse, error)
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -58,6 +74,9 @@ type UnimplementedEventServiceServer struct {
 
 func (UnimplementedEventServiceServer) Publish(context.Context, *EventPublishRequest) (*EventPublishResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
+}
+func (UnimplementedEventServiceServer) PublishCloudEvent(context.Context, *PublishCloudEventRequest) (*PublishCloudEventResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishCloudEvent not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
@@ -90,6 +109,24 @@ func _EventService_Publish_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EventService_PublishCloudEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishCloudEventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).PublishCloudEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.event.v1.EventService/PublishCloudEvent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).PublishCloudEvent(ctx, req.(*PublishCloudEventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +137,10 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Publish",
 			Handler:    _EventService_Publish_Handler,
+		},
+		{
+			MethodName: "PublishCloudEvent",
+			Handler:    _EventService_PublishCloudEvent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

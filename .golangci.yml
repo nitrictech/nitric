@@ -24,6 +24,8 @@ linters-settings:
     local-prefixes: github.com/nitrictech
   govet:
     check-shadowing: false
+  staticcheck:
+    checks: ["all", "-SA1019"]
 
 issues:
   max-issues-per-linter: 0
