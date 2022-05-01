@@ -224,8 +224,6 @@ func (s *Membrane) Start() error {
 		var workerErr error
 		if s.mode == Mode_HttpProxy {
 			wrkr, workerErr = worker.NewHttpWorker(s.childAddress)
-		} else if s.mode == Mode_HttpFaas {
-			wrkr, workerErr = worker.NewFaasHttpWorker(s.childAddress)
 		}
 
 		if workerErr == nil {
