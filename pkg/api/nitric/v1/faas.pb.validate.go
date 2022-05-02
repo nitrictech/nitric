@@ -1333,6 +1333,37 @@ func (m *TriggerRequest) validate(all bool) error {
 			}
 		}
 
+	case *TriggerRequest_CloudEvent:
+
+		if all {
+			switch v := interface{}(m.GetCloudEvent()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCloudEvent()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerRequestValidationError{
+					field:  "CloudEvent",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -1919,6 +1950,137 @@ var _ interface {
 	ErrorName() string
 } = TopicTriggerContextValidationError{}
 
+// Validate checks the field values on CloudEventContext with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CloudEventContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CloudEventContext with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CloudEventContextMultiError, or nil if none found.
+func (m *CloudEventContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CloudEventContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEvent()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CloudEventContextValidationError{
+					field:  "Event",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CloudEventContextValidationError{
+					field:  "Event",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEvent()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CloudEventContextValidationError{
+				field:  "Event",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CloudEventContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// CloudEventContextMultiError is an error wrapping multiple validation errors
+// returned by CloudEventContext.ValidateAll() if the designated constraints
+// aren't met.
+type CloudEventContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CloudEventContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CloudEventContextMultiError) AllErrors() []error { return m }
+
+// CloudEventContextValidationError is the validation error returned by
+// CloudEventContext.Validate if the designated constraints aren't met.
+type CloudEventContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CloudEventContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CloudEventContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CloudEventContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CloudEventContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CloudEventContextValidationError) ErrorName() string {
+	return "CloudEventContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CloudEventContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCloudEventContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CloudEventContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CloudEventContextValidationError{}
+
 // Validate checks the field values on TriggerResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -2001,6 +2163,37 @@ func (m *TriggerResponse) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return TriggerResponseValidationError{
 					field:  "Topic",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TriggerResponse_CloudEvent:
+
+		if all {
+			switch v := interface{}(m.GetCloudEvent()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCloudEvent()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerResponseValidationError{
+					field:  "CloudEvent",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2342,3 +2535,107 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = TopicResponseContextValidationError{}
+
+// Validate checks the field values on CloudEventResponseContext with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CloudEventResponseContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CloudEventResponseContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CloudEventResponseContextMultiError, or nil if none found.
+func (m *CloudEventResponseContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CloudEventResponseContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return CloudEventResponseContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// CloudEventResponseContextMultiError is an error wrapping multiple validation
+// errors returned by CloudEventResponseContext.ValidateAll() if the
+// designated constraints aren't met.
+type CloudEventResponseContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CloudEventResponseContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CloudEventResponseContextMultiError) AllErrors() []error { return m }
+
+// CloudEventResponseContextValidationError is the validation error returned by
+// CloudEventResponseContext.Validate if the designated constraints aren't met.
+type CloudEventResponseContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CloudEventResponseContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CloudEventResponseContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CloudEventResponseContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CloudEventResponseContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CloudEventResponseContextValidationError) ErrorName() string {
+	return "CloudEventResponseContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CloudEventResponseContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCloudEventResponseContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CloudEventResponseContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CloudEventResponseContextValidationError{}

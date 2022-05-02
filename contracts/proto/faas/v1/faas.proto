@@ -1,6 +1,8 @@
 syntax = "proto3";
 package nitric.faas.v1;
 
+import "cloudevent/v1/cloudevent.proto";
+
 // protoc plugin options for code generation
 option go_package = "nitric/v1;v1";
 option java_package = "io.nitric.proto.faas.v1";
@@ -109,6 +111,7 @@ message TriggerRequest {
   oneof context {
     HttpTriggerContext http = 3;
     TopicTriggerContext topic = 4;
+    CloudEventContext cloud_event = 5;
   }
 }
 
@@ -153,6 +156,10 @@ message TopicTriggerContext {
   // TODO: Add the event ID to the trigger context here got transactional outbox?
 }
 
+message CloudEventContext {
+  nitric.cloudevent.v1.CloudEvent event = 1;
+}
+
 // The worker has successfully processed a trigger
 message TriggerResponse {
   // The data returned in the response
@@ -166,6 +173,8 @@ message TriggerResponse {
     HttpResponseContext http = 10;
     // response to a topic trigger
     TopicResponseContext topic = 11;
+    // response to a cloud event trigger
+    CloudEventResponseContext cloud_event = 12;
   }
 }
 
@@ -190,5 +199,9 @@ message HttpResponseContext {
 // only whether or not they were successfully processed
 message TopicResponseContext {
   // Success status of the handled event
+  bool success = 1;
+}
+
+message CloudEventResponseContext {
   bool success = 1;
 }

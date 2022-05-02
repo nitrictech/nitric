@@ -1,3 +1,7 @@
+package triggers
+
+import v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+
 // Copyright 2021 Nitric Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +16,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package triggers
+// Event - A nitric event that has come from a trigger source
+type CloudEvent struct {
+	Event *v1.CloudEvent
+}
 
-// SourceType enum
-type TriggerType int
-
-const (
-	TriggerType_Subscription TriggerType = iota
-	TriggerType_Request
-	TriggerType_CloudEvent
-	TriggerType_Custom
-)
-
-func (e TriggerType) String() string {
-	return []string{"SUBSCRIPTION", "REQUEST", "CLOUD_EVENT", "CUSTOM"}[e]
+func (*CloudEvent) GetTriggerType() TriggerType {
+	return TriggerType_CloudEvent
 }

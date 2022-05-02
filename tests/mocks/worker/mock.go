@@ -19,24 +19,37 @@ import (
 )
 
 type MockWorkerOptions struct {
-	ReturnHttp *triggers2.HttpResponse
-	HttpError  error
-	eventError error
+	ReturnHttp      *triggers2.HttpResponse
+	HttpError       error
+	eventError      error
+	CloudEventError error
 }
 
 // MockWorker - A mock worker interface for testing
 type MockWorker struct {
-	returnHttp       *triggers2.HttpResponse
-	httpError        error
-	eventError       error
-	ReceivedEvents   []*triggers2.Event
-	ReceivedRequests []*triggers2.HttpRequest
+	returnHttp          *triggers2.HttpResponse
+	httpError           error
+	eventError          error
+	cloudEventError     error
+	ReceivedEvents      []*triggers2.Event
+	ReceivedCloudEvents []*triggers2.CloudEvent
+	ReceivedRequests    []*triggers2.HttpRequest
 }
 
 func (m *MockWorker) HandleEvent(trigger *triggers2.Event) error {
 	m.ReceivedEvents = append(m.ReceivedEvents, trigger)
 
 	return m.eventError
+}
+
+func (m *MockWorker) HandleCloudEvent(trigger *triggers2.CloudEvent) error {
+	m.ReceivedCloudEvents = append(m.ReceivedCloudEvents, trigger)
+
+	return m.eventError
+}
+
+func (m *MockWorker) HandlesCloudEvent(trigger *triggers2.CloudEvent) bool {
+	return true
 }
 
 func (m *MockWorker) HandlesEvent(trigger *triggers2.Event) bool {
@@ -60,10 +73,12 @@ func (m *MockWorker) Reset() {
 
 func NewMockWorker(opts *MockWorkerOptions) *MockWorker {
 	return &MockWorker{
-		httpError:        opts.HttpError,
-		returnHttp:       opts.ReturnHttp,
-		eventError:       opts.eventError,
-		ReceivedEvents:   make([]*triggers2.Event, 0),
-		ReceivedRequests: make([]*triggers2.HttpRequest, 0),
+		httpError:           opts.HttpError,
+		returnHttp:          opts.ReturnHttp,
+		eventError:          opts.eventError,
+		cloudEventError:     opts.CloudEventError,
+		ReceivedEvents:      make([]*triggers2.Event, 0),
+		ReceivedRequests:    make([]*triggers2.HttpRequest, 0),
+		ReceivedCloudEvents: make([]*triggers2.CloudEvent, 0),
 	}
 }

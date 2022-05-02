@@ -22,14 +22,20 @@ import (
 
 type Worker interface {
 	HandleEvent(trigger *triggers.Event) error
+	HandleCloudEvent(trigger *triggers.CloudEvent) error
 	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 	HandlesHttpRequest(trigger *triggers.HttpRequest) bool
 	HandlesEvent(trigger *triggers.Event) bool
+	HandlesCloudEvent(trigger *triggers.CloudEvent) bool
 }
 
 type UnimplementedWorker struct{}
 
 func (*UnimplementedWorker) HandlesEvent(trigger *triggers.Event) bool {
+	return false
+}
+
+func (*UnimplementedWorker) HandlesCloudEvent(trigger *triggers.CloudEvent) bool {
 	return false
 }
 
@@ -43,4 +49,8 @@ func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
 
 func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	return nil, fmt.Errorf("worker does not handle http requests")
+}
+
+func (*UnimplementedWorker) HandleCloudEvent(trigger *triggers.CloudEvent) (*triggers.CloudEvent, error) {
+	return nil, fmt.Errorf("worker does not handle cloud events")
 }

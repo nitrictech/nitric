@@ -125,6 +125,10 @@ func (s *grpcWorkerBase) HandlesEvent(trigger *triggers.Event) bool {
 	return true
 }
 
+func (s *grpcWorkerBase) HandlesCloudEvent(trigger *triggers.CloudEvent) bool {
+	return true
+}
+
 func (s *grpcWorkerBase) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
@@ -272,6 +276,55 @@ func (s *grpcWorkerBase) HandleEvent(trigger *triggers.Event) error {
 	}
 
 	if topic.GetSuccess() {
+		return nil
+	}
+
+	return fmt.Errorf("Error occurred handling the event")
+}
+
+func (s *grpcWorkerBase) HandleCloudEvent(trigger *triggers.CloudEvent) error {
+	// Generate an ID here
+	ID, returnChan := s.newTicket()
+	triggerRequest := &v1.TriggerRequest{
+		// info included in the cloud even itself
+		// Data:     trigger.Payload,
+		// MimeType: http.DetectContentType(trigger.Payload),
+		Context: &v1.TriggerRequest_CloudEvent{
+			CloudEvent: &v1.CloudEventContext{
+				Event: trigger.Event,
+			},
+		},
+	}
+
+	// construct the message
+	message := &v1.ServerMessage{
+		Id: ID,
+		Content: &v1.ServerMessage_TriggerRequest{
+			TriggerRequest: triggerRequest,
+		},
+	}
+
+	// send the message
+	err := s.send(message)
+
+	if err != nil {
+		// There was an error enqueuing the message
+		return err
+	}
+
+	// wait for the response
+	// FIXME: Need to handle timeouts here...
+	response := <-returnChan
+
+	ce := response.GetCloudEvent()
+
+	if ce == nil {
+		// Fatal error in this case
+		// We don't have the correct response type for this handler
+		return fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
+	}
+
+	if ce.GetSuccess() {
 		return nil
 	}
 

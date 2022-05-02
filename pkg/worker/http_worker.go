@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"time"
@@ -38,6 +39,10 @@ func (s *HttpWorker) HandlesEvent(trigger *triggers.Event) bool {
 	return true
 }
 
+func (s *HttpWorker) HandlesCloudEvent(trigger *triggers.CloudEvent) bool {
+	return true
+}
+
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
 func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
@@ -55,6 +60,37 @@ func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 
 	// TODO: Handle response or error and respond appropriately
 	err := fasthttp.Do(httpRequest, &resp)
+	if err == nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
+		return nil
+	}
+	if err != nil {
+		return errors.Wrapf(err, "Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
+	}
+	return errors.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
+}
+
+// HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
+func (h *HttpWorker) HandleCloudEvent(trigger *triggers.CloudEvent) error {
+	address := fmt.Sprintf("http://%s/cloudevent/%s", h.address, trigger.Event.Source)
+
+	httpRequest := fasthttp.AcquireRequest()
+	httpRequest.SetRequestURI(address)
+	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
+
+	var resp fasthttp.Response
+
+	body, err := json.Marshal(trigger.Event)
+
+	if err != nil {
+		return errors.Wrapf(err, "Error marshalling cloud event")
+	}
+
+	httpRequest.SetBody(body)
+	httpRequest.Header.SetContentType("application/json")
+	httpRequest.Header.SetContentLength(len(body))
+
+	// TODO: Handle response or error and respond appropriately
+	err = fasthttp.Do(httpRequest, &resp)
 	if err == nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
 		return nil
 	}

@@ -34,6 +34,20 @@ func (m *MockGrpcWorker) EXPECT() *MockGrpcWorkerMockRecorder {
 	return m.recorder
 }
 
+// HandleCloudEvent mocks base method.
+func (m *MockGrpcWorker) HandleCloudEvent(arg0 *triggers.CloudEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleCloudEvent", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleCloudEvent indicates an expected call of HandleCloudEvent.
+func (mr *MockGrpcWorkerMockRecorder) HandleCloudEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleCloudEvent", reflect.TypeOf((*MockGrpcWorker)(nil).HandleCloudEvent), arg0)
+}
+
 // HandleEvent mocks base method.
 func (m *MockGrpcWorker) HandleEvent(arg0 *triggers.Event) error {
 	m.ctrl.T.Helper()
@@ -61,6 +75,20 @@ func (m *MockGrpcWorker) HandleHttpRequest(arg0 *triggers.HttpRequest) (*trigger
 func (mr *MockGrpcWorkerMockRecorder) HandleHttpRequest(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHttpRequest", reflect.TypeOf((*MockGrpcWorker)(nil).HandleHttpRequest), arg0)
+}
+
+// HandlesCloudEvent mocks base method.
+func (m *MockGrpcWorker) HandlesCloudEvent(arg0 *triggers.CloudEvent) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandlesCloudEvent", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HandlesCloudEvent indicates an expected call of HandlesCloudEvent.
+func (mr *MockGrpcWorkerMockRecorder) HandlesCloudEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandlesCloudEvent", reflect.TypeOf((*MockGrpcWorker)(nil).HandlesCloudEvent), arg0)
 }
 
 // HandlesEvent mocks base method.
