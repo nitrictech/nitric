@@ -21,6 +21,8 @@ service StorageService {
   rpc Delete (StorageDeleteRequest) returns (StorageDeleteResponse);
   // Generate a pre-signed URL for direct operations on an item
   rpc PreSignUrl (StoragePreSignUrlRequest) returns (StoragePreSignUrlResponse);
+  // List files currently in the bucket
+  rpc ListFiles (StorageListFilesRequest) returns (StorageListFilesResponse);
 }
 
 // Request to put (create/update) a storage item
@@ -98,4 +100,20 @@ message StoragePreSignUrlRequest {
 message StoragePreSignUrlResponse {
   // The pre-signed url, restricted to the operation, resource and expiry time specified in the request.
   string url = 1;
+}
+
+message StorageListFilesRequest {
+  string bucket_name = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+}
+
+message File {
+  string key = 1;
+}
+
+message StorageListFilesResponse {
+  // keys of the files in the bucket
+  repeated File files = 1;
 }
