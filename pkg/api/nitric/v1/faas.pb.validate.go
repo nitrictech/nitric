@@ -948,6 +948,106 @@ var _ interface {
 	ErrorName() string
 } = ScheduleCronValidationError{}
 
+// Validate checks the field values on CloudEventWorker with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CloudEventWorker) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CloudEventWorker with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CloudEventWorkerMultiError, or nil if none found.
+func (m *CloudEventWorker) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CloudEventWorker) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return CloudEventWorkerMultiError(errors)
+	}
+
+	return nil
+}
+
+// CloudEventWorkerMultiError is an error wrapping multiple validation errors
+// returned by CloudEventWorker.ValidateAll() if the designated constraints
+// aren't met.
+type CloudEventWorkerMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CloudEventWorkerMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CloudEventWorkerMultiError) AllErrors() []error { return m }
+
+// CloudEventWorkerValidationError is the validation error returned by
+// CloudEventWorker.Validate if the designated constraints aren't met.
+type CloudEventWorkerValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CloudEventWorkerValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CloudEventWorkerValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CloudEventWorkerValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CloudEventWorkerValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CloudEventWorkerValidationError) ErrorName() string { return "CloudEventWorkerValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CloudEventWorkerValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCloudEventWorker.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CloudEventWorkerValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CloudEventWorkerValidationError{}
+
 // Validate checks the field values on InitRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1059,6 +1159,37 @@ func (m *InitRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return InitRequestValidationError{
 					field:  "Schedule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *InitRequest_CloudEvent:
+
+		if all {
+			switch v := interface{}(m.GetCloudEvent()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "CloudEvent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCloudEvent()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return InitRequestValidationError{
+					field:  "CloudEvent",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

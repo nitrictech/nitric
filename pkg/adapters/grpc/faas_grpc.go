@@ -57,6 +57,11 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Path:    api.Path,
 			Methods: api.Methods,
 		})
+	} else if cloudevent := ir.GetCloudEvent(); cloudevent != nil {
+		wrkr = worker.NewCloudEventWorker(stream, &worker.CloudEventWorkerOptions{
+			Sources:    cloudevent.Sources,
+			EventTypes: cloudevent.EventTypes,
+		})
 	} else if subscription := ir.GetSubscription(); subscription != nil {
 		wrkr = worker.NewSubscriptionWorker(stream, &worker.SubscriptionWorkerOptions{
 			Topic: subscription.Topic,

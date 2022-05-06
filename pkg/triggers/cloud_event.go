@@ -1,7 +1,3 @@
-package triggers
-
-import v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
-
 // Copyright 2021 Nitric Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +11,10 @@ import v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+package triggers
+
+import v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 
 // Event - A nitric event that has come from a trigger source
 type CloudEvent struct {

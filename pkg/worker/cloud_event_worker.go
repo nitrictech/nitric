@@ -22,7 +22,7 @@ import (
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
-// RouteWorker - Worker representation for an http api route handler
+// CloudEventWorker - Worker representation a cloud event trigger handler
 type CloudEventWorker struct {
 	sources    []string
 	eventTypes []string
@@ -67,8 +67,8 @@ func (s *CloudEventWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*tr
 	return nil, fmt.Errorf("cloud event workers cannot handle HTTP requests")
 }
 
-func (s *CloudEventWorker) HandleEvent(trigger *triggers.CloudEvent) bool {
-	return false
+func (s *CloudEventWorker) HandleEvent(trigger *triggers.Event) error {
+	return fmt.Errorf("cloud event workers cannot handle event triggers")
 }
 
 type CloudEventWorkerOptions struct {
