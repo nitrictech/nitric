@@ -47,24 +47,36 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 		// We have an event from pubsub here...
 
+		topicName, ok := pubsubEvent.Message.Attributes["x-nitric-topic"]
+		if !ok {
+			ctx.Error("Could not find topicName for event", 400)
+			return false
+		}
+
 		// need to determine if the underlying data is a nitric event
 		var event *triggers.Event
 		messageJson := &ep.NitricEvent{}
+
 		// Check if it's a nitric event
-		if err := json.Unmarshal(pubsubEvent.Message.Data, messageJson); err == nil && messageJson.ID != "" {
+		err := json.Unmarshal(pubsubEvent.Message.Data, messageJson)
+		if err == nil && messageJson.ID != "" && messageJson.PayloadType != "" {
 			// reserialize the nitric event payload
-			payload, _ := json.Marshal(messageJson.Payload)
+			payload, err := json.Marshal(messageJson.Payload)
+			if err != nil {
+				ctx.Error("Could not marshal event payload: "+err.Error(), 400)
+				return false
+			}
 
 			event = &triggers.Event{
 				ID:      messageJson.ID,
-				Topic:   pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Topic:   topicName,
 				Payload: payload,
 			}
 		} else {
 			event = &triggers.Event{
 				ID: pubsubEvent.Message.ID,
 				// Set the topic
-				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Topic: topicName,
 				// Set the original full payload payload
 				Payload: pubsubEvent.Message.Data,
 			}
@@ -73,7 +85,6 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Event: event,
 		})
-
 		if err != nil {
 			ctx.Error("Could not find handle for event", 500)
 			return false
