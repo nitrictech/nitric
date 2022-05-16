@@ -36,24 +36,32 @@ type StorageStorageService struct {
 	plugin.UnimplementedStoragePlugin
 	client    ifaces_gcloud_storage.StorageClient
 	projectID string
+	cache     map[string]ifaces_gcloud_storage.BucketHandle
 }
 
 func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_storage.BucketHandle, error) {
-	buckets := s.client.Buckets(context.Background(), s.projectID)
-	for {
-		b, err := buckets.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("an error occurred finding bucket: %s; %v", bucket, err)
-		}
-		// We'll label the buckets by their name in the nitric.yaml file and use this...
-		if b.Labels["x-nitric-name"] == bucket {
-			bucketHandle := s.client.Bucket(b.Name)
-			return bucketHandle, nil
+	if s.cache == nil {
+		buckets := s.client.Buckets(context.Background(), s.projectID)
+		s.cache = make(map[string]ifaces_gcloud_storage.BucketHandle)
+		for {
+			b, err := buckets.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("an error occurred finding bucket: %s; %v", bucket, err)
+			}
+
+			if name, ok := b.Labels["x-nitric-name"]; ok {
+				s.cache[name] = s.client.Bucket(b.Name)
+			}
 		}
 	}
+
+	if b, ok := s.cache[bucket]; ok {
+		return b, nil
+	}
+
 	return nil, fmt.Errorf("bucket not found")
 }
 
@@ -221,6 +229,47 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 	}
 
 	return signedUrl, nil
+}
+
+func (s *StorageStorageService) ListFiles(bucket string) ([]*plugin.FileInfo, error) {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.ListFiles",
+		map[string]interface{}{
+			"bucket": bucket,
+		},
+	)
+
+	bucketHandle, err := s.getBucketByName(bucket)
+
+	if err != nil {
+		return nil, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
+
+	iter := bucketHandle.Objects(context.TODO(), &storage.Query{
+		Projection: storage.ProjectionNoACL,
+	})
+
+	fis := make([]*plugin.FileInfo, 0)
+	for {
+		obj, err := iter.Next()
+
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, newErr(codes.Internal, "error occurred iterating objects", err)
+		}
+
+		fis = append(fis, &plugin.FileInfo{
+			Key: obj.Name,
+		})
+	}
+
+	return fis, nil
 }
 
 /**
