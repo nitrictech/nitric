@@ -207,4 +207,42 @@ var _ = Describe("S3", func() {
 			})
 		})
 	})
+
+	When("ListFiles", func() {
+		When("The bucket exists", func() {
+			When("The s3 backend is available", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
+				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient)
+
+				It("should list the files contained in the bucket", func() {
+					By("the bucket existing")
+					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+					}, nil)
+
+					By("s3 returning files")
+					mockStorageClient.EXPECT().ListObjects(&s3.ListObjectsInput{
+						Bucket: aws.String("test-bucket-aaa111"),
+					}).Return(&s3.ListObjectsOutput{
+						Contents: []*s3.Object{{
+							Key: aws.String("test"),
+						}},
+					}, nil)
+
+					files, err := storagePlugin.ListFiles("test-bucket")
+
+					By("not returning an error")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					By("returning the file listing from s3")
+					Expect(files).To(HaveLen(1))
+
+					By("having the returned keys")
+					Expect(files[0].Key).To(Equal("test"))
+				})
+			})
+		})
+	})
 })
