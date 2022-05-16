@@ -41,10 +41,12 @@ type AzblobStorageService struct {
 	storage.UnimplementedStoragePlugin
 }
 
+func (a *AzblobStorageService) getContainerUrl(bucket string) azblob_service_iface.AzblobContainerUrlIface {
+	return a.client.NewContainerURL(bucket)
+}
+
 func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_service_iface.AzblobBlockBlobUrlIface {
-	cUrl := a.client.NewContainerURL(bucket)
-	// Get a new blob for the key name
-	return cUrl.NewBlockBlobURL(key)
+	return a.getContainerUrl(bucket).NewBlockBlobURL(key)
 }
 
 func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
@@ -187,6 +189,39 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	url := blobUrlParts.URL()
 
 	return url.String(), nil
+}
+
+func (s *AzblobStorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+	newErr := errors.ErrorsWithScope(
+		"AzblobStorageService.ListFiles",
+		map[string]interface{}{
+			"bucket": bucket,
+		},
+	)
+
+	cUrl := s.getContainerUrl(bucket)
+	files := make([]*storage.FileInfo, 0)
+
+	// List the blob(s) in our container; since a container may hold millions of blobs, this is done 1 segment at a time.
+	for marker := (azblob.Marker{}); marker.NotDone(); { // The parens around Marker{} are required to avoid compiler error.
+		// Get a result segment starting with the blob indicated by the current Marker.
+		listBlob, err := cUrl.ListBlobsFlatSegment(context.TODO(), marker, azblob.ListBlobsSegmentOptions{})
+		if err != nil {
+			return nil, newErr(codes.Internal, "error listing files", err)
+		}
+		// IMPORTANT: ListBlobs returns the start of the next segment; you MUST use this to get
+		// the next segment (after processing the current result segment).
+		marker = listBlob.NextMarker
+
+		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
+		for _, blobInfo := range listBlob.Segment.BlobItems {
+			files = append(files, &storage.FileInfo{
+				Key: blobInfo.Name,
+			})
+		}
+	}
+
+	return files, nil
 }
 
 const expiryBuffer = 2 * time.Minute
