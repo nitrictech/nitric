@@ -140,9 +140,11 @@ var _ = Describe("events", func() {
 				Expect(capturedRequest.Header.Get("x-nitric-source")).To(Equal("test"))
 
 				By("Providing the payload in the Body")
-				bodyBytes, _ := ioutil.ReadAll(capturedRequest.Body)
+				bodyBytes, err := ioutil.ReadAll(capturedRequest.Body)
+				Expect(err).NotTo(HaveOccurred())
 				bodyMap := make(map[string]interface{})
-				json.Unmarshal(bodyBytes, &bodyMap)
+				err = json.Unmarshal(bodyBytes, &bodyMap)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(bodyMap).To(BeEquivalentTo(testPayload))
 
 			})

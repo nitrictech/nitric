@@ -282,7 +282,10 @@ func (s *BoltDocService) query(collection *document.Collection, expressions []do
 
 	// Execute query
 	var docs []BoltDoc
-	query.Find(&docs)
+	err = query.Find(&docs)
+	if err != nil {
+		fmt.Println("query.Find: ", err)
+	}
 
 	// Create values map filter expression, for example : country == 'US' && age < '12'
 	expStr := strings.Builder{}

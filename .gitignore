@@ -19,4 +19,9 @@
 # vendor/
 bin/
 
+tools/bin
+tools/include
+tools/protoc*.zip
+tools/readme.txt
+
 *.coverprofile

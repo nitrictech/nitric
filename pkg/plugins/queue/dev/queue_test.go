@@ -67,13 +67,13 @@ var _ = Describe("Queue", func() {
 
 	queuePlugin, err := queue_service.New()
 	if err != nil {
-		panic(err)
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	AfterEach(func() {
 		err := os.RemoveAll(local_queue_directory)
 		if err != nil {
-			panic(err)
+			Expect(err).ShouldNot(HaveOccurred())
 		}
 
 		_, err = os.Stat(local_queue_directory)
@@ -81,7 +81,7 @@ var _ = Describe("Queue", func() {
 			// Make diretory if not present
 			err := os.Mkdir(local_queue_directory, 0777)
 			if err != nil {
-				panic(err)
+				Expect(err).ShouldNot(HaveOccurred())
 			}
 		}
 	})
@@ -222,7 +222,8 @@ var _ = Describe("Queue", func() {
 					tasks = append(tasks, task)
 				}
 
-				queuePlugin.SendBatch("test", tasks)
+				_, err = queuePlugin.SendBatch("test", tasks)
+				Expect(err).ShouldNot(HaveOccurred())
 				storedTasks := GetAllTasks("test")
 				Expect(storedTasks).NotTo(BeNil())
 				Expect(storedTasks).To(HaveLen(15))

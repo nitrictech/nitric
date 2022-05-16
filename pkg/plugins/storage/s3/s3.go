@@ -46,6 +46,7 @@ type S3StorageService struct {
 	client   s3iface.S3API
 	provider core.AwsProvider
 	selector BucketSelector
+	storage.UnimplementedStoragePlugin
 }
 
 type BucketSelector = func(nitricName string) (*string, error)
@@ -223,6 +224,44 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 		}
 	} else {
 		return "", newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
+}
+
+func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.ListFiles",
+		map[string]interface{}{
+			"bucket": bucket,
+		},
+	)
+
+	if b, err := s.getBucketName(bucket); err == nil {
+		objects, err := s.client.ListObjects(&s3.ListObjectsInput{
+			Bucket: b,
+		})
+
+		if err != nil {
+			return nil, newErr(
+				codes.Internal,
+				"unable to fetch file list",
+				err,
+			)
+		}
+
+		files := make([]*storage.FileInfo, 0, len(objects.Contents))
+		for _, o := range objects.Contents {
+			files = append(files, &storage.FileInfo{
+				Key: *o.Key,
+			})
+		}
+
+		return files, nil
+	} else {
+		return nil, newErr(
 			codes.NotFound,
 			"unable to locate bucket",
 			err,

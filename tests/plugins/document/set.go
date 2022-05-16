@@ -85,7 +85,7 @@ func SetTests(docPlugin document.DocumentService) {
 				Expect(doc.Content).To(BeEquivalentTo(Customer1.Orders[0].Content))
 			})
 		})
-		When("Valid Mutliple Sub Collection Set", func() {
+		When("Valid Multiple Sub Collection Set", func() {
 			It("Should store item successfully", func() {
 				err := docPlugin.Set(&Customer1.Reviews[0].Key, Customer1.Reviews[0].Content)
 				Expect(err).ShouldNot(HaveOccurred())

@@ -124,7 +124,10 @@ func New() (events.EventService, error) {
 	tmpSubs := make(map[string][]string)
 	subs := make(map[string][]string)
 
-	json.Unmarshal([]byte(localSubscriptions), &tmpSubs)
+	err := json.Unmarshal([]byte(localSubscriptions), &tmpSubs)
+	if err != nil {
+		return nil, err
+	}
 
 	for key, val := range tmpSubs {
 		subs[strings.ToLower(key)] = val

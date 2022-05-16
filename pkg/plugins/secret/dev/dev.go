@@ -72,7 +72,14 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		)
 	}
 	writer := bufio.NewWriter(file)
-	writer.WriteString(string(val))
+	_, err = writer.WriteString(string(val))
+	if err != nil {
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"error writing secret value",
+			err,
+		)
+	}
 	writer.Flush()
 
 	//Creates a new file as latest
@@ -85,8 +92,23 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		)
 	}
 	latestWriter := bufio.NewWriter(latestFile)
-	latestWriter.WriteString(string(val))
-	latestWriter.WriteString("," + versionId)
+	_, err = latestWriter.WriteString(string(val))
+	if err != nil {
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"error writing secret value",
+			err,
+		)
+	}
+
+	_, err = latestWriter.WriteString("," + versionId)
+	if err != nil {
+		return nil, newErr(
+			codes.FailedPrecondition,
+			"error writing secret value",
+			err,
+		)
+	}
 	latestWriter.Flush()
 
 	return &secret.SecretPutResponse{

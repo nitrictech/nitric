@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -50,10 +51,16 @@ var _ = Describe("Http", func() {
 			StatusCode: 200,
 		},
 	})
-	pool.AddWorker(mockHandler)
-	httpPlugin, _ := cloudrun_plugin.New()
+	err := pool.AddWorker(mockHandler)
+	Expect(err).To(BeNil())
+
+	httpPlugin, err := cloudrun_plugin.New()
+	Expect(err).To(BeNil())
+
 	// Run on a non-blocking thread
-	go (httpPlugin.Start)(pool)
+	go func(gw gateway.GatewayService) {
+		_ = gw.Start(pool)
+	}(httpPlugin)
 
 	// Delay to allow the HTTP server to correctly start
 	// FIXME: Should block on channels...
@@ -102,9 +109,9 @@ var _ = Describe("Http", func() {
 				Expect(streamRead).To(BeEquivalentTo([]byte("Test")))
 
 				By("Preserving the original requests headers")
-				Expect(string(handledRequest.Header["User-Agent"][0])).To(Equal("Test"))
-				Expect(string(handledRequest.Header["X-Nitric-Request-Id"][0])).To(Equal("1234"))
-				Expect(string(handledRequest.Header["X-Nitric-Payload-Type"][0])).To(Equal("Test Payload"))
+				Expect(handledRequest.Header["User-Agent"][0]).To(Equal("Test"))
+				Expect(handledRequest.Header["X-Nitric-Request-Id"][0]).To(Equal("1234"))
+				Expect(handledRequest.Header["X-Nitric-Payload-Type"][0]).To(Equal("Test Payload"))
 				Expect(handledRequest.Header["Cookie"]).To(Equal([]string{"test1=testcookie1; test2=testcookie2"}))
 
 				By("The request returns a successful status")

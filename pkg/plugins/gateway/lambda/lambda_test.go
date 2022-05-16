@@ -66,7 +66,8 @@ var _ = Describe("Lambda", func() {
 			StatusCode: 200,
 		},
 	})
-	pool.AddWorker(mockHandler)
+	err := pool.AddWorker(mockHandler)
+	Expect(err).NotTo(HaveOccurred())
 
 	AfterEach(func() {
 		mockHandler.Reset()
@@ -98,13 +99,15 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, _ := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			Expect(err).To(BeNil())
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
-				client.Start(pool)
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
 
 				By("Handling a single HTTP request")
 				Expect(len(mockHandler.ReceivedRequests)).To(Equal(1))
@@ -148,7 +151,8 @@ var _ = Describe("Lambda", func() {
 				Payload:     eventPayload,
 			}
 
-			messageBytes, _ := json.Marshal(&event)
+			messageBytes, err := json.Marshal(&event)
+			Expect(err).To(BeNil())
 
 			runtime := MockLambdaRuntime{
 				// Setup mock events for our runtime to process...
@@ -167,7 +171,8 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, _ := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			Expect(err).To(BeNil())
 
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("having the topic available")
@@ -178,7 +183,8 @@ var _ = Describe("Lambda", func() {
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request
-				client.Start(pool)
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
 
 				By("Handling a single event")
 				Expect(len(mockHandler.ReceivedEvents)).To(Equal(1))

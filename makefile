@@ -5,40 +5,28 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-init: install-tools
+include tools/tools.mk
+
+init: check-gopath go-mod-download install-tools
 	@echo Installing git hooks
 	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
 .PHONY: check fmt lint
 check: lint test
 
+sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
+
 fmt:
-	@echo Formatting Code
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run --fix
 
 lint:
-	@echo Linting Code
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
 
-install:
+go-mod-download:
 	@echo installing go dependencies
 	@go mod download
-
-fetch-validate:
-	@echo fetching envoyproxy validate contract
-	@mkdir -p ./contracts/validate
-	@curl https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/v0.6.1/validate/validate.proto --output ./contracts/validate/validate.proto
-
-install-tools: install check-gopath ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate
-
-${GOPATH}/bin/protoc-gen-go: go.sum
-	go get github.com/golang/protobuf/protoc-gen-go
-
-${GOPATH}/bin/protoc-gen-go-grpc: go.sum
-	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
-
-${GOPATH}/bin/protoc-gen-validate: go.sum
-	@GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
 
 clean: check-gopath
 	@rm -rf ./bin/
@@ -76,16 +64,6 @@ license-check-azure: azure-static
 	@echo Checking Azure Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
 
-sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
-
-license-header-add:
-	@echo Add License Headers to Source Files
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-
-license-header-check:
-	@echo Checking License Headers to Source Files
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-
 license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
 	@echo Checking OSS Licenses
 
@@ -98,10 +76,10 @@ endif
 generate: generate-proto generate-mocks
 
 # Generate interfaces
-generate-proto: install-tools check-gopath fetch-validate
+generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
-	@protoc --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
+	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
 
 # BEGIN AWS Plugins
 aws-static: generate-proto
@@ -112,17 +90,6 @@ aws-static: generate-proto
 aws-static-xp: generate-proto
 	@echo Building static AWS membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# aws-plugin:
-# 	@echo Building AWS Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/aws.so ./providers/aws/plugin.go
-
-aws-docker-static:
-	@docker build . -f ./pkg/providers/aws/aws.dockerfile -t nitricimages/membrane-aws
-
-aws-docker: aws-docker-static
-	@echo Built AWS Docker Images
 # END AWS Plugins
 
 # BEGIN Azure Plugins
@@ -134,17 +101,6 @@ azure-static: generate-proto
 azure-static-xp: generate-proto
 	@echo Building static Azure membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# azure-plugin:
-# 	@echo Building Azure Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/azure.so ./pkg/providers/azure/plugin.go
-
-azure-docker-static:
-	@docker build . -f ./pkg/providers/azure/azure.dockerfile -t nitricimages/membrane-azure
-
-azure-docker: azure-docker-static # azure-docker-alpine azure-docker-debian
-	@echo Built Azure Docker Images
 # END Azure Plugins
 
 gcp-static: generate-proto
@@ -155,17 +111,6 @@ gcp-static: generate-proto
 gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# gcp-plugin:
-# 	@echo Building GCP Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/gcp.so ./providers/gcp/plugin.go
-
-gcp-docker-static:
-	@docker build . -f ./pkg/providers/gcp/gcp.dockerfile -t nitricimages/membrane-gcp
-
-gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
-	@echo Built GCP Docker Images
 # END GCP Plugins
 
 # BEGIN Local Plugins
@@ -173,28 +118,11 @@ gcp-docker: gcp-docker-static # gcp-docker-alpine gcp-docker-debian
 dev-static: generate-proto
 	@echo Building static Local membrane
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
-
-# # Service Factory Plugin for Pluggable Membrane
-# dev-plugin:
-# 	@echo Building Dev Service Factory Plugin
-# 	@go build -buildmode=plugin -o lib/plugins/dev.so ./pkg/providers/dev/plugin.go
-
-dev-docker-static:
-	@docker build . -f ./pkg/providers/dev/dev.dockerfile -t nitricimages/membrane-local
-
-dev-docker: dev-docker-static
-	@echo Built Local Docker Images
 # END Local Plugins
 
 # BEGIN DigitalOcean Plugins
 do-static: generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
-
-do-docker-static:
-	@docker build . -f ./pkg/providers/do/do.dockerfile -t nitricimages/membrane-do
-
-do-docker: do-docker-static
-	@echo Built Digital Ocean Docker Images
 # END DigitalOcean Plugins
 
 build-all-binaries: clean generate-proto
@@ -205,22 +133,13 @@ build-all-binaries: clean generate-proto
 	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
 	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
 
-# membrane-docker-alpine: generate-proto
-# 	@docker build . -f alpine.dockerfile -t nitric:membrane-alpine
-# membrane-docker-debian: generate-proto
-# 	@docker build . -f debian.dockerfile -t nitric:membrane-debian
-
-# # Generate proto files locally before building docker images
-# # TODO: Get alpine image generating its own sources
-# membrane-docker: generate-proto membrane-docker-alpine membrane-docker-debian
-# 	@echo Built Docker Images
-
 # generate mock implementations
 generate-mocks:
 	@echo Generating Mock Clients
 	@mkdir -p mocks/secret_manager
 	@mkdir -p mocks/secrets_manager
 	@mkdir -p mocks/key_vault
+	@mkdir -p mocks/storage
 	@mkdir -p mocks/s3
 	@mkdir -p mocks/sns
 	@mkdir -p mocks/sqs
@@ -232,6 +151,7 @@ generate-mocks:
 	@mkdir -p mocks/sync
 	@mkdir -p mocks/provider
 	@mkdir -p mocks/resourcetaggingapi
+	@mkdir -p mocks/gcp_storage
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
@@ -242,11 +162,16 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/document DocumentService > mocks/document/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret SecretService > mocks/secret/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage StorageService > mocks/storage/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue QueueService > mocks/queue/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker GrpcWorker > mocks/worker/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
 
 generate-sources: generate-proto generate-mocks

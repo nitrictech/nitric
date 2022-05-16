@@ -40,7 +40,7 @@ var _ = Describe("Azblob", func() {
 	//})
 
 	Context("Read", func() {
-		When("Azure returns a successfuly response", func() {
+		When("Azure returns a successfully response", func() {
 			crtl := gomock.NewController(GinkgoT())
 			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(crtl)
 			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(crtl)
@@ -260,6 +260,77 @@ var _ = Describe("Azblob", func() {
 				Expect(err).To(HaveOccurred())
 
 				crtl.Finish()
+			})
+		})
+	})
+
+	Context("ListFiles", func() {
+		When("Azure returns a successful response", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			doneMarker := ""
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(ctrl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(ctrl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should should return a list of files on the bucket", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("The container returning list of files")
+				mockContainer.EXPECT().ListBlobsFlatSegment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&azblob.ListBlobsFlatSegmentResponse{
+					NextMarker: azblob.Marker{
+						Val: &doneMarker,
+					},
+					Segment: azblob.BlobFlatListSegment{
+						BlobItems: []azblob.BlobItemInternal{
+							{
+								Name: "/test/test.png",
+							},
+						},
+					},
+				}, nil)
+
+				files, err := storagePlugin.ListFiles("my-bucket")
+
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Returning a single file")
+				Expect(files).To(HaveLen(1))
+
+				By("Having the returned key")
+				Expect(files[0].Key).To(Equal("/test/test.png"))
+
+				ctrl.Finish()
+			})
+		})
+
+		When("Azure returns an error", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(ctrl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(ctrl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should return a wrapped error", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("Azure returning an error")
+				mockContainer.EXPECT().ListBlobsFlatSegment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, fmt.Errorf("mock-error"))
+
+				files, err := storagePlugin.ListFiles("my-bucket")
+
+				By("returning nil results")
+				Expect(files).To(BeNil())
+
+				By("returning an error")
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})

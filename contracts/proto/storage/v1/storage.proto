@@ -21,6 +21,8 @@ service StorageService {
   rpc Delete (StorageDeleteRequest) returns (StorageDeleteResponse);
   // Generate a pre-signed URL for direct operations on an item
   rpc PreSignUrl (StoragePreSignUrlRequest) returns (StoragePreSignUrlResponse);
+  // List files currently in the bucket
+  rpc ListFiles (StorageListFilesRequest) returns (StorageListFilesResponse);
 }
 
 // Request to put (create/update) a storage item
@@ -32,7 +34,7 @@ message StorageWriteRequest {
     max_bytes: 256,
   }];
   // Key to store the item under
-  string key = 2;
+  string key = 2 [(validate.rules).string = {min_len: 1}];
   // bytes array to store
   bytes body = 3;
 }
@@ -49,7 +51,7 @@ message StorageReadRequest {
     max_bytes: 256,
   }];
   // Key of item to retrieve
-  string key = 2;
+  string key = 2 [(validate.rules).string = {min_len: 1}];
 }
 
 // Returned storage item
@@ -66,7 +68,7 @@ message StorageDeleteRequest {
     max_bytes: 256,
   }];
   // Key of item to delete
-  string key = 2;
+  string key = 2 [(validate.rules).string = {min_len: 1}];
 }
 
 // Result of deleting a storage item
@@ -76,10 +78,13 @@ message StorageDeleteResponse {}
 message StoragePreSignUrlRequest {
   // Nitric name of the bucket to retrieve from
   //  this will be automatically resolved to the provider specific bucket identifier.
-  string bucket_name = 1;
+  string bucket_name = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
   // Key of item to generate the signed URL for.
   // The URL and the token it contains will only be valid for operations on this resource specifically.
-  string key = 2;
+  string key = 2 [(validate.rules).string = {min_len: 1}];
   // Operation
   enum Operation {
     READ = 0;
@@ -95,4 +100,20 @@ message StoragePreSignUrlRequest {
 message StoragePreSignUrlResponse {
   // The pre-signed url, restricted to the operation, resource and expiry time specified in the request.
   string url = 1;
+}
+
+message StorageListFilesRequest {
+  string bucket_name = 1 [(validate.rules).string = {
+    pattern:   "^\\w+([.\\-]\\w+)*$",
+    max_bytes: 256,
+  }];
+}
+
+message File {
+  string key = 1;
+}
+
+message StorageListFilesResponse {
+  // keys of the files in the bucket
+  repeated File files = 1;
 }
