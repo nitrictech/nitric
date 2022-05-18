@@ -49,10 +49,24 @@ message ServerMessage {
   }
 }
 
+message ApiWorkerScopes {
+  repeated string scopes = 1;
+}
+
+message ApiWorkerOptions {
+  // Apply security definitions to this operation
+  map<string, ApiWorkerScopes> security = 1;
+  // explicitly disable security for this endpoint
+  // We need to do this as the default value of a repeated field
+  // is always empty so there is no way of knowing if security is explicitly disabled
+  bool security_disabled = 2;
+}
+
 message ApiWorker {
   string api = 1;
   string path = 2;
   repeated string methods = 3;
+  ApiWorkerOptions options = 4;
 }
 
 message SubscriptionWorker {
