@@ -407,6 +407,24 @@ func QueryTests(docPlugin document.DocumentService) {
 				Expect(*result.Documents[0].Key.Collection.Parent).To(BeEquivalentTo(Customer1.Key))
 			})
 		})
+		When("key: {customers, key1}, subcol: orders, exps: [firstName == John, email == jsmith@server.com, lastName == Smith, country == AU]", func() {
+			It("Should return correct custom with two exps", func() {
+				LoadCustomersData(docPlugin)
+
+				exps := []document.QueryExpression{
+					{Operand: "firstName", Operator: "==", Value: "John"},
+					{Operand: "email", Operator: "==", Value: "jsmith@server.com"},
+					{Operand: "lastName", Operator: "==", Value: "Smith"},
+					{Operand: "country", Operator: "==", Value: "AU"},
+				}
+
+				result, err := docPlugin.Query(&CustomersColl, exps, 0, nil)
+				Expect(result).ToNot(BeNil())
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(result.Documents).To(HaveLen(1))
+				Expect(result.Documents[0].Content["testName"]).To(BeEquivalentTo(Customer1.Content["testName"]))
+			})
+		})
 		When("key: {items, nil}, subcol: '', exp: [], limit: 10", func() {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
