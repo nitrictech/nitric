@@ -174,7 +174,7 @@ func (exps ExpsSort) Less(i, j int) bool {
 		operatorCompare := strings.Compare(exps[j].Operator, exps[i].Operator)
 		if operatorCompare == 0 {
 			iVal := fmt.Sprintf("%v", exps[i].Value)
-			jVal := fmt.Sprintf("%v", exps[2].Value)
+			jVal := fmt.Sprintf("%v", exps[j].Value)
 
 			return strings.Compare(iVal, jVal) < 0
 		} else {
