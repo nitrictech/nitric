@@ -11,7 +11,6 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,7 +31,6 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
-	_ = sort.Sort
 )
 
 // Validate checks the field values on ClientMessage with the rules defined in
@@ -128,7 +126,6 @@ func (m *ClientMessage) validate(all bool) error {
 	if len(errors) > 0 {
 		return ClientMessageMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -296,7 +293,6 @@ func (m *ServerMessage) validate(all bool) error {
 	if len(errors) > 0 {
 		return ServerMessageMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -396,7 +392,6 @@ func (m *ApiWorkerScopes) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiWorkerScopesMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -493,50 +488,40 @@ func (m *ApiWorkerOptions) validate(all bool) error {
 
 	var errors []error
 
-	{
-		sorted_keys := make([]string, len(m.GetSecurity()))
-		i := 0
-		for key := range m.GetSecurity() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetSecurity()[key]
-			_ = val
+	for key, val := range m.GetSecurity() {
+		_ = val
 
-			// no validation rules for Security[key]
+		// no validation rules for Security[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, ApiWorkerOptionsValidationError{
-							field:  fmt.Sprintf("Security[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, ApiWorkerOptionsValidationError{
-							field:  fmt.Sprintf("Security[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return ApiWorkerOptionsValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApiWorkerOptionsValidationError{
 						field:  fmt.Sprintf("Security[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApiWorkerOptionsValidationError{
+						field:  fmt.Sprintf("Security[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApiWorkerOptionsValidationError{
+					field:  fmt.Sprintf("Security[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
 	// no validation rules for SecurityDisabled
@@ -544,7 +529,6 @@ func (m *ApiWorkerOptions) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiWorkerOptionsMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -677,7 +661,6 @@ func (m *ApiWorker) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiWorkerMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -775,10 +758,11 @@ func (m *SubscriptionWorker) validate(all bool) error {
 
 	// no validation rules for Topic
 
+	// no validation rules for DeadLetterQueue
+
 	if len(errors) > 0 {
 		return SubscriptionWorkerMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -948,7 +932,6 @@ func (m *ScheduleWorker) validate(all bool) error {
 	if len(errors) > 0 {
 		return ScheduleWorkerMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1050,7 +1033,6 @@ func (m *ScheduleRate) validate(all bool) error {
 	if len(errors) > 0 {
 		return ScheduleRateMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1151,7 +1133,6 @@ func (m *ScheduleCron) validate(all bool) error {
 	if len(errors) > 0 {
 		return ScheduleCronMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1347,7 +1328,6 @@ func (m *InitRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return InitRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1446,7 +1426,6 @@ func (m *InitResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return InitResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1615,7 +1594,6 @@ func (m *TriggerRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return TriggerRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1715,7 +1693,6 @@ func (m *HeaderValue) validate(all bool) error {
 	if len(errors) > 0 {
 		return HeaderValueMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1814,7 +1791,6 @@ func (m *QueryValue) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueryValueMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1918,96 +1894,76 @@ func (m *HttpTriggerContext) validate(all bool) error {
 
 	// no validation rules for QueryParamsOld
 
-	{
-		sorted_keys := make([]string, len(m.GetHeaders()))
-		i := 0
-		for key := range m.GetHeaders() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetHeaders()[key]
-			_ = val
+	for key, val := range m.GetHeaders() {
+		_ = val
 
-			// no validation rules for Headers[key]
+		// no validation rules for Headers[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, HttpTriggerContextValidationError{
-							field:  fmt.Sprintf("Headers[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, HttpTriggerContextValidationError{
-							field:  fmt.Sprintf("Headers[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return HttpTriggerContextValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpTriggerContextValidationError{
 						field:  fmt.Sprintf("Headers[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpTriggerContextValidationError{
+						field:  fmt.Sprintf("Headers[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return HttpTriggerContextValidationError{
+					field:  fmt.Sprintf("Headers[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
-	{
-		sorted_keys := make([]string, len(m.GetQueryParams()))
-		i := 0
-		for key := range m.GetQueryParams() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetQueryParams()[key]
-			_ = val
+	for key, val := range m.GetQueryParams() {
+		_ = val
 
-			// no validation rules for QueryParams[key]
+		// no validation rules for QueryParams[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, HttpTriggerContextValidationError{
-							field:  fmt.Sprintf("QueryParams[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, HttpTriggerContextValidationError{
-							field:  fmt.Sprintf("QueryParams[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return HttpTriggerContextValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpTriggerContextValidationError{
 						field:  fmt.Sprintf("QueryParams[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpTriggerContextValidationError{
+						field:  fmt.Sprintf("QueryParams[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return HttpTriggerContextValidationError{
+					field:  fmt.Sprintf("QueryParams[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
 	// no validation rules for PathParams
@@ -2015,7 +1971,6 @@ func (m *HttpTriggerContext) validate(all bool) error {
 	if len(errors) > 0 {
 		return HttpTriggerContextMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2119,7 +2074,6 @@ func (m *TopicTriggerContext) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicTriggerContextMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2289,7 +2243,6 @@ func (m *TriggerResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return TriggerResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2390,56 +2343,45 @@ func (m *HttpResponseContext) validate(all bool) error {
 
 	// no validation rules for Status
 
-	{
-		sorted_keys := make([]string, len(m.GetHeaders()))
-		i := 0
-		for key := range m.GetHeaders() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetHeaders()[key]
-			_ = val
+	for key, val := range m.GetHeaders() {
+		_ = val
 
-			// no validation rules for Headers[key]
+		// no validation rules for Headers[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, HttpResponseContextValidationError{
-							field:  fmt.Sprintf("Headers[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, HttpResponseContextValidationError{
-							field:  fmt.Sprintf("Headers[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return HttpResponseContextValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpResponseContextValidationError{
 						field:  fmt.Sprintf("Headers[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpResponseContextValidationError{
+						field:  fmt.Sprintf("Headers[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return HttpResponseContextValidationError{
+					field:  fmt.Sprintf("Headers[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
 	if len(errors) > 0 {
 		return HttpResponseContextMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2543,7 +2485,6 @@ func (m *TopicResponseContext) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicResponseContextMultiError(errors)
 	}
-
 	return nil
 }
 

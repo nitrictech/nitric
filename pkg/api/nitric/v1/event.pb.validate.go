@@ -11,7 +11,6 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,7 +31,6 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
-	_ = sort.Sort
 )
 
 // Validate checks the field values on EventPublishRequest with the rules
@@ -122,7 +120,6 @@ func (m *EventPublishRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return EventPublishRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -228,7 +225,6 @@ func (m *EventPublishResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return EventPublishResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -330,7 +326,6 @@ func (m *TopicListRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicListRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -464,7 +459,6 @@ func (m *TopicListResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicListResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -568,7 +562,6 @@ func (m *NitricTopic) validate(all bool) error {
 	if len(errors) > 0 {
 		return NitricTopicMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -700,7 +693,6 @@ func (m *NitricEvent) validate(all bool) error {
 	if len(errors) > 0 {
 		return NitricEventMultiError(errors)
 	}
-
 	return nil
 }
 

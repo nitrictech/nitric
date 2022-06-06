@@ -71,6 +71,8 @@ message ApiWorker {
 
 message SubscriptionWorker {
   string topic = 1;
+  // optional dead-letter queue where events should be sent if they can't be delivered to/processed by this worker.
+  string dead_letter_queue = 2;
 }
 
 message ScheduleWorker {

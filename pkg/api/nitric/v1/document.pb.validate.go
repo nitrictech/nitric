@@ -11,7 +11,6 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,7 +31,6 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
-	_ = sort.Sort
 )
 
 // Validate checks the field values on Collection with the rules defined in the
@@ -111,7 +109,6 @@ func (m *Collection) validate(all bool) error {
 	if len(errors) > 0 {
 		return CollectionMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -262,7 +259,6 @@ func (m *Key) validate(all bool) error {
 	if len(errors) > 0 {
 		return KeyMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -441,7 +437,6 @@ func (m *Document) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -556,7 +551,6 @@ func (m *ExpressionValue) validate(all bool) error {
 	if len(errors) > 0 {
 		return ExpressionValueMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -709,7 +703,6 @@ func (m *Expression) validate(all bool) error {
 	if len(errors) > 0 {
 		return ExpressionMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -857,7 +850,6 @@ func (m *DocumentGetRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentGetRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -988,7 +980,6 @@ func (m *DocumentGetResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentGetResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1170,7 +1161,6 @@ func (m *DocumentSetRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentSetRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1272,7 +1262,6 @@ func (m *DocumentSetResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentSetResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1414,7 +1403,6 @@ func (m *DocumentDeleteRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentDeleteRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1516,7 +1504,6 @@ func (m *DocumentDeleteResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentDeleteResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1696,7 +1683,6 @@ func (m *DocumentQueryRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentQueryRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1834,7 +1820,6 @@ func (m *DocumentQueryResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentQueryResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2012,7 +1997,6 @@ func (m *DocumentQueryStreamRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentQueryStreamRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -2143,7 +2127,6 @@ func (m *DocumentQueryStreamResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return DocumentQueryStreamResponseMultiError(errors)
 	}
-
 	return nil
 }
 

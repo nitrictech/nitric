@@ -11,7 +11,6 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,7 +31,6 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
-	_ = sort.Sort
 )
 
 // Validate checks the field values on SecretPutRequest with the rules defined
@@ -102,7 +100,6 @@ func (m *SecretPutRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretPutRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -231,7 +228,6 @@ func (m *SecretPutResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretPutResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -373,7 +369,6 @@ func (m *SecretAccessRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretAccessRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -526,7 +521,6 @@ func (m *SecretAccessResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretAccessResponseMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -649,7 +643,6 @@ func (m *Secret) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -801,7 +794,6 @@ func (m *SecretVersion) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretVersionMultiError(errors)
 	}
-
 	return nil
 }
 

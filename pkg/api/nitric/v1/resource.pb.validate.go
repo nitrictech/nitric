@@ -11,7 +11,6 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,7 +31,6 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
-	_ = sort.Sort
 )
 
 // Validate checks the field values on PolicyResource with the rules defined in
@@ -128,7 +126,6 @@ func (m *PolicyResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return PolicyResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -232,7 +229,6 @@ func (m *Resource) validate(all bool) error {
 	if len(errors) > 0 {
 		return ResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -581,7 +577,6 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return ResourceDeclareRequestMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -683,7 +678,6 @@ func (m *BucketResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return BucketResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -783,7 +777,6 @@ func (m *QueueResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -883,7 +876,6 @@ func (m *TopicResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -983,7 +975,6 @@ func (m *CollectionResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return CollectionResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1085,7 +1076,6 @@ func (m *SecretResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1187,7 +1177,6 @@ func (m *ApiSecurityDefinitionJwt) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiSecurityDefinitionJwtMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1324,7 +1313,6 @@ func (m *ApiSecurityDefinition) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiSecurityDefinitionMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1426,7 +1414,6 @@ func (m *ApiScopes) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiScopesMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1522,102 +1509,81 @@ func (m *ApiResource) validate(all bool) error {
 
 	var errors []error
 
-	{
-		sorted_keys := make([]string, len(m.GetSecurityDefinitions()))
-		i := 0
-		for key := range m.GetSecurityDefinitions() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetSecurityDefinitions()[key]
-			_ = val
+	for key, val := range m.GetSecurityDefinitions() {
+		_ = val
 
-			// no validation rules for SecurityDefinitions[key]
+		// no validation rules for SecurityDefinitions[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, ApiResourceValidationError{
-							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, ApiResourceValidationError{
-							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return ApiResourceValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApiResourceValidationError{
 						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApiResourceValidationError{
+						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApiResourceValidationError{
+					field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
-	{
-		sorted_keys := make([]string, len(m.GetSecurity()))
-		i := 0
-		for key := range m.GetSecurity() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetSecurity()[key]
-			_ = val
+	for key, val := range m.GetSecurity() {
+		_ = val
 
-			// no validation rules for Security[key]
+		// no validation rules for Security[key]
 
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, ApiResourceValidationError{
-							field:  fmt.Sprintf("Security[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, ApiResourceValidationError{
-							field:  fmt.Sprintf("Security[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return ApiResourceValidationError{
+		if all {
+			switch v := interface{}(val).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApiResourceValidationError{
 						field:  fmt.Sprintf("Security[%v]", key),
 						reason: "embedded message failed validation",
 						cause:  err,
-					}
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApiResourceValidationError{
+						field:  fmt.Sprintf("Security[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
 				}
 			}
-
+		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApiResourceValidationError{
+					field:  fmt.Sprintf("Security[%v]", key),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
 		}
+
 	}
 
 	if len(errors) > 0 {
 		return ApiResourceMultiError(errors)
 	}
-
 	return nil
 }
 
@@ -1716,7 +1682,6 @@ func (m *ResourceDeclareResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return ResourceDeclareResponseMultiError(errors)
 	}
-
 	return nil
 }
 
