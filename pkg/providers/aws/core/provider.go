@@ -31,6 +31,7 @@ const (
 	AwsResource_Queue      AwsResource = "sqs:queue"
 	AwsResource_Bucket     AwsResource = "s3:bucket"
 	AwsResource_Secret     AwsResource = "secretsmanager:secret"
+	AwsResource_EventRule  AwsResource = "events:rule"
 )
 
 type AwsProvider interface {

@@ -39,15 +39,19 @@ const (
 	unknown eventType = iota
 	sns
 	httpEvent
+	cloudwatch
 	xforwardHeader string = "x-forwarded-for"
 )
 
 type LambdaRuntimeHandler func(handler interface{})
 
 func getEventType(request map[string]interface{}) eventType {
+	log.Default().Printf("handling event %+v", request)
 	// If our event is a HTTP request
 	if _, ok := request["rawPath"]; ok {
 		return httpEvent
+	} else if source, ok := request["source"]; ok && source == "aws.events" {
+		return cloudwatch
 	} else if records, ok := request["Records"]; ok {
 		recordsList, _ := records.([]interface{})
 		record, _ := recordsList[0].(map[string]interface{})
@@ -72,7 +76,7 @@ func getEventType(request map[string]interface{}) eventType {
 func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
 	topics, err := s.provider.GetResources(core.AwsResource_Topic)
 	if err != nil {
-		return "", fmt.Errorf("error retrieving topics: %v", err)
+		return "", fmt.Errorf("error retreiving topics: %v", err)
 	}
 
 	for name, arn := range topics {
@@ -82,6 +86,21 @@ func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
 	}
 
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
+}
+
+func (s *LambdaGateway) getScheduleNameForArn(eventRuleArn string) (string, error) {
+	topics, err := s.provider.GetResources(core.AwsResource_EventRule)
+	if err != nil {
+		return "", fmt.Errorf("error retreiving event rules: %v", err)
+	}
+
+	for name, arn := range topics {
+		if arn == eventRuleArn {
+			return name, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find event rule for arn %s", eventRuleArn)
 }
 
 func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]triggers.Trigger, error) {
@@ -123,6 +142,30 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 				}
 			}
 		}
+	case cloudwatch:
+		evt := &events.CloudWatchEvent{}
+		err := json.Unmarshal(bytes, evt)
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to unmarshal cloudwatchEvent: %v", err)
+		}
+
+		evtRuleArn := evt.Resources[0]
+
+		sched, err := s.getScheduleNameForArn(evtRuleArn)
+
+		if err != nil {
+			log.Default().Println("unable to locate nitric schedule")
+			return nil, fmt.Errorf("unable to find nitric schedule: %v", err)
+		}
+
+		log.Default().Println("creating event from cloud watch")
+
+		trigs = append(trigs, &triggers.Event{
+			ID:      "TODO",
+			Topic:   strings.ToLower(strings.ReplaceAll(sched, " ", "-")),
+			Payload: []byte{},
+		})
 	case httpEvent:
 		evt := &events.APIGatewayV2HTTPRequest{}
 
