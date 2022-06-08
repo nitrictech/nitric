@@ -51,12 +51,8 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 			// Don't copy the host header
 			headerCopy["X-Forwarded-For"] = []string{string(val)}
 		} else {
-			headerCopy[string(key)] = []string{string(val)}
+			headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 		}
-	})
-
-	ctx.Request.Header.VisitAllCookie(func(key []byte, val []byte) {
-		headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 	})
 
 	ctx.QueryArgs().VisitAll(func(key []byte, val []byte) {
