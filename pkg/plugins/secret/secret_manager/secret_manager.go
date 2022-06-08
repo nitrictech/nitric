@@ -20,31 +20,25 @@ import (
 	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	gax "github.com/googleapis/gax-go/v2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iterator"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
-	pbcodes "google.golang.org/grpc/codes"
+	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	ifaces_gcloud_secret "github.com/nitrictech/nitric/pkg/ifaces/gcloud_secret"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
-
-// SecretManagerClient - iface that exposes utilized subset of generated SecretManagerServiceClient
-// Used with gomock to assert create client -> service interaction in unit tests
-type SecretManagerClient interface {
-	AccessSecretVersion(context.Context, *secretmanagerpb.AccessSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
-	AddSecretVersion(context.Context, *secretmanagerpb.AddSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.SecretVersion, error)
-	CreateSecret(context.Context, *secretmanagerpb.CreateSecretRequest, ...gax.CallOption) (*secretmanagerpb.Secret, error)
-	GetSecret(context.Context, *secretmanagerpb.GetSecretRequest, ...gax.CallOption) (*secretmanagerpb.Secret, error)
-	UpdateSecret(context.Context, *secretmanagerpb.UpdateSecretRequest, ...gax.CallOption) (*secretmanagerpb.Secret, error)
-}
 
 type secretManagerSecretService struct {
 	secret.UnimplementedSecretPlugin
-	client    SecretManagerClient
+	client    ifaces_gcloud_secret.SecretManagerClient
 	projectId string
+	stackName string
+	cache     map[string]string
 }
 
 func validateNewSecret(sec *secret.Secret, val []byte) error {
@@ -65,71 +59,45 @@ func (s *secretManagerSecretService) getParentName() string {
 	return fmt.Sprintf("projects/%s", s.projectId)
 }
 
-func (s *secretManagerSecretService) buildSecretName(sec *secret.Secret) (string, error) {
-	if len(sec.Name) == 0 {
-		return "", fmt.Errorf("provide non-blank name")
-	}
-
-	return fmt.Sprintf("%s/secrets/%s", s.getParentName(), sec.Name), nil
-}
-
 func (s *secretManagerSecretService) buildSecretVersionName(sv *secret.SecretVersion) (string, error) {
-	parent, err := s.buildSecretName(sv.Secret)
-
-	if err != nil {
-		return "", err
+	if len(sv.Secret.Name) == 0 {
+		return "", fmt.Errorf("provide non-blank name")
 	}
 
 	if len(sv.Version) == 0 {
 		return "", fmt.Errorf("provide non-blank version")
 	}
 
+	parent, inCache := s.cache[sv.Secret.Name]
+	if !inCache {
+		realSec, err := s.getSecret(sv.Secret)
+		if err != nil {
+			return "", err
+		}
+
+		parent = realSec.Name
+	}
+
 	return fmt.Sprintf("%s/versions/%s", parent, sv.Version), nil
 }
 
 // ensure a secret container exists for storing secret versions
-func (s *secretManagerSecretService) ensureSecret(sec *secret.Secret) (*secretmanagerpb.Secret, error) {
-	secName, err := s.buildSecretName(sec)
+func (s *secretManagerSecretService) getSecret(sec *secret.Secret) (*secretmanagerpb.Secret, error) {
+	iter := s.client.ListSecrets(context.TODO(), &secretmanagerpb.ListSecretsRequest{
+		Parent: s.getParentName(),
+		Filter: "labels.x-nitric-name=" + sec.Name + " AND labels.x-nitric-stack=" + s.stackName,
+	})
+
+	result, err := iter.Next()
+	if err == iterator.Done {
+		return nil, status.Error(grpcCodes.NotFound, "secret not found")
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	getReq := &secretmanagerpb.GetSecretRequest{
-		Name: secName,
-	}
-
-	result, err := s.client.GetSecret(context.TODO(), getReq)
-
-	if err != nil {
-		// check error status, if it was an RPC NOT_FOUND error then continue
-		if s, ok := status.FromError(err); ok && s.Code() != pbcodes.NotFound {
-			return nil, err
-		} else if !ok {
-			// It wasn't an RPC error so return
-			return nil, err
-		}
-	}
-
-	if result == nil {
-		// Creates the secret container
-		secReq := &secretmanagerpb.CreateSecretRequest{
-			Parent:   s.getParentName(),
-			SecretId: sec.Name,
-			Secret: &secretmanagerpb.Secret{
-				Replication: &secretmanagerpb.Replication{
-					Replication: &secretmanagerpb.Replication_Automatic_{
-						Automatic: &secretmanagerpb.Replication_Automatic{},
-					},
-				},
-			},
-		}
-
-		result, err = s.client.CreateSecret(context.TODO(), secReq)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create new secret: %v", err)
-		}
-	}
+	s.cache[sec.Name] = result.Name
 
 	return result, nil
 }
@@ -152,7 +120,7 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 	}
 
 	// ensure the secret container exists...
-	parentSec, err := s.ensureSecret(sec)
+	parentSec, err := s.getSecret(sec)
 
 	if err != nil {
 		return nil, newErr(
@@ -238,7 +206,7 @@ func New() (secret.SecretService, error) {
 		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
 	}
 
-	client, clientError := secretmanager.NewClient(ctx)
+	client, clientError := ifaces_gcloud_secret.NewClient(ctx)
 	if clientError != nil {
 		return nil, fmt.Errorf("secret manager client error: %v", clientError)
 	}
@@ -246,5 +214,7 @@ func New() (secret.SecretService, error) {
 	return &secretManagerSecretService{
 		client:    client,
 		projectId: credentials.ProjectID,
+		stackName: utils.GetEnv("NITRIC_STACK", ""),
+		cache:     make(map[string]string),
 	}, nil
 }
