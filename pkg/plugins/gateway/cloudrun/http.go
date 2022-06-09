@@ -97,5 +97,5 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 // New - Create a New cloudrun gateway plugin
 func New() (gateway.GatewayService, error) {
 	// plugin is derived from base http plugin
-	return base_http.New(middleware)
+	return base_http.New(base_http.WithMiddleware(middleware))
 }

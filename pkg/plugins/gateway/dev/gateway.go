@@ -70,5 +70,5 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (gateway.GatewayService, error) {
-	return base_http.New(middleware)
+	return base_http.New(base_http.WithMiddleware(middleware))
 }

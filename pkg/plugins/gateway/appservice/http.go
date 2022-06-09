@@ -149,5 +149,5 @@ func New(provider core.AzProvider) (gateway.GatewayService, error) {
 		provider: provider,
 	}
 
-	return base_http.New(mw.middleware)
+	return base_http.New(base_http.WithMiddleware(mw.middleware))
 }

@@ -23,5 +23,5 @@ import (
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func New() (gateway.GatewayService, error) {
-	return base_http.New(nil)
+	return base_http.New()
 }

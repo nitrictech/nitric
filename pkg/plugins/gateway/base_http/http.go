@@ -128,7 +128,9 @@ func New(opts ...BaseHttpGatewayOption) (gateway.GatewayService, error) {
 	}
 
 	for _, opt := range opts {
-		opt(gw)
+		if opt != nil {
+			opt(gw)
+		}
 	}
 
 	return gw, nil
