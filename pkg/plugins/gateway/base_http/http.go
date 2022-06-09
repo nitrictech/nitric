@@ -120,12 +120,16 @@ func (s *BaseHttpGateway) Stop() error {
 
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New(opts BaseHttpGatewayOptions) (gateway.GatewayService, error) {
+func New(opts ...BaseHttpGatewayOption) (gateway.GatewayService, error) {
 	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
 
-	return &BaseHttpGateway{
-		address:  address,
-		mw:       opts.Middleware,
-		routeReg: opts.Router,
-	}, nil
+	gw := &BaseHttpGateway{
+		address: address,
+	}
+
+	for _, opt := range opts {
+		opt(gw)
+	}
+
+	return gw, nil
 }
