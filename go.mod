@@ -25,6 +25,7 @@ require (
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.30
 	github.com/envoyproxy/protoc-gen-validate v0.6.7
+	github.com/fasthttp/router v1.4.10
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/golangci/golangci-lint v1.45.0
@@ -37,11 +38,11 @@ require (
 	github.com/onsi/gomega v1.18.1
 	github.com/pkg/errors v0.9.1
 	github.com/uw-labs/lichen v0.1.4
-	github.com/valyala/fasthttp v1.30.0
+	github.com/valyala/fasthttp v1.37.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	google.golang.org/api v0.69.0
 	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
