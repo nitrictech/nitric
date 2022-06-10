@@ -21,16 +21,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
-	mocks "github.com/nitrictech/nitric/mocks/secret_manager"
+	mocks "github.com/nitrictech/nitric/mocks/gcp_secret"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
 )
 
 var _ = Describe("Secret Manager", func() {
 	var mockSecret = &secretmanagerpb.Secret{
-		Name:   "Test",
+		Name:   "projects/my-project/secrets/Test",
 		Labels: make(map[string]string),
 	}
 	testSecret := secret.Secret{
@@ -46,27 +44,25 @@ var _ = Describe("Secret Manager", func() {
 				secretPlugin := &secretManagerSecretService{
 					client:    mockSecretClient,
 					projectId: "my-project",
+					cache:     make(map[string]string),
 				}
 
 				It("Should successfully store a secret", func() {
 					// Assert all methods are called at least their number of times
 					defer crtl.Finish()
 					//Mocking expects
-					By("calling SecretManagerService.GetSecret with the expected request")
-					mockSecretClient.EXPECT().GetSecret(
-						gomock.Any(),
-						&secretmanagerpb.GetSecretRequest{
-							Name: "projects/my-project/secrets/Test",
-						},
-					).Return(&secretmanagerpb.Secret{
-						Name: "projects/my-project/secrets/Test",
-					}, nil).Times(1)
+					By("calling SecretManagerService.ListSecrets with the expected request")
 
-					By("not calling SecretManagerService.CreateSecret")
-					mockSecretClient.EXPECT().CreateSecret(
+					si := mocks.NewMockSecretIterator(crtl)
+					si.EXPECT().Next().Return(mockSecret, nil)
+
+					mockSecretClient.EXPECT().ListSecrets(
 						gomock.Any(),
-						gomock.AssignableToTypeOf(&secretmanagerpb.CreateSecretRequest{}),
-					).Return(mockSecret, nil).Times(0)
+						&secretmanagerpb.ListSecretsRequest{
+							Parent: "projects/my-project",
+							Filter: "labels.x-nitric-name=Test AND labels.x-nitric-stack=",
+						},
+					).Return(si).Times(1)
 
 					By("Calling SecretManagerService AddSecretVersion with the expected payload")
 					mockSecretClient.EXPECT().AddSecretVersion(
@@ -90,69 +86,10 @@ var _ = Describe("Secret Manager", func() {
 				})
 			})
 
-			When("Putting a Secret to a non-existent secret", func() {
-				crtl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-				secretPlugin := &secretManagerSecretService{
-					client:    mockSecretClient,
-					projectId: "my-project",
-				}
-
-				It("Should successfully store a secret", func() {
-					defer crtl.Finish()
-
-					//Mocking expects
-					By("Calling SecretManagerService.GetSecret")
-					mockSecretClient.EXPECT().GetSecret(
-						gomock.Any(),
-						&secretmanagerpb.GetSecretRequest{
-							Name: "projects/my-project/secrets/Test",
-						},
-					).Return(nil, status.Error(codes.NotFound, "secret not found")).Times(1)
-
-					By("Calling SecretManagerService.CreateSecret with the expected payload")
-					mockSecretClient.EXPECT().CreateSecret(
-						gomock.Any(),
-						&secretmanagerpb.CreateSecretRequest{
-							Parent:   "projects/my-project",
-							SecretId: "Test",
-							Secret: &secretmanagerpb.Secret{
-								Replication: &secretmanagerpb.Replication{
-									Replication: &secretmanagerpb.Replication_Automatic_{
-										Automatic: &secretmanagerpb.Replication_Automatic{},
-									},
-								},
-							},
-						},
-					).Return(&secretmanagerpb.Secret{
-						Name: "projects/my-project/secrets/Test",
-					}, nil).Times(1)
-
-					By("Calling SecretManagerService.AddSecretVersion")
-					mockSecretClient.EXPECT().AddSecretVersion(
-						gomock.Any(),
-						&secretmanagerpb.AddSecretVersionRequest{
-							Parent: "projects/my-project/secrets/Test",
-							Payload: &secretmanagerpb.SecretPayload{
-								Data: []byte("Super Secret Message"),
-							},
-						},
-					).Return(&secretmanagerpb.SecretVersion{
-						Name: "/projects/my-project/Test/versions/1",
-					}, nil).Times(1)
-
-					response, err := secretPlugin.Put(&testSecret, testSecretVal)
-					By("Not returning an error")
-					Expect(err).ShouldNot(HaveOccurred())
-
-					By("Returning a response with a version id")
-					Expect(response.SecretVersion.Version).To(Equal("1"))
-				})
-			})
-
 			When("Putting a nil secret", func() {
 				secretPlugin := &secretManagerSecretService{
 					projectId: "my-project",
+					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
@@ -165,6 +102,7 @@ var _ = Describe("Secret Manager", func() {
 			When("Putting a secret with an empty name", func() {
 				secretPlugin := &secretManagerSecretService{
 					projectId: "my-project",
+					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
@@ -179,6 +117,7 @@ var _ = Describe("Secret Manager", func() {
 			When("Putting a secret with an empty value", func() {
 				secretPlugin := &secretManagerSecretService{
 					projectId: "my-project",
+					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
@@ -200,6 +139,7 @@ var _ = Describe("Secret Manager", func() {
 					secretPlugin := &secretManagerSecretService{
 						client:    mockSecretClient,
 						projectId: "my-project",
+						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
 					}
 					It("Should successfully return a secret", func() {
 						defer crtl.Finish()
@@ -238,6 +178,7 @@ var _ = Describe("Secret Manager", func() {
 					secretPlugin := &secretManagerSecretService{
 						client:    mockSecretClient,
 						projectId: "my-project",
+						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
 					}
 					It("Should return an error", func() {
 						defer crtl.Finish()
@@ -267,6 +208,7 @@ var _ = Describe("Secret Manager", func() {
 				When("An empty name is provided", func() {
 					secretPlugin := &secretManagerSecretService{
 						projectId: "my-project",
+						cache:     make(map[string]string),
 					}
 
 					It("Should return an error", func() {
@@ -288,6 +230,7 @@ var _ = Describe("Secret Manager", func() {
 				When("An empty version is provided", func() {
 					secretPlugin := &secretManagerSecretService{
 						projectId: "my-project",
+						cache:     make(map[string]string),
 					}
 					It("Should return an error", func() {
 						response, err := secretPlugin.Access(&secret.SecretVersion{
