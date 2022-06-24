@@ -83,6 +83,7 @@ func (s *BaseHttpGateway) Start(pool worker.WorkerPool) error {
 		IdleTimeout:     time.Second * 1,
 		CloseOnShutdown: true,
 		Handler:         s.httpHandler(pool),
+		ReadBufferSize:  8192,
 	}
 
 	return s.server.ListenAndServe(s.address)
