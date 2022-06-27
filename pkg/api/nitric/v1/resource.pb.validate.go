@@ -545,6 +545,37 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 			}
 		}
 
+	case *ResourceDeclareRequest_Api:
+
+		if all {
+			switch v := interface{}(m.GetApi()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "Api",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "Api",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetApi()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceDeclareRequestValidationError{
+					field:  "Api",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -1128,6 +1159,537 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SecretResourceValidationError{}
+
+// Validate checks the field values on ApiSecurityDefinitionJwt with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ApiSecurityDefinitionJwt) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiSecurityDefinitionJwt with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ApiSecurityDefinitionJwtMultiError, or nil if none found.
+func (m *ApiSecurityDefinitionJwt) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiSecurityDefinitionJwt) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Issuer
+
+	if len(errors) > 0 {
+		return ApiSecurityDefinitionJwtMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiSecurityDefinitionJwtMultiError is an error wrapping multiple validation
+// errors returned by ApiSecurityDefinitionJwt.ValidateAll() if the designated
+// constraints aren't met.
+type ApiSecurityDefinitionJwtMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiSecurityDefinitionJwtMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiSecurityDefinitionJwtMultiError) AllErrors() []error { return m }
+
+// ApiSecurityDefinitionJwtValidationError is the validation error returned by
+// ApiSecurityDefinitionJwt.Validate if the designated constraints aren't met.
+type ApiSecurityDefinitionJwtValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiSecurityDefinitionJwtValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiSecurityDefinitionJwtValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiSecurityDefinitionJwtValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiSecurityDefinitionJwtValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiSecurityDefinitionJwtValidationError) ErrorName() string {
+	return "ApiSecurityDefinitionJwtValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ApiSecurityDefinitionJwtValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiSecurityDefinitionJwt.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiSecurityDefinitionJwtValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiSecurityDefinitionJwtValidationError{}
+
+// Validate checks the field values on ApiSecurityDefinition with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ApiSecurityDefinition) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiSecurityDefinition with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ApiSecurityDefinitionMultiError, or nil if none found.
+func (m *ApiSecurityDefinition) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiSecurityDefinition) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch m.Definition.(type) {
+
+	case *ApiSecurityDefinition_Jwt:
+
+		if all {
+			switch v := interface{}(m.GetJwt()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApiSecurityDefinitionValidationError{
+						field:  "Jwt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApiSecurityDefinitionValidationError{
+						field:  "Jwt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetJwt()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApiSecurityDefinitionValidationError{
+					field:  "Jwt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ApiSecurityDefinitionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiSecurityDefinitionMultiError is an error wrapping multiple validation
+// errors returned by ApiSecurityDefinition.ValidateAll() if the designated
+// constraints aren't met.
+type ApiSecurityDefinitionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiSecurityDefinitionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiSecurityDefinitionMultiError) AllErrors() []error { return m }
+
+// ApiSecurityDefinitionValidationError is the validation error returned by
+// ApiSecurityDefinition.Validate if the designated constraints aren't met.
+type ApiSecurityDefinitionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiSecurityDefinitionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiSecurityDefinitionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiSecurityDefinitionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiSecurityDefinitionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiSecurityDefinitionValidationError) ErrorName() string {
+	return "ApiSecurityDefinitionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ApiSecurityDefinitionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiSecurityDefinition.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiSecurityDefinitionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiSecurityDefinitionValidationError{}
+
+// Validate checks the field values on ApiScopes with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ApiScopes) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiScopes with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ApiScopesMultiError, or nil
+// if none found.
+func (m *ApiScopes) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiScopes) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ApiScopesMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiScopesMultiError is an error wrapping multiple validation errors returned
+// by ApiScopes.ValidateAll() if the designated constraints aren't met.
+type ApiScopesMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiScopesMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiScopesMultiError) AllErrors() []error { return m }
+
+// ApiScopesValidationError is the validation error returned by
+// ApiScopes.Validate if the designated constraints aren't met.
+type ApiScopesValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiScopesValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiScopesValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiScopesValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiScopesValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiScopesValidationError) ErrorName() string { return "ApiScopesValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ApiScopesValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiScopes.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiScopesValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiScopesValidationError{}
+
+// Validate checks the field values on ApiResource with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ApiResource) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiResource with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ApiResourceMultiError, or
+// nil if none found.
+func (m *ApiResource) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiResource) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	{
+		sorted_keys := make([]string, len(m.GetSecurityDefinitions()))
+		i := 0
+		for key := range m.GetSecurityDefinitions() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetSecurityDefinitions()[key]
+			_ = val
+
+			// no validation rules for SecurityDefinitions[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ApiResourceValidationError{
+						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetSecurity()))
+		i := 0
+		for key := range m.GetSecurity() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetSecurity()[key]
+			_ = val
+
+			// no validation rules for Security[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ApiResourceValidationError{
+						field:  fmt.Sprintf("Security[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	if len(errors) > 0 {
+		return ApiResourceMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiResourceMultiError is an error wrapping multiple validation errors
+// returned by ApiResource.ValidateAll() if the designated constraints aren't met.
+type ApiResourceMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiResourceMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiResourceMultiError) AllErrors() []error { return m }
+
+// ApiResourceValidationError is the validation error returned by
+// ApiResource.Validate if the designated constraints aren't met.
+type ApiResourceValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiResourceValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiResourceValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiResourceValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiResourceValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiResourceValidationError) ErrorName() string { return "ApiResourceValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ApiResourceValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiResource.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiResourceValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiResourceValidationError{}
 
 // Validate checks the field values on ResourceDeclareResponse with the rules
 // defined in the proto definition for this message. If any rules are

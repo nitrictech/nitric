@@ -371,6 +371,254 @@ var _ interface {
 	ErrorName() string
 } = ServerMessageValidationError{}
 
+// Validate checks the field values on ApiWorkerScopes with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ApiWorkerScopes) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiWorkerScopes with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ApiWorkerScopesMultiError, or nil if none found.
+func (m *ApiWorkerScopes) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiWorkerScopes) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ApiWorkerScopesMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiWorkerScopesMultiError is an error wrapping multiple validation errors
+// returned by ApiWorkerScopes.ValidateAll() if the designated constraints
+// aren't met.
+type ApiWorkerScopesMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiWorkerScopesMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiWorkerScopesMultiError) AllErrors() []error { return m }
+
+// ApiWorkerScopesValidationError is the validation error returned by
+// ApiWorkerScopes.Validate if the designated constraints aren't met.
+type ApiWorkerScopesValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiWorkerScopesValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiWorkerScopesValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiWorkerScopesValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiWorkerScopesValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiWorkerScopesValidationError) ErrorName() string { return "ApiWorkerScopesValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ApiWorkerScopesValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiWorkerScopes.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiWorkerScopesValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiWorkerScopesValidationError{}
+
+// Validate checks the field values on ApiWorkerOptions with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ApiWorkerOptions) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ApiWorkerOptions with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ApiWorkerOptionsMultiError, or nil if none found.
+func (m *ApiWorkerOptions) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ApiWorkerOptions) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	{
+		sorted_keys := make([]string, len(m.GetSecurity()))
+		i := 0
+		for key := range m.GetSecurity() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetSecurity()[key]
+			_ = val
+
+			// no validation rules for Security[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ApiWorkerOptionsValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ApiWorkerOptionsValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ApiWorkerOptionsValidationError{
+						field:  fmt.Sprintf("Security[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	// no validation rules for SecurityDisabled
+
+	if len(errors) > 0 {
+		return ApiWorkerOptionsMultiError(errors)
+	}
+
+	return nil
+}
+
+// ApiWorkerOptionsMultiError is an error wrapping multiple validation errors
+// returned by ApiWorkerOptions.ValidateAll() if the designated constraints
+// aren't met.
+type ApiWorkerOptionsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ApiWorkerOptionsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ApiWorkerOptionsMultiError) AllErrors() []error { return m }
+
+// ApiWorkerOptionsValidationError is the validation error returned by
+// ApiWorkerOptions.Validate if the designated constraints aren't met.
+type ApiWorkerOptionsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ApiWorkerOptionsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ApiWorkerOptionsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ApiWorkerOptionsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ApiWorkerOptionsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ApiWorkerOptionsValidationError) ErrorName() string { return "ApiWorkerOptionsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ApiWorkerOptionsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sApiWorkerOptions.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ApiWorkerOptionsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ApiWorkerOptionsValidationError{}
+
 // Validate checks the field values on ApiWorker with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -396,6 +644,35 @@ func (m *ApiWorker) validate(all bool) error {
 	// no validation rules for Api
 
 	// no validation rules for Path
+
+	if all {
+		switch v := interface{}(m.GetOptions()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ApiWorkerValidationError{
+					field:  "Options",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ApiWorkerValidationError{
+					field:  "Options",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetOptions()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ApiWorkerValidationError{
+				field:  "Options",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return ApiWorkerMultiError(errors)

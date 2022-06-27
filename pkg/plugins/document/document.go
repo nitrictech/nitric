@@ -20,6 +20,8 @@ import (
 	"strings"
 )
 
+const SubcollectionDelimiter = "+"
+
 // Map of valid expression operators
 var validOperators = map[string]bool{
 	"==":         true,
@@ -37,6 +39,9 @@ func ValidateKey(key *Key) error {
 	}
 	if key.Id == "" {
 		return fmt.Errorf("provide non-blank key.Id")
+	}
+	if strings.Contains(key.Id, SubcollectionDelimiter) {
+		return fmt.Errorf("key.Id cannot contain %s", SubcollectionDelimiter)
 	}
 	if key.Collection == nil {
 		return fmt.Errorf("provide non-nil key.Collection")
@@ -174,7 +179,7 @@ func (exps ExpsSort) Less(i, j int) bool {
 		operatorCompare := strings.Compare(exps[j].Operator, exps[i].Operator)
 		if operatorCompare == 0 {
 			iVal := fmt.Sprintf("%v", exps[i].Value)
-			jVal := fmt.Sprintf("%v", exps[2].Value)
+			jVal := fmt.Sprintf("%v", exps[j].Value)
 
 			return strings.Compare(iVal, jVal) < 0
 		} else {

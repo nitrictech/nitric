@@ -54,6 +54,7 @@ message ResourceDeclareRequest {
     TopicResource topic = 13;
     CollectionResource collection = 14;
     SecretResource secret = 15;
+    ApiResource api = 16;
   }
 }
 
@@ -62,6 +63,30 @@ message QueueResource {}
 message TopicResource {}
 message CollectionResource {}
 message SecretResource {}
+
+// protect your API with JWT authentication
+message ApiSecurityDefinitionJwt {
+  string issuer = 1;
+  repeated string audiences = 2;
+}
+
+message ApiSecurityDefinition {
+  oneof definition {
+    ApiSecurityDefinitionJwt jwt = 1;
+  } 
+}
+
+message ApiScopes {
+  repeated string scopes = 1;
+}
+
+message ApiResource {
+  // Security definitions for the api
+  // These may be used by registered routes and operations on the API
+  map<string, ApiSecurityDefinition> security_definitions = 1;
+  // root level security for this api
+  map<string, ApiScopes>  security = 2;
+}
 
 enum Action {
   // Bucket Permissions: 0XX

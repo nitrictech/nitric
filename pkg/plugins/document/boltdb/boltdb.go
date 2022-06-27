@@ -35,11 +35,12 @@ import (
 )
 
 const DEV_SUB_DIRECTORY = "./collections/"
-
-const skipTokenName = "skip"
-const idName = "Id"
-const partitionKeyName = "PartitionKey"
-const sortKeyName = "SortKey"
+const (
+	skipTokenName    = "skip"
+	idName           = "Id"
+	partitionKeyName = "PartitionKey"
+	sortKeyName      = "SortKey"
+)
 
 type BoltDocService struct {
 	document.UnimplementedDocumentPlugin
@@ -465,7 +466,7 @@ func createDoc(key *document.Key) BoltDoc {
 		}
 	} else {
 		return BoltDoc{
-			Id:           parentKey.Id + "_" + key.Id,
+			Id:           parentKey.Id + document.SubcollectionDelimiter + key.Id,
 			PartitionKey: parentKey.Id,
 			SortKey:      key.Collection.Name + "#" + key.Id,
 		}
@@ -473,7 +474,7 @@ func createDoc(key *document.Key) BoltDoc {
 }
 
 func toSdkDoc(col *document.Collection, doc BoltDoc) *document.Document {
-	keys := strings.Split(doc.Id, "_")
+	keys := strings.Split(doc.Id, document.SubcollectionDelimiter)
 
 	// Translate the boltdb Id into a nitric document key Id
 	var id string
