@@ -24,14 +24,13 @@ require (
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/aws/aws-lambda-go v1.20.0
 	github.com/aws/aws-sdk-go v1.36.30
-	github.com/envoyproxy/protoc-gen-validate v0.6.2
+	github.com/envoyproxy/protoc-gen-validate v0.6.7
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/golangci/golangci-lint v1.45.0
 	github.com/google/addlicense v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.1.1
-	github.com/lyft/protoc-gen-star v0.6.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27
 	github.com/onsi/ginkgo v1.16.5

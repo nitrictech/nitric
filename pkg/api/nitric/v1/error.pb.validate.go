@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,6 +32,7 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
+	_ = sort.Sort
 )
 
 // Validate checks the field values on ErrorScope with the rules defined in the
@@ -64,6 +66,7 @@ func (m *ErrorScope) validate(all bool) error {
 	if len(errors) > 0 {
 		return ErrorScopeMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -195,6 +198,7 @@ func (m *ErrorDetails) validate(all bool) error {
 	if len(errors) > 0 {
 		return ErrorDetailsMultiError(errors)
 	}
+
 	return nil
 }
 

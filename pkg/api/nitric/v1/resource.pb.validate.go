@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,6 +32,7 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
+	_ = sort.Sort
 )
 
 // Validate checks the field values on PolicyResource with the rules defined in
@@ -126,6 +128,7 @@ func (m *PolicyResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return PolicyResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -229,6 +232,7 @@ func (m *Resource) validate(all bool) error {
 	if len(errors) > 0 {
 		return ResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -572,11 +576,43 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 			}
 		}
 
+	case *ResourceDeclareRequest_DeadLetter:
+
+		if all {
+			switch v := interface{}(m.GetDeadLetter()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "DeadLetter",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceDeclareRequestValidationError{
+						field:  "DeadLetter",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDeadLetter()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceDeclareRequestValidationError{
+					field:  "DeadLetter",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
 		return ResourceDeclareRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -678,6 +714,7 @@ func (m *BucketResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return BucketResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -777,6 +814,7 @@ func (m *QueueResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -876,6 +914,7 @@ func (m *TopicResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return TopicResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -975,6 +1014,7 @@ func (m *CollectionResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return CollectionResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1076,6 +1116,7 @@ func (m *SecretResource) validate(all bool) error {
 	if len(errors) > 0 {
 		return SecretResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1150,6 +1191,108 @@ var _ interface {
 	ErrorName() string
 } = SecretResourceValidationError{}
 
+// Validate checks the field values on DeadLetterResource with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeadLetterResource) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeadLetterResource with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeadLetterResourceMultiError, or nil if none found.
+func (m *DeadLetterResource) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeadLetterResource) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return DeadLetterResourceMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeadLetterResourceMultiError is an error wrapping multiple validation errors
+// returned by DeadLetterResource.ValidateAll() if the designated constraints
+// aren't met.
+type DeadLetterResourceMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeadLetterResourceMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeadLetterResourceMultiError) AllErrors() []error { return m }
+
+// DeadLetterResourceValidationError is the validation error returned by
+// DeadLetterResource.Validate if the designated constraints aren't met.
+type DeadLetterResourceValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeadLetterResourceValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeadLetterResourceValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeadLetterResourceValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeadLetterResourceValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeadLetterResourceValidationError) ErrorName() string {
+	return "DeadLetterResourceValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeadLetterResourceValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeadLetterResource.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeadLetterResourceValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeadLetterResourceValidationError{}
+
 // Validate checks the field values on ApiSecurityDefinitionJwt with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -1177,6 +1320,7 @@ func (m *ApiSecurityDefinitionJwt) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiSecurityDefinitionJwtMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1313,6 +1457,7 @@ func (m *ApiSecurityDefinition) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiSecurityDefinitionMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1414,6 +1559,7 @@ func (m *ApiScopes) validate(all bool) error {
 	if len(errors) > 0 {
 		return ApiScopesMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1509,81 +1655,102 @@ func (m *ApiResource) validate(all bool) error {
 
 	var errors []error
 
-	for key, val := range m.GetSecurityDefinitions() {
-		_ = val
-
-		// no validation rules for SecurityDefinitions[key]
-
-		if all {
-			switch v := interface{}(val).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ApiResourceValidationError{
-						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ApiResourceValidationError{
-						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ApiResourceValidationError{
-					field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
+	{
+		sorted_keys := make([]string, len(m.GetSecurityDefinitions()))
+		i := 0
+		for key := range m.GetSecurityDefinitions() {
+			sorted_keys[i] = key
+			i++
 		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetSecurityDefinitions()[key]
+			_ = val
 
+			// no validation rules for SecurityDefinitions[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ApiResourceValidationError{
+						field:  fmt.Sprintf("SecurityDefinitions[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
 	}
 
-	for key, val := range m.GetSecurity() {
-		_ = val
-
-		// no validation rules for Security[key]
-
-		if all {
-			switch v := interface{}(val).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ApiResourceValidationError{
-						field:  fmt.Sprintf("Security[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ApiResourceValidationError{
-						field:  fmt.Sprintf("Security[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ApiResourceValidationError{
-					field:  fmt.Sprintf("Security[%v]", key),
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
+	{
+		sorted_keys := make([]string, len(m.GetSecurity()))
+		i := 0
+		for key := range m.GetSecurity() {
+			sorted_keys[i] = key
+			i++
 		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetSecurity()[key]
+			_ = val
 
+			// no validation rules for Security[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ApiResourceValidationError{
+							field:  fmt.Sprintf("Security[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ApiResourceValidationError{
+						field:  fmt.Sprintf("Security[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
 	}
 
 	if len(errors) > 0 {
 		return ApiResourceMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1682,6 +1849,7 @@ func (m *ResourceDeclareResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return ResourceDeclareResponseMultiError(errors)
 	}
+
 	return nil
 }
 

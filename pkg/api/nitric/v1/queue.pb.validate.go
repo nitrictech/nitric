@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,6 +32,7 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
+	_ = sort.Sort
 )
 
 // Validate checks the field values on QueueSendRequest with the rules defined
@@ -120,6 +122,7 @@ func (m *QueueSendRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueSendRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -221,6 +224,7 @@ func (m *QueueSendResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueSendResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -389,6 +393,7 @@ func (m *QueueSendBatchRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueSendBatchRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -526,6 +531,7 @@ func (m *QueueSendBatchResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueSendBatchResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -651,6 +657,7 @@ func (m *QueueReceiveRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueReceiveRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -788,6 +795,7 @@ func (m *QueueReceiveResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueReceiveResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -922,6 +930,7 @@ func (m *QueueCompleteRequest) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueCompleteRequestMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1025,6 +1034,7 @@ func (m *QueueCompleteResponse) validate(all bool) error {
 	if len(errors) > 0 {
 		return QueueCompleteResponseMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1157,6 +1167,7 @@ func (m *FailedTask) validate(all bool) error {
 	if len(errors) > 0 {
 		return FailedTaskMultiError(errors)
 	}
+
 	return nil
 }
 
@@ -1290,6 +1301,7 @@ func (m *NitricTask) validate(all bool) error {
 	if len(errors) > 0 {
 		return NitricTaskMultiError(errors)
 	}
+
 	return nil
 }
 
