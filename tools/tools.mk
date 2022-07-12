@@ -62,5 +62,5 @@ ${GOPATH}/bin/protoc-gen-go-grpc: go.sum
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
 ${GOPATH}/bin/protoc-gen-validate: go.sum
-	GO111MODULE=off go get github.com/envoyproxy/protoc-gen-validate
+	go install github.com/envoyproxy/protoc-gen-validate
 

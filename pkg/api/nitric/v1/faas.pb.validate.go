@@ -775,6 +775,8 @@ func (m *SubscriptionWorker) validate(all bool) error {
 
 	// no validation rules for Topic
 
+	// no validation rules for DeadLetter
+
 	if len(errors) > 0 {
 		return SubscriptionWorkerMultiError(errors)
 	}
