@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The Digital Ocean App Platform HTTP gateway plugin
 package base_http
 
 import (
@@ -27,6 +26,20 @@ import (
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
+
+type BaseHttpGatewayOption = func(*BaseHttpGateway)
+
+func WithMiddleware(mw func(*fasthttp.RequestCtx, worker.WorkerPool) bool) BaseHttpGatewayOption {
+	return func(bhg *BaseHttpGateway) {
+		bhg.mw = mw
+	}
+}
+
+func WithRouter(routeRegister func(*router.Router, worker.WorkerPool)) BaseHttpGatewayOption {
+	return func(bhg *BaseHttpGateway) {
+		bhg.routeReg = routeRegister
+	}
+}
 
 type HttpMiddleware func(*fasthttp.RequestCtx, worker.WorkerPool) bool
 type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) triggers.Event
