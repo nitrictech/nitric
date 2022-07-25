@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -156,14 +157,14 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 
 		if err != nil {
 			log.Default().Println("unable to locate nitric schedule")
-			return nil, fmt.Errorf("unable to find nitric schedule: %v", err)
+			return nil, fmt.Errorf("unable to locate nitric schedule: %v", err)
 		}
 
-		log.Default().Println("creating event from cloud watch")
+		scheduleName := strings.ReplaceAll(sched, " ", "-")
 
 		trigs = append(trigs, &triggers.Event{
-			ID:      "TODO",
-			Topic:   strings.ToLower(strings.ReplaceAll(sched, " ", "-")),
+			ID:      fmt.Sprintf("%s:%d", scheduleName, time.Now().UnixMilli()),
+			Topic:   strings.ToLower(scheduleName),
 			Payload: []byte{},
 		})
 	case httpEvent:
