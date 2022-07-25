@@ -48,26 +48,28 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 		return status.Error(codes.FailedPrecondition, "first message must be InitRequest")
 	}
 
-	var wrkr worker.GrpcWorker = nil
+	var wrkr worker.Worker = nil
+
+	hndlr := worker.NewGrpcHandler(stream)
 
 	if api := ir.GetApi(); api != nil {
 		// Create a new route worker
-		wrkr = worker.NewRouteWorker(stream, &worker.RouteWorkerOptions{
+		wrkr = worker.NewRouteWorker(hndlr, &worker.RouteWorkerOptions{
 			Api:     api.Api,
 			Path:    api.Path,
 			Methods: api.Methods,
 		})
 	} else if subscription := ir.GetSubscription(); subscription != nil {
-		wrkr = worker.NewSubscriptionWorker(stream, &worker.SubscriptionWorkerOptions{
+		wrkr = worker.NewSubscriptionWorker(hndlr, &worker.SubscriptionWorkerOptions{
 			Topic: subscription.Topic,
 		})
 	} else if schedule := ir.GetSchedule(); schedule != nil {
-		wrkr = worker.NewScheduleWorker(stream, &worker.ScheduleWorkerOptions{
+		wrkr = worker.NewScheduleWorker(hndlr, &worker.ScheduleWorkerOptions{
 			Key: schedule.Key,
 		})
 	} else {
 		// XXX: Catch all worker type
-		wrkr = worker.NewFaasWorker(stream)
+		wrkr = worker.NewFaasWorker(hndlr)
 	}
 
 	// Add it to our new pool
@@ -82,7 +84,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	errchan := make(chan error)
 
 	// Start the worker
-	go wrkr.Listen(errchan)
+	go hndlr.Start(errchan)
 
 	// block here on error returned from the worker
 	err = <-errchan

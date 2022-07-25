@@ -20,11 +20,14 @@ import (
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
-type Worker interface {
-	HandleEvent(trigger *triggers.Event) error
-	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+type Delegate interface {
 	HandlesHttpRequest(trigger *triggers.HttpRequest) bool
 	HandlesEvent(trigger *triggers.Event) bool
+}
+
+type Worker interface {
+	Delegate
+	Handler
 }
 
 type UnimplementedWorker struct{}

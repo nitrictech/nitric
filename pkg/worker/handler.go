@@ -16,25 +16,8 @@ package worker
 
 import "github.com/nitrictech/nitric/pkg/triggers"
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
-	Handler
-}
-
-var _ Worker = &FaasWorker{}
-
-func (s *FaasWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
-	return true
-}
-
-func (s *FaasWorker) HandlesEvent(trigger *triggers.Event) bool {
-	return true
-}
-
-// NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(handler Handler) *FaasWorker {
-	return &FaasWorker{
-		Handler: handler,
-	}
+// Handler - An interface for defining the delivery of events
+type Handler interface {
+	HandleEvent(trigger *triggers.Event) error
+	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }

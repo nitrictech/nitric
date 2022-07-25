@@ -198,7 +198,7 @@ var _ = Describe("ProcessPool", func() {
 			Context("Getting a worker for a Http trigger", func() {
 				When("no compatible workers are available", func() {
 					ctrl := gomock.NewController(GinkgoT())
-					badWrkr := mock_worker.NewMockGrpcWorker(ctrl)
+					badWrkr := mock_worker.NewMockWorker(ctrl)
 					pp := &ProcessPool{minWorkers: 0, workers: []Worker{badWrkr}, workerLock: &sync.Mutex{}}
 
 					It("should return an error", func() {
@@ -216,7 +216,7 @@ var _ = Describe("ProcessPool", func() {
 
 				When("compatible workers are available", func() {
 					ctrl := gomock.NewController(GinkgoT())
-					hw := mock_worker.NewMockGrpcWorker(ctrl)
+					hw := mock_worker.NewMockWorker(ctrl)
 					pp := &ProcessPool{minWorkers: 0, workers: []Worker{hw}, workerLock: &sync.Mutex{}}
 					tr := &triggers.HttpRequest{}
 
@@ -239,7 +239,7 @@ var _ = Describe("ProcessPool", func() {
 				When("no compatible event workers are available", func() {
 					When("no compatible workers are available", func() {
 						ctrl := gomock.NewController(GinkgoT())
-						badWrkr := mock_worker.NewMockGrpcWorker(ctrl)
+						badWrkr := mock_worker.NewMockWorker(ctrl)
 						pp := &ProcessPool{minWorkers: 0, workers: []Worker{badWrkr}, workerLock: &sync.Mutex{}}
 
 						It("should return an error", func() {
@@ -257,7 +257,7 @@ var _ = Describe("ProcessPool", func() {
 
 					When("compatible workers are available", func() {
 						ctrl := gomock.NewController(GinkgoT())
-						hw := mock_worker.NewMockGrpcWorker(ctrl)
+						hw := mock_worker.NewMockWorker(ctrl)
 						pp := &ProcessPool{minWorkers: 0, workers: []Worker{hw}, workerLock: &sync.Mutex{}}
 						tr := &triggers.Event{}
 
@@ -281,7 +281,7 @@ var _ = Describe("ProcessPool", func() {
 			When("removing an existing worker from the pool", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				lck := mock_sync.NewMockLocker(ctrl)
-				wkr := mock_worker.NewMockGrpcWorker(ctrl)
+				wkr := mock_worker.NewMockWorker(ctrl)
 
 				pp := &ProcessPool{
 					workerLock: lck,
@@ -310,7 +310,7 @@ var _ = Describe("ProcessPool", func() {
 			When("removing a non-existent worker from the pool", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				lck := mock_sync.NewMockLocker(ctrl)
-				wkr := mock_worker.NewMockGrpcWorker(ctrl)
+				wkr := mock_worker.NewMockWorker(ctrl)
 
 				pp := &ProcessPool{
 					workerLock: lck,
@@ -336,7 +336,7 @@ var _ = Describe("ProcessPool", func() {
 			When("Max workers have not been exceeded", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				lck := mock_sync.NewMockLocker(ctrl)
-				wkr := mock_worker.NewMockGrpcWorker(ctrl)
+				wkr := mock_worker.NewMockWorker(ctrl)
 
 				pp := &ProcessPool{
 					workerLock: lck,
@@ -366,8 +366,8 @@ var _ = Describe("ProcessPool", func() {
 			When("Max workers have been exceeded", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				lck := mock_sync.NewMockLocker(ctrl)
-				wkr := mock_worker.NewMockGrpcWorker(ctrl)
-				wkr2 := mock_worker.NewMockGrpcWorker(ctrl)
+				wkr := mock_worker.NewMockWorker(ctrl)
+				wkr2 := mock_worker.NewMockWorker(ctrl)
 
 				pp := &ProcessPool{
 					workerLock: lck,
