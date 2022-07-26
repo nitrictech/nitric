@@ -16,25 +16,23 @@ package http_service
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+	"github.com/fasthttp/router"
 	"github.com/mitchellh/mapstructure"
 	"github.com/valyala/fasthttp"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
 
-type azMiddleware struct {
-	provider core.AzProvider
-}
-
-func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
+func handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
 	var validateData eventgrid.SubscriptionValidationEventData
 	if err := mapstructure.Decode(subPayload.Data, &validateData); err != nil {
@@ -50,7 +48,9 @@ func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, ev
 	ctx.Success("application/json", responseBody)
 }
 
-func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
+func handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
+	topicName := ctx.UserValue("name").(string)
+
 	// TODO: As we are batch handling events
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -67,27 +67,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		var evt *triggers.Event
-		topics, err := a.provider.GetResources(core.AzResource_Topic)
-		if err != nil {
-			log.Default().Println("could not get topic resources")
-			continue
-		}
-
-		topicName := ""
-		for name, t := range topics {
-			if strings.HasSuffix(*event.Topic, t.Name) {
-				topicName = name
-			}
-		}
-
-		if topicName == "" {
-			log.Default().Println("could not resolve nitric name for topic", *event.Topic)
-			continue
-		}
-
-		// Just extract the payload from the event type (payload from nitric event is directly mapped)
-		evt = &triggers.Event{
+		evt := &triggers.Event{
 			ID:      *event.ID,
 			Topic:   topicName,
 			Payload: payloadBytes,
@@ -95,6 +75,10 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Event: evt,
+			Filter: func(w worker.Worker) bool {
+				_, isSubscription := w.(*worker.SubscriptionWorker)
+				return isSubscription
+			},
 		})
 		if err != nil {
 			log.Default().Println("could not get worker for topic: ", topicName)
@@ -115,39 +99,77 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 	ctx.SuccessString("text/plain", "success")
 }
 
-func (a *azMiddleware) middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
-	eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
+func handleSubscription(pool worker.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
-	// Handle an eventgrid webhook event
-	if eventType != "" {
-		var eventgridEvents []eventgrid.Event
-		bytes := ctx.Request.Body()
-		// TODO: verify topic for validity
-		if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
-			ctx.Error("Invalid event grid types", 400)
-			return false
-		}
+		// Handle an eventgrid webhook event
+		if eventType != "" {
+			var eventgridEvents []eventgrid.Event
+			bytes := ctx.Request.Body()
+			// TODO: verify topic for validity
+			if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
+				ctx.Error("Invalid event grid types", 400)
+				return
+			}
 
-		// Handle Eventgrid event
-		if eventType == "SubscriptionValidation" {
-			// Validate a subscription
-			a.handleSubscriptionValidation(ctx, eventgridEvents)
-			return false
-		} else if eventType == "Notification" {
-			// Handle notifications
-			a.handleNotifications(ctx, eventgridEvents, pool)
-			return false
+			// Handle Eventgrid event
+			if eventType == "SubscriptionValidation" {
+				// Validate a subscription
+				handleSubscriptionValidation(ctx, eventgridEvents)
+			} else if eventType == "Notification" {
+				// Handle notifications
+				handleNotifications(ctx, eventgridEvents, pool)
+			}
 		}
 	}
+}
 
-	return true
+func handleSchedule(pool worker.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		topicName := ctx.UserValue("name").(string)
+
+		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
+			ctx.SuccessString("text/plain", "success")
+			return
+		}
+
+		evt := &triggers.Event{
+			ID:      fmt.Sprintf("%s:%d", topicName, time.Now().UnixMilli()),
+			Topic:   topicName,
+			Payload: []byte{},
+		}
+
+		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
+			Event: evt,
+			Filter: func(w worker.Worker) bool {
+				_, isSchedule := w.(*worker.ScheduleWorker)
+				return isSchedule
+			},
+		})
+
+		if err != nil {
+			ctx.Error(fmt.Sprintf("could not find handler for schedule: %s", topicName), 404)
+			return
+		}
+
+		if err := wrkr.HandleEvent(evt); err != nil {
+			ctx.Error("error handling schedule", 500)
+		} else {
+			ctx.SuccessString("text/plain", "success")
+		}
+	}
+}
+
+func routes(r *router.Router, p worker.WorkerPool) {
+	r.GET("/dapr/config", func(ctx *fasthttp.RequestCtx) {
+		ctx.Error("no config", 404)
+	})
+	r.ANY("/x-nitric-schedule/{name}", handleSchedule(p))
+	r.ANY("/x-nitric-subscription/{name}", handleSubscription(p))
 }
 
 // Create a new HTTP Gateway plugin
-func New(provider core.AzProvider) (gateway.GatewayService, error) {
-	mw := &azMiddleware{
-		provider: provider,
-	}
-
-	return base_http.New(base_http.WithMiddleware(mw.middleware))
+func New() (gateway.GatewayService, error) {
+	return base_http.New(base_http.WithRouter(routes))
 }

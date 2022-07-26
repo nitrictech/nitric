@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
-	membraneOpts.GatewayPlugin, _ = http_service.New(provider)
+	membraneOpts.GatewayPlugin, _ = http_service.New()
 	membraneOpts.QueuePlugin, _ = azqueue_service.New()
 	membraneOpts.StoragePlugin, _ = azblob_service.New()
 	membraneOpts.SecretPlugin, err = key_vault.New()
