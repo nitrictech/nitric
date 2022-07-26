@@ -48,8 +48,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 		return status.Error(codes.FailedPrecondition, "first message must be InitRequest")
 	}
 
-	var wrkr worker.Worker = nil
-
+	var wrkr worker.Worker
 	hndlr := worker.NewGrpcHandler(stream)
 
 	if api := ir.GetApi(); api != nil {
