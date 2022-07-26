@@ -24,35 +24,29 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mock_worker "github.com/nitrictech/nitric/mocks/worker"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	cloudrun_plugin "github.com/nitrictech/nitric/pkg/plugins/gateway/cloudrun"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
-	mock_worker "github.com/nitrictech/nitric/tests/mocks/worker"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Http", func() {
-	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{
+		MinWorkers: 0,
+	})
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
-
-	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
-		ReturnHttp: &triggers.HttpResponse{
-			Body:       []byte("success"),
-			StatusCode: 200,
-		},
-	})
-	err := pool.AddWorker(mockHandler)
-	Expect(err).To(BeNil())
 
 	httpPlugin, err := cloudrun_plugin.New()
 	Expect(err).To(BeNil())
@@ -66,13 +60,35 @@ var _ = Describe("Http", func() {
 	// FIXME: Should block on channels...
 	time.Sleep(500 * time.Millisecond)
 
-	AfterEach(func() {
-		mockHandler.Reset()
-	})
-
 	When("Invoking the GCP HTTP Gateway", func() {
-		When("with a HTTP request", func() {
+		Context("with a HTTP request", func() {
+			var wrkr *worker.RouteWorker
+			var hndlr *mock_worker.MockHandler
+			var ctrl *gomock.Controller
+
+			BeforeEach(func() {
+				ctrl = gomock.NewController(GinkgoT())
+				hndlr = mock_worker.NewMockHandler(ctrl)
+				wrkr = worker.NewRouteWorker(hndlr, &worker.RouteWorkerOptions{
+					Api:     "test",
+					Path:    "/test",
+					Methods: []string{"POST"},
+				})
+				_ = pool.AddWorker(wrkr)
+			})
+
+			AfterEach(func() {
+				_ = pool.RemoveWorker(wrkr)
+				ctrl.Finish()
+			})
+
 			It("Should be handled successfully", func() {
+				By("Calling the worker with expected request")
+				hndlr.EXPECT().HandleHttpRequest(gomock.AssignableToTypeOf(&triggers.HttpRequest{})).Return(&triggers.HttpResponse{
+					Body:       []byte("success"),
+					StatusCode: 200,
+				}, nil).Times(1)
+
 				request, err := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader([]byte("Test")))
 				Expect(err).To(BeNil())
 				request.Header.Add("x-nitric-request-id", "1234")
@@ -90,29 +106,6 @@ var _ = Describe("Http", func() {
 					}
 				}
 
-				By("Not returning an error")
-				Expect(err).To(BeNil())
-
-				By("Handling exactly 1 request")
-				Expect(mockHandler.ReceivedRequests).To(HaveLen(1))
-
-				handledRequest := mockHandler.ReceivedRequests[0]
-				By("Preserving the original requests method")
-				Expect(handledRequest.Method).To(Equal("POST"))
-
-				By("Preserving the original requests path")
-				Expect(handledRequest.Path).To(Equal("/test"))
-
-				streamRead := handledRequest.Body
-				By("Preserving the original requests body")
-				Expect(streamRead).To(BeEquivalentTo([]byte("Test")))
-
-				By("Preserving the original requests headers")
-				Expect(handledRequest.Header["User-Agent"][0]).To(Equal("Test"))
-				Expect(handledRequest.Header["X-Nitric-Request-Id"][0]).To(Equal("1234"))
-				Expect(handledRequest.Header["X-Nitric-Payload-Type"][0]).To(Equal("Test Payload"))
-				Expect(handledRequest.Header["Cookie"]).To(Equal([]string{"test1=testcookie1; test2=testcookie2"}))
-
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
 
@@ -121,7 +114,7 @@ var _ = Describe("Http", func() {
 			})
 		})
 
-		When("From a subcription with a NitricEvent", func() {
+		Context("From a subcription with a NitricEvent", func() {
 			eventPayload := map[string]interface{}{
 				"Test": "Test",
 			}
@@ -146,8 +139,33 @@ var _ = Describe("Http", func() {
 				},
 			})
 
+			var wrkr *worker.SubscriptionWorker
+			var hndlr *mock_worker.MockHandler
+			var ctrl *gomock.Controller
+
+			BeforeEach(func() {
+				ctrl = gomock.NewController(GinkgoT())
+				hndlr = mock_worker.NewMockHandler(ctrl)
+				wrkr = worker.NewSubscriptionWorker(hndlr, &worker.SubscriptionWorkerOptions{
+					Topic: "test",
+				})
+				_ = pool.AddWorker(wrkr)
+			})
+
+			AfterEach(func() {
+				_ = pool.RemoveWorker(wrkr)
+				ctrl.Finish()
+			})
+
 			It("Should handle the event successfully", func() {
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payloadBytes))
+				By("Calling the handler with the expected request")
+				hndlr.EXPECT().HandleEvent(&triggers.Event{
+					ID:      "1234",
+					Topic:   "test",
+					Payload: pBytes,
+				}).Times(1).Return(nil)
+
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-subscription/test", gatewayUrl), bytes.NewReader(payloadBytes))
 				Expect(err).To(BeNil())
 				request.Header.Add("Content-Type", "application/json")
 				resp, err := http.DefaultClient.Do(request)
@@ -156,20 +174,6 @@ var _ = Describe("Http", func() {
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())
-
-				By("Handling exactly 1 request")
-				Expect(mockHandler.ReceivedEvents).To(HaveLen(1))
-
-				handledEvent := mockHandler.ReceivedEvents[0]
-
-				By("Passing through nitric event ID")
-				Expect(handledEvent.ID).To(Equal("1234"))
-
-				By("Extracting the topic name from the subscription")
-				Expect(handledEvent.Topic).To(Equal("test"))
-
-				By("Passing through the published message data")
-				Expect(handledEvent.Payload).To(BeEquivalentTo(pBytes))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
