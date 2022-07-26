@@ -91,8 +91,9 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 			err,
 		)
 	}
+
 	latestWriter := bufio.NewWriter(latestFile)
-	_, err = latestWriter.WriteString(string(val))
+	_, err = latestWriter.WriteString(string(val) + "," + versionId)
 	if err != nil {
 		return nil, newErr(
 			codes.FailedPrecondition,
@@ -101,14 +102,6 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		)
 	}
 
-	_, err = latestWriter.WriteString("," + versionId)
-	if err != nil {
-		return nil, newErr(
-			codes.FailedPrecondition,
-			"error writing secret value",
-			err,
-		)
-	}
 	latestWriter.Flush()
 
 	return &secret.SecretPutResponse{
@@ -154,12 +147,18 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 	}
 
 	splitContent := strings.Split(string(content), ",")
+	version := sv.Version
+	// check whether a version number is stored in the file, this indicates the 'latest' version file.
+	if len(splitContent) == 2 {
+		version = splitContent[1]
+	}
+
 	return &secret.SecretAccessResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: splitContent[len(splitContent)-1],
+			Version: version,
 		},
 		Value: []byte(splitContent[0]),
 	}, nil
