@@ -61,7 +61,7 @@ var _ = Describe("RouteWorker", func() {
 		When("calling HandleHttpRequest", func() {
 			It("should call the base grpc workers HandleEvent with augmented trigger", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				hndlr := mock.NewMockHandler(ctrl)
+				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
 				hndlr.EXPECT().HandleHttpRequest(&triggers.HttpRequest{

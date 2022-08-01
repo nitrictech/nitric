@@ -70,7 +70,7 @@ var _ = Describe("SubscriptionWorker", func() {
 		When("calling HandleEvent", func() {
 			It("should call the base grpc workers HandleEvent", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				hndlr := mock.NewMockHandler(ctrl)
+				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
 				hndlr.EXPECT().HandleEvent(gomock.Any()).Times(1)
