@@ -16,8 +16,8 @@ package worker
 
 import "github.com/nitrictech/nitric/pkg/triggers"
 
-// Handler - An interface for defining the delivery of events
-type Handler interface {
+// Adapter - An interface for defining the delivery of events
+type Adapter interface {
 	HandleEvent(trigger *triggers.Event) error
 	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }

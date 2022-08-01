@@ -28,7 +28,7 @@ type RouteWorker struct {
 	methods []string
 	path    string
 
-	Handler
+	Adapter
 }
 
 var _ Worker = &RouteWorker{}
@@ -93,7 +93,7 @@ func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 
 	trigger.Params = params
 
-	return s.Handler.HandleHttpRequest(trigger)
+	return s.Adapter.HandleHttpRequest(trigger)
 }
 
 func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
@@ -108,11 +108,11 @@ type RouteWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewRouteWorker(handler Handler, opts *RouteWorkerOptions) *RouteWorker {
+func NewRouteWorker(handler Adapter, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
 		api:     opts.Api,
 		path:    opts.Path,
 		methods: opts.Methods,
-		Handler: handler,
+		Adapter: handler,
 	}
 }

@@ -30,13 +30,13 @@ import (
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
-var _ = Describe("grpcHandler", func() {
+var _ = Describe("grpcAdapter", func() {
 
 	Context("newTicket", func() {
 		When("calling newTicket", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			lck := mock_sync.NewMockLocker(ctrl)
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: lck,
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 			}
@@ -68,7 +68,7 @@ var _ = Describe("grpcHandler", func() {
 		When("resolving a ticket id that does not exist", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			lck := mock_sync.NewMockLocker(ctrl)
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: lck,
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 			}
@@ -96,7 +96,7 @@ var _ = Describe("grpcHandler", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			lck := mock_sync.NewMockLocker(ctrl)
 			ch := make(chan *v1.TriggerResponse)
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: lck,
 				responseQueue: map[string]chan *v1.TriggerResponse{
 					"test": ch,
@@ -138,7 +138,7 @@ var _ = Describe("grpcHandler", func() {
 			errChan := make(chan error)
 			respChan := make(chan *v1.TriggerResponse)
 			mockResp := &v1.TriggerResponse{}
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue: map[string]chan *v1.TriggerResponse{
 					"test": respChan,
@@ -180,7 +180,7 @@ var _ = Describe("grpcHandler", func() {
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			errChan := make(chan error)
 			mockResp := &v1.TriggerResponse{}
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue: map[string]chan *v1.TriggerResponse{
 					"test": nil,
@@ -217,7 +217,7 @@ var _ = Describe("grpcHandler", func() {
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			mockErr := fmt.Errorf("mock error")
 
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 				stream:            stream,
@@ -246,7 +246,7 @@ var _ = Describe("grpcHandler", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 				stream:            stream,
@@ -279,7 +279,7 @@ var _ = Describe("grpcHandler", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			mockErr := fmt.Errorf("mock error")
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 				stream:            stream,
@@ -306,7 +306,7 @@ var _ = Describe("grpcHandler", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
 			mockErr := fmt.Errorf("mock error")
-			wkr := &GrpcHandler{
+			wkr := &GrpcAdapter{
 				responseQueueLock: &sync.Mutex{},
 				responseQueue:     make(map[string]chan *v1.TriggerResponse),
 				stream:            stream,

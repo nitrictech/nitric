@@ -29,18 +29,18 @@ import (
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
-type GrpcHandler struct {
+type GrpcAdapter struct {
 	stream v1.FaasService_TriggerStreamServer
 	// Response channels for this worker
 	responseQueueLock sync.Locker
 	responseQueue     map[string]chan *v1.TriggerResponse
 }
 
-var _ Handler = &GrpcHandler{}
+var _ Adapter = &GrpcAdapter{}
 
 // newTicket - Generates a request/response ID and response channel
 // for the requesting thread to wait on
-func (s *GrpcHandler) newTicket() (string, chan *v1.TriggerResponse) {
+func (s *GrpcAdapter) newTicket() (string, chan *v1.TriggerResponse) {
 	s.responseQueueLock.Lock()
 	defer s.responseQueueLock.Unlock()
 
@@ -54,7 +54,7 @@ func (s *GrpcHandler) newTicket() (string, chan *v1.TriggerResponse) {
 
 // resolveTicket - Retrieves a response channel from the queue for
 // the given ID and removes the entry from the map
-func (s *GrpcHandler) resolveTicket(ID string) (chan *v1.TriggerResponse, error) {
+func (s *GrpcAdapter) resolveTicket(ID string) (chan *v1.TriggerResponse, error) {
 	s.responseQueueLock.Lock()
 	defer func() {
 		delete(s.responseQueue, ID)
@@ -68,11 +68,11 @@ func (s *GrpcHandler) resolveTicket(ID string) (chan *v1.TriggerResponse, error)
 	return s.responseQueue[ID], nil
 }
 
-func (gwb *GrpcHandler) send(msg *v1.ServerMessage) error {
+func (gwb *GrpcAdapter) send(msg *v1.ServerMessage) error {
 	return gwb.stream.Send(msg)
 }
 
-func (gwb *GrpcHandler) Start(errchan chan error) {
+func (gwb *GrpcAdapter) Start(errchan chan error) {
 	for {
 		msg, err := gwb.stream.Recv()
 		if err != nil {
@@ -114,7 +114,7 @@ func (gwb *GrpcHandler) Start(errchan chan error) {
 	}
 }
 
-func (s *GrpcHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 
@@ -218,7 +218,7 @@ func (s *GrpcHandler) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	return response, nil
 }
 
-func (s *GrpcHandler) HandleEvent(trigger *triggers.Event) error {
+func (s *GrpcAdapter) HandleEvent(trigger *triggers.Event) error {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 	triggerRequest := &v1.TriggerRequest{
@@ -267,8 +267,8 @@ func (s *GrpcHandler) HandleEvent(trigger *triggers.Event) error {
 	return fmt.Errorf("Error occurred handling the event")
 }
 
-func NewGrpcHandler(stream v1.FaasService_TriggerStreamServer) *GrpcHandler {
-	return &GrpcHandler{
+func NewGrpcAdapter(stream v1.FaasService_TriggerStreamServer) *GrpcAdapter {
+	return &GrpcAdapter{
 		stream:            stream,
 		responseQueueLock: &sync.Mutex{},
 		responseQueue:     make(map[string]chan *v1.TriggerResponse),

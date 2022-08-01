@@ -19,7 +19,7 @@ import "github.com/nitrictech/nitric/pkg/triggers"
 // FaasWorker
 // Worker representation for a Nitric FaaS function using gRPC
 type FaasWorker struct {
-	Handler
+	Adapter
 }
 
 var _ Worker = &FaasWorker{}
@@ -33,8 +33,8 @@ func (s *FaasWorker) HandlesEvent(trigger *triggers.Event) bool {
 }
 
 // NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(handler Handler) *FaasWorker {
+func NewFaasWorker(handler Adapter) *FaasWorker {
 	return &FaasWorker{
-		Handler: handler,
+		Adapter: handler,
 	}
 }

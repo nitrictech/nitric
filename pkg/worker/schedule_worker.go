@@ -24,7 +24,7 @@ import (
 // RouteWorker - Worker representation for an http api route handler
 type ScheduleWorker struct {
 	key string
-	Handler
+	Adapter
 }
 
 var _ Worker = &ScheduleWorker{}
@@ -58,9 +58,9 @@ type ScheduleWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewScheduleWorker(handler Handler, opts *ScheduleWorkerOptions) *ScheduleWorker {
+func NewScheduleWorker(adapter Adapter, opts *ScheduleWorkerOptions) *ScheduleWorker {
 	return &ScheduleWorker{
 		key:     opts.Key,
-		Handler: handler,
+		Adapter: adapter,
 	}
 }

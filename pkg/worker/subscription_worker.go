@@ -24,7 +24,7 @@ import (
 type SubscriptionWorker struct {
 	topic string
 	Delegate
-	Handler
+	Adapter
 }
 
 var _ Worker = &SubscriptionWorker{}
@@ -52,9 +52,9 @@ type SubscriptionWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewSubscriptionWorker(handler Handler, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
+func NewSubscriptionWorker(adapter Adapter, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
 	return &SubscriptionWorker{
 		topic:   opts.Topic,
-		Handler: handler,
+		Adapter: adapter,
 	}
 }

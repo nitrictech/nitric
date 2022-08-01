@@ -77,7 +77,7 @@ var _ = Describe("SubscriptionWorker", func() {
 
 				subWrkr := &SubscriptionWorker{
 					topic:   "test",
-					Handler: hndlr,
+					Adapter: hndlr,
 				}
 
 				err := subWrkr.HandleEvent(&triggers.Event{})

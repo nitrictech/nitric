@@ -75,7 +75,7 @@ var _ = Describe("RouteWorker", func() {
 				subWrkr := &RouteWorker{
 					methods: []string{"GET"},
 					path:    "/test/:param",
-					Handler: hndlr,
+					Adapter: hndlr,
 				}
 
 				_, err := subWrkr.HandleHttpRequest(&triggers.HttpRequest{

@@ -49,26 +49,26 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	}
 
 	var wrkr worker.Worker
-	hndlr := worker.NewGrpcHandler(stream)
+	adapter := worker.NewGrpcAdapter(stream)
 
 	if api := ir.GetApi(); api != nil {
 		// Create a new route worker
-		wrkr = worker.NewRouteWorker(hndlr, &worker.RouteWorkerOptions{
+		wrkr = worker.NewRouteWorker(adapter, &worker.RouteWorkerOptions{
 			Api:     api.Api,
 			Path:    api.Path,
 			Methods: api.Methods,
 		})
 	} else if subscription := ir.GetSubscription(); subscription != nil {
-		wrkr = worker.NewSubscriptionWorker(hndlr, &worker.SubscriptionWorkerOptions{
+		wrkr = worker.NewSubscriptionWorker(adapter, &worker.SubscriptionWorkerOptions{
 			Topic: subscription.Topic,
 		})
 	} else if schedule := ir.GetSchedule(); schedule != nil {
-		wrkr = worker.NewScheduleWorker(hndlr, &worker.ScheduleWorkerOptions{
+		wrkr = worker.NewScheduleWorker(adapter, &worker.ScheduleWorkerOptions{
 			Key: schedule.Key,
 		})
 	} else {
 		// XXX: Catch all worker type
-		wrkr = worker.NewFaasWorker(hndlr)
+		wrkr = worker.NewFaasWorker(adapter)
 	}
 
 	// Add it to our new pool
@@ -83,7 +83,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	errchan := make(chan error)
 
 	// Start the worker
-	go hndlr.Start(errchan)
+	go adapter.Start(errchan)
 
 	// block here on error returned from the worker
 	err = <-errchan

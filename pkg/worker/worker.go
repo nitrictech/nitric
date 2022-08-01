@@ -27,7 +27,7 @@ type Delegate interface {
 
 type Worker interface {
 	Delegate
-	Handler
+	Adapter
 }
 
 type UnimplementedWorker struct{}
