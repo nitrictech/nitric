@@ -63,12 +63,12 @@ var _ = Describe("Http", func() {
 	When("Invoking the GCP HTTP Gateway", func() {
 		Context("with a HTTP request", func() {
 			var wrkr *worker.RouteWorker
-			var hndlr *mock_worker.MockHandler
+			var hndlr *mock_worker.MockAdapter
 			var ctrl *gomock.Controller
 
 			BeforeEach(func() {
 				ctrl = gomock.NewController(GinkgoT())
-				hndlr = mock_worker.NewMockHandler(ctrl)
+				hndlr = mock_worker.NewMockAdapter(ctrl)
 				wrkr = worker.NewRouteWorker(hndlr, &worker.RouteWorkerOptions{
 					Api:     "test",
 					Path:    "/test",
@@ -140,12 +140,12 @@ var _ = Describe("Http", func() {
 			})
 
 			var wrkr *worker.SubscriptionWorker
-			var hndlr *mock_worker.MockHandler
+			var hndlr *mock_worker.MockAdapter
 			var ctrl *gomock.Controller
 
 			BeforeEach(func() {
 				ctrl = gomock.NewController(GinkgoT())
-				hndlr = mock_worker.NewMockHandler(ctrl)
+				hndlr = mock_worker.NewMockAdapter(ctrl)
 				wrkr = worker.NewSubscriptionWorker(hndlr, &worker.SubscriptionWorkerOptions{
 					Topic: "test",
 				})
