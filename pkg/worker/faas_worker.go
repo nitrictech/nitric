@@ -33,8 +33,8 @@ func (s *FaasWorker) HandlesEvent(trigger *triggers.Event) bool {
 }
 
 // NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(handler Adapter) *FaasWorker {
+func NewFaasWorker(adapter Adapter) *FaasWorker {
 	return &FaasWorker{
-		Adapter: handler,
+		Adapter: adapter,
 	}
 }

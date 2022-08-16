@@ -108,11 +108,11 @@ type RouteWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewRouteWorker(handler Adapter, opts *RouteWorkerOptions) *RouteWorker {
+func NewRouteWorker(adapter Adapter, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
 		api:     opts.Api,
 		path:    opts.Path,
 		methods: opts.Methods,
-		Adapter: handler,
+		Adapter: adapter,
 	}
 }
