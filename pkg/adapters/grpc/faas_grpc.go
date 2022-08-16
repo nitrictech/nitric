@@ -35,7 +35,6 @@ type FaasServer struct {
 // This represents a new server that is ready to begin processing
 func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) error {
 	cm, err := stream.Recv()
-
 	if err != nil {
 		return status.Errorf(codes.Internal, "error reading message from stream: %v", err)
 	}

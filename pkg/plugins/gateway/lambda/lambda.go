@@ -127,7 +127,6 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 		evt := &events.APIGatewayV2HTTPRequest{}
 
 		err := json.Unmarshal(bytes, evt)
-
 		if err != nil {
 			return nil, fmt.Errorf("unable to unmarshal httpEvent: %v", err)
 		}
@@ -148,7 +147,6 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 
 		// Parse the raw query string
 		qVals, err := url.ParseQuery(evt.RawQueryString)
-
 		if err != nil {
 			return nil, fmt.Errorf("error parsing query for httpEvent: %v", err)
 		}
@@ -178,7 +176,6 @@ type LambdaGateway struct {
 
 func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{}) (interface{}, error) {
 	trigs, err := s.triggersFromRequest(data)
-
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +191,6 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 					return nil, fmt.Errorf("unable to get worker to handle http trigger")
 				}
 				response, err := wrkr.HandleHttpRequest(httpEvent)
-
 				if err != nil {
 					return events.APIGatewayProxyResponse{
 						StatusCode: 500,
@@ -246,7 +242,7 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 
 // Start the lambda gateway handler
 func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
-	//s.finished = make(chan int)
+	// s.finished = make(chan int)
 	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...
 	s.runtime(s.handle)

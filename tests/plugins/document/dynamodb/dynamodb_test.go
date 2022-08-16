@@ -33,8 +33,10 @@ import (
 	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
-const containerName = "dynamodb-nitric"
-const port = "8000"
+const (
+	containerName = "dynamodb-nitric"
+	port          = "8000"
+)
 
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()

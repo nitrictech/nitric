@@ -24,7 +24,6 @@ import (
 )
 
 var _ = Describe("SubscriptionWorker", func() {
-
 	Context("Http", func() {
 		subWrkr := &SubscriptionWorker{}
 

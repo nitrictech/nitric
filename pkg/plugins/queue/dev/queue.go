@@ -256,7 +256,7 @@ func New() (queue.QueueService, error) {
 	_, err := os.Stat(dbDir)
 	if os.IsNotExist(err) {
 		// Make diretory if not present
-		err := os.MkdirAll(dbDir, 0777)
+		err := os.MkdirAll(dbDir, 0o777)
 		if err != nil {
 			return nil, err
 		}
@@ -270,7 +270,7 @@ func New() (queue.QueueService, error) {
 func (s *DevQueueService) createDb(queue string) (*storm.DB, error) {
 	dbPath := filepath.Join(s.dbDir, strings.ToLower(queue)+".db")
 
-	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
+	options := storm.BoltOptions(0o600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
 	if err != nil {
 		return nil, err

@@ -117,7 +117,6 @@ var _ = Describe("Sqs", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				ctrl.Finish()
 			})
-
 		})
 
 		When("Publishing to a queue that doesn't exist", func() {
@@ -262,7 +261,6 @@ var _ = Describe("Sqs", func() {
 		// Tests for the Complete method
 		Context("Complete", func() {
 			When("The message is successfully deleted from SQS", func() {
-
 				// No errors set on mock, 'complete' won't return an error.
 				It("Should successfully delete the task", func() {
 					ctrl := gomock.NewController(GinkgoT())

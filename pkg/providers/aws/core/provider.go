@@ -66,7 +66,6 @@ func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, erro
 			ResourceTypeFilters: []*string{aws.String(typ)},
 			TagFilters:          tagFilters,
 		})
-
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +92,6 @@ func New() (AwsProvider, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	})
-
 	if err != nil {
 		return nil, err
 	}

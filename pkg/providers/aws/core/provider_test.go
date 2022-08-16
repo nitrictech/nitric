@@ -45,7 +45,6 @@ var _ = Describe("AwsProvider", func() {
 	})
 
 	When("Calling get resources with no cache", func() {
-
 		When("Call to GetResources fails", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)

@@ -27,7 +27,6 @@ func unwrapIter(iter document.DocumentIterator) []*document.Document {
 	docs := make([]*document.Document, 0)
 	for {
 		d, err := iter()
-
 		if err != nil {
 			Expect(err).To(Equal(io.EOF))
 			break

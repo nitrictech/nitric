@@ -39,6 +39,7 @@ var task1 = queue.NitricTask{
 		"Test": "Test 1",
 	},
 }
+
 var task2 = queue.NitricTask{
 	ID:          "2345",
 	PayloadType: "test-payload",
@@ -46,6 +47,7 @@ var task2 = queue.NitricTask{
 		"Test": "Test 3",
 	},
 }
+
 var task3 = queue.NitricTask{
 	ID:          "3456",
 	PayloadType: "test-payload",
@@ -53,6 +55,7 @@ var task3 = queue.NitricTask{
 		"Test": "Test 3",
 	},
 }
+
 var task4 = queue.NitricTask{
 	ID:          "4567",
 	PayloadType: "test-payload",
@@ -64,7 +67,6 @@ var task4 = queue.NitricTask{
 var local_queue_directory = utils.GetRelativeDevPath(queue_service.DEV_SUB_DIRECTORY)
 
 var _ = Describe("Queue", func() {
-
 	queuePlugin, err := queue_service.New()
 	if err != nil {
 		Expect(err).ShouldNot(HaveOccurred())
@@ -79,7 +81,7 @@ var _ = Describe("Queue", func() {
 		_, err = os.Stat(local_queue_directory)
 		if os.IsNotExist(err) {
 			// Make diretory if not present
-			err := os.Mkdir(local_queue_directory, 0777)
+			err := os.Mkdir(local_queue_directory, 0o777)
 			if err != nil {
 				Expect(err).ShouldNot(HaveOccurred())
 			}
@@ -207,7 +209,6 @@ var _ = Describe("Queue", func() {
 
 		When("The queue depth is 15", func() {
 			It("Should return 10 items", func() {
-
 				task := queue.NitricTask{
 					ID:          "1234",
 					PayloadType: "test-payload",
@@ -262,7 +263,7 @@ var _ = Describe("Queue", func() {
 func GetAllTasks(q string) []queue.NitricTask {
 	dbPath := filepath.Join(local_queue_directory, strings.ToLower(q)+".db")
 
-	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
+	options := storm.BoltOptions(0o600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
 	if err != nil {
 		panic(err)

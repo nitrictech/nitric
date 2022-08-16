@@ -64,7 +64,6 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 		QueueName:              aws.String(queueName),
 		QueueOwnerAWSAccountId: aws.String(accountId),
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the queue list: %v", err)
 	}
@@ -183,8 +182,8 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 			},
 			QueueUrl: url,
 			// TODO: Consider explicit timeout values
-			//VisibilityTimeout:       nil,
-			//WaitTimeSeconds:         nil,
+			// VisibilityTimeout:       nil,
+			// WaitTimeSeconds:         nil,
 		}
 
 		res, err := s.client.ReceiveMessage(&req)

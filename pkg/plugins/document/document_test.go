@@ -25,7 +25,6 @@ import (
 // Function Test Cases
 
 var _ = Describe("Document Plugin", func() {
-
 	When("ValidateKey", func() {
 		When("Nil key", func() {
 			It("should return error", func() {

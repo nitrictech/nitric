@@ -48,7 +48,7 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 	}
 
 	// auto generate an ID if we did not receive one
-	var ID = req.GetEvent().GetId()
+	ID := req.GetEvent().GetId()
 	if ID == "" {
 		ID = uuid.New().String()
 	}

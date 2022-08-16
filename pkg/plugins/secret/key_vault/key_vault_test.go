@@ -56,7 +56,7 @@ var _ = Describe("Key Vault", func() {
 					// Assert all methods are called at least their number of times
 					defer ctrl.Finish()
 
-					//Mocking expects
+					// Mocking expects
 					mockSecretClient.EXPECT().SetSecret(
 						context.Background(),
 						"https://localvault.vault.azure.net",
@@ -80,7 +80,7 @@ var _ = Describe("Key Vault", func() {
 				It("Should successfully store a secret", func() {
 					defer ctrl.Finish()
 
-					//Mocking expects
+					// Mocking expects
 					mockSecretClient.EXPECT().SetSecret(
 						context.Background(),
 						"https://localvault.vault.azure.net",
@@ -145,7 +145,7 @@ var _ = Describe("Key Vault", func() {
 
 					It("Should successfully return a secret", func() {
 						defer ctrl.Finish()
-						//Mocking expects
+						// Mocking expects
 						mockSecretClient.EXPECT().GetSecret(
 							context.Background(),
 							"https://localvault.vault.azure.net",

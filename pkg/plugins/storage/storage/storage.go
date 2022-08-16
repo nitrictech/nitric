@@ -122,7 +122,6 @@ func (s *StorageStorageService) Write(bucket string, key string, object []byte) 
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
-
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -165,7 +164,6 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
-
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -199,7 +197,6 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
-
 	if err != nil {
 		return "", newErr(
 			codes.NotFound,
@@ -208,7 +205,7 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 		)
 	}
 
-	var method = "GET"
+	method := "GET"
 	if operation == plugin.WRITE {
 		method = "PUT"
 	}
@@ -240,7 +237,6 @@ func (s *StorageStorageService) ListFiles(bucket string) ([]*plugin.FileInfo, er
 	)
 
 	bucketHandle, err := s.getBucketByName(bucket)
-
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,

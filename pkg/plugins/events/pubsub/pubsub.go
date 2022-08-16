@@ -66,7 +66,6 @@ func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) er
 	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
-
 	if err != nil {
 		return newErr(
 			codes.Internal,

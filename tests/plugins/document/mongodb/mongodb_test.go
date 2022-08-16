@@ -73,7 +73,6 @@ var _ = Describe("MongoDB", func() {
 	ctx := context.Background()
 
 	client, err := createMongoClient(ctx)
-
 	if err != nil {
 		panic(err)
 	}

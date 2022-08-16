@@ -30,8 +30,8 @@ import (
 )
 
 var _ = Describe("Secrets Manager Plugin", func() {
-	var testARN = "arn:partition:service:region:account-id:resource-id"
-	var testVersionID = "yVBWEvgpNjpcCxddXyj9kTefaUpVD999"
+	testARN := "arn:partition:service:region:account-id:resource-id"
+	testVersionID := "yVBWEvgpNjpcCxddXyj9kTefaUpVD999"
 	testSecret := secret.Secret{
 		Name: "Test",
 	}
@@ -95,7 +95,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				secretPlugin := &secretsManagerSecretService{}
 
 				It("Should return an error", func() {
-					var emptySecret = &secret.Secret{}
+					emptySecret := &secret.Secret{}
 					response, err := secretPlugin.Put(emptySecret, testSecretVal)
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())

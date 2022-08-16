@@ -45,7 +45,6 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 	)
 
 	topics, err := s.provider.GetResources(core.AzResource_Topic)
-
 	if err != nil {
 		return nil, newErr(codes.Internal, "unable to retrieve topic list", err)
 	}
@@ -135,7 +134,7 @@ func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent)
 }
 
 func New(provider core.AzProvider) (events.EventService, error) {
-	//Get the event grid token, using the event grid resource endpoint
+	// Get the event grid token, using the event grid resource endpoint
 	spt, err := provider.ServicePrincipalToken("https://eventgrid.azure.net")
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating event grid client: %v", err.Error())

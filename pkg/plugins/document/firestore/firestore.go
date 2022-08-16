@@ -61,7 +61,7 @@ func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error)
 
 	value, err := doc.Get(s.context)
 	if err != nil {
-		var code = codes.Internal
+		code := codes.Internal
 		if status.Code(err) == grpcCodes.NotFound {
 			code = codes.NotFound
 		}
@@ -315,7 +315,6 @@ func (s *FirestoreDocService) QueryStream(collection *document.Collection, expre
 
 	return func() (*document.Document, error) {
 		docSnp, err := iter.Next()
-
 		if err != nil {
 			if err == iterator.Done {
 				return nil, io.EOF

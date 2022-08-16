@@ -60,8 +60,8 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		return nil, newErr(codes.InvalidArgument, "provide non-blank secret value", nil)
 	}
 
-	var versionId = uuid.New().String()
-	//Creates a new file in the form:
+	versionId := uuid.New().String()
+	// Creates a new file in the form:
 	// DIR/Name_Version.txt
 	file, err := os.Create(s.secretFileName(sec, versionId))
 	if err != nil {
@@ -82,7 +82,7 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	}
 	writer.Flush()
 
-	//Creates a new file as latest
+	// Creates a new file as latest
 	latestFile, err := os.Create(s.secretFileName(sec, "latest"))
 	if err != nil {
 		return nil, newErr(
@@ -164,15 +164,15 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 	}, nil
 }
 
-//Create new secret store
+// Create new secret store
 func New() (secret.SecretService, error) {
 	secDir := utils.GetEnv("LOCAL_SEC_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
-	//Check whether file exists
+	// Check whether file exists
 	_, err := os.Stat(secDir)
 	if os.IsNotExist(err) {
-		//Make directory if not present
-		err := os.MkdirAll(secDir, 0777)
+		// Make directory if not present
+		err := os.MkdirAll(secDir, 0o777)
 		if err != nil {
 			return nil, err
 		}

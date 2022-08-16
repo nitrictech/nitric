@@ -26,7 +26,6 @@ import (
 )
 
 var _ = Describe("Bolt", func() {
-
 	docPlugin, err := boltdb_service.New()
 	if err != nil {
 		panic(err)

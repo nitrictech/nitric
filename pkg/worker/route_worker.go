@@ -86,7 +86,6 @@ func (s *RouteWorker) HandlesEvent(trigger *triggers.Event) bool {
 
 func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	params, err := s.extractPathParams(trigger)
-
 	if err != nil {
 		return nil, err
 	}

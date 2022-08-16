@@ -31,7 +31,6 @@ import (
 )
 
 var _ = Describe("grpcAdapter", func() {
-
 	Context("newTicket", func() {
 		When("calling newTicket", func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -127,11 +126,10 @@ var _ = Describe("grpcAdapter", func() {
 	})
 
 	Context("send", func() {
-		//TODO: possible remove?
+		// TODO: possible remove?
 	})
 
 	Context("Listen", func() {
-
 		When("receiving valid trigger responses", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
@@ -270,11 +268,9 @@ var _ = Describe("grpcAdapter", func() {
 				ctrl.Finish()
 			})
 		})
-
 	})
 
 	Context("HandleHttpRequest", func() {
-
 		When("the worker connection responds with an error", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			stream := mock_nitric.NewMockFaasService_TriggerStreamServer(ctrl)
@@ -298,7 +294,6 @@ var _ = Describe("grpcAdapter", func() {
 		PWhen("the worker successfully responds", func() {
 			// TODO
 		})
-
 	})
 
 	Context("HandleEvent", func() {
@@ -326,5 +321,4 @@ var _ = Describe("grpcAdapter", func() {
 			// TODO
 		})
 	})
-
 })
