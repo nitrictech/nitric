@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
@@ -29,8 +28,10 @@ type RouteWorker struct {
 	methods []string
 	path    string
 
-	GrpcWorker
+	Adapter
 }
+
+var _ Worker = &RouteWorker{}
 
 // Api - Retrieve the name of the API this
 // route worker was registered for
@@ -92,7 +93,7 @@ func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 
 	trigger.Params = params
 
-	return s.GrpcWorker.HandleHttpRequest(trigger)
+	return s.Adapter.HandleHttpRequest(trigger)
 }
 
 func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
@@ -107,11 +108,11 @@ type RouteWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewRouteWorker(stream pb.FaasService_TriggerStreamServer, opts *RouteWorkerOptions) *RouteWorker {
+func NewRouteWorker(adapter Adapter, opts *RouteWorkerOptions) *RouteWorker {
 	return &RouteWorker{
-		api:        opts.Api,
-		path:       opts.Path,
-		methods:    opts.Methods,
-		GrpcWorker: NewGrpcListener(stream),
+		api:     opts.Api,
+		path:    opts.Path,
+		methods: opts.Methods,
+		Adapter: adapter,
 	}
 }

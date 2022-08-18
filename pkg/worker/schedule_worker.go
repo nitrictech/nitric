@@ -19,15 +19,15 @@ import (
 	"strings"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
-
-	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
 // RouteWorker - Worker representation for an http api route handler
 type ScheduleWorker struct {
 	key string
-	GrpcWorker
+	Adapter
 }
+
+var _ Worker = &ScheduleWorker{}
 
 func (s *ScheduleWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
 	return false
@@ -58,9 +58,9 @@ type ScheduleWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewScheduleWorker(stream pb.FaasService_TriggerStreamServer, opts *ScheduleWorkerOptions) *ScheduleWorker {
+func NewScheduleWorker(adapter Adapter, opts *ScheduleWorkerOptions) *ScheduleWorker {
 	return &ScheduleWorker{
-		key:        opts.Key,
-		GrpcWorker: NewGrpcListener(stream),
+		key:     opts.Key,
+		Adapter: adapter,
 	}
 }
