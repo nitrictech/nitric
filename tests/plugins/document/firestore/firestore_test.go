@@ -28,8 +28,10 @@ import (
 	test "github.com/nitrictech/nitric/tests/plugins/document"
 )
 
-const containerName = "firestore-nitric"
-const port = "8080"
+const (
+	containerName = "firestore-nitric"
+	port          = "8080"
+)
 
 func createFirestoreClient(ctx context.Context) *firestore.Client {
 	client, err := firestore.NewClient(ctx, "test")

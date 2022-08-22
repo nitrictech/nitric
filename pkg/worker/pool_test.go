@@ -28,9 +28,7 @@ import (
 )
 
 var _ = Describe("ProcessPool", func() {
-
 	Context("GetWorkerCount", func() {
-
 		When("calling GetWorkerCount", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			lck := mock_sync.NewMockLocker(ctrl)
@@ -139,7 +137,6 @@ var _ = Describe("ProcessPool", func() {
 				mockErr := fmt.Errorf("mock error")
 
 				It("should block the current thread until poolErr is populated", func() {
-
 					By("Blocking until pool error is populated")
 					blockingErr := make(chan error)
 					go func(errChan chan error) {
@@ -231,7 +228,6 @@ var _ = Describe("ProcessPool", func() {
 						By("not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 					})
-
 				})
 			})
 
@@ -392,7 +388,6 @@ var _ = Describe("ProcessPool", func() {
 					ctrl.Finish()
 				})
 			})
-
 		})
 	})
 })

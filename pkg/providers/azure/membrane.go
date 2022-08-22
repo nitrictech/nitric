@@ -39,7 +39,6 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	provider, err := core.New()
-
 	if err != nil {
 		log.Fatalf("could not create core azure provider: %v", err)
 	}
@@ -64,7 +63,6 @@ func main() {
 	}
 
 	m, err := membrane.New(membraneOpts)
-
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}

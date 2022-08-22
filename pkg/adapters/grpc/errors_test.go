@@ -109,7 +109,6 @@ var _ = Describe("GRPC Errors", func() {
 
 		When("struct", func() {
 			It("return string value", func() {
-
 				data := Secret{
 					Name:    "name",
 					Version: "3",

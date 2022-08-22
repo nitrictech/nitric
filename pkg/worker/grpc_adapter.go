@@ -179,7 +179,6 @@ func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 
 	// send the message
 	err := s.send(message)
-
 	if err != nil {
 		// There was an error enqueuing the message
 		return nil, err
@@ -242,7 +241,6 @@ func (s *GrpcAdapter) HandleEvent(trigger *triggers.Event) error {
 
 	// send the message
 	err := s.send(message)
-
 	if err != nil {
 		// There was an error enqueuing the message
 		return err

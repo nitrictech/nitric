@@ -32,7 +32,6 @@ import (
 
 var _ = Describe("Pubsub", func() {
 	Context("Send", func() {
-
 		When("Publishing to a queue that exists", func() {
 			mockPubsubClient := mock_pubsub.NewMockPubsubClient(
 				mock_pubsub.MockPubsubOptions{
@@ -80,7 +79,6 @@ var _ = Describe("Pubsub", func() {
 	})
 
 	Context("BatchPush", func() {
-
 		When("Publishing to a queue that exists", func() {
 			mockPubsubClient := mock_pubsub.NewMockPubsubClient(
 				mock_pubsub.MockPubsubOptions{
@@ -130,7 +128,6 @@ var _ = Describe("Pubsub", func() {
 	})
 
 	Context("Receive", func() {
-
 		When("Popping from a queue that exists", func() {
 			When("There is a message on the queue", func() {
 				mockId := "mockmessageid"

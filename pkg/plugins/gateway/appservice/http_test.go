@@ -86,7 +86,6 @@ var _ = Describe("Http", func() {
 
 	When("Invoking the Azure AppService HTTP Gateway", func() {
 		When("with a standard Nitric Request", func() {
-
 			It("Should be handled successfully", func() {
 				request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test/", gatewayUrl), bytes.NewReader([]byte("Test")))
 				request.Header.Add("x-nitric-request-id", "1234")

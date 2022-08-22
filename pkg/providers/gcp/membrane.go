@@ -70,7 +70,6 @@ func main() {
 	}
 
 	m, err := membrane.New(membraneOpts)
-
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)
 	}

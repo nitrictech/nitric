@@ -51,7 +51,6 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 	)
 
 	data, err := json.Marshal(event)
-
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -61,7 +60,6 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 	}
 
 	topics, err := s.getTopics()
-
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -107,7 +105,6 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics", nil)
 
 	topics, err := s.getTopics()
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

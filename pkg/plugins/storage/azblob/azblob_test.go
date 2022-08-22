@@ -33,7 +33,7 @@ import (
 )
 
 var _ = Describe("Azblob", func() {
-	//Context("New", func() {
+	// Context("New", func() {
 	//	When("", func() {
 
 	//	})

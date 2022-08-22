@@ -32,7 +32,6 @@ import (
 )
 
 var _ = Describe("Sns", func() {
-
 	Context("Get Topics", func() {
 		When("There are available topics", func() {
 			ctrl := gomock.NewController(GinkgoT())

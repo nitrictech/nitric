@@ -264,7 +264,7 @@ func (s *BoltDocService) query(collection *document.Collection, expressions []do
 	matcher := q.And(matchers[:]...)
 	query := db.Select(matcher)
 
-	var pagingSkip = 0
+	pagingSkip := 0
 
 	// If fetch limit configured skip past previous reads
 	if limit > 0 && len(pagingToken) > 0 {
@@ -375,7 +375,7 @@ func (s *BoltDocService) QueryStream(collection *document.Collection, expression
 		},
 	)
 
-	var tmpLimit = limit
+	tmpLimit := limit
 	var documents []document.Document
 	var pagingToken map[string]string
 
@@ -429,7 +429,7 @@ func New() (*BoltDocService, error) {
 	_, err := os.Stat(dbDir)
 	if os.IsNotExist(err) {
 		// Make directory if not present
-		err := os.MkdirAll(dbDir, 0777)
+		err := os.MkdirAll(dbDir, 0o777)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +445,7 @@ func (s *BoltDocService) createdDb(coll document.Collection) (*storm.DB, error) 
 
 	dbPath := filepath.Join(s.dbDir, strings.ToLower(coll.Name)+".db")
 
-	options := storm.BoltOptions(0600, &bbolt.Options{Timeout: 1 * time.Second})
+	options := storm.BoltOptions(0o600, &bbolt.Options{Timeout: 1 * time.Second})
 	db, err := storm.Open(dbPath, options)
 	if err != nil {
 		return nil, err

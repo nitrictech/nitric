@@ -61,11 +61,9 @@ func (m MockPubsubMessage) PublishTime() time.Time {
 }
 
 func (m MockPubsubMessage) Ack() {
-
 }
 
 func (m MockPubsubMessage) Nack() {
-
 }
 
 type MockPubsubOptions struct {
@@ -92,7 +90,7 @@ func (s *MockPubsubClient) Topic(name string) ifaces_pubsub.Topic {
 	return &MockPubsubTopic{
 		name: name,
 		c:    s,
-		//subscriptions: nil,
+		// subscriptions: nil,
 	}
 }
 
@@ -122,10 +120,10 @@ func (s *MockTopicIterator) Next() (ifaces_pubsub.Topic, error) {
 }
 
 type MockPubsubTopic struct {
-	//ifaces.Topic
+	// ifaces.Topic
 	c    *MockPubsubClient
 	name string
-	//subscriptions []ifaces.Subscription
+	// subscriptions []ifaces.Subscription
 }
 
 var _ ifaces_pubsub.Topic = (*MockPubsubTopic)(nil)

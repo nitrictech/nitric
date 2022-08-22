@@ -75,7 +75,6 @@ func nameSelector(nitricName string) (*string, error) {
 
 func New() (storage.StorageService, error) {
 	conf, err := configFromEnv()
-
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +88,6 @@ func New() (storage.StorageService, error) {
 		S3ForcePathStyle: aws.Bool(true),
 	}
 	newSession, err := session.NewSession(s3Config)
-
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session")
 	}

@@ -24,7 +24,6 @@ import (
 )
 
 var _ = Describe("RouteWorker", func() {
-
 	Context("Http", func() {
 		rWrkr := &RouteWorker{
 			methods: []string{"GET"},
@@ -90,7 +89,6 @@ var _ = Describe("RouteWorker", func() {
 	})
 
 	Context("Event", func() {
-
 		When("calling HandlesEvent", func() {
 			rWrkr := &RouteWorker{}
 
@@ -103,7 +101,6 @@ var _ = Describe("RouteWorker", func() {
 			subWrkr := &RouteWorker{}
 
 			It("should return an error", func() {
-
 				err := subWrkr.HandleEvent(&triggers.Event{})
 
 				Expect(err).Should(HaveOccurred())

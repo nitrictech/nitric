@@ -72,7 +72,6 @@ var _ = Describe("Http", func() {
 
 	When("Invoking the GCP HTTP Gateway", func() {
 		When("with a HTTP request", func() {
-
 			It("Should be handled successfully", func() {
 				request, err := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader([]byte("Test")))
 				Expect(err).To(BeNil())
@@ -83,7 +82,7 @@ var _ = Describe("Http", func() {
 				request.Header.Add("Cookie", "test2=testcookie2")
 				resp, err := http.DefaultClient.Do(request)
 
-				var responseBody = make([]byte, 0)
+				responseBody := make([]byte, 0)
 
 				if err == nil {
 					if bytes, err := ioutil.ReadAll(resp.Body); err == nil {

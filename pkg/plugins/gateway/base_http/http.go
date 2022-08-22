@@ -54,14 +54,12 @@ func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Http: httpTrigger,
 		})
-
 		if err != nil {
 			ctx.Error("Unable to get worker to handle request", 500)
 			return
 		}
 
 		response, err := wrkr.HandleHttpRequest(httpTrigger)
-
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return

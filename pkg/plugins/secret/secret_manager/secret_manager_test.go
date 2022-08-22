@@ -27,7 +27,7 @@ import (
 )
 
 var _ = Describe("Secret Manager", func() {
-	var mockSecret = &secretmanagerpb.Secret{
+	mockSecret := &secretmanagerpb.Secret{
 		Name:   "projects/my-project/secrets/Test",
 		Labels: make(map[string]string),
 	}
@@ -50,7 +50,7 @@ var _ = Describe("Secret Manager", func() {
 				It("Should successfully store a secret", func() {
 					// Assert all methods are called at least their number of times
 					defer crtl.Finish()
-					//Mocking expects
+					// Mocking expects
 					By("calling SecretManagerService.ListSecrets with the expected request")
 
 					si := mocks.NewMockSecretIterator(crtl)
@@ -106,7 +106,7 @@ var _ = Describe("Secret Manager", func() {
 				}
 
 				It("Should return an error", func() {
-					var emptySecretName = &secret.Secret{}
+					emptySecretName := &secret.Secret{}
 					_, err := secretPlugin.Put(emptySecretName, testSecretVal)
 
 					Expect(err).Should(HaveOccurred())
@@ -143,7 +143,7 @@ var _ = Describe("Secret Manager", func() {
 					}
 					It("Should successfully return a secret", func() {
 						defer crtl.Finish()
-						//Mocking expects
+						// Mocking expects
 						By("calling SecretManagerService.AccessSecretVersion with the expected payload")
 						mockSecretClient.EXPECT().AccessSecretVersion(
 							gomock.Any(),

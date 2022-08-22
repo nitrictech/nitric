@@ -68,7 +68,6 @@ func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 		false,
 		azblob.ClientProvidedKeyOptions{},
 	)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -155,7 +154,6 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	currentTime := time.Now().UTC()
 	validDuration := currentTime.Add(time.Duration(expiry) * time.Second)
 	cred, err := s.client.GetUserDelegationCredential(context.TODO(), azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
-
 	if err != nil {
 		return "", newErr(
 			codes.Internal,
@@ -176,7 +174,6 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	}
 
 	queryParams, err := sigOpts.NewSASQueryParameters(cred)
-
 	if err != nil {
 		return "", newErr(
 			codes.Internal,

@@ -25,6 +25,7 @@ var UserKey1 = document.Key{
 	Collection: &document.Collection{Name: "users"},
 	Id:         "jsmith@server.com",
 }
+
 var UserItem1 = map[string]interface{}{
 	"firstName": "John",
 	"lastName":  "Smith",
@@ -32,10 +33,12 @@ var UserItem1 = map[string]interface{}{
 	"country":   "US",
 	"age":       "30",
 }
+
 var UserKey2 = document.Key{
 	Collection: &document.Collection{Name: "users"},
 	Id:         "j.smithers@yahoo.com",
 }
+
 var UserItem2 = map[string]interface{}{
 	"firstName": "Johnson",
 	"lastName":  "Smithers",
@@ -43,10 +46,12 @@ var UserItem2 = map[string]interface{}{
 	"country":   "AU",
 	"age":       "40",
 }
+
 var UserKey3 = document.Key{
 	Collection: &document.Collection{Name: "users"},
 	Id:         "pdavis@server.com",
 }
+
 var UserItem3 = map[string]interface{}{
 	"firstName": "Paul",
 	"lastName":  "Davis",

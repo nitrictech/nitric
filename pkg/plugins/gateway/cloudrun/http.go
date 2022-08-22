@@ -73,7 +73,6 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Event: event,
 		})
-
 		if err != nil {
 			ctx.Error("Could not find handle for event", 500)
 			return false

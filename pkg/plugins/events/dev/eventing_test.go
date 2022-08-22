@@ -59,7 +59,6 @@ var _ = Describe("events", func() {
 	})
 
 	When("Getting available topics", func() {
-
 		When("topics exist", func() {
 			subs := map[string][]string{
 				"test": {"http://test-endpoint/"},
@@ -146,7 +145,6 @@ var _ = Describe("events", func() {
 				err = json.Unmarshal(bodyBytes, &bodyMap)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bodyMap).To(BeEquivalentTo(testPayload))
-
 			})
 		})
 
