@@ -47,8 +47,8 @@ type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) triggers.
 type RouteRegister func(*router.Router, worker.WorkerPool)
 
 const (
-	DefaultTopicRoute    = "/x-nitric-topic/:name"
-	DefaultScheduleRoute = "/x-nitric-schedule/:name"
+	DefaultTopicRoute    = "/x-nitric-subscription/{name}"
+	DefaultScheduleRoute = "/x-nitric-schedule/{name}"
 )
 
 type BaseHttpGatewayOptions struct {
