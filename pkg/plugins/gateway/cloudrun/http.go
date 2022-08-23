@@ -132,8 +132,8 @@ func handleSubscription(pool worker.WorkerPool) fasthttp.RequestHandler {
 }
 
 func routes(r *router.Router, p worker.WorkerPool) {
-	r.ANY("/x-nitric-schedule/{name}", handleSchedule(p))
-	r.ANY("/x-nitric-subscription/{name}", handleSubscription(p))
+	r.ANY(base_http.DefaultScheduleRoute, handleSchedule(p))
+	r.ANY(base_http.DefaultTopicRoute, handleSubscription(p))
 }
 
 // New - Create a New cloudrun gateway plugin
