@@ -165,8 +165,8 @@ func routes(r *router.Router, p worker.WorkerPool) {
 	r.GET("/dapr/config", func(ctx *fasthttp.RequestCtx) {
 		ctx.Error("no config", 404)
 	})
-	r.ANY("/x-nitric-schedule/{name}", handleSchedule(p))
-	r.ANY("/x-nitric-subscription/{name}", handleSubscription(p))
+	r.ANY(base_http.DefaultScheduleRoute, handleSchedule(p))
+	r.ANY(base_http.DefaultTopicRoute, handleSubscription(p))
 }
 
 // Create a new HTTP Gateway plugin
