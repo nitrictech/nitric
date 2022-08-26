@@ -147,7 +147,6 @@ func handleSchedule(pool worker.WorkerPool) fasthttp.RequestHandler {
 				return isSchedule
 			},
 		})
-
 		if err != nil {
 			ctx.Error(fmt.Sprintf("could not find handler for schedule: %s", topicName), 404)
 			return
