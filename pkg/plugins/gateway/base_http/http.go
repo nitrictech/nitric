@@ -41,8 +41,10 @@ func WithRouter(routeRegister func(*router.Router, worker.WorkerPool)) BaseHttpG
 	}
 }
 
-type HttpMiddleware func(*fasthttp.RequestCtx, worker.WorkerPool) bool
-type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) triggers.Event
+type (
+	HttpMiddleware   func(*fasthttp.RequestCtx, worker.WorkerPool) bool
+	EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) triggers.Event
+)
 
 type RouteRegister func(*router.Router, worker.WorkerPool)
 

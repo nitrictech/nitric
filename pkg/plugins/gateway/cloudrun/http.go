@@ -113,7 +113,6 @@ func handleSubscription(pool worker.WorkerPool) fasthttp.RequestHandler {
 					return isSubscription
 				},
 			})
-
 			if err != nil {
 				ctx.Error("Could not find handler for event", 500)
 				return
