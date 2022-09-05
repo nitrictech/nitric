@@ -48,6 +48,8 @@ Nitric is currently in Public Preview. Anyone can use or deploy applications, bu
 
 - Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
 
+- Join us on [Discord](https://discord.gg/Webemece5C)
+
 - Find us on [Twitter](https://twitter.com/nitric_io)
 
 - Send us an [email](mailto:maintainers@nitric.io)
