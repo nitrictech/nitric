@@ -39,6 +39,7 @@ const (
 	unknown eventType = iota
 	sns
 	httpEvent
+	healthcheck
 	xforwardHeader string = "x-forwarded-for"
 )
 
@@ -82,6 +83,12 @@ func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
 	}
 
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
+}
+
+func (s *LambdaGateway) isHealthCheck(data map[string]interface{}) bool {
+	_, ok := data["x-nitric-healthcheck"]
+
+	return ok
 }
 
 func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]triggers.Trigger, error) {
@@ -159,6 +166,9 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 			Path:   evt.RawPath,
 			Query:  qVals,
 		})
+
+	case healthcheck:
+
 	default:
 		return nil, fmt.Errorf("unhandled event type %v", data)
 	}
@@ -175,6 +185,12 @@ type LambdaGateway struct {
 }
 
 func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{}) (interface{}, error) {
+	if s.isHealthCheck(data) {
+		return map[string]interface{}{
+			"healthy": true,
+		}, nil
+	}
+
 	trigs, err := s.triggersFromRequest(data)
 	if err != nil {
 		return nil, err
