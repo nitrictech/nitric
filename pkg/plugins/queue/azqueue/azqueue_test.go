@@ -29,14 +29,13 @@ import (
 )
 
 var _ = Describe("Azqueue", func() {
-
 	Context("Send", func() {
 		When("Azure returns a successfully response", func() {
 			crtl := gomock.NewController(GinkgoT())
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -73,7 +72,7 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -112,7 +111,7 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -153,7 +152,7 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -198,7 +197,7 @@ var _ = Describe("Azqueue", func() {
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
 			mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -221,8 +220,8 @@ var _ = Describe("Azqueue", func() {
 				mockDequeueResp.EXPECT().NumMessages().AnyTimes().Return(int32(1))
 				mockDequeueResp.EXPECT().Message(int32(0)).Times(1).Return(&azqueue2.DequeuedMessage{
 					ID: "testid",
-					//InsertionTime:   time.Time{},
-					//ExpirationTime:  time.Time{},
+					// InsertionTime:   time.Time{},
+					// ExpirationTime:  time.Time{},
 					PopReceipt:      "popreceipt",
 					NextVisibleTime: time.Time{},
 					DequeueCount:    0,
@@ -252,8 +251,8 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
-			//mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
+			// mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
+			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
 				client: mockAzqueue,
@@ -294,7 +293,7 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
+			// mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
 			mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{
@@ -332,7 +331,7 @@ var _ = Describe("Azqueue", func() {
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
 			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
 			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			//mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
+			// mockDequeueResp := mock_azqueue.NewMockDequeueMessagesResponseIface(crtl)
 			mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
 
 			queuePlugin := &AzqueueQueueService{

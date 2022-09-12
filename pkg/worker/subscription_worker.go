@@ -18,15 +18,16 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
-
-	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
 // RouteWorker - Worker representation for an http api route handler
 type SubscriptionWorker struct {
 	topic string
-	GrpcWorker
+	Delegate
+	Adapter
 }
+
+var _ Worker = &SubscriptionWorker{}
 
 func (s *SubscriptionWorker) Topic() string {
 	return s.topic
@@ -51,9 +52,9 @@ type SubscriptionWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewSubscriptionWorker(stream pb.FaasService_TriggerStreamServer, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
+func NewSubscriptionWorker(adapter Adapter, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
 	return &SubscriptionWorker{
-		topic:      opts.Topic,
-		GrpcWorker: NewGrpcListener(stream),
+		topic:   opts.Topic,
+		Adapter: adapter,
 	}
 }

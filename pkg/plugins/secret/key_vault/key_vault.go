@@ -102,13 +102,12 @@ func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 
 	result, err := s.client.SetSecret(
 		context.Background(),
-		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), //https://myvault.vault.azure.net.
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
 		sec.Name,
 		keyvault.SecretSetParameters{
 			Value: &stringVal,
 		},
 	)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -148,14 +147,14 @@ func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 		},
 	)
 
-	//Key vault will default to latest if an empty string is provided
+	// Key vault will default to latest if an empty string is provided
 	version := sv.Version
 	if version == "latest" {
 		version = ""
 	}
 	result, err := s.client.GetSecret(
 		context.Background(),
-		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), //https://myvault.vault.azure.net.
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
 		sv.Secret.Name,
 		version,
 	)
@@ -166,8 +165,8 @@ func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 			err,
 		)
 	}
-	//Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
-	//Split to get the version
+	// Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
+	// Split to get the version
 	return &secret.SecretAccessResponse{
 		// Return the original secret version payload
 		SecretVersion: &secret.SecretVersion{
@@ -187,9 +186,9 @@ func New() (secret.SecretService, error) {
 		return nil, fmt.Errorf("KVAULT_NAME not configured")
 	}
 
-	//Auth requires:
-	//AZURE_TENANT_ID: Your Azure tenant ID
-	//AZURE_CLIENT_ID: Your Azure client ID. This will be an app ID from your AAD.
+	// Auth requires:
+	// AZURE_TENANT_ID: Your Azure tenant ID
+	// AZURE_CLIENT_ID: Your Azure client ID. This will be an app ID from your AAD.
 	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.KeyVault)
 	if err != nil {
 		return nil, err

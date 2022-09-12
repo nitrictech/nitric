@@ -60,8 +60,8 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		return nil, newErr(codes.InvalidArgument, "provide non-blank secret value", nil)
 	}
 
-	var versionId = uuid.New().String()
-	//Creates a new file in the form:
+	versionId := uuid.New().String()
+	// Creates a new file in the form:
 	// DIR/Name_Version.txt
 	file, err := os.Create(s.secretFileName(sec, versionId))
 	if err != nil {
@@ -82,7 +82,7 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	}
 	writer.Flush()
 
-	//Creates a new file as latest
+	// Creates a new file as latest
 	latestFile, err := os.Create(s.secretFileName(sec, "latest"))
 	if err != nil {
 		return nil, newErr(
@@ -91,8 +91,9 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 			err,
 		)
 	}
+
 	latestWriter := bufio.NewWriter(latestFile)
-	_, err = latestWriter.WriteString(string(val))
+	_, err = latestWriter.WriteString(string(val) + "," + versionId)
 	if err != nil {
 		return nil, newErr(
 			codes.FailedPrecondition,
@@ -101,14 +102,6 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 		)
 	}
 
-	_, err = latestWriter.WriteString("," + versionId)
-	if err != nil {
-		return nil, newErr(
-			codes.FailedPrecondition,
-			"error writing secret value",
-			err,
-		)
-	}
 	latestWriter.Flush()
 
 	return &secret.SecretPutResponse{
@@ -154,26 +147,32 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 	}
 
 	splitContent := strings.Split(string(content), ",")
+	version := sv.Version
+	// check whether a version number is stored in the file, this indicates the 'latest' version file.
+	if len(splitContent) == 2 {
+		version = splitContent[1]
+	}
+
 	return &secret.SecretAccessResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: splitContent[len(splitContent)-1],
+			Version: version,
 		},
 		Value: []byte(splitContent[0]),
 	}, nil
 }
 
-//Create new secret store
+// Create new secret store
 func New() (secret.SecretService, error) {
 	secDir := utils.GetEnv("LOCAL_SEC_DIR", utils.GetRelativeDevPath(DEV_SUB_DIRECTORY))
 
-	//Check whether file exists
+	// Check whether file exists
 	_, err := os.Stat(secDir)
 	if os.IsNotExist(err) {
-		//Make directory if not present
-		err := os.MkdirAll(secDir, 0777)
+		// Make directory if not present
+		err := os.MkdirAll(secDir, 0o777)
 		if err != nil {
 			return nil, err
 		}

@@ -65,7 +65,6 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 	if _, ok := p.cache[r]; !ok {
 		// populate the cache
 		results, err := p.rclient.ListByResourceGroupComplete(context.TODO(), p.rgName, filter, "", nil)
-
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +73,6 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 
 		for results.NotDone() {
 			err := results.NextWithContext(context.TODO())
-
 			if err != nil {
 				return nil, err
 			}
@@ -151,7 +149,6 @@ func New() (*azProviderImpl, error) {
 
 	rclient := resources.NewClient(subId)
 	spt, err := prov.ServicePrincipalToken("https://management.azure.com")
-
 	if err != nil {
 		return nil, err
 	}

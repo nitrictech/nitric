@@ -50,8 +50,7 @@ type MockQueueServiceServer struct {
 	queue.UnimplementedQueuePlugin
 }
 
-type MockFunction struct {
-}
+type MockFunction struct{}
 
 type MockGateway struct {
 	gateway.UnimplementedGatewayPlugin
@@ -184,7 +183,6 @@ var _ = Describe("Membrane", func() {
 	})
 
 	Context("Starting the server", func() {
-
 		Context("That tolerates missing adapters", func() {
 			When("The Gateway plugin is available and working", func() {
 				mockGateway := &MockGateway{}
@@ -243,7 +241,6 @@ var _ = Describe("Membrane", func() {
 		var mockGateway *MockGateway
 		var mb *membrane.Membrane
 		When("The configured command exists", func() {
-
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
 				mb, _ = membrane.New(&membrane.MembraneOptions{

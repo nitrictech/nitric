@@ -43,7 +43,6 @@ var _ = Describe("Storage", func() {
 				testPayload := []byte("Test")
 
 				It("Should store the item", func() {
-
 					By("The bucket existing")
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
@@ -298,7 +297,6 @@ var _ = Describe("Storage", func() {
 	Context("SignedUrl", func() {
 		When("The bucket exists", func() {
 			When("The item exists", func() {
-
 				When("requesting a read url", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := storage_mock.NewMockStorageClient(ctrl)

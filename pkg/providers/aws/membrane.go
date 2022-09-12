@@ -42,7 +42,6 @@ func main() {
 	membraneOpts := membrane.DefaultMembraneOptions()
 
 	provider, err := core.New()
-
 	if err != nil {
 		log.Fatalf("could not create aws provider: %v", err)
 		return
@@ -63,7 +62,6 @@ func main() {
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 
 	m, err := membrane.New(membraneOpts)
-
 	if err != nil {
 		log.Default().Fatalf("There was an error initialising the membrane server: %v", err)
 	}

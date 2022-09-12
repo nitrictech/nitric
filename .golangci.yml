@@ -8,6 +8,7 @@ linters:
   enable:
   - goimports
   - gofmt
+  - gofumpt
   - whitespace
   - staticcheck
   - structcheck

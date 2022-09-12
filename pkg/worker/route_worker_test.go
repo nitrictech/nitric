@@ -24,7 +24,6 @@ import (
 )
 
 var _ = Describe("RouteWorker", func() {
-
 	Context("Http", func() {
 		rWrkr := &RouteWorker{
 			methods: []string{"GET"},
@@ -61,10 +60,10 @@ var _ = Describe("RouteWorker", func() {
 		When("calling HandleHttpRequest", func() {
 			It("should call the base grpc workers HandleEvent with augmented trigger", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mGrpc := mock.NewMockGrpcWorker(ctrl)
+				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
-				mGrpc.EXPECT().HandleHttpRequest(&triggers.HttpRequest{
+				hndlr.EXPECT().HandleHttpRequest(&triggers.HttpRequest{
 					Method: "GET",
 					Path:   "/test/name",
 					Params: map[string]string{
@@ -73,9 +72,9 @@ var _ = Describe("RouteWorker", func() {
 				}).Times(1)
 
 				subWrkr := &RouteWorker{
-					methods:    []string{"GET"},
-					path:       "/test/:param",
-					GrpcWorker: mGrpc,
+					methods: []string{"GET"},
+					path:    "/test/:param",
+					Adapter: hndlr,
 				}
 
 				_, err := subWrkr.HandleHttpRequest(&triggers.HttpRequest{
@@ -90,7 +89,6 @@ var _ = Describe("RouteWorker", func() {
 	})
 
 	Context("Event", func() {
-
 		When("calling HandlesEvent", func() {
 			rWrkr := &RouteWorker{}
 
@@ -103,7 +101,6 @@ var _ = Describe("RouteWorker", func() {
 			subWrkr := &RouteWorker{}
 
 			It("should return an error", func() {
-
 				err := subWrkr.HandleEvent(&triggers.Event{})
 
 				Expect(err).Should(HaveOccurred())

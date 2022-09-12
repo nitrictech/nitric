@@ -52,7 +52,6 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 
 func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
 	secrets, err := s.provider.GetResources(core.AwsResource_Secret)
-
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secrets list: %v", err)
 	}
@@ -81,7 +80,6 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 	}
 
 	secretId, err := s.getSecretId(sec.Name)
-
 	if err != nil {
 		return nil, newErr(codes.NotFound, "unable to find secret", err)
 	}
@@ -90,7 +88,6 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		SecretId:     aws.String(secretId),
 		SecretBinary: val,
 	})
-
 	if err != nil {
 		return nil, newErr(codes.Internal, "unable to put secret", err)
 	}
@@ -130,12 +127,11 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 	}
 
 	secretId, err := s.getSecretId(sv.Secret.Name)
-
 	if err != nil {
 		return nil, newErr(codes.NotFound, "could not find secret", err)
 	}
 
-	//Build the request to get the secret
+	// Build the request to get the secret
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(secretId),
 	}
@@ -147,7 +143,6 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 	}
 
 	result, err := s.client.GetSecretValue(input)
-
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -167,7 +162,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 	}, nil
 }
 
-//Gets a new Secrets Manager Client
+// Gets a new Secrets Manager Client
 func New(provider core.AwsProvider) (secret.SecretService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 

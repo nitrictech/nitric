@@ -29,7 +29,7 @@ import (
 )
 
 func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
-	var triggerTypeString = string(ctx.Request.Header.Peek("x-nitric-source-type"))
+	triggerTypeString := string(ctx.Request.Header.Peek("x-nitric-source-type"))
 
 	// Handle Event/Subscription Request Types
 	if strings.ToUpper(triggerTypeString) == triggers.TriggerType_Subscription.String() {
@@ -46,7 +46,6 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{
 			Event: evt,
 		})
-
 		if err != nil {
 			ctx.Error("No worker available to handle event", 500)
 			return false

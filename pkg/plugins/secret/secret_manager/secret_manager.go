@@ -121,7 +121,6 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 
 	// ensure the secret container exists...
 	parentSec, err := s.getSecret(sec)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -136,7 +135,6 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 			Data: val,
 		},
 	})
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -168,7 +166,6 @@ func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.S
 	)
 
 	fullName, err := s.buildSecretVersionName(sv)
-
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,

@@ -30,9 +30,11 @@ import (
 	"github.com/nitrictech/nitric/pkg/providers/azure/core"
 )
 
-const mockRegion = "local1-test"
-const mockTopicName = "Test"
-const mockResourceName = "test-abcdef"
+const (
+	mockRegion       = "local1-test"
+	mockTopicName    = "Test"
+	mockResourceName = "test-abcdef"
+)
 
 var getTopicResourcesResponse = map[string]core.AzGenericResource{
 	mockTopicName: {

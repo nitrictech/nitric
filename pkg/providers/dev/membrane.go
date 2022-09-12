@@ -46,7 +46,6 @@ func main() {
 	membraneOpts.StoragePlugin, _ = minio_storage_service.New()
 
 	m, err := membrane.New(membraneOpts)
-
 	if err != nil {
 		log.Fatalf("There was an error initialising the membraneServer server: %v", err)
 	}

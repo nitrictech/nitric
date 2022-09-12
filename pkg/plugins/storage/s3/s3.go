@@ -42,7 +42,7 @@ const (
 
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
-	//storage.UnimplementedStoragePlugin
+	// storage.UnimplementedStoragePlugin
 	client   s3iface.S3API
 	provider core.AwsProvider
 	selector BucketSelector
@@ -57,7 +57,6 @@ func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
 	}
 
 	buckets, err := s.provider.GetResources(core.AwsResource_Bucket)
-
 	if err != nil {
 		return nil, fmt.Errorf("error getting bucket list: %v", err)
 	}
@@ -86,7 +85,6 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 			Bucket: b,
 			Key:    aws.String(key),
 		})
-
 		if err != nil {
 			return nil, newErr(
 				codes.NotFound,
@@ -96,7 +94,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 		}
 
 		defer resp.Body.Close()
-		//TODO: Wrap the possible error from ReadAll
+		// TODO: Wrap the possible error from ReadAll
 		return ioutil.ReadAll(resp.Body)
 	} else {
 		return nil, newErr(
@@ -243,7 +241,6 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 		objects, err := s.client.ListObjects(&s3.ListObjectsInput{
 			Bucket: b,
 		})
-
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,

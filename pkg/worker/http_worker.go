@@ -89,7 +89,6 @@ func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers
 
 	var resp fasthttp.Response
 	err := fasthttp.Do(httpRequest, &resp)
-
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,7 @@ func NewHttpWorker(address string) (*HttpWorker, error) {
 	// Longer poll times, e.g. 200 milliseconds results in slow lambda cold starts (15s+)
 	pollInterval := time.Duration(15) * time.Millisecond
 
-	var waitedTime = time.Duration(0)
+	waitedTime := time.Duration(0)
 	for {
 		conn, _ := net.Dial("tcp", address)
 		if conn != nil {

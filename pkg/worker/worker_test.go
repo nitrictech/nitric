@@ -22,7 +22,6 @@ import (
 )
 
 var _ = Describe("Worker", func() {
-
 	Context("UnimplementedWorker", func() {
 		uiWrkr := &UnimplementedWorker{}
 

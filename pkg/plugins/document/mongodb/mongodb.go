@@ -87,9 +87,8 @@ func (s *MongoDocService) Get(key *document.Key) (*document.Document, error) {
 	opts.SetProjection(bson.M{primaryKeyAttr: 0, parentKeyAttr: 0, childrenAttr: 0})
 
 	err := col.FindOne(s.context, docRef, opts).Decode(&value)
-
 	if err != nil {
-		var code = codes.Internal
+		code := codes.Internal
 		if err == mongo.ErrNoDocuments {
 			return nil, newErr(
 				codes.NotFound,
@@ -146,7 +145,6 @@ func (s *MongoDocService) Set(key *document.Key, value map[string]interface{}) e
 	update := bson.D{{"$set", value}}
 
 	_, err := coll.UpdateOne(s.context, filter, update, opts)
-
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -158,7 +156,6 @@ func (s *MongoDocService) Set(key *document.Key, value map[string]interface{}) e
 	// add references
 	if key.Collection.Parent != nil {
 		err := s.updateChildReferences(key, coll.Name(), "$addToSet")
-
 		if err != nil {
 			return newErr(
 				codes.Internal,
@@ -212,7 +209,6 @@ func (s *MongoDocService) Delete(key *document.Key) error {
 			colName := v.(string)
 			childCol := s.db.Collection(colName)
 			_, err := childCol.DeleteMany(s.context, bson.D{{parentKeyAttr, key.Id}})
-
 			if err != nil {
 				return newErr(
 					codes.Internal,
@@ -226,7 +222,6 @@ func (s *MongoDocService) Delete(key *document.Key) error {
 	// clean references if none left
 	if key.Collection.Parent != nil {
 		err := s.updateChildReferences(key, coll.Name(), "$pull")
-
 		if err != nil {
 			return newErr(
 				codes.Internal,
@@ -319,7 +314,6 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 	}
 
 	cursor, orderBy, err := s.getCursor(collection, expressions, limit, pagingToken)
-
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -331,7 +325,6 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 	defer cursor.Close(s.context)
 	for cursor.Next(s.context) {
 		sdkDoc, err := mongoDocToDocument(collection, cursor)
-
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -391,7 +384,6 @@ func (s *MongoDocService) QueryStream(collection *document.Collection, expressio
 		if cursor.Next(s.context) {
 			// return the next document
 			doc, err := mongoDocToDocument(collection, cursor)
-
 			if err != nil {
 				return nil, newErr(
 					codes.Internal,
@@ -534,7 +526,6 @@ func (s *MongoDocService) updateChildReferences(key *document.Key, subCollection
 
 	opts := options.Update().SetUpsert(true)
 	_, err := parentColl.UpdateOne(s.context, filter, update, opts)
-
 	if err != nil {
 		return err
 	}

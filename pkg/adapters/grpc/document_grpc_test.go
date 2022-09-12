@@ -159,7 +159,6 @@ var _ = Describe("GRPC Document", func() {
 				Expect(resp.Documents[0].Key.Id).Should(Equal("123456"))
 			})
 		})
-
 	})
 
 	Context("Set", func() {

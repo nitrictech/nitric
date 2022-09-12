@@ -33,10 +33,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
-const AttribPk = "_pk"
-const AttribSk = "_sk"
-const deleteQueryLimit = int64(1000)
-const maxBatchWrite = 25
+const (
+	AttribPk         = "_pk"
+	AttribSk         = "_sk"
+	deleteQueryLimit = int64(1000)
+	maxBatchWrite    = 25
+)
 
 // DynamoDocService - AWS DynamoDB AWS Nitric Document service
 type DynamoDocService struct {
@@ -73,7 +75,6 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	}
 
 	tableName, err := s.getTableName(*key.Collection)
-
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +152,6 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 	}
 
 	tableName, err := s.getTableName(*key.Collection)
-
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -204,7 +204,6 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 	}
 
 	tableName, err := s.getTableName(*key.Collection)
-
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -358,7 +357,7 @@ func (s *DynamoDocService) QueryStream(collection *document.Collection, expressi
 		}
 	}
 
-	var tmpLimit = limit
+	tmpLimit := limit
 	var documents []document.Document
 	var pagingToken map[string]string
 
@@ -502,7 +501,6 @@ func (s *DynamoDocService) performQuery(
 	sort.Sort(document.ExpsSort(expressions))
 
 	tableName, err := s.getTableName(*collection)
-
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +560,6 @@ func (s *DynamoDocService) performQuery(
 
 	// Perform query
 	resp, err := s.client.Query(input)
-
 	if err != nil {
 		return nil, fmt.Errorf("error performing query %v: %v", input, err)
 	}
@@ -640,7 +637,6 @@ func (s *DynamoDocService) performScan(
 	}
 
 	resp, err := s.client.Scan(input)
-
 	if err != nil {
 		return nil, fmt.Errorf("error performing scan %v: %v", input, err)
 	}
@@ -766,7 +762,6 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 
 func (s *DynamoDocService) getTableName(collection document.Collection) (*string, error) {
 	tables, err := s.provider.GetResources(core.AwsResource_Collection)
-
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the table list: %v", err)
 	}

@@ -107,11 +107,9 @@ var _ = Describe("S3", func() {
 					})
 				})
 				When("The item doesn't exist", func() {
-
 				})
 			})
 			When("The bucket doesn't exist", func() {
-
 			})
 		})
 	})
@@ -139,11 +137,9 @@ var _ = Describe("S3", func() {
 					})
 				})
 				When("The item doesn't exist", func() {
-
 				})
 			})
 			When("The bucket doesn't exist", func() {
-
 			})
 		})
 	})
@@ -156,7 +152,6 @@ var _ = Describe("S3", func() {
 
 			When("A URL is requested for a known operation", func() {
 				It("Should successfully generate the URL", func() {
-
 					By("the bucket existing")
 					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
 						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
