@@ -37,7 +37,6 @@ enum ResourceType {
   Collection = 7;
   Policy = 8;
   Secret = 9;
-  DeadLetter = 10;
 }
 
 message Resource {
@@ -56,7 +55,6 @@ message ResourceDeclareRequest {
     CollectionResource collection = 14;
     SecretResource secret = 15;
     ApiResource api = 16;
-    DeadLetterResource dead_letter = 17;
   }
 }
 
@@ -65,7 +63,6 @@ message QueueResource {}
 message TopicResource {}
 message CollectionResource {}
 message SecretResource {}
-message DeadLetterResource {}
 
 // protect your API with JWT authentication
 message ApiSecurityDefinitionJwt {
