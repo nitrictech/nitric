@@ -16,6 +16,7 @@ package secret_service
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -71,8 +72,11 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 			err,
 		)
 	}
+
+	sVal := base64.StdEncoding.EncodeToString(val)
+
 	writer := bufio.NewWriter(file)
-	_, err = writer.WriteString(string(val))
+	_, err = writer.WriteString(sVal)
 	if err != nil {
 		return nil, newErr(
 			codes.FailedPrecondition,
@@ -93,7 +97,7 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	}
 
 	latestWriter := bufio.NewWriter(latestFile)
-	_, err = latestWriter.WriteString(string(val) + "," + versionId)
+	_, err = latestWriter.WriteString(sVal + "," + versionId)
 	if err != nil {
 		return nil, newErr(
 			codes.FailedPrecondition,
@@ -153,6 +157,11 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 		version = splitContent[1]
 	}
 
+	sVal, err := base64.StdEncoding.DecodeString(splitContent[0])
+	if err != nil {
+		return nil, err
+	}
+
 	return &secret.SecretAccessResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
@@ -160,7 +169,7 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 			},
 			Version: version,
 		},
-		Value: []byte(splitContent[0]),
+		Value: sVal,
 	}, nil
 }
 
