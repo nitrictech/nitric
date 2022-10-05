@@ -119,6 +119,21 @@ func (m *EventPublishRequest) validate(all bool) error {
 		}
 	}
 
+	if m.GetDelay() != 0 {
+
+		if m.GetDelay() < 30 {
+			err := EventPublishRequestValidationError{
+				field:  "Delay",
+				reason: "value must be greater than or equal to 30",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return EventPublishRequestMultiError(errors)
 	}
