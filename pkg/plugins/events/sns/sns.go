@@ -89,11 +89,12 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 		_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
 			StateMachineArn: aws.String(sfnArn),
 			Input: aws.String(fmt.Sprintf(`{
-				"seconds", %d,
+				"seconds": %d,
 				"message": %s
 			}`, delay, message)),
 		})
 		if err != nil {
+			fmt.Println("%w", err)
 			return newErr(
 				codes.Internal,
 				"error starting state machine execution",

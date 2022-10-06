@@ -27,7 +27,7 @@ type AwsResource = string
 
 const (
 	// TODO: Verify this is correct
-	AwsResource_StateMachine AwsResource = "stepfunctions:statemachine"
+	AwsResource_StateMachine AwsResource = "states:stateMachine"
 	AwsResource_Topic        AwsResource = "sns:topic"
 	AwsResource_Collection   AwsResource = "dynamodb:table"
 	AwsResource_Queue        AwsResource = "sqs:queue"
