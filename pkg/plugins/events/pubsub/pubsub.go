@@ -54,7 +54,7 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) error {
+func (s *PubsubEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubEventService.Publish",
 		map[string]interface{}{

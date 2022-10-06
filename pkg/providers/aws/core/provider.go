@@ -26,11 +26,13 @@ import (
 type AwsResource = string
 
 const (
-	AwsResource_Topic      AwsResource = "sns:topic"
-	AwsResource_Collection AwsResource = "dynamodb:table"
-	AwsResource_Queue      AwsResource = "sqs:queue"
-	AwsResource_Bucket     AwsResource = "s3:bucket"
-	AwsResource_Secret     AwsResource = "secretsmanager:secret"
+	// TODO: Verify this is correct
+	AwsResource_StateMachine AwsResource = "stepfunctions:statemachine"
+	AwsResource_Topic        AwsResource = "sns:topic"
+	AwsResource_Collection   AwsResource = "dynamodb:table"
+	AwsResource_Queue        AwsResource = "sqs:queue"
+	AwsResource_Bucket       AwsResource = "s3:bucket"
+	AwsResource_Secret       AwsResource = "secretsmanager:secret"
 )
 
 type AwsProvider interface {

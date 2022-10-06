@@ -20,6 +20,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sfn"
+	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 
@@ -32,16 +34,21 @@ import (
 
 type SnsEventService struct {
 	events.UnimplementedeventsPlugin
-	client   snsiface.SNSAPI
-	provider core.AwsProvider
+	client    snsiface.SNSAPI
+	sfnClient sfniface.SFNAPI
+	provider  core.AwsProvider
 }
 
 func (s *SnsEventService) getTopics() (map[string]string, error) {
 	return s.provider.GetResources(core.AwsResource_Topic)
 }
 
+func (s *SnsEventService) getStateMachines() (map[string]string, error) {
+	return s.provider.GetResources(core.AwsResource_StateMachine)
+}
+
 // Publish to a given topic
-func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error {
+func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"SnsEventService.Publish",
 		map[string]interface{}{
@@ -57,6 +64,42 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 			"error marshalling event payload",
 			err,
 		)
+	}
+	message := string(data)
+
+	if delay > 0 {
+		sfns, err := s.getStateMachines()
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"error finding state machine",
+				err,
+			)
+		}
+
+		sfnArn, ok := sfns[topic]
+		if !ok {
+			return newErr(
+				codes.Internal,
+				"error finding state machine",
+				err,
+			)
+		}
+
+		_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
+			StateMachineArn: aws.String(sfnArn),
+			Input: aws.String(fmt.Sprintf(`{
+				"seconds", %d,
+				"message": %s
+			}`, delay, message)),
+		})
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"error starting state machine execution",
+				err,
+			)
+		}
 	}
 
 	topics, err := s.getTopics()
@@ -77,8 +120,6 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 			nil,
 		)
 	}
-
-	message := string(data)
 
 	publishInput := &sns.PublishInput{
 		TopicArn: aws.String(topicArn),
@@ -135,10 +176,12 @@ func New(provider core.AwsProvider) (events.EventService, error) {
 	}
 
 	snsClient := sns.New(sess)
+	sfnClient := sfn.New(sess)
 
 	return &SnsEventService{
-		client:   snsClient,
-		provider: provider,
+		client:    snsClient,
+		sfnClient: sfnClient,
+		provider:  provider,
 	}, nil
 }
 

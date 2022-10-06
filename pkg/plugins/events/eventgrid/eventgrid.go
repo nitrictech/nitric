@@ -74,7 +74,7 @@ func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events [
 	return azureEvents, nil
 }
 
-func (s *EventGridEventService) Publish(topic string, event *events.NitricEvent) error {
+func (s *EventGridEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"EventGrid.Publish",
 		map[string]interface{}{

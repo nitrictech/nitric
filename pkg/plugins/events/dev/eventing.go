@@ -42,7 +42,7 @@ type LocalHttpeventsClient interface {
 }
 
 // Publish a message to a given topic
-func (s *LocalEventService) Publish(topic string, event *events.NitricEvent) error {
+func (s *LocalEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"LocalEventService.Publish",
 		map[string]interface{}{
