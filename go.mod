@@ -3,11 +3,12 @@ module github.com/nitrictech/nitric
 go 1.16
 
 require (
+	cloud.google.com/go/cloudtasks v1.6.0
 	cloud.google.com/go/firestore v1.6.1
 	cloud.google.com/go/kms v1.1.0 // indirect
 	cloud.google.com/go/pubsub v1.5.0
-	cloud.google.com/go/secretmanager v1.0.0
-	cloud.google.com/go/storage v1.21.0
+	cloud.google.com/go/secretmanager v1.6.0
+	cloud.google.com/go/storage v1.23.0
 	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.13.0
 	github.com/Azure/azure-storage-queue-go v0.0.0-20191125232315-636801874cdd
@@ -30,7 +31,7 @@ require (
 	github.com/golangci/golangci-lint v1.45.0
 	github.com/google/addlicense v1.0.0
 	github.com/google/uuid v1.3.0
-	github.com/googleapis/gax-go/v2 v2.1.1
+	github.com/googleapis/gax-go/v2 v2.5.1
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27
 	github.com/onsi/ginkgo v1.16.5
@@ -41,11 +42,11 @@ require (
 	github.com/vmihailenco/msgpack v3.3.3+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
-	google.golang.org/api v0.69.0
-	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
-	google.golang.org/grpc v1.44.0
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
+	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
+	google.golang.org/api v0.96.0
+	google.golang.org/genproto v0.0.0-20220920201722-2b89144ce006
+	google.golang.org/grpc v1.49.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.28.1
 )
