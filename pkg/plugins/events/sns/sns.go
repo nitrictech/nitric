@@ -186,9 +186,10 @@ func New(provider core.AwsProvider) (events.EventService, error) {
 	}, nil
 }
 
-func NewWithClient(provider core.AwsProvider, client snsiface.SNSAPI) (events.EventService, error) {
+func NewWithClient(provider core.AwsProvider, client snsiface.SNSAPI, sfnClient sfniface.SFNAPI) (events.EventService, error) {
 	return &SnsEventService{
-		provider: provider,
-		client:   client,
+		provider:  provider,
+		client:    client,
+		sfnClient: sfnClient,
 	}, nil
 }

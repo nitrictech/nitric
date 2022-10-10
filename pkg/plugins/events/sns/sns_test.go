@@ -38,7 +38,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 
 			It("Should return the available topics", func() {
 				By("Topics being available")
@@ -62,7 +62,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 			payload := map[string]interface{}{"Test": "test"}
 			testEvent := &events.NitricEvent{
 				ID:          "testing",
@@ -96,7 +96,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 
 			payload := map[string]interface{}{"Test": "test"}
 
