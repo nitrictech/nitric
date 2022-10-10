@@ -91,14 +91,6 @@ func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *
 		return err
 	}
 
-	// Find the queue
-	taskQueue, err := s.tasksClient.GetQueue(context.Background(), &tasks.GetQueueRequest{
-		Name: utils.GetEnv("DELAY_QUEUE_NAME", ""),
-	})
-	if err != nil {
-		return err
-	}
-
 	body := httpPubsubMessages{
 		Messages: []httpPubsubMessage{{
 			Attributes: pubsubMsg.Attributes,
@@ -113,13 +105,12 @@ func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *
 
 	// Delay the message publishing
 	_, err = s.tasksClient.CreateTask(context.Background(), &tasks.CreateTaskRequest{
-		Parent: taskQueue.Name,
+		Parent: utils.GetEnv("DELAY_QUEUE_NAME", ""),
 		Task: &tasks.Task{
 			MessageType: &tasks.Task_HttpRequest{
 				HttpRequest: &tasks.HttpRequest{
-					// TODO: Create a token using this instances service account
-					AuthorizationHeader: &tasks.HttpRequest_OidcToken{
-						OidcToken: &tasks.OidcToken{
+					AuthorizationHeader: &tasks.HttpRequest_OauthToken{
+						OauthToken: &tasks.OAuthToken{
 							ServiceAccountEmail: saEmail,
 						},
 					},
@@ -162,6 +153,9 @@ func (s *PubsubEventService) Publish(topic string, delay int, event *events.Nitr
 		Data: eventBytes,
 	}
 
+	// TODO: Remove debug line...
+	delay = 10
+
 	if delay > 0 {
 		err = s.publishDelayed(topic, delay, pubsubMsg)
 	} else {
@@ -171,7 +165,7 @@ func (s *PubsubEventService) Publish(topic string, delay int, event *events.Nitr
 	if err != nil {
 		return newErr(
 			codes.Internal,
-			"error publishing message",
+			fmt.Sprintf("error publishing message: %s", err.Error()),
 			err,
 		)
 	}
