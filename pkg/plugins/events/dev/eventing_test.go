@@ -16,7 +16,7 @@ package events_service_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -139,7 +139,7 @@ var _ = Describe("events", func() {
 				Expect(capturedRequest.Header.Get("x-nitric-source")).To(Equal("test"))
 
 				By("Providing the payload in the Body")
-				bodyBytes, err := ioutil.ReadAll(capturedRequest.Body)
+				bodyBytes, err := io.ReadAll(capturedRequest.Body)
 				Expect(err).NotTo(HaveOccurred())
 				bodyMap := make(map[string]interface{})
 				err = json.Unmarshal(bodyBytes, &bodyMap)

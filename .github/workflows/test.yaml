@@ -20,7 +20,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.19
     - name: Install modules
       run: make install-tools
     - name: Linting check
@@ -55,7 +55,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16.14 
+        go-version: 1.19
     - name: Install modules
       run: make install-tools
     - name: Run Integration Tests

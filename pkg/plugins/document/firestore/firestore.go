@@ -186,7 +186,6 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	return nil
 }
 
-//
 func (s *FirestoreDocService) buildQuery(collection *document.Collection, expressions []document.QueryExpression, limit int) (query firestore.Query, orderBy string) {
 	// Select correct root collection to perform query on
 	query = s.getQueryRoot(collection)

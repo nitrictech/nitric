@@ -17,7 +17,7 @@ package storage_service
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -96,7 +96,7 @@ func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) 
 	}
 	defer reader.Close()
 
-	bytes, err := ioutil.ReadAll(reader)
+	bytes, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

@@ -18,12 +18,12 @@ import (
 	"context"
 
 	"github.com/golang/mock/gomock"
-	mock_events "github.com/nitrictech/nitric/mocks/plugins/events"
-	"github.com/nitrictech/nitric/pkg/adapters/grpc"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mock_events "github.com/nitrictech/nitric/mocks/plugins/events"
+	"github.com/nitrictech/nitric/pkg/adapters/grpc"
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 )
 
@@ -34,7 +34,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 			mockService := mock_events.NewMockEventService(ctrl)
 			eventServer := grpc.NewEventServiceServer(mockService)
 
-			It("should sucessfully publish the event", func() {
+			It("should successfully publish the event", func() {
 				By("Calling the provided service")
 				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
@@ -60,7 +60,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 			mockService := mock_events.NewMockEventService(ctrl)
 			eventServer := grpc.NewEventServiceServer(mockService)
 
-			It("Should sucessfully be handled", func() {
+			It("Should successfully be handled", func() {
 				By("Calling the provided service")
 				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
