@@ -82,6 +82,10 @@ func (s *EventGridEventService) Publish(topic string, delay int, event *events.N
 		},
 	)
 
+	if delay > 0 {
+		return newErr(codes.Unimplemented, "delayed messages with eventgrid are unsupported", nil)
+	}
+
 	topics, err := s.provider.GetResources(core.AzResource_Topic)
 	if err != nil {
 		return newErr(
@@ -102,7 +106,6 @@ func (s *EventGridEventService) Publish(topic string, delay int, event *events.N
 
 	// TODO: Determine correctness of availability zone in endpoint hostname
 	topicHostName := fmt.Sprintf("%s.%s-1.eventgrid.azure.net", t.Name, t.Location)
-	fmt.Println("topic host name is", topicHostName)
 
 	eventToPublish, err := s.nitricEventsToAzureEvents(topicHostName, []*events.NitricEvent{event})
 	if err != nil {
