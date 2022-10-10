@@ -178,7 +178,7 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/pubsub PubsubClient > mocks/pubsub/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/pubsub PubsubClient,TopicIterator,Topic,PublishResult > mocks/pubsub/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/cloudtasks CloudtasksClient > mocks/cloudtasks/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_secret SecretManagerClient,SecretIterator > mocks/gcp_secret/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/events EventService > mocks/plugins/events/mock.go

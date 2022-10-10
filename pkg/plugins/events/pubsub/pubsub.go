@@ -196,8 +196,9 @@ func New(provider core.GcpProvider) (events.EventService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (events.EventService, error) {
+func NewWithClient(provider core.GcpProvider, client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (events.EventService, error) {
 	return &PubsubEventService{
+		GcpProvider: provider,
 		client:      client,
 		tasksClient: tasksClient,
 	}, nil
