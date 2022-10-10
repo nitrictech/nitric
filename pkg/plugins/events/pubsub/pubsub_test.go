@@ -29,7 +29,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
 				Topics: []string{},
 			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient, nil)
 
 			It("Should return an empty list of topics", func() {
 				topics, err := pubsubPlugin.ListTopics()
@@ -42,7 +42,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
 				Topics: []string{"Test"},
 			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient, nil)
 
 			It("Should return all available topics", func() {
 				topics, err := pubsubPlugin.ListTopics()
@@ -65,7 +65,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
 				Topics: []string{},
 			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient, nil)
 
 			It("should return an error", func() {
 				err := pubsubPlugin.Publish("Test", 0, event)
@@ -77,7 +77,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
 				Topics: []string{"Test"},
 			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient, nil)
 
 			It("should successfully publish the message", func() {
 				err := pubsubPlugin.Publish("Test", 0, event)

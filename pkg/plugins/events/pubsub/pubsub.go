@@ -27,6 +27,7 @@ import (
 	"google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	ifaces_cloudtasks "github.com/nitrictech/nitric/pkg/ifaces/cloudtasks"
 	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
@@ -39,7 +40,7 @@ type PubsubEventService struct {
 	events.UnimplementedeventsPlugin
 	core.GcpProvider
 	client      ifaces_pubsub.PubsubClient
-	tasksClient *cloudtasks.Client
+	tasksClient ifaces_cloudtasks.CloudtasksClient
 }
 
 func (s *PubsubEventService) ListTopics() ([]string, error) {
@@ -195,8 +196,9 @@ func New(provider core.GcpProvider) (events.EventService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces_pubsub.PubsubClient) (events.EventService, error) {
+func NewWithClient(client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (events.EventService, error) {
 	return &PubsubEventService{
-		client: client,
+		client:      client,
+		tasksClient: tasksClient,
 	}, nil
 }
