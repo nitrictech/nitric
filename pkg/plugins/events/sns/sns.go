@@ -47,6 +47,60 @@ func (s *SnsEventService) getStateMachines() (map[string]string, error) {
 	return s.provider.GetResources(core.AwsResource_StateMachine)
 }
 
+func (s *SnsEventService) publish(topic string, message string) error {
+	topics, err := s.getTopics()
+	if err != nil {
+		return fmt.Errorf("error finding topics: %v", err)
+	}
+
+	topicArn, ok := topics[topic]
+
+	if !ok {
+		return fmt.Errorf("could not find topic")
+	}
+
+	publishInput := &sns.PublishInput{
+		TopicArn: aws.String(topicArn),
+		Message:  &message,
+		// MessageStructure: json is for an AWS specific JSON format,
+		// which sends different messages to different subscription types. Don't use it.
+		// MessageStructure: aws.String("json"),
+	}
+
+	_, err = s.client.Publish(publishInput)
+
+	if err != nil {
+		return fmt.Errorf("unable to publish message: %v", err)
+	}
+
+	return nil
+}
+
+func (s *SnsEventService) publishDelayed(topic string, delay int, message string) error {
+	sfns, err := s.getStateMachines()
+	if err != nil {
+		return fmt.Errorf("error finding state machine: %v", err)
+	}
+
+	sfnArn, ok := sfns[topic]
+	if !ok {
+		return fmt.Errorf("error finding state machine:: %v", err)
+	}
+
+	_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
+		StateMachineArn: aws.String(sfnArn),
+		Input: aws.String(fmt.Sprintf(`{
+			"seconds": %d,
+			"message": %s
+		}`, delay, message)),
+	})
+	if err != nil {
+		return fmt.Errorf("error starting state machine execution: %v", err)
+	}
+
+	return nil
+}
+
 // Publish to a given topic
 func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
@@ -54,6 +108,7 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 		map[string]interface{}{
 			"topic": topic,
 			"event": event,
+			"delay": delay,
 		},
 	)
 
@@ -68,76 +123,13 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 	message := string(data)
 
 	if delay > 0 {
-		sfns, err := s.getStateMachines()
-		if err != nil {
-			return newErr(
-				codes.Internal,
-				"error finding state machine",
-				err,
-			)
-		}
-
-		sfnArn, ok := sfns[topic]
-		if !ok {
-			return newErr(
-				codes.Internal,
-				"error finding state machine",
-				err,
-			)
-		}
-
-		_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
-			StateMachineArn: aws.String(sfnArn),
-			Input: aws.String(fmt.Sprintf(`{
-				"seconds": %d,
-				"message": %s
-			}`, delay, message)),
-		})
-		if err != nil {
-			fmt.Println("%w", err)
-			return newErr(
-				codes.Internal,
-				"error starting state machine execution",
-				err,
-			)
-		}
+		err = s.publishDelayed(topic, delay, message)
+	} else {
+		err = s.publish(topic, message)
 	}
-
-	topics, err := s.getTopics()
-	if err != nil {
-		return newErr(
-			codes.Internal,
-			"error finding topics",
-			err,
-		)
-	}
-
-	topicArn, ok := topics[topic]
-
-	if !ok {
-		return newErr(
-			codes.NotFound,
-			"could not find topic",
-			nil,
-		)
-	}
-
-	publishInput := &sns.PublishInput{
-		TopicArn: aws.String(topicArn),
-		Message:  &message,
-		// MessageStructure: json is for an AWS specific JSON format,
-		// which sends different messages to different subscription types. Don't use it.
-		// MessageStructure: aws.String("json"),
-	}
-
-	_, err = s.client.Publish(publishInput)
 
 	if err != nil {
-		return newErr(
-			codes.Internal,
-			"unable to publish message",
-			err,
-		)
+		return newErr(codes.Internal, "error publishing message", err)
 	}
 
 	return nil
