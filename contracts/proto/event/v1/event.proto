@@ -30,7 +30,7 @@ message EventPublishRequest {
   NitricEvent event = 2 [(validate.rules).message.required = true];
 
   // An optional delay specified in seconds (minimum 30 seconds)
-  uint32 delay = 3 [(validate.rules).uint32 = {ignore_empty: true, gte:30}];
+  uint32 delay = 3 [(validate.rules).uint32 = {ignore_empty: true, gte:30, lte: 2592000}];
 }
 
 // Result of publishing an event
