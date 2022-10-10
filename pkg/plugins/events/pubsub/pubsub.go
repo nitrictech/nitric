@@ -153,9 +153,6 @@ func (s *PubsubEventService) Publish(topic string, delay int, event *events.Nitr
 		Data: eventBytes,
 	}
 
-	// TODO: Remove debug line...
-	delay = 10
-
 	if delay > 0 {
 		err = s.publishDelayed(topic, delay, pubsubMsg)
 	} else {

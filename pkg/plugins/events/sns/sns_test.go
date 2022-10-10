@@ -85,7 +85,7 @@ var _ = Describe("Sns", func() {
 					Message:  aws.String(stringData),
 				})
 
-				err := eventsClient.Publish("test", testEvent)
+				err := eventsClient.Publish("test", 0, testEvent)
 
 				Expect(err).To(BeNil())
 			})
@@ -104,7 +104,7 @@ var _ = Describe("Sns", func() {
 				By("Returning no topics")
 				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
 
-				err := eventsClient.Publish("test", &events.NitricEvent{
+				err := eventsClient.Publish("test", 0, &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,

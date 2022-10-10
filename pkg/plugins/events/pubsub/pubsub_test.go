@@ -68,7 +68,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
 
 			It("should return an error", func() {
-				err := pubsubPlugin.Publish("Test", event)
+				err := pubsubPlugin.Publish("Test", 0, event)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -80,7 +80,7 @@ var _ = Describe("Pubsub Plugin", func() {
 			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
 
 			It("should successfully publish the message", func() {
-				err := pubsubPlugin.Publish("Test", event)
+				err := pubsubPlugin.Publish("Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(pubsubClient.PublishedMessages["Test"]).To(HaveLen(1))
 			})

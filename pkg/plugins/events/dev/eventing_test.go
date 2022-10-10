@@ -101,7 +101,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should return an error", func() {
-				err := pubsubClient.Publish("test", testEvent)
+				err := pubsubClient.Publish("test", 0, testEvent)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -114,7 +114,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
-				err := pubsubClient.Publish("test", testEvent)
+				err := pubsubClient.Publish("test", 0, testEvent)
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())
@@ -156,7 +156,7 @@ var _ = Describe("events", func() {
 			eventPlugin, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
-				err := eventPlugin.Publish("test", testEvent)
+				err := eventPlugin.Publish("test", 0, testEvent)
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())

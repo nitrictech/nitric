@@ -152,10 +152,12 @@ generate-mocks:
 	@mkdir -p mocks/provider
 	@mkdir -p mocks/resourcetaggingapi
 	@mkdir -p mocks/gcp_storage
+	@mkdir -p mocks/plugins/events
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/azure/core AzProvider > mocks/provider/azure.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/gcp/core GcpProvider > mocks/provider/gcp.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
@@ -173,5 +175,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_secret SecretManagerClient,SecretIterator > mocks/gcp_secret/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/events EventService > mocks/plugins/events/mock.go
 
 generate-sources: generate-proto generate-mocks

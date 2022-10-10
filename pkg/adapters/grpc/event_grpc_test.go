@@ -17,90 +17,66 @@ package grpc_test
 import (
 	"context"
 
+	"github.com/golang/mock/gomock"
+	mock_events "github.com/nitrictech/nitric/mocks/plugins/events"
 	"github.com/nitrictech/nitric/pkg/adapters/grpc"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/pkg/plugins/events"
 )
-
-type MockEventService struct {
-	PublishError error
-	PublishTopic string
-	PublishEvent *events.NitricEvent
-
-	TopicList      []string
-	TopicListError error
-}
-
-func (m *MockEventService) Publish(topic string, event *events.NitricEvent) error {
-	m.PublishTopic = topic
-	m.PublishEvent = event
-	return m.PublishError
-}
-
-func (m *MockEventService) ListTopics() ([]string, error) {
-	return m.TopicList, m.TopicListError
-}
 
 var _ = Describe("Event Service gRPC Adapter", func() {
 	Context("Publish", func() {
 		When("No request id is provided", func() {
-			mockService := &MockEventService{
-				PublishError:   nil,
-				TopicListError: nil,
-			}
-
+			ctrl := gomock.NewController(GinkgoT())
+			mockService := mock_events.NewMockEventService(ctrl)
 			eventServer := grpc.NewEventServiceServer(mockService)
-			response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
-				Topic: "test-topic",
-				Event: &v1.NitricEvent{
-					Id:          "",
-					PayloadType: "",
-					Payload:     nil,
-				},
-			})
 
-			It("Should not return an error", func() {
-				Expect(err).To(BeNil())
-			})
+			It("should sucessfully publish the event", func() {
+				By("Calling the provided service")
+				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
-			It("Should pass the generated id to the implementing service plugin", func() {
-				Expect(mockService.PublishEvent.ID).ToNot(BeEmpty())
-			})
+				response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
+					Topic: "test-topic",
+					Event: &v1.NitricEvent{
+						Id:          "",
+						PayloadType: "",
+						Payload:     nil,
+					},
+				})
 
-			It("Should return the generated ID", func() {
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Autogenerating the event ID")
 				Expect(response.Id).ToNot(BeEmpty())
 			})
 		})
 
 		When("A request id is provided", func() {
-			mockService := &MockEventService{
-				PublishError:   nil,
-				TopicListError: nil,
-			}
-
+			ctrl := gomock.NewController(GinkgoT())
+			mockService := mock_events.NewMockEventService(ctrl)
 			eventServer := grpc.NewEventServiceServer(mockService)
-			response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
-				Topic: "test-topic",
-				Event: &v1.NitricEvent{
-					Id:          "test-id",
-					PayloadType: "",
-					Payload:     nil,
-				},
-			})
 
-			It("Should not return an error", func() {
-				Expect(err).To(BeNil())
-			})
+			It("Should sucessfully be handled", func() {
+				By("Calling the provided service")
+				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
-			It("Should pass the provided id to the implementing service plugin", func() {
-				Expect(mockService.PublishEvent.ID).To(Equal("test-id"))
-			})
+				response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
+					Topic: "test-topic",
+					Event: &v1.NitricEvent{
+						Id:          "test-id",
+						PayloadType: "",
+						Payload:     nil,
+					},
+				})
 
-			It("Should return the provided ID", func() {
+				By("Not returning an error")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				By("Returning the provided id")
 				Expect(response.Id).To(Equal("test-id"))
 			})
 		})
