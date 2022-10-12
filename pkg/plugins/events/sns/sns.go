@@ -70,7 +70,7 @@ func (s *SnsEventService) publish(topic string, message string) error {
 	_, err = s.client.Publish(publishInput)
 
 	if err != nil {
-		return fmt.Errorf("unable to publish message: %v", err)
+		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	return nil
@@ -79,12 +79,12 @@ func (s *SnsEventService) publish(topic string, message string) error {
 func (s *SnsEventService) publishDelayed(topic string, delay int, message string) error {
 	sfns, err := s.getStateMachines()
 	if err != nil {
-		return fmt.Errorf("error finding state machine: %v", err)
+		return fmt.Errorf("error gettings state machines: %w", err)
 	}
 
 	sfnArn, ok := sfns[topic]
 	if !ok {
-		return fmt.Errorf("error finding state machine:: %v", err)
+		return fmt.Errorf("error finding state machine for topic %s: %w", topic, err)
 	}
 
 	_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
@@ -95,7 +95,7 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 		}`, delay, message)),
 	})
 	if err != nil {
-		return fmt.Errorf("error starting state machine execution: %v", err)
+		return fmt.Errorf("error starting state machine execution: %w", err)
 	}
 
 	return nil
