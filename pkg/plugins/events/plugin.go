@@ -17,7 +17,7 @@ package events
 import "fmt"
 
 type EventService interface {
-	Publish(topic string, event *NitricEvent) error
+	Publish(topic string, delay int, event *NitricEvent) error
 	ListTopics() ([]string, error)
 }
 
@@ -25,7 +25,7 @@ type UnimplementedeventsPlugin struct {
 	EventService
 }
 
-func (*UnimplementedeventsPlugin) Publish(topic string, event *NitricEvent) error {
+func (*UnimplementedeventsPlugin) Publish(topic string, delay int, event *NitricEvent) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

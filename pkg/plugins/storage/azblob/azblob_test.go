@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"strings"
 
@@ -69,7 +69,7 @@ var _ = Describe("Azblob", func() {
 				).Times(1).Return(mockDown, nil)
 
 				By("Reading from the download response")
-				mockDown.EXPECT().Body(gomock.Any()).Times(1).Return(ioutil.NopCloser(strings.NewReader("file-contents")))
+				mockDown.EXPECT().Body(gomock.Any()).Times(1).Return(io.NopCloser(strings.NewReader("file-contents")))
 
 				data, err := storagePlugin.Read("my-bucket", "my-blob")
 

@@ -15,23 +15,31 @@
 package pubsub_service_test
 
 import (
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/api/iterator"
 
+	mock_cloudtasks "github.com/nitrictech/nitric/mocks/cloudtasks"
+	mock_core "github.com/nitrictech/nitric/mocks/provider"
+	mock_pubsub "github.com/nitrictech/nitric/mocks/pubsub"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	pubsub_service "github.com/nitrictech/nitric/pkg/plugins/events/pubsub"
-	mock_pubsub "github.com/nitrictech/nitric/tests/mocks/pubsub"
 )
 
 var _ = Describe("Pubsub Plugin", func() {
 	When("Listing Available Topics", func() {
 		When("There are no topics available", func() {
-			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
-				Topics: []string{},
-			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			ctrl := gomock.NewController(GinkgoT())
+			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
+			mockIterator := mock_pubsub.NewMockTopicIterator(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(nil, pubsubClient, nil)
 
 			It("Should return an empty list of topics", func() {
+				By("Returning an empty topic iterator")
+				mockIterator.EXPECT().Next().Return(nil, iterator.Done)
+				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
+
 				topics, err := pubsubPlugin.ListTopics()
 				Expect(err).To(BeNil())
 				Expect(topics).To(BeEmpty())
@@ -39,12 +47,21 @@ var _ = Describe("Pubsub Plugin", func() {
 		})
 
 		When("There are topics available", func() {
-			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
-				Topics: []string{"Test"},
-			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			ctrl := gomock.NewController(GinkgoT())
+			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
+			mockIterator := mock_pubsub.NewMockTopicIterator(ctrl)
+			mockTopic := mock_pubsub.NewMockTopic(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(nil, pubsubClient, nil)
 
 			It("Should return all available topics", func() {
+				By("Returning an non-empty topic iterator")
+				mockTopic.EXPECT().ID().Return("Test")
+				gomock.InOrder(
+					mockIterator.EXPECT().Next().Return(mockTopic, nil),
+					mockIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
+
 				topics, err := pubsubPlugin.ListTopics()
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("Test"))
@@ -61,28 +78,56 @@ var _ = Describe("Pubsub Plugin", func() {
 			},
 		}
 
-		When("To a topic that does not exist", func() {
-			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
-				Topics: []string{},
-			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
-
-			It("should return an error", func() {
-				err := pubsubPlugin.Publish("Test", event)
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
 		When("To a topic that does exist", func() {
-			pubsubClient := mock_pubsub.NewMockPubsubClient(mock_pubsub.MockPubsubOptions{
-				Topics: []string{"Test"},
-			})
-			pubsubPlugin, _ := pubsub_service.NewWithClient(pubsubClient)
+			ctrl := gomock.NewController(GinkgoT())
+			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
+			mockTopic := mock_pubsub.NewMockTopic(ctrl)
+			mockPublishResult := mock_pubsub.NewMockPublishResult(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(nil, pubsubClient, nil)
 
 			It("should successfully publish the message", func() {
-				err := pubsubPlugin.Publish("Test", event)
+				By("the publish being successful")
+				mockPublishResult.EXPECT().Get(gomock.Any()).Return("mock-server", nil)
+				mockTopic.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(mockPublishResult)
+
+				By("the topic existing")
+				pubsubClient.EXPECT().Topic(gomock.Any()).Return(mockTopic)
+
+				err := pubsubPlugin.Publish("Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(pubsubClient.PublishedMessages["Test"]).To(HaveLen(1))
+			})
+		})
+	})
+
+	When("Publishing Delayed Messages", func() {
+		event := &events.NitricEvent{
+			ID:          "Test",
+			PayloadType: "Test",
+			Payload: map[string]interface{}{
+				"Test": "Test",
+			},
+		}
+
+		When("To a topic that does exist", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			cloudtasksClient := mock_cloudtasks.NewMockCloudtasksClient(ctrl)
+			mockGcp := mock_core.NewMockGcpProvider(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(mockGcp, nil, cloudtasksClient)
+
+			It("should successfully publish the message", func() {
+				By("having a valid service account email")
+				mockGcp.EXPECT().GetServiceAccountEmail().Return("test@test.com", nil)
+
+				By("having a valid project id")
+				mockGcp.EXPECT().GetProjectID().Return("mock-project-id", nil)
+
+				By("the publish being successful")
+				// TODO: We want to validate that create task is called with the correct parameters.
+				// This will require a custom gomock matcher, implemented here...
+				cloudtasksClient.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+				err := pubsubPlugin.Publish("Test", 1, event)
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})
 	})

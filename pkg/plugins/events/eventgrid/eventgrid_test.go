@@ -100,7 +100,7 @@ var _ = Describe("Event Grid Plugin", func() {
 				By("provider returning no topics")
 				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(map[string]core.AzGenericResource{}, nil)
 
-				err := eventgridPlugin.Publish("Test", event)
+				err := eventgridPlugin.Publish("Test", 0, event)
 				Expect(err).Should(HaveOccurred())
 
 				ctrl.Finish()
@@ -128,7 +128,7 @@ var _ = Describe("Event Grid Plugin", func() {
 				By("get resources returning topics")
 				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
 
-				err := eventgridPlugin.Publish("Test", event)
+				err := eventgridPlugin.Publish("Test", 0, event)
 				Expect(err).Should(HaveOccurred())
 
 				ctrl.Finish()
@@ -155,7 +155,7 @@ var _ = Describe("Event Grid Plugin", func() {
 					},
 				}, nil).Times(1)
 
-				err := eventgridPlugin.Publish("Test", event)
+				err := eventgridPlugin.Publish("Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				ctrl.Finish()

@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -141,7 +140,7 @@ func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAcces
 		)
 	}
 
-	content, err := ioutil.ReadFile(s.secretFileName(sv.Secret, sv.Version))
+	content, err := os.ReadFile(s.secretFileName(sv.Secret, sv.Version))
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,

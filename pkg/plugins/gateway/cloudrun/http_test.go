@@ -19,7 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -85,7 +85,7 @@ var _ = Describe("Http", func() {
 				responseBody := make([]byte, 0)
 
 				if err == nil {
-					if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
+					if bytes, err := io.ReadAll(resp.Body); err == nil {
 						responseBody = bytes
 					}
 				}
@@ -152,7 +152,7 @@ var _ = Describe("Http", func() {
 				request.Header.Add("Content-Type", "application/json")
 				resp, err := http.DefaultClient.Do(request)
 				Expect(err).To(BeNil())
-				responseBody, _ := ioutil.ReadAll(resp.Body)
+				responseBody, _ := io.ReadAll(resp.Body)
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())

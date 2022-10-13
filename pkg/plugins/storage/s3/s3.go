@@ -17,7 +17,7 @@ package s3_service
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -95,7 +95,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 
 		defer resp.Body.Close()
 		// TODO: Wrap the possible error from ReadAll
-		return ioutil.ReadAll(resp.Body)
+		return io.ReadAll(resp.Body)
 	} else {
 		return nil, newErr(
 			codes.NotFound,

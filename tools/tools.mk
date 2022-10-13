@@ -56,10 +56,10 @@ $(TOOLS_DIR)/$(PROTOC_ZIP):
 	curl --location $(PROTOC_DOWNLOAD) --output $@
 
 ${GOPATH}/bin/protoc-gen-go: go.sum
-	go install github.com/golang/protobuf/protoc-gen-go
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
 
 ${GOPATH}/bin/protoc-gen-go-grpc: go.sum
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
 ${GOPATH}/bin/protoc-gen-validate: go.sum
 	go install github.com/envoyproxy/protoc-gen-validate

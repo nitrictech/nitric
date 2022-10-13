@@ -28,6 +28,7 @@ import (
 	pubsub_queue_service "github.com/nitrictech/nitric/pkg/plugins/queue/pubsub"
 	secret_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager"
 	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
+	"github.com/nitrictech/nitric/pkg/providers/gcp/core"
 )
 
 func main() {
@@ -38,6 +39,10 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
 	membraneOpts := membrane.DefaultMembraneOptions()
+	provider, err := core.New()
+	if err != nil {
+		log.Default().Fatalf("Failed create core provider: %s", err.Error())
+	}
 
 	membraneOpts.SecretPlugin, err = secret_manager_secret_service.New()
 	if err != nil {
@@ -49,7 +54,7 @@ func main() {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
-	membraneOpts.EventsPlugin, err = pubsub_service.New()
+	membraneOpts.EventsPlugin, err = pubsub_service.New(provider)
 	if err != nil {
 		log.Default().Println("Failed to load events plugin:", err.Error())
 	}

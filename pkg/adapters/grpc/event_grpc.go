@@ -58,7 +58,7 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		PayloadType: req.GetEvent().GetPayloadType(),
 		Payload:     req.GetEvent().GetPayload().AsMap(),
 	}
-	if err := s.eventPlugin.Publish(req.GetTopic(), event); err == nil {
+	if err := s.eventPlugin.Publish(req.GetTopic(), int(req.Delay), event); err == nil {
 		return &pb.EventPublishResponse{
 			Id: ID,
 		}, nil
