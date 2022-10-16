@@ -18,10 +18,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc/codes"
 
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/span"
 )
 
 // GRPC Interface for registered Nitric events Plugins
@@ -58,11 +61,26 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		PayloadType: req.GetEvent().GetPayloadType(),
 		Payload:     req.GetEvent().GetPayload().AsMap(),
 	}
+
+	sn := span.FromContext(ctx, "topic-"+req.GetTopic())
+
+	sn.SetAttributes(
+		semconv.CodeFunctionKey.String("EventService.Publish"),
+		semconv.MessagingDestinationKindTopic,
+		semconv.MessagingDestinationKey.String(req.GetTopic()),
+		semconv.MessagingMessageIDKey.String(event.ID),
+		attribute.Key("messaging.message_type").String(event.PayloadType),
+	)
+
+	defer sn.End()
+
 	if err := s.eventPlugin.Publish(req.GetTopic(), int(req.Delay), event); err == nil {
 		return &pb.EventPublishResponse{
 			Id: ID,
 		}, nil
 	} else {
+		sn.RecordError(err)
+
 		return nil, NewGrpcError("EventService.Publish", err)
 	}
 }

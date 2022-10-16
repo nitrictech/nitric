@@ -244,7 +244,7 @@ var _ = Describe("Membrane", func() {
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
 				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildCommand:            []string{"echo"},
+					ChildCommand:            []string{"sleep", "5"},
 					GatewayPlugin:           mockGateway,
 					ServiceAddress:          fmt.Sprintf(":%d", 9001),
 					ChildTimeoutSeconds:     1,

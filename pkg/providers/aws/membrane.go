@@ -60,6 +60,7 @@ func main() {
 	membraneOpts.EventsPlugin, _ = sns_service.New(provider)
 	membraneOpts.QueuePlugin, _ = sqs_service.New(provider)
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
+	membraneOpts.CreateTracerProvider = newTracerProvider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

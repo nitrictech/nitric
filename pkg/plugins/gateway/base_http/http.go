@@ -20,8 +20,11 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -40,8 +43,20 @@ type BaseHttpGateway struct {
 	mw HttpMiddleware
 }
 
-func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func (s *BaseHttpGateway) httpHandler(unWrappedPool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
+		pool := &worker.InstrumentedWorkerPool{
+			WorkerPool: unWrappedPool,
+			Wrapper:    worker.InstrumentedWorkerFn(span.FromFastHttp(ctx), true, false),
+		}
+
+		defer func() {
+			tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
+			if ok {
+				_ = tp.ForceFlush(ctx)
+			}
+		}()
+
 		if s.mw != nil {
 			if !s.mw(ctx, pool) {
 				// middleware has indicated that is has processed the request
@@ -51,6 +66,7 @@ func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp
 		}
 
 		httpTrigger := triggers.FromHttpRequest(ctx)
+
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Http: httpTrigger,
 		})
