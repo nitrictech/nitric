@@ -286,6 +286,56 @@ func (mr *MockSNSAPIMockRecorder) CreatePlatformEndpointWithContext(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePlatformEndpointWithContext", reflect.TypeOf((*MockSNSAPI)(nil).CreatePlatformEndpointWithContext), varargs...)
 }
 
+// CreateSMSSandboxPhoneNumber mocks base method.
+func (m *MockSNSAPI) CreateSMSSandboxPhoneNumber(arg0 *sns.CreateSMSSandboxPhoneNumberInput) (*sns.CreateSMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSMSSandboxPhoneNumber", arg0)
+	ret0, _ := ret[0].(*sns.CreateSMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSMSSandboxPhoneNumber indicates an expected call of CreateSMSSandboxPhoneNumber.
+func (mr *MockSNSAPIMockRecorder) CreateSMSSandboxPhoneNumber(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSMSSandboxPhoneNumber", reflect.TypeOf((*MockSNSAPI)(nil).CreateSMSSandboxPhoneNumber), arg0)
+}
+
+// CreateSMSSandboxPhoneNumberRequest mocks base method.
+func (m *MockSNSAPI) CreateSMSSandboxPhoneNumberRequest(arg0 *sns.CreateSMSSandboxPhoneNumberInput) (*request.Request, *sns.CreateSMSSandboxPhoneNumberOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSMSSandboxPhoneNumberRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.CreateSMSSandboxPhoneNumberOutput)
+	return ret0, ret1
+}
+
+// CreateSMSSandboxPhoneNumberRequest indicates an expected call of CreateSMSSandboxPhoneNumberRequest.
+func (mr *MockSNSAPIMockRecorder) CreateSMSSandboxPhoneNumberRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSMSSandboxPhoneNumberRequest", reflect.TypeOf((*MockSNSAPI)(nil).CreateSMSSandboxPhoneNumberRequest), arg0)
+}
+
+// CreateSMSSandboxPhoneNumberWithContext mocks base method.
+func (m *MockSNSAPI) CreateSMSSandboxPhoneNumberWithContext(arg0 context.Context, arg1 *sns.CreateSMSSandboxPhoneNumberInput, arg2 ...request.Option) (*sns.CreateSMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateSMSSandboxPhoneNumberWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.CreateSMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSMSSandboxPhoneNumberWithContext indicates an expected call of CreateSMSSandboxPhoneNumberWithContext.
+func (mr *MockSNSAPIMockRecorder) CreateSMSSandboxPhoneNumberWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSMSSandboxPhoneNumberWithContext", reflect.TypeOf((*MockSNSAPI)(nil).CreateSMSSandboxPhoneNumberWithContext), varargs...)
+}
+
 // CreateTopic mocks base method.
 func (m *MockSNSAPI) CreateTopic(arg0 *sns.CreateTopicInput) (*sns.CreateTopicOutput, error) {
 	m.ctrl.T.Helper()
@@ -436,6 +486,56 @@ func (mr *MockSNSAPIMockRecorder) DeletePlatformApplicationWithContext(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePlatformApplicationWithContext", reflect.TypeOf((*MockSNSAPI)(nil).DeletePlatformApplicationWithContext), varargs...)
 }
 
+// DeleteSMSSandboxPhoneNumber mocks base method.
+func (m *MockSNSAPI) DeleteSMSSandboxPhoneNumber(arg0 *sns.DeleteSMSSandboxPhoneNumberInput) (*sns.DeleteSMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSMSSandboxPhoneNumber", arg0)
+	ret0, _ := ret[0].(*sns.DeleteSMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteSMSSandboxPhoneNumber indicates an expected call of DeleteSMSSandboxPhoneNumber.
+func (mr *MockSNSAPIMockRecorder) DeleteSMSSandboxPhoneNumber(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSMSSandboxPhoneNumber", reflect.TypeOf((*MockSNSAPI)(nil).DeleteSMSSandboxPhoneNumber), arg0)
+}
+
+// DeleteSMSSandboxPhoneNumberRequest mocks base method.
+func (m *MockSNSAPI) DeleteSMSSandboxPhoneNumberRequest(arg0 *sns.DeleteSMSSandboxPhoneNumberInput) (*request.Request, *sns.DeleteSMSSandboxPhoneNumberOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSMSSandboxPhoneNumberRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.DeleteSMSSandboxPhoneNumberOutput)
+	return ret0, ret1
+}
+
+// DeleteSMSSandboxPhoneNumberRequest indicates an expected call of DeleteSMSSandboxPhoneNumberRequest.
+func (mr *MockSNSAPIMockRecorder) DeleteSMSSandboxPhoneNumberRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSMSSandboxPhoneNumberRequest", reflect.TypeOf((*MockSNSAPI)(nil).DeleteSMSSandboxPhoneNumberRequest), arg0)
+}
+
+// DeleteSMSSandboxPhoneNumberWithContext mocks base method.
+func (m *MockSNSAPI) DeleteSMSSandboxPhoneNumberWithContext(arg0 context.Context, arg1 *sns.DeleteSMSSandboxPhoneNumberInput, arg2 ...request.Option) (*sns.DeleteSMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteSMSSandboxPhoneNumberWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.DeleteSMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteSMSSandboxPhoneNumberWithContext indicates an expected call of DeleteSMSSandboxPhoneNumberWithContext.
+func (mr *MockSNSAPIMockRecorder) DeleteSMSSandboxPhoneNumberWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSMSSandboxPhoneNumberWithContext", reflect.TypeOf((*MockSNSAPI)(nil).DeleteSMSSandboxPhoneNumberWithContext), varargs...)
+}
+
 // DeleteTopic mocks base method.
 func (m *MockSNSAPI) DeleteTopic(arg0 *sns.DeleteTopicInput) (*sns.DeleteTopicOutput, error) {
 	m.ctrl.T.Helper()
@@ -484,6 +584,56 @@ func (mr *MockSNSAPIMockRecorder) DeleteTopicWithContext(arg0, arg1 interface{},
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopicWithContext", reflect.TypeOf((*MockSNSAPI)(nil).DeleteTopicWithContext), varargs...)
+}
+
+// GetDataProtectionPolicy mocks base method.
+func (m *MockSNSAPI) GetDataProtectionPolicy(arg0 *sns.GetDataProtectionPolicyInput) (*sns.GetDataProtectionPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDataProtectionPolicy", arg0)
+	ret0, _ := ret[0].(*sns.GetDataProtectionPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDataProtectionPolicy indicates an expected call of GetDataProtectionPolicy.
+func (mr *MockSNSAPIMockRecorder) GetDataProtectionPolicy(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataProtectionPolicy", reflect.TypeOf((*MockSNSAPI)(nil).GetDataProtectionPolicy), arg0)
+}
+
+// GetDataProtectionPolicyRequest mocks base method.
+func (m *MockSNSAPI) GetDataProtectionPolicyRequest(arg0 *sns.GetDataProtectionPolicyInput) (*request.Request, *sns.GetDataProtectionPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDataProtectionPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.GetDataProtectionPolicyOutput)
+	return ret0, ret1
+}
+
+// GetDataProtectionPolicyRequest indicates an expected call of GetDataProtectionPolicyRequest.
+func (mr *MockSNSAPIMockRecorder) GetDataProtectionPolicyRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataProtectionPolicyRequest", reflect.TypeOf((*MockSNSAPI)(nil).GetDataProtectionPolicyRequest), arg0)
+}
+
+// GetDataProtectionPolicyWithContext mocks base method.
+func (m *MockSNSAPI) GetDataProtectionPolicyWithContext(arg0 context.Context, arg1 *sns.GetDataProtectionPolicyInput, arg2 ...request.Option) (*sns.GetDataProtectionPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetDataProtectionPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.GetDataProtectionPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDataProtectionPolicyWithContext indicates an expected call of GetDataProtectionPolicyWithContext.
+func (mr *MockSNSAPIMockRecorder) GetDataProtectionPolicyWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataProtectionPolicyWithContext", reflect.TypeOf((*MockSNSAPI)(nil).GetDataProtectionPolicyWithContext), varargs...)
 }
 
 // GetEndpointAttributes mocks base method.
@@ -634,6 +784,56 @@ func (mr *MockSNSAPIMockRecorder) GetSMSAttributesWithContext(arg0, arg1 interfa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSMSAttributesWithContext", reflect.TypeOf((*MockSNSAPI)(nil).GetSMSAttributesWithContext), varargs...)
+}
+
+// GetSMSSandboxAccountStatus mocks base method.
+func (m *MockSNSAPI) GetSMSSandboxAccountStatus(arg0 *sns.GetSMSSandboxAccountStatusInput) (*sns.GetSMSSandboxAccountStatusOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSMSSandboxAccountStatus", arg0)
+	ret0, _ := ret[0].(*sns.GetSMSSandboxAccountStatusOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSMSSandboxAccountStatus indicates an expected call of GetSMSSandboxAccountStatus.
+func (mr *MockSNSAPIMockRecorder) GetSMSSandboxAccountStatus(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSMSSandboxAccountStatus", reflect.TypeOf((*MockSNSAPI)(nil).GetSMSSandboxAccountStatus), arg0)
+}
+
+// GetSMSSandboxAccountStatusRequest mocks base method.
+func (m *MockSNSAPI) GetSMSSandboxAccountStatusRequest(arg0 *sns.GetSMSSandboxAccountStatusInput) (*request.Request, *sns.GetSMSSandboxAccountStatusOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSMSSandboxAccountStatusRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.GetSMSSandboxAccountStatusOutput)
+	return ret0, ret1
+}
+
+// GetSMSSandboxAccountStatusRequest indicates an expected call of GetSMSSandboxAccountStatusRequest.
+func (mr *MockSNSAPIMockRecorder) GetSMSSandboxAccountStatusRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSMSSandboxAccountStatusRequest", reflect.TypeOf((*MockSNSAPI)(nil).GetSMSSandboxAccountStatusRequest), arg0)
+}
+
+// GetSMSSandboxAccountStatusWithContext mocks base method.
+func (m *MockSNSAPI) GetSMSSandboxAccountStatusWithContext(arg0 context.Context, arg1 *sns.GetSMSSandboxAccountStatusInput, arg2 ...request.Option) (*sns.GetSMSSandboxAccountStatusOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetSMSSandboxAccountStatusWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.GetSMSSandboxAccountStatusOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSMSSandboxAccountStatusWithContext indicates an expected call of GetSMSSandboxAccountStatusWithContext.
+func (mr *MockSNSAPIMockRecorder) GetSMSSandboxAccountStatusWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSMSSandboxAccountStatusWithContext", reflect.TypeOf((*MockSNSAPI)(nil).GetSMSSandboxAccountStatusWithContext), varargs...)
 }
 
 // GetSubscriptionAttributes mocks base method.
@@ -819,6 +1019,89 @@ func (mr *MockSNSAPIMockRecorder) ListEndpointsByPlatformApplicationWithContext(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEndpointsByPlatformApplicationWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListEndpointsByPlatformApplicationWithContext), varargs...)
 }
 
+// ListOriginationNumbers mocks base method.
+func (m *MockSNSAPI) ListOriginationNumbers(arg0 *sns.ListOriginationNumbersInput) (*sns.ListOriginationNumbersOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListOriginationNumbers", arg0)
+	ret0, _ := ret[0].(*sns.ListOriginationNumbersOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListOriginationNumbers indicates an expected call of ListOriginationNumbers.
+func (mr *MockSNSAPIMockRecorder) ListOriginationNumbers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOriginationNumbers", reflect.TypeOf((*MockSNSAPI)(nil).ListOriginationNumbers), arg0)
+}
+
+// ListOriginationNumbersPages mocks base method.
+func (m *MockSNSAPI) ListOriginationNumbersPages(arg0 *sns.ListOriginationNumbersInput, arg1 func(*sns.ListOriginationNumbersOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListOriginationNumbersPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListOriginationNumbersPages indicates an expected call of ListOriginationNumbersPages.
+func (mr *MockSNSAPIMockRecorder) ListOriginationNumbersPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOriginationNumbersPages", reflect.TypeOf((*MockSNSAPI)(nil).ListOriginationNumbersPages), arg0, arg1)
+}
+
+// ListOriginationNumbersPagesWithContext mocks base method.
+func (m *MockSNSAPI) ListOriginationNumbersPagesWithContext(arg0 context.Context, arg1 *sns.ListOriginationNumbersInput, arg2 func(*sns.ListOriginationNumbersOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListOriginationNumbersPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListOriginationNumbersPagesWithContext indicates an expected call of ListOriginationNumbersPagesWithContext.
+func (mr *MockSNSAPIMockRecorder) ListOriginationNumbersPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOriginationNumbersPagesWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListOriginationNumbersPagesWithContext), varargs...)
+}
+
+// ListOriginationNumbersRequest mocks base method.
+func (m *MockSNSAPI) ListOriginationNumbersRequest(arg0 *sns.ListOriginationNumbersInput) (*request.Request, *sns.ListOriginationNumbersOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListOriginationNumbersRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.ListOriginationNumbersOutput)
+	return ret0, ret1
+}
+
+// ListOriginationNumbersRequest indicates an expected call of ListOriginationNumbersRequest.
+func (mr *MockSNSAPIMockRecorder) ListOriginationNumbersRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOriginationNumbersRequest", reflect.TypeOf((*MockSNSAPI)(nil).ListOriginationNumbersRequest), arg0)
+}
+
+// ListOriginationNumbersWithContext mocks base method.
+func (m *MockSNSAPI) ListOriginationNumbersWithContext(arg0 context.Context, arg1 *sns.ListOriginationNumbersInput, arg2 ...request.Option) (*sns.ListOriginationNumbersOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListOriginationNumbersWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.ListOriginationNumbersOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListOriginationNumbersWithContext indicates an expected call of ListOriginationNumbersWithContext.
+func (mr *MockSNSAPIMockRecorder) ListOriginationNumbersWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOriginationNumbersWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListOriginationNumbersWithContext), varargs...)
+}
+
 // ListPhoneNumbersOptedOut mocks base method.
 func (m *MockSNSAPI) ListPhoneNumbersOptedOut(arg0 *sns.ListPhoneNumbersOptedOutInput) (*sns.ListPhoneNumbersOptedOutOutput, error) {
 	m.ctrl.T.Helper()
@@ -832,6 +1115,39 @@ func (m *MockSNSAPI) ListPhoneNumbersOptedOut(arg0 *sns.ListPhoneNumbersOptedOut
 func (mr *MockSNSAPIMockRecorder) ListPhoneNumbersOptedOut(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPhoneNumbersOptedOut", reflect.TypeOf((*MockSNSAPI)(nil).ListPhoneNumbersOptedOut), arg0)
+}
+
+// ListPhoneNumbersOptedOutPages mocks base method.
+func (m *MockSNSAPI) ListPhoneNumbersOptedOutPages(arg0 *sns.ListPhoneNumbersOptedOutInput, arg1 func(*sns.ListPhoneNumbersOptedOutOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPhoneNumbersOptedOutPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListPhoneNumbersOptedOutPages indicates an expected call of ListPhoneNumbersOptedOutPages.
+func (mr *MockSNSAPIMockRecorder) ListPhoneNumbersOptedOutPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPhoneNumbersOptedOutPages", reflect.TypeOf((*MockSNSAPI)(nil).ListPhoneNumbersOptedOutPages), arg0, arg1)
+}
+
+// ListPhoneNumbersOptedOutPagesWithContext mocks base method.
+func (m *MockSNSAPI) ListPhoneNumbersOptedOutPagesWithContext(arg0 context.Context, arg1 *sns.ListPhoneNumbersOptedOutInput, arg2 func(*sns.ListPhoneNumbersOptedOutOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPhoneNumbersOptedOutPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListPhoneNumbersOptedOutPagesWithContext indicates an expected call of ListPhoneNumbersOptedOutPagesWithContext.
+func (mr *MockSNSAPIMockRecorder) ListPhoneNumbersOptedOutPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPhoneNumbersOptedOutPagesWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListPhoneNumbersOptedOutPagesWithContext), varargs...)
 }
 
 // ListPhoneNumbersOptedOutRequest mocks base method.
@@ -950,6 +1266,89 @@ func (mr *MockSNSAPIMockRecorder) ListPlatformApplicationsWithContext(arg0, arg1
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPlatformApplicationsWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListPlatformApplicationsWithContext), varargs...)
+}
+
+// ListSMSSandboxPhoneNumbers mocks base method.
+func (m *MockSNSAPI) ListSMSSandboxPhoneNumbers(arg0 *sns.ListSMSSandboxPhoneNumbersInput) (*sns.ListSMSSandboxPhoneNumbersOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSMSSandboxPhoneNumbers", arg0)
+	ret0, _ := ret[0].(*sns.ListSMSSandboxPhoneNumbersOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSMSSandboxPhoneNumbers indicates an expected call of ListSMSSandboxPhoneNumbers.
+func (mr *MockSNSAPIMockRecorder) ListSMSSandboxPhoneNumbers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSMSSandboxPhoneNumbers", reflect.TypeOf((*MockSNSAPI)(nil).ListSMSSandboxPhoneNumbers), arg0)
+}
+
+// ListSMSSandboxPhoneNumbersPages mocks base method.
+func (m *MockSNSAPI) ListSMSSandboxPhoneNumbersPages(arg0 *sns.ListSMSSandboxPhoneNumbersInput, arg1 func(*sns.ListSMSSandboxPhoneNumbersOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSMSSandboxPhoneNumbersPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListSMSSandboxPhoneNumbersPages indicates an expected call of ListSMSSandboxPhoneNumbersPages.
+func (mr *MockSNSAPIMockRecorder) ListSMSSandboxPhoneNumbersPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSMSSandboxPhoneNumbersPages", reflect.TypeOf((*MockSNSAPI)(nil).ListSMSSandboxPhoneNumbersPages), arg0, arg1)
+}
+
+// ListSMSSandboxPhoneNumbersPagesWithContext mocks base method.
+func (m *MockSNSAPI) ListSMSSandboxPhoneNumbersPagesWithContext(arg0 context.Context, arg1 *sns.ListSMSSandboxPhoneNumbersInput, arg2 func(*sns.ListSMSSandboxPhoneNumbersOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListSMSSandboxPhoneNumbersPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListSMSSandboxPhoneNumbersPagesWithContext indicates an expected call of ListSMSSandboxPhoneNumbersPagesWithContext.
+func (mr *MockSNSAPIMockRecorder) ListSMSSandboxPhoneNumbersPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSMSSandboxPhoneNumbersPagesWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListSMSSandboxPhoneNumbersPagesWithContext), varargs...)
+}
+
+// ListSMSSandboxPhoneNumbersRequest mocks base method.
+func (m *MockSNSAPI) ListSMSSandboxPhoneNumbersRequest(arg0 *sns.ListSMSSandboxPhoneNumbersInput) (*request.Request, *sns.ListSMSSandboxPhoneNumbersOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSMSSandboxPhoneNumbersRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.ListSMSSandboxPhoneNumbersOutput)
+	return ret0, ret1
+}
+
+// ListSMSSandboxPhoneNumbersRequest indicates an expected call of ListSMSSandboxPhoneNumbersRequest.
+func (mr *MockSNSAPIMockRecorder) ListSMSSandboxPhoneNumbersRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSMSSandboxPhoneNumbersRequest", reflect.TypeOf((*MockSNSAPI)(nil).ListSMSSandboxPhoneNumbersRequest), arg0)
+}
+
+// ListSMSSandboxPhoneNumbersWithContext mocks base method.
+func (m *MockSNSAPI) ListSMSSandboxPhoneNumbersWithContext(arg0 context.Context, arg1 *sns.ListSMSSandboxPhoneNumbersInput, arg2 ...request.Option) (*sns.ListSMSSandboxPhoneNumbersOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListSMSSandboxPhoneNumbersWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.ListSMSSandboxPhoneNumbersOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSMSSandboxPhoneNumbersWithContext indicates an expected call of ListSMSSandboxPhoneNumbersWithContext.
+func (mr *MockSNSAPIMockRecorder) ListSMSSandboxPhoneNumbersWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSMSSandboxPhoneNumbersWithContext", reflect.TypeOf((*MockSNSAPI)(nil).ListSMSSandboxPhoneNumbersWithContext), varargs...)
 }
 
 // ListSubscriptions mocks base method.
@@ -1316,6 +1715,56 @@ func (mr *MockSNSAPIMockRecorder) Publish(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockSNSAPI)(nil).Publish), arg0)
 }
 
+// PublishBatch mocks base method.
+func (m *MockSNSAPI) PublishBatch(arg0 *sns.PublishBatchInput) (*sns.PublishBatchOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishBatch", arg0)
+	ret0, _ := ret[0].(*sns.PublishBatchOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PublishBatch indicates an expected call of PublishBatch.
+func (mr *MockSNSAPIMockRecorder) PublishBatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBatch", reflect.TypeOf((*MockSNSAPI)(nil).PublishBatch), arg0)
+}
+
+// PublishBatchRequest mocks base method.
+func (m *MockSNSAPI) PublishBatchRequest(arg0 *sns.PublishBatchInput) (*request.Request, *sns.PublishBatchOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishBatchRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.PublishBatchOutput)
+	return ret0, ret1
+}
+
+// PublishBatchRequest indicates an expected call of PublishBatchRequest.
+func (mr *MockSNSAPIMockRecorder) PublishBatchRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBatchRequest", reflect.TypeOf((*MockSNSAPI)(nil).PublishBatchRequest), arg0)
+}
+
+// PublishBatchWithContext mocks base method.
+func (m *MockSNSAPI) PublishBatchWithContext(arg0 context.Context, arg1 *sns.PublishBatchInput, arg2 ...request.Option) (*sns.PublishBatchOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PublishBatchWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.PublishBatchOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PublishBatchWithContext indicates an expected call of PublishBatchWithContext.
+func (mr *MockSNSAPIMockRecorder) PublishBatchWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishBatchWithContext", reflect.TypeOf((*MockSNSAPI)(nil).PublishBatchWithContext), varargs...)
+}
+
 // PublishRequest mocks base method.
 func (m *MockSNSAPI) PublishRequest(arg0 *sns.PublishInput) (*request.Request, *sns.PublishOutput) {
 	m.ctrl.T.Helper()
@@ -1349,6 +1798,56 @@ func (mr *MockSNSAPIMockRecorder) PublishWithContext(arg0, arg1 interface{}, arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWithContext", reflect.TypeOf((*MockSNSAPI)(nil).PublishWithContext), varargs...)
+}
+
+// PutDataProtectionPolicy mocks base method.
+func (m *MockSNSAPI) PutDataProtectionPolicy(arg0 *sns.PutDataProtectionPolicyInput) (*sns.PutDataProtectionPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutDataProtectionPolicy", arg0)
+	ret0, _ := ret[0].(*sns.PutDataProtectionPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutDataProtectionPolicy indicates an expected call of PutDataProtectionPolicy.
+func (mr *MockSNSAPIMockRecorder) PutDataProtectionPolicy(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutDataProtectionPolicy", reflect.TypeOf((*MockSNSAPI)(nil).PutDataProtectionPolicy), arg0)
+}
+
+// PutDataProtectionPolicyRequest mocks base method.
+func (m *MockSNSAPI) PutDataProtectionPolicyRequest(arg0 *sns.PutDataProtectionPolicyInput) (*request.Request, *sns.PutDataProtectionPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutDataProtectionPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.PutDataProtectionPolicyOutput)
+	return ret0, ret1
+}
+
+// PutDataProtectionPolicyRequest indicates an expected call of PutDataProtectionPolicyRequest.
+func (mr *MockSNSAPIMockRecorder) PutDataProtectionPolicyRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutDataProtectionPolicyRequest", reflect.TypeOf((*MockSNSAPI)(nil).PutDataProtectionPolicyRequest), arg0)
+}
+
+// PutDataProtectionPolicyWithContext mocks base method.
+func (m *MockSNSAPI) PutDataProtectionPolicyWithContext(arg0 context.Context, arg1 *sns.PutDataProtectionPolicyInput, arg2 ...request.Option) (*sns.PutDataProtectionPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PutDataProtectionPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.PutDataProtectionPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutDataProtectionPolicyWithContext indicates an expected call of PutDataProtectionPolicyWithContext.
+func (mr *MockSNSAPIMockRecorder) PutDataProtectionPolicyWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutDataProtectionPolicyWithContext", reflect.TypeOf((*MockSNSAPI)(nil).PutDataProtectionPolicyWithContext), varargs...)
 }
 
 // RemovePermission mocks base method.
@@ -1849,4 +2348,54 @@ func (mr *MockSNSAPIMockRecorder) UntagResourceWithContext(arg0, arg1 interface{
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UntagResourceWithContext", reflect.TypeOf((*MockSNSAPI)(nil).UntagResourceWithContext), varargs...)
+}
+
+// VerifySMSSandboxPhoneNumber mocks base method.
+func (m *MockSNSAPI) VerifySMSSandboxPhoneNumber(arg0 *sns.VerifySMSSandboxPhoneNumberInput) (*sns.VerifySMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifySMSSandboxPhoneNumber", arg0)
+	ret0, _ := ret[0].(*sns.VerifySMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifySMSSandboxPhoneNumber indicates an expected call of VerifySMSSandboxPhoneNumber.
+func (mr *MockSNSAPIMockRecorder) VerifySMSSandboxPhoneNumber(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySMSSandboxPhoneNumber", reflect.TypeOf((*MockSNSAPI)(nil).VerifySMSSandboxPhoneNumber), arg0)
+}
+
+// VerifySMSSandboxPhoneNumberRequest mocks base method.
+func (m *MockSNSAPI) VerifySMSSandboxPhoneNumberRequest(arg0 *sns.VerifySMSSandboxPhoneNumberInput) (*request.Request, *sns.VerifySMSSandboxPhoneNumberOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifySMSSandboxPhoneNumberRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*sns.VerifySMSSandboxPhoneNumberOutput)
+	return ret0, ret1
+}
+
+// VerifySMSSandboxPhoneNumberRequest indicates an expected call of VerifySMSSandboxPhoneNumberRequest.
+func (mr *MockSNSAPIMockRecorder) VerifySMSSandboxPhoneNumberRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySMSSandboxPhoneNumberRequest", reflect.TypeOf((*MockSNSAPI)(nil).VerifySMSSandboxPhoneNumberRequest), arg0)
+}
+
+// VerifySMSSandboxPhoneNumberWithContext mocks base method.
+func (m *MockSNSAPI) VerifySMSSandboxPhoneNumberWithContext(arg0 context.Context, arg1 *sns.VerifySMSSandboxPhoneNumberInput, arg2 ...request.Option) (*sns.VerifySMSSandboxPhoneNumberOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "VerifySMSSandboxPhoneNumberWithContext", varargs...)
+	ret0, _ := ret[0].(*sns.VerifySMSSandboxPhoneNumberOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifySMSSandboxPhoneNumberWithContext indicates an expected call of VerifySMSSandboxPhoneNumberWithContext.
+func (mr *MockSNSAPIMockRecorder) VerifySMSSandboxPhoneNumberWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifySMSSandboxPhoneNumberWithContext", reflect.TypeOf((*MockSNSAPI)(nil).VerifySMSSandboxPhoneNumberWithContext), varargs...)
 }

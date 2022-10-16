@@ -15,11 +15,23 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"go.opentelemetry.io/contrib/detectors/gcp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 
 	"github.com/nitrictech/nitric/pkg/membrane"
 	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
@@ -29,14 +41,49 @@ import (
 	secret_manager_secret_service "github.com/nitrictech/nitric/pkg/plugins/secret/secret_manager"
 	storage_service "github.com/nitrictech/nitric/pkg/plugins/storage/storage"
 	"github.com/nitrictech/nitric/pkg/providers/gcp/core"
+	"github.com/nitrictech/nitric/pkg/span"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
+
+func newTraceProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
+	exp, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resource.New(ctx,
+		resource.WithDetectors(gcp.NewDetector()),
+		resource.WithAttributes(
+			attribute.Key("component").String("Nitric membrane"),
+			semconv.ServiceNameKey.String(span.FunctionName),
+			semconv.ServiceNamespaceKey.String(utils.GetEnv("NITRIC_STACK", "")),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagator.CloudTraceFormatPropagator{},
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		))
+
+	span.UseFuncNameAsSpanName = false
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithResource(res),
+		sdktrace.WithBatcher(exp),
+	), nil
+}
 
 func main() {
 	// Setup signal interrupt handling for graceful shutdown
 	var err error
 	term := make(chan os.Signal, 1)
-	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+	signal.Notify(term, syscall.SIGTERM, syscall.SIGINT)
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 	provider, err := core.New()
@@ -75,6 +122,7 @@ func main() {
 	}
 
 	membraneOpts.ResourcesPlugin = provider
+	membraneOpts.CreateTracerProvider = newTraceProvider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

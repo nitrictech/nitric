@@ -25,6 +25,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
@@ -253,15 +255,30 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 			}
 		}
 	}
+
 	return nil, nil
 }
 
 // Start the lambda gateway handler
 func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 	// s.finished = make(chan int)
-	s.pool = pool
+
 	// Here we want to begin polling lambda for incoming requests...
-	s.runtime(s.handle)
+	s.runtime(func(ctx context.Context, data map[string]interface{}) (interface{}, error) {
+		s.pool = &worker.InstrumentedWorkerPool{
+			WorkerPool: pool,
+			Wrapper:    worker.InstrumentedWorkerFn(spanFromContext(ctx), false, true),
+		}
+
+		a, err := s.handle(ctx, data)
+
+		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
+		if ok {
+			_ = tp.ForceFlush(ctx)
+		}
+
+		return a, err
+	})
 	// Unblock the 'Stop' function if it's waiting.
 	go func() { s.finished <- 1 }()
 	return nil
