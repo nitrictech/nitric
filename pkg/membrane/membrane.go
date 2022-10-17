@@ -357,6 +357,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		secretPlugin:            options.SecretPlugin,
+		resourcePlugin:          options.ResourcesPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,
