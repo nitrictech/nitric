@@ -351,7 +351,7 @@ func NewWithClient(client ifaces_pubsub.PubsubClient) queue.QueueService {
 	}
 }
 
-//*pubsubbase.SubscriberClient
+// *pubsubbase.SubscriberClient
 func NewWithClients(client ifaces_pubsub.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)) queue.QueueService {
 	return &PubsubQueueService{
 		client:              client,

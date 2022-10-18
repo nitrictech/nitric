@@ -17,7 +17,7 @@ package s3_service_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -95,7 +95,7 @@ var _ = Describe("S3", func() {
 							Bucket: aws.String("test-bucket"),
 							Key:    aws.String("test-key"),
 						}).Return(&s3.GetObjectOutput{
-							Body: ioutil.NopCloser(bytes.NewReader([]byte("Test"))),
+							Body: io.NopCloser(bytes.NewReader([]byte("Test"))),
 						}, nil)
 
 						object, err := storagePlugin.Read("test-bucket", "test-key")

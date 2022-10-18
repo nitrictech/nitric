@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/url"
 	"time"
@@ -79,7 +79,7 @@ func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 	// TODO: Configure retries
 	data := r.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
 
-	return ioutil.ReadAll(data)
+	return io.ReadAll(data)
 }
 
 func (a *AzblobStorageService) Write(bucket string, key string, object []byte) error {

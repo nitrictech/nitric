@@ -16,8 +16,10 @@ package sns_service_test
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/golang/mock/gomock"
 
@@ -25,6 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	provider_mocks "github.com/nitrictech/nitric/mocks/provider"
+	sfn_mock "github.com/nitrictech/nitric/mocks/sfn"
 	sns_mock "github.com/nitrictech/nitric/mocks/sns"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	sns_service "github.com/nitrictech/nitric/pkg/plugins/events/sns"
@@ -38,7 +41,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 
 			It("Should return the available topics", func() {
 				By("Topics being available")
@@ -62,7 +65,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 			payload := map[string]interface{}{"Test": "test"}
 			testEvent := &events.NitricEvent{
 				ID:          "testing",
@@ -85,7 +88,7 @@ var _ = Describe("Sns", func() {
 					Message:  aws.String(stringData),
 				})
 
-				err := eventsClient.Publish("test", testEvent)
+				err := eventsClient.Publish("test", 0, testEvent)
 
 				Expect(err).To(BeNil())
 			})
@@ -96,7 +99,7 @@ var _ = Describe("Sns", func() {
 			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
-			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock)
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 
 			payload := map[string]interface{}{"Test": "test"}
 
@@ -104,13 +107,52 @@ var _ = Describe("Sns", func() {
 				By("Returning no topics")
 				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
 
-				err := eventsClient.Publish("test", &events.NitricEvent{
+				err := eventsClient.Publish("test", 0, &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
 				})
 
 				Expect(err.Error()).To(ContainSubstring("could not find topic"))
+			})
+		})
+	})
+
+	Context("Delayed Publish", func() {
+		When("Publishing to an available topic", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
+			sfnMock := sfn_mock.NewMockSFNAPI(ctrl)
+
+			eventsClient, _ := sns_service.NewWithClient(awsMock, nil, sfnMock)
+			payload := map[string]interface{}{"Test": "test"}
+			testEvent := &events.NitricEvent{
+				ID:          "testing",
+				PayloadType: "Test Payload",
+				Payload:     payload,
+			}
+
+			data, _ := json.Marshal(testEvent)
+			stringData := string(data)
+
+			It("Should publish without error", func() {
+				By("Retrieving a list of topics")
+				awsMock.EXPECT().GetResources(core.AwsResource_StateMachine).Return(map[string]string{
+					"test": "arn:test",
+				}, nil)
+
+				By("Publishing the message to the topic")
+				sfnMock.EXPECT().StartExecution(&sfn.StartExecutionInput{
+					StateMachineArn: aws.String("arn:test"),
+					Input: aws.String(fmt.Sprintf(`{
+			"seconds": 1,
+			"message": %s
+		}`, stringData)),
+				})
+
+				err := eventsClient.Publish("test", 1, testEvent)
+
+				Expect(err).To(BeNil())
 			})
 		})
 	})

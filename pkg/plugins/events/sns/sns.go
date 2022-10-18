@@ -20,6 +20,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sfn"
+	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 
@@ -32,53 +34,30 @@ import (
 
 type SnsEventService struct {
 	events.UnimplementedeventsPlugin
-	client   snsiface.SNSAPI
-	provider core.AwsProvider
+	client    snsiface.SNSAPI
+	sfnClient sfniface.SFNAPI
+	provider  core.AwsProvider
 }
 
 func (s *SnsEventService) getTopics() (map[string]string, error) {
 	return s.provider.GetResources(core.AwsResource_Topic)
 }
 
-// Publish to a given topic
-func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error {
-	newErr := errors.ErrorsWithScope(
-		"SnsEventService.Publish",
-		map[string]interface{}{
-			"topic": topic,
-			"event": event,
-		},
-	)
+func (s *SnsEventService) getStateMachines() (map[string]string, error) {
+	return s.provider.GetResources(core.AwsResource_StateMachine)
+}
 
-	data, err := json.Marshal(event)
-	if err != nil {
-		return newErr(
-			codes.Internal,
-			"error marshalling event payload",
-			err,
-		)
-	}
-
+func (s *SnsEventService) publish(topic string, message string) error {
 	topics, err := s.getTopics()
 	if err != nil {
-		return newErr(
-			codes.Internal,
-			"error finding topics",
-			err,
-		)
+		return fmt.Errorf("error finding topics: %v", err)
 	}
 
 	topicArn, ok := topics[topic]
 
 	if !ok {
-		return newErr(
-			codes.NotFound,
-			"could not find topic",
-			nil,
-		)
+		return fmt.Errorf("could not find topic")
 	}
-
-	message := string(data)
 
 	publishInput := &sns.PublishInput{
 		TopicArn: aws.String(topicArn),
@@ -91,11 +70,66 @@ func (s *SnsEventService) Publish(topic string, event *events.NitricEvent) error
 	_, err = s.client.Publish(publishInput)
 
 	if err != nil {
+		return fmt.Errorf("unable to publish message: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SnsEventService) publishDelayed(topic string, delay int, message string) error {
+	sfns, err := s.getStateMachines()
+	if err != nil {
+		return fmt.Errorf("error gettings state machines: %w", err)
+	}
+
+	sfnArn, ok := sfns[topic]
+	if !ok {
+		return fmt.Errorf("error finding state machine for topic %s: %w", topic, err)
+	}
+
+	_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
+		StateMachineArn: aws.String(sfnArn),
+		Input: aws.String(fmt.Sprintf(`{
+			"seconds": %d,
+			"message": %s
+		}`, delay, message)),
+	})
+	if err != nil {
+		return fmt.Errorf("error starting state machine execution: %w", err)
+	}
+
+	return nil
+}
+
+// Publish to a given topic
+func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+	newErr := errors.ErrorsWithScope(
+		"SnsEventService.Publish",
+		map[string]interface{}{
+			"topic": topic,
+			"event": event,
+			"delay": delay,
+		},
+	)
+
+	data, err := json.Marshal(event)
+	if err != nil {
 		return newErr(
 			codes.Internal,
-			"unable to publish message",
+			"error marshalling event payload",
 			err,
 		)
+	}
+	message := string(data)
+
+	if delay > 0 {
+		err = s.publishDelayed(topic, delay, message)
+	} else {
+		err = s.publish(topic, message)
+	}
+
+	if err != nil {
+		return newErr(codes.Internal, "error publishing message", err)
 	}
 
 	return nil
@@ -135,16 +169,19 @@ func New(provider core.AwsProvider) (events.EventService, error) {
 	}
 
 	snsClient := sns.New(sess)
+	sfnClient := sfn.New(sess)
 
 	return &SnsEventService{
-		client:   snsClient,
-		provider: provider,
+		client:    snsClient,
+		sfnClient: sfnClient,
+		provider:  provider,
 	}, nil
 }
 
-func NewWithClient(provider core.AwsProvider, client snsiface.SNSAPI) (events.EventService, error) {
+func NewWithClient(provider core.AwsProvider, client snsiface.SNSAPI, sfnClient sfniface.SFNAPI) (events.EventService, error) {
 	return &SnsEventService{
-		provider: provider,
-		client:   client,
+		provider:  provider,
+		client:    client,
+		sfnClient: sfnClient,
 	}, nil
 }

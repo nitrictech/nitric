@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -134,7 +134,7 @@ var _ = Describe("Http", func() {
 
 				By("Containing the provided validation code")
 				var respEvt eventgrid.SubscriptionValidationResponse
-				bytes, err := ioutil.ReadAll(resp.Body)
+				bytes, err := io.ReadAll(resp.Body)
 				Expect(err).To(BeNil())
 
 				err = json.Unmarshal(bytes, &respEvt)

@@ -18,20 +18,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
+	"google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	ifaces_cloudtasks "github.com/nitrictech/nitric/pkg/ifaces/cloudtasks"
 	ifaces_pubsub "github.com/nitrictech/nitric/pkg/ifaces/pubsub"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
+	"github.com/nitrictech/nitric/pkg/providers/gcp/core"
+	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 type PubsubEventService struct {
 	events.UnimplementedeventsPlugin
-	client ifaces_pubsub.PubsubClient
+	core.GcpProvider
+	client      ifaces_pubsub.PubsubClient
+	tasksClient ifaces_cloudtasks.CloudtasksClient
 }
 
 func (s *PubsubEventService) ListTopics() ([]string, error) {
@@ -54,7 +63,73 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 	return topics, nil
 }
 
-func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) error {
+type httpPubsubMessage struct {
+	Attributes map[string]string `json:"attributes"`
+	Data       []byte            `json:"data"`
+}
+
+type httpPubsubMessages struct {
+	Messages []httpPubsubMessage `json:"messages"`
+}
+
+func (s *PubsubEventService) publish(topic string, pubsubMsg *pubsub.Message) error {
+	ctx := context.Background()
+	msg := ifaces_pubsub.AdaptPubsubMessage(pubsubMsg)
+	pubsubTopic := s.client.Topic(topic)
+
+	_, err := pubsubTopic.Publish(ctx, msg).Get(ctx)
+	return err
+}
+
+func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *pubsub.Message) error {
+	saEmail, err := s.GetServiceAccountEmail()
+	if err != nil {
+		return err
+	}
+
+	projectId, err := s.GetProjectID()
+	if err != nil {
+		return err
+	}
+
+	body := httpPubsubMessages{
+		Messages: []httpPubsubMessage{{
+			Attributes: pubsubMsg.Attributes,
+			Data:       pubsubMsg.Data,
+		}},
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	// Delay the message publishing
+	_, err = s.tasksClient.CreateTask(context.Background(), &tasks.CreateTaskRequest{
+		Parent: utils.GetEnv("DELAY_QUEUE_NAME", ""),
+		Task: &tasks.Task{
+			MessageType: &tasks.Task_HttpRequest{
+				HttpRequest: &tasks.HttpRequest{
+					AuthorizationHeader: &tasks.HttpRequest_OauthToken{
+						OauthToken: &tasks.OAuthToken{
+							ServiceAccountEmail: saEmail,
+						},
+					},
+					HttpMethod: tasks.HttpMethod_POST,
+					Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics/%s:publish", projectId, topic),
+					// TODO: Add message body with attributes
+					Body: jsonBody,
+				},
+			},
+			// schedule for the future
+			ScheduleTime: timestamppb.New(timestamppb.Now().AsTime().Add(time.Duration(delay) * time.Second)),
+		},
+	})
+
+	return err
+}
+
+func (s *PubsubEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubEventService.Publish",
 		map[string]interface{}{
@@ -62,8 +137,6 @@ func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) er
 			"event": event,
 		},
 	)
-
-	ctx := context.TODO()
 
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
@@ -74,19 +147,23 @@ func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) er
 		)
 	}
 
-	pubsubTopic := s.client.Topic(topic)
-
-	msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
+	pubsubMsg := &pubsub.Message{
 		Attributes: map[string]string{
 			"x-nitric-topic": topic,
 		},
 		Data: eventBytes,
-	})
+	}
 
-	if _, err := pubsubTopic.Publish(ctx, msg).Get(ctx); err != nil {
+	if delay > 0 {
+		err = s.publishDelayed(topic, delay, pubsubMsg)
+	} else {
+		err = s.publish(topic, pubsubMsg)
+	}
+
+	if err != nil {
 		return newErr(
 			codes.Internal,
-			"topic publishing error",
+			fmt.Sprintf("error publishing message: %s", err.Error()),
 			err,
 		)
 	}
@@ -94,26 +171,35 @@ func (s *PubsubEventService) Publish(topic string, event *events.NitricEvent) er
 	return nil
 }
 
-func New() (events.EventService, error) {
+func New(provider core.GcpProvider) (events.EventService, error) {
 	ctx := context.Background()
 
-	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
-	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+	credentials, err := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
+	if err != nil {
+		return nil, fmt.Errorf("GCP credentials error: %v", err)
 	}
 
-	client, clientError := pubsub.NewClient(ctx, credentials.ProjectID)
-	if clientError != nil {
-		return nil, fmt.Errorf("pubsub client error: %v", clientError)
+	client, err := pubsub.NewClient(ctx, credentials.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("pubsub client error: %v", err)
+	}
+
+	tasksClient, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cloudtasks client error: %v", err)
 	}
 
 	return &PubsubEventService{
-		client: ifaces_pubsub.AdaptPubsubClient(client),
+		GcpProvider: provider,
+		client:      ifaces_pubsub.AdaptPubsubClient(client),
+		tasksClient: tasksClient,
 	}, nil
 }
 
-func NewWithClient(client ifaces_pubsub.PubsubClient) (events.EventService, error) {
+func NewWithClient(provider core.GcpProvider, client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (events.EventService, error) {
 	return &PubsubEventService{
-		client: client,
+		GcpProvider: provider,
+		client:      client,
+		tasksClient: tasksClient,
 	}, nil
 }
