@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	common "github.com/nitrictech/nitric/pkg/providers/common"
 )
 
 // MockAwsProvider is a mock of AwsProvider interface.
@@ -31,6 +32,21 @@ func NewMockAwsProvider(ctrl *gomock.Controller) *MockAwsProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAwsProvider) EXPECT() *MockAwsProviderMockRecorder {
 	return m.recorder
+}
+
+// Details mocks base method.
+func (m *MockAwsProvider) Details(arg0, arg1 string) (*common.DetailsResponse[interface{}], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret0, _ := ret[0].(*common.DetailsResponse[interface{}])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Details indicates an expected call of Details.
+func (mr *MockAwsProviderMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockAwsProvider)(nil).Details), arg0, arg1)
 }
 
 // GetResources mocks base method.
