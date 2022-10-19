@@ -74,6 +74,8 @@ func main() {
 		log.Default().Println("Failed to load queue plugin:", err.Error())
 	}
 
+	membraneOpts.ResourcesPlugin = provider
+
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
 		log.Fatalf("There was an error initialising the membrane server: %v", err)

@@ -26,6 +26,8 @@ type ResourceServiceClient interface {
 	// At Deploy time this will create resources as part of the nitric stacks dependency graph
 	// At runtime
 	Declare(ctx context.Context, in *ResourceDeclareRequest, opts ...grpc.CallOption) (*ResourceDeclareResponse, error)
+	// Retrieve details about a resource at runtime
+	Details(ctx context.Context, in *ResourceDetailsRequest, opts ...grpc.CallOption) (*ResourceDetailsResponse, error)
 }
 
 type resourceServiceClient struct {
@@ -45,6 +47,15 @@ func (c *resourceServiceClient) Declare(ctx context.Context, in *ResourceDeclare
 	return out, nil
 }
 
+func (c *resourceServiceClient) Details(ctx context.Context, in *ResourceDetailsRequest, opts ...grpc.CallOption) (*ResourceDetailsResponse, error) {
+	out := new(ResourceDetailsResponse)
+	err := c.cc.Invoke(ctx, "/nitric.resource.v1.ResourceService/Details", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceServiceServer is the server API for ResourceService service.
 // All implementations must embed UnimplementedResourceServiceServer
 // for forward compatibility
@@ -53,6 +64,8 @@ type ResourceServiceServer interface {
 	// At Deploy time this will create resources as part of the nitric stacks dependency graph
 	// At runtime
 	Declare(context.Context, *ResourceDeclareRequest) (*ResourceDeclareResponse, error)
+	// Retrieve details about a resource at runtime
+	Details(context.Context, *ResourceDetailsRequest) (*ResourceDetailsResponse, error)
 	mustEmbedUnimplementedResourceServiceServer()
 }
 
@@ -62,6 +75,9 @@ type UnimplementedResourceServiceServer struct {
 
 func (UnimplementedResourceServiceServer) Declare(context.Context, *ResourceDeclareRequest) (*ResourceDeclareResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Declare not implemented")
+}
+func (UnimplementedResourceServiceServer) Details(context.Context, *ResourceDetailsRequest) (*ResourceDetailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Details not implemented")
 }
 func (UnimplementedResourceServiceServer) mustEmbedUnimplementedResourceServiceServer() {}
 
@@ -94,6 +110,24 @@ func _ResourceService_Declare_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceService_Details_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).Details(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.resource.v1.ResourceService/Details",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).Details(ctx, req.(*ResourceDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceService_ServiceDesc is the grpc.ServiceDesc for ResourceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +138,10 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Declare",
 			Handler:    _ResourceService_Declare_Handler,
+		},
+		{
+			MethodName: "Details",
+			Handler:    _ResourceService_Details_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
