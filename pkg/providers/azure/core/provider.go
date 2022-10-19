@@ -20,9 +20,11 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
+	"github.com/Azure/azure-sdk-for-go/services/preview/apimanagement/mgmt/2019-12-01-preview/apimanagement"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/nitrictech/nitric/pkg/providers/common"
 )
 
 type AzProvider interface {
@@ -30,6 +32,7 @@ type AzProvider interface {
 	SubscriptionId() string
 	ResourceGroupName() string
 	ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error)
+	common.ResourceService
 }
 
 type AzResource = string
@@ -38,30 +41,72 @@ const (
 	AzResource_Topic AzResource = "Microsoft.Eventgrid/topics"
 	// Collections are handled by mongodb in azure
 	// AzResource_Collection AzResource = "TODO"
+	AzResource_Api    AzResource = "Microsoft.ApiManagement/service"
 	AzResource_Queue  AzResource = "Microsoft.Storage/storageAccounts/queueServices"
 	AzResource_Bucket AzResource = "Microsoft.Storage/storageAccounts/blobServices"
 	AzResource_Secret AzResource = "Microsoft.KeyVault/vaults/secrets"
 )
 
 type AzGenericResource struct {
-	Name     string
-	Type     string
-	Location string
+	Name       string
+	Type       string
+	Location   string
+	Properties interface{}
 }
 
 type azResourceCache = map[AzResource]map[string]AzGenericResource
 
 type azProviderImpl struct {
-	env     auth.EnvironmentSettings
-	rclient resources.Client
-	subId   string
-	rgName  string
-	cache   azResourceCache
+	env       auth.EnvironmentSettings
+	rclient   resources.Client
+	srvClient apimanagement.ServiceClient
+	subId     string
+	rgName    string
+	cache     azResourceCache
+}
+
+var _ AzProvider = &azProviderImpl{}
+
+func (p *azProviderImpl) getApiDetails(name string) (*common.DetailsResponse[any], error) {
+	res, err := p.srvClient.ListByResourceGroupComplete(context.TODO(), p.rgName)
+	if err != nil {
+		return nil, err
+	}
+
+	for res.NotDone() {
+		service := res.Value()
+
+		if t, ok := service.Tags["x-nitric-name"]; ok && t != nil && *t == name {
+			return &common.DetailsResponse[any]{
+				Id:       *service.ID,
+				Provider: "azure",
+				Service:  "ApiManagement",
+				Detail: common.ApiDetails{
+					URL: *service.GatewayURL,
+				},
+			}, nil
+		}
+
+		err := res.NextWithContext(context.TODO())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, fmt.Errorf("api resource %s not found", name)
+}
+
+func (p *azProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+	switch typ {
+	case common.ResourceType_Api:
+		return p.getApiDetails(name)
+	default:
+		return nil, fmt.Errorf("unsupported resource type %s", typ)
+	}
 }
 
 func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResource, error) {
 	filter := fmt.Sprintf("resourceType eq '%s'", r)
-
 	if _, ok := p.cache[r]; !ok {
 		// populate the cache
 		results, err := p.rclient.ListByResourceGroupComplete(context.TODO(), p.rgName, filter, "", nil)
@@ -72,19 +117,21 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 		p.cache[r] = map[string]AzGenericResource{}
 
 		for results.NotDone() {
-			err := results.NextWithContext(context.TODO())
-			if err != nil {
-				return nil, err
-			}
-
 			resource := results.Value()
+
 			if tagV, ok := resource.Tags["x-nitric-name"]; ok && tagV != nil {
 				// Add it to the cache
 				p.cache[r][*tagV] = AzGenericResource{
-					Name:     *resource.Name,
-					Type:     *resource.Type,
-					Location: *resource.Location,
+					Name:       *resource.Name,
+					Type:       *resource.Type,
+					Location:   *resource.Location,
+					Properties: resource.Properties,
 				}
+			}
+
+			err := results.NextWithContext(context.TODO())
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -147,14 +194,18 @@ func New() (*azProviderImpl, error) {
 		cache:  make(map[string]map[string]AzGenericResource),
 	}
 
-	rclient := resources.NewClient(subId)
 	spt, err := prov.ServicePrincipalToken("https://management.azure.com")
 	if err != nil {
 		return nil, err
 	}
 
+	sClient := apimanagement.NewServiceClient(subId)
+	sClient.Authorizer = autorest.NewBearerAuthorizer(spt)
+
+	rclient := resources.NewClient(subId)
 	rclient.Authorizer = autorest.NewBearerAuthorizer(spt)
 	prov.rclient = rclient
+	prov.srvClient = sClient
 
 	return prov, nil
 }
