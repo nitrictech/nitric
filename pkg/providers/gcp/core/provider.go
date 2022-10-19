@@ -21,9 +21,10 @@ import (
 	"net/http"
 
 	apigateway "cloud.google.com/go/apigateway/apiv1"
+	apigatewaypb "google.golang.org/genproto/googleapis/cloud/apigateway/v1"
+
 	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
-	apigatewaypb "google.golang.org/genproto/googleapis/cloud/apigateway/v1"
 )
 
 type GcpProvider interface {
