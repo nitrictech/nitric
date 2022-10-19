@@ -3,6 +3,7 @@ module github.com/nitrictech/nitric
 go 1.18
 
 require (
+	cloud.google.com/go/apigateway v1.2.0
 	cloud.google.com/go/cloudtasks v1.6.0
 	cloud.google.com/go/firestore v1.6.1
 	cloud.google.com/go/pubsub v1.5.0
