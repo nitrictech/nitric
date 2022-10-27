@@ -58,6 +58,7 @@ func main() {
 	membraneOpts.QueuePlugin, _ = azqueue_service.New()
 	membraneOpts.StoragePlugin, _ = azblob_service.New()
 	membraneOpts.SecretPlugin, err = key_vault.New()
+	membraneOpts.ResourcesPlugin = provider
 	if err != nil {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}

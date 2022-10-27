@@ -10,6 +10,7 @@ import (
 	adal "github.com/Azure/go-autorest/autorest/adal"
 	gomock "github.com/golang/mock/gomock"
 	core "github.com/nitrictech/nitric/pkg/providers/azure/core"
+	common "github.com/nitrictech/nitric/pkg/providers/common"
 )
 
 // MockAzProvider is a mock of AzProvider interface.
@@ -33,6 +34,21 @@ func NewMockAzProvider(ctrl *gomock.Controller) *MockAzProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAzProvider) EXPECT() *MockAzProviderMockRecorder {
 	return m.recorder
+}
+
+// Details mocks base method.
+func (m *MockAzProvider) Details(arg0, arg1 string) (*common.DetailsResponse[interface{}], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret0, _ := ret[0].(*common.DetailsResponse[interface{}])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Details indicates an expected call of Details.
+func (mr *MockAzProviderMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockAzProvider)(nil).Details), arg0, arg1)
 }
 
 // GetResources mocks base method.
