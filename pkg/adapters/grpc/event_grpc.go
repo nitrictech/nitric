@@ -62,9 +62,8 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		Payload:     req.GetEvent().GetPayload().AsMap(),
 	}
 
-	sn := span.FromContext(ctx, "topic-"+req.GetTopic())
-
-	sn.SetAttributes(
+	sp := span.FromHeaders(ctx, "topic-"+req.GetTopic(), map[string][]string{})
+	sp.SetAttributes(
 		semconv.CodeFunctionKey.String("EventService.Publish"),
 		semconv.MessagingDestinationKindTopic,
 		semconv.MessagingDestinationKey.String(req.GetTopic()),
@@ -72,14 +71,14 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		attribute.Key("messaging.message_type").String(event.PayloadType),
 	)
 
-	defer sn.End()
+	defer sp.End()
 
 	if err := s.eventPlugin.Publish(req.GetTopic(), int(req.Delay), event); err == nil {
 		return &pb.EventPublishResponse{
 			Id: ID,
 		}, nil
 	} else {
-		sn.RecordError(err)
+		sp.RecordError(err)
 
 		return nil, NewGrpcError("EventService.Publish", err)
 	}

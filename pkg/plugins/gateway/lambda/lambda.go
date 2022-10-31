@@ -25,12 +25,16 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambdacontext"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/providers/aws/core"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -70,6 +74,34 @@ func getEventType(request map[string]interface{}) eventType {
 	}
 
 	return unknown
+}
+
+func contextWithTrace(ctx context.Context) context.Context {
+	lc, ok := lambdacontext.FromContext(ctx)
+	if !ok {
+		log.Default().Println("failed to load lambda context from context, ensure tracing enabled in Lambda")
+	}
+
+	ctx, sp := otel.Tracer("membrane/pkg/plugins/gateway/lambda", trace.WithInstrumentationVersion(span.MembraneVersion)).
+		Start(ctx, lambdacontext.FunctionName)
+
+	if lc != nil {
+		ctxRequestID := lc.AwsRequestID
+		sp.SetAttributes(semconv.FaaSExecutionKey.String(ctxRequestID))
+
+		// Some resource attrs added as span attrs because lambda
+		// resource detectors are created before a lambda
+		// invocation and therefore lack lambdacontext.
+		// Create these attrs upon first invocation
+		ctxFunctionArn := lc.InvokedFunctionArn
+		sp.SetAttributes(semconv.FaaSIDKey.String(ctxFunctionArn))
+		arnParts := strings.Split(ctxFunctionArn, ":")
+		if len(arnParts) >= 5 {
+			sp.SetAttributes(semconv.CloudAccountIDKey.String(arnParts[4]))
+		}
+	}
+
+	return trace.ContextWithSpan(ctx, sp)
 }
 
 func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
@@ -166,6 +198,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 			Body:   []byte(evt.Body),
 			Method: evt.RequestContext.HTTP.Method,
 			Path:   evt.RawPath,
+			URL:    evt.RawPath,
 			Query:  qVals,
 		})
 
@@ -208,7 +241,8 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 				if err != nil {
 					return nil, fmt.Errorf("unable to get worker to handle http trigger")
 				}
-				response, err := wrkr.HandleHttpRequest(httpEvent)
+
+				response, err := wrkr.HandleHttpRequest(contextWithTrace(ctx), httpEvent)
 				if err != nil {
 					return events.APIGatewayProxyResponse{
 						StatusCode: 500,
@@ -247,7 +281,8 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 				if err != nil {
 					return nil, fmt.Errorf("unable to get worker to event trigger")
 				}
-				if err := wrkr.HandleEvent(event); err != nil {
+
+				if err := wrkr.HandleEvent(contextWithTrace(ctx), event); err != nil {
 					return nil, err
 				}
 			} else {
@@ -262,14 +297,9 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 // Start the lambda gateway handler
 func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 	// s.finished = make(chan int)
-
+	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...
 	s.runtime(func(ctx context.Context, data map[string]interface{}) (interface{}, error) {
-		s.pool = &worker.InstrumentedWorkerPool{
-			WorkerPool: pool,
-			Wrapper:    worker.InstrumentedWorkerFn(spanFromContext(ctx), false, true),
-		}
-
 		a, err := s.handle(ctx, data)
 
 		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)

@@ -65,9 +65,8 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 		Payload:     task.GetPayload().AsMap(),
 	}
 
-	sn := span.FromContext(ctx, "queue-"+req.GetQueue())
-
-	sn.SetAttributes(
+	sp := span.FromHeaders(ctx, "queue-"+req.GetQueue(), map[string][]string{})
+	sp.SetAttributes(
 		semconv.CodeFunctionKey.String("Queue.Send"),
 		semconv.MessagingDestinationKindQueue,
 		semconv.MessagingDestinationKey.String(req.GetQueue()),
@@ -75,10 +74,10 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 		attribute.Key("messaging.message_type").String(nitricTask.PayloadType),
 	)
 
-	defer sn.End()
+	defer sp.End()
 
 	if err := s.plugin.Send(req.GetQueue(), nitricTask); err != nil {
-		sn.RecordError(err)
+		sp.RecordError(err)
 
 		return nil, err
 	}

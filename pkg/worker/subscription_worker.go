@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nitrictech/nitric/pkg/triggers"
@@ -41,7 +42,7 @@ func (s *SubscriptionWorker) HandlesEvent(trigger *triggers.Event) bool {
 	return trigger.Topic == s.topic
 }
 
-func (s *SubscriptionWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *SubscriptionWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	return nil, fmt.Errorf("subscription workers cannot handle HTTP requests")
 }

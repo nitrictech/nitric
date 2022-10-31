@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -286,7 +287,7 @@ var _ = Describe("grpcAdapter", func() {
 				stream.EXPECT().Send(gomock.Any()).Return(mockErr)
 
 				By("returning the error")
-				_, err := wkr.HandleHttpRequest(&triggers.HttpRequest{})
+				_, err := wkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{})
 				Expect(err).To(Equal(mockErr))
 			})
 		})
@@ -312,7 +313,7 @@ var _ = Describe("grpcAdapter", func() {
 				stream.EXPECT().Send(gomock.Any()).Return(mockErr)
 
 				By("returning the error")
-				err := wkr.HandleEvent(&triggers.Event{})
+				err := wkr.HandleEvent(context.TODO(), &triggers.Event{})
 				Expect(err).To(Equal(mockErr))
 			})
 		})

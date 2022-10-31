@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -47,7 +48,7 @@ func (s *ScheduleWorker) HandlesEvent(trigger *triggers.Event) bool {
 	return ScheduleKeyToTopicName(s.key) == trigger.Topic
 }
 
-func (s *ScheduleWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *ScheduleWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	return nil, fmt.Errorf("schedule workers cannot handle HTTP requests")
 }

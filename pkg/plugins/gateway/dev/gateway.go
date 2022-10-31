@@ -16,6 +16,7 @@
 package gateway_plugin
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -51,7 +52,7 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 			return false
 		}
 
-		err = wrkr.HandleEvent(evt)
+		err = wrkr.HandleEvent(context.TODO(), evt)
 
 		if err != nil {
 			log.Default().Println(err)

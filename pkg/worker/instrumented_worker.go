@@ -17,8 +17,7 @@ package worker
 import (
 	"context"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
@@ -27,85 +26,61 @@ import (
 
 type instrumentedWorker struct {
 	Worker
-	span        trace.Span
-	setName     bool
-	setHTTPAttr bool
 }
 
 var _ Worker = &instrumentedWorker{}
 
-func InstrumentedWorkerFn(span trace.Span, setName, setHTTPAttr bool) func(Worker) Worker {
-	return func(w Worker) Worker {
-		return &instrumentedWorker{
-			Worker:      w,
-			span:        span,
-			setName:     setName,
-			setHTTPAttr: setHTTPAttr,
-		}
+func InstrumentedWorkerFn(w Worker) Worker {
+	return &instrumentedWorker{
+		Worker: w,
 	}
 }
 
 // HandleEvent implements worker.Adapter
-func (a *instrumentedWorker) HandleEvent(trigger *triggers.Event) error {
-	a.span.SetAttributes(
+func (a *instrumentedWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
+	s := trace.SpanFromContext(ctx)
+	s.SetAttributes(
 		semconv.CodeFunctionKey.String("HandleEvent"),
-		semconv.FaaSTriggerKey.String("event"),
 		semconv.MessagingDestinationKindTopic,
 		semconv.MessagingDestinationKey.String(trigger.Topic),
 		semconv.MessagingMessageIDKey.String(trigger.ID),
-		semconv.MessagingOperationProcess,
 	)
 
-	if a.setName {
-		a.span.SetName(trigger.Topic)
-	}
+	defer s.End()
 
-	defer a.span.End()
-
-	// nowhere to inject the traceID into here :-(
-
-	err := a.Worker.HandleEvent(trigger)
+	err := a.Worker.HandleEvent(trace.ContextWithSpan(ctx, s), trigger)
 	if err != nil {
-		a.span.RecordError(err)
+		s.SetStatus(codes.Error, "Event Handler returned an error")
+		s.RecordError(err)
+	} else {
+		s.SetStatus(codes.Ok, "Event Handled Successfully")
 	}
 
 	return err
 }
 
 // HandleHttpRequest implements worker.Adapter
-func (a *instrumentedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	a.span.SetAttributes(
-		semconv.FaaSTriggerHTTP,
+func (a *instrumentedWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+	s := trace.SpanFromContext(ctx)
+	s.SetAttributes(
 		semconv.CodeFunctionKey.String("HandleHttpRequest"),
+		semconv.HTTPMethodKey.String(trigger.Method),
+		semconv.HTTPTargetKey.String(trigger.Path),
+		semconv.HTTPURLKey.String(trigger.URL),
 	)
 
-	if a.setHTTPAttr {
-		a.span.SetAttributes(
-			semconv.HTTPMethodKey.String(trigger.Method),
-			semconv.HTTPURLKey.String(trigger.Path),
-		)
-	}
+	defer s.End()
 
-	if a.setName {
-		a.span.SetName(trigger.Path)
-	}
-
-	defer a.span.End()
-
-	// Inject the correct headers.
-	var hc propagation.HeaderCarrier = trigger.Header
-
-	otel.GetTextMapPropagator().Inject(trace.ContextWithSpan(context.TODO(), a.span), hc)
-
-	trigger.Header = hc
-
-	resp, err := a.Worker.HandleHttpRequest(trigger)
+	resp, err := a.Worker.HandleHttpRequest(trace.ContextWithSpan(ctx, s), trigger)
 	if err != nil {
-		a.span.RecordError(err)
+		s.SetStatus(codes.Error, "Request Handler returned an error")
+		s.RecordError(err)
+	} else {
+		s.SetStatus(codes.Ok, "Request Handled Successfully")
 	}
 
 	if resp != nil {
-		a.span.SetAttributes(semconv.HTTPStatusCodeKey.Int(resp.StatusCode))
+		s.SetAttributes(semconv.HTTPStatusCodeKey.Int(resp.StatusCode))
 	}
 
 	return resp, err

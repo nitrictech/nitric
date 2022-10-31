@@ -15,6 +15,7 @@
 package http_service
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"strings"
@@ -102,7 +103,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			continue
 		}
 
-		err = wrkr.HandleEvent(evt)
+		err = wrkr.HandleEvent(context.TODO(), evt)
 		if err != nil {
 			log.Default().Println("could not handle event: ", evt)
 			// TODO: Handle error

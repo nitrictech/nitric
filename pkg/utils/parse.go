@@ -12,16 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package utils
 
 import (
-	"context"
-
-	"github.com/nitrictech/nitric/pkg/triggers"
+	"strconv"
 )
 
-// Adapter - An interface for defining the delivery of events
-type Adapter interface {
-	HandleEvent(ctx context.Context, trigger *triggers.Event) error
-	HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+func PercentFromIntString(in string) (float64, error) {
+	intVar, err := strconv.Atoi(in)
+	if err != nil {
+		return 0, err
+	}
+
+	if intVar > 100 {
+		return 100, nil
+	} else if intVar < 0 {
+		return 0, nil
+	}
+
+	return float64(intVar / 100), nil
 }

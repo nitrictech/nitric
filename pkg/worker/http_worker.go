@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"time"
@@ -39,7 +40,7 @@ func (s *HttpWorker) HandlesEvent(trigger *triggers.Event) bool {
 }
 
 // HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
+func (h *HttpWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
 	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
 
 	httpRequest := fasthttp.AcquireRequest()
@@ -65,7 +66,7 @@ func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 }
 
 // HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *HttpWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (h *HttpWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	address := fmt.Sprintf("http://%s%s", h.address, trigger.Path)
 
 	httpRequest := fasthttp.AcquireRequest()

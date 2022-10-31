@@ -5,6 +5,7 @@
 package worker
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,32 +36,32 @@ func (m *MockWorker) EXPECT() *MockWorkerMockRecorder {
 }
 
 // HandleEvent mocks base method.
-func (m *MockWorker) HandleEvent(arg0 *triggers.Event) error {
+func (m *MockWorker) HandleEvent(arg0 context.Context, arg1 *triggers.Event) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvent", arg0)
+	ret := m.ctrl.Call(m, "HandleEvent", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleEvent indicates an expected call of HandleEvent.
-func (mr *MockWorkerMockRecorder) HandleEvent(arg0 interface{}) *gomock.Call {
+func (mr *MockWorkerMockRecorder) HandleEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvent", reflect.TypeOf((*MockWorker)(nil).HandleEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvent", reflect.TypeOf((*MockWorker)(nil).HandleEvent), arg0, arg1)
 }
 
 // HandleHttpRequest mocks base method.
-func (m *MockWorker) HandleHttpRequest(arg0 *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (m *MockWorker) HandleHttpRequest(arg0 context.Context, arg1 *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleHttpRequest", arg0)
+	ret := m.ctrl.Call(m, "HandleHttpRequest", arg0, arg1)
 	ret0, _ := ret[0].(*triggers.HttpResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleHttpRequest indicates an expected call of HandleHttpRequest.
-func (mr *MockWorkerMockRecorder) HandleHttpRequest(arg0 interface{}) *gomock.Call {
+func (mr *MockWorkerMockRecorder) HandleHttpRequest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHttpRequest", reflect.TypeOf((*MockWorker)(nil).HandleHttpRequest), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHttpRequest", reflect.TypeOf((*MockWorker)(nil).HandleHttpRequest), arg0, arg1)
 }
 
 // HandlesEvent mocks base method.
@@ -115,30 +116,30 @@ func (m *MockAdapter) EXPECT() *MockAdapterMockRecorder {
 }
 
 // HandleEvent mocks base method.
-func (m *MockAdapter) HandleEvent(arg0 *triggers.Event) error {
+func (m *MockAdapter) HandleEvent(arg0 context.Context, arg1 *triggers.Event) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvent", arg0)
+	ret := m.ctrl.Call(m, "HandleEvent", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleEvent indicates an expected call of HandleEvent.
-func (mr *MockAdapterMockRecorder) HandleEvent(arg0 interface{}) *gomock.Call {
+func (mr *MockAdapterMockRecorder) HandleEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvent", reflect.TypeOf((*MockAdapter)(nil).HandleEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvent", reflect.TypeOf((*MockAdapter)(nil).HandleEvent), arg0, arg1)
 }
 
 // HandleHttpRequest mocks base method.
-func (m *MockAdapter) HandleHttpRequest(arg0 *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (m *MockAdapter) HandleHttpRequest(arg0 context.Context, arg1 *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleHttpRequest", arg0)
+	ret := m.ctrl.Call(m, "HandleHttpRequest", arg0, arg1)
 	ret0, _ := ret[0].(*triggers.HttpResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleHttpRequest indicates an expected call of HandleHttpRequest.
-func (mr *MockAdapterMockRecorder) HandleHttpRequest(arg0 interface{}) *gomock.Call {
+func (mr *MockAdapterMockRecorder) HandleHttpRequest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHttpRequest", reflect.TypeOf((*MockAdapter)(nil).HandleHttpRequest), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleHttpRequest", reflect.TypeOf((*MockAdapter)(nil).HandleHttpRequest), arg0, arg1)
 }
