@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"strconv"
 
 	"go.opentelemetry.io/otel"
@@ -363,7 +362,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	config := "/etc/otelcol/config.yaml"
 	createTracerProvider := options.CreateTracerProvider
 
-	if createTracerProvider != nil && os.Getenv("TELEMETRY_COLLECTOR") != "" && fileExists(bin) && fileExists(config) {
+	if createTracerProvider != nil && fileExists(bin) && fileExists(config) {
 		log.Default().Println("Tracing is enabled")
 
 		options.PreCommands = [][]string{
@@ -371,8 +370,13 @@ func New(options *MembraneOptions) (*Membrane, error) {
 				bin, "--config", config,
 			},
 		}
+
+		options.Pool = &worker.InstrumentedWorkerPool{
+			WorkerPool: options.Pool,
+			Wrapper:    worker.InstrumentedWorkerFn,
+		}
 	} else {
-		log.Default().Println("Tracing is disabled")
+		log.Default().Printf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin), fileExists(config))
 		createTracerProvider = nil
 	}
 

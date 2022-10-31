@@ -49,20 +49,19 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Put", err)
 	}
 
-	span := span.FromContext(ctx, "secret-"+req.GetSecret().GetName())
-
-	span.SetAttributes(
+	sp := span.FromHeaders(ctx, "secret-"+req.GetSecret().GetName(), map[string][]string{})
+	sp.SetAttributes(
 		semconv.CodeFunctionKey.String("Secret.Put"),
 		attribute.Key("faas.secret.name").String(req.GetSecret().GetName()),
 		attribute.Key("faas.secret.operation").String("put"),
 	)
 
-	defer span.End()
+	defer sp.End()
 
 	if r, err := s.secretPlugin.Put(&secret.Secret{
 		Name: req.GetSecret().GetName(),
 	}, req.GetValue()); err == nil {
-		span.SetAttributes(attribute.Key("faas.secret.version").String(r.SecretVersion.Version))
+		sp.SetAttributes(attribute.Key("faas.secret.version").String(r.SecretVersion.Version))
 
 		return &pb.SecretPutResponse{
 			SecretVersion: &pb.SecretVersion{
@@ -73,7 +72,7 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 			},
 		}, nil
 	} else {
-		span.RecordError(err)
+		sp.RecordError(err)
 
 		return nil, NewGrpcError("SecretService.Put", err)
 	}
@@ -88,16 +87,15 @@ func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) 
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Access", err)
 	}
 
-	span := span.FromContext(ctx, "secret-"+req.GetSecretVersion().GetSecret().GetName())
-
-	span.SetAttributes(
+	sp := span.FromHeaders(ctx, "secret-"+req.GetSecretVersion().GetSecret().GetName(), map[string][]string{})
+	sp.SetAttributes(
 		semconv.CodeFunctionKey.String("Secret.Access"),
 		attribute.Key("faas.secret.name").String(req.GetSecretVersion().GetSecret().GetName()),
 		attribute.Key("faas.secret.operation").String("access"),
 		attribute.Key("faas.secret.version").String(req.GetSecretVersion().GetVersion()),
 	)
 
-	defer span.End()
+	defer sp.End()
 
 	if s, err := s.secretPlugin.Access(&secret.SecretVersion{
 		Secret: &secret.Secret{
@@ -115,7 +113,7 @@ func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) 
 			Value: s.Value,
 		}, nil
 	} else {
-		span.RecordError(err)
+		sp.RecordError(err)
 
 		return nil, NewGrpcError("SecretService.Access", err)
 	}

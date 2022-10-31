@@ -23,11 +23,7 @@ type InstrumentedWorkerPool struct {
 
 var _ WorkerPool = &InstrumentedWorkerPool{}
 
-func (iwp *InstrumentedWorkerPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
-	w, err := iwp.WorkerPool.GetWorker(opts)
-	if err != nil {
-		return w, err
-	}
-
-	return iwp.Wrapper(w), nil
+// AddWorker - Adds the given worker to this pool
+func (iwp *InstrumentedWorkerPool) AddWorker(w Worker) error {
+	return iwp.WorkerPool.AddWorker(iwp.Wrapper(w))
 }

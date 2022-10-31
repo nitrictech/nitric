@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -114,7 +115,7 @@ func (gwb *GrpcAdapter) Start(errchan chan error) {
 	}
 }
 
-func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *GrpcAdapter) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 
@@ -217,7 +218,7 @@ func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	return response, nil
 }
 
-func (s *GrpcAdapter) HandleEvent(trigger *triggers.Event) error {
+func (s *GrpcAdapter) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 	triggerRequest := &v1.TriggerRequest{

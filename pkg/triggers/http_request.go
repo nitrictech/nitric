@@ -15,9 +15,13 @@
 package triggers
 
 import (
+	"context"
 	"strings"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/nitrictech/nitric/pkg/span"
 )
 
 // HttpRequest - Storage information that captures a HTTP Request
@@ -29,6 +33,8 @@ type HttpRequest struct {
 	Method string
 	// The original path
 	Path string
+	// URL
+	URL string
 	// URL query parameters
 	Query map[string][]string
 	// Path parameters
@@ -39,12 +45,10 @@ func (*HttpRequest) GetTriggerType() TriggerType {
 	return TriggerType_Request
 }
 
-// FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
-func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
+func HttpHeaders(rh *fasthttp.RequestHeader) map[string][]string {
 	headerCopy := make(map[string][]string)
-	queryArgs := make(map[string][]string)
 
-	ctx.Request.Header.VisitAll(func(key []byte, val []byte) {
+	rh.VisitAll(func(key []byte, val []byte) {
 		keyString := string(key)
 
 		if strings.ToLower(keyString) == "host" {
@@ -55,7 +59,15 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 		}
 	})
 
-	ctx.QueryArgs().VisitAll(func(key []byte, val []byte) {
+	return headerCopy
+}
+
+// FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
+func FromHttpRequest(rc *fasthttp.RequestCtx) (context.Context, *HttpRequest) {
+	headerCopy := HttpHeaders(&rc.Request.Header)
+	queryArgs := make(map[string][]string)
+
+	rc.QueryArgs().VisitAll(func(key []byte, val []byte) {
 		k := string(key)
 
 		if queryArgs[k] == nil {
@@ -65,11 +77,16 @@ func FromHttpRequest(ctx *fasthttp.RequestCtx) *HttpRequest {
 		queryArgs[k] = append(queryArgs[k], string(val))
 	})
 
-	return &HttpRequest{
+	ctx := context.Background()
+	triggerPath := string(rc.URI().PathOriginal())
+	s := span.FromHeaders(ctx, triggerPath, headerCopy)
+
+	return trace.ContextWithSpan(ctx, s), &HttpRequest{
 		Header: headerCopy,
-		Body:   ctx.Request.Body(),
-		Method: string(ctx.Method()),
-		Path:   string(ctx.URI().PathOriginal()),
+		Body:   rc.Request.Body(),
+		Method: string(rc.Method()),
+		URL:    rc.URI().String(),
+		Path:   triggerPath,
 		Query:  queryArgs,
 	}
 }

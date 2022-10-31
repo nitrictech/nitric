@@ -32,6 +32,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
+	"github.com/pkg/errors"
 
 	"github.com/nitrictech/nitric/pkg/membrane"
 	firestore_service "github.com/nitrictech/nitric/pkg/plugins/document/firestore"
@@ -46,6 +47,9 @@ import (
 )
 
 func newTraceProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
+	span.FunctionName = os.Getenv("K_SERVICE")
+	span.UseFuncNameAsSpanName = false
+
 	exp, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure())
 	if err != nil {
 		return nil, err
@@ -54,6 +58,8 @@ func newTraceProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 	res, err := resource.New(ctx,
 		resource.WithDetectors(gcp.NewDetector()),
 		resource.WithAttributes(
+			semconv.CloudProviderGCP,
+			semconv.CloudPlatformGCPCloudRun,
 			attribute.Key("component").String("Nitric membrane"),
 			semconv.ServiceNameKey.String(span.FunctionName),
 			semconv.ServiceNamespaceKey.String(utils.GetEnv("NITRIC_STACK", "")),
@@ -70,10 +76,13 @@ func newTraceProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 			propagation.Baggage{},
 		))
 
-	span.UseFuncNameAsSpanName = false
+	rate, err := utils.PercentFromIntString(utils.GetEnv("NITRIC_TRACE_SAMPLE_PERCENT", "10"))
+	if err != nil {
+		return nil, errors.WithMessagef(err, "NITRIC_TRACE_SAMPLE_PERCENT should be an int not %s", rate)
+	}
 
 	return sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(rate))),
 		sdktrace.WithResource(res),
 		sdktrace.WithBatcher(exp),
 	), nil

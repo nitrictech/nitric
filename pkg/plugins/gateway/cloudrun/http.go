@@ -16,14 +16,17 @@
 package cloudrun_plugin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -37,8 +40,8 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
-	bodyBytes := ctx.Request.Body()
+func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
+	bodyBytes := rc.Request.Body()
 
 	// Check if the payload contains a pubsub event
 	// TODO: We probably want to use a simpler method than this
@@ -70,19 +73,22 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 			}
 		}
 
+		ctx := context.TODO()
+		ctx = trace.ContextWithSpan(ctx, span.FromHeaders(ctx, "topic-"+event.Topic, triggers.HttpHeaders(&rc.Request.Header)))
+
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Event: event,
 		})
 		if err != nil {
-			ctx.Error("Could not find handle for event", 500)
+			rc.Error("Could not find handle for event", 500)
 			return false
 		}
 
-		if err := wrkr.HandleEvent(event); err == nil {
+		if err := wrkr.HandleEvent(ctx, event); err == nil {
 			// return a successful response
-			ctx.SuccessString("text/plain", "success")
+			rc.SuccessString("text/plain", "success")
 		} else {
-			ctx.Error(fmt.Sprintf("Error handling event %v", err), 500)
+			rc.Error(fmt.Sprintf("Error handling event %v", err), 500)
 		}
 
 		// We've already handled the request
