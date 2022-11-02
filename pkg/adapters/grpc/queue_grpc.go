@@ -18,13 +18,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc/codes"
 
 	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/protoutils"
 )
 
@@ -65,20 +62,7 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 		Payload:     task.GetPayload().AsMap(),
 	}
 
-	sp := span.FromHeaders(ctx, "queue-"+req.GetQueue(), map[string][]string{})
-	sp.SetAttributes(
-		semconv.CodeFunctionKey.String("Queue.Send"),
-		semconv.MessagingDestinationKindQueue,
-		semconv.MessagingDestinationKey.String(req.GetQueue()),
-		semconv.MessagingMessageIDKey.String(nitricTask.ID),
-		attribute.Key("messaging.message_type").String(nitricTask.PayloadType),
-	)
-
-	defer sp.End()
-
 	if err := s.plugin.Send(req.GetQueue(), nitricTask); err != nil {
-		sp.RecordError(err)
-
 		return nil, err
 	}
 

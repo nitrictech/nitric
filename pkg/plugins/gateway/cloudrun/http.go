@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/valyala/fasthttp"
-	"go.opentelemetry.io/otel/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
@@ -50,6 +49,9 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 		// We have an event from pubsub here...
 
+		topic := pubsubEvent.Message.Attributes["x-nitric-topic"]
+		ctx := span.FromHeaders(context.TODO(), "topic-"+topic, triggers.HttpHeaders(&rc.Request.Header))
+
 		// need to determine if the underlying data is a nitric event
 		var event *triggers.Event
 		messageJson := &ep.NitricEvent{}
@@ -60,21 +62,18 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 
 			event = &triggers.Event{
 				ID:      messageJson.ID,
-				Topic:   pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Topic:   topic,
 				Payload: payload,
 			}
 		} else {
 			event = &triggers.Event{
 				ID: pubsubEvent.Message.ID,
 				// Set the topic
-				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Topic: topic,
 				// Set the original full payload payload
 				Payload: pubsubEvent.Message.Data,
 			}
 		}
-
-		ctx := context.TODO()
-		ctx = trace.ContextWithSpan(ctx, span.FromHeaders(ctx, "topic-"+event.Topic, triggers.HttpHeaders(&rc.Request.Header)))
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Event: event,

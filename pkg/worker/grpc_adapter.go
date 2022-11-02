@@ -27,6 +27,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
@@ -155,8 +156,9 @@ func (s *GrpcAdapter) HandleHttpRequest(ctx context.Context, trigger *triggers.H
 	}
 
 	triggerRequest := &v1.TriggerRequest{
-		Data:     trigger.Body,
-		MimeType: mimeType,
+		Data:         trigger.Body,
+		MimeType:     mimeType,
+		TraceContext: span.ToTraceContext(ctx),
 		Context: &v1.TriggerRequest_Http{
 			Http: &v1.HttpTriggerContext{
 				Path:           trigger.Path,
@@ -222,8 +224,9 @@ func (s *GrpcAdapter) HandleEvent(ctx context.Context, trigger *triggers.Event) 
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 	triggerRequest := &v1.TriggerRequest{
-		Data:     trigger.Payload,
-		MimeType: http.DetectContentType(trigger.Payload),
+		Data:         trigger.Payload,
+		MimeType:     http.DetectContentType(trigger.Payload),
+		TraceContext: span.ToTraceContext(ctx),
 		Context: &v1.TriggerRequest_Topic{
 			Topic: &v1.TopicTriggerContext{
 				Topic: trigger.Topic,

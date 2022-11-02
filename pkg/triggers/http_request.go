@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/valyala/fasthttp"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nitrictech/nitric/pkg/span"
 )
@@ -77,11 +76,10 @@ func FromHttpRequest(rc *fasthttp.RequestCtx) (context.Context, *HttpRequest) {
 		queryArgs[k] = append(queryArgs[k], string(val))
 	})
 
-	ctx := context.Background()
 	triggerPath := string(rc.URI().PathOriginal())
-	s := span.FromHeaders(ctx, triggerPath, headerCopy)
+	ctx := span.FromHeaders(context.Background(), triggerPath, headerCopy)
 
-	return trace.ContextWithSpan(ctx, s), &HttpRequest{
+	return ctx, &HttpRequest{
 		Header: headerCopy,
 		Body:   rc.Request.Body(),
 		Method: string(rc.Method()),

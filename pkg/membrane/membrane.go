@@ -22,7 +22,9 @@ import (
 	"net"
 	"strconv"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
@@ -155,9 +157,33 @@ func (s *Membrane) Start() error {
 		return err
 	}
 
-	// Search for known plugins
-
 	var opts []grpc.ServerOption
+
+	if s.createTracerProvider != nil {
+		tp, err := s.createTracerProvider(context.Background())
+		if err != nil {
+			s.log(fmt.Sprintf("traceProvider %v", err))
+			return err
+		}
+
+		if tp != nil {
+			s.log(fmt.Sprintf("traceProvider connected"))
+			otel.SetTracerProvider(tp)
+		}
+
+		interceptorOpts := []otelgrpc.Option{
+			otelgrpc.WithPropagators(propagation.NewCompositeTextMapPropagator(
+				propagation.TraceContext{},
+				propagation.Baggage{},
+			)),
+		}
+
+		opts = append(opts,
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(interceptorOpts...)),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(interceptorOpts...)),
+		)
+	}
+
 	s.grpcServer = grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
@@ -193,19 +219,6 @@ func (s *Membrane) Start() error {
 	}
 
 	s.log("Registered Gateway Plugin")
-
-	if s.createTracerProvider != nil {
-		tp, err := s.createTracerProvider(context.Background())
-		if err != nil {
-			s.log(fmt.Sprintf("traceProvider %v", err))
-			return err
-		}
-
-		if tp != nil {
-			s.log(fmt.Sprintf("traceProvider connected"))
-			otel.SetTracerProvider(tp)
-		}
-	}
 
 	// Start the gRPC server
 	go (func() {

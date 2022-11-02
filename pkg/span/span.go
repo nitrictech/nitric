@@ -16,11 +16,13 @@ package span
 
 import (
 	"context"
+	"net/textproto"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
+	pb "github.com/nitrictech/nitric/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -30,24 +32,51 @@ var (
 	MembraneVersion       = utils.GetEnv("MEMBRANE_VERSION", "not-set")
 )
 
-func FromHeaders(ctx context.Context, spanName string, headers map[string][]string) trace.Span {
+func FromHeaders(ctx context.Context, spanName string, headers map[string][]string) context.Context {
 	var hc propagation.HeaderCarrier = headers
-
-	// this extracts the traceID from the header and creates a parent span in the context.
-	_, sp := otel.Tracer("membrane/pkg/span", trace.WithInstrumentationVersion(MembraneVersion)).
-		Start(otel.GetTextMapPropagator().Extract(ctx, hc), spanName)
 
 	if UseFuncNameAsSpanName {
-		sp.SetName(FunctionName)
+		spanName = FunctionName
 	}
 
-	return sp
+	// this extracts the traceID from the header and creates a parent span in the context.
+	ctx, _ = otel.Tracer("membrane/pkg/span", trace.WithInstrumentationVersion(MembraneVersion)).
+		Start(otel.GetTextMapPropagator().Extract(ctx, hc), spanName)
+
+	return ctx
 }
 
-func ToHeaders(ctx context.Context, headers map[string][]string) map[string][]string {
-	var hc propagation.HeaderCarrier = headers
+// simpleHeaderCarrier adapts map[string]string to satisfy the TextMapCarrier interface.
+type simpleHeaderCarrier map[string]string
 
-	otel.GetTextMapPropagator().Inject(ctx, hc)
+func (hc simpleHeaderCarrier) Get(key string) string {
+	return hc[textproto.CanonicalMIMEHeaderKey(key)]
+}
 
-	return hc
+func (hc simpleHeaderCarrier) Set(key string, value string) {
+	hc[textproto.CanonicalMIMEHeaderKey(key)] = value
+}
+
+func (hc simpleHeaderCarrier) Keys() []string {
+	keys := make([]string, 0, len(hc))
+	for k := range hc {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
+func ToTraceContext(ctx context.Context) *pb.TraceContext {
+	var hc simpleHeaderCarrier = make(simpleHeaderCarrier)
+
+	// we want to inject cloud agnostic info here, so that the user process
+	// can do the same.
+	prop := propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
+
+	prop.Inject(ctx, hc)
+
+	return &pb.TraceContext{Values: hc}
 }

@@ -109,6 +109,9 @@ message InitRequest {
 // Placeholder message
 message InitResponse {}
 
+message TraceContext {
+  map<string, string> values = 1;
+}
 
 // The server has a trigger for the client to handle
 message TriggerRequest {
@@ -118,6 +121,9 @@ message TriggerRequest {
   // Should we supply a mime type for the data?
   // Or rely on context?
   string mime_type = 2;
+
+  // TraceInformation from the membrane
+  TraceContext trace_context = 10;
 
   // The context of the trigger
   oneof context {
