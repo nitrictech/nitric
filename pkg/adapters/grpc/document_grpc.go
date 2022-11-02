@@ -16,6 +16,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -151,7 +152,7 @@ func (s *DocumentServiceServer) QueryStream(req *pb.DocumentQueryStreamRequest, 
 
 	next := s.documentPlugin.QueryStream(col, expressions, int(req.Limit))
 
-	for doc, err := next(); err != io.EOF; doc, err = next() {
+	for doc, err := next(); !errors.Is(err, io.EOF); doc, err = next() {
 		if err != nil {
 			return NewGrpcError("DocumentService.QueryStream", err)
 		}

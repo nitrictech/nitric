@@ -89,7 +89,7 @@ func (s *secretManagerSecretService) getSecret(sec *secret.Secret) (*secretmanag
 	})
 
 	result, err := iter.Next()
-	if err == iterator.Done {
+	if errors.Is(err, iterator.Done) {
 		return nil, status.Error(grpcCodes.NotFound, "secret not found")
 	}
 
@@ -200,12 +200,12 @@ func New() (secret.SecretService, error) {
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, secretmanager.DefaultAuthScopes()...)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials error: %w", credentialsError)
 	}
 
 	client, clientError := ifaces_gcloud_secret.NewClient(ctx)
 	if clientError != nil {
-		return nil, fmt.Errorf("secret manager client error: %v", clientError)
+		return nil, fmt.Errorf("secret manager client error: %w", clientError)
 	}
 
 	return &secretManagerSecretService{

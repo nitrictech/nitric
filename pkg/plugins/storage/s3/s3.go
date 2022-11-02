@@ -58,7 +58,7 @@ func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
 
 	buckets, err := s.provider.GetResources(core.AwsResource_Bucket)
 	if err != nil {
-		return nil, fmt.Errorf("error getting bucket list: %v", err)
+		return nil, fmt.Errorf("error getting bucket list: %w", err)
 	}
 
 	if bucketArn, ok := buckets[bucket]; ok {
@@ -276,7 +276,7 @@ func New(provider core.AwsProvider) (storage.StorageService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	s3Client := s3.New(sess)

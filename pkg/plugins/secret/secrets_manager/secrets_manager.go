@@ -53,7 +53,7 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
 	secrets, err := s.provider.GetResources(core.AwsResource_Secret)
 	if err != nil {
-		return "", fmt.Errorf("error retrieving secrets list: %v", err)
+		return "", fmt.Errorf("error retrieving secrets list: %w", err)
 	}
 
 	if secret, ok := secrets[sec]; ok {
@@ -171,7 +171,7 @@ func New(provider core.AwsProvider) (secret.SecretService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	client := secretsmanager.New(sess)

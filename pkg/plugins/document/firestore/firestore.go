@@ -136,7 +136,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 
 	// Delete any sub collection documents
 	collsIter := doc.Collections(s.context)
-	for subCol, err := collsIter.Next(); err != iterator.Done; subCol, err = collsIter.Next() {
+	for subCol, err := collsIter.Next(); !errors.Is(err, iterator.Done); subCol, err = collsIter.Next() {
 		if err != nil {
 			return newErr(
 				codes.Internal,
@@ -153,7 +153,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 			numDeleted := 0
 
 			batch := s.client.Batch()
-			for subDoc, err := docsIter.Next(); err != iterator.Done; subDoc, err = docsIter.Next() {
+			for subDoc, err := docsIter.Next(); !errors.Is(err, iterator.Done); subDoc, err = docsIter.Next() {
 				if err != nil {
 					return err
 				}
@@ -257,7 +257,7 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	}
 
 	itr := query.Documents(s.context)
-	for docSnp, err := itr.Next(); err != iterator.Done; docSnp, err = itr.Next() {
+	for docSnp, err := itr.Next(); !errors.Is(err, iterator.Done); docSnp, err = itr.Next() {
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -303,7 +303,7 @@ func (s *FirestoreDocService) QueryStream(collection *document.Collection, expre
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
 			)
 		}
 	}
@@ -315,7 +315,7 @@ func (s *FirestoreDocService) QueryStream(collection *document.Collection, expre
 	return func() (*document.Document, error) {
 		docSnp, err := iter.Next()
 		if err != nil {
-			if err == iterator.Done {
+			if errors.Is(err, iterator.Done) {
 				return nil, io.EOF
 			}
 
@@ -359,12 +359,12 @@ func New() (document.DocumentService, error) {
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials error: %w", credentialsError)
 	}
 
 	client, clientError := firestore.NewClient(ctx, credentials.ProjectID)
 	if clientError != nil {
-		return nil, fmt.Errorf("firestore client error: %v", clientError)
+		return nil, fmt.Errorf("firestore client error: %w", clientError)
 	}
 
 	return &FirestoreDocService{

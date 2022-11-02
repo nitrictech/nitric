@@ -27,7 +27,9 @@ import (
 
 // Provides GRPC error reporting
 func NewGrpcError(operation string, err error) error {
-	if pe, ok := err.(*errors.PluginError); ok {
+	var pe *errors.PluginError
+
+	if errors.As(err, &pe) {
 		code := codes.Code(errors.Code(pe))
 
 		ed := &v1.ErrorDetails{}

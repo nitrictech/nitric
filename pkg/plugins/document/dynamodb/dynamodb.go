@@ -352,7 +352,7 @@ func (s *DynamoDocService) QueryStream(collection *document.Collection, expressi
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
 			)
 		}
 	}
@@ -426,7 +426,7 @@ func New(provider core.AwsProvider) (document.DocumentService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	dynamoClient := dynamodb.New(sess)
@@ -552,7 +552,7 @@ func (s *DynamoDocService) performQuery(
 		if len(pagingToken) > 0 {
 			startKey, err := dynamodbattribute.MarshalMap(pagingToken)
 			if err != nil {
-				return nil, fmt.Errorf("error performing query %v: %v", input, err)
+				return nil, fmt.Errorf("error performing query %v: %w", input, err)
 			}
 			input.SetExclusiveStartKey(startKey)
 		}
@@ -561,7 +561,7 @@ func (s *DynamoDocService) performQuery(
 	// Perform query
 	resp, err := s.client.Query(input)
 	if err != nil {
-		return nil, fmt.Errorf("error performing query %v: %v", input, err)
+		return nil, fmt.Errorf("error performing query %v: %w", input, err)
 	}
 
 	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey)
@@ -630,7 +630,7 @@ func (s *DynamoDocService) performScan(
 		if len(pagingToken) > 0 {
 			startKey, err := dynamodbattribute.MarshalMap(pagingToken)
 			if err != nil {
-				return nil, fmt.Errorf("error performing scan %v: %v", input, err)
+				return nil, fmt.Errorf("error performing scan %v: %w", input, err)
 			}
 			input.SetExclusiveStartKey(startKey)
 		}
@@ -638,7 +638,7 @@ func (s *DynamoDocService) performScan(
 
 	resp, err := s.client.Scan(input)
 	if err != nil {
-		return nil, fmt.Errorf("error performing scan %v: %v", input, err)
+		return nil, fmt.Errorf("error performing scan %v: %w", input, err)
 	}
 
 	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey)
@@ -649,7 +649,7 @@ func marshalQueryResult(collection *document.Collection, items []map[string]*dyn
 	var pTkn map[string]string = nil
 	var valueMaps []map[string]interface{}
 	if err := dynamodbattribute.UnmarshalListOfMaps(items, &valueMaps); err != nil {
-		return nil, fmt.Errorf("error unmarshalling query response: %v", err)
+		return nil, fmt.Errorf("error unmarshalling query response: %w", err)
 	}
 
 	docs := make([]document.Document, 0, len(valueMaps))
@@ -699,7 +699,7 @@ func marshalQueryResult(collection *document.Collection, items []map[string]*dyn
 	var resultPagingToken map[string]string
 	if len(lastEvaluatedKey) > 0 {
 		if err := dynamodbattribute.UnmarshalMap(lastEvaluatedKey, &resultPagingToken); err != nil {
-			return nil, fmt.Errorf("error unmarshalling query lastEvaluatedKey: %v", err)
+			return nil, fmt.Errorf("error unmarshalling query lastEvaluatedKey: %w", err)
 		}
 		pTkn = resultPagingToken
 	}
@@ -763,7 +763,7 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 func (s *DynamoDocService) getTableName(collection document.Collection) (*string, error) {
 	tables, err := s.provider.GetResources(core.AwsResource_Collection)
 	if err != nil {
-		return nil, fmt.Errorf("encountered an error retrieving the table list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the table list: %w", err)
 	}
 
 	coll := collection
