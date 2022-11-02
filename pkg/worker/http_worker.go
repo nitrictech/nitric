@@ -44,6 +44,11 @@ func (h *HttpWorker) HandleEvent(trigger *triggers.Event) error {
 
 	httpRequest := fasthttp.AcquireRequest()
 	httpRequest.SetRequestURI(address)
+
+	for k, v := range trigger.Headers {
+		httpRequest.Header.Add(k, v)
+	}
+
 	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
 	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
 	httpRequest.Header.Add("x-nitric-source", trigger.Topic)

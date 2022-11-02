@@ -164,6 +164,7 @@ message TopicTriggerContext {
   // The topic the message was published for
   string topic = 1;
 
+  map<string, string> headers = 2;
   // TODO: Add the event ID to the trigger context here got transactional outbox?
 }
 

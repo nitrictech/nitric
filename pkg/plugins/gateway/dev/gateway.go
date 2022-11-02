@@ -40,6 +40,7 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 		evt := &triggers.Event{
 			ID:      requestId,
 			Topic:   trigger,
+			Headers: map[string]string{}, // TODO add trace headers here
 			Payload: payload,
 		}
 

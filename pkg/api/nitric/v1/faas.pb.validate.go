@@ -2116,6 +2116,8 @@ func (m *TopicTriggerContext) validate(all bool) error {
 
 	// no validation rules for Topic
 
+	// no validation rules for Headers
+
 	if len(errors) > 0 {
 		return TopicTriggerContextMultiError(errors)
 	}

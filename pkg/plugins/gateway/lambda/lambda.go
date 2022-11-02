@@ -123,6 +123,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 					trigs = append(trigs, &triggers.Event{
 						ID:      id,
 						Topic:   tName,
+						Headers: map[string]string{}, // TODO add trace headers here
 						Payload: payloadBytes,
 					})
 				} else {

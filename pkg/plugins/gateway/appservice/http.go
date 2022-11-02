@@ -90,6 +90,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 		evt = &triggers.Event{
 			ID:      *event.ID,
 			Topic:   topicName,
+			Headers: map[string]string{}, // TODO add trace headers here
 			Payload: payloadBytes,
 		}
 

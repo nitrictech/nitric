@@ -58,6 +58,7 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 			event = &triggers.Event{
 				ID:      messageJson.ID,
 				Topic:   pubsubEvent.Message.Attributes["x-nitric-topic"],
+				Headers: map[string]string{}, // TODO add trace headers here
 				Payload: payload,
 			}
 		} else {
@@ -66,6 +67,7 @@ func middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 				// Set the topic
 				Topic: pubsubEvent.Message.Attributes["x-nitric-topic"],
 				// Set the original full payload payload
+				Headers: map[string]string{}, // TODO add trace headers here
 				Payload: pubsubEvent.Message.Data,
 			}
 		}

@@ -18,6 +18,7 @@ package triggers
 type Event struct {
 	ID      string
 	Topic   string
+	Headers map[string]string
 	Payload []byte
 }
 

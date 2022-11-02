@@ -225,7 +225,8 @@ func (s *GrpcAdapter) HandleEvent(trigger *triggers.Event) error {
 		MimeType: http.DetectContentType(trigger.Payload),
 		Context: &v1.TriggerRequest_Topic{
 			Topic: &v1.TopicTriggerContext{
-				Topic: trigger.Topic,
+				Topic:   trigger.Topic,
+				Headers: trigger.Headers,
 				// FIXME: Add missing fields here...
 			},
 		},
