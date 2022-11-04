@@ -1148,6 +1148,8 @@ func (m *ScheduleCron) validate(all bool) error {
 
 	// no validation rules for Cron
 
+	// no validation rules for Timezone
+
 	if len(errors) > 0 {
 		return ScheduleCronMultiError(errors)
 	}
