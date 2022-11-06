@@ -879,6 +879,8 @@ func (m *ScheduleWorker) validate(all bool) error {
 
 	// no validation rules for Key
 
+	// no validation rules for Timezone
+
 	switch m.Cadence.(type) {
 
 	case *ScheduleWorker_Rate:
@@ -1147,8 +1149,6 @@ func (m *ScheduleCron) validate(all bool) error {
 	var errors []error
 
 	// no validation rules for Cron
-
-	// no validation rules for Timezone
 
 	if len(errors) > 0 {
 		return ScheduleCronMultiError(errors)

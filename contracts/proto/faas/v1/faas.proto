@@ -74,7 +74,13 @@ message SubscriptionWorker {
 }
 
 message ScheduleWorker {
+  // the unique identifier for this schedule
   string key = 1;
+
+  // timezone to pin this worker to
+  string timezone = 2;
+
+  // the cadence this worker will execute at
   oneof cadence {
     ScheduleRate rate = 10;
     ScheduleCron cron = 11;
@@ -82,14 +88,13 @@ message ScheduleWorker {
 }
 
 message ScheduleRate {
+  // the rate to execute this schedule at e.g. "5 minutes" | "2 days"
   string rate = 1;
 }
 
 message ScheduleCron {
   // cron expression to use
   string cron = 1;
-  // locale to pin cron job to
-  string timezone = 2;
 }
 
 // Generic catch all worker (XXX: Do we need this for backwards compatibility?)
