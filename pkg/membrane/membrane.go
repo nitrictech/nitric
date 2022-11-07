@@ -358,8 +358,8 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		})
 	}
 
-	bin := "/usr/bin/otelcol-contrib"
-	config := "/etc/otelcol/config.yaml"
+	bin := utils.GetEnv("OTELCOL_BIN", "/usr/bin/otelcol-contrib")
+	config := utils.GetEnv("OTELCOL_CONFIG", "/etc/otelcol/config.yaml")
 	createTracerProvider := options.CreateTracerProvider
 
 	if createTracerProvider != nil && fileExists(bin) && fileExists(config) {
