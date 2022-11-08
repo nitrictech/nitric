@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
-	"github.com/Azure/azure-sdk-for-go/services/preview/apimanagement/mgmt/2019-12-01-preview/apimanagement"
+	"github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
