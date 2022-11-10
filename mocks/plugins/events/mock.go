@@ -5,6 +5,7 @@
 package mock_events
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,30 +36,30 @@ func (m *MockEventService) EXPECT() *MockEventServiceMockRecorder {
 }
 
 // ListTopics mocks base method.
-func (m *MockEventService) ListTopics() ([]string, error) {
+func (m *MockEventService) ListTopics(arg0 context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListTopics")
+	ret := m.ctrl.Call(m, "ListTopics", arg0)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListTopics indicates an expected call of ListTopics.
-func (mr *MockEventServiceMockRecorder) ListTopics() *gomock.Call {
+func (mr *MockEventServiceMockRecorder) ListTopics(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTopics", reflect.TypeOf((*MockEventService)(nil).ListTopics))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTopics", reflect.TypeOf((*MockEventService)(nil).ListTopics), arg0)
 }
 
 // Publish mocks base method.
-func (m *MockEventService) Publish(arg0 string, arg1 int, arg2 *events.NitricEvent) error {
+func (m *MockEventService) Publish(arg0 context.Context, arg1 string, arg2 int, arg3 *events.NitricEvent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Publish", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Publish indicates an expected call of Publish.
-func (mr *MockEventServiceMockRecorder) Publish(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockEventServiceMockRecorder) Publish(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventService)(nil).Publish), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventService)(nil).Publish), arg0, arg1, arg2, arg3)
 }

@@ -15,6 +15,7 @@
 package events_service_test
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -67,7 +68,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the available topics", func() {
-				topics, err := pubsubClient.ListTopics()
+				topics, err := pubsubClient.ListTopics(context.TODO())
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("test"))
 			})
@@ -78,7 +79,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("Should return the no topics", func() {
-				topics, err := pubsubClient.ListTopics()
+				topics, err := pubsubClient.ListTopics(context.TODO())
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(HaveLen(0))
@@ -101,7 +102,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should return an error", func() {
-				err := pubsubClient.Publish("test", 0, testEvent)
+				err := pubsubClient.Publish(context.TODO(), "test", 0, testEvent)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -114,7 +115,7 @@ var _ = Describe("events", func() {
 			pubsubClient, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
-				err := pubsubClient.Publish("test", 0, testEvent)
+				err := pubsubClient.Publish(context.TODO(), "test", 0, testEvent)
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())
@@ -156,7 +157,7 @@ var _ = Describe("events", func() {
 			eventPlugin, _ := events_service.NewWithClientAndSubs(mockHttpClient, subs)
 
 			It("should successfully publish", func() {
-				err := eventPlugin.Publish("test", 0, testEvent)
+				err := eventPlugin.Publish(context.TODO(), "test", 0, testEvent)
 
 				By("Not returning an error")
 				Expect(err).To(BeNil())

@@ -40,16 +40,16 @@ type SnsEventService struct {
 	provider  core.AwsProvider
 }
 
-func (s *SnsEventService) getTopics() (map[string]string, error) {
+func (s *SnsEventService) getTopics(ctx context.Context) (map[string]string, error) {
 	return s.provider.GetResources(core.AwsResource_Topic)
 }
 
-func (s *SnsEventService) getStateMachines() (map[string]string, error) {
+func (s *SnsEventService) getStateMachines(ctx context.Context) (map[string]string, error) {
 	return s.provider.GetResources(core.AwsResource_StateMachine)
 }
 
-func (s *SnsEventService) publish(topic string, message string) error {
-	topics, err := s.getTopics()
+func (s *SnsEventService) publish(ctx context.Context, topic string, message string) error {
+	topics, err := s.getTopics(ctx)
 	if err != nil {
 		return fmt.Errorf("error finding topics: %w", err)
 	}
@@ -68,7 +68,7 @@ func (s *SnsEventService) publish(topic string, message string) error {
 		// MessageStructure: aws.String("json"),
 	}
 
-	_, err = s.client.Publish(context.TODO(), publishInput)
+	_, err = s.client.Publish(ctx, publishInput)
 
 	if err != nil {
 		return fmt.Errorf("unable to publish message: %w", err)
@@ -77,8 +77,8 @@ func (s *SnsEventService) publish(topic string, message string) error {
 	return nil
 }
 
-func (s *SnsEventService) publishDelayed(topic string, delay int, message string) error {
-	sfns, err := s.getStateMachines()
+func (s *SnsEventService) publishDelayed(ctx context.Context, topic string, delay int, message string) error {
+	sfns, err := s.getStateMachines(ctx)
 	if err != nil {
 		return fmt.Errorf("error gettings state machines: %w", err)
 	}
@@ -88,7 +88,7 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 		return fmt.Errorf("error finding state machine for topic %s: %w", topic, err)
 	}
 
-	_, err = s.sfnClient.StartExecution(context.TODO(), &sfn.StartExecutionInput{
+	_, err = s.sfnClient.StartExecution(ctx, &sfn.StartExecutionInput{
 		StateMachineArn: aws.String(sfnArn),
 		Input: aws.String(fmt.Sprintf(`{
 			"seconds": %d,
@@ -103,7 +103,7 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 }
 
 // Publish to a given topic
-func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *SnsEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"SnsEventService.Publish",
 		map[string]interface{}{
@@ -124,9 +124,9 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 	message := string(data)
 
 	if delay > 0 {
-		err = s.publishDelayed(topic, delay, message)
+		err = s.publishDelayed(ctx, topic, delay, message)
 	} else {
-		err = s.publish(topic, message)
+		err = s.publish(ctx, topic, message)
 	}
 
 	if err != nil {
@@ -136,10 +136,10 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 	return nil
 }
 
-func (s *SnsEventService) ListTopics() ([]string, error) {
+func (s *SnsEventService) ListTopics(ctx context.Context) ([]string, error) {
 	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics", nil)
 
-	topics, err := s.getTopics()
+	topics, err := s.getTopics(ctx)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

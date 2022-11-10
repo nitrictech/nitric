@@ -36,7 +36,7 @@ type EventGridEventService struct {
 	provider core.AzProvider
 }
 
-func (s *EventGridEventService) ListTopics() ([]string, error) {
+func (s *EventGridEventService) ListTopics(ctx context.Context) ([]string, error) {
 	newErr := errors.ErrorsWithScope(
 		"EventGrid.ListTopics",
 		map[string]interface{}{
@@ -74,7 +74,7 @@ func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events [
 	return azureEvents, nil
 }
 
-func (s *EventGridEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *EventGridEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"EventGrid.Publish",
 		map[string]interface{}{
@@ -116,7 +116,7 @@ func (s *EventGridEventService) Publish(topic string, delay int, event *events.N
 		)
 	}
 
-	result, err := s.client.PublishEvents(context.TODO(), topicHostName, eventToPublish)
+	result, err := s.client.PublishEvents(ctx, topicHostName, eventToPublish)
 	if err != nil {
 		return newErr(
 			codes.Internal,

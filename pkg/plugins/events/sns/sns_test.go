@@ -15,6 +15,7 @@
 package sns_service_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -49,7 +50,7 @@ var _ = Describe("Sns", func() {
 					"test": "arn:test",
 				}, nil)
 
-				topics, err := eventsClient.ListTopics()
+				topics, err := eventsClient.ListTopics(context.TODO())
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElements("test"))
@@ -88,7 +89,7 @@ var _ = Describe("Sns", func() {
 					Message:  aws.String(stringData),
 				})
 
-				err := eventsClient.Publish("test", 0, testEvent)
+				err := eventsClient.Publish(context.TODO(), "test", 0, testEvent)
 
 				Expect(err).To(BeNil())
 			})
@@ -107,7 +108,7 @@ var _ = Describe("Sns", func() {
 				By("Returning no topics")
 				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
 
-				err := eventsClient.Publish("test", 0, &events.NitricEvent{
+				err := eventsClient.Publish(context.TODO(), "test", 0, &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
@@ -150,7 +151,7 @@ var _ = Describe("Sns", func() {
 		}`, stringData)),
 				})
 
-				err := eventsClient.Publish("test", 1, testEvent)
+				err := eventsClient.Publish(context.TODO(), "test", 1, testEvent)
 
 				Expect(err).To(BeNil())
 			})
