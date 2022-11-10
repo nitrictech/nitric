@@ -69,7 +69,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 		}
 
 		var evt *triggers.Event
-		topics, err := a.provider.GetResources(core.AzResource_Topic)
+		topics, err := a.provider.GetResources(context.TODO(), core.AzResource_Topic)
 		if err != nil {
 			log.Default().Println("could not get topic resources")
 			continue

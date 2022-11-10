@@ -46,7 +46,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should return the available topics", func() {
 				By("Topics being available")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 
@@ -79,7 +79,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should publish without error", func() {
 				By("Retrieving a list of topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 
@@ -106,7 +106,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should return an error", func() {
 				By("Returning no topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{}, nil)
 
 				err := eventsClient.Publish(context.TODO(), "test", 0, &events.NitricEvent{
 					ID:          "testing",
@@ -138,7 +138,7 @@ var _ = Describe("Sns", func() {
 
 			It("Should publish without error", func() {
 				By("Retrieving a list of topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_StateMachine).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_StateMachine).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 

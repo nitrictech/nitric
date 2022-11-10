@@ -52,7 +52,7 @@ type AwsProvider interface {
 	common.ResourceService
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
-	GetResources(AwsResource) (map[string]string, error)
+	GetResources(context.Context, AwsResource) (map[string]string, error)
 }
 
 // Aws core utility provider
@@ -65,14 +65,14 @@ type awsProviderImpl struct {
 
 var _ AwsProvider = &awsProviderImpl{}
 
-func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	rt, ok := resourceTypeMap[typ]
 	if !ok {
 		return nil, fmt.Errorf("unhandled resource type: %s", typ)
 	}
 
 	// Get resource references (arns) for the resource type
-	resources, err := a.GetResources(rt)
+	resources, err := a.GetResources(ctx, rt)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common
 	}
 }
 
-func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, error) {
+func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
 	if a.cache[typ] == nil {
 		resources := make(map[string]string)
 		tagFilters := []types.TagFilter{{
@@ -125,7 +125,7 @@ func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, erro
 			})
 		}
 
-		out, err := a.client.GetResources(context.TODO(), &resourcegroupstaggingapi.GetResourcesInput{
+		out, err := a.client.GetResources(ctx, &resourcegroupstaggingapi.GetResourcesInput{
 			ResourceTypeFilters: []string{typ},
 			TagFilters:          tagFilters,
 		})

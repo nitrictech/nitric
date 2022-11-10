@@ -73,13 +73,13 @@ func filter(stack string, name string) string {
 	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
 }
 
-func (g *gcpProviderImpl) getApiGatewayDetails(name string) (*common.DetailsResponse[any], error) {
+func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*common.DetailsResponse[any], error) {
 	projectName, err := g.GetProjectID()
 	if err != nil {
 		return nil, err
 	}
 
-	gws := g.apiClient.ListGateways(context.TODO(), &apigatewaypb.ListGatewaysRequest{
+	gws := g.apiClient.ListGateways(ctx, &apigatewaypb.ListGatewaysRequest{
 		Parent: fmt.Sprintf("projects/%s/locations/%s", projectName, g.region),
 		Filter: filter(g.stackName, name),
 	})
@@ -99,10 +99,10 @@ func (g *gcpProviderImpl) getApiGatewayDetails(name string) (*common.DetailsResp
 	}
 }
 
-func (g *gcpProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (g *gcpProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	switch typ {
 	case common.ResourceType_Api:
-		return g.getApiGatewayDetails(name)
+		return g.getApiGatewayDetails(ctx, name)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", typ)
 	}

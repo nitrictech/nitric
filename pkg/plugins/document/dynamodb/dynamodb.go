@@ -77,7 +77,7 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 		)
 	}
 
-	tableName, err := s.getTableName(*key.Collection)
+	tableName, err := s.getTableName(ctx, *key.Collection)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s *DynamoDocService) Set(ctx context.Context, key *document.Key, value map
 		return fmt.Errorf("failed to marshal value")
 	}
 
-	tableName, err := s.getTableName(*key.Collection)
+	tableName, err := s.getTableName(ctx, *key.Collection)
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -206,7 +206,7 @@ func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error 
 		)
 	}
 
-	tableName, err := s.getTableName(*key.Collection)
+	tableName, err := s.getTableName(ctx, *key.Collection)
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -503,7 +503,7 @@ func (s *DynamoDocService) performQuery(
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
-	tableName, err := s.getTableName(*collection)
+	tableName, err := s.getTableName(ctx, *collection)
 	if err != nil {
 		return nil, err
 	}
@@ -580,7 +580,7 @@ func (s *DynamoDocService) performScan(
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
-	tableName, err := s.getTableName(*collection)
+	tableName, err := s.getTableName(ctx, *collection)
 	if err != nil {
 		return nil, err
 	}
@@ -764,8 +764,8 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 	return false
 }
 
-func (s *DynamoDocService) getTableName(collection document.Collection) (*string, error) {
-	tables, err := s.provider.GetResources(core.AwsResource_Collection)
+func (s *DynamoDocService) getTableName(ctx context.Context, collection document.Collection) (*string, error) {
+	tables, err := s.provider.GetResources(ctx, core.AwsResource_Collection)
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the table list: %w", err)
 	}

@@ -71,7 +71,7 @@ func (rs *ResourcesServiceServer) Details(ctx context.Context, req *v1.ResourceD
 		return nil, fmt.Errorf("unsupported resource type: %s", req.Resource.Type)
 	}
 
-	d, err := rs.plugin.Details(cType, req.Resource.Name)
+	d, err := rs.plugin.Details(ctx, cType, req.Resource.Name)
 	if err != nil {
 		return nil, err
 	}

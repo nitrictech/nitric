@@ -54,7 +54,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret container existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(
 						map[string]string{
 							"Test": testARN,
 						}, nil,
@@ -86,7 +86,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("the secret not existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{}, nil)
 
 					_, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
 					By("returning an error")
@@ -141,7 +141,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
 						"Test": testARN,
 					}, nil)
 
@@ -174,7 +174,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("the secret existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
 						"Test": testARN,
 					}, nil)
 
@@ -216,7 +216,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret not existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{}, nil)
 
 					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 						Secret: &secret.Secret{
@@ -243,7 +243,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret already existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
 						"test-id": testARN,
 					}, nil)
 

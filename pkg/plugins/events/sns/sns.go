@@ -42,11 +42,11 @@ type SnsEventService struct {
 }
 
 func (s *SnsEventService) getTopics(ctx context.Context) (map[string]string, error) {
-	return s.provider.GetResources(core.AwsResource_Topic)
+	return s.provider.GetResources(ctx, core.AwsResource_Topic)
 }
 
 func (s *SnsEventService) getStateMachines(ctx context.Context) (map[string]string, error) {
-	return s.provider.GetResources(core.AwsResource_StateMachine)
+	return s.provider.GetResources(ctx, core.AwsResource_StateMachine)
 }
 
 func (s *SnsEventService) publish(ctx context.Context, topic string, message string) error {

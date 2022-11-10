@@ -52,8 +52,8 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 	return nil
 }
 
-func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
-	secrets, err := s.provider.GetResources(core.AwsResource_Secret)
+func (s *secretsManagerSecretService) getSecretId(ctx context.Context, sec string) (string, error) {
+	secrets, err := s.provider.GetResources(ctx, core.AwsResource_Secret)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secrets list: %w", err)
 	}
@@ -81,7 +81,7 @@ func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secre
 		)
 	}
 
-	secretId, err := s.getSecretId(sec.Name)
+	secretId, err := s.getSecretId(ctx, sec.Name)
 	if err != nil {
 		return nil, newErr(codes.NotFound, "unable to find secret", err)
 	}
@@ -128,7 +128,7 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 		)
 	}
 
-	secretId, err := s.getSecretId(sv.Secret.Name)
+	secretId, err := s.getSecretId(ctx, sv.Secret.Name)
 	if err != nil {
 		return nil, newErr(codes.NotFound, "could not find secret", err)
 	}

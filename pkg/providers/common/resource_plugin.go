@@ -14,7 +14,10 @@
 
 package common
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type ResourceType = string
 
@@ -36,13 +39,13 @@ type ApiDetails struct {
 // ResourceService - Base resource service interface for providers
 type ResourceService interface {
 	// Details - The details endpoint
-	Details(ResourceType, name string) (*DetailsResponse[any], error)
+	Details(ctx context.Context, ResourceType, name string) (*DetailsResponse[any], error)
 }
 
 type UnimplementResourceService struct{}
 
 var _ ResourceService = &UnimplementResourceService{}
 
-func (*UnimplementResourceService) Details(typ ResourceType, name string) (*DetailsResponse[any], error) {
+func (*UnimplementResourceService) Details(ctx context.Context, typ ResourceType, name string) (*DetailsResponse[any], error) {
 	return nil, fmt.Errorf("Unimplemented")
 }

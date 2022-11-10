@@ -48,7 +48,7 @@ type SQSQueueService struct {
 
 // Get the URL for a given queue name
 func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) (*string, error) {
-	queues, err := s.provder.GetResources(core.AwsResource_Queue)
+	queues, err := s.provder.GetResources(ctx, core.AwsResource_Queue)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving queue list")
 	}

@@ -54,12 +54,12 @@ type S3StorageService struct {
 
 type BucketSelector = func(nitricName string) (*string, error)
 
-func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
+func (s *S3StorageService) getBucketName(ctx context.Context, bucket string) (*string, error) {
 	if s.selector != nil {
 		return s.selector(bucket)
 	}
 
-	buckets, err := s.provider.GetResources(core.AwsResource_Bucket)
+	buckets, err := s.provider.GetResources(ctx, core.AwsResource_Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bucket list: %w", err)
 	}
@@ -83,7 +83,7 @@ func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) 
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
@@ -119,7 +119,7 @@ func (s *S3StorageService) Write(ctx context.Context, bucket string, key string,
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
 		if _, err := s.client.PutObject(ctx, &s3.PutObjectInput{
@@ -155,7 +155,7 @@ func (s *S3StorageService) Delete(ctx context.Context, bucket string, key string
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: b,
@@ -190,7 +190,7 @@ func (s *S3StorageService) PreSignUrl(ctx context.Context, bucket string, key st
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		switch operation {
 		case storage.READ:
 			req, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
@@ -238,7 +238,7 @@ func (s *S3StorageService) ListFiles(ctx context.Context, bucket string) ([]*sto
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: b,
 		})

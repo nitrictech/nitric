@@ -104,8 +104,8 @@ func contextWithTrace(ctx context.Context) context.Context {
 	return trace.ContextWithSpan(ctx, sp)
 }
 
-func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
-	topics, err := s.provider.GetResources(core.AwsResource_Topic)
+func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string) (string, error) {
+	topics, err := s.provider.GetResources(ctx, core.AwsResource_Topic)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving topics: %w", err)
 	}
@@ -125,7 +125,7 @@ func (s *LambdaGateway) isHealthCheck(data map[string]interface{}) bool {
 	return ok
 }
 
-func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]triggers.Trigger, error) {
+func (s *LambdaGateway) triggersFromRequest(ctx context.Context, data map[string]interface{}) ([]triggers.Trigger, error) {
 	bytes, _ := json.Marshal(data)
 	trigs := make([]triggers.Trigger, 0)
 
@@ -151,7 +151,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 					id = snsRecord.SNS.MessageID
 				}
 
-				tName, err := s.getTopicNameForArn(snsRecord.SNS.TopicArn)
+				tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
 
 				if err == nil {
 					trigs = append(trigs, &triggers.Event{
@@ -226,7 +226,7 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 		}, nil
 	}
 
-	trigs, err := s.triggersFromRequest(data)
+	trigs, err := s.triggersFromRequest(ctx, data)
 	if err != nil {
 		return nil, err
 	}

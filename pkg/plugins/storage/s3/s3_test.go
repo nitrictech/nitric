@@ -47,7 +47,7 @@ var _ = Describe("S3", func() {
 
 				It("Should successfully store the object", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
 						"my-bucket": "arn:aws:s3:::my-bucket",
 					}, nil)
 
@@ -68,7 +68,7 @@ var _ = Describe("S3", func() {
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 				It("Should fail to store the item", func() {
 					By("the bucket not existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{}, nil)
 
 					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", []byte("Test"))
 					By("Returning an error")
@@ -89,7 +89,7 @@ var _ = Describe("S3", func() {
 
 					It("Should successfully retrieve the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
 							"test-bucket": "arn:aws:s3:::test-bucket",
 						}, nil)
 
@@ -128,7 +128,7 @@ var _ = Describe("S3", func() {
 
 					It("Should successfully delete the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
 							"test-bucket": "arn:aws:s3:::test-bucket",
 						}, nil)
 
@@ -158,7 +158,7 @@ var _ = Describe("S3", func() {
 			When("A URL is requested for a known operation", func() {
 				It("Should successfully generate the URL", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
 						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
 					}, nil)
 
@@ -191,7 +191,7 @@ var _ = Describe("S3", func() {
 
 				It("should list the files contained in the bucket", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
 						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
 					}, nil)
 

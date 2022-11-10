@@ -44,7 +44,7 @@ func (s *EventGridEventService) ListTopics(ctx context.Context) ([]string, error
 		},
 	)
 
-	topics, err := s.provider.GetResources(core.AzResource_Topic)
+	topics, err := s.provider.GetResources(ctx, core.AzResource_Topic)
 	if err != nil {
 		return nil, newErr(codes.Internal, "unable to retrieve topic list", err)
 	}
@@ -86,7 +86,7 @@ func (s *EventGridEventService) Publish(ctx context.Context, topic string, delay
 		return newErr(codes.Unimplemented, "delayed messages with eventgrid are unsupported", nil)
 	}
 
-	topics, err := s.provider.GetResources(core.AzResource_Topic)
+	topics, err := s.provider.GetResources(ctx, core.AzResource_Topic)
 	if err != nil {
 		return newErr(
 			codes.NotFound,
