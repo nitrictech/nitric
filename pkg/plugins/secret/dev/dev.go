@@ -16,6 +16,7 @@ package secret_service
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -42,7 +43,7 @@ func (s *DevSecretService) secretFileName(sec *secret.Secret, v string) string {
 	return filepath.Join(s.secDir, filename)
 }
 
-func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *DevSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevSecretService.Put",
 		map[string]interface{}{
@@ -117,7 +118,7 @@ func (s *DevSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPu
 	}, nil
 }
 
-func (s *DevSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *DevSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevSecretService.Access",
 		map[string]interface{}{

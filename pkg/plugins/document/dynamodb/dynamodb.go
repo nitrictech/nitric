@@ -50,7 +50,7 @@ type DynamoDocService struct {
 	provider core.AwsProvider
 }
 
-func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
+func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Get",
 		map[string]interface{}{
@@ -87,7 +87,7 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 		TableName: tableName,
 	}
 
-	result, err := s.client.GetItem(context.TODO(), input)
+	result, err := s.client.GetItem(ctx, input)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -123,7 +123,7 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	}, nil
 }
 
-func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) error {
+func (s *DynamoDocService) Set(ctx context.Context, key *document.Key, value map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Set",
 		map[string]interface{}{
@@ -168,7 +168,7 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 		TableName: tableName,
 	}
 
-	_, err = s.client.PutItem(context.TODO(), input)
+	_, err = s.client.PutItem(ctx, input)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -180,7 +180,7 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 	return nil
 }
 
-func (s *DynamoDocService) Delete(key *document.Key) error {
+func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Delete",
 		map[string]interface{}{
@@ -220,7 +220,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 		TableName: tableName,
 	}
 
-	_, err = s.client.DeleteItem(context.TODO(), deleteInput)
+	_, err = s.client.DeleteItem(ctx, deleteInput)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -234,7 +234,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 		var lastEvaluatedKey map[string]types.AttributeValue
 		for {
 			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
-			resp, err := s.client.Query(context.TODO(), queryInput)
+			resp, err := s.client.Query(ctx, queryInput)
 			if err != nil {
 				return newErr(
 					codes.Internal,
@@ -245,7 +245,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 			lastEvaluatedKey = resp.LastEvaluatedKey
 
-			err = s.processDeleteQuery(*tableName, resp)
+			err = s.processDeleteQuery(ctx, *tableName, resp)
 			if err != nil {
 				return newErr(
 					codes.Internal,
@@ -263,7 +263,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 	return nil
 }
 
-func (s *DynamoDocService) query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+func (s *DynamoDocService) query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	queryResult := &document.QueryResult{
 		Documents: make([]document.Document, 0),
 	}
@@ -273,7 +273,7 @@ func (s *DynamoDocService) query(collection *document.Collection, expressions []
 		resFunc = s.performScan
 	}
 
-	if res, err := resFunc(collection, expressions, limit, pagingToken); err != nil {
+	if res, err := resFunc(ctx, collection, expressions, limit, pagingToken); err != nil {
 		return nil, err
 	} else {
 		queryResult.Documents = append(queryResult.Documents, res.Documents...)
@@ -283,7 +283,7 @@ func (s *DynamoDocService) query(collection *document.Collection, expressions []
 	return queryResult, nil
 }
 
-func (s *DynamoDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+func (s *DynamoDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.Query",
 		map[string]interface{}{
@@ -307,7 +307,7 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 		)
 	}
 
-	queryResult, err := s.query(collection, expressions, limit, pagingToken)
+	queryResult, err := s.query(ctx, collection, expressions, limit, pagingToken)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -321,7 +321,7 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 	// If more results available, perform additional queries
 	for remainingLimit > 0 &&
 		(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
-		if res, err := s.query(collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
+		if res, err := s.query(ctx, collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
 			return nil, newErr(
 				codes.Internal,
 				"query error",
@@ -338,7 +338,7 @@ func (s *DynamoDocService) Query(collection *document.Collection, expressions []
 	return queryResult, nil
 }
 
-func (s *DynamoDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+func (s *DynamoDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
 	newErr := errors.ErrorsWithScope(
 		"DynamoDocService.QueryStream",
 		map[string]interface{}{
@@ -365,7 +365,7 @@ func (s *DynamoDocService) QueryStream(collection *document.Collection, expressi
 	var pagingToken map[string]string
 
 	// Initial fetch
-	res, fetchErr := s.query(collection, expressions, tmpLimit, nil)
+	res, fetchErr := s.query(ctx, collection, expressions, tmpLimit, nil)
 
 	if fetchErr != nil {
 		// Return an error only iterator if the initial fetch failed
@@ -388,7 +388,7 @@ func (s *DynamoDocService) QueryStream(collection *document.Collection, expressi
 			return nil, io.EOF
 		} else if pagingToken != nil && len(documents) == 0 {
 			// we've run out of documents and have more pages to read
-			res, fetchErr = s.query(collection, expressions, tmpLimit, pagingToken)
+			res, fetchErr = s.query(ctx, collection, expressions, tmpLimit, pagingToken)
 			documents = res.Documents
 			pagingToken = res.PagingToken
 		} else if pagingToken == nil && len(documents) == 0 {
@@ -481,6 +481,7 @@ func createItemMap(source map[string]interface{}, key *document.Key) map[string]
 }
 
 type resultRetriever = func(
+	ctx context.Context,
 	collection *document.Collection,
 	expressions []document.QueryExpression,
 	limit int,
@@ -488,6 +489,7 @@ type resultRetriever = func(
 ) (*document.QueryResult, error)
 
 func (s *DynamoDocService) performQuery(
+	ctx context.Context,
 	collection *document.Collection,
 	expressions []document.QueryExpression,
 	limit int,
@@ -560,7 +562,7 @@ func (s *DynamoDocService) performQuery(
 	}
 
 	// Perform query
-	resp, err := s.client.Query(context.TODO(), input)
+	resp, err := s.client.Query(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("error performing query %v: %w", input, err)
 	}
@@ -569,6 +571,7 @@ func (s *DynamoDocService) performQuery(
 }
 
 func (s *DynamoDocService) performScan(
+	ctx context.Context,
 	collection *document.Collection,
 	expressions []document.QueryExpression,
 	limit int,
@@ -637,7 +640,7 @@ func (s *DynamoDocService) performScan(
 		}
 	}
 
-	resp, err := s.client.Scan(context.TODO(), input)
+	resp, err := s.client.Scan(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("error performing scan %v: %w", input, err)
 	}
@@ -804,7 +807,7 @@ func createDeleteQuery(table *string, key *document.Key, startKey map[string]typ
 	}
 }
 
-func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.QueryOutput) error {
+func (s *DynamoDocService) processDeleteQuery(ctx context.Context, table string, resp *dynamodb.QueryOutput) error {
 	itemIndex := 0
 	for itemIndex < len(resp.Items) {
 		batchInput := &dynamodb.BatchWriteItemInput{}
@@ -832,7 +835,7 @@ func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.Query
 		batchInput.RequestItems = make(map[string][]types.WriteRequest)
 		batchInput.RequestItems[table] = writeRequests
 
-		_, err := s.client.BatchWriteItem(context.TODO(), batchInput)
+		_, err := s.client.BatchWriteItem(ctx, batchInput)
 		if err != nil {
 			return err
 		}

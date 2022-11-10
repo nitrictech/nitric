@@ -74,7 +74,7 @@ func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
 }
 
 // Read - Retrieves an item from a bucket
-func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
+func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Read",
 		map[string]interface{}{
@@ -84,7 +84,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 	)
 
 	if b, err := s.getBucketName(bucket); err == nil {
-		resp, err := s.client.GetObject(context.TODO(), &s3.GetObjectInput{
+		resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		})
@@ -109,7 +109,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 }
 
 // Write - Writes an item to a bucket
-func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
+func (s *S3StorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Write",
 		map[string]interface{}{
@@ -122,7 +122,7 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 	if b, err := s.getBucketName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
-		if _, err := s.client.PutObject(context.TODO(), &s3.PutObjectInput{
+		if _, err := s.client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      b,
 			Body:        bytes.NewReader(object),
 			ContentType: &contentType,
@@ -146,7 +146,7 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 }
 
 // Delete - Deletes an item from a bucket
-func (s *S3StorageService) Delete(bucket string, key string) error {
+func (s *S3StorageService) Delete(ctx context.Context, bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Delete",
 		map[string]interface{}{
@@ -157,7 +157,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 
 	if b, err := s.getBucketName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
-		if _, err := s.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		}); err != nil {
@@ -180,7 +180,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 
 // PreSignUrl - generates a signed URL which can be used to perform direct operations on a file
 // useful for large file uploads/downloads so they can bypass application code and work directly with S3
-func (s *S3StorageService) PreSignUrl(bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
+func (s *S3StorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.PreSignUrl",
 		map[string]interface{}{
@@ -193,7 +193,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 	if b, err := s.getBucketName(bucket); err == nil {
 		switch operation {
 		case storage.READ:
-			req, err := s.preSignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+			req, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
 			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
@@ -206,7 +206,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 			}
 			return req.URL, err
 		case storage.WRITE:
-			req, err := s.preSignClient.PresignPutObject(context.TODO(), &s3.PutObjectInput{
+			req, err := s.preSignClient.PresignPutObject(ctx, &s3.PutObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
 			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
@@ -230,7 +230,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 	}
 }
 
-func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+func (s *S3StorageService) ListFiles(ctx context.Context, bucket string) ([]*storage.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.ListFiles",
 		map[string]interface{}{
@@ -239,7 +239,7 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 	)
 
 	if b, err := s.getBucketName(bucket); err == nil {
-		objects, err := s.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: b,
 		})
 		if err != nil {

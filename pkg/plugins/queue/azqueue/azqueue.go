@@ -55,7 +55,7 @@ func (s *AzqueueQueueService) getMessageIdUrl(queue string, messageId azqueue.Me
 	return mUrl.NewMessageIDURL(messageId)
 }
 
-func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
+func (s *AzqueueQueueService) Send(ctx context.Context, queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueQueueService.Send",
 		map[string]interface{}{
@@ -68,7 +68,6 @@ func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
 
 	// Send the tasks to the queue
 	if taskBytes, err := json.Marshal(task); err == nil {
-		ctx := context.TODO()
 		if _, err := messages.Enqueue(ctx, string(taskBytes), 0, 0); err != nil {
 			return newErr(
 				codes.Internal,
@@ -87,12 +86,12 @@ func (s *AzqueueQueueService) Send(queue string, task queue.NitricTask) error {
 	return nil
 }
 
-func (s *AzqueueQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (s *AzqueueQueueService) SendBatch(ctx context.Context, queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	failedTasks := make([]*queue.FailedTask, 0)
 
 	for _, task := range tasks {
 		// Azure Storage Queues don't support batches, so each task must be sent individually.
-		err := s.Send(queueName, task)
+		err := s.Send(ctx, queueName, task)
 		if err != nil {
 			failedTasks = append(failedTasks, &queue.FailedTask{
 				Task:    &task,
@@ -134,7 +133,7 @@ func leaseFromString(leaseID string) (*AzureQueueItemLease, error) {
 }
 
 // Receive - Receives a collection of tasks off a given queue.
-func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (s *AzqueueQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueQueueService.Receive",
 		map[string]interface{}{
@@ -152,7 +151,6 @@ func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nit
 
 	messages := s.getMessagesUrl(options.QueueName)
 
-	ctx := context.TODO()
 	dequeueResp, err := messages.Dequeue(ctx, int32(*options.Depth), defaultVisibilityTimeout)
 	if err != nil {
 		return nil, newErr(
@@ -203,7 +201,7 @@ func (s *AzqueueQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nit
 }
 
 // Complete - Completes a previously popped queue item
-func (s *AzqueueQueueService) Complete(queue string, leaseId string) error {
+func (s *AzqueueQueueService) Complete(ctx context.Context, queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"AzqueueQueueService.Complete",
 		map[string]interface{}{
@@ -223,7 +221,6 @@ func (s *AzqueueQueueService) Complete(queue string, leaseId string) error {
 
 	// Client for the specific message referenced by the lease
 	task := s.getMessageIdUrl(queue, azqueue.MessageID(lease.ID))
-	ctx := context.TODO()
 	_, err = task.Delete(ctx, azqueue.PopReceipt(lease.PopReceipt))
 	if err != nil {
 		return newErr(

@@ -15,6 +15,7 @@
 package boltdb_service
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -58,7 +59,7 @@ func (d BoltDoc) String() string {
 	return fmt.Sprintf("BoltDoc{Id: %v PartitionKey: %v SortKey: %v Value: %v}\n", d.Id, d.PartitionKey, d.SortKey, d.Value)
 }
 
-func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
+func (s *BoltDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Get",
 		map[string]interface{}{
@@ -106,7 +107,7 @@ func (s *BoltDocService) Get(key *document.Key) (*document.Document, error) {
 	return toSdkDoc(key.Collection, doc), nil
 }
 
-func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) error {
+func (s *BoltDocService) Set(ctx context.Context, key *document.Key, content map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Set",
 		map[string]interface{}{
@@ -154,7 +155,7 @@ func (s *BoltDocService) Set(key *document.Key, content map[string]interface{}) 
 	return nil
 }
 
-func (s *BoltDocService) Delete(key *document.Key) error {
+func (s *BoltDocService) Delete(ctx context.Context, key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Delete",
 		map[string]interface{}{
@@ -356,7 +357,7 @@ func (s *BoltDocService) query(collection *document.Collection, expressions []do
 	}, nil
 }
 
-func (s *BoltDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+func (s *BoltDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.Query",
 		map[string]interface{}{
@@ -367,7 +368,7 @@ func (s *BoltDocService) Query(collection *document.Collection, expressions []do
 	return s.query(collection, expressions, limit, pagingToken, newErr)
 }
 
-func (s *BoltDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+func (s *BoltDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
 	newErr := errors.ErrorsWithScope(
 		"BoltDocService.QueryStream",
 		map[string]interface{}{

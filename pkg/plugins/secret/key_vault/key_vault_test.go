@@ -64,7 +64,7 @@ var _ = Describe("Key Vault", func() {
 						gomock.Any(),
 					).Return(mockSecretResponse, nil).Times(1)
 
-					response, err := secretPlugin.Put(testSecret, secretVal)
+					response, err := secretPlugin.Put(context.TODO(), testSecret, secretVal)
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 					By("Returning the service provided version id")
@@ -88,7 +88,7 @@ var _ = Describe("Key Vault", func() {
 						gomock.Any(),
 					).Return(mockSecretResponse, nil).Times(1)
 
-					response, err := secretPlugin.Put(testSecret, secretVal)
+					response, err := secretPlugin.Put(context.TODO(), testSecret, secretVal)
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 					By("Returning the correct secret")
@@ -103,7 +103,7 @@ var _ = Describe("Key Vault", func() {
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(nil, secretVal)
+					_, err := secretPlugin.Put(context.TODO(), nil, secretVal)
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
@@ -115,7 +115,7 @@ var _ = Describe("Key Vault", func() {
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(&secret.Secret{Name: ""}, secretVal)
+					_, err := secretPlugin.Put(context.TODO(), &secret.Secret{Name: ""}, secretVal)
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
@@ -127,7 +127,7 @@ var _ = Describe("Key Vault", func() {
 				secretPlugin := NewWithClient(mockSecretClient)
 
 				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(testSecret, nil)
+					_, err := secretPlugin.Put(context.TODO(), testSecret, nil)
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
@@ -153,7 +153,7 @@ var _ = Describe("Key Vault", func() {
 							secretVersion,
 						).Return(mockSecretResponse, nil).Times(1)
 
-						response, err := secretPlugin.Access(testSecretVersion)
+						response, err := secretPlugin.Access(context.TODO(), testSecretVersion)
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 						By("Returning the correct secret")
@@ -178,7 +178,7 @@ var _ = Describe("Key Vault", func() {
 						secretVersion,
 					).Return(keyvault.SecretBundle{}, fmt.Errorf("secret does not exist")).Times(1)
 
-					response, err := secretPlugin.Access(testSecretVersion)
+					response, err := secretPlugin.Access(context.TODO(), testSecretVersion)
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("secret does not exist"))
@@ -194,7 +194,7 @@ var _ = Describe("Key Vault", func() {
 				It("Should return an error", func() {
 					defer ctrl.Finish()
 
-					response, err := secretPlugin.Access(nil)
+					response, err := secretPlugin.Access(context.TODO(), nil)
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("returning a nil response")
@@ -209,7 +209,7 @@ var _ = Describe("Key Vault", func() {
 				It("Should return an error", func() {
 					defer ctrl.Finish()
 
-					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: nil, Version: secretVersion})
+					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{Secret: nil, Version: secretVersion})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("returning a nil response")
@@ -224,7 +224,7 @@ var _ = Describe("Key Vault", func() {
 				It("Should return an error", func() {
 					defer ctrl.Finish()
 
-					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: &secret.Secret{Name: ""}, Version: secretVersion})
+					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{Secret: &secret.Secret{Name: ""}, Version: secretVersion})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("returning a nil response")
@@ -239,7 +239,7 @@ var _ = Describe("Key Vault", func() {
 				It("Should return an error", func() {
 					defer ctrl.Finish()
 
-					response, err := secretPlugin.Access(&secret.SecretVersion{Secret: testSecret, Version: ""})
+					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{Secret: testSecret, Version: ""})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("returning a nil response")

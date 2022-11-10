@@ -47,7 +47,7 @@ type SQSQueueService struct {
 }
 
 // Get the URL for a given queue name
-func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
+func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) (*string, error) {
 	queues, err := s.provder.GetResources(core.AwsResource_Queue)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving queue list")
@@ -63,7 +63,7 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 	accountId := arnParts[4]
 	queueName := arnParts[5]
 
-	out, err := s.client.GetQueueUrl(context.TODO(), &sqs.GetQueueUrlInput{
+	out, err := s.client.GetQueueUrl(ctx, &sqs.GetQueueUrlInput{
 		QueueName:              aws.String(queueName),
 		QueueOwnerAWSAccountId: aws.String(accountId),
 	})
@@ -74,7 +74,7 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 	return out.QueueUrl, nil
 }
 
-func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
+func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Send",
 		map[string]interface{}{
@@ -84,7 +84,7 @@ func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 	)
 
 	tasks := []queue.NitricTask{task}
-	if _, err := s.SendBatch(queueName, tasks); err != nil {
+	if _, err := s.SendBatch(ctx, queueName, tasks); err != nil {
 		return newErr(
 			codes.Internal,
 			"failed to send task",
@@ -94,7 +94,7 @@ func (s *SQSQueueService) Send(queueName string, task queue.NitricTask) error {
 	return nil
 }
 
-func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.SendBatch",
 		map[string]interface{}{
@@ -103,7 +103,7 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 		},
 	)
 
-	if url, err := s.getUrlForQueueName(queueName); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, queueName); err == nil {
 		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
 		for _, task := range tasks {
@@ -123,7 +123,7 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 			}
 		}
 
-		if out, err := s.client.SendMessageBatch(context.TODO(), &sqs.SendMessageBatchInput{
+		if out, err := s.client.SendMessageBatch(ctx, &sqs.SendMessageBatchInput{
 			Entries:  entries,
 			QueueUrl: url,
 		}); err == nil {
@@ -161,7 +161,7 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 	}
 }
 
-func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Receive",
 		map[string]interface{}{
@@ -177,7 +177,7 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 		)
 	}
 
-	if url, err := s.getUrlForQueueName(options.QueueName); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, options.QueueName); err == nil {
 		req := sqs.ReceiveMessageInput{
 			MaxNumberOfMessages: int32(*options.Depth),
 			MessageAttributeNames: []string{
@@ -189,7 +189,7 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 			// WaitTimeSeconds:         nil,
 		}
 
-		res, err := s.client.ReceiveMessage(context.TODO(), &req)
+		res, err := s.client.ReceiveMessage(ctx, &req)
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -234,7 +234,7 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 }
 
 // Completes a previously popped queue item
-func (s *SQSQueueService) Complete(q string, leaseId string) error {
+func (s *SQSQueueService) Complete(ctx context.Context, q string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Complete",
 		map[string]interface{}{
@@ -243,13 +243,13 @@ func (s *SQSQueueService) Complete(q string, leaseId string) error {
 		},
 	)
 
-	if url, err := s.getUrlForQueueName(q); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, q); err == nil {
 		req := sqs.DeleteMessageInput{
 			QueueUrl:      url,
 			ReceiptHandle: aws.String(leaseId),
 		}
 
-		if _, err := s.client.DeleteMessage(context.TODO(), &req); err != nil {
+		if _, err := s.client.DeleteMessage(ctx, &req); err != nil {
 			return newErr(
 				codes.Internal,
 				"failed to dequeue task",

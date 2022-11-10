@@ -45,7 +45,7 @@ func generateQueueSubscription(queue string) string {
 	return fmt.Sprintf("%s-nitricqueue", queue)
 }
 
-func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
+func (s *PubsubQueueService) Send(ctx context.Context, queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Send",
 		map[string]interface{}{
@@ -54,7 +54,6 @@ func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 		},
 	)
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	ctx := context.TODO()
 	topic := s.client.Topic(queue)
 
 	if exists, err := topic.Exists(ctx); !exists || err != nil {
@@ -90,7 +89,7 @@ func (s *PubsubQueueService) Send(queue string, task queue.NitricTask) error {
 	return nil
 }
 
-func (s *PubsubQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.SendBatch",
 		map[string]interface{}{
@@ -100,7 +99,6 @@ func (s *PubsubQueueService) SendBatch(q string, tasks []queue.NitricTask) (*que
 	)
 
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	ctx := context.TODO()
 	topic := s.client.Topic(q)
 
 	if exists, err := topic.Exists(ctx); !exists || err != nil {
@@ -155,9 +153,7 @@ func (s *PubsubQueueService) SendBatch(q string, tasks []queue.NitricTask) (*que
 // we use this behavior to emulate a queue.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubQueueService) getQueueSubscription(q string) (ifaces_pubsub.Subscription, error) {
-	ctx := context.Background()
-
+func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, q string) (ifaces_pubsub.Subscription, error) {
 	topic := s.client.Topic(q)
 	subsIt := topic.Subscriptions(ctx)
 
@@ -179,7 +175,7 @@ func (s *PubsubQueueService) getQueueSubscription(q string) (ifaces_pubsub.Subsc
 }
 
 // Receives a collection of tasks off a given queue.
-func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Receive",
 		map[string]interface{}{
@@ -195,10 +191,8 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 		)
 	}
 
-	ctx := context.Background()
-
 	// Find the generic pull subscription for the provided topic (queue)
-	queueSubscription, err := s.getQueueSubscription(options.QueueName)
+	queueSubscription, err := s.getQueueSubscription(ctx, options.QueueName)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -263,7 +257,7 @@ func (s *PubsubQueueService) Receive(options queue.ReceiveOptions) ([]queue.Nitr
 }
 
 // Completes a previously popped queue item
-func (s *PubsubQueueService) Complete(q string, leaseId string) error {
+func (s *PubsubQueueService) Complete(ctx context.Context, q string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Complete",
 		map[string]interface{}{
@@ -272,10 +266,8 @@ func (s *PubsubQueueService) Complete(q string, leaseId string) error {
 		},
 	)
 
-	ctx := context.Background()
-
 	// Find the generic pull subscription for the provided topic (queue)
-	queueSubscription, err := s.getQueueSubscription(q)
+	queueSubscription, err := s.getQueueSubscription(ctx, q)
 	if err != nil {
 		return newErr(
 			codes.NotFound,

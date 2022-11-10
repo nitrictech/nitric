@@ -15,6 +15,7 @@
 package queue_service_test
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -99,7 +100,7 @@ var _ = Describe("Queue", func() {
 	Context("Send", func() {
 		When("The queue is empty", func() {
 			It("Should store the events in the queue", func() {
-				err := queuePlugin.Send("test", task1)
+				err := queuePlugin.Send(context.TODO(), "test", task1)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				storedTasks := GetAllTasks("test")
@@ -111,7 +112,7 @@ var _ = Describe("Queue", func() {
 
 		When("The queue is not empty", func() {
 			It("Should append to the existing queue", func() {
-				err := queuePlugin.Send("test", task1)
+				err := queuePlugin.Send(context.TODO(), "test", task1)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				storedTasks := GetAllTasks("test")
@@ -119,7 +120,7 @@ var _ = Describe("Queue", func() {
 				Expect(storedTasks).To(HaveLen(1))
 				Expect(storedTasks[0]).To(BeEquivalentTo(task1))
 
-				err = queuePlugin.Send("test", task2)
+				err = queuePlugin.Send(context.TODO(), "test", task2)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				storedTasks = GetAllTasks("test")
@@ -135,7 +136,7 @@ var _ = Describe("Queue", func() {
 		When("The queue is empty", func() {
 			tasks := []queue.NitricTask{task1, task2}
 			It("Should store the events in the queue", func() {
-				resp, err := queuePlugin.SendBatch("test", tasks)
+				resp, err := queuePlugin.SendBatch(context.TODO(), "test", tasks)
 				Expect(resp.FailedTasks).To(BeEmpty())
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -150,7 +151,7 @@ var _ = Describe("Queue", func() {
 		When("The queue is not empty", func() {
 			It("Should append to the existing queue", func() {
 				batch1 := []queue.NitricTask{task1, task2}
-				resp, err := queuePlugin.SendBatch("test", batch1)
+				resp, err := queuePlugin.SendBatch(context.TODO(), "test", batch1)
 				Expect(resp.FailedTasks).To(BeEmpty())
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -159,7 +160,7 @@ var _ = Describe("Queue", func() {
 				Expect(storedTasks).To(HaveLen(2))
 
 				batch2 := []queue.NitricTask{task3, task4}
-				resp, err = queuePlugin.SendBatch("test", batch2)
+				resp, err = queuePlugin.SendBatch(context.TODO(), "test", batch2)
 				Expect(resp.FailedTasks).To(BeEmpty())
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -176,7 +177,7 @@ var _ = Describe("Queue", func() {
 		When("The queue is empty", func() {
 			It("Should return an empty slice of queue items", func() {
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(queue.ReceiveOptions{
+				items, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -187,11 +188,11 @@ var _ = Describe("Queue", func() {
 
 		When("The queue is not empty", func() {
 			It("Should append to the existing queue", func() {
-				err := queuePlugin.Send("test", task1)
+				err := queuePlugin.Send(context.TODO(), "test", task1)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(queue.ReceiveOptions{
+				items, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -223,14 +224,14 @@ var _ = Describe("Queue", func() {
 					tasks = append(tasks, task)
 				}
 
-				_, err = queuePlugin.SendBatch("test", tasks)
+				_, err = queuePlugin.SendBatch(context.TODO(), "test", tasks)
 				Expect(err).ShouldNot(HaveOccurred())
 				storedTasks := GetAllTasks("test")
 				Expect(storedTasks).NotTo(BeNil())
 				Expect(storedTasks).To(HaveLen(15))
 
 				depth := uint32(10)
-				items, err := queuePlugin.Receive(queue.ReceiveOptions{
+				items, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 					QueueName: "test",
 					Depth:     &depth,
 				})
@@ -252,7 +253,7 @@ var _ = Describe("Queue", func() {
 		// We may consider adding more realistic behavior if that is useful in future.
 		When("it always returns successfully", func() {
 			It("Should retnot return an error", func() {
-				err := queuePlugin.Complete("test-queue", "test-id")
+				err := queuePlugin.Complete(context.TODO(), "test-queue", "test-id")
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 			})

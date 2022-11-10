@@ -15,6 +15,7 @@
 package queue
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -26,13 +27,13 @@ type SendBatchResponse struct {
 // QueueService - The Nitric plugin interface for cloud native queue adapters
 type QueueService interface {
 	// Send - Send a single task to a queue
-	Send(queue string, task NitricTask) error
+	Send(ctx context.Context, queue string, task NitricTask) error
 	// SendBatch - sends multiple tasks to a queue
-	SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error)
+	SendBatch(ctx context.Context, queue string, tasks []NitricTask) (*SendBatchResponse, error)
 	// Receive - Receives one or more tasks(s) off a queue
-	Receive(options ReceiveOptions) ([]NitricTask, error)
+	Receive(ctx context.Context, options ReceiveOptions) ([]NitricTask, error)
 	// Complete - Marks a received task as completed
-	Complete(queue string, leaseId string) error
+	Complete(ctx context.Context, queue string, leaseId string) error
 }
 
 type ReceiveOptions struct {
@@ -79,18 +80,18 @@ var _ QueueService = (*UnimplementedQueuePlugin)(nil)
 
 // TODO: replace NitricTask and []NitricTask with pointers
 // Push - Unimplemented Stub for the UnimplementedQueuePlugin
-func (*UnimplementedQueuePlugin) Send(queue string, task NitricTask) error {
+func (*UnimplementedQueuePlugin) Send(ctx context.Context, queue string, task NitricTask) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedQueuePlugin) SendBatch(queue string, tasks []NitricTask) (*SendBatchResponse, error) {
+func (*UnimplementedQueuePlugin) SendBatch(ctx context.Context, queue string, tasks []NitricTask) (*SendBatchResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedQueuePlugin) Receive(options ReceiveOptions) ([]NitricTask, error) {
+func (*UnimplementedQueuePlugin) Receive(ctx context.Context, options ReceiveOptions) ([]NitricTask, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedQueuePlugin) Complete(queue string, leaseId string) error {
+func (*UnimplementedQueuePlugin) Complete(ctx context.Context, queue string, leaseId string) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }

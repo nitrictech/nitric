@@ -15,6 +15,7 @@
 package document_suite
 
 import (
+	"context"
 	"io"
 
 	. "github.com/onsi/ginkgo"
@@ -43,7 +44,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 		// Validation Tests
 		When("Invalid - blank key.Collection.Name", func() {
 			It("Should return an iterator that errors", func() {
-				iter := docPlugin.QueryStream(&document.Collection{}, []document.QueryExpression{}, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &document.Collection{}, []document.QueryExpression{}, 0)
 				Expect(iter).ToNot(BeNil())
 
 				_, err := iter()
@@ -53,7 +54,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 		})
 		When("Invalid - nil expressions argument", func() {
 			It("Should return an iterator that errors", func() {
-				iter := docPlugin.QueryStream(&document.Collection{Name: "users"}, nil, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &document.Collection{Name: "users"}, nil, 0)
 				Expect(iter).ToNot(BeNil())
 
 				_, err := iter()
@@ -68,7 +69,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				iter := docPlugin.QueryStream(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &document.Collection{Name: "users"}, []document.QueryExpression{}, 0)
 
 				docs := unwrapIter(iter)
 
@@ -86,7 +87,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 			It("Should return 2 items", func() {
 				LoadCustomersData(docPlugin)
 
-				iter := docPlugin.QueryStream(&CustomersColl, []document.QueryExpression{}, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &CustomersColl, []document.QueryExpression{}, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(2))
@@ -104,7 +105,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "country", Operator: "==", Value: "US"},
 				}
 
-				iter := docPlugin.QueryStream(&CustomersColl, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &CustomersColl, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(1))
@@ -121,7 +122,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
 
-				iter := docPlugin.QueryStream(&CustomersColl, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &CustomersColl, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(0))
@@ -136,7 +137,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					Parent: &Customer1.Key,
 				}
 
-				iter := docPlugin.QueryStream(&coll, []document.QueryExpression{}, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, []document.QueryExpression{}, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(3))
@@ -163,7 +164,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(2))
@@ -187,7 +188,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(1))
@@ -208,7 +209,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(3))
@@ -235,7 +236,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(2))
@@ -259,7 +260,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(0))
@@ -277,7 +278,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(0))
@@ -295,7 +296,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(5))
@@ -322,7 +323,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(3))
@@ -349,7 +350,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(2))
@@ -373,7 +374,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(1))
@@ -394,7 +395,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(2))
@@ -418,7 +419,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
 
-				iter := docPlugin.QueryStream(&coll, exps, 0)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, exps, 0)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(1))
@@ -435,7 +436,7 @@ func QueryStreamTests(docPlugin document.DocumentService) {
 					Name: "items",
 				}
 
-				iter := docPlugin.QueryStream(&coll, []document.QueryExpression{}, 10)
+				iter := docPlugin.QueryStream(context.TODO(), &coll, []document.QueryExpression{}, 10)
 				docs := unwrapIter(iter)
 
 				Expect(docs).To(HaveLen(10))

@@ -68,7 +68,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 /**
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) {
+func (s *StorageStorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Read",
 		map[string]interface{}{
@@ -86,7 +86,7 @@ func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) 
 		)
 	}
 
-	reader, err := bucketHandle.Object(key).NewReader(context.Background())
+	reader, err := bucketHandle.Object(key).NewReader(ctx)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -111,7 +111,7 @@ func (s *StorageStorageService) Read(bucket string, key string) ([]byte, error) 
 /**
  * Stores a new Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Write(bucket string, key string, object []byte) error {
+func (s *StorageStorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Write",
 		map[string]interface{}{
@@ -130,7 +130,7 @@ func (s *StorageStorageService) Write(bucket string, key string, object []byte) 
 		)
 	}
 
-	writer := bucketHandle.Object(key).NewWriter(context.Background())
+	writer := bucketHandle.Object(key).NewWriter(ctx)
 
 	if _, err := writer.Write(object); err != nil {
 		return newErr(
@@ -154,7 +154,7 @@ func (s *StorageStorageService) Write(bucket string, key string, object []byte) 
 /**
  * Delete an Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Delete(bucket string, key string) error {
+func (s *StorageStorageService) Delete(ctx context.Context, bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.Delete",
 		map[string]interface{}{
@@ -172,7 +172,7 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 		)
 	}
 
-	if err := bucketHandle.Object(key).Delete(context.Background()); err != nil {
+	if err := bucketHandle.Object(key).Delete(ctx); err != nil {
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
 		if !errors.Is(err, storage.ErrObjectNotExist) {
@@ -187,7 +187,7 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 	return nil
 }
 
-func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation plugin.Operation, expiry uint32) (string, error) {
+func (s *StorageStorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation plugin.Operation, expiry uint32) (string, error) {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.PreSignedUrl",
 		map[string]interface{}{
@@ -228,7 +228,7 @@ func (s *StorageStorageService) PreSignUrl(bucket string, key string, operation 
 	return signedUrl, nil
 }
 
-func (s *StorageStorageService) ListFiles(bucket string) ([]*plugin.FileInfo, error) {
+func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string) ([]*plugin.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.ListFiles",
 		map[string]interface{}{
@@ -245,7 +245,7 @@ func (s *StorageStorageService) ListFiles(bucket string) ([]*plugin.FileInfo, er
 		)
 	}
 
-	iter := bucketHandle.Objects(context.TODO(), &storage.Query{
+	iter := bucketHandle.Objects(ctx, &storage.Query{
 		Projection: storage.ProjectionNoACL,
 	})
 

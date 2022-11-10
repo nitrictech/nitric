@@ -40,7 +40,7 @@ var _ = Describe("Pubsub", func() {
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 
 			It("Should queue the Nitric Task", func() {
-				err := queuePlugin.Send("test", queue.NitricTask{
+				err := queuePlugin.Send(context.TODO(), "test", queue.NitricTask{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -62,7 +62,7 @@ var _ = Describe("Pubsub", func() {
 			})
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 			It("Should return the error that failed to publish", func() {
-				err := queuePlugin.Send("test", queue.NitricTask{
+				err := queuePlugin.Send(context.TODO(), "test", queue.NitricTask{
 					ID:          "mockrequestid",
 					PayloadType: "mockpayloadtype",
 					LeaseID:     "MockId",
@@ -87,7 +87,7 @@ var _ = Describe("Pubsub", func() {
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 
 			It("Should queue the Nitric Task", func() {
-				resp, err := queuePlugin.SendBatch("test", []queue.NitricTask{{
+				resp, err := queuePlugin.SendBatch(context.TODO(), "test", []queue.NitricTask{{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -112,7 +112,7 @@ var _ = Describe("Pubsub", func() {
 			})
 			queuePlugin := pubsub_queue_service.NewWithClient(mockPubsubClient)
 			It("Should return the messages that failed to publish", func() {
-				_, err := queuePlugin.SendBatch("test", []queue.NitricTask{{
+				_, err := queuePlugin.SendBatch(context.TODO(), "test", []queue.NitricTask{{
 					ID:          "1234",
 					PayloadType: "test-payload",
 					Payload: map[string]interface{}{
@@ -163,7 +163,7 @@ var _ = Describe("Pubsub", func() {
 				})
 
 				It("Should receive the message", func() {
-					items, err := queuePlugin.Receive(queue.ReceiveOptions{
+					items, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     nil,
 					})
@@ -206,7 +206,7 @@ var _ = Describe("Pubsub", func() {
 			})
 
 			It("Should not return an error", func() {
-				err := queuePlugin.Complete("mock-queue", "test-id")
+				err := queuePlugin.Complete(context.TODO(), "mock-queue", "test-id")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -223,7 +223,7 @@ var _ = Describe("Pubsub", func() {
 			})
 
 			It("Should return an error", func() {
-				err := queuePlugin.Complete("mock-queue", "test-id")
+				err := queuePlugin.Complete(context.TODO(), "mock-queue", "test-id")
 
 				By("Not returning an error")
 				Expect(err).Should(HaveOccurred())

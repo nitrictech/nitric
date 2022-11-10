@@ -14,13 +14,16 @@
 
 package secret
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type SecretService interface {
 	// Put - Creates a new version for a given secret
-	Put(*Secret, []byte) (*SecretPutResponse, error)
+	Put(context.Context, *Secret, []byte) (*SecretPutResponse, error)
 	// Access - Retrieves the value for a given secret version
-	Access(*SecretVersion) (*SecretAccessResponse, error)
+	Access(context.Context, *SecretVersion) (*SecretAccessResponse, error)
 }
 
 type UnimplementedSecretPlugin struct {
@@ -29,10 +32,10 @@ type UnimplementedSecretPlugin struct {
 
 var _ SecretService = (*UnimplementedSecretPlugin)(nil)
 
-func (*UnimplementedSecretPlugin) Put(secret *Secret, value []byte) (*SecretPutResponse, error) {
+func (*UnimplementedSecretPlugin) Put(ctx context.Context, secret *Secret, value []byte) (*SecretPutResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedSecretPlugin) Access(version *SecretVersion) (*SecretAccessResponse, error) {
+func (*UnimplementedSecretPlugin) Access(ctx context.Context, version *SecretVersion) (*SecretAccessResponse, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

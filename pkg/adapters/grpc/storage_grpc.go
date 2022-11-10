@@ -47,7 +47,7 @@ func (s *StorageServiceServer) Write(ctx context.Context, req *pb.StorageWriteRe
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Write", err)
 	}
 
-	if err := s.storagePlugin.Write(req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
+	if err := s.storagePlugin.Write(ctx, req.GetBucketName(), req.GetKey(), req.GetBody()); err == nil {
 		return &pb.StorageWriteResponse{}, nil
 	} else {
 		return nil, NewGrpcError("StorageService.Write", err)
@@ -63,7 +63,7 @@ func (s *StorageServiceServer) Read(ctx context.Context, req *pb.StorageReadRequ
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Read", err)
 	}
 
-	if object, err := s.storagePlugin.Read(req.GetBucketName(), req.GetKey()); err == nil {
+	if object, err := s.storagePlugin.Read(ctx, req.GetBucketName(), req.GetKey()); err == nil {
 		return &pb.StorageReadResponse{
 			Body: object,
 		}, nil
@@ -81,7 +81,7 @@ func (s *StorageServiceServer) Delete(ctx context.Context, req *pb.StorageDelete
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Delete", err)
 	}
 
-	if err := s.storagePlugin.Delete(req.GetBucketName(), req.GetKey()); err == nil {
+	if err := s.storagePlugin.Delete(ctx, req.GetBucketName(), req.GetKey()); err == nil {
 		return &pb.StorageDeleteResponse{}, nil
 	} else {
 		return nil, NewGrpcError("StorageService.Delete", err)
@@ -112,7 +112,7 @@ func (s *StorageServiceServer) PreSignUrl(ctx context.Context, req *pb.StoragePr
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.PreSignUrl", err)
 	}
 
-	if url, err := s.storagePlugin.PreSignUrl(req.GetBucketName(), req.GetKey(), intendedOp, req.GetExpiry()); err == nil {
+	if url, err := s.storagePlugin.PreSignUrl(ctx, req.GetBucketName(), req.GetKey(), intendedOp, req.GetExpiry()); err == nil {
 		return &pb.StoragePreSignUrlResponse{
 			Url: url,
 		}, nil
@@ -130,7 +130,7 @@ func (s *StorageServiceServer) ListFiles(ctx context.Context, req *pb.StorageLis
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.ListFiles", err)
 	}
 
-	if files, err := s.storagePlugin.ListFiles(req.BucketName); err == nil {
+	if files, err := s.storagePlugin.ListFiles(ctx, req.BucketName); err == nil {
 		pbFiles := make([]*pb.File, 0, len(files))
 
 		for _, file := range files {

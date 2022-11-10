@@ -15,6 +15,8 @@
 package document_suite
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,23 +28,23 @@ func GetTests(docPlugin document.DocumentService) {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
 				key := document.Key{Id: "1"}
-				_, err := docPlugin.Get(&key)
+				_, err := docPlugin.Get(context.TODO(), &key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := document.Key{Collection: &document.Collection{Name: "users"}}
-				_, err := docPlugin.Get(&key)
+				_, err := docPlugin.Get(context.TODO(), &key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Get", func() {
 			It("Should get item successfully", func() {
-				err := docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(context.TODO(), &UserKey1, UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(&UserKey1)
+				doc, err := docPlugin.Get(context.TODO(), &UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Key).To(Equal(&UserKey1))
@@ -51,10 +53,10 @@ func GetTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Sub Collection Get", func() {
 			It("Should store item successfully", func() {
-				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				err := docPlugin.Set(context.TODO(), &Customer1.Orders[0].Key, Customer1.Orders[0].Content)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
+				doc, err := docPlugin.Get(context.TODO(), &Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Key).To(Equal(&Customer1.Orders[0].Key))
@@ -64,7 +66,7 @@ func GetTests(docPlugin document.DocumentService) {
 		When("Document Doesn't Exist", func() {
 			It("Should return NotFound error", func() {
 				key := document.Key{Collection: &document.Collection{Name: "items"}, Id: "not-exist"}
-				doc, err := docPlugin.Get(&key)
+				doc, err := docPlugin.Get(context.TODO(), &key)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("not found"))
@@ -72,10 +74,10 @@ func GetTests(docPlugin document.DocumentService) {
 		})
 		When("Valid Collection Get when there is a Sub Collection", func() {
 			It("Should store item successfully", func() {
-				err := docPlugin.Set(&Customer1.Key, Customer1.Content)
+				err := docPlugin.Set(context.TODO(), &Customer1.Key, Customer1.Content)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(&Customer1.Key)
+				doc, err := docPlugin.Get(context.TODO(), &Customer1.Key)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(doc).ToNot(BeNil())
 				Expect(doc.Key).To(Equal(&Customer1.Key))

@@ -15,6 +15,7 @@
 package sqs_service
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -43,7 +44,7 @@ var _ = Describe("Sqs", func() {
 				By("Calling GetResources and receiving an error")
 				providerMock.EXPECT().GetResources(core.AwsResource_Queue).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				_, err := plugin.getUrlForQueueName("test-queue")
+				_, err := plugin.getUrlForQueueName(context.TODO(), "test-queue")
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -62,7 +63,7 @@ var _ = Describe("Sqs", func() {
 				By("Calling GetResources and have queue be missing")
 				providerMock.EXPECT().GetResources(core.AwsResource_Queue).Times(1).Return(map[string]string{}, nil)
 
-				_, err := plugin.getUrlForQueueName("test-queue")
+				_, err := plugin.getUrlForQueueName(context.TODO(), "test-queue")
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -104,7 +105,7 @@ var _ = Describe("Sqs", func() {
 					},
 				}).Return(&sqs.SendMessageBatchOutput{}, nil)
 
-				_, err := plugin.SendBatch("test-queue", []queue.NitricTask{
+				_, err := plugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 					{
 						ID:          "1234",
 						PayloadType: "test-payload",
@@ -131,7 +132,7 @@ var _ = Describe("Sqs", func() {
 					By("provider GetResources returning an error")
 					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(nil, fmt.Errorf("mock-error"))
 
-					_, err := plugin.SendBatch("test-queue", []queue.NitricTask{
+					_, err := plugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 						{
 							ID:          "1234",
 							PayloadType: "test-payload",
@@ -191,7 +192,7 @@ var _ = Describe("Sqs", func() {
 					depth := uint32(10)
 
 					By("Returning the task")
-					messages, err := plugin.Receive(queue.ReceiveOptions{
+					messages, err := plugin.Receive(context.TODO(), queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -243,7 +244,7 @@ var _ = Describe("Sqs", func() {
 
 					depth := uint32(10)
 
-					msgs, err := plugin.Receive(queue.ReceiveOptions{
+					msgs, err := plugin.Receive(context.TODO(), queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -290,7 +291,7 @@ var _ = Describe("Sqs", func() {
 						nil,
 					)
 
-					err := plugin.Complete("test-queue", "lease-id")
+					err := plugin.Complete(context.TODO(), "test-queue", "lease-id")
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -325,7 +326,7 @@ var _ = Describe("Sqs", func() {
 						ReceiptHandle: aws.String("test-id"),
 					}).Return(nil, fmt.Errorf("mock-error"))
 
-					err := plugin.Complete("test-queue", "test-id")
+					err := plugin.Complete(context.TODO(), "test-queue", "test-id")
 
 					By("returning the error")
 					Expect(err).Should(HaveOccurred())

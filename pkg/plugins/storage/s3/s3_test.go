@@ -16,6 +16,7 @@ package s3_service_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -53,7 +54,7 @@ var _ = Describe("S3", func() {
 					By("writing the item")
 					mockStorageClient.EXPECT().PutObject(gomock.Any(), gomock.Any()).Return(&s3.PutObjectOutput{}, nil)
 
-					err := storagePlugin.Write("my-bucket", "test-item", testPayload)
+					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", testPayload)
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 				})
@@ -69,7 +70,7 @@ var _ = Describe("S3", func() {
 					By("the bucket not existing")
 					mockProvider.EXPECT().GetResources(core.AwsResource_Bucket).Return(map[string]string{}, nil)
 
-					err := storagePlugin.Write("my-bucket", "test-item", []byte("Test"))
+					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", []byte("Test"))
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
@@ -100,7 +101,7 @@ var _ = Describe("S3", func() {
 							Body: io.NopCloser(bytes.NewReader([]byte("Test"))),
 						}, nil)
 
-						object, err := storagePlugin.Read("test-bucket", "test-key")
+						object, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
@@ -134,7 +135,7 @@ var _ = Describe("S3", func() {
 						By("successfully deleting the object")
 						mockStorageClient.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(&s3.DeleteObjectOutput{}, nil)
 
-						err := storagePlugin.Delete("test-bucket", "test-key")
+						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 					})
@@ -168,7 +169,7 @@ var _ = Describe("S3", func() {
 						URL: "aws.example.com",
 					}, nil)
 
-					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", 1, uint32(60))
+					url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", 1, uint32(60))
 					By("Returning an error")
 					// We always get an error due to inability to replace the Request with a mock
 					Expect(err).Should(HaveOccurred())
@@ -205,7 +206,7 @@ var _ = Describe("S3", func() {
 						}},
 					}, nil)
 
-					files, err := storagePlugin.ListFiles("test-bucket")
+					files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
 
 					By("not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())

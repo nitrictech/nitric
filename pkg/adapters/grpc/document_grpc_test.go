@@ -78,7 +78,7 @@ var _ = Describe("GRPC Document", func() {
 			expect.Content, err = protoutils.NewStruct(doc.Content)
 			Expect(err).Should(BeNil())
 
-			mockDS.EXPECT().Get(key).Return(doc, nil)
+			mockDS.EXPECT().Get(context.TODO(), key).Return(doc, nil)
 
 			dss := grpc.NewDocumentServer(mockDS)
 			resp, err := dss.Get(context.Background(), &v1.DocumentGetRequest{Key: expect.Key})
@@ -127,7 +127,7 @@ var _ = Describe("GRPC Document", func() {
 				},
 			}
 
-			mockDS.EXPECT().Query(&document.Collection{Name: "zed"}, []document.QueryExpression{
+			mockDS.EXPECT().Query(gomock.Any(), &document.Collection{Name: "zed"}, []document.QueryExpression{
 				{
 					Operand:  "count",
 					Operator: ">",
@@ -208,7 +208,7 @@ var _ = Describe("GRPC Document", func() {
 			expect.Content, err = protoutils.NewStruct(doc.Content)
 			Expect(err).Should(BeNil())
 
-			mockDS.EXPECT().Set(key, expect.Content.AsMap()).Return(nil)
+			mockDS.EXPECT().Set(gomock.Any(), key, expect.Content.AsMap()).Return(nil)
 
 			dss := grpc.NewDocumentServer(mockDS)
 			resp, err := dss.Set(context.Background(), &v1.DocumentSetRequest{
@@ -270,7 +270,7 @@ var _ = Describe("GRPC Document", func() {
 			expect.Content, err = protoutils.NewStruct(doc.Content)
 			Expect(err).Should(BeNil())
 
-			mockDS.EXPECT().Delete(key).Return(nil)
+			mockDS.EXPECT().Delete(gomock.Any(), key).Return(nil)
 
 			dss := grpc.NewDocumentServer(mockDS)
 			resp, err := dss.Delete(context.Background(), &v1.DocumentDeleteRequest{

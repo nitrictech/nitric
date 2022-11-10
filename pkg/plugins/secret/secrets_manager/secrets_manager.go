@@ -65,7 +65,7 @@ func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
 	return "", fmt.Errorf("secret %s does not exist", sec)
 }
 
-func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Put",
 		map[string]interface{}{
@@ -86,7 +86,7 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		return nil, newErr(codes.NotFound, "unable to find secret", err)
 	}
 
-	result, err := s.client.PutSecretValue(context.TODO(), &secretsmanager.PutSecretValueInput{
+	result, err := s.client.PutSecretValue(ctx, &secretsmanager.PutSecretValueInput{
 		SecretId:     aws.String(secretId),
 		SecretBinary: val,
 	})
@@ -104,7 +104,7 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 	}, nil
 }
 
-func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Access",
 		map[string]interface{}{
@@ -144,7 +144,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 		input.VersionId = aws.String(sv.Version)
 	}
 
-	result, err := s.client.GetSecretValue(context.TODO(), input)
+	result, err := s.client.GetSecretValue(ctx, input)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,

@@ -49,7 +49,7 @@ func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_serv
 	return a.getContainerUrl(bucket).NewBlockBlobURL(key)
 }
 
-func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
+func (a *AzblobStorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Read",
 		map[string]interface{}{
@@ -61,7 +61,7 @@ func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 	blob := a.getBlobUrl(bucket, key)
 	//// download the blob
 	r, err := blob.Download(
-		context.TODO(),
+		ctx,
 		0,
 		azblob.CountToEnd,
 		azblob.BlobAccessConditions{},
@@ -82,7 +82,7 @@ func (a *AzblobStorageService) Read(bucket string, key string) ([]byte, error) {
 	return io.ReadAll(data)
 }
 
-func (a *AzblobStorageService) Write(bucket string, key string, object []byte) error {
+func (a *AzblobStorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Write",
 		map[string]interface{}{
@@ -94,7 +94,7 @@ func (a *AzblobStorageService) Write(bucket string, key string, object []byte) e
 	blob := a.getBlobUrl(bucket, key)
 
 	if _, err := blob.Upload(
-		context.TODO(),
+		ctx,
 		bytes.NewReader(object),
 		azblob.BlobHTTPHeaders{},
 		azblob.Metadata{},
@@ -113,7 +113,7 @@ func (a *AzblobStorageService) Write(bucket string, key string, object []byte) e
 	return nil
 }
 
-func (a *AzblobStorageService) Delete(bucket string, key string) error {
+func (a *AzblobStorageService) Delete(ctx context.Context, bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.Delete",
 		map[string]interface{}{
@@ -140,7 +140,7 @@ func (a *AzblobStorageService) Delete(bucket string, key string) error {
 	return nil
 }
 
-func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
+func (s *AzblobStorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.PreSignUrl",
 		map[string]interface{}{
@@ -153,7 +153,7 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(bucket, key).Url())
 	currentTime := time.Now().UTC()
 	validDuration := currentTime.Add(time.Duration(expiry) * time.Second)
-	cred, err := s.client.GetUserDelegationCredential(context.TODO(), azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
+	cred, err := s.client.GetUserDelegationCredential(ctx, azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
 	if err != nil {
 		return "", newErr(
 			codes.Internal,
@@ -188,7 +188,7 @@ func (s *AzblobStorageService) PreSignUrl(bucket string, key string, operation s
 	return url.String(), nil
 }
 
-func (s *AzblobStorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string) ([]*storage.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.ListFiles",
 		map[string]interface{}{
@@ -202,7 +202,7 @@ func (s *AzblobStorageService) ListFiles(bucket string) ([]*storage.FileInfo, er
 	// List the blob(s) in our container; since a container may hold millions of blobs, this is done 1 segment at a time.
 	for marker := (azblob.Marker{}); marker.NotDone(); { // The parens around Marker{} are required to avoid compiler error.
 		// Get a result segment starting with the blob indicated by the current Marker.
-		listBlob, err := cUrl.ListBlobsFlatSegment(context.TODO(), marker, azblob.ListBlobsSegmentOptions{})
+		listBlob, err := cUrl.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{})
 		if err != nil {
 			return nil, newErr(codes.Internal, "error listing files", err)
 		}

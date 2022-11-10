@@ -5,6 +5,7 @@
 package mock_document
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,73 +36,73 @@ func (m *MockDocumentService) EXPECT() *MockDocumentServiceMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockDocumentService) Delete(arg0 *document.Key) error {
+func (m *MockDocumentService) Delete(arg0 context.Context, arg1 *document.Key) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0)
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockDocumentServiceMockRecorder) Delete(arg0 interface{}) *gomock.Call {
+func (mr *MockDocumentServiceMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDocumentService)(nil).Delete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDocumentService)(nil).Delete), arg0, arg1)
 }
 
 // Get mocks base method.
-func (m *MockDocumentService) Get(arg0 *document.Key) (*document.Document, error) {
+func (m *MockDocumentService) Get(arg0 context.Context, arg1 *document.Key) (*document.Document, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "Get", arg0, arg1)
 	ret0, _ := ret[0].(*document.Document)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockDocumentServiceMockRecorder) Get(arg0 interface{}) *gomock.Call {
+func (mr *MockDocumentServiceMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDocumentService)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDocumentService)(nil).Get), arg0, arg1)
 }
 
 // Query mocks base method.
-func (m *MockDocumentService) Query(arg0 *document.Collection, arg1 []document.QueryExpression, arg2 int, arg3 map[string]string) (*document.QueryResult, error) {
+func (m *MockDocumentService) Query(arg0 context.Context, arg1 *document.Collection, arg2 []document.QueryExpression, arg3 int, arg4 map[string]string) (*document.QueryResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Query", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "Query", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*document.QueryResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Query indicates an expected call of Query.
-func (mr *MockDocumentServiceMockRecorder) Query(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockDocumentServiceMockRecorder) Query(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockDocumentService)(nil).Query), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockDocumentService)(nil).Query), arg0, arg1, arg2, arg3, arg4)
 }
 
 // QueryStream mocks base method.
-func (m *MockDocumentService) QueryStream(arg0 *document.Collection, arg1 []document.QueryExpression, arg2 int) func() (*document.Document, error) {
+func (m *MockDocumentService) QueryStream(arg0 context.Context, arg1 *document.Collection, arg2 []document.QueryExpression, arg3 int) func() (*document.Document, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryStream", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "QueryStream", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(func() (*document.Document, error))
 	return ret0
 }
 
 // QueryStream indicates an expected call of QueryStream.
-func (mr *MockDocumentServiceMockRecorder) QueryStream(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockDocumentServiceMockRecorder) QueryStream(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryStream", reflect.TypeOf((*MockDocumentService)(nil).QueryStream), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryStream", reflect.TypeOf((*MockDocumentService)(nil).QueryStream), arg0, arg1, arg2, arg3)
 }
 
 // Set mocks base method.
-func (m *MockDocumentService) Set(arg0 *document.Key, arg1 map[string]interface{}) error {
+func (m *MockDocumentService) Set(arg0 context.Context, arg1 *document.Key, arg2 map[string]interface{}) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set", arg0, arg1)
+	ret := m.ctrl.Call(m, "Set", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Set indicates an expected call of Set.
-func (mr *MockDocumentServiceMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDocumentServiceMockRecorder) Set(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockDocumentService)(nil).Set), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockDocumentService)(nil).Set), arg0, arg1, arg2)
 }
