@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -83,7 +83,7 @@ var _ = Describe("Sns", func() {
 				}, nil)
 
 				By("Publishing the message to the topic")
-				snsMock.EXPECT().Publish(&sns.PublishInput{
+				snsMock.EXPECT().Publish(gomock.Any(), &sns.PublishInput{
 					TopicArn: aws.String("arn:test"),
 					Message:  aws.String(stringData),
 				})
@@ -142,7 +142,7 @@ var _ = Describe("Sns", func() {
 				}, nil)
 
 				By("Publishing the message to the topic")
-				sfnMock.EXPECT().StartExecution(&sfn.StartExecutionInput{
+				sfnMock.EXPECT().StartExecution(gomock.Any(), &sfn.StartExecutionInput{
 					StateMachineArn: aws.String("arn:test"),
 					Input: aws.String(fmt.Sprintf(`{
 			"seconds": 1,

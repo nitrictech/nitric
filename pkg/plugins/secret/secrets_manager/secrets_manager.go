@@ -15,14 +15,15 @@
 package secrets_manager_secret_service
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	secretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
@@ -84,7 +85,7 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		return nil, newErr(codes.NotFound, "unable to find secret", err)
 	}
 
-	result, err := s.client.PutSecretValue(&secretsmanager.PutSecretValueInput{
+	result, err := s.client.PutSecretValue(context.TODO(), &secretsmanager.PutSecretValueInput{
 		SecretId:     aws.String(secretId),
 		SecretBinary: val,
 	})
@@ -97,7 +98,7 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 			Secret: &secret.Secret{
 				Name: sec.Name,
 			},
-			Version: aws.StringValue(result.VersionId),
+			Version: *result.VersionId,
 		},
 	}, nil
 }
@@ -142,7 +143,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 		input.VersionId = aws.String(sv.Version)
 	}
 
-	result, err := s.client.GetSecretValue(input)
+	result, err := s.client.GetSecretValue(context.TODO(), input)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -156,7 +157,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: aws.StringValue(result.VersionId),
+			Version: *result.VersionId,
 		},
 		Value: result.SecretBinary,
 	}, nil
@@ -166,15 +167,12 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 func New(provider core.AwsProvider) (secret.SecretService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	client := secretsmanager.New(sess)
+	client := secretsmanager.NewFromConfig(cfg)
 
 	return &secretsManagerSecretService{
 		client:   client,

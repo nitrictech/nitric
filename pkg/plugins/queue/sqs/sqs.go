@@ -15,15 +15,17 @@
 package sqs_service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/sqsiface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
@@ -60,7 +62,7 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 	accountId := arnParts[4]
 	queueName := arnParts[5]
 
-	out, err := s.client.GetQueueUrl(&sqs.GetQueueUrlInput{
+	out, err := s.client.GetQueueUrl(context.TODO(), &sqs.GetQueueUrlInput{
 		QueueName:              aws.String(queueName),
 		QueueOwnerAWSAccountId: aws.String(accountId),
 	})
@@ -101,11 +103,11 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 	)
 
 	if url, err := s.getUrlForQueueName(queueName); err == nil {
-		entries := make([]*sqs.SendMessageBatchRequestEntry, 0)
+		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
 		for _, task := range tasks {
 			if bytes, err := json.Marshal(task); err == nil {
-				entries = append(entries, &sqs.SendMessageBatchRequestEntry{
+				entries = append(entries, types.SendMessageBatchRequestEntry{
 					// Share the request ID here...
 					Id:          &task.ID,
 					MessageBody: aws.String(string(bytes)),
@@ -120,7 +122,7 @@ func (s *SQSQueueService) SendBatch(queueName string, tasks []queue.NitricTask) 
 			}
 		}
 
-		if out, err := s.client.SendMessageBatch(&sqs.SendMessageBatchInput{
+		if out, err := s.client.SendMessageBatch(context.TODO(), &sqs.SendMessageBatchInput{
 			Entries:  entries,
 			QueueUrl: url,
 		}); err == nil {
@@ -176,9 +178,9 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 
 	if url, err := s.getUrlForQueueName(options.QueueName); err == nil {
 		req := sqs.ReceiveMessageInput{
-			MaxNumberOfMessages: aws.Int64(int64(*options.Depth)),
-			MessageAttributeNames: []*string{
-				aws.String(sqs.QueueAttributeNameAll),
+			MaxNumberOfMessages: int32(*options.Depth),
+			MessageAttributeNames: []string{
+				string(types.QueueAttributeNameAll),
 			},
 			QueueUrl: url,
 			// TODO: Consider explicit timeout values
@@ -186,7 +188,7 @@ func (s *SQSQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 			// WaitTimeSeconds:         nil,
 		}
 
-		res, err := s.client.ReceiveMessage(&req)
+		res, err := s.client.ReceiveMessage(context.TODO(), &req)
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -246,7 +248,7 @@ func (s *SQSQueueService) Complete(q string, leaseId string) error {
 			ReceiptHandle: aws.String(leaseId),
 		}
 
-		if _, err := s.client.DeleteMessage(&req); err != nil {
+		if _, err := s.client.DeleteMessage(context.TODO(), &req); err != nil {
 			return newErr(
 				codes.Internal,
 				"failed to dequeue task",
@@ -267,15 +269,15 @@ func (s *SQSQueueService) Complete(q string, leaseId string) error {
 func New(provider core.AwsProvider) (queue.QueueService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if sessionError != nil {
+		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+	}
 	if sessionError != nil {
 		return nil, fmt.Errorf("Error creating new AWS session %w", sessionError)
 	}
 
-	client := sqs.New(sess)
+	client := sqs.NewFromConfig(cfg)
 
 	return &SQSQueueService{
 		client:  client,

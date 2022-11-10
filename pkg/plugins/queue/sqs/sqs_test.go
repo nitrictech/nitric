@@ -17,8 +17,9 @@ package sqs_service
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -88,14 +89,14 @@ var _ = Describe("Sqs", func() {
 				}, nil)
 
 				By("Calling GetQueueUrl to get the queue name")
-				sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+				sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 					QueueUrl: queueUrl,
 				}, nil)
 
 				By("Calling SendMessageBatch with the expected batch entries")
-				sqsMock.EXPECT().SendMessageBatch(&sqs.SendMessageBatchInput{
+				sqsMock.EXPECT().SendMessageBatch(gomock.Any(), &sqs.SendMessageBatchInput{
 					QueueUrl: queueUrl,
-					Entries: []*sqs.SendMessageBatchRequestEntry{
+					Entries: []types.SendMessageBatchRequestEntry{
 						{
 							Id:          aws.String("1234"),
 							MessageBody: aws.String(`{"id":"1234","payloadType":"test-payload","payload":{"Test":"Test"}}`),
@@ -167,19 +168,19 @@ var _ = Describe("Sqs", func() {
 					}, nil)
 
 					By("calling provider GetQueuUrl")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling ReceiveMessage with the expected inputs")
-					sqsMock.EXPECT().ReceiveMessage(&sqs.ReceiveMessageInput{
-						MaxNumberOfMessages: aws.Int64(int64(10)),
-						MessageAttributeNames: []*string{
-							aws.String(sqs.QueueAttributeNameAll),
+					sqsMock.EXPECT().ReceiveMessage(gomock.Any(), &sqs.ReceiveMessageInput{
+						MaxNumberOfMessages: int32(10),
+						MessageAttributeNames: []string{
+							string(types.QueueAttributeNameAll),
 						},
 						QueueUrl: queueUrl,
 					}).Times(1).Return(&sqs.ReceiveMessageOutput{
-						Messages: []*sqs.Message{
+						Messages: []types.Message{
 							{
 								ReceiptHandle: aws.String("mockreceipthandle"),
 								Body:          aws.String(`{"id":"1234","payloadType":"test-payload","payload":{"Test":"Test"}}`),
@@ -225,19 +226,19 @@ var _ = Describe("Sqs", func() {
 					}, nil)
 
 					By("Calling GetQueueUrl to get the queue url")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling ReceiveMessage with the expected inputs")
-					sqsMock.EXPECT().ReceiveMessage(&sqs.ReceiveMessageInput{
-						MaxNumberOfMessages: aws.Int64(int64(10)),
-						MessageAttributeNames: []*string{
-							aws.String(sqs.QueueAttributeNameAll),
+					sqsMock.EXPECT().ReceiveMessage(gomock.Any(), &sqs.ReceiveMessageInput{
+						MaxNumberOfMessages: int32(10),
+						MessageAttributeNames: []string{
+							string(types.QueueAttributeNameAll),
 						},
 						QueueUrl: queueUrl,
 					}).Times(1).Return(&sqs.ReceiveMessageOutput{
-						Messages: []*sqs.Message{},
+						Messages: []types.Message{},
 					}, nil)
 
 					depth := uint32(10)
@@ -276,12 +277,12 @@ var _ = Describe("Sqs", func() {
 					}, nil)
 
 					By("Calling ListQueueTags to get the x-nitric-name")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling SQS with the queue url and task lease id")
-					sqsMock.EXPECT().DeleteMessage(&sqs.DeleteMessageInput{
+					sqsMock.EXPECT().DeleteMessage(gomock.Any(), &sqs.DeleteMessageInput{
 						QueueUrl:      queueUrl,
 						ReceiptHandle: aws.String("lease-id"),
 					}).Times(1).Return(
@@ -314,12 +315,12 @@ var _ = Describe("Sqs", func() {
 					}, nil)
 
 					By("Calling GetQueueUrl to get the queueurl")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling SQS with the queue url and task lease id")
-					sqsMock.EXPECT().DeleteMessage(&sqs.DeleteMessageInput{
+					sqsMock.EXPECT().DeleteMessage(gomock.Any(), &sqs.DeleteMessageInput{
 						QueueUrl:      queueUrl,
 						ReceiptHandle: aws.String("test-id"),
 					}).Return(nil, fmt.Errorf("mock-error"))

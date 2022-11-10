@@ -15,16 +15,17 @@
 package sns_service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/sfniface"
+	"github.com/nitrictech/nitric/pkg/ifaces/snsiface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
@@ -67,7 +68,7 @@ func (s *SnsEventService) publish(topic string, message string) error {
 		// MessageStructure: aws.String("json"),
 	}
 
-	_, err = s.client.Publish(publishInput)
+	_, err = s.client.Publish(context.TODO(), publishInput)
 
 	if err != nil {
 		return fmt.Errorf("unable to publish message: %w", err)
@@ -87,7 +88,7 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 		return fmt.Errorf("error finding state machine for topic %s: %w", topic, err)
 	}
 
-	_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
+	_, err = s.sfnClient.StartExecution(context.TODO(), &sfn.StartExecutionInput{
 		StateMachineArn: aws.String(sfnArn),
 		Input: aws.String(fmt.Sprintf(`{
 			"seconds": %d,
@@ -160,16 +161,13 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 func New(provider core.AwsProvider) (events.EventService, error) {
 	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	snsClient := sns.New(sess)
-	sfnClient := sfn.New(sess)
+	snsClient := sns.NewFromConfig(cfg)
+	sfnClient := sfn.NewFromConfig(cfg)
 
 	return &SnsEventService{
 		client:    snsClient,

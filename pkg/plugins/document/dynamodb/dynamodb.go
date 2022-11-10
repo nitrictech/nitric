@@ -15,28 +15,30 @@
 package dynamodb_service
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
+	"github.com/nitrictech/nitric/pkg/ifaces/dynamodbiface"
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/providers/aws/core"
 	"github.com/nitrictech/nitric/pkg/utils"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
 const (
 	AttribPk         = "_pk"
 	AttribSk         = "_sk"
-	deleteQueryLimit = int64(1000)
+	deleteQueryLimit = int32(1000)
 	maxBatchWrite    = 25
 )
 
@@ -65,7 +67,7 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	}
 
 	keyMap := createKeyMap(key)
-	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
+	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -84,7 +86,7 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 		TableName: tableName,
 	}
 
-	result, err := s.client.GetItem(input)
+	result, err := s.client.GetItem(context.TODO(), input)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -102,7 +104,7 @@ func (s *DynamoDocService) Get(key *document.Key) (*document.Document, error) {
 	}
 
 	var itemMap map[string]interface{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, &itemMap)
+	err = attributevalue.UnmarshalMap(result.Item, &itemMap)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -146,7 +148,7 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 
 	// Construct DynamoDB attribute value object
 	itemMap := createItemMap(value, key)
-	itemAttributeMap, err := dynamodbattribute.MarshalMap(itemMap)
+	itemAttributeMap, err := attributevalue.MarshalMap(itemMap)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value")
 	}
@@ -165,7 +167,7 @@ func (s *DynamoDocService) Set(key *document.Key, value map[string]interface{}) 
 		TableName: tableName,
 	}
 
-	_, err = s.client.PutItem(input)
+	_, err = s.client.PutItem(context.TODO(), input)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -194,7 +196,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 	}
 
 	keyMap := createKeyMap(key)
-	attributeMap, err := dynamodbattribute.MarshalMap(keyMap)
+	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
 		return newErr(
 			codes.InvalidArgument,
@@ -217,7 +219,7 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 		TableName: tableName,
 	}
 
-	_, err = s.client.DeleteItem(deleteInput)
+	_, err = s.client.DeleteItem(context.TODO(), deleteInput)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -228,10 +230,10 @@ func (s *DynamoDocService) Delete(key *document.Key) error {
 
 	// Delete sub collection items
 	if key.Collection.Parent == nil {
-		var lastEvaluatedKey map[string]*dynamodb.AttributeValue
+		var lastEvaluatedKey map[string]types.AttributeValue
 		for {
 			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
-			resp, err := s.client.Query(queryInput)
+			resp, err := s.client.Query(context.TODO(), queryInput)
 			if err != nil {
 				return newErr(
 					codes.Internal,
@@ -420,16 +422,12 @@ func New(provider core.AwsProvider) (document.DocumentService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
 	// Create a new AWS session
-	sess, sessionError := session.NewSession(&aws.Config{
-		// FIXME: Use env config
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	dynamoClient := dynamodb.New(sess)
+	dynamoClient := dynamodb.NewFromConfig(cfg)
 
 	return &DynamoDocService{
 		client:   dynamoClient,
@@ -438,7 +436,7 @@ func New(provider core.AwsProvider) (document.DocumentService, error) {
 }
 
 // NewWithClient - Mainly used for testing
-func NewWithClient(provider core.AwsProvider, client *dynamodb.DynamoDB) (document.DocumentService, error) {
+func NewWithClient(provider core.AwsProvider, client *dynamodb.Client) (document.DocumentService, error) {
 	return &DynamoDocService{
 		provider: provider,
 		client:   client,
@@ -520,24 +518,24 @@ func (s *DynamoDocService) performQuery(
 	}
 
 	// Configure ExpressionAttributeNames
-	input.ExpressionAttributeNames = make(map[string]*string)
-	input.ExpressionAttributeNames["#pk"] = aws.String("_pk")
-	input.ExpressionAttributeNames["#sk"] = aws.String("_sk")
+	input.ExpressionAttributeNames = make(map[string]string)
+	input.ExpressionAttributeNames["#pk"] = "_pk"
+	input.ExpressionAttributeNames["#sk"] = "_sk"
 	for _, exp := range expressions {
-		input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
+		input.ExpressionAttributeNames["#"+exp.Operand] = exp.Operand
 	}
 
 	// Configure ExpressionAttributeValues
-	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	input.ExpressionAttributeValues[":pk"] = &dynamodb.AttributeValue{
-		S: aws.String(collection.Parent.Id),
+	input.ExpressionAttributeValues = make(map[string]types.AttributeValue)
+	input.ExpressionAttributeValues[":pk"] = &types.AttributeValueMemberS{
+		Value: collection.Parent.Id,
 	}
-	input.ExpressionAttributeValues[":sk"] = &dynamodb.AttributeValue{
-		S: aws.String(collection.Name + "#"),
+	input.ExpressionAttributeValues[":sk"] = &types.AttributeValueMemberS{
+		Value: collection.Name + "#",
 	}
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
-		valAttrib, err := dynamodbattribute.Marshal(exp.Value)
+		valAttrib, err := attributevalue.Marshal(exp.Value)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling %v: %v", exp.Operand, exp.Value)
 		}
@@ -546,20 +544,20 @@ func (s *DynamoDocService) performQuery(
 
 	// Configure fetch Limit
 	if limit > 0 {
-		limit64 := int64(limit)
+		limit64 := int32(limit)
 		input.Limit = &(limit64)
 
 		if len(pagingToken) > 0 {
-			startKey, err := dynamodbattribute.MarshalMap(pagingToken)
+			startKey, err := attributevalue.MarshalMap(pagingToken)
 			if err != nil {
 				return nil, fmt.Errorf("error performing query %v: %w", input, err)
 			}
-			input.SetExclusiveStartKey(startKey)
+			input.ExclusiveStartKey = startKey
 		}
 	}
 
 	// Perform query
-	resp, err := s.client.Query(input)
+	resp, err := s.client.Query(context.TODO(), input)
 	if err != nil {
 		return nil, fmt.Errorf("error performing query %v: %w", input, err)
 	}
@@ -600,21 +598,21 @@ func (s *DynamoDocService) performScan(
 	input.FilterExpression = aws.String(filterExp)
 
 	// Configure ExpressionAttributeNames
-	input.ExpressionAttributeNames = make(map[string]*string)
-	input.ExpressionAttributeNames["#sk"] = aws.String("_sk")
+	input.ExpressionAttributeNames = make(map[string]string)
+	input.ExpressionAttributeNames["#sk"] = "_sk"
 
 	for _, exp := range expressions {
-		input.ExpressionAttributeNames["#"+exp.Operand] = aws.String(exp.Operand)
+		input.ExpressionAttributeNames["#"+exp.Operand] = exp.Operand
 	}
 
 	// Configure ExpressionAttributeValues
-	input.ExpressionAttributeValues = make(map[string]*dynamodb.AttributeValue)
-	keyAttrib := &dynamodb.AttributeValue{S: aws.String(collection.Name + "#")}
+	input.ExpressionAttributeValues = make(map[string]types.AttributeValue)
+	keyAttrib := &types.AttributeValueMemberS{Value: collection.Name + "#"}
 
 	input.ExpressionAttributeValues[":sk"] = keyAttrib
 	for i, exp := range expressions {
 		expKey := fmt.Sprintf(":%v%v", exp.Operand, i)
-		valAttrib, err := dynamodbattribute.Marshal(exp.Value)
+		valAttrib, err := attributevalue.Marshal(exp.Value)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling %v: %v", exp.Operand, exp.Value)
 		}
@@ -624,19 +622,19 @@ func (s *DynamoDocService) performScan(
 	// Configure fetch Limit
 	if limit > 0 {
 		// Account for parent record in fetch limit
-		limit64 := int64(limit)
-		input.Limit = &(limit64)
+		limit32 := int32(limit)
+		input.Limit = &(limit32)
 
 		if len(pagingToken) > 0 {
-			startKey, err := dynamodbattribute.MarshalMap(pagingToken)
+			startKey, err := attributevalue.MarshalMap(pagingToken)
 			if err != nil {
 				return nil, fmt.Errorf("error performing scan %v: %w", input, err)
 			}
-			input.SetExclusiveStartKey(startKey)
+			input.ExclusiveStartKey = startKey
 		}
 	}
 
-	resp, err := s.client.Scan(input)
+	resp, err := s.client.Scan(context.TODO(), input)
 	if err != nil {
 		return nil, fmt.Errorf("error performing scan %v: %w", input, err)
 	}
@@ -644,11 +642,11 @@ func (s *DynamoDocService) performScan(
 	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey)
 }
 
-func marshalQueryResult(collection *document.Collection, items []map[string]*dynamodb.AttributeValue, lastEvaluatedKey map[string]*dynamodb.AttributeValue) (*document.QueryResult, error) {
+func marshalQueryResult(collection *document.Collection, items []map[string]types.AttributeValue, lastEvaluatedKey map[string]types.AttributeValue) (*document.QueryResult, error) {
 	// Unmarshal Dynamo response items
 	var pTkn map[string]string = nil
 	var valueMaps []map[string]interface{}
-	if err := dynamodbattribute.UnmarshalListOfMaps(items, &valueMaps); err != nil {
+	if err := attributevalue.UnmarshalListOfMaps(items, &valueMaps); err != nil {
 		return nil, fmt.Errorf("error unmarshalling query response: %w", err)
 	}
 
@@ -698,7 +696,7 @@ func marshalQueryResult(collection *document.Collection, items []map[string]*dyn
 	// Unmarshal lastEvalutedKey
 	var resultPagingToken map[string]string
 	if len(lastEvaluatedKey) > 0 {
-		if err := dynamodbattribute.UnmarshalMap(lastEvaluatedKey, &resultPagingToken); err != nil {
+		if err := attributevalue.UnmarshalMap(lastEvaluatedKey, &resultPagingToken); err != nil {
 			return nil, fmt.Errorf("error unmarshalling query lastEvaluatedKey: %w", err)
 		}
 		pTkn = resultPagingToken
@@ -781,22 +779,22 @@ func (s *DynamoDocService) getTableName(collection document.Collection) (*string
 	return nil, fmt.Errorf("collection %s does not exist", coll.Name)
 }
 
-func createDeleteQuery(table *string, key *document.Key, startKey map[string]*dynamodb.AttributeValue) *dynamodb.QueryInput {
+func createDeleteQuery(table *string, key *document.Key, startKey map[string]types.AttributeValue) *dynamodb.QueryInput {
 	limit := deleteQueryLimit
 
 	return &dynamodb.QueryInput{
 		TableName:              table,
 		Limit:                  &(limit),
-		Select:                 aws.String(dynamodb.SelectSpecificAttributes),
+		Select:                 types.SelectSpecificAttributes,
 		ProjectionExpression:   aws.String("#pk, #sk"),
 		KeyConditionExpression: aws.String("#pk = :pk"),
-		ExpressionAttributeNames: map[string]*string{
-			"#pk": aws.String("_pk"),
-			"#sk": aws.String("_sk"),
+		ExpressionAttributeNames: map[string]string{
+			"#pk": "_pk",
+			"#sk": "_sk",
 		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":pk": {
-				S: aws.String(key.Id),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":pk": &types.AttributeValueMemberS{
+				Value: key.Id,
 			},
 		},
 		ExclusiveStartKey: startKey,
@@ -807,31 +805,31 @@ func (s *DynamoDocService) processDeleteQuery(table string, resp *dynamodb.Query
 	itemIndex := 0
 	for itemIndex < len(resp.Items) {
 		batchInput := &dynamodb.BatchWriteItemInput{}
-		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
-		writeRequests := make([]*dynamodb.WriteRequest, 0, maxBatchWrite)
+		batchInput.RequestItems = make(map[string][]types.WriteRequest)
+		writeRequests := make([]types.WriteRequest, 0, maxBatchWrite)
 
 		batchCount := 0
 		for batchCount < maxBatchWrite && itemIndex < len(resp.Items) {
 			item := resp.Items[itemIndex]
 			itemIndex += 1
 
-			writeRequest := dynamodb.WriteRequest{}
+			writeRequest := types.WriteRequest{}
 
-			writeRequest.DeleteRequest = &dynamodb.DeleteRequest{
-				Key: map[string]*dynamodb.AttributeValue{
+			writeRequest.DeleteRequest = &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
 					AttribPk: item[AttribPk],
 					AttribSk: item[AttribSk],
 				},
 			}
-			writeRequests = append(writeRequests, &writeRequest)
+			writeRequests = append(writeRequests, writeRequest)
 
 			batchCount += 1
 		}
 
-		batchInput.RequestItems = make(map[string][]*dynamodb.WriteRequest)
+		batchInput.RequestItems = make(map[string][]types.WriteRequest)
 		batchInput.RequestItems[table] = writeRequests
 
-		_, err := s.client.BatchWriteItem(batchInput)
+		_, err := s.client.BatchWriteItem(context.TODO(), batchInput)
 		if err != nil {
 			return err
 		}

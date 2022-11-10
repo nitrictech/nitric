@@ -156,15 +156,17 @@ generate-mocks:
 	@mkdir -p mocks/plugins/events
 	@mkdir -p mocks/pubsub
 	@mkdir -p mocks/cloudtasks
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sfn/sfniface SFNAPI > mocks/sfn/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/snsiface SNSAPI > mocks/sns/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sfniface SFNAPI > mocks/sfn/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/azure/core AzProvider > mocks/provider/azure.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/gcp/core GcpProvider > mocks/provider/gcp.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/document DocumentService > mocks/document/mock.go
@@ -172,8 +174,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage StorageService > mocks/storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue QueueService > mocks/queue/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker Worker,Adapter > mocks/worker/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go

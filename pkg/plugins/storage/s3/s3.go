@@ -16,17 +16,18 @@ package s3_service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/s3iface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
@@ -43,9 +44,10 @@ const (
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
 	// storage.UnimplementedStoragePlugin
-	client   s3iface.S3API
-	provider core.AwsProvider
-	selector BucketSelector
+	client        s3iface.S3API
+	preSignClient s3iface.PreSignAPI
+	provider      core.AwsProvider
+	selector      BucketSelector
 	storage.UnimplementedStoragePlugin
 }
 
@@ -81,7 +83,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 	)
 
 	if b, err := s.getBucketName(bucket); err == nil {
-		resp, err := s.client.GetObject(&s3.GetObjectInput{
+		resp, err := s.client.GetObject(context.TODO(), &s3.GetObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		})
@@ -119,7 +121,7 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 	if b, err := s.getBucketName(bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
-		if _, err := s.client.PutObject(&s3.PutObjectInput{
+		if _, err := s.client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:      b,
 			Body:        bytes.NewReader(object),
 			ContentType: &contentType,
@@ -154,7 +156,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 
 	if b, err := s.getBucketName(bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
-		if _, err := s.client.DeleteObject(&s3.DeleteObjectInput{
+		if _, err := s.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		}); err != nil {
@@ -190,11 +192,10 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 	if b, err := s.getBucketName(bucket); err == nil {
 		switch operation {
 		case storage.READ:
-			req, _ := s.client.GetObjectRequest(&s3.GetObjectInput{
+			req, err := s.preSignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
-			})
-			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
 			if err != nil {
 				return "", newErr(
 					codes.Internal,
@@ -202,13 +203,12 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 					err,
 				)
 			}
-			return url, err
+			return req.URL, err
 		case storage.WRITE:
-			req, _ := s.client.PutObjectRequest(&s3.PutObjectInput{
+			req, err := s.preSignClient.PresignPutObject(context.TODO(), &s3.PutObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
-			})
-			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
 			if err != nil {
 				return "", newErr(
 					codes.Internal,
@@ -216,7 +216,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 					err,
 				)
 			}
-			return url, err
+			return req.URL, err
 		default:
 			return "", fmt.Errorf("requested operation not supported for pre-signed AWS S3 urls")
 		}
@@ -238,7 +238,7 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 	)
 
 	if b, err := s.getBucketName(bucket); err == nil {
-		objects, err := s.client.ListObjects(&s3.ListObjectsInput{
+		objects, err := s.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 			Bucket: b,
 		})
 		if err != nil {
@@ -270,25 +270,22 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 func New(provider core.AwsProvider) (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		// FIXME: Use ENV configuration
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	s3Client := s3.New(sess)
+	s3Client := s3.NewFromConfig(cfg)
 
 	return &S3StorageService{
-		client:   s3Client,
-		provider: provider,
+		client:        s3Client,
+		preSignClient: s3.NewPresignClient(s3Client),
+		provider:      provider,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(provider core.AwsProvider, client s3iface.S3API, opts ...S3StorageServiceOption) (storage.StorageService, error) {
+func NewWithClient(provider core.AwsProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (storage.StorageService, error) {
 	s3Client := &S3StorageService{
 		client:   client,
 		provider: provider,
