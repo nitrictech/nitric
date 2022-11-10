@@ -52,6 +52,7 @@ require (
 	go.mongodb.org/mongo-driver v1.7.1
 	go.opentelemetry.io/contrib/detectors/aws/lambda v0.36.3
 	go.opentelemetry.io/contrib/detectors/gcp v1.11.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.36.4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4
 	go.opentelemetry.io/contrib/propagators/aws v1.11.0
 	go.opentelemetry.io/otel v1.11.1

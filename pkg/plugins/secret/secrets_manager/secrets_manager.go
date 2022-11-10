@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
@@ -171,6 +172,8 @@ func New(provider core.AwsProvider) (secret.SecretService, error) {
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
+
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
 	client := secretsmanager.NewFromConfig(cfg)
 

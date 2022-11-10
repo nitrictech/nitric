@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/pkg/ifaces/apigatewayv2iface"
 	"github.com/nitrictech/nitric/pkg/ifaces/resourcegroupstaggingapiiface"
@@ -155,6 +156,8 @@ func New() (AwsProvider, error) {
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
 	}
+
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
 	apiClient := apigatewayv2.NewFromConfig(cfg)
 	client := resourcegroupstaggingapi.NewFromConfig(cfg)

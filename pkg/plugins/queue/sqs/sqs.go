@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/pkg/ifaces/sqsiface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
@@ -276,6 +277,8 @@ func New(provider core.AwsProvider) (queue.QueueService, error) {
 	if sessionError != nil {
 		return nil, fmt.Errorf("Error creating new AWS session %w", sessionError)
 	}
+
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
 	client := sqs.NewFromConfig(cfg)
 

@@ -898,6 +898,8 @@ go.opentelemetry.io/contrib/detectors/aws/lambda v0.36.3 h1:Joa3ioM69WggvQgSvr7Z
 go.opentelemetry.io/contrib/detectors/aws/lambda v0.36.3/go.mod h1:DVT7ZIQ4/NA8BmwOLDpRADMmNoAozODhEMOdK7MQ1xY=
 go.opentelemetry.io/contrib/detectors/gcp v1.11.0 h1:kb+VGYAf2ut2Iiy7lJy/lglbIeC3sTqug/nIl3vvGoE=
 go.opentelemetry.io/contrib/detectors/gcp v1.11.0/go.mod h1:ngcIy8Phjir6CnHzUQXRASWl4dG3bXlQ3HY761RMmUQ=
+go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.36.4 h1:E85NvhZcKfJtiCI+E2sNjrBHE/anyA3MjbTTiRngGoQ=
+go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.36.4/go.mod h1:sNHaxla2G+y6M3/Jfb3N06CVn/kAZf+8yFwxkIVa/pI=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4 h1:PRXhsszxTt5bbPriTjmaweWUsAnJYeWBhUMLRetUgBU=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4/go.mod h1:05eWWy6ZWzmpeImD3UowLTB3VjDMU1yxQ+ENuVWDM3c=
 go.opentelemetry.io/contrib/propagators/aws v1.11.0 h1:PQH+ds9TdfJv/kVge4ohedKCxmUzkaFLgxd3Fp7vEx4=

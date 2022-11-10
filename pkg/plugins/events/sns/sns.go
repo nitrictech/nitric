@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/pkg/ifaces/sfniface"
 	"github.com/nitrictech/nitric/pkg/ifaces/snsiface"
@@ -165,6 +166,8 @@ func New(provider core.AwsProvider) (events.EventService, error) {
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
+
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
 	snsClient := sns.NewFromConfig(cfg)
 	sfnClient := sfn.NewFromConfig(cfg)
