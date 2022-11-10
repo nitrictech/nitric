@@ -16,6 +16,7 @@ package secrets_manager_secret_service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -143,15 +144,16 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					mockProvider.EXPECT().GetResources(core.AwsResource_Secret).Return(map[string]string{
 						"Test": testARN,
 					}, nil)
-					/*
-						mockSecretClient.EXPECT().PutSecretValue(
-							gomock.Any(),
-						).Return(nil, awserr.New(secretsmanager.ErrCodeEncryptionFailure, "aws error", nil)).Times(1)
-					*/
+
+					mockSecretClient.EXPECT().PutSecretValue(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil, errors.New("aws error")).Times(1)
+
 					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("EncryptionFailure: aws error"))
+					Expect(err.Error()).To(ContainSubstring("aws error"))
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})

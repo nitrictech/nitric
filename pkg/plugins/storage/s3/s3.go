@@ -290,8 +290,9 @@ func New(provider core.AwsProvider) (storage.StorageService, error) {
 // NewWithClient creates a new S3 Storage plugin and injects the given client
 func NewWithClient(provider core.AwsProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (storage.StorageService, error) {
 	s3Client := &S3StorageService{
-		client:   client,
-		provider: provider,
+		client:        client,
+		preSignClient: preSignClient,
+		provider:      provider,
 	}
 
 	for _, o := range opts {

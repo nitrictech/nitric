@@ -165,16 +165,14 @@ var _ = Describe("S3", func() {
 					mockPSStorageClient.EXPECT().PresignPutObject(gomock.Any(), &s3.PutObjectInput{
 						Bucket: aws.String("test-bucket-aaa111"), // the real bucket name should be provided here, not the nitric name
 						Key:    aws.String("test-key"),
-					}).Times(1).Return(&v4.PresignedHTTPRequest{
+					}, gomock.Any()).Times(1).Return(&v4.PresignedHTTPRequest{
 						URL: "aws.example.com",
 					}, nil)
 
 					url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", 1, uint32(60))
-					By("Returning an error")
-					// We always get an error due to inability to replace the Request with a mock
-					Expect(err).Should(HaveOccurred())
+					Expect(err).ShouldNot(HaveOccurred())
 
-					By("Returning a blank url")
+					By("Return the correct url")
 					// always blank - it's the best we can do without a real mock.
 					Expect(url).To(Equal("aws.example.com"))
 				})
@@ -198,9 +196,9 @@ var _ = Describe("S3", func() {
 					}, nil)
 
 					By("s3 returning files")
-					mockStorageClient.EXPECT().ListObjectsV2(gomock.Any(), &s3.ListObjectsInput{
+					mockStorageClient.EXPECT().ListObjectsV2(gomock.Any(), &s3.ListObjectsV2Input{
 						Bucket: aws.String("test-bucket-aaa111"),
-					}).Return(&s3.ListObjectsOutput{
+					}).Return(&s3.ListObjectsV2Output{
 						Contents: []types.Object{{
 							Key: aws.String("test"),
 						}},
