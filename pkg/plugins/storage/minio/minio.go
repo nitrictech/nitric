@@ -81,6 +81,9 @@ func New() (storage.StorageService, error) {
 	}
 
 	/* Configure to use MinIO Server
+
+	TODO do we need these? Can't find v2 equivalents
+
 	s3Config := &aws.Config{
 		DisableSSL:       aws.Bool(true),
 		S3ForcePathStyle: aws.Bool(true),
