@@ -65,7 +65,7 @@ func (s *SQSQueueService) getUrlForQueueName(queue string) (*string, error) {
 		QueueOwnerAWSAccountId: aws.String(accountId),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("encountered an error retrieving the queue list: %v", err)
+		return nil, fmt.Errorf("encountered an error retrieving the queue list: %w", err)
 	}
 
 	return out.QueueUrl, nil
@@ -272,7 +272,7 @@ func New(provider core.AwsProvider) (queue.QueueService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("Error creating new AWS session %w", sessionError)
 	}
 
 	client := sqs.New(sess)

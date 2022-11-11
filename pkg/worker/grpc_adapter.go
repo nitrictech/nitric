@@ -76,7 +76,7 @@ func (gwb *GrpcAdapter) Start(errchan chan error) {
 	for {
 		msg, err := gwb.stream.Recv()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				// return will close stream from server side
 				log.Println("exit")
 			}

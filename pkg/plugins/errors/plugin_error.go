@@ -15,6 +15,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
@@ -41,9 +42,19 @@ func (p *PluginError) Error() string {
 	return fmt.Sprintf("%s", p.Msg)
 }
 
+func As(err error, target any) bool {
+	return errors.As(err, target)
+}
+
+func Is(err error, target error) bool {
+	return errors.Is(err, target)
+}
+
 // Code - returns a nitric api error code from an error or Unknown if the error was not a nitric api error
 func Code(e error) codes.Code {
-	if pe, ok := e.(*PluginError); ok {
+	var pe *PluginError
+
+	if errors.As(e, &pe) {
 		return pe.Code
 	}
 

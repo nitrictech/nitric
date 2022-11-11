@@ -25,7 +25,7 @@ import (
 func GetServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error) {
 	config, err := auth.GetSettingsFromEnvironment()
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve azure auth settings: %v", err)
+		return nil, fmt.Errorf("failed to retrieve azure auth settings: %w", err)
 	}
 
 	if fileCred, fileErr := auth.GetSettingsFromFile(); fileErr == nil {

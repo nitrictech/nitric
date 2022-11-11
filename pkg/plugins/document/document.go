@@ -47,7 +47,7 @@ func ValidateKey(key *Key) error {
 		return fmt.Errorf("provide non-nil key.Collection")
 	} else {
 		if err := ValidateCollection(key.Collection); err != nil {
-			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
+			return fmt.Errorf("invalid collection for document key %s, %w", key.Id, err)
 		}
 	}
 	return nil
@@ -63,7 +63,7 @@ func ValidateCollection(collection *Collection) error {
 	}
 	if collection.Parent != nil {
 		if err := ValidateKey(collection.Parent); err != nil {
-			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
+			return fmt.Errorf("invalid parent for collection %s, %w", collection.Name, err)
 		}
 	}
 
@@ -81,7 +81,7 @@ func ValidateQueryKey(key *Key) error {
 		return fmt.Errorf("provide non-nil key.Collection")
 	} else {
 		if err := ValidateQueryCollection(key.Collection); err != nil {
-			return fmt.Errorf("invalid collection for document key %s, %v", key.Id, err)
+			return fmt.Errorf("invalid collection for document key %s, %w", key.Id, err)
 		}
 	}
 	return nil
@@ -98,7 +98,7 @@ func ValidateQueryCollection(collection *Collection) error {
 	}
 	if collection.Parent != nil {
 		if err := ValidateQueryKey(collection.Parent); err != nil {
-			return fmt.Errorf("invalid parent for collection %s, %v", collection.Name, err)
+			return fmt.Errorf("invalid parent for collection %s, %w", collection.Name, err)
 		}
 	}
 	return validateSubCollectionDepth(collection)
