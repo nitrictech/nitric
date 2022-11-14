@@ -33,6 +33,7 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/providers/gcp/core"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -146,11 +147,18 @@ func (s *PubsubEventService) Publish(ctx context.Context, topic string, delay in
 		)
 	}
 
+	attributes := map[string]string{
+		"x-nitric-topic": topic,
+	}
+
+	tc := span.ToTraceContext(ctx)
+	for k, v := range tc.Values {
+		attributes[k] = v
+	}
+
 	pubsubMsg := &pubsub.Message{
-		Attributes: map[string]string{
-			"x-nitric-topic": topic,
-		},
-		Data: eventBytes,
+		Attributes: attributes,
+		Data:       eventBytes,
 	}
 
 	if delay > 0 {

@@ -80,3 +80,17 @@ func ToTraceContext(ctx context.Context) *pb.TraceContext {
 
 	return &pb.TraceContext{Values: hc}
 }
+
+func FromSimpleHeaders(ctx context.Context, spanName string, headers map[string]string) context.Context {
+	var hc simpleHeaderCarrier = headers
+
+	if UseFuncNameAsSpanName {
+		spanName = FunctionName
+	}
+
+	// this extracts the traceID from the header and creates a parent span in the context.
+	ctx, _ = otel.Tracer("membrane/pkg/span", trace.WithInstrumentationVersion(MembraneVersion)).
+		Start(otel.GetTextMapPropagator().Extract(ctx, hc), spanName)
+
+	return ctx
+}

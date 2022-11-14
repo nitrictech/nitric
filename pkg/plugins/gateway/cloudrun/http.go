@@ -50,7 +50,7 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		// We have an event from pubsub here...
 
 		topic := pubsubEvent.Message.Attributes["x-nitric-topic"]
-		ctx := span.FromHeaders(context.TODO(), "topic-"+topic, triggers.HttpHeaders(&rc.Request.Header))
+		ctx := span.FromSimpleHeaders(context.TODO(), "topic-"+topic, pubsubEvent.Message.Attributes)
 
 		// need to determine if the underlying data is a nitric event
 		var event *triggers.Event
