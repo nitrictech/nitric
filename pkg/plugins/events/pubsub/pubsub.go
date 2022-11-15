@@ -22,6 +22,8 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/pubsub"
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -33,7 +35,6 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/providers/gcp/core"
-	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -147,14 +148,11 @@ func (s *PubsubEventService) Publish(ctx context.Context, topic string, delay in
 		)
 	}
 
-	attributes := map[string]string{
+	attributes := propagation.MapCarrier{
 		"x-nitric-topic": topic,
 	}
 
-	tc := span.ToTraceContext(ctx)
-	for k, v := range tc.Values {
-		attributes[k] = v
-	}
+	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
 
 	pubsubMsg := &pubsub.Message{
 		Attributes: attributes,

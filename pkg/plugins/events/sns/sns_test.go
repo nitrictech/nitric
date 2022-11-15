@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -85,8 +86,9 @@ var _ = Describe("Sns", func() {
 
 				By("Publishing the message to the topic")
 				snsMock.EXPECT().Publish(gomock.Any(), &sns.PublishInput{
-					TopicArn: aws.String("arn:test"),
-					Message:  aws.String(stringData),
+					MessageAttributes: map[string]types.MessageAttributeValue{},
+					TopicArn:          aws.String("arn:test"),
+					Message:           aws.String(stringData),
 				})
 
 				err := eventsClient.Publish(context.TODO(), "test", 0, testEvent)
@@ -145,6 +147,7 @@ var _ = Describe("Sns", func() {
 				By("Publishing the message to the topic")
 				sfnMock.EXPECT().StartExecution(gomock.Any(), &sfn.StartExecutionInput{
 					StateMachineArn: aws.String("arn:test"),
+					TraceHeader:     aws.String(""),
 					Input: aws.String(fmt.Sprintf(`{
 			"seconds": 1,
 			"message": %s

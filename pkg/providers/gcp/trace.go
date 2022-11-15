@@ -60,12 +60,11 @@ func newTraceProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 		propagation.NewCompositeTextMapPropagator(
 			propagator.CloudTraceFormatPropagator{},
 			propagation.TraceContext{},
-			propagation.Baggage{},
 		))
 
 	rate, err := utils.PercentFromIntString(utils.GetEnv("NITRIC_TRACE_SAMPLE_PERCENT", "10"))
 	if err != nil {
-		return nil, errors.WithMessagef(err, "NITRIC_TRACE_SAMPLE_PERCENT should be an int not %s", rate)
+		return nil, errors.WithMessagef(err, "NITRIC_TRACE_SAMPLE_PERCENT should be an int")
 	}
 
 	return sdktrace.NewTracerProvider(

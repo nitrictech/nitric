@@ -97,7 +97,7 @@ func New() (storage.StorageService, error) {
 		})),
 	)
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	s3Client := s3.NewFromConfig(cfg)

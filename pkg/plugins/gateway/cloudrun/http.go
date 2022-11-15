@@ -20,12 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel/propagation"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway/base_http"
-	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -50,7 +51,6 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		// We have an event from pubsub here...
 
 		topic := pubsubEvent.Message.Attributes["x-nitric-topic"]
-		ctx := span.FromSimpleHeaders(context.TODO(), "topic-"+topic, pubsubEvent.Message.Attributes)
 
 		// need to determine if the underlying data is a nitric event
 		var event *triggers.Event
@@ -61,9 +61,10 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 			payload, _ := json.Marshal(messageJson.Payload)
 
 			event = &triggers.Event{
-				ID:      messageJson.ID,
-				Topic:   topic,
-				Payload: payload,
+				ID:         messageJson.ID,
+				Topic:      topic,
+				Payload:    payload,
+				Attributes: pubsubEvent.Message.Attributes,
 			}
 		} else {
 			event = &triggers.Event{
@@ -71,7 +72,8 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 				// Set the topic
 				Topic: topic,
 				// Set the original full payload payload
-				Payload: pubsubEvent.Message.Data,
+				Payload:    pubsubEvent.Message.Data,
+				Attributes: pubsubEvent.Message.Attributes,
 			}
 		}
 
@@ -81,6 +83,17 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 		if err != nil {
 			rc.Error("Could not find handle for event", 500)
 			return false
+		}
+
+		traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
+		ctx := context.TODO()
+
+		if pubsubEvent.Message.Attributes[traceKey] != "" {
+			var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
+			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, mc)
+		} else {
+			var hc propagation.HeaderCarrier = triggers.HttpHeaders(&rc.Request.Header)
+			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, hc)
 		}
 
 		if err := wrkr.HandleEvent(ctx, event); err == nil {

@@ -21,6 +21,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -65,8 +67,13 @@ func (s *PubsubQueueService) Send(ctx context.Context, queue string, task queue.
 	}
 
 	if taskBytes, err := json.Marshal(task); err == nil {
+		attributes := propagation.MapCarrier{}
+
+		propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
+
 		msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
-			Data: taskBytes,
+			Attributes: attributes,
+			Data:       taskBytes,
 		})
 
 		result := topic.Publish(ctx, msg)
@@ -115,10 +122,15 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	failedTasks := make([]*queue.FailedTask, 0)
 	publishedTasks := make([]queue.NitricTask, 0)
 
+	attributes := propagation.MapCarrier{}
+
+	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
+
 	for _, task := range tasks {
 		if taskBytes, err := json.Marshal(task); err == nil {
 			msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
-				Data: taskBytes,
+				Data:       taskBytes,
+				Attributes: attributes,
 			})
 
 			results = append(results, topic.Publish(ctx, msg))

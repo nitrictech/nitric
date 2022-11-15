@@ -172,10 +172,7 @@ func (s *Membrane) Start() error {
 		}
 
 		interceptorOpts := []otelgrpc.Option{
-			otelgrpc.WithPropagators(propagation.NewCompositeTextMapPropagator(
-				propagation.TraceContext{},
-				propagation.Baggage{},
-			)),
+			otelgrpc.WithPropagators(propagation.TraceContext{}),
 		}
 
 		opts = append(opts,

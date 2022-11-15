@@ -39,9 +39,10 @@ func middleware(ctx *fasthttp.RequestCtx, wrkr worker.WorkerPool) bool {
 		payload := ctx.Request.Body()
 
 		evt := &triggers.Event{
-			ID:      requestId,
-			Topic:   trigger,
-			Payload: payload,
+			ID:         requestId,
+			Topic:      trigger,
+			Payload:    payload,
+			Attributes: map[string]string{},
 		}
 
 		wrkr, err := wrkr.GetWorker(&worker.GetWorkerOptions{

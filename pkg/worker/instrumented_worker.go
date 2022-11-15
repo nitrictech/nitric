@@ -17,10 +17,12 @@ package worker
 import (
 	"context"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
@@ -38,7 +40,11 @@ func InstrumentedWorkerFn(w Worker) Worker {
 
 // HandleEvent implements worker.Adapter
 func (a *instrumentedWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
-	s := trace.SpanFromContext(ctx)
+	var s trace.Span
+
+	ctx, s = otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
+		Start(ctx, span.Name("topic-"+trigger.Topic))
+
 	s.SetAttributes(
 		semconv.CodeFunctionKey.String("HandleEvent"),
 		semconv.MessagingDestinationKindTopic,
@@ -48,7 +54,7 @@ func (a *instrumentedWorker) HandleEvent(ctx context.Context, trigger *triggers.
 
 	defer s.End()
 
-	err := a.Worker.HandleEvent(trace.ContextWithSpan(ctx, s), trigger)
+	err := a.Worker.HandleEvent(ctx, trigger)
 	if err != nil {
 		s.SetStatus(codes.Error, "Event Handler returned an error")
 		s.RecordError(err)
@@ -61,7 +67,11 @@ func (a *instrumentedWorker) HandleEvent(ctx context.Context, trigger *triggers.
 
 // HandleHttpRequest implements worker.Adapter
 func (a *instrumentedWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	s := trace.SpanFromContext(ctx)
+	var s trace.Span
+
+	ctx, s = otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
+		Start(ctx, span.Name(trigger.Path))
+
 	s.SetAttributes(
 		semconv.CodeFunctionKey.String("HandleHttpRequest"),
 		semconv.HTTPMethodKey.String(trigger.Method),
@@ -71,7 +81,7 @@ func (a *instrumentedWorker) HandleHttpRequest(ctx context.Context, trigger *tri
 
 	defer s.End()
 
-	resp, err := a.Worker.HandleHttpRequest(trace.ContextWithSpan(ctx, s), trigger)
+	resp, err := a.Worker.HandleHttpRequest(ctx, trigger)
 	if err != nil {
 		s.SetStatus(codes.Error, "Request Handler returned an error")
 		s.RecordError(err)

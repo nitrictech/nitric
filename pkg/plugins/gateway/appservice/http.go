@@ -89,9 +89,10 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 
 		// Just extract the payload from the event type (payload from nitric event is directly mapped)
 		evt = &triggers.Event{
-			ID:      *event.ID,
-			Topic:   topicName,
-			Payload: payloadBytes,
+			ID:         *event.ID,
+			Topic:      topicName,
+			Payload:    payloadBytes,
+			Attributes: map[string]string{},
 		}
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{

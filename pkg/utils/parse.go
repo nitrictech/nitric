@@ -18,15 +18,17 @@ import (
 	"strconv"
 )
 
+// PercentFromIntString returns a float between 0.0 to 1 representing a percentage.
+// this is converted from a string int in the range "0" to "100".
 func PercentFromIntString(in string) (float64, error) {
 	intVar, err := strconv.Atoi(in)
 	if err != nil {
 		return 0, err
 	}
 
-	if intVar > 100 {
-		return 100, nil
-	} else if intVar < 0 {
+	if intVar >= 100 {
+		return 1, nil
+	} else if intVar <= 0 {
 		return 0, nil
 	}
 

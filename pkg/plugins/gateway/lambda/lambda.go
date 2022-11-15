@@ -25,16 +25,14 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-lambda-go/lambdacontext"
+	"go.opentelemetry.io/contrib/propagators/aws/xray"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	"go.opentelemetry.io/otel/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/pkg/providers/aws/core"
-	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -76,34 +74,6 @@ func getEventType(request map[string]interface{}) eventType {
 	return unknown
 }
 
-func contextWithTrace(ctx context.Context) context.Context {
-	lc, ok := lambdacontext.FromContext(ctx)
-	if !ok {
-		log.Default().Println("failed to load lambda context from context, ensure tracing enabled in Lambda")
-	}
-
-	ctx, sp := otel.Tracer("membrane/pkg/plugins/gateway/lambda", trace.WithInstrumentationVersion(span.MembraneVersion)).
-		Start(ctx, lambdacontext.FunctionName)
-
-	if lc != nil {
-		ctxRequestID := lc.AwsRequestID
-		sp.SetAttributes(semconv.FaaSExecutionKey.String(ctxRequestID))
-
-		// Some resource attrs added as span attrs because lambda
-		// resource detectors are created before a lambda
-		// invocation and therefore lack lambdacontext.
-		// Create these attrs upon first invocation
-		ctxFunctionArn := lc.InvokedFunctionArn
-		sp.SetAttributes(semconv.FaaSIDKey.String(ctxFunctionArn))
-		arnParts := strings.Split(ctxFunctionArn, ":")
-		if len(arnParts) >= 5 {
-			sp.SetAttributes(semconv.CloudAccountIDKey.String(arnParts[4]))
-		}
-	}
-
-	return trace.ContextWithSpan(ctx, sp)
-}
-
 func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string) (string, error) {
 	topics, err := s.provider.GetResources(ctx, core.AwsResource_Topic)
 	if err != nil {
@@ -139,6 +109,14 @@ func (s *LambdaGateway) triggersFromRequest(ctx context.Context, data map[string
 				messageJson := &ep.NitricEvent{}
 				var payloadBytes []byte
 				var id string
+				attrs := map[string]string{}
+
+				for k, v := range snsRecord.SNS.MessageAttributes {
+					sv, ok := v.(string)
+					if ok {
+						attrs[k] = sv
+					}
+				}
 
 				// Populate the JSON
 				if err := json.Unmarshal([]byte(messageString), messageJson); err == nil {
@@ -155,9 +133,10 @@ func (s *LambdaGateway) triggersFromRequest(ctx context.Context, data map[string
 
 				if err == nil {
 					trigs = append(trigs, &triggers.Event{
-						ID:      id,
-						Topic:   tName,
-						Payload: payloadBytes,
+						ID:         id,
+						Topic:      tName,
+						Payload:    payloadBytes,
+						Attributes: attrs,
 					})
 				} else {
 					log.Default().Printf("unable to find nitric topic: %v", err)
@@ -242,7 +221,9 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 					return nil, fmt.Errorf("unable to get worker to handle http trigger")
 				}
 
-				response, err := wrkr.HandleHttpRequest(contextWithTrace(ctx), httpEvent)
+				var hc propagation.HeaderCarrier = httpEvent.Header
+
+				response, err := wrkr.HandleHttpRequest(xray.Propagator{}.Extract(ctx, hc), httpEvent)
 				if err != nil {
 					return events.APIGatewayProxyResponse{
 						StatusCode: 500,
@@ -282,7 +263,9 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 					return nil, fmt.Errorf("unable to get worker to event trigger")
 				}
 
-				if err := wrkr.HandleEvent(contextWithTrace(ctx), event); err != nil {
+				var mc propagation.MapCarrier = event.Attributes
+
+				if err := wrkr.HandleEvent(xray.Propagator{}.Extract(ctx, mc), event); err != nil {
 					return nil, err
 				}
 			} else {

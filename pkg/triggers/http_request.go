@@ -15,12 +15,9 @@
 package triggers
 
 import (
-	"context"
 	"strings"
 
 	"github.com/valyala/fasthttp"
-
-	"github.com/nitrictech/nitric/pkg/span"
 )
 
 // HttpRequest - Storage information that captures a HTTP Request
@@ -62,7 +59,7 @@ func HttpHeaders(rh *fasthttp.RequestHeader) map[string][]string {
 }
 
 // FromHttpRequest (constructs a HttpRequest source type from a HttpRequest)
-func FromHttpRequest(rc *fasthttp.RequestCtx) (context.Context, *HttpRequest) {
+func FromHttpRequest(rc *fasthttp.RequestCtx) *HttpRequest {
 	headerCopy := HttpHeaders(&rc.Request.Header)
 	queryArgs := make(map[string][]string)
 
@@ -76,15 +73,12 @@ func FromHttpRequest(rc *fasthttp.RequestCtx) (context.Context, *HttpRequest) {
 		queryArgs[k] = append(queryArgs[k], string(val))
 	})
 
-	triggerPath := string(rc.URI().PathOriginal())
-	ctx := span.FromHeaders(context.Background(), triggerPath, headerCopy)
-
-	return ctx, &HttpRequest{
+	return &HttpRequest{
 		Header: headerCopy,
 		Body:   rc.Request.Body(),
 		Method: string(rc.Method()),
 		URL:    rc.URI().String(),
-		Path:   triggerPath,
+		Path:   string(rc.URI().PathOriginal()),
 		Query:  queryArgs,
 	}
 }

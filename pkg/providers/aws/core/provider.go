@@ -154,7 +154,7 @@ func New() (AwsProvider, error) {
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)

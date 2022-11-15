@@ -272,7 +272,7 @@ func New(provider core.AwsProvider) (queue.QueueService, error) {
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 	if sessionError != nil {
 		return nil, fmt.Errorf("Error creating new AWS session %w", sessionError)

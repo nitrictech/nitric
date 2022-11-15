@@ -25,6 +25,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -53,7 +54,7 @@ func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp
 			}
 		}
 
-		ctx, httpTrigger := triggers.FromHttpRequest(rc)
+		httpTrigger := triggers.FromHttpRequest(rc)
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Http: httpTrigger,
@@ -63,7 +64,7 @@ func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp
 			return
 		}
 
-		response, err := wrkr.HandleHttpRequest(ctx, httpTrigger)
+		response, err := wrkr.HandleHttpRequest(span.FromHeaders(context.TODO(), httpTrigger.Header), httpTrigger)
 		if err != nil {
 			rc.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return
@@ -95,6 +96,7 @@ func (s *BaseHttpGateway) Stop() error {
 	tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
 	if ok {
 		_ = tp.ForceFlush(context.TODO())
+		_ = tp.Shutdown(context.TODO())
 	}
 
 	if s.server != nil {
