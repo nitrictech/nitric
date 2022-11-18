@@ -274,9 +274,6 @@ func New(provider core.AwsProvider) (queue.QueueService, error) {
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
-	if sessionError != nil {
-		return nil, fmt.Errorf("Error creating new AWS session %w", sessionError)
-	}
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
