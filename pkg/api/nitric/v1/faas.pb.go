@@ -817,6 +817,9 @@ type TriggerRequest struct {
 	// Or rely on context?
 	MimeType string `protobuf:"bytes,2,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
 	// TraceInformation from the membrane
+	// Allows tying traces from external triggers (e.g. HttpRequests)
+	// into each event request/response pair of the Bidirectional stream.
+	// which cannot be facilitated by OOTB stream interceptors from OTEL.
 	TraceContext *TraceContext `protobuf:"bytes,10,opt,name=trace_context,json=traceContext,proto3" json:"trace_context,omitempty"`
 	// The context of the trigger
 	//
