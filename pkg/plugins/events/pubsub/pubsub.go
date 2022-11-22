@@ -48,7 +48,7 @@ func (s *PubsubEventService) ListTopics() ([]string, error) {
 	iter := s.client.Topics(context.TODO())
 
 	var topics []string
-	for topic, err := iter.Next(); err != iterator.Done; topic, err = iter.Next() {
+	for topic, err := iter.Next(); !errors.Is(err, iterator.Done); topic, err = iter.Next() {
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -176,17 +176,17 @@ func New(provider core.GcpProvider) (events.EventService, error) {
 
 	credentials, err := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if err != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", err)
+		return nil, fmt.Errorf("GCP credentials error: %w", err)
 	}
 
 	client, err := pubsub.NewClient(ctx, credentials.ProjectID)
 	if err != nil {
-		return nil, fmt.Errorf("pubsub client error: %v", err)
+		return nil, fmt.Errorf("pubsub client error: %w", err)
 	}
 
 	tasksClient, err := cloudtasks.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("cloudtasks client error: %v", err)
+		return nil, fmt.Errorf("cloudtasks client error: %w", err)
 	}
 
 	return &PubsubEventService{

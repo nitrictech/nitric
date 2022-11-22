@@ -120,7 +120,7 @@ var _ = Describe("Event Grid Plugin", func() {
 					fmt.Sprintf("%s.%s-1.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
 					gomock.Any(),
 				).Return(autorest.Response{
-					&http.Response{
+					Response: &http.Response{
 						StatusCode: 403,
 					},
 				}, nil).Times(1)
@@ -150,7 +150,7 @@ var _ = Describe("Event Grid Plugin", func() {
 					fmt.Sprintf("%s.%s-1.eventgrid.azure.net", getTopicResourcesResponse["Test"].Name, getTopicResourcesResponse["Test"].Location),
 					gomock.Any(),
 				).Return(autorest.Response{
-					&http.Response{
+					Response: &http.Response{
 						StatusCode: 202,
 					},
 				}, nil).Times(1)

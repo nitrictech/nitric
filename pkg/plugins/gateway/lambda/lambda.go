@@ -73,7 +73,7 @@ func getEventType(request map[string]interface{}) eventType {
 func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
 	topics, err := s.provider.GetResources(core.AwsResource_Topic)
 	if err != nil {
-		return "", fmt.Errorf("error retrieving topics: %v", err)
+		return "", fmt.Errorf("error retrieving topics: %w", err)
 	}
 
 	for name, arn := range topics {
@@ -135,7 +135,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 
 		err := json.Unmarshal(bytes, evt)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal httpEvent: %v", err)
+			return nil, fmt.Errorf("unable to unmarshal httpEvent: %w", err)
 		}
 
 		// Copy the headers and re-write for the proxy
@@ -155,7 +155,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 		// Parse the raw query string
 		qVals, err := url.ParseQuery(evt.RawQueryString)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing query for httpEvent: %v", err)
+			return nil, fmt.Errorf("error parsing query for httpEvent: %w", err)
 		}
 
 		trigs = append(trigs, &triggers.HttpRequest{

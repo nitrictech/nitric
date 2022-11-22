@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	common "github.com/nitrictech/nitric/pkg/providers/common"
 )
 
 // MockGcpProvider is a mock of GcpProvider interface.
@@ -31,6 +32,21 @@ func NewMockGcpProvider(ctrl *gomock.Controller) *MockGcpProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGcpProvider) EXPECT() *MockGcpProviderMockRecorder {
 	return m.recorder
+}
+
+// Details mocks base method.
+func (m *MockGcpProvider) Details(arg0, arg1 string) (*common.DetailsResponse[interface{}], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret0, _ := ret[0].(*common.DetailsResponse[interface{}])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Details indicates an expected call of Details.
+func (mr *MockGcpProviderMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockGcpProvider)(nil).Details), arg0, arg1)
 }
 
 // GetProjectID mocks base method.

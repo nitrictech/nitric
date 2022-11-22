@@ -66,7 +66,7 @@ func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events [
 			Data:        event.Payload,
 			EventType:   &event.PayloadType,
 			Subject:     &topic,
-			EventTime:   &date.Time{time.Now()},
+			EventTime:   &date.Time{Time: time.Now()},
 			DataVersion: &dataVersion,
 		})
 	}
@@ -140,7 +140,7 @@ func New(provider core.AzProvider) (events.EventService, error) {
 	// Get the event grid token, using the event grid resource endpoint
 	spt, err := provider.ServicePrincipalToken("https://eventgrid.azure.net")
 	if err != nil {
-		return nil, fmt.Errorf("error authenticating event grid client: %v", err.Error())
+		return nil, fmt.Errorf("error authenticating event grid client: %w", err)
 	}
 
 	client := eventgrid.New()

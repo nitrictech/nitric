@@ -15,17 +15,24 @@
 package core
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/apigatewayv2"
+	"github.com/aws/aws-sdk-go/service/apigatewayv2/apigatewayv2iface"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface"
 
+	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
 type AwsResource = string
 
 const (
+	AwsResource_Api          AwsResource = "apigateway:apis"
 	AwsResource_StateMachine AwsResource = "states:stateMachine"
 	AwsResource_Topic        AwsResource = "sns:topic"
 	AwsResource_Collection   AwsResource = "dynamodb:table"
@@ -34,7 +41,12 @@ const (
 	AwsResource_Secret       AwsResource = "secretsmanager:secret"
 )
 
+var resourceTypeMap = map[common.ResourceType]AwsResource{
+	common.ResourceType_Api: AwsResource_Api,
+}
+
 type AwsProvider interface {
+	common.ResourceService
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
 	GetResources(AwsResource) (map[string]string, error)
@@ -42,12 +54,59 @@ type AwsProvider interface {
 
 // Aws core utility provider
 type awsProviderImpl struct {
-	stack  string
-	client resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
-	cache  map[AwsResource]map[string]string
+	stack     string
+	client    resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
+	apiClient apigatewayv2iface.ApiGatewayV2API
+	cache     map[AwsResource]map[string]string
 }
 
 var _ AwsProvider = &awsProviderImpl{}
+
+func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+	rt, ok := resourceTypeMap[typ]
+	if !ok {
+		return nil, fmt.Errorf("unhandled resource type: %s", typ)
+	}
+
+	// Get resource references (arns) for the resource type
+	resources, err := a.GetResources(rt)
+	if err != nil {
+		return nil, err
+	}
+
+	arn, ok := resources[name]
+	if !ok {
+		return nil, fmt.Errorf("unable to find resource %s for name: %s", typ, name)
+	}
+
+	details := &common.DetailsResponse[any]{
+		Id:       arn,
+		Provider: "aws",
+	}
+
+	switch rt {
+	case AwsResource_Api:
+		// split arn to find the apiId
+		arnParts := strings.Split(arn, "/")
+		apiId := arnParts[len(arnParts)-1]
+		// Get api detail
+		api, err := a.apiClient.GetApi(&apigatewayv2.GetApiInput{
+			ApiId: aws.String(apiId),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		details.Service = "ApiGateway"
+		details.Detail = common.ApiDetails{
+			URL: *api.ApiEndpoint,
+		}
+
+		return details, nil
+	default:
+		return nil, fmt.Errorf("unimplemented resource type")
+	}
+}
 
 func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, error) {
 	if a.cache[typ] == nil {
@@ -98,10 +157,12 @@ func New() (AwsProvider, error) {
 	}
 
 	client := resourcegroupstaggingapi.New(sess)
+	apiClient := apigatewayv2.New(sess)
 
 	return &awsProviderImpl{
-		stack:  stack,
-		client: client,
-		cache:  make(map[AwsResource]map[string]string),
+		stack:     stack,
+		client:    client,
+		apiClient: apiClient,
+		cache:     make(map[AwsResource]map[string]string),
 	}, nil
 }

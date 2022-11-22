@@ -18,6 +18,9 @@ service ResourceService {
   // At Deploy time this will create resources as part of the nitric stacks dependency graph
   // At runtime
   rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
+
+  // Retrieve details about a resource at runtime
+  rpc Details (ResourceDetailsRequest) returns (ResourceDetailsResponse);
 }
 
 message PolicyResource {
@@ -119,3 +122,27 @@ enum Action {
 }
 
 message ResourceDeclareResponse {}
+
+message ApiResourceDetails {
+  string url = 1;
+}
+
+message ResourceDetailsRequest {
+  Resource resource = 1;
+}
+
+message ResourceDetailsResponse {
+  // The identifier of the resource
+  string id = 1;
+
+  // The provider this resource is deployed with (e.g. aws)
+  string provider = 2;
+
+  // The service this resource is deployed on (e.g. ApiGateway)
+  string service = 3;
+
+  // Details about the resource
+  oneof details {
+    ApiResourceDetails api = 10;
+  }
+}

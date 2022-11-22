@@ -15,9 +15,15 @@
 package core
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"net/http"
 
+	apigateway "cloud.google.com/go/apigateway/apiv1"
+	apigatewaypb "google.golang.org/genproto/googleapis/cloud/apigateway/v1"
+
+	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
 
@@ -25,12 +31,18 @@ type GcpProvider interface {
 	// GetServiceAccountEmail for google cloud projects
 	GetServiceAccountEmail() (string, error)
 	GetProjectID() (string, error)
+	common.ResourceService
 }
 
 type gcpProviderImpl struct {
+	apiClient           *apigateway.Client
+	stackName           string
 	serviceAccountEmail string
 	projectID           string
+	region              string
 }
+
+var _ common.ResourceService = &gcpProviderImpl{}
 
 const (
 	metadataFlavorKey      = "Metadata-Flavor"
@@ -51,6 +63,49 @@ func createMetadataRequest(uri string) (*http.Request, error) {
 	req.Header.Add(metadataFlavorKey, metadataFlavorValue)
 
 	return req, nil
+}
+
+type GenericIterator[T any] interface {
+	Next() (T, error)
+}
+
+func filter(stack string, name string) string {
+	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
+}
+
+func (g *gcpProviderImpl) getApiGatewayDetails(name string) (*common.DetailsResponse[any], error) {
+	projectName, err := g.GetProjectID()
+	if err != nil {
+		return nil, err
+	}
+
+	gws := g.apiClient.ListGateways(context.TODO(), &apigatewaypb.ListGatewaysRequest{
+		Parent: fmt.Sprintf("projects/%s/locations/%s", projectName, g.region),
+		Filter: filter(g.stackName, name),
+	})
+
+	// there should only be a single entry in this array, we'll grab the first and then break
+	if gw, err := gws.Next(); gw != nil && err == nil {
+		return &common.DetailsResponse[any]{
+			Id:       gw.Name,
+			Provider: "gcp",
+			Service:  "ApiGateway",
+			Detail: common.ApiDetails{
+				URL: fmt.Sprintf("https://%s", gw.DefaultHostname),
+			},
+		}, nil
+	} else {
+		return nil, err
+	}
+}
+
+func (g *gcpProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+	switch typ {
+	case common.ResourceType_Api:
+		return g.getApiGatewayDetails(name)
+	default:
+		return nil, fmt.Errorf("unsupported resource type: %s", typ)
+	}
 }
 
 func (g *gcpProviderImpl) GetProjectID() (string, error) {
@@ -110,5 +165,17 @@ func (g *gcpProviderImpl) GetServiceAccountEmail() (string, error) {
 }
 
 func New() (GcpProvider, error) {
-	return &gcpProviderImpl{}, nil
+	stack := utils.GetEnv("NITRIC_STACK", "")
+	region := utils.GetEnv("GCP_REGION", "")
+
+	apiClient, err := apigateway.NewClient(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
+	return &gcpProviderImpl{
+		stackName: stack,
+		apiClient: apiClient,
+		region:    region,
+	}, nil
 }

@@ -50,7 +50,7 @@ func (s *SnsEventService) getStateMachines() (map[string]string, error) {
 func (s *SnsEventService) publish(topic string, message string) error {
 	topics, err := s.getTopics()
 	if err != nil {
-		return fmt.Errorf("error finding topics: %v", err)
+		return fmt.Errorf("error finding topics: %w", err)
 	}
 
 	topicArn, ok := topics[topic]
@@ -165,7 +165,7 @@ func New(provider core.AwsProvider) (events.EventService, error) {
 	})
 
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %v", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
 	snsClient := sns.New(sess)

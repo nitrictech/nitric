@@ -16,12 +16,25 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/providers/common"
 )
 
 type ResourcesServiceServer struct {
 	v1.UnimplementedResourceServiceServer
+	plugin common.ResourceService
+}
+
+type ResourceServiceOption = func(*ResourcesServiceServer)
+
+func WithResourcePlugin(plugin common.ResourceService) ResourceServiceOption {
+	return func(srv *ResourcesServiceServer) {
+		if plugin != nil {
+			srv.plugin = plugin
+		}
+	}
 }
 
 func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
@@ -30,6 +43,62 @@ func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceD
 	return &v1.ResourceDeclareResponse{}, nil
 }
 
-func NewResourcesServiceServer() v1.ResourceServiceServer {
-	return &ResourcesServiceServer{}
+type resourceDetailsType interface {
+	// Add union type here to exhaust possible ResourceDetailTypes
+	*v1.ResourceDetailsResponse_Api
+}
+
+func convertDetails[T resourceDetailsType](details *common.DetailsResponse[any]) (T, error) {
+	switch det := details.Detail.(type) {
+	case common.ApiDetails:
+		return &v1.ResourceDetailsResponse_Api{
+			Api: &v1.ApiResourceDetails{
+				Url: det.URL,
+			},
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported details type")
+	}
+}
+
+var resourceTypeMap = map[v1.ResourceType]common.ResourceType{
+	v1.ResourceType_Api: common.ResourceType_Api,
+}
+
+func (rs *ResourcesServiceServer) Details(ctx context.Context, req *v1.ResourceDetailsRequest) (*v1.ResourceDetailsResponse, error) {
+	cType, ok := resourceTypeMap[req.Resource.Type]
+	if !ok {
+		return nil, fmt.Errorf("unsupported resource type: %s", req.Resource.Type)
+	}
+
+	d, err := rs.plugin.Details(cType, req.Resource.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	details, err := convertDetails(d)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ResourceDetailsResponse{
+		Id:       d.Id,
+		Provider: d.Provider,
+		Service:  d.Service,
+		Details:  details,
+	}, nil
+}
+
+func NewResourcesServiceServer(opts ...ResourceServiceOption) v1.ResourceServiceServer {
+	// Default server implementation
+	srv := &ResourcesServiceServer{
+		plugin: &common.UnimplementResourceService{},
+	}
+
+	// Apply options
+	for _, o := range opts {
+		o(srv)
+	}
+
+	return srv
 }

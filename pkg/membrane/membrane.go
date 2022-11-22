@@ -33,6 +33,7 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
 )
@@ -46,12 +47,13 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	DocumentPlugin document.DocumentService
-	EventsPlugin   events.EventService
-	StoragePlugin  storage.StorageService
-	QueuePlugin    queue.QueueService
-	GatewayPlugin  gateway.GatewayService
-	SecretPlugin   secret.SecretService
+	DocumentPlugin  document.DocumentService
+	EventsPlugin    events.EventService
+	StoragePlugin   storage.StorageService
+	QueuePlugin     queue.QueueService
+	GatewayPlugin   gateway.GatewayService
+	SecretPlugin    secret.SecretService
+	ResourcesPlugin common.ResourceService
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -87,6 +89,7 @@ type Membrane struct {
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
 	secretPlugin   secret.SecretService
+	resourcePlugin common.ResourceService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -182,8 +185,8 @@ func (s *Membrane) Start() error {
 	secretServer := s.createSecretServer()
 	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
 
-	// TODO: Implement based on resource resolution plugins
-	v1.RegisterResourceServiceServer(s.grpcServer, &grpc2.ResourcesServiceServer{})
+	resourceServer := grpc2.NewResourcesServiceServer(grpc2.WithResourcePlugin(s.resourcePlugin))
+	v1.RegisterResourceServiceServer(s.grpcServer, resourceServer)
 
 	// FaaS server MUST start before the child process
 	if s.mode == Mode_Faas {
@@ -354,6 +357,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		secretPlugin:            options.SecretPlugin,
+		resourcePlugin:          options.ResourcesPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
 		mode:                    *options.Mode,

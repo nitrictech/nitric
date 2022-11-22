@@ -163,11 +163,11 @@ func (s *PubsubQueueService) getQueueSubscription(q string) (ifaces_pubsub.Subsc
 
 	for {
 		sub, err := subsIt.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve pull subscription for topic: %s\n%s", topic.ID(), err)
+			return nil, fmt.Errorf("failed to retrieve pull subscription for topic: %s\n%w", topic.ID(), err)
 		}
 		queueSubName := generateQueueSubscription(q)
 		if sub.ID() == queueSubName {
@@ -329,11 +329,11 @@ func New() (queue.QueueService, error) {
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials error: %w", credentialsError)
 	}
 	client, clientError := pubsub.NewClient(ctx, credentials.ProjectID)
 	if clientError != nil {
-		return nil, fmt.Errorf("pubsub client error: %v", clientError)
+		return nil, fmt.Errorf("pubsub client error: %w", clientError)
 	}
 
 	return &PubsubQueueService{

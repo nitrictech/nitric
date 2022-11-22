@@ -45,11 +45,11 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 		s.cache = make(map[string]ifaces_gcloud_storage.BucketHandle)
 		for {
 			b, err := buckets.Next()
-			if err == iterator.Done {
+			if errors.Is(err, iterator.Done) {
 				break
 			}
 			if err != nil {
-				return nil, fmt.Errorf("an error occurred finding bucket: %s; %v", bucket, err)
+				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
 			if name, ok := b.Labels["x-nitric-name"]; ok {
@@ -175,7 +175,7 @@ func (s *StorageStorageService) Delete(bucket string, key string) error {
 	if err := bucketHandle.Object(key).Delete(context.Background()); err != nil {
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
-		if err != storage.ErrObjectNotExist {
+		if !errors.Is(err, storage.ErrObjectNotExist) {
 			return newErr(
 				codes.NotFound,
 				"object does not exist",
@@ -253,7 +253,7 @@ func (s *StorageStorageService) ListFiles(bucket string) ([]*plugin.FileInfo, er
 	for {
 		obj, err := iter.Next()
 
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
@@ -280,13 +280,13 @@ func New() (plugin.StorageService, error) {
 		iamcredentials.CloudPlatformScope,
 	)
 	if credentialsError != nil {
-		return nil, fmt.Errorf("GCP credentials error: %v", credentialsError)
+		return nil, fmt.Errorf("GCP credentials error: %w", credentialsError)
 	}
 
 	// Get the client credentials
 	client, err := storage.NewClient(ctx, option.WithCredentials(credentials))
 	if err != nil {
-		return nil, fmt.Errorf("storage client error: %v", err)
+		return nil, fmt.Errorf("storage client error: %w", err)
 	}
 
 	return &StorageStorageService{

@@ -34,19 +34,19 @@ func createMongoClient(ctx context.Context) (*mongo.Client, error) {
 	client, clientError := mongo.NewClient(clientOptions)
 
 	if clientError != nil {
-		return nil, fmt.Errorf("mongodb error creating client: %v", clientError)
+		return nil, fmt.Errorf("mongodb error creating client: %w", clientError)
 	}
 
 	connectError := client.Connect(ctx)
 
 	if connectError != nil {
-		return nil, fmt.Errorf("mongodb unable to initialize connection: %v", connectError)
+		return nil, fmt.Errorf("mongodb unable to initialize connection: %w", connectError)
 	}
 
 	pingError := client.Ping(ctx, nil)
 
 	if pingError != nil {
-		return nil, fmt.Errorf("mongodb unable to connect: %v", pingError)
+		return nil, fmt.Errorf("mongodb unable to connect: %w", pingError)
 	}
 
 	return client, nil

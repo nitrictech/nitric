@@ -89,7 +89,7 @@ func (s *MongoDocService) Get(key *document.Key) (*document.Document, error) {
 	err := col.FindOne(s.context, docRef, opts).Decode(&value)
 	if err != nil {
 		code := codes.Internal
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, newErr(
 				codes.NotFound,
 				"document not found",
@@ -142,7 +142,7 @@ func (s *MongoDocService) Set(key *document.Key, value map[string]interface{}) e
 
 	filter := bson.M{primaryKeyAttr: key.Id}
 
-	update := bson.D{{"$set", value}}
+	update := bson.D{{Key: "$set", Value: value}}
 
 	_, err := coll.UpdateOne(s.context, filter, update, opts)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *MongoDocService) Delete(key *document.Key) error {
 		for _, v := range children {
 			colName := v.(string)
 			childCol := s.db.Collection(colName)
-			_, err := childCol.DeleteMany(s.context, bson.D{{parentKeyAttr, key.Id}})
+			_, err := childCol.DeleteMany(s.context, bson.D{{Key: parentKeyAttr, Value: key.Id}})
 			if err != nil {
 				return newErr(
 					codes.Internal,
@@ -247,7 +247,7 @@ func (s *MongoDocService) getCursor(collection *document.Collection, expressions
 		opts.SetLimit(int64(limit))
 
 		if len(pagingToken) > 0 {
-			opts.SetSort(bson.D{{primaryKeyAttr, 1}})
+			opts.SetSort(bson.D{{Key: primaryKeyAttr, Value: 1}})
 
 			if tokens, ok := pagingToken["pagingTokens"]; ok {
 				var vals []interface{}
@@ -255,7 +255,7 @@ func (s *MongoDocService) getCursor(collection *document.Collection, expressions
 					vals = append(vals, v)
 				}
 
-				query[primaryKeyAttr] = bson.D{{"$gt", vals[len(vals)-1]}}
+				query[primaryKeyAttr] = bson.D{{Key: "$gt", Value: vals[len(vals)-1]}}
 			}
 		}
 	}
@@ -271,19 +271,19 @@ func (s *MongoDocService) getCursor(collection *document.Collection, expressions
 			endRangeValue := document.GetEndRangeValue(expVal)
 
 			startsWith := bson.D{
-				{s.getOperator(">="), expVal},
-				{s.getOperator("<"), endRangeValue},
+				{Key: s.getOperator(">="), Value: expVal},
+				{Key: s.getOperator("<"), Value: endRangeValue},
 			}
 
 			query[expOperand] = startsWith
 		} else {
 			query[expOperand] = bson.D{
-				{s.getOperator(exp.Operator), exp.Value},
+				{Key: s.getOperator(exp.Operator), Value: exp.Value},
 			}
 		}
 
 		if exp.Operator != "==" && limit > 0 && orderBy == "" {
-			opts.SetSort(bson.D{{expOperand, 1}})
+			opts.SetSort(bson.D{{Key: expOperand, Value: 1}})
 			orderBy = expOperand
 		}
 	}
@@ -305,7 +305,7 @@ func (s *MongoDocService) Query(collection *document.Collection, expressions []d
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid arguments",
-			fmt.Errorf("collection: %v, expressions%v", colErr, expErr),
+			fmt.Errorf("collection: %w, expressions%v", colErr, expErr),
 		)
 	}
 
@@ -369,7 +369,7 @@ func (s *MongoDocService) QueryStream(collection *document.Collection, expressio
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%v, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
 			)
 		}
 	}
@@ -471,13 +471,13 @@ func New() (document.DocumentService, error) {
 	client, clientError := mongo.NewClient(clientOptions)
 
 	if clientError != nil {
-		return nil, fmt.Errorf("mongodb error creating client: %v", clientError)
+		return nil, fmt.Errorf("mongodb error creating client: %w", clientError)
 	}
 
 	connectError := client.Connect(ctx)
 
 	if connectError != nil {
-		return nil, fmt.Errorf("mongodb unable to initialize connection: %v", connectError)
+		return nil, fmt.Errorf("mongodb unable to initialize connection: %w", connectError)
 	}
 
 	db := client.Database(database)
@@ -522,7 +522,7 @@ func (s *MongoDocService) updateChildReferences(key *document.Key, subCollection
 	parentColl := s.getCollection(key.Collection.Parent)
 	filter := bson.M{primaryKeyAttr: key.Collection.Parent.Id}
 	referenceMeta := bson.M{childrenAttr: subCollectionName}
-	update := bson.D{{action, referenceMeta}}
+	update := bson.D{{Key: action, Value: referenceMeta}}
 
 	opts := options.Update().SetUpsert(true)
 	_, err := parentColl.UpdateOne(s.context, filter, update, opts)
