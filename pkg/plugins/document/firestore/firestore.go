@@ -36,12 +36,11 @@ import (
 const pagingTokens = "pagingTokens"
 
 type FirestoreDocService struct {
-	client  *firestore.Client
-	context context.Context
+	client *firestore.Client
 	document.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error) {
+func (s *FirestoreDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Get",
 		map[string]interface{}{
@@ -59,7 +58,7 @@ func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error)
 
 	doc := s.getDocRef(key)
 
-	value, err := doc.Get(s.context)
+	value, err := doc.Get(ctx)
 	if err != nil {
 		code := codes.Internal
 		if status.Code(err) == grpcCodes.NotFound {
@@ -79,7 +78,7 @@ func (s *FirestoreDocService) Get(key *document.Key) (*document.Document, error)
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{}) error {
+func (s *FirestoreDocService) Set(ctx context.Context, key *document.Key, value map[string]interface{}) error {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Set",
 		map[string]interface{}{
@@ -105,7 +104,7 @@ func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{
 
 	doc := s.getDocRef(key)
 
-	if _, err := doc.Set(s.context, value); err != nil {
+	if _, err := doc.Set(ctx, value); err != nil {
 		return newErr(
 			codes.Internal,
 			"error updating value",
@@ -116,7 +115,7 @@ func (s *FirestoreDocService) Set(key *document.Key, value map[string]interface{
 	return nil
 }
 
-func (s *FirestoreDocService) Delete(key *document.Key) error {
+func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) error {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Delete",
 		map[string]interface{}{
@@ -135,7 +134,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	doc := s.getDocRef(key)
 
 	// Delete any sub collection documents
-	collsIter := doc.Collections(s.context)
+	collsIter := doc.Collections(ctx)
 	for subCol, err := collsIter.Next(); !errors.Is(err, iterator.Done); subCol, err = collsIter.Next() {
 		if err != nil {
 			return newErr(
@@ -149,7 +148,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 		// up to Firestore's maximum batch size
 		const maxBatchSize = 500
 		for {
-			docsIter := subCol.Limit(maxBatchSize).Documents(s.context)
+			docsIter := subCol.Limit(maxBatchSize).Documents(ctx)
 			numDeleted := 0
 
 			batch := s.client.Batch()
@@ -167,7 +166,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 				break
 			}
 
-			_, err := batch.Commit(s.context)
+			_, err := batch.Commit(ctx)
 			if err != nil {
 				return err
 			}
@@ -175,7 +174,7 @@ func (s *FirestoreDocService) Delete(key *document.Key) error {
 	}
 
 	// Delete document
-	if _, err := doc.Delete(s.context); err != nil {
+	if _, err := doc.Delete(ctx); err != nil {
 		return newErr(
 			codes.Internal,
 			"error deleting value",
@@ -213,7 +212,7 @@ func (s *FirestoreDocService) buildQuery(collection *document.Collection, expres
 	return
 }
 
-func (s *FirestoreDocService) Query(collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
+func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.Query",
 		map[string]interface{}{
@@ -256,7 +255,7 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 		}
 	}
 
-	itr := query.Documents(s.context)
+	itr := query.Documents(ctx)
 	for docSnp, err := itr.Next(); !errors.Is(err, iterator.Done); docSnp, err = itr.Next() {
 		if err != nil {
 			return nil, newErr(
@@ -286,7 +285,7 @@ func (s *FirestoreDocService) Query(collection *document.Collection, expressions
 	return queryResult, nil
 }
 
-func (s *FirestoreDocService) QueryStream(collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
+func (s *FirestoreDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
 	newErr := errors.ErrorsWithScope(
 		"FirestoreDocService.QueryStream",
 		map[string]interface{}{
@@ -310,7 +309,7 @@ func (s *FirestoreDocService) QueryStream(collection *document.Collection, expre
 
 	query, _ := s.buildQuery(collection, expressions, limit)
 
-	iter := query.Documents(s.context)
+	iter := query.Documents(ctx)
 
 	return func() (*document.Document, error) {
 		docSnp, err := iter.Next()
@@ -368,15 +367,13 @@ func New() (document.DocumentService, error) {
 	}
 
 	return &FirestoreDocService{
-		client:  client,
-		context: ctx,
+		client: client,
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client, ctx context.Context) (document.DocumentService, error) {
+func NewWithClient(client *firestore.Client) (document.DocumentService, error) {
 	return &FirestoreDocService{
-		client:  client,
-		context: ctx,
+		client: client,
 	}, nil
 }
 

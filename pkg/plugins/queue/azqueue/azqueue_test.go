@@ -15,6 +15,7 @@
 package azqueue_service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -56,7 +57,7 @@ var _ = Describe("Azqueue", func() {
 					time.Duration(0),
 				).Times(1).Return(&azqueue2.EnqueueMessageResponse{}, nil)
 
-				err := queuePlugin.Send("test-queue", queue.NitricTask{
+				err := queuePlugin.Send(context.TODO(), "test-queue", queue.NitricTask{
 					Payload: map[string]interface{}{"testval": "testkey"},
 				})
 
@@ -93,7 +94,7 @@ var _ = Describe("Azqueue", func() {
 					time.Duration(0),
 				).Times(1).Return(nil, fmt.Errorf("a test error"))
 
-				err := queuePlugin.Send("test-queue", queue.NitricTask{
+				err := queuePlugin.Send(context.TODO(), "test-queue", queue.NitricTask{
 					Payload: map[string]interface{}{"testval": "testkey"},
 				})
 
@@ -132,7 +133,7 @@ var _ = Describe("Azqueue", func() {
 					time.Duration(0),
 				).Times(2).Return(&azqueue2.EnqueueMessageResponse{}, nil)
 
-				resp, err := queuePlugin.SendBatch("test-queue", []queue.NitricTask{
+				resp, err := queuePlugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 					{Payload: map[string]interface{}{"testval": "testkey"}},
 					{Payload: map[string]interface{}{"testval": "testkey"}},
 				})
@@ -174,7 +175,7 @@ var _ = Describe("Azqueue", func() {
 				).AnyTimes( /* Using AnyTimes because Times(2) doesn't work for multiple returns */
 				).Return(nil, fmt.Errorf("a test error")).Return(&azqueue2.EnqueueMessageResponse{}, nil)
 
-				resp, err := queuePlugin.SendBatch("test-queue", []queue.NitricTask{
+				resp, err := queuePlugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 					{Payload: map[string]interface{}{"testval": "testkey"}},
 					{Payload: map[string]interface{}{"testval": "testkey"}},
 				})
@@ -230,7 +231,7 @@ var _ = Describe("Azqueue", func() {
 
 				depth := uint32(1)
 
-				tasks, err := queuePlugin.Receive(queue.ReceiveOptions{
+				tasks, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 					QueueName: "test-queue",
 					Depth:     &depth,
 				})
@@ -274,7 +275,7 @@ var _ = Describe("Azqueue", func() {
 
 				depth := uint32(1)
 
-				_, err := queuePlugin.Receive(queue.ReceiveOptions{
+				_, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
 					QueueName: "test-queue",
 					Depth:     &depth,
 				})
@@ -317,7 +318,7 @@ var _ = Describe("Azqueue", func() {
 				mockMessages.EXPECT().NewMessageIDURL(azqueue2.MessageID("testid")).Times(1).Return(mockMessageId)
 				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue2.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, nil)
 
-				err := queuePlugin.Complete("test-queue", leaseStr)
+				err := queuePlugin.Complete(context.TODO(), "test-queue", leaseStr)
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -355,7 +356,7 @@ var _ = Describe("Azqueue", func() {
 				mockMessages.EXPECT().NewMessageIDURL(azqueue2.MessageID("testid")).Times(1).Return(mockMessageId)
 				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue2.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, fmt.Errorf("a test error"))
 
-				err := queuePlugin.Complete("test-queue", leaseStr)
+				err := queuePlugin.Complete(context.TODO(), "test-queue", leaseStr)
 
 				By("Returning an error")
 				Expect(err).To(HaveOccurred())

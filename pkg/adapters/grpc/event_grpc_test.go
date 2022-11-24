@@ -36,7 +36,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 
 			It("should successfully publish the event", func() {
 				By("Calling the provided service")
-				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
+				mockService.EXPECT().Publish(gomock.Any(), "test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
 				response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
 					Topic: "test-topic",
@@ -62,7 +62,7 @@ var _ = Describe("Event Service gRPC Adapter", func() {
 
 			It("Should successfully be handled", func() {
 				By("Calling the provided service")
-				mockService.EXPECT().Publish("test-topic", 0, gomock.Any()).Return(nil).Times(1)
+				mockService.EXPECT().Publish(context.TODO(), "test-topic", 0, gomock.Any()).Return(nil).Times(1)
 
 				response, err := eventServer.Publish(context.Background(), &v1.EventPublishRequest{
 					Topic: "test-topic",

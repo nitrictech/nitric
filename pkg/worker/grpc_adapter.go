@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -26,6 +27,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	v1 "github.com/nitrictech/nitric/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 )
 
@@ -114,7 +116,7 @@ func (gwb *GrpcAdapter) Start(errchan chan error) {
 	}
 }
 
-func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *GrpcAdapter) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 
@@ -154,8 +156,9 @@ func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	}
 
 	triggerRequest := &v1.TriggerRequest{
-		Data:     trigger.Body,
-		MimeType: mimeType,
+		Data:         trigger.Body,
+		MimeType:     mimeType,
+		TraceContext: span.ToTraceContext(ctx),
 		Context: &v1.TriggerRequest_Http{
 			Http: &v1.HttpTriggerContext{
 				Path:           trigger.Path,
@@ -217,12 +220,13 @@ func (s *GrpcAdapter) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 	return response, nil
 }
 
-func (s *GrpcAdapter) HandleEvent(trigger *triggers.Event) error {
+func (s *GrpcAdapter) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
 	// Generate an ID here
 	ID, returnChan := s.newTicket()
 	triggerRequest := &v1.TriggerRequest{
-		Data:     trigger.Payload,
-		MimeType: http.DetectContentType(trigger.Payload),
+		Data:         trigger.Payload,
+		MimeType:     http.DetectContentType(trigger.Payload),
+		TraceContext: span.ToTraceContext(ctx),
 		Context: &v1.TriggerRequest_Topic{
 			Topic: &v1.TopicTriggerContext{
 				Topic: trigger.Topic,

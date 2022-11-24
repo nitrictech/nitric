@@ -15,14 +15,17 @@
 package membrane
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"os/exec"
 	"strconv"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
 	grpc2 "github.com/nitrictech/nitric/pkg/adapters/grpc"
@@ -33,6 +36,7 @@ import (
 	"github.com/nitrictech/nitric/pkg/plugins/queue"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/pkg/pm"
 	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -44,6 +48,9 @@ type MembraneOptions struct {
 	ChildAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand []string
+	// Commands that will be started before all others
+	PreCommands [][]string
+
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
@@ -54,6 +61,8 @@ type MembraneOptions struct {
 	GatewayPlugin   gateway.GatewayService
 	SecretPlugin    secret.SecretService
 	ResourcesPlugin common.ResourceService
+
+	CreateTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
@@ -77,8 +86,9 @@ type Membrane struct {
 	// The URL (including protocol, the child process can be reached on)
 	childUrl string
 
-	// The command that will be used to invoke the child process
-	childCommand []string
+	processManager       pm.ProcessManager
+	tracerProvider       *sdktrace.TracerProvider
+	createTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
 	childTimeoutSeconds int
 
@@ -141,29 +151,36 @@ func (s *Membrane) createQueueServer() v1.QueueServiceServer {
 	return grpc2.NewQueueServiceServer(s.queuePlugin)
 }
 
-func (s *Membrane) startChildProcess() error {
-	// TODO: This is a detached process
-	// so it will continue to run until even after the membrane dies
-
-	log.Default().Println("Starting Child Process")
-	childProcess := exec.Command(s.childCommand[0], s.childCommand[1:]...)
-	childProcess.Stdout = os.Stdout
-	childProcess.Stderr = os.Stderr
-	applicationError := childProcess.Start()
-
-	// Actual panic here, we don't want to start if our userland code cannot successfully start
-	if applicationError != nil {
-		return fmt.Errorf("there was an error starting the child process: %w", applicationError)
-	}
-
-	return nil
-}
-
 // Start the membrane
 func (s *Membrane) Start() error {
-	// Search for known plugins
+	if err := s.processManager.StartPreProcesses(); err != nil {
+		return err
+	}
 
 	var opts []grpc.ServerOption
+
+	if s.createTracerProvider != nil {
+		tp, err := s.createTracerProvider(context.Background())
+		if err != nil {
+			s.log(fmt.Sprintf("traceProvider %v", err))
+			return err
+		}
+
+		if tp != nil {
+			s.log(fmt.Sprintf("traceProvider connected"))
+			otel.SetTracerProvider(tp)
+		}
+
+		interceptorOpts := []otelgrpc.Option{
+			otelgrpc.WithPropagators(propagation.TraceContext{}),
+		}
+
+		opts = append(opts,
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(interceptorOpts...)),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(interceptorOpts...)),
+		)
+	}
+
 	s.grpcServer = grpc.NewServer(opts...)
 
 	// Load & Register the GRPC service plugins
@@ -211,13 +228,8 @@ func (s *Membrane) Start() error {
 
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections
-	if len(s.childCommand) > 0 {
-		if err := s.startChildProcess(); err != nil {
-			// Return the error
-			return err
-		}
-	} else {
-		s.log("No Child Command Specified, Skipping...")
+	if err := s.processManager.StartUserProcess(); err != nil {
+		return err
 	}
 
 	// If we aren't in FaaS mode
@@ -261,12 +273,17 @@ func (s *Membrane) Start() error {
 		errch <- s.pool.Monitor()
 	}(poolErrchan)
 
+	processErrchan := make(chan error)
+	go func(errch chan error) {
+		errch <- s.processManager.Monitor()
+	}(processErrchan)
+
 	var exitErr error
 
 	// Wait and fail on either
 	select {
 	case gatewayErr := <-gatewayErrchan:
-		if err == nil {
+		if gatewayErr == nil {
 			// Normal Gateway shutdown
 			// Allowing the membrane to exit
 			return nil
@@ -274,14 +291,20 @@ func (s *Membrane) Start() error {
 		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
 	case poolErr := <-poolErrchan:
 		exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
+	case processErr := <-processErrchan:
+		exitErr = fmt.Errorf(fmt.Sprintf("Process error: %v, exiting", processErr))
 	}
 
 	return exitErr
 }
 
 func (s *Membrane) Stop() {
+	if s.tracerProvider != nil {
+		_ = s.tracerProvider.Shutdown(context.Background())
+	}
 	_ = s.gatewayPlugin.Stop()
 	s.grpcServer.Stop()
+	s.processManager.StopAll()
 }
 
 // Create a new Membrane server
@@ -345,11 +368,34 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		})
 	}
 
+	bin := utils.GetEnv("OTELCOL_BIN", "/usr/bin/otelcol-contrib")
+	config := utils.GetEnv("OTELCOL_CONFIG", "/etc/otelcol/config.yaml")
+	createTracerProvider := options.CreateTracerProvider
+
+	if createTracerProvider != nil && fileExists(bin) && fileExists(config) {
+		log.Default().Println("Tracing is enabled")
+
+		options.PreCommands = [][]string{
+			{
+				bin, "--config", config,
+			},
+		}
+
+		options.Pool = &worker.InstrumentedWorkerPool{
+			WorkerPool: options.Pool,
+			Wrapper:    worker.InstrumentedWorkerFn,
+		}
+	} else {
+		log.Default().Printf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin), fileExists(config))
+		createTracerProvider = nil
+	}
+
 	return &Membrane{
 		serviceAddress:          options.ServiceAddress,
 		childAddress:            options.ChildAddress,
 		childUrl:                fmt.Sprintf("http://%s", options.ChildAddress),
-		childCommand:            options.ChildCommand,
+		processManager:          pm.NewProcessManager(options.ChildCommand, options.PreCommands),
+		createTracerProvider:    createTracerProvider,
 		childTimeoutSeconds:     options.ChildTimeoutSeconds,
 		documentPlugin:          options.DocumentPlugin,
 		eventsPlugin:            options.EventsPlugin,

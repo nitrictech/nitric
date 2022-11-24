@@ -15,16 +15,19 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/apigatewayv2"
-	"github.com/aws/aws-sdk-go/service/apigatewayv2/apigatewayv2iface"
-	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
-	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/apigatewayv2iface"
+	"github.com/nitrictech/nitric/pkg/ifaces/resourcegroupstaggingapiiface"
 	"github.com/nitrictech/nitric/pkg/providers/common"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
@@ -49,7 +52,7 @@ type AwsProvider interface {
 	common.ResourceService
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
-	GetResources(AwsResource) (map[string]string, error)
+	GetResources(context.Context, AwsResource) (map[string]string, error)
 }
 
 // Aws core utility provider
@@ -62,14 +65,14 @@ type awsProviderImpl struct {
 
 var _ AwsProvider = &awsProviderImpl{}
 
-func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	rt, ok := resourceTypeMap[typ]
 	if !ok {
 		return nil, fmt.Errorf("unhandled resource type: %s", typ)
 	}
 
 	// Get resource references (arns) for the resource type
-	resources, err := a.GetResources(rt)
+	resources, err := a.GetResources(ctx, rt)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +93,7 @@ func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common
 		arnParts := strings.Split(arn, "/")
 		apiId := arnParts[len(arnParts)-1]
 		// Get api detail
-		api, err := a.apiClient.GetApi(&apigatewayv2.GetApiInput{
+		api, err := a.apiClient.GetApi(context.TODO(), &apigatewayv2.GetApiInput{
 			ApiId: aws.String(apiId),
 		})
 		if err != nil {
@@ -108,22 +111,22 @@ func (a *awsProviderImpl) Details(typ common.ResourceType, name string) (*common
 	}
 }
 
-func (a *awsProviderImpl) GetResources(typ AwsResource) (map[string]string, error) {
+func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
 	if a.cache[typ] == nil {
 		resources := make(map[string]string)
-		tagFilters := []*resourcegroupstaggingapi.TagFilter{{
+		tagFilters := []types.TagFilter{{
 			Key: aws.String("x-nitric-name"),
 		}}
 
 		if a.stack != "" {
-			tagFilters = append(tagFilters, &resourcegroupstaggingapi.TagFilter{
+			tagFilters = append(tagFilters, types.TagFilter{
 				Key:    aws.String("x-nitric-stack"),
-				Values: []*string{aws.String(a.stack)},
+				Values: []string{a.stack},
 			})
 		}
 
-		out, err := a.client.GetResources(&resourcegroupstaggingapi.GetResourcesInput{
-			ResourceTypeFilters: []*string{aws.String(typ)},
+		out, err := a.client.GetResources(ctx, &resourcegroupstaggingapi.GetResourcesInput{
+			ResourceTypeFilters: []string{typ},
 			TagFilters:          tagFilters,
 		})
 		if err != nil {
@@ -149,15 +152,15 @@ func New() (AwsProvider, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 	stack := utils.GetEnv("NITRIC_STACK", "")
 
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-	if err != nil {
-		return nil, err
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if sessionError != nil {
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	client := resourcegroupstaggingapi.New(sess)
-	apiClient := apigatewayv2.New(sess)
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
+
+	apiClient := apigatewayv2.NewFromConfig(cfg)
+	client := resourcegroupstaggingapi.NewFromConfig(cfg)
 
 	return &awsProviderImpl{
 		stack:     stack,

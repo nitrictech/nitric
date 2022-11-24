@@ -15,6 +15,7 @@
 package dynamodb_service_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -22,9 +23,10 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	mock_provider "github.com/nitrictech/nitric/mocks/provider"
 	dynamodb_service "github.com/nitrictech/nitric/pkg/plugins/document/dynamodb"
@@ -84,7 +86,7 @@ var _ = Describe("DynamoDb", func() {
 	ctrl := gomock.NewController(GinkgoT())
 	provider := mock_provider.NewMockAwsProvider(ctrl)
 
-	provider.EXPECT().GetResources(core.AwsResource_Collection).AnyTimes().Return(map[string]string{
+	provider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Collection).AnyTimes().Return(map[string]string{
 		"customers":   "arn:${Partition}:dynamodb:${Region}:${Account}:table/customers-1111111",
 		"users":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/users-1111111",
 		"items":       "arn:${Partition}:dynamodb:${Region}:${Account}:table/items-1111111",
@@ -103,26 +105,31 @@ var _ = Describe("DynamoDb", func() {
 	test.QueryStreamTests(docPlugin)
 })
 
-func createDynamoClient() *dynamodb.DynamoDB {
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region:   aws.String("x"),
-		Endpoint: aws.String("http://localhost:8000"),
-	}))
+func createDynamoClient() *dynamodb.Client {
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("x"),
+		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{URL: "http://localhost:8000"}, nil
+		})),
+	)
+	if sessionError != nil {
+		return nil
+	}
 
-	return dynamodb.New(sess)
+	return dynamodb.NewFromConfig(cfg)
 }
 
-func testConnection(db *dynamodb.DynamoDB) {
+func testConnection(db *dynamodb.Client) {
 	input := &dynamodb.ListTablesInput{}
 
-	if _, err := db.ListTables(input); err != nil {
+	if _, err := db.ListTables(context.TODO(), input); err != nil {
 		// Wait for Java DynamoDB process to get started
 		time.Sleep(2 * time.Second)
 
-		if _, err := db.ListTables(input); err != nil {
+		if _, err := db.ListTables(context.TODO(), input); err != nil {
 			time.Sleep(4 * time.Second)
 
-			if _, err := db.ListTables(input); err != nil {
+			if _, err := db.ListTables(context.TODO(), input); err != nil {
 				fmt.Printf("DynamoDB connection error: %v \n", err)
 				panic(err)
 			}
@@ -132,52 +139,52 @@ func testConnection(db *dynamodb.DynamoDB) {
 	}
 }
 
-func createTable(db *dynamodb.DynamoDB, tableName string) {
+func createTable(db *dynamodb.Client, tableName string) {
 	input := &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+		AttributeDefinitions: []types.AttributeDefinition{
 			{
 				AttributeName: aws.String("_pk"),
-				AttributeType: aws.String("S"),
+				AttributeType: "S",
 			},
 			{
 				AttributeName: aws.String("_sk"),
-				AttributeType: aws.String("S"),
+				AttributeType: "S",
 			},
 		},
-		KeySchema: []*dynamodb.KeySchemaElement{
+		KeySchema: []types.KeySchemaElement{
 			{
 				AttributeName: aws.String("_pk"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       types.KeyTypeHash,
 			},
 			{
 				AttributeName: aws.String("_sk"),
-				KeyType:       aws.String("RANGE"),
+				KeyType:       types.KeyTypeRange,
 			},
 		},
-		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+		ProvisionedThroughput: &types.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(10),
 			WriteCapacityUnits: aws.Int64(10),
 		},
 		TableName: aws.String(tableName),
-		Tags: []*dynamodb.Tag{
+		Tags: []types.Tag{
 			{
 				Key:   aws.String("x-nitric-name"),
 				Value: aws.String(tableName),
 			},
 		},
 	}
-	_, err := db.CreateTable(input)
+	_, err := db.CreateTable(context.TODO(), input)
 	if err != nil {
 		panic(fmt.Sprintf("Error calling CreateTable: %s", err))
 	}
 }
 
-func deleteTable(db *dynamodb.DynamoDB, tableName string) {
+func deleteTable(db *dynamodb.Client, tableName string) {
 	deleteInput := &dynamodb.DeleteTableInput{
 		TableName: aws.String(tableName),
 	}
 
-	_, err := db.DeleteTable(deleteInput)
+	_, err := db.DeleteTable(context.TODO(), deleteInput)
 	if err != nil {
 		panic(fmt.Sprintf("Error calling DeleteTable: %s", err))
 	}

@@ -22,6 +22,8 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/pubsub"
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -43,9 +45,9 @@ type PubsubEventService struct {
 	tasksClient ifaces_cloudtasks.CloudtasksClient
 }
 
-func (s *PubsubEventService) ListTopics() ([]string, error) {
+func (s *PubsubEventService) ListTopics(ctx context.Context) ([]string, error) {
 	newErr := errors.ErrorsWithScope("PubsubEventService.ListTopics", nil)
-	iter := s.client.Topics(context.TODO())
+	iter := s.client.Topics(ctx)
 
 	var topics []string
 	for topic, err := iter.Next(); !errors.Is(err, iterator.Done); topic, err = iter.Next() {
@@ -72,8 +74,7 @@ type httpPubsubMessages struct {
 	Messages []httpPubsubMessage `json:"messages"`
 }
 
-func (s *PubsubEventService) publish(topic string, pubsubMsg *pubsub.Message) error {
-	ctx := context.Background()
+func (s *PubsubEventService) publish(ctx context.Context, topic string, pubsubMsg *pubsub.Message) error {
 	msg := ifaces_pubsub.AdaptPubsubMessage(pubsubMsg)
 	pubsubTopic := s.client.Topic(topic)
 
@@ -81,7 +82,7 @@ func (s *PubsubEventService) publish(topic string, pubsubMsg *pubsub.Message) er
 	return err
 }
 
-func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *pubsub.Message) error {
+func (s *PubsubEventService) publishDelayed(ctx context.Context, topic string, delay int, pubsubMsg *pubsub.Message) error {
 	saEmail, err := s.GetServiceAccountEmail()
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *
 	}
 
 	// Delay the message publishing
-	_, err = s.tasksClient.CreateTask(context.Background(), &tasks.CreateTaskRequest{
+	_, err = s.tasksClient.CreateTask(ctx, &tasks.CreateTaskRequest{
 		Parent: utils.GetEnv("DELAY_QUEUE_NAME", ""),
 		Task: &tasks.Task{
 			MessageType: &tasks.Task_HttpRequest{
@@ -129,7 +130,7 @@ func (s *PubsubEventService) publishDelayed(topic string, delay int, pubsubMsg *
 	return err
 }
 
-func (s *PubsubEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *PubsubEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubEventService.Publish",
 		map[string]interface{}{
@@ -147,17 +148,21 @@ func (s *PubsubEventService) Publish(topic string, delay int, event *events.Nitr
 		)
 	}
 
+	attributes := propagation.MapCarrier{
+		"x-nitric-topic": topic,
+	}
+
+	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
+
 	pubsubMsg := &pubsub.Message{
-		Attributes: map[string]string{
-			"x-nitric-topic": topic,
-		},
-		Data: eventBytes,
+		Attributes: attributes,
+		Data:       eventBytes,
 	}
 
 	if delay > 0 {
-		err = s.publishDelayed(topic, delay, pubsubMsg)
+		err = s.publishDelayed(ctx, topic, delay, pubsubMsg)
 	} else {
-		err = s.publish(topic, pubsubMsg)
+		err = s.publish(ctx, topic, pubsubMsg)
 	}
 
 	if err != nil {

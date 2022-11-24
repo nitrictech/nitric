@@ -62,7 +62,7 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 		Payload:     task.GetPayload().AsMap(),
 	}
 
-	if err := s.plugin.Send(req.GetQueue(), nitricTask); err != nil {
+	if err := s.plugin.Send(ctx, req.GetQueue(), nitricTask); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 		}
 	}
 
-	if resp, err := s.plugin.SendBatch(req.GetQueue(), tasks); err == nil {
+	if resp, err := s.plugin.SendBatch(ctx, req.GetQueue(), tasks); err == nil {
 		failedTasks := make([]*pb.FailedTask, len(resp.FailedTasks))
 		for i, failedTask := range resp.FailedTasks {
 			st, _ := protoutils.NewStruct(failedTask.Task.Payload)
@@ -133,7 +133,7 @@ func (s *QueueServiceServer) Receive(ctx context.Context, req *pb.QueueReceiveRe
 	}
 
 	// Perform the Queue Receive operation
-	tasks, err := s.plugin.Receive(popOptions)
+	tasks, err := s.plugin.Receive(ctx, popOptions)
 	if err != nil {
 		return nil, NewGrpcError("QueueService.Receive", err)
 	}
@@ -170,7 +170,7 @@ func (s *QueueServiceServer) Complete(ctx context.Context, req *pb.QueueComplete
 	leaseId := req.GetLeaseId()
 
 	// Perform the Queue Complete operation
-	err := s.plugin.Complete(queueName, leaseId)
+	err := s.plugin.Complete(ctx, queueName, leaseId)
 	if err != nil {
 		return nil, NewGrpcError("QueueService.Complete", err)
 	}

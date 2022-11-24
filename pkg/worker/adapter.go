@@ -14,10 +14,14 @@
 
 package worker
 
-import "github.com/nitrictech/nitric/pkg/triggers"
+import (
+	"context"
+
+	"github.com/nitrictech/nitric/pkg/triggers"
+)
 
 // Adapter - An interface for defining the delivery of events
 type Adapter interface {
-	HandleEvent(trigger *triggers.Event) error
-	HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+	HandleEvent(ctx context.Context, trigger *triggers.Event) error
+	HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
 }

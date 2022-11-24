@@ -15,6 +15,7 @@
 package membrane_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -71,7 +72,7 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 				wrkr, _ := pool.GetWorker(&worker.GetWorkerOptions{
 					Http: s,
 				})
-				resp, err := wrkr.HandleHttpRequest(s)
+				resp, err := wrkr.HandleHttpRequest(context.TODO(), s)
 
 				if err != nil {
 					gw.responses = append(gw.responses, &triggers.HttpResponse{
@@ -89,7 +90,7 @@ func (gw *MockGateway) Start(pool worker.WorkerPool) error {
 					return err
 				}
 
-				err = wrkr.HandleEvent(s)
+				err = wrkr.HandleEvent(context.TODO(), s)
 				if err != nil {
 					return err
 				}
@@ -244,7 +245,7 @@ var _ = Describe("Membrane", func() {
 			BeforeEach(func() {
 				mockGateway = &MockGateway{}
 				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildCommand:            []string{"echo"},
+					ChildCommand:            []string{"sleep", "5"},
 					GatewayPlugin:           mockGateway,
 					ServiceAddress:          fmt.Sprintf(":%d", 9001),
 					ChildTimeoutSeconds:     1,

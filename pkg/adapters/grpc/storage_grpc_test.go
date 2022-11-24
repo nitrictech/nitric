@@ -54,7 +54,7 @@ var _ = Describe("GRPC Storage", func() {
 			mockSS := mock_storage.NewMockStorageService(g)
 
 			val := []byte("hush")
-			mockSS.EXPECT().Write("bucky", "key", val)
+			mockSS.EXPECT().Write(gomock.Any(), "bucky", "key", val)
 
 			resp, err := grpc.NewStorageServiceServer(mockSS).Write(context.Background(), &v1.StorageWriteRequest{
 				BucketName: "bucky",
@@ -95,7 +95,7 @@ var _ = Describe("GRPC Storage", func() {
 			mockSS := mock_storage.NewMockStorageService(g)
 
 			val := []byte("hush")
-			mockSS.EXPECT().Read("bucky", "key").Return(val, nil)
+			mockSS.EXPECT().Read(gomock.Any(), "bucky", "key").Return(val, nil)
 
 			resp, err := grpc.NewStorageServiceServer(mockSS).Read(context.Background(), &v1.StorageReadRequest{
 				BucketName: "bucky",
@@ -134,7 +134,7 @@ var _ = Describe("GRPC Storage", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_storage.NewMockStorageService(g)
 
-			mockSS.EXPECT().Delete("bucky", "key").Return(nil)
+			mockSS.EXPECT().Delete(gomock.Any(), "bucky", "key").Return(nil)
 
 			_, err := grpc.NewStorageServiceServer(mockSS).Delete(context.Background(), &v1.StorageDeleteRequest{
 				BucketName: "bucky",
@@ -186,7 +186,7 @@ var _ = Describe("GRPC Storage", func() {
 			mockSS := mock_storage.NewMockStorageService(g)
 
 			val := "example.com/this/and/that"
-			mockSS.EXPECT().PreSignUrl("bucky", "key", storage.READ, uint32(0)).Return(val, nil)
+			mockSS.EXPECT().PreSignUrl(gomock.Any(), "bucky", "key", storage.READ, uint32(0)).Return(val, nil)
 
 			resp, err := grpc.NewStorageServiceServer(mockSS).PreSignUrl(context.Background(), &v1.StoragePreSignUrlRequest{
 				BucketName: "bucky",
@@ -226,7 +226,7 @@ var _ = Describe("GRPC Storage", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_storage.NewMockStorageService(g)
 
-			mockSS.EXPECT().ListFiles("bucky").Return([]*storage.FileInfo{}, nil)
+			mockSS.EXPECT().ListFiles(gomock.Any(), "bucky").Return([]*storage.FileInfo{}, nil)
 
 			_, err := grpc.NewStorageServiceServer(mockSS).ListFiles(context.Background(), &v1.StorageListFilesRequest{
 				BucketName: "bucky",

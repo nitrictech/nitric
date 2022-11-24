@@ -1,8 +1,6 @@
 syntax = "proto3";
 package nitric.resource.v1;
 
-import "validate/validate.proto";
-
 //protoc plugin options for code generation
 option go_package = "nitric/v1;v1";
 option java_package = "io.nitric.proto.resource.v1";

@@ -54,7 +54,7 @@ var _ = Describe("GRPC Secret", func() {
 			mockSS := mock_secret.NewMockSecretService(g)
 
 			val := []byte("hush")
-			mockSS.EXPECT().Put(&secret.Secret{Name: "foo"}, val).Return(&secret.SecretPutResponse{
+			mockSS.EXPECT().Put(gomock.Any(), &secret.Secret{Name: "foo"}, val).Return(&secret.SecretPutResponse{
 				SecretVersion: &secret.SecretVersion{
 					Secret: &secret.Secret{
 						Name: "foo",
@@ -101,7 +101,7 @@ var _ = Describe("GRPC Secret", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_secret.NewMockSecretService(g)
 
-			mockSS.EXPECT().Access(&secret.SecretVersion{Secret: &secret.Secret{Name: "foo"}, Version: "3"}).Return(&secret.SecretAccessResponse{
+			mockSS.EXPECT().Access(gomock.Any(), &secret.SecretVersion{Secret: &secret.Secret{Name: "foo"}, Version: "3"}).Return(&secret.SecretAccessResponse{
 				SecretVersion: &secret.SecretVersion{
 					Secret: &secret.Secret{
 						Name: "foo",

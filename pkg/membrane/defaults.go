@@ -36,3 +36,8 @@ func DefaultMembraneOptions() *MembraneOptions {
 
 	return options
 }
+
+func fileExists(fn string) bool {
+	_, err := os.Stat(fn)
+	return err == nil
+}

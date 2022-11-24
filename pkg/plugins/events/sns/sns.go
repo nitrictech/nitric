@@ -15,16 +15,21 @@
 package sns_service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"go.opentelemetry.io/contrib/propagators/aws/xray"
+	"go.opentelemetry.io/otel/propagation"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/sfniface"
+	"github.com/nitrictech/nitric/pkg/ifaces/snsiface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/events"
@@ -39,16 +44,16 @@ type SnsEventService struct {
 	provider  core.AwsProvider
 }
 
-func (s *SnsEventService) getTopics() (map[string]string, error) {
-	return s.provider.GetResources(core.AwsResource_Topic)
+func (s *SnsEventService) getTopics(ctx context.Context) (map[string]string, error) {
+	return s.provider.GetResources(ctx, core.AwsResource_Topic)
 }
 
-func (s *SnsEventService) getStateMachines() (map[string]string, error) {
-	return s.provider.GetResources(core.AwsResource_StateMachine)
+func (s *SnsEventService) getStateMachines(ctx context.Context) (map[string]string, error) {
+	return s.provider.GetResources(ctx, core.AwsResource_StateMachine)
 }
 
-func (s *SnsEventService) publish(topic string, message string) error {
-	topics, err := s.getTopics()
+func (s *SnsEventService) publish(ctx context.Context, topic string, message string) error {
+	topics, err := s.getTopics(ctx)
 	if err != nil {
 		return fmt.Errorf("error finding topics: %w", err)
 	}
@@ -59,15 +64,24 @@ func (s *SnsEventService) publish(topic string, message string) error {
 		return fmt.Errorf("could not find topic")
 	}
 
+	mc := propagation.MapCarrier{}
+	xray.Propagator{}.Inject(ctx, mc)
+
+	attrs := map[string]types.MessageAttributeValue{}
+	for k, v := range mc {
+		attrs[k] = types.MessageAttributeValue{DataType: aws.String("String"), StringValue: &v}
+	}
+
 	publishInput := &sns.PublishInput{
 		TopicArn: aws.String(topicArn),
 		Message:  &message,
 		// MessageStructure: json is for an AWS specific JSON format,
 		// which sends different messages to different subscription types. Don't use it.
 		// MessageStructure: aws.String("json"),
+		MessageAttributes: attrs,
 	}
 
-	_, err = s.client.Publish(publishInput)
+	_, err = s.client.Publish(ctx, publishInput)
 
 	if err != nil {
 		return fmt.Errorf("unable to publish message: %w", err)
@@ -76,8 +90,8 @@ func (s *SnsEventService) publish(topic string, message string) error {
 	return nil
 }
 
-func (s *SnsEventService) publishDelayed(topic string, delay int, message string) error {
-	sfns, err := s.getStateMachines()
+func (s *SnsEventService) publishDelayed(ctx context.Context, topic string, delay int, message string) error {
+	sfns, err := s.getStateMachines(ctx)
 	if err != nil {
 		return fmt.Errorf("error gettings state machines: %w", err)
 	}
@@ -87,8 +101,12 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 		return fmt.Errorf("error finding state machine for topic %s: %w", topic, err)
 	}
 
-	_, err = s.sfnClient.StartExecution(&sfn.StartExecutionInput{
+	mc := propagation.MapCarrier{}
+	xray.Propagator{}.Inject(ctx, mc)
+
+	_, err = s.sfnClient.StartExecution(ctx, &sfn.StartExecutionInput{
 		StateMachineArn: aws.String(sfnArn),
+		TraceHeader:     aws.String(mc[xray.Propagator{}.Fields()[0]]),
 		Input: aws.String(fmt.Sprintf(`{
 			"seconds": %d,
 			"message": %s
@@ -102,7 +120,7 @@ func (s *SnsEventService) publishDelayed(topic string, delay int, message string
 }
 
 // Publish to a given topic
-func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *SnsEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"SnsEventService.Publish",
 		map[string]interface{}{
@@ -123,9 +141,9 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 	message := string(data)
 
 	if delay > 0 {
-		err = s.publishDelayed(topic, delay, message)
+		err = s.publishDelayed(ctx, topic, delay, message)
 	} else {
-		err = s.publish(topic, message)
+		err = s.publish(ctx, topic, message)
 	}
 
 	if err != nil {
@@ -135,10 +153,10 @@ func (s *SnsEventService) Publish(topic string, delay int, event *events.NitricE
 	return nil
 }
 
-func (s *SnsEventService) ListTopics() ([]string, error) {
+func (s *SnsEventService) ListTopics(ctx context.Context) ([]string, error) {
 	newErr := errors.ErrorsWithScope("SnsEventService.ListTopics", nil)
 
-	topics, err := s.getTopics()
+	topics, err := s.getTopics(ctx)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -160,16 +178,15 @@ func (s *SnsEventService) ListTopics() ([]string, error) {
 func New(provider core.AwsProvider) (events.EventService, error) {
 	awsRegion := utils2.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	snsClient := sns.New(sess)
-	sfnClient := sfn.New(sess)
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
+
+	snsClient := sns.NewFromConfig(cfg)
+	sfnClient := sfn.NewFromConfig(cfg)
 
 	return &SnsEventService{
 		client:    snsClient,

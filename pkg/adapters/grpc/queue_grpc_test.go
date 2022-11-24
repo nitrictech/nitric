@@ -54,7 +54,7 @@ var _ = Describe("GRPC Queue", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_queue.NewMockQueueService(g)
 
-			mockSS.EXPECT().Send("job", queue.NitricTask{
+			mockSS.EXPECT().Send(gomock.Any(), "job", queue.NitricTask{
 				ID:          "tsk",
 				PayloadType: "thing",
 				Payload: map[string]interface{}{
@@ -106,7 +106,7 @@ var _ = Describe("GRPC Queue", func() {
 			mockSS := mock_queue.NewMockQueueService(g)
 
 			one := uint32(1)
-			mockSS.EXPECT().Receive(queue.ReceiveOptions{
+			mockSS.EXPECT().Receive(gomock.Any(), queue.ReceiveOptions{
 				QueueName: "job",
 				Depth:     &one,
 			}).Return([]queue.NitricTask{
@@ -157,7 +157,7 @@ var _ = Describe("GRPC Queue", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_queue.NewMockQueueService(g)
 
-			mockSS.EXPECT().Complete("job", "45").Return(nil)
+			mockSS.EXPECT().Complete(gomock.Any(), "job", "45").Return(nil)
 
 			resp, err := grpc.NewQueueServiceServer(mockSS).Complete(context.Background(), &v1.QueueCompleteRequest{
 				Queue:   "job",

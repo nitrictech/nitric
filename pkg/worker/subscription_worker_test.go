@@ -15,6 +15,8 @@
 package worker
 
 import (
+	"context"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,7 +37,7 @@ var _ = Describe("SubscriptionWorker", func() {
 
 		When("calling HandleHttpRequest", func() {
 			It("should return an error", func() {
-				_, err := subWrkr.HandleHttpRequest(&triggers.HttpRequest{})
+				_, err := subWrkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{})
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -72,14 +74,14 @@ var _ = Describe("SubscriptionWorker", func() {
 				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
-				hndlr.EXPECT().HandleEvent(gomock.Any()).Times(1)
+				hndlr.EXPECT().HandleEvent(gomock.Any(), gomock.Any()).Times(1)
 
 				subWrkr := &SubscriptionWorker{
 					topic:   "test",
 					Adapter: hndlr,
 				}
 
-				err := subWrkr.HandleEvent(&triggers.Event{})
+				err := subWrkr.HandleEvent(context.TODO(), &triggers.Event{})
 
 				Expect(err).ShouldNot(HaveOccurred())
 				ctrl.Finish()

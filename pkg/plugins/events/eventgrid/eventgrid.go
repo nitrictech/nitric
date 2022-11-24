@@ -36,7 +36,7 @@ type EventGridEventService struct {
 	provider core.AzProvider
 }
 
-func (s *EventGridEventService) ListTopics() ([]string, error) {
+func (s *EventGridEventService) ListTopics(ctx context.Context) ([]string, error) {
 	newErr := errors.ErrorsWithScope(
 		"EventGrid.ListTopics",
 		map[string]interface{}{
@@ -44,7 +44,7 @@ func (s *EventGridEventService) ListTopics() ([]string, error) {
 		},
 	)
 
-	topics, err := s.provider.GetResources(core.AzResource_Topic)
+	topics, err := s.provider.GetResources(ctx, core.AzResource_Topic)
 	if err != nil {
 		return nil, newErr(codes.Internal, "unable to retrieve topic list", err)
 	}
@@ -74,7 +74,7 @@ func (s *EventGridEventService) nitricEventsToAzureEvents(topic string, events [
 	return azureEvents, nil
 }
 
-func (s *EventGridEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *EventGridEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"EventGrid.Publish",
 		map[string]interface{}{
@@ -86,7 +86,7 @@ func (s *EventGridEventService) Publish(topic string, delay int, event *events.N
 		return newErr(codes.Unimplemented, "delayed messages with eventgrid are unsupported", nil)
 	}
 
-	topics, err := s.provider.GetResources(core.AzResource_Topic)
+	topics, err := s.provider.GetResources(ctx, core.AzResource_Topic)
 	if err != nil {
 		return newErr(
 			codes.NotFound,
@@ -116,7 +116,7 @@ func (s *EventGridEventService) Publish(topic string, delay int, event *events.N
 		)
 	}
 
-	result, err := s.client.PublishEvents(context.TODO(), topicHostName, eventToPublish)
+	result, err := s.client.PublishEvents(ctx, topicHostName, eventToPublish)
 	if err != nil {
 		return newErr(
 			codes.Internal,

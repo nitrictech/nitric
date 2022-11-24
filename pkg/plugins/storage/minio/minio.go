@@ -15,12 +15,13 @@
 package minio_storage_service
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
 	s3_service "github.com/nitrictech/nitric/pkg/plugins/storage/s3"
@@ -79,20 +80,28 @@ func New() (storage.StorageService, error) {
 		return nil, err
 	}
 
-	// Configure to use MinIO Server
+	/* Configure to use MinIO Server
+
+	TODO do we need these? Can't find v2 equivalents
+
 	s3Config := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials(conf.accessKey, conf.secretKey, ""),
-		Endpoint:         aws.String(conf.endpoint),
-		Region:           aws.String("us-east-1"),
 		DisableSSL:       aws.Bool(true),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	newSession, err := session.NewSession(s3Config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating new session")
+	*/
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(conf.accessKey, conf.secretKey, "")),
+		config.WithRegion("us-east-1"),
+		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{URL: conf.endpoint}, nil
+		})),
+	)
+	if sessionError != nil {
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	s3Client := s3.New(newSession)
+	s3Client := s3.NewFromConfig(cfg)
+	s3PSClient := s3.NewPresignClient(s3Client)
 
-	return s3_service.NewWithClient(nil, s3Client, s3_service.WithSelector(nameSelector))
+	return s3_service.NewWithClient(nil, s3Client, s3PSClient, s3_service.WithSelector(nameSelector))
 }

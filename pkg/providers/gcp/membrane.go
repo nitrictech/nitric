@@ -35,8 +35,7 @@ func main() {
 	// Setup signal interrupt handling for graceful shutdown
 	var err error
 	term := make(chan os.Signal, 1)
-	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+	signal.Notify(term, syscall.SIGTERM, syscall.SIGINT)
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 	provider, err := core.New()
@@ -75,6 +74,7 @@ func main() {
 	}
 
 	membraneOpts.ResourcesPlugin = provider
+	membraneOpts.CreateTracerProvider = newTraceProvider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

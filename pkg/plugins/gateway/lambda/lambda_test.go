@@ -176,7 +176,7 @@ var _ = Describe("Lambda", func() {
 
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("having the topic available")
-				mockProvider.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
 					"MyTopic": "some:arbitrary:topic:arn:MyTopic",
 				}, nil)
 

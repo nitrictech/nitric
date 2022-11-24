@@ -15,14 +15,16 @@
 package secrets_manager_secret_service
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	secretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/secret"
@@ -50,8 +52,8 @@ func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val 
 	return nil
 }
 
-func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
-	secrets, err := s.provider.GetResources(core.AwsResource_Secret)
+func (s *secretsManagerSecretService) getSecretId(ctx context.Context, sec string) (string, error) {
+	secrets, err := s.provider.GetResources(ctx, core.AwsResource_Secret)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secrets list: %w", err)
 	}
@@ -63,7 +65,7 @@ func (s *secretsManagerSecretService) getSecretId(sec string) (string, error) {
 	return "", fmt.Errorf("secret %s does not exist", sec)
 }
 
-func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Put",
 		map[string]interface{}{
@@ -79,12 +81,12 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 		)
 	}
 
-	secretId, err := s.getSecretId(sec.Name)
+	secretId, err := s.getSecretId(ctx, sec.Name)
 	if err != nil {
 		return nil, newErr(codes.NotFound, "unable to find secret", err)
 	}
 
-	result, err := s.client.PutSecretValue(&secretsmanager.PutSecretValueInput{
+	result, err := s.client.PutSecretValue(ctx, &secretsmanager.PutSecretValueInput{
 		SecretId:     aws.String(secretId),
 		SecretBinary: val,
 	})
@@ -97,12 +99,12 @@ func (s *secretsManagerSecretService) Put(sec *secret.Secret, val []byte) (*secr
 			Secret: &secret.Secret{
 				Name: sec.Name,
 			},
-			Version: aws.StringValue(result.VersionId),
+			Version: *result.VersionId,
 		},
 	}, nil
 }
 
-func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Access",
 		map[string]interface{}{
@@ -126,7 +128,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 		)
 	}
 
-	secretId, err := s.getSecretId(sv.Secret.Name)
+	secretId, err := s.getSecretId(ctx, sv.Secret.Name)
 	if err != nil {
 		return nil, newErr(codes.NotFound, "could not find secret", err)
 	}
@@ -142,7 +144,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 		input.VersionId = aws.String(sv.Version)
 	}
 
-	result, err := s.client.GetSecretValue(input)
+	result, err := s.client.GetSecretValue(ctx, input)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -156,7 +158,7 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 			Secret: &secret.Secret{
 				Name: sv.Secret.Name,
 			},
-			Version: aws.StringValue(result.VersionId),
+			Version: *result.VersionId,
 		},
 		Value: result.SecretBinary,
 	}, nil
@@ -166,15 +168,14 @@ func (s *secretsManagerSecretService) Access(sv *secret.SecretVersion) (*secret.
 func New(provider core.AwsProvider) (secret.SecretService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	client := secretsmanager.New(sess)
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
+
+	client := secretsmanager.NewFromConfig(cfg)
 
 	return &secretsManagerSecretService{
 		client:   client,

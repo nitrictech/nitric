@@ -15,10 +15,12 @@
 package sqs_service
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -40,9 +42,9 @@ var _ = Describe("Sqs", func() {
 				plugin := NewWithClient(providerMock, sqsMock).(*SQSQueueService)
 
 				By("Calling GetResources and receiving an error")
-				providerMock.EXPECT().GetResources(core.AwsResource_Queue).Times(1).Return(nil, fmt.Errorf("mock-error"))
+				providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				_, err := plugin.getUrlForQueueName("test-queue")
+				_, err := plugin.getUrlForQueueName(context.TODO(), "test-queue")
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -59,9 +61,9 @@ var _ = Describe("Sqs", func() {
 				plugin := NewWithClient(providerMock, sqsMock).(*SQSQueueService)
 
 				By("Calling GetResources and have queue be missing")
-				providerMock.EXPECT().GetResources(core.AwsResource_Queue).Times(1).Return(map[string]string{}, nil)
+				providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Times(1).Return(map[string]string{}, nil)
 
-				_, err := plugin.getUrlForQueueName("test-queue")
+				_, err := plugin.getUrlForQueueName(context.TODO(), "test-queue")
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -83,19 +85,19 @@ var _ = Describe("Sqs", func() {
 				queueUrl := aws.String("https://example.com/test-queue")
 
 				By("The queue being available")
-				providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(map[string]string{
+				providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
 					"test-queue": "arn:aws:sqs:us-east-2:444455556666:test-queue",
 				}, nil)
 
 				By("Calling GetQueueUrl to get the queue name")
-				sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+				sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 					QueueUrl: queueUrl,
 				}, nil)
 
 				By("Calling SendMessageBatch with the expected batch entries")
-				sqsMock.EXPECT().SendMessageBatch(&sqs.SendMessageBatchInput{
+				sqsMock.EXPECT().SendMessageBatch(gomock.Any(), &sqs.SendMessageBatchInput{
 					QueueUrl: queueUrl,
-					Entries: []*sqs.SendMessageBatchRequestEntry{
+					Entries: []types.SendMessageBatchRequestEntry{
 						{
 							Id:          aws.String("1234"),
 							MessageBody: aws.String(`{"id":"1234","payloadType":"test-payload","payload":{"Test":"Test"}}`),
@@ -103,7 +105,7 @@ var _ = Describe("Sqs", func() {
 					},
 				}).Return(&sqs.SendMessageBatchOutput{}, nil)
 
-				_, err := plugin.SendBatch("test-queue", []queue.NitricTask{
+				_, err := plugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 					{
 						ID:          "1234",
 						PayloadType: "test-payload",
@@ -128,9 +130,9 @@ var _ = Describe("Sqs", func() {
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					By("provider GetResources returning an error")
-					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(nil, fmt.Errorf("mock-error"))
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(nil, fmt.Errorf("mock-error"))
 
-					_, err := plugin.SendBatch("test-queue", []queue.NitricTask{
+					_, err := plugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
 						{
 							ID:          "1234",
 							PayloadType: "test-payload",
@@ -162,24 +164,24 @@ var _ = Describe("Sqs", func() {
 					queueUrl := aws.String("https://example.com/test-queue")
 
 					By("calling provider GetResources to get the queue arn")
-					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(map[string]string{
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
 						"mock-queue": "arn:aws:sqs:us-east-2:444455556666:mock-queue",
 					}, nil)
 
 					By("calling provider GetQueuUrl")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling ReceiveMessage with the expected inputs")
-					sqsMock.EXPECT().ReceiveMessage(&sqs.ReceiveMessageInput{
-						MaxNumberOfMessages: aws.Int64(int64(10)),
-						MessageAttributeNames: []*string{
-							aws.String(sqs.QueueAttributeNameAll),
+					sqsMock.EXPECT().ReceiveMessage(gomock.Any(), &sqs.ReceiveMessageInput{
+						MaxNumberOfMessages: int32(10),
+						MessageAttributeNames: []string{
+							string(types.QueueAttributeNameAll),
 						},
 						QueueUrl: queueUrl,
 					}).Times(1).Return(&sqs.ReceiveMessageOutput{
-						Messages: []*sqs.Message{
+						Messages: []types.Message{
 							{
 								ReceiptHandle: aws.String("mockreceipthandle"),
 								Body:          aws.String(`{"id":"1234","payloadType":"test-payload","payload":{"Test":"Test"}}`),
@@ -190,7 +192,7 @@ var _ = Describe("Sqs", func() {
 					depth := uint32(10)
 
 					By("Returning the task")
-					messages, err := plugin.Receive(queue.ReceiveOptions{
+					messages, err := plugin.Receive(context.TODO(), queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -220,29 +222,29 @@ var _ = Describe("Sqs", func() {
 					queueUrl := aws.String("https://example.com/test-queue")
 
 					By("Calling GetResources to get the queue arn")
-					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(map[string]string{
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
 						"mock-queue": "arn:aws:sqs:us-east-2:444455556666:mock-queue",
 					}, nil)
 
 					By("Calling GetQueueUrl to get the queue url")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling ReceiveMessage with the expected inputs")
-					sqsMock.EXPECT().ReceiveMessage(&sqs.ReceiveMessageInput{
-						MaxNumberOfMessages: aws.Int64(int64(10)),
-						MessageAttributeNames: []*string{
-							aws.String(sqs.QueueAttributeNameAll),
+					sqsMock.EXPECT().ReceiveMessage(gomock.Any(), &sqs.ReceiveMessageInput{
+						MaxNumberOfMessages: int32(10),
+						MessageAttributeNames: []string{
+							string(types.QueueAttributeNameAll),
 						},
 						QueueUrl: queueUrl,
 					}).Times(1).Return(&sqs.ReceiveMessageOutput{
-						Messages: []*sqs.Message{},
+						Messages: []types.Message{},
 					}, nil)
 
 					depth := uint32(10)
 
-					msgs, err := plugin.Receive(queue.ReceiveOptions{
+					msgs, err := plugin.Receive(context.TODO(), queue.ReceiveOptions{
 						QueueName: "mock-queue",
 						Depth:     &depth,
 					})
@@ -271,17 +273,17 @@ var _ = Describe("Sqs", func() {
 					queueUrl := aws.String("https://example.com/test-queue")
 
 					By("Calling GetResources to get the queue arn")
-					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Return(map[string]string{
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
 						"test-queue": "arn:aws:sqs:us-east-2:444455556666:test-queue",
 					}, nil)
 
 					By("Calling ListQueueTags to get the x-nitric-name")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling SQS with the queue url and task lease id")
-					sqsMock.EXPECT().DeleteMessage(&sqs.DeleteMessageInput{
+					sqsMock.EXPECT().DeleteMessage(gomock.Any(), &sqs.DeleteMessageInput{
 						QueueUrl:      queueUrl,
 						ReceiptHandle: aws.String("lease-id"),
 					}).Times(1).Return(
@@ -289,7 +291,7 @@ var _ = Describe("Sqs", func() {
 						nil,
 					)
 
-					err := plugin.Complete("test-queue", "lease-id")
+					err := plugin.Complete(context.TODO(), "test-queue", "lease-id")
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -309,22 +311,22 @@ var _ = Describe("Sqs", func() {
 					queueUrl := aws.String("http://example.com/queue")
 
 					By("Calling GetResources to get the queue arn")
-					providerMock.EXPECT().GetResources(core.AwsResource_Queue).Times(1).Return(map[string]string{
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Times(1).Return(map[string]string{
 						"test-queue": "arn:aws:sqs:us-east-2:444455556666:test-queue",
 					}, nil)
 
 					By("Calling GetQueueUrl to get the queueurl")
-					sqsMock.EXPECT().GetQueueUrl(gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)
 
 					By("Calling SQS with the queue url and task lease id")
-					sqsMock.EXPECT().DeleteMessage(&sqs.DeleteMessageInput{
+					sqsMock.EXPECT().DeleteMessage(gomock.Any(), &sqs.DeleteMessageInput{
 						QueueUrl:      queueUrl,
 						ReceiptHandle: aws.String("test-id"),
 					}).Return(nil, fmt.Errorf("mock-error"))
 
-					err := plugin.Complete("test-queue", "test-id")
+					err := plugin.Complete(context.TODO(), "test-queue", "test-id")
 
 					By("returning the error")
 					Expect(err).Should(HaveOccurred())

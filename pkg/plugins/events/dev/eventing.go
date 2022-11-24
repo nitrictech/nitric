@@ -16,6 +16,7 @@ package events_service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -42,7 +43,7 @@ type LocalHttpeventsClient interface {
 }
 
 // Publish a message to a given topic
-func (s *LocalEventService) Publish(topic string, delay int, event *events.NitricEvent) error {
+func (s *LocalEventService) Publish(ctx context.Context, topic string, delay int, event *events.NitricEvent) error {
 	newErr := errors.ErrorsWithScope(
 		"LocalEventService.Publish",
 		map[string]interface{}{
@@ -68,7 +69,7 @@ func (s *LocalEventService) Publish(topic string, delay int, event *events.Nitri
 
 	if targets, ok := s.subscriptions[topic]; ok {
 		for _, target := range targets {
-			httpRequest, _ := http.NewRequest("POST", target, bytes.NewReader(marshaledPayload))
+			httpRequest, _ := http.NewRequestWithContext(ctx, "POST", target, bytes.NewReader(marshaledPayload))
 
 			httpRequest.Header.Add("Content-Type", contentType)
 			httpRequest.Header.Add("x-nitric-request-id", requestId)
@@ -107,7 +108,7 @@ func (s *LocalEventService) Publish(topic string, delay int, event *events.Nitri
 }
 
 // Get a list of available topics
-func (s *LocalEventService) ListTopics() ([]string, error) {
+func (s *LocalEventService) ListTopics(ctx context.Context) ([]string, error) {
 	keys := []string{}
 
 	for key := range s.subscriptions {

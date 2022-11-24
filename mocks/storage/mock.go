@@ -5,6 +5,7 @@
 package mock_storage
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,74 +36,74 @@ func (m *MockStorageService) EXPECT() *MockStorageServiceMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockStorageService) Delete(arg0, arg1 string) error {
+func (m *MockStorageService) Delete(arg0 context.Context, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStorageServiceMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStorageServiceMockRecorder) Delete(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStorageService)(nil).Delete), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStorageService)(nil).Delete), arg0, arg1, arg2)
 }
 
 // ListFiles mocks base method.
-func (m *MockStorageService) ListFiles(arg0 string) ([]*storage.FileInfo, error) {
+func (m *MockStorageService) ListFiles(arg0 context.Context, arg1 string) ([]*storage.FileInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListFiles", arg0)
+	ret := m.ctrl.Call(m, "ListFiles", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListFiles indicates an expected call of ListFiles.
-func (mr *MockStorageServiceMockRecorder) ListFiles(arg0 interface{}) *gomock.Call {
+func (mr *MockStorageServiceMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockStorageService)(nil).ListFiles), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockStorageService)(nil).ListFiles), arg0, arg1)
 }
 
 // PreSignUrl mocks base method.
-func (m *MockStorageService) PreSignUrl(arg0, arg1 string, arg2 storage.Operation, arg3 uint32) (string, error) {
+func (m *MockStorageService) PreSignUrl(arg0 context.Context, arg1, arg2 string, arg3 storage.Operation, arg4 uint32) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PreSignUrl", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "PreSignUrl", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PreSignUrl indicates an expected call of PreSignUrl.
-func (mr *MockStorageServiceMockRecorder) PreSignUrl(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockStorageServiceMockRecorder) PreSignUrl(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreSignUrl", reflect.TypeOf((*MockStorageService)(nil).PreSignUrl), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreSignUrl", reflect.TypeOf((*MockStorageService)(nil).PreSignUrl), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Read mocks base method.
-func (m *MockStorageService) Read(arg0, arg1 string) ([]byte, error) {
+func (m *MockStorageService) Read(arg0 context.Context, arg1, arg2 string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", arg0, arg1)
+	ret := m.ctrl.Call(m, "Read", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read.
-func (mr *MockStorageServiceMockRecorder) Read(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStorageServiceMockRecorder) Read(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStorageService)(nil).Read), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStorageService)(nil).Read), arg0, arg1, arg2)
 }
 
 // Write mocks base method.
-func (m *MockStorageService) Write(arg0, arg1 string, arg2 []byte) error {
+func (m *MockStorageService) Write(arg0 context.Context, arg1, arg2 string, arg3 []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Write", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Write indicates an expected call of Write.
-func (mr *MockStorageServiceMockRecorder) Write(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockStorageServiceMockRecorder) Write(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorageService)(nil).Write), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorageService)(nil).Write), arg0, arg1, arg2, arg3)
 }

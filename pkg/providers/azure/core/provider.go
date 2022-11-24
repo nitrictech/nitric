@@ -29,7 +29,7 @@ import (
 )
 
 type AzProvider interface {
-	GetResources(AzResource) (map[string]AzGenericResource, error)
+	GetResources(context.Context, AzResource) (map[string]AzGenericResource, error)
 	SubscriptionId() string
 	ResourceGroupName() string
 	ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error)
@@ -68,8 +68,8 @@ type azProviderImpl struct {
 
 var _ AzProvider = &azProviderImpl{}
 
-func (p *azProviderImpl) getApiDetails(name string) (*common.DetailsResponse[any], error) {
-	res, err := p.srvClient.ListByResourceGroupComplete(context.TODO(), p.rgName)
+func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*common.DetailsResponse[any], error) {
+	res, err := p.srvClient.ListByResourceGroupComplete(ctx, p.rgName)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (p *azProviderImpl) getApiDetails(name string) (*common.DetailsResponse[any
 			}, nil
 		}
 
-		err := res.NextWithContext(context.TODO())
+		err := res.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -97,20 +97,20 @@ func (p *azProviderImpl) getApiDetails(name string) (*common.DetailsResponse[any
 	return nil, fmt.Errorf("api resource %s not found", name)
 }
 
-func (p *azProviderImpl) Details(typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (p *azProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	switch typ {
 	case common.ResourceType_Api:
-		return p.getApiDetails(name)
+		return p.getApiDetails(ctx, name)
 	default:
 		return nil, fmt.Errorf("unsupported resource type %s", typ)
 	}
 }
 
-func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResource, error) {
+func (p *azProviderImpl) GetResources(ctx context.Context, r AzResource) (map[string]AzGenericResource, error) {
 	filter := fmt.Sprintf("resourceType eq '%s'", r)
 	if _, ok := p.cache[r]; !ok {
 		// populate the cache
-		results, err := p.rclient.ListByResourceGroupComplete(context.TODO(), p.rgName, filter, "", nil)
+		results, err := p.rclient.ListByResourceGroupComplete(ctx, p.rgName, filter, "", nil)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func (p *azProviderImpl) GetResources(r AzResource) (map[string]AzGenericResourc
 				}
 			}
 
-			err := results.NextWithContext(context.TODO())
+			err := results.NextWithContext(ctx)
 			if err != nil {
 				return nil, err
 			}

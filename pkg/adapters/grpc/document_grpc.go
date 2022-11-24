@@ -53,7 +53,7 @@ func (s *DocumentServiceServer) Get(ctx context.Context, req *pb.DocumentGetRequ
 
 	key := keyFromWire(req.Key)
 
-	doc, err := s.documentPlugin.Get(key)
+	doc, err := s.documentPlugin.Get(ctx, key)
 	if err != nil {
 		return nil, NewGrpcError("DocumentService.Get", err)
 	}
@@ -79,7 +79,7 @@ func (s *DocumentServiceServer) Set(ctx context.Context, req *pb.DocumentSetRequ
 
 	key := keyFromWire(req.Key)
 
-	err := s.documentPlugin.Set(key, req.GetContent().AsMap())
+	err := s.documentPlugin.Set(ctx, key, req.GetContent().AsMap())
 	if err != nil {
 		return nil, NewGrpcError("DocumentService.Set", err)
 	}
@@ -98,7 +98,7 @@ func (s *DocumentServiceServer) Delete(ctx context.Context, req *pb.DocumentDele
 
 	key := keyFromWire(req.Key)
 
-	err := s.documentPlugin.Delete(key)
+	err := s.documentPlugin.Delete(ctx, key)
 	if err != nil {
 		return nil, NewGrpcError("DocumentService.Delete", err)
 	}
@@ -121,7 +121,7 @@ func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQuery
 	limit := int(req.GetLimit())
 	pagingMap := req.GetPagingToken()
 
-	qr, err := s.documentPlugin.Query(collection, expressions, limit, pagingMap)
+	qr, err := s.documentPlugin.Query(ctx, collection, expressions, limit, pagingMap)
 	if err != nil {
 		return nil, NewGrpcError("DocumentService.Query", err)
 	}
@@ -150,7 +150,7 @@ func (s *DocumentServiceServer) QueryStream(req *pb.DocumentQueryStreamRequest, 
 	col := collectionFromWire(req.Collection)
 	expressions := expressionsFromWire(req.Expressions)
 
-	next := s.documentPlugin.QueryStream(col, expressions, int(req.Limit))
+	next := s.documentPlugin.QueryStream(context.TODO(), col, expressions, int(req.Limit))
 
 	for doc, err := next(); !errors.Is(err, io.EOF); doc, err = next() {
 		if err != nil {

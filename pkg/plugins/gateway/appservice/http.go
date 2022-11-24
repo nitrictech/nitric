@@ -15,6 +15,7 @@
 package http_service
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"strings"
@@ -68,7 +69,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 		}
 
 		var evt *triggers.Event
-		topics, err := a.provider.GetResources(core.AzResource_Topic)
+		topics, err := a.provider.GetResources(context.TODO(), core.AzResource_Topic)
 		if err != nil {
 			log.Default().Println("could not get topic resources")
 			continue
@@ -88,9 +89,10 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 
 		// Just extract the payload from the event type (payload from nitric event is directly mapped)
 		evt = &triggers.Event{
-			ID:      *event.ID,
-			Topic:   topicName,
-			Payload: payloadBytes,
+			ID:         *event.ID,
+			Topic:      topicName,
+			Payload:    payloadBytes,
+			Attributes: map[string]string{},
 		}
 
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
@@ -102,7 +104,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			continue
 		}
 
-		err = wrkr.HandleEvent(evt)
+		err = wrkr.HandleEvent(context.TODO(), evt)
 		if err != nil {
 			log.Default().Println("could not handle event: ", evt)
 			// TODO: Handle error

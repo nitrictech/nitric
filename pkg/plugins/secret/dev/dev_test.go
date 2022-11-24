@@ -15,6 +15,7 @@
 package secret_service_test
 
 import (
+	"context"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -39,7 +40,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Putting a secret to a non-existent secret", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should successfully store a secret", func() {
-				response, err := secretPlugin.Put(&testSecret, testSecretVal)
+				response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -50,7 +51,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Putting a secret to an existing secret", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should successfully store a secret", func() {
-				response, err := secretPlugin.Put(&testSecret, testSecretVal)
+				response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -62,7 +63,7 @@ var _ = Describe("Dev Secret Manager", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should throw an error", func() {
 				emptySecretName := &secret.Secret{}
-				response, err := secretPlugin.Put(emptySecretName, testSecretVal)
+				response, err := secretPlugin.Put(context.TODO(), emptySecretName, testSecretVal)
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
 
@@ -75,8 +76,8 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Getting a secret that exists", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should return the secret", func() {
-				putResponse, _ := secretPlugin.Put(&testSecret, testSecretVal)
-				response, err := secretPlugin.Access(putResponse.SecretVersion)
+				putResponse, _ := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+				response, err := secretPlugin.Access(context.TODO(), putResponse.SecretVersion)
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 				By("Returning a response")
@@ -87,8 +88,8 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Getting the latest secret", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should return the latest secret", func() {
-				putResponse, _ := secretPlugin.Put(&testSecret, testSecretVal)
-				response, err := secretPlugin.Access(&secret.SecretVersion{
+				putResponse, _ := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+				response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 					Secret: &secret.Secret{
 						Name: testSecret.Name,
 					},
@@ -105,7 +106,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Getting a secret that doesn't exist", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should return an error", func() {
-				response, err := secretPlugin.Access(&secret.SecretVersion{
+				response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 					Secret: &secret.Secret{
 						Name: "test-id",
 					},
@@ -120,7 +121,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Getting a secret with an empty id", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should return an error", func() {
-				response, err := secretPlugin.Access(&secret.SecretVersion{
+				response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 					Secret:  &secret.Secret{},
 					Version: "test-version-id",
 				})
@@ -133,7 +134,7 @@ var _ = Describe("Dev Secret Manager", func() {
 		When("Getting a secret with an empty version id", func() {
 			secretPlugin, _ := secretPlugin.New()
 			It("Should return an error", func() {
-				response, err := secretPlugin.Access(&secret.SecretVersion{
+				response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 					Secret: &secret.Secret{
 						Name: "test-id",
 					},

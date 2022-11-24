@@ -15,12 +15,14 @@
 package sns_service_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -45,11 +47,11 @@ var _ = Describe("Sns", func() {
 
 			It("Should return the available topics", func() {
 				By("Topics being available")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 
-				topics, err := eventsClient.ListTopics()
+				topics, err := eventsClient.ListTopics(context.TODO())
 
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElements("test"))
@@ -78,17 +80,18 @@ var _ = Describe("Sns", func() {
 
 			It("Should publish without error", func() {
 				By("Retrieving a list of topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 
 				By("Publishing the message to the topic")
-				snsMock.EXPECT().Publish(&sns.PublishInput{
-					TopicArn: aws.String("arn:test"),
-					Message:  aws.String(stringData),
+				snsMock.EXPECT().Publish(gomock.Any(), &sns.PublishInput{
+					MessageAttributes: map[string]types.MessageAttributeValue{},
+					TopicArn:          aws.String("arn:test"),
+					Message:           aws.String(stringData),
 				})
 
-				err := eventsClient.Publish("test", 0, testEvent)
+				err := eventsClient.Publish(context.TODO(), "test", 0, testEvent)
 
 				Expect(err).To(BeNil())
 			})
@@ -105,9 +108,9 @@ var _ = Describe("Sns", func() {
 
 			It("Should return an error", func() {
 				By("Returning no topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_Topic).Return(map[string]string{}, nil)
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{}, nil)
 
-				err := eventsClient.Publish("test", 0, &events.NitricEvent{
+				err := eventsClient.Publish(context.TODO(), "test", 0, &events.NitricEvent{
 					ID:          "testing",
 					PayloadType: "Test Payload",
 					Payload:     payload,
@@ -137,20 +140,21 @@ var _ = Describe("Sns", func() {
 
 			It("Should publish without error", func() {
 				By("Retrieving a list of topics")
-				awsMock.EXPECT().GetResources(core.AwsResource_StateMachine).Return(map[string]string{
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_StateMachine).Return(map[string]string{
 					"test": "arn:test",
 				}, nil)
 
 				By("Publishing the message to the topic")
-				sfnMock.EXPECT().StartExecution(&sfn.StartExecutionInput{
+				sfnMock.EXPECT().StartExecution(gomock.Any(), &sfn.StartExecutionInput{
 					StateMachineArn: aws.String("arn:test"),
+					TraceHeader:     aws.String(""),
 					Input: aws.String(fmt.Sprintf(`{
 			"seconds": 1,
 			"message": %s
 		}`, stringData)),
 				})
 
-				err := eventsClient.Publish("test", 1, testEvent)
+				err := eventsClient.Publish(context.TODO(), "test", 1, testEvent)
 
 				Expect(err).To(BeNil())
 			})
