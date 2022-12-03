@@ -15,6 +15,8 @@
 package worker
 
 import (
+	"context"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -63,7 +65,7 @@ var _ = Describe("RouteWorker", func() {
 				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
-				hndlr.EXPECT().HandleHttpRequest(&triggers.HttpRequest{
+				hndlr.EXPECT().HandleHttpRequest(context.TODO(), &triggers.HttpRequest{
 					Method: "GET",
 					Path:   "/test/name",
 					Params: map[string]string{
@@ -77,7 +79,7 @@ var _ = Describe("RouteWorker", func() {
 					Adapter: hndlr,
 				}
 
-				_, err := subWrkr.HandleHttpRequest(&triggers.HttpRequest{
+				_, err := subWrkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{
 					Method: "GET",
 					Path:   "/test/name",
 				})
@@ -101,7 +103,7 @@ var _ = Describe("RouteWorker", func() {
 			subWrkr := &RouteWorker{}
 
 			It("should return an error", func() {
-				err := subWrkr.HandleEvent(&triggers.Event{})
+				err := subWrkr.HandleEvent(context.TODO(), &triggers.Event{})
 
 				Expect(err).Should(HaveOccurred())
 			})

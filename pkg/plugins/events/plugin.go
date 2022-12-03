@@ -14,21 +14,24 @@
 
 package events
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type EventService interface {
-	Publish(topic string, delay int, event *NitricEvent) error
-	ListTopics() ([]string, error)
+	Publish(ctx context.Context, topic string, delay int, event *NitricEvent) error
+	ListTopics(ctx context.Context) ([]string, error)
 }
 
 type UnimplementedeventsPlugin struct {
 	EventService
 }
 
-func (*UnimplementedeventsPlugin) Publish(topic string, delay int, event *NitricEvent) error {
+func (*UnimplementedeventsPlugin) Publish(ctx context.Context, topic string, delay int, event *NitricEvent) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedeventsPlugin) ListTopics() ([]string, error) {
+func (*UnimplementedeventsPlugin) ListTopics(ctx context.Context) ([]string, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }

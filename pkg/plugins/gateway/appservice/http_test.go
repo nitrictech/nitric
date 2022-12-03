@@ -61,7 +61,7 @@ var _ = Describe("Http", func() {
 	ctrl := gomock.NewController(GinkgoT())
 	provider := mock_provider.NewMockAzProvider(ctrl)
 
-	provider.EXPECT().GetResources(core.AzResource_Topic).AnyTimes().Return(map[string]core.AzGenericResource{
+	provider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).AnyTimes().Return(map[string]core.AzGenericResource{
 		"test": {
 			Name:     "test",
 			Type:     "topic",

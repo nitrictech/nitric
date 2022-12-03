@@ -15,6 +15,7 @@
 package storage_service_test
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -66,7 +67,7 @@ var _ = Describe("Storage", func() {
 					mockWriter.EXPECT().Write(testPayload).Times(1)
 					mockWriter.EXPECT().Close().Times(1)
 
-					err := mockStorageServer.Write("my-bucket", "test-file", testPayload)
+					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -88,7 +89,7 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					err := mockStorageServer.Write("my-bucket", "test-file", testPayload)
+					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -132,7 +133,7 @@ var _ = Describe("Storage", func() {
 						mockReader.EXPECT().Read(gomock.Any()).Return(0, io.EOF)
 						mockReader.EXPECT().Close().Times(1)
 
-						item, err := storagePlugin.Read("test-bucket", "test-key")
+						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -168,7 +169,7 @@ var _ = Describe("Storage", func() {
 						mockBucket.EXPECT().Object("test-key").Return(mockObject)
 						mockObject.EXPECT().NewReader(gomock.Any()).Return(nil, fmt.Errorf("mock-error"))
 
-						item, err := storagePlugin.Read("test-bucket", "test-key")
+						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
@@ -190,7 +191,7 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					item, err := storagePlugin.Read("test-bucket", "test-key")
+					item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -233,7 +234,7 @@ var _ = Describe("Storage", func() {
 						By("the object delete being called")
 						mockObject.EXPECT().Delete(gomock.Any()).Return(nil)
 
-						err := storagePlugin.Delete("test-bucket", "test-key")
+						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -266,7 +267,7 @@ var _ = Describe("Storage", func() {
 						mockBucket.EXPECT().Object("test-key").Return(mockObject)
 						mockObject.EXPECT().Delete(gomock.Any()).Return(fmt.Errorf("mock-error"))
 
-						err := storagePlugin.Delete("test-bucket", "test-key")
+						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
@@ -285,7 +286,7 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					err := storagePlugin.Delete("test-bucket", "test-key")
+					err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -321,7 +322,7 @@ var _ = Describe("Storage", func() {
 						By("the object reference being valid")
 						mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("http://example.com", nil)
 
-						url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 6000)
+						url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 6000)
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -357,7 +358,7 @@ var _ = Describe("Storage", func() {
 						By("the object reference being valid")
 						mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("http://example.com", nil)
 
-						url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.WRITE, 6000)
+						url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.WRITE, 6000)
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -394,7 +395,7 @@ var _ = Describe("Storage", func() {
 					By("the object reference being invalid")
 					mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("", fmt.Errorf("mock-error"))
 
-					url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 6000)
+					url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 6000)
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -416,7 +417,7 @@ var _ = Describe("Storage", func() {
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 
-				url, err := storagePlugin.PreSignUrl("test-bucket", "test-key", plugin.READ, 60)
+				url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 60)
 				By("Returning an error")
 				Expect(err).ShouldNot(BeNil())
 
@@ -458,7 +459,7 @@ var _ = Describe("Storage", func() {
 					mockObjectIterator.EXPECT().Next().Return(nil, iterator.Done),
 				)
 
-				files, err := storagePlugin.ListFiles("test-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -482,7 +483,7 @@ var _ = Describe("Storage", func() {
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-				files, err := storagePlugin.ListFiles("test-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
 
 				By("returning nil files")
 				Expect(files).To(BeNil())

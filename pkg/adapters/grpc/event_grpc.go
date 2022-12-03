@@ -58,7 +58,8 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 		PayloadType: req.GetEvent().GetPayloadType(),
 		Payload:     req.GetEvent().GetPayload().AsMap(),
 	}
-	if err := s.eventPlugin.Publish(req.GetTopic(), int(req.Delay), event); err == nil {
+
+	if err := s.eventPlugin.Publish(ctx, req.GetTopic(), int(req.Delay), event); err == nil {
 		return &pb.EventPublishResponse{
 			Id: ID,
 		}, nil
@@ -95,7 +96,7 @@ func (s *TopicServiceServer) List(ctx context.Context, req *pb.TopicListRequest)
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "TopicService.List", err)
 	}
 
-	if res, err := s.eventPlugin.ListTopics(); err == nil {
+	if res, err := s.eventPlugin.ListTopics(ctx); err == nil {
 		topics := make([]*pb.NitricTopic, len(res))
 		for i, topicName := range res {
 			topics[i] = &pb.NitricTopic{

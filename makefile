@@ -84,54 +84,54 @@ generate-proto: install-tools check-gopath
 # BEGIN AWS Plugins
 aws-static: generate-proto
 	@echo Building static AWS membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws
 
 # Cross-platform Build
 aws-static-xp: generate-proto
 	@echo Building static AWS membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws
 # END AWS Plugins
 
 # BEGIN Azure Plugins
 azure-static: generate-proto
 	@echo Building static Azure membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure
 
 # Cross-platform Build
 azure-static-xp: generate-proto
 	@echo Building static Azure membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure
 # END Azure Plugins
 
 gcp-static: generate-proto
 	@echo Building static GCP membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp
 
 # Cross-platform Build
 gcp-static-xp: generate-proto
 	@echo Building static GCP membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp
 # END GCP Plugins
 
 # BEGIN Local Plugins
 # Cross-platform build only, this membrane is not for production use.
 dev-static: generate-proto
 	@echo Building static Local membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/dev
 # END Local Plugins
 
 # BEGIN DigitalOcean Plugins
 do-static: generate-proto
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/do
 # END DigitalOcean Plugins
 
 build-all-binaries: clean generate-proto
 	@echo Building all provider membranes
-	@CGO_ENABLED=0 go build -o bin/membrane-gcp -ldflags="-extldflags=-static" ./pkg/providers/gcp/membrane.go
-	@CGO_ENABLED=0 go build -o bin/membrane-aws -ldflags="-extldflags=-static" ./pkg/providers/aws/membrane.go
-	@CGO_ENABLED=0 go build -o bin/membrane-azure -ldflags="-extldflags=-static" ./pkg/providers/azure/membrane.go
-	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do/membrane.go
-	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev/membrane.go
+	@CGO_ENABLED=0 go build -o bin/membrane-gcp -ldflags="-extldflags=-static" ./pkg/providers/gcp
+	@CGO_ENABLED=0 go build -o bin/membrane-aws -ldflags="-extldflags=-static" ./pkg/providers/aws
+	@CGO_ENABLED=0 go build -o bin/membrane-azure -ldflags="-extldflags=-static" ./pkg/providers/azure
+	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do
+	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev
 
 # generate mock implementations
 generate-mocks:
@@ -156,15 +156,17 @@ generate-mocks:
 	@mkdir -p mocks/plugins/events
 	@mkdir -p mocks/pubsub
 	@mkdir -p mocks/cloudtasks
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sns/snsiface SNSAPI > mocks/sns/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sfn/sfniface SFNAPI > mocks/sfn/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/snsiface SNSAPI > mocks/sns/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sfniface SFNAPI > mocks/sfn/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/azure/core AzProvider > mocks/provider/azure.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/gcp/core GcpProvider > mocks/provider/gcp.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/document DocumentService > mocks/document/mock.go
@@ -172,8 +174,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage StorageService > mocks/storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue QueueService > mocks/queue/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker Worker,Adapter > mocks/worker/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/s3/s3iface S3API > mocks/s3/mock.go
-	@go run github.com/golang/mock/mockgen github.com/aws/aws-sdk-go/service/sqs/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go

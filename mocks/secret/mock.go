@@ -5,6 +5,7 @@
 package mock_secret
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,31 +36,31 @@ func (m *MockSecretService) EXPECT() *MockSecretServiceMockRecorder {
 }
 
 // Access mocks base method.
-func (m *MockSecretService) Access(arg0 *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (m *MockSecretService) Access(arg0 context.Context, arg1 *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Access", arg0)
+	ret := m.ctrl.Call(m, "Access", arg0, arg1)
 	ret0, _ := ret[0].(*secret.SecretAccessResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Access indicates an expected call of Access.
-func (mr *MockSecretServiceMockRecorder) Access(arg0 interface{}) *gomock.Call {
+func (mr *MockSecretServiceMockRecorder) Access(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Access", reflect.TypeOf((*MockSecretService)(nil).Access), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Access", reflect.TypeOf((*MockSecretService)(nil).Access), arg0, arg1)
 }
 
 // Put mocks base method.
-func (m *MockSecretService) Put(arg0 *secret.Secret, arg1 []byte) (*secret.SecretPutResponse, error) {
+func (m *MockSecretService) Put(arg0 context.Context, arg1 *secret.Secret, arg2 []byte) (*secret.SecretPutResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", arg0, arg1)
+	ret := m.ctrl.Call(m, "Put", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*secret.SecretPutResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Put indicates an expected call of Put.
-func (mr *MockSecretServiceMockRecorder) Put(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockSecretServiceMockRecorder) Put(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockSecretService)(nil).Put), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockSecretService)(nil).Put), arg0, arg1, arg2)
 }

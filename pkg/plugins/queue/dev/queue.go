@@ -15,6 +15,7 @@
 package queue_service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -44,7 +45,7 @@ type Item struct {
 	Data []byte
 }
 
-func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
+func (s *DevQueueService) Send(ctx context.Context, queue string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Send",
 		map[string]interface{}{
@@ -96,7 +97,7 @@ func (s *DevQueueService) Send(queue string, task queue.NitricTask) error {
 	return nil
 }
 
-func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (s *DevQueueService) SendBatch(ctx context.Context, q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.SendBatch",
 		map[string]interface{}{
@@ -159,7 +160,7 @@ func (s *DevQueueService) SendBatch(q string, tasks []queue.NitricTask) (*queue.
 	}, nil
 }
 
-func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (s *DevQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Receive",
 		map[string]interface{}{
@@ -223,7 +224,7 @@ func (s *DevQueueService) Receive(options queue.ReceiveOptions) ([]queue.NitricT
 }
 
 // Completes a previously popped queue item
-func (s *DevQueueService) Complete(queue string, leaseId string) error {
+func (s *DevQueueService) Complete(ctx context.Context, queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"DevQueueService.Complete",
 		map[string]interface{}{

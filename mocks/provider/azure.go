@@ -5,6 +5,7 @@
 package mock_core
 
 import (
+	context "context"
 	reflect "reflect"
 
 	adal "github.com/Azure/go-autorest/autorest/adal"
@@ -37,33 +38,33 @@ func (m *MockAzProvider) EXPECT() *MockAzProviderMockRecorder {
 }
 
 // Details mocks base method.
-func (m *MockAzProvider) Details(arg0, arg1 string) (*common.DetailsResponse[interface{}], error) {
+func (m *MockAzProvider) Details(arg0 context.Context, arg1, arg2 string) (*common.DetailsResponse[interface{}], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret := m.ctrl.Call(m, "Details", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*common.DetailsResponse[interface{}])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Details indicates an expected call of Details.
-func (mr *MockAzProviderMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockAzProviderMockRecorder) Details(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockAzProvider)(nil).Details), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockAzProvider)(nil).Details), arg0, arg1, arg2)
 }
 
 // GetResources mocks base method.
-func (m *MockAzProvider) GetResources(arg0 string) (map[string]core.AzGenericResource, error) {
+func (m *MockAzProvider) GetResources(arg0 context.Context, arg1 string) (map[string]core.AzGenericResource, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetResources", arg0)
+	ret := m.ctrl.Call(m, "GetResources", arg0, arg1)
 	ret0, _ := ret[0].(map[string]core.AzGenericResource)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetResources indicates an expected call of GetResources.
-func (mr *MockAzProviderMockRecorder) GetResources(arg0 interface{}) *gomock.Call {
+func (mr *MockAzProviderMockRecorder) GetResources(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResources", reflect.TypeOf((*MockAzProvider)(nil).GetResources), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResources", reflect.TypeOf((*MockAzProvider)(nil).GetResources), arg0, arg1)
 }
 
 // ResourceGroupName mocks base method.

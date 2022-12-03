@@ -15,6 +15,8 @@
 package document_suite
 
 import (
+	"context"
+
 	"github.com/nitrictech/nitric/pkg/plugins/document"
 	"github.com/nitrictech/nitric/pkg/utils"
 )
@@ -299,31 +301,31 @@ var ChildItemsCollection = document.Collection{
 // Test Data Loading Functions ------------------------------------------------
 
 func LoadUsersData(docPlugin document.DocumentService) {
-	utils.Must(docPlugin.Set(&UserKey1, UserItem1))
-	utils.Must(docPlugin.Set(&UserKey2, UserItem2))
-	utils.Must(docPlugin.Set(&UserKey3, UserItem3))
+	utils.Must(docPlugin.Set(context.TODO(), &UserKey1, UserItem1))
+	utils.Must(docPlugin.Set(context.TODO(), &UserKey2, UserItem2))
+	utils.Must(docPlugin.Set(context.TODO(), &UserKey3, UserItem3))
 }
 
 func LoadCustomersData(docPlugin document.DocumentService) {
-	utils.Must(docPlugin.Set(&Customer1.Key, Customer1.Content))
-	utils.Must(docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content))
-	utils.Must(docPlugin.Set(&Customer1.Orders[1].Key, Customer1.Orders[1].Content))
-	utils.Must(docPlugin.Set(&Customer1.Orders[2].Key, Customer1.Orders[2].Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Key, Customer1.Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[0].Key, Customer1.Orders[0].Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[1].Key, Customer1.Orders[1].Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[2].Key, Customer1.Orders[2].Content))
 
-	utils.Must(docPlugin.Set(&Customer2.Key, Customer2.Content))
-	utils.Must(docPlugin.Set(&Customer2.Orders[0].Key, Customer2.Orders[0].Content))
-	utils.Must(docPlugin.Set(&Customer2.Orders[1].Key, Customer2.Orders[1].Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Key, Customer2.Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Orders[0].Key, Customer2.Orders[0].Content))
+	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Orders[1].Key, Customer2.Orders[1].Content))
 }
 
 func LoadItemsData(docPlugin document.DocumentService) {
 	for _, item := range Items {
-		utils.Must(docPlugin.Set(&item.Key, item.Content))
+		utils.Must(docPlugin.Set(context.TODO(), &item.Key, item.Content))
 
 		key := document.Key{
 			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
-		utils.Must(docPlugin.Set(&key, item.Content))
+		utils.Must(docPlugin.Set(context.TODO(), &key, item.Content))
 	}
 }
 

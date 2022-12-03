@@ -15,6 +15,8 @@
 package document_suite
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,39 +28,39 @@ func DeleteTests(docPlugin document.DocumentService) {
 		When("Blank key.Collection.Name", func() {
 			It("Should return error", func() {
 				key := document.Key{Id: "1"}
-				err := docPlugin.Delete(&key)
+				err := docPlugin.Delete(context.TODO(), &key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Blank key.Id", func() {
 			It("Should return error", func() {
 				key := document.Key{Collection: &document.Collection{Name: "users"}}
-				err := docPlugin.Delete(&key)
+				err := docPlugin.Delete(context.TODO(), &key)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Delete", func() {
 			It("Should delete item successfully", func() {
-				err := docPlugin.Set(&UserKey1, UserItem1)
+				err := docPlugin.Set(context.TODO(), &UserKey1, UserItem1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = docPlugin.Delete(&UserKey1)
+				err = docPlugin.Delete(context.TODO(), &UserKey1)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(&UserKey1)
+				doc, err := docPlugin.Get(context.TODO(), &UserKey1)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Valid Sub Collection Delete", func() {
 			It("Should delete item successfully", func() {
-				err := docPlugin.Set(&Customer1.Orders[0].Key, Customer1.Orders[0].Content)
+				err := docPlugin.Set(context.TODO(), &Customer1.Orders[0].Key, Customer1.Orders[0].Content)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = docPlugin.Delete(&Customer1.Orders[0].Key)
+				err = docPlugin.Delete(context.TODO(), &Customer1.Orders[0].Key)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				doc, err := docPlugin.Get(&Customer1.Orders[0].Key)
+				doc, err := docPlugin.Get(context.TODO(), &Customer1.Orders[0].Key)
 				Expect(doc).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
@@ -76,17 +78,17 @@ func DeleteTests(docPlugin document.DocumentService) {
 					},
 				}
 
-				result, err := docPlugin.Query(&col, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &col, []document.QueryExpression{}, 0, nil)
 				Expect(err).To(BeNil())
 				Expect(result.Documents).To(HaveLen(5))
 
-				err = docPlugin.Delete(&Customer1.Key)
+				err = docPlugin.Delete(context.TODO(), &Customer1.Key)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = docPlugin.Delete(&Customer2.Key)
+				err = docPlugin.Delete(context.TODO(), &Customer2.Key)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				result, err = docPlugin.Query(&col, []document.QueryExpression{}, 0, nil)
+				result, err = docPlugin.Query(context.TODO(), &col, []document.QueryExpression{}, 0, nil)
 				Expect(err).To(BeNil())
 				Expect(result.Documents).To(HaveLen(0))
 			})

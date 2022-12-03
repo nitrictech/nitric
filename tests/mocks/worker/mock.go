@@ -15,6 +15,8 @@
 package worker_mocks
 
 import (
+	"context"
+
 	triggers2 "github.com/nitrictech/nitric/pkg/triggers"
 )
 
@@ -33,7 +35,7 @@ type MockWorker struct {
 	ReceivedRequests []*triggers2.HttpRequest
 }
 
-func (m *MockWorker) HandleEvent(trigger *triggers2.Event) error {
+func (m *MockWorker) HandleEvent(ctx context.Context, trigger *triggers2.Event) error {
 	m.ReceivedEvents = append(m.ReceivedEvents, trigger)
 
 	return m.eventError
@@ -47,7 +49,7 @@ func (m *MockWorker) HandlesHttpRequest(trigger *triggers2.HttpRequest) bool {
 	return true
 }
 
-func (m *MockWorker) HandleHttpRequest(trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
+func (m *MockWorker) HandleHttpRequest(ctx context.Context, trigger *triggers2.HttpRequest) (*triggers2.HttpResponse, error) {
 	m.ReceivedRequests = append(m.ReceivedRequests, trigger)
 
 	return m.returnHttp, m.httpError

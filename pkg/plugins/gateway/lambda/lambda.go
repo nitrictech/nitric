@@ -25,6 +25,10 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"go.opentelemetry.io/contrib/propagators/aws/xray"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	ep "github.com/nitrictech/nitric/pkg/plugins/events"
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
@@ -70,8 +74,8 @@ func getEventType(request map[string]interface{}) eventType {
 	return unknown
 }
 
-func (s *LambdaGateway) getTopicNameForArn(topicArn string) (string, error) {
-	topics, err := s.provider.GetResources(core.AwsResource_Topic)
+func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string) (string, error) {
+	topics, err := s.provider.GetResources(ctx, core.AwsResource_Topic)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving topics: %w", err)
 	}
@@ -91,7 +95,7 @@ func (s *LambdaGateway) isHealthCheck(data map[string]interface{}) bool {
 	return ok
 }
 
-func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]triggers.Trigger, error) {
+func (s *LambdaGateway) triggersFromRequest(ctx context.Context, data map[string]interface{}) ([]triggers.Trigger, error) {
 	bytes, _ := json.Marshal(data)
 	trigs := make([]triggers.Trigger, 0)
 
@@ -105,6 +109,14 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 				messageJson := &ep.NitricEvent{}
 				var payloadBytes []byte
 				var id string
+				attrs := map[string]string{}
+
+				for k, v := range snsRecord.SNS.MessageAttributes {
+					sv, ok := v.(string)
+					if ok {
+						attrs[k] = sv
+					}
+				}
 
 				// Populate the JSON
 				if err := json.Unmarshal([]byte(messageString), messageJson); err == nil {
@@ -117,13 +129,14 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 					id = snsRecord.SNS.MessageID
 				}
 
-				tName, err := s.getTopicNameForArn(snsRecord.SNS.TopicArn)
+				tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
 
 				if err == nil {
 					trigs = append(trigs, &triggers.Event{
-						ID:      id,
-						Topic:   tName,
-						Payload: payloadBytes,
+						ID:         id,
+						Topic:      tName,
+						Payload:    payloadBytes,
+						Attributes: attrs,
 					})
 				} else {
 					log.Default().Printf("unable to find nitric topic: %v", err)
@@ -164,6 +177,7 @@ func (s *LambdaGateway) triggersFromRequest(data map[string]interface{}) ([]trig
 			Body:   []byte(evt.Body),
 			Method: evt.RequestContext.HTTP.Method,
 			Path:   evt.RawPath,
+			URL:    evt.RawPath,
 			Query:  qVals,
 		})
 
@@ -191,7 +205,7 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 		}, nil
 	}
 
-	trigs, err := s.triggersFromRequest(data)
+	trigs, err := s.triggersFromRequest(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +220,10 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 				if err != nil {
 					return nil, fmt.Errorf("unable to get worker to handle http trigger")
 				}
-				response, err := wrkr.HandleHttpRequest(httpEvent)
+
+				var hc propagation.HeaderCarrier = httpEvent.Header
+
+				response, err := wrkr.HandleHttpRequest(xray.Propagator{}.Extract(ctx, hc), httpEvent)
 				if err != nil {
 					return events.APIGatewayProxyResponse{
 						StatusCode: 500,
@@ -245,7 +262,10 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 				if err != nil {
 					return nil, fmt.Errorf("unable to get worker to event trigger")
 				}
-				if err := wrkr.HandleEvent(event); err != nil {
+
+				var mc propagation.MapCarrier = event.Attributes
+
+				if err := wrkr.HandleEvent(xray.Propagator{}.Extract(ctx, mc), event); err != nil {
 					return nil, err
 				}
 			} else {
@@ -253,6 +273,7 @@ func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{})
 			}
 		}
 	}
+
 	return nil, nil
 }
 
@@ -261,7 +282,16 @@ func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
 	// s.finished = make(chan int)
 	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...
-	s.runtime(s.handle)
+	s.runtime(func(ctx context.Context, data map[string]interface{}) (interface{}, error) {
+		a, err := s.handle(ctx, data)
+
+		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
+		if ok {
+			_ = tp.ForceFlush(ctx)
+		}
+
+		return a, err
+	})
 	// Unblock the 'Stop' function if it's waiting.
 	go func() { s.finished <- 1 }()
 	return nil

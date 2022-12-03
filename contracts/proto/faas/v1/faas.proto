@@ -109,6 +109,9 @@ message InitRequest {
 // Placeholder message
 message InitResponse {}
 
+message TraceContext {
+  map<string, string> values = 1;
+}
 
 // The server has a trigger for the client to handle
 message TriggerRequest {
@@ -118,6 +121,12 @@ message TriggerRequest {
   // Should we supply a mime type for the data?
   // Or rely on context?
   string mime_type = 2;
+
+  // TraceInformation from the membrane
+  // Allows tying traces from external triggers (e.g. HttpRequests)
+  // into each event request/response pair of the Bidirectional stream.
+  // which cannot be facilitated by OOTB stream interceptors from OTEL.
+  TraceContext trace_context = 10;
 
   // The context of the trigger
   oneof context {

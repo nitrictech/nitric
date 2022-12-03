@@ -1520,6 +1520,107 @@ var _ interface {
 	ErrorName() string
 } = InitResponseValidationError{}
 
+// Validate checks the field values on TraceContext with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *TraceContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TraceContext with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in TraceContextMultiError, or
+// nil if none found.
+func (m *TraceContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TraceContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Values
+
+	if len(errors) > 0 {
+		return TraceContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// TraceContextMultiError is an error wrapping multiple validation errors
+// returned by TraceContext.ValidateAll() if the designated constraints aren't met.
+type TraceContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TraceContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TraceContextMultiError) AllErrors() []error { return m }
+
+// TraceContextValidationError is the validation error returned by
+// TraceContext.Validate if the designated constraints aren't met.
+type TraceContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TraceContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TraceContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TraceContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TraceContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TraceContextValidationError) ErrorName() string { return "TraceContextValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TraceContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTraceContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TraceContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TraceContextValidationError{}
+
 // Validate checks the field values on TriggerRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1545,6 +1646,35 @@ func (m *TriggerRequest) validate(all bool) error {
 	// no validation rules for Data
 
 	// no validation rules for MimeType
+
+	if all {
+		switch v := interface{}(m.GetTraceContext()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TriggerRequestValidationError{
+					field:  "TraceContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TriggerRequestValidationError{
+					field:  "TraceContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTraceContext()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TriggerRequestValidationError{
+				field:  "TraceContext",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	switch m.Context.(type) {
 

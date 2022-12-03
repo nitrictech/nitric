@@ -14,7 +14,10 @@
 
 package storage
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type Operation int
 
@@ -33,33 +36,33 @@ type FileInfo struct {
 }
 
 type StorageService interface {
-	Read(bucket string, key string) ([]byte, error)
-	Write(bucket string, key string, object []byte) error
-	Delete(bucket string, key string) error
-	ListFiles(bucket string) ([]*FileInfo, error)
-	PreSignUrl(bucket string, key string, operation Operation, expiry uint32) (string, error)
+	Read(ctx context.Context, bucket string, key string) ([]byte, error)
+	Write(ctx context.Context, bucket string, key string, object []byte) error
+	Delete(ctx context.Context, bucket string, key string) error
+	ListFiles(ctx context.Context, bucket string) ([]*FileInfo, error)
+	PreSignUrl(ctx context.Context, bucket string, key string, operation Operation, expiry uint32) (string, error)
 }
 
 type UnimplementedStoragePlugin struct{}
 
 var _ StorageService = (*UnimplementedStoragePlugin)(nil)
 
-func (*UnimplementedStoragePlugin) Read(bucket string, key string) ([]byte, error) {
+func (*UnimplementedStoragePlugin) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedStoragePlugin) Write(bucket string, key string, object []byte) error {
+func (*UnimplementedStoragePlugin) Write(ctx context.Context, bucket string, key string, object []byte) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedStoragePlugin) Delete(bucket string, key string) error {
+func (*UnimplementedStoragePlugin) Delete(ctx context.Context, bucket string, key string) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedStoragePlugin) ListFiles(bucket string) ([]*FileInfo, error) {
+func (*UnimplementedStoragePlugin) ListFiles(ctx context.Context, bucket string) ([]*FileInfo, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedStoragePlugin) PreSignUrl(bucket string, key string, operation Operation, expiry uint32) (string, error) {
+func (*UnimplementedStoragePlugin) PreSignUrl(ctx context.Context, bucket string, key string, operation Operation, expiry uint32) (string, error) {
 	return "", fmt.Errorf("UNIMPLEMENTED")
 }

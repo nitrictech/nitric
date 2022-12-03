@@ -15,6 +15,7 @@
 package secret_manager_secret_service
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/golang/mock/gomock"
@@ -77,7 +78,7 @@ var _ = Describe("Secret Manager", func() {
 						Name: "/projects/secrets/Test/versions/1",
 					}, nil).Times(1)
 
-					response, err := secretPlugin.Put(&testSecret, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -93,7 +94,7 @@ var _ = Describe("Secret Manager", func() {
 				}
 
 				It("Should return an error", func() {
-					_, err := secretPlugin.Put(nil, testSecretVal)
+					_, err := secretPlugin.Put(context.TODO(), nil, testSecretVal)
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("provide non-nil secret"))
 				})
@@ -107,7 +108,7 @@ var _ = Describe("Secret Manager", func() {
 
 				It("Should return an error", func() {
 					emptySecretName := &secret.Secret{}
-					_, err := secretPlugin.Put(emptySecretName, testSecretVal)
+					_, err := secretPlugin.Put(context.TODO(), emptySecretName, testSecretVal)
 
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("provide non-blank secret name"))
@@ -121,7 +122,7 @@ var _ = Describe("Secret Manager", func() {
 				}
 
 				It("Should return an error", func() {
-					_, err := secretPlugin.Put(&testSecret, nil)
+					_, err := secretPlugin.Put(context.TODO(), &testSecret, nil)
 
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("provide non-blank secret value"))
@@ -156,7 +157,7 @@ var _ = Describe("Secret Manager", func() {
 								Data: []byte("Super Secret Message"),
 							},
 						}, nil).Times(1)
-						response, err := secretPlugin.Access(&secret.SecretVersion{
+						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 							Secret: &secret.Secret{
 								Name: "test-id",
 							},
@@ -190,7 +191,7 @@ var _ = Describe("Secret Manager", func() {
 							},
 						).Return(nil, fmt.Errorf("failed to access secret")).Times(1)
 
-						response, err := secretPlugin.Access(&secret.SecretVersion{
+						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 							Secret: &secret.Secret{
 								Name: "test-id",
 							},
@@ -212,7 +213,7 @@ var _ = Describe("Secret Manager", func() {
 					}
 
 					It("Should return an error", func() {
-						response, err := secretPlugin.Access(&secret.SecretVersion{
+						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 							Secret: &secret.Secret{
 								Name: "",
 							},
@@ -233,7 +234,7 @@ var _ = Describe("Secret Manager", func() {
 						cache:     make(map[string]string),
 					}
 					It("Should return an error", func() {
-						response, err := secretPlugin.Access(&secret.SecretVersion{
+						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
 							Secret: &secret.Secret{
 								Name: "test-id",
 							},

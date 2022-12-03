@@ -15,6 +15,8 @@
 package pubsub_service_test
 
 import (
+	"context"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,7 +42,7 @@ var _ = Describe("Pubsub Plugin", func() {
 				mockIterator.EXPECT().Next().Return(nil, iterator.Done)
 				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
 
-				topics, err := pubsubPlugin.ListTopics()
+				topics, err := pubsubPlugin.ListTopics(context.TODO())
 				Expect(err).To(BeNil())
 				Expect(topics).To(BeEmpty())
 			})
@@ -62,7 +64,7 @@ var _ = Describe("Pubsub Plugin", func() {
 				)
 				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
 
-				topics, err := pubsubPlugin.ListTopics()
+				topics, err := pubsubPlugin.ListTopics(context.TODO())
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("Test"))
 			})
@@ -93,7 +95,7 @@ var _ = Describe("Pubsub Plugin", func() {
 				By("the topic existing")
 				pubsubClient.EXPECT().Topic(gomock.Any()).Return(mockTopic)
 
-				err := pubsubPlugin.Publish("Test", 0, event)
+				err := pubsubPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})
@@ -126,7 +128,7 @@ var _ = Describe("Pubsub Plugin", func() {
 				// This will require a custom gomock matcher, implemented here...
 				cloudtasksClient.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, nil)
 
-				err := pubsubPlugin.Publish("Test", 1, event)
+				err := pubsubPlugin.Publish(context.TODO(), "Test", 1, event)
 				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})

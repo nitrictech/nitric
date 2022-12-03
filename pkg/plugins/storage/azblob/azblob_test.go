@@ -71,7 +71,7 @@ var _ = Describe("Azblob", func() {
 				By("Reading from the download response")
 				mockDown.EXPECT().Body(gomock.Any()).Times(1).Return(io.NopCloser(strings.NewReader("file-contents")))
 
-				data, err := storagePlugin.Read("my-bucket", "my-blob")
+				data, err := storagePlugin.Read(context.TODO(), "my-bucket", "my-blob")
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -110,7 +110,7 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(nil, fmt.Errorf("Failed to download"))
 
-				_, err := storagePlugin.Read("my-bucket", "my-blob")
+				_, err := storagePlugin.Read(context.TODO(), "my-bucket", "my-blob")
 
 				By("Returning an error")
 				Expect(err).To(HaveOccurred())
@@ -148,7 +148,7 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(&azblob.BlockBlobUploadResponse{}, nil)
 
-				err := storagePlugin.Write("my-bucket", "my-blob", []byte("test"))
+				err := storagePlugin.Write(context.TODO(), "my-bucket", "my-blob", []byte("test"))
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -186,7 +186,7 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				err := storagePlugin.Write("my-bucket", "my-blob", []byte("test"))
+				err := storagePlugin.Write(context.TODO(), "my-bucket", "my-blob", []byte("test"))
 
 				By("returning an error")
 				Expect(err).To(HaveOccurred())
@@ -221,7 +221,7 @@ var _ = Describe("Azblob", func() {
 					azblob.BlobAccessConditions{},
 				).Times(1).Return(&azblob.BlobDeleteResponse{}, nil)
 
-				err := storagePlugin.Delete("my-bucket", "my-blob")
+				err := storagePlugin.Delete(context.TODO(), "my-bucket", "my-blob")
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -254,7 +254,7 @@ var _ = Describe("Azblob", func() {
 					azblob.BlobAccessConditions{},
 				).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				err := storagePlugin.Delete("my-bucket", "my-blob")
+				err := storagePlugin.Delete(context.TODO(), "my-bucket", "my-blob")
 
 				By("Not returning an error")
 				Expect(err).To(HaveOccurred())
@@ -293,7 +293,7 @@ var _ = Describe("Azblob", func() {
 					},
 				}, nil)
 
-				files, err := storagePlugin.ListFiles("my-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket")
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -324,7 +324,7 @@ var _ = Describe("Azblob", func() {
 				By("Azure returning an error")
 				mockContainer.EXPECT().ListBlobsFlatSegment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				files, err := storagePlugin.ListFiles("my-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket")
 
 				By("returning nil results")
 				Expect(files).To(BeNil())
@@ -365,7 +365,7 @@ var _ = Describe("Azblob", func() {
 				By("Getting the URL")
 				mockBlob.EXPECT().Url().Return(*u)
 
-				url, err := storagePlugin.PreSignUrl("my-bucket", "my-blob", storage.READ, 3600)
+				url, err := storagePlugin.PreSignUrl(context.TODO(), "my-bucket", "my-blob", storage.READ, 3600)
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -404,7 +404,7 @@ var _ = Describe("Azblob", func() {
 				By("Getting the URL")
 				mockBlob.EXPECT().Url().Return(*u)
 
-				url, err := storagePlugin.PreSignUrl("my-bucket", "my-blob", storage.READ, 3600)
+				url, err := storagePlugin.PreSignUrl(context.TODO(), "my-bucket", "my-blob", storage.READ, 3600)
 
 				By("Not returning a url")
 				Expect(url).To(Equal(""))

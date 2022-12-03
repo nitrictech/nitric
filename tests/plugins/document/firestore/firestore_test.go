@@ -61,14 +61,13 @@ var _ = Describe("Firestore", func() {
 	}
 	plugins.StartContainer(containerName, args)
 
-	ctx := context.Background()
-	db := createFirestoreClient(ctx)
+	db := createFirestoreClient(context.TODO())
 
 	AfterSuite(func() {
 		plugins.StopContainer(containerName)
 	})
 
-	docPlugin, err := firestore_service.NewWithClient(db, ctx)
+	docPlugin, err := firestore_service.NewWithClient(db)
 	if err != nil {
 		panic(err)
 	}

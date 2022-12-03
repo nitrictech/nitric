@@ -16,17 +16,19 @@ package s3_service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
+	"github.com/nitrictech/nitric/pkg/ifaces/s3iface"
 	"github.com/nitrictech/nitric/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/pkg/plugins/storage"
@@ -43,20 +45,21 @@ const (
 // S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
 type S3StorageService struct {
 	// storage.UnimplementedStoragePlugin
-	client   s3iface.S3API
-	provider core.AwsProvider
-	selector BucketSelector
+	client        s3iface.S3API
+	preSignClient s3iface.PreSignAPI
+	provider      core.AwsProvider
+	selector      BucketSelector
 	storage.UnimplementedStoragePlugin
 }
 
 type BucketSelector = func(nitricName string) (*string, error)
 
-func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
+func (s *S3StorageService) getBucketName(ctx context.Context, bucket string) (*string, error) {
 	if s.selector != nil {
 		return s.selector(bucket)
 	}
 
-	buckets, err := s.provider.GetResources(core.AwsResource_Bucket)
+	buckets, err := s.provider.GetResources(ctx, core.AwsResource_Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bucket list: %w", err)
 	}
@@ -71,7 +74,7 @@ func (s *S3StorageService) getBucketName(bucket string) (*string, error) {
 }
 
 // Read - Retrieves an item from a bucket
-func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
+func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Read",
 		map[string]interface{}{
@@ -80,8 +83,8 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
-		resp, err := s.client.GetObject(&s3.GetObjectInput{
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
+		resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		})
@@ -106,7 +109,7 @@ func (s *S3StorageService) Read(bucket string, key string) ([]byte, error) {
 }
 
 // Write - Writes an item to a bucket
-func (s *S3StorageService) Write(bucket string, key string, object []byte) error {
+func (s *S3StorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Write",
 		map[string]interface{}{
@@ -116,10 +119,10 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		contentType := http.DetectContentType(object)
 
-		if _, err := s.client.PutObject(&s3.PutObjectInput{
+		if _, err := s.client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      b,
 			Body:        bytes.NewReader(object),
 			ContentType: &contentType,
@@ -143,7 +146,7 @@ func (s *S3StorageService) Write(bucket string, key string, object []byte) error
 }
 
 // Delete - Deletes an item from a bucket
-func (s *S3StorageService) Delete(bucket string, key string) error {
+func (s *S3StorageService) Delete(ctx context.Context, bucket string, key string) error {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.Delete",
 		map[string]interface{}{
@@ -152,9 +155,9 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		// TODO: should we handle delete markers, etc.?
-		if _, err := s.client.DeleteObject(&s3.DeleteObjectInput{
+		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: b,
 			Key:    aws.String(key),
 		}); err != nil {
@@ -177,7 +180,7 @@ func (s *S3StorageService) Delete(bucket string, key string) error {
 
 // PreSignUrl - generates a signed URL which can be used to perform direct operations on a file
 // useful for large file uploads/downloads so they can bypass application code and work directly with S3
-func (s *S3StorageService) PreSignUrl(bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
+func (s *S3StorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.PreSignUrl",
 		map[string]interface{}{
@@ -187,14 +190,13 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		switch operation {
 		case storage.READ:
-			req, _ := s.client.GetObjectRequest(&s3.GetObjectInput{
+			req, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
-			})
-			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
 			if err != nil {
 				return "", newErr(
 					codes.Internal,
@@ -202,13 +204,12 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 					err,
 				)
 			}
-			return url, err
+			return req.URL, err
 		case storage.WRITE:
-			req, _ := s.client.PutObjectRequest(&s3.PutObjectInput{
+			req, err := s.preSignClient.PresignPutObject(ctx, &s3.PutObjectInput{
 				Bucket: b,
 				Key:    aws.String(key),
-			})
-			url, err := req.Presign(time.Duration(expiry) * time.Second)
+			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
 			if err != nil {
 				return "", newErr(
 					codes.Internal,
@@ -216,7 +217,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 					err,
 				)
 			}
-			return url, err
+			return req.URL, err
 		default:
 			return "", fmt.Errorf("requested operation not supported for pre-signed AWS S3 urls")
 		}
@@ -229,7 +230,7 @@ func (s *S3StorageService) PreSignUrl(bucket string, key string, operation stora
 	}
 }
 
-func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error) {
+func (s *S3StorageService) ListFiles(ctx context.Context, bucket string) ([]*storage.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.ListFiles",
 		map[string]interface{}{
@@ -237,8 +238,8 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 		},
 	)
 
-	if b, err := s.getBucketName(bucket); err == nil {
-		objects, err := s.client.ListObjects(&s3.ListObjectsInput{
+	if b, err := s.getBucketName(ctx, bucket); err == nil {
+		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: b,
 		})
 		if err != nil {
@@ -270,28 +271,28 @@ func (s *S3StorageService) ListFiles(bucket string) ([]*storage.FileInfo, error)
 func New(provider core.AwsProvider) (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 
-	sess, sessionError := session.NewSession(&aws.Config{
-		// FIXME: Use ENV configuration
-		Region: aws.String(awsRegion),
-	})
-
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	s3Client := s3.New(sess)
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
+
+	s3Client := s3.NewFromConfig(cfg)
 
 	return &S3StorageService{
-		client:   s3Client,
-		provider: provider,
+		client:        s3Client,
+		preSignClient: s3.NewPresignClient(s3Client),
+		provider:      provider,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(provider core.AwsProvider, client s3iface.S3API, opts ...S3StorageServiceOption) (storage.StorageService, error) {
+func NewWithClient(provider core.AwsProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (storage.StorageService, error) {
 	s3Client := &S3StorageService{
-		client:   client,
-		provider: provider,
+		client:        client,
+		preSignClient: preSignClient,
+		provider:      provider,
 	}
 
 	for _, o := range opts {

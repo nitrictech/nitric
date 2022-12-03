@@ -14,7 +14,10 @@
 
 package document
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // MaxSubCollectionDepth - maximum number of parents a collection can support.
 // Depth is a count of the number of parents for a collection.
@@ -54,34 +57,34 @@ type DocumentIterator = func() (*Document, error)
 // Use this over proto definitions to remove dependency on protobuf in the plugin internally
 // and open options to adding additional non-grpc interfaces
 type DocumentService interface {
-	Get(*Key) (*Document, error)
-	Set(*Key, map[string]interface{}) error
-	Delete(*Key) error
-	Query(*Collection, []QueryExpression, int, map[string]string) (*QueryResult, error)
-	QueryStream(*Collection, []QueryExpression, int) DocumentIterator
+	Get(context.Context, *Key) (*Document, error)
+	Set(context.Context, *Key, map[string]interface{}) error
+	Delete(context.Context, *Key) error
+	Query(context.Context, *Collection, []QueryExpression, int, map[string]string) (*QueryResult, error)
+	QueryStream(context.Context, *Collection, []QueryExpression, int) DocumentIterator
 }
 
 type UnimplementedDocumentPlugin struct {
 	DocumentService
 }
 
-func (p *UnimplementedDocumentPlugin) Get(key *Key) (*Document, error) {
+func (p *UnimplementedDocumentPlugin) Get(ctx context.Context, key *Key) (*Document, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Set(key *Key, content map[string]interface{}) error {
+func (p *UnimplementedDocumentPlugin) Set(ctx context.Context, key *Key, content map[string]interface{}) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Delete(key *Key) error {
+func (p *UnimplementedDocumentPlugin) Delete(ctx context.Context, key *Key) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) Query(collection *Collection, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
+func (p *UnimplementedDocumentPlugin) Query(ctx context.Context, collection *Collection, expressions []QueryExpression, limit int, pagingToken map[string]string) (*QueryResult, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (p *UnimplementedDocumentPlugin) QueryStream(collection *Collection, expressions []QueryExpression, limit int) DocumentIterator {
+func (p *UnimplementedDocumentPlugin) QueryStream(ctx context.Context, collection *Collection, expressions []QueryExpression, limit int) DocumentIterator {
 	return func() (*Document, error) {
 		return nil, fmt.Errorf("UNIMPLEMENTED")
 	}

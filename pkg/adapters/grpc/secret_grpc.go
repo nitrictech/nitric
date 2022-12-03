@@ -46,7 +46,7 @@ func (s *SecretServer) Put(ctx context.Context, req *pb.SecretPutRequest) (*pb.S
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Put", err)
 	}
 
-	if r, err := s.secretPlugin.Put(&secret.Secret{
+	if r, err := s.secretPlugin.Put(ctx, &secret.Secret{
 		Name: req.GetSecret().GetName(),
 	}, req.GetValue()); err == nil {
 		return &pb.SecretPutResponse{
@@ -71,7 +71,7 @@ func (s *SecretServer) Access(ctx context.Context, req *pb.SecretAccessRequest) 
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "SecretService.Access", err)
 	}
 
-	if s, err := s.secretPlugin.Access(&secret.SecretVersion{
+	if s, err := s.secretPlugin.Access(ctx, &secret.SecretVersion{
 		Secret: &secret.Secret{
 			Name: req.GetSecretVersion().GetSecret().GetName(),
 		},

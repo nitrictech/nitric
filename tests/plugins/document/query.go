@@ -15,6 +15,7 @@
 package document_suite
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -27,21 +28,21 @@ func QueryTests(docPlugin document.DocumentService) {
 	Context("Query", func() {
 		When("Invalid - blank key.Collection.Name", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(&document.Collection{}, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &document.Collection{}, []document.QueryExpression{}, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Invalid - nil expressions argument", func() {
 			It("Should return an error", func() {
-				result, err := docPlugin.Query(&document.Collection{Name: "users"}, nil, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &document.Collection{Name: "users"}, nil, 0, nil)
 				Expect(result).To(BeNil())
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		When("Empty database", func() {
 			It("Should return empty list", func() {
-				result, err := docPlugin.Query(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -53,7 +54,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				LoadUsersData(docPlugin)
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(&document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &document.Collection{Name: "users"}, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -70,7 +71,7 @@ func QueryTests(docPlugin document.DocumentService) {
 			It("Should return 2 items", func() {
 				LoadCustomersData(docPlugin)
 
-				result, err := docPlugin.Query(&CustomersColl, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &CustomersColl, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -88,7 +89,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "country", Operator: "==", Value: "US"},
 				}
-				result, err := docPlugin.Query(&CustomersColl, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &CustomersColl, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
@@ -105,7 +106,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					{Operand: "country", Operator: "==", Value: "US"},
 					{Operand: "age", Operator: ">", Value: "40"},
 				}
-				result, err := docPlugin.Query(&CustomersColl, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &CustomersColl, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -119,7 +120,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					Name:   "orders",
 					Parent: &Customer1.Key,
 				}
-				result, err := docPlugin.Query(&coll, []document.QueryExpression{}, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, []document.QueryExpression{}, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -145,7 +146,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -168,7 +169,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "==", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
@@ -188,7 +189,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -214,7 +215,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -237,7 +238,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -263,7 +264,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -280,7 +281,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(5))
@@ -306,7 +307,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: ">=", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(3))
@@ -332,7 +333,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -355,7 +356,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "number", Operator: "<=", Value: "1"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
@@ -375,7 +376,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -398,7 +399,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "type", Operator: "startsWith", Value: "scooter"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 0, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 0, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(1))
@@ -414,7 +415,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				coll := document.Collection{
 					Name: "items",
 				}
-				result, err := docPlugin.Query(&coll, []document.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, []document.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(10))
@@ -428,7 +429,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&coll, []document.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &coll, []document.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -454,7 +455,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
-				result, err := docPlugin.Query(&coll, exps, 4, nil)
+				result, err := docPlugin.Query(context.TODO(), &coll, exps, 4, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(4))
@@ -468,7 +469,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&coll, exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &coll, exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(4))
@@ -483,7 +484,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					}
 				}
 
-				result, err = docPlugin.Query(&coll, exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &coll, exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))
@@ -494,7 +495,7 @@ func QueryTests(docPlugin document.DocumentService) {
 			It("Should return have multiple pages", func() {
 				LoadItemsData(docPlugin)
 
-				result, err := docPlugin.Query(&ChildItemsCollection, []document.QueryExpression{}, 10, nil)
+				result, err := docPlugin.Query(context.TODO(), &ChildItemsCollection, []document.QueryExpression{}, 10, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(10))
@@ -508,7 +509,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&ChildItemsCollection, []document.QueryExpression{}, 10, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &ChildItemsCollection, []document.QueryExpression{}, 10, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(2))
@@ -531,7 +532,7 @@ func QueryTests(docPlugin document.DocumentService) {
 				exps := []document.QueryExpression{
 					{Operand: "letter", Operator: ">", Value: "D"},
 				}
-				result, err := docPlugin.Query(&ChildItemsCollection, exps, 4, nil)
+				result, err := docPlugin.Query(context.TODO(), &ChildItemsCollection, exps, 4, nil)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(4))
@@ -545,7 +546,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					dataMap[val] = val
 				}
 
-				result, err = docPlugin.Query(&ChildItemsCollection, exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &ChildItemsCollection, exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(4))
@@ -560,7 +561,7 @@ func QueryTests(docPlugin document.DocumentService) {
 					}
 				}
 
-				result, err = docPlugin.Query(&ChildItemsCollection, exps, 4, result.PagingToken)
+				result, err = docPlugin.Query(context.TODO(), &ChildItemsCollection, exps, 4, result.PagingToken)
 				Expect(result).ToNot(BeNil())
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(result.Documents).To(HaveLen(0))

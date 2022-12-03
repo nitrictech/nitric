@@ -16,12 +16,16 @@
 package base_http
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/pkg/span"
 	"github.com/nitrictech/nitric/pkg/triggers"
 	"github.com/nitrictech/nitric/pkg/utils"
 	"github.com/nitrictech/nitric/pkg/worker"
@@ -41,38 +45,39 @@ type BaseHttpGateway struct {
 }
 
 func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
+	return func(rc *fasthttp.RequestCtx) {
 		if s.mw != nil {
-			if !s.mw(ctx, pool) {
+			if !s.mw(rc, pool) {
 				// middleware has indicated that is has processed the request
 				// so we can exit here
 				return
 			}
 		}
 
-		httpTrigger := triggers.FromHttpRequest(ctx)
+		httpTrigger := triggers.FromHttpRequest(rc)
+
 		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
 			Http: httpTrigger,
 		})
 		if err != nil {
-			ctx.Error("Unable to get worker to handle request", 500)
+			rc.Error("Unable to get worker to handle request", 500)
 			return
 		}
 
-		response, err := wrkr.HandleHttpRequest(httpTrigger)
+		response, err := wrkr.HandleHttpRequest(span.FromHeaders(context.TODO(), httpTrigger.Header), httpTrigger)
 		if err != nil {
-			ctx.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
+			rc.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return
 		}
 
 		if response.Header != nil {
-			response.Header.CopyTo(&ctx.Response.Header)
+			response.Header.CopyTo(&rc.Response.Header)
 		}
 
 		// Avoid content length header duplication
-		ctx.Response.Header.Del("Content-Length")
-		ctx.Response.SetStatusCode(response.StatusCode)
-		ctx.Response.SetBody(response.Body)
+		rc.Response.Header.Del("Content-Length")
+		rc.Response.SetStatusCode(response.StatusCode)
+		rc.Response.SetBody(response.Body)
 	}
 }
 
@@ -88,6 +93,12 @@ func (s *BaseHttpGateway) Start(pool worker.WorkerPool) error {
 }
 
 func (s *BaseHttpGateway) Stop() error {
+	tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
+	if ok {
+		_ = tp.ForceFlush(context.TODO())
+		_ = tp.Shutdown(context.TODO())
+	}
+
 	if s.server != nil {
 		return s.server.Shutdown()
 	}

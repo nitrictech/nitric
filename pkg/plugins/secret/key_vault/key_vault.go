@@ -78,7 +78,7 @@ func validateSecretVersion(sec *secret.SecretVersion) error {
 	return nil
 }
 
-func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *KeyVaultSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	validationErr := errors.ErrorsWithScope(
 		"KeyVaultSecretService.Put",
 		map[string]interface{}{
@@ -101,7 +101,7 @@ func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 	stringVal := string(val[:])
 
 	result, err := s.client.SetSecret(
-		context.Background(),
+		ctx,
 		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
 		sec.Name,
 		keyvault.SecretSetParameters{
@@ -126,7 +126,7 @@ func (s *KeyVaultSecretService) Put(sec *secret.Secret, val []byte) (*secret.Sec
 	}, nil
 }
 
-func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *KeyVaultSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	validationErr := errors.ErrorsWithScope(
 		"KeyVaultSecretService.Access",
 		map[string]interface{}{
@@ -153,7 +153,7 @@ func (s *KeyVaultSecretService) Access(sv *secret.SecretVersion) (*secret.Secret
 		version = ""
 	}
 	result, err := s.client.GetSecret(
-		context.Background(),
+		ctx,
 		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
 		sv.Secret.Name,
 		version,

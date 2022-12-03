@@ -59,7 +59,7 @@ func (s *secretManagerSecretService) getParentName() string {
 	return fmt.Sprintf("projects/%s", s.projectId)
 }
 
-func (s *secretManagerSecretService) buildSecretVersionName(sv *secret.SecretVersion) (string, error) {
+func (s *secretManagerSecretService) buildSecretVersionName(ctx context.Context, sv *secret.SecretVersion) (string, error) {
 	if len(sv.Secret.Name) == 0 {
 		return "", fmt.Errorf("provide non-blank name")
 	}
@@ -70,7 +70,7 @@ func (s *secretManagerSecretService) buildSecretVersionName(sv *secret.SecretVer
 
 	parent, inCache := s.cache[sv.Secret.Name]
 	if !inCache {
-		realSec, err := s.getSecret(sv.Secret)
+		realSec, err := s.getSecret(ctx, sv.Secret)
 		if err != nil {
 			return "", err
 		}
@@ -82,8 +82,8 @@ func (s *secretManagerSecretService) buildSecretVersionName(sv *secret.SecretVer
 }
 
 // ensure a secret container exists for storing secret versions
-func (s *secretManagerSecretService) getSecret(sec *secret.Secret) (*secretmanagerpb.Secret, error) {
-	iter := s.client.ListSecrets(context.TODO(), &secretmanagerpb.ListSecretsRequest{
+func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.Secret) (*secretmanagerpb.Secret, error) {
+	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
 		Filter: "labels.x-nitric-name=" + sec.Name + " AND labels.x-nitric-stack=" + s.stackName,
 	})
@@ -103,7 +103,7 @@ func (s *secretManagerSecretService) getSecret(sec *secret.Secret) (*secretmanag
 }
 
 // Put - Creates a new secret if one doesn't exist, or just adds a new secret version
-func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
+func (s *secretManagerSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Put",
 		map[string]interface{}{
@@ -120,7 +120,7 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 	}
 
 	// ensure the secret container exists...
-	parentSec, err := s.getSecret(sec)
+	parentSec, err := s.getSecret(ctx, sec)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -129,7 +129,7 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 		)
 	}
 
-	verResult, err := s.client.AddSecretVersion(context.TODO(), &secretmanagerpb.AddSecretVersionRequest{
+	verResult, err := s.client.AddSecretVersion(ctx, &secretmanagerpb.AddSecretVersionRequest{
 		Parent: parentSec.Name,
 		Payload: &secretmanagerpb.SecretPayload{
 			Data: val,
@@ -157,7 +157,7 @@ func (s *secretManagerSecretService) Put(sec *secret.Secret, val []byte) (*secre
 }
 
 // Get - Retrieves a secret given a name and a version
-func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
+func (s *secretManagerSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Access",
 		map[string]interface{}{
@@ -165,7 +165,7 @@ func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.S
 		},
 	)
 
-	fullName, err := s.buildSecretVersionName(sv)
+	fullName, err := s.buildSecretVersionName(ctx, sv)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -178,7 +178,7 @@ func (s *secretManagerSecretService) Access(sv *secret.SecretVersion) (*secret.S
 		Name: fullName,
 	}
 
-	result, err := s.client.AccessSecretVersion(context.TODO(), req)
+	result, err := s.client.AccessSecretVersion(ctx, req)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

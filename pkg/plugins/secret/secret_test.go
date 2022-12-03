@@ -15,6 +15,8 @@
 package secret_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,7 +28,7 @@ var _ = Describe("Unimplemented Secret Plugin Tests", func() {
 
 	Context("Put", func() {
 		When("Calling Put on UnimplementedSecretPlugin", func() {
-			_, err := uisp.Put(nil, nil)
+			_, err := uisp.Put(context.TODO(), nil, nil)
 
 			It("should return an unimplemented error", func() {
 				Expect(err).Should(HaveOccurred())
@@ -37,7 +39,7 @@ var _ = Describe("Unimplemented Secret Plugin Tests", func() {
 
 	Context("Access", func() {
 		When("Calling Access on UnimplementedSecretPlugin", func() {
-			_, err := uisp.Access(nil)
+			_, err := uisp.Access(context.TODO(), nil)
 
 			It("should return an unimplemented error", func() {
 				Expect(err).Should(HaveOccurred())

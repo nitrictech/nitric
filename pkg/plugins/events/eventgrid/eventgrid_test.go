@@ -15,6 +15,7 @@
 package eventgrid_service_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -53,9 +54,9 @@ var _ = Describe("Event Grid Plugin", func() {
 
 			It("Should return an empty list of topics", func() {
 				By("provider returning no available topics")
-				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(map[string]core.AzGenericResource{}, nil)
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).Return(map[string]core.AzGenericResource{}, nil)
 
-				topics, err := eventgridPlugin.ListTopics()
+				topics, err := eventgridPlugin.ListTopics(context.TODO())
 				Expect(err).To(BeNil())
 				Expect(topics).To(BeEmpty())
 				ctrl.Finish()
@@ -70,9 +71,9 @@ var _ = Describe("Event Grid Plugin", func() {
 
 			It("Should return all available topics", func() {
 				By("provider returning a topic")
-				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
 
-				topics, err := eventgridPlugin.ListTopics()
+				topics, err := eventgridPlugin.ListTopics(context.TODO())
 				Expect(err).To(BeNil())
 				Expect(topics).To(ContainElement("Test"))
 
@@ -98,9 +99,9 @@ var _ = Describe("Event Grid Plugin", func() {
 
 			It("should return an error", func() {
 				By("provider returning no topics")
-				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(map[string]core.AzGenericResource{}, nil)
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).Return(map[string]core.AzGenericResource{}, nil)
 
-				err := eventgridPlugin.Publish("Test", 0, event)
+				err := eventgridPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).Should(HaveOccurred())
 
 				ctrl.Finish()
@@ -126,9 +127,9 @@ var _ = Describe("Event Grid Plugin", func() {
 				}, nil).Times(1)
 
 				By("get resources returning topics")
-				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
 
-				err := eventgridPlugin.Publish("Test", 0, event)
+				err := eventgridPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).Should(HaveOccurred())
 
 				ctrl.Finish()
@@ -143,7 +144,7 @@ var _ = Describe("Event Grid Plugin", func() {
 
 			It("should successfully publish the message", func() {
 				By("the az provider returning topics")
-				mockProvider.EXPECT().GetResources(core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).Return(getTopicResourcesResponse, nil)
 				By("the eventgrid client publishing to the returned topic")
 				eventgridClient.EXPECT().PublishEvents(
 					gomock.Any(),
@@ -155,7 +156,7 @@ var _ = Describe("Event Grid Plugin", func() {
 					},
 				}, nil).Times(1)
 
-				err := eventgridPlugin.Publish("Test", 0, event)
+				err := eventgridPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				ctrl.Finish()

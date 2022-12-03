@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -84,7 +85,7 @@ func (s *RouteWorker) HandlesEvent(trigger *triggers.Event) bool {
 	return false
 }
 
-func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (s *RouteWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
 	params, err := s.extractPathParams(trigger)
 	if err != nil {
 		return nil, err
@@ -92,10 +93,10 @@ func (s *RouteWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*trigger
 
 	trigger.Params = params
 
-	return s.Adapter.HandleHttpRequest(trigger)
+	return s.Adapter.HandleHttpRequest(ctx, trigger)
 }
 
-func (s *RouteWorker) HandleEvent(trigger *triggers.Event) error {
+func (s *RouteWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
 	return fmt.Errorf("route workers cannot handle events")
 }
 

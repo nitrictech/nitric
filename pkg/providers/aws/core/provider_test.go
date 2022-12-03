@@ -15,10 +15,12 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,7 +39,7 @@ var _ = Describe("AwsProvider", func() {
 		}
 
 		It("should return the map of available resources", func() {
-			res, err := provider.GetResources(AwsResource_Bucket)
+			res, err := provider.GetResources(context.TODO(), AwsResource_Bucket)
 
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(res)).To(Equal(1))
@@ -57,9 +59,9 @@ var _ = Describe("AwsProvider", func() {
 				defer ctrl.Finish()
 
 				By("failing to call GetResources")
-				mockClient.EXPECT().GetResources(gomock.Any()).Return(nil, fmt.Errorf("mock-error"))
+				mockClient.EXPECT().GetResources(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("mock-error"))
 
-				res, err := provider.GetResources(AwsResource_Topic)
+				res, err := provider.GetResources(context.TODO(), AwsResource_Topic)
 
 				By("returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -80,10 +82,10 @@ var _ = Describe("AwsProvider", func() {
 
 			It("should return available resources", func() {
 				By("failing to call GetResources")
-				mockClient.EXPECT().GetResources(gomock.Any()).Return(&resourcegroupstaggingapi.GetResourcesOutput{
-					ResourceTagMappingList: []*resourcegroupstaggingapi.ResourceTagMapping{{
+				mockClient.EXPECT().GetResources(gomock.Any(), gomock.Any()).Return(&resourcegroupstaggingapi.GetResourcesOutput{
+					ResourceTagMappingList: []types.ResourceTagMapping{{
 						ResourceARN: aws.String("arn:aws:::sns:test"),
-						Tags: []*resourcegroupstaggingapi.Tag{{
+						Tags: []types.Tag{{
 							Key:   aws.String("x-nitric-name"),
 							Value: aws.String("test"),
 						}, {
@@ -93,7 +95,7 @@ var _ = Describe("AwsProvider", func() {
 					}},
 				}, nil)
 
-				res, err := provider.GetResources(AwsResource_Topic)
+				res, err := provider.GetResources(context.TODO(), AwsResource_Topic)
 
 				By("not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())

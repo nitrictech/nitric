@@ -5,6 +5,7 @@
 package mock_queue
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,59 +36,59 @@ func (m *MockQueueService) EXPECT() *MockQueueServiceMockRecorder {
 }
 
 // Complete mocks base method.
-func (m *MockQueueService) Complete(arg0, arg1 string) error {
+func (m *MockQueueService) Complete(arg0 context.Context, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Complete", arg0, arg1)
+	ret := m.ctrl.Call(m, "Complete", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Complete indicates an expected call of Complete.
-func (mr *MockQueueServiceMockRecorder) Complete(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockQueueServiceMockRecorder) Complete(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockQueueService)(nil).Complete), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockQueueService)(nil).Complete), arg0, arg1, arg2)
 }
 
 // Receive mocks base method.
-func (m *MockQueueService) Receive(arg0 queue.ReceiveOptions) ([]queue.NitricTask, error) {
+func (m *MockQueueService) Receive(arg0 context.Context, arg1 queue.ReceiveOptions) ([]queue.NitricTask, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Receive", arg0)
+	ret := m.ctrl.Call(m, "Receive", arg0, arg1)
 	ret0, _ := ret[0].([]queue.NitricTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Receive indicates an expected call of Receive.
-func (mr *MockQueueServiceMockRecorder) Receive(arg0 interface{}) *gomock.Call {
+func (mr *MockQueueServiceMockRecorder) Receive(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockQueueService)(nil).Receive), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockQueueService)(nil).Receive), arg0, arg1)
 }
 
 // Send mocks base method.
-func (m *MockQueueService) Send(arg0 string, arg1 queue.NitricTask) error {
+func (m *MockQueueService) Send(arg0 context.Context, arg1 string, arg2 queue.NitricTask) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0, arg1)
+	ret := m.ctrl.Call(m, "Send", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockQueueServiceMockRecorder) Send(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockQueueServiceMockRecorder) Send(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockQueueService)(nil).Send), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockQueueService)(nil).Send), arg0, arg1, arg2)
 }
 
 // SendBatch mocks base method.
-func (m *MockQueueService) SendBatch(arg0 string, arg1 []queue.NitricTask) (*queue.SendBatchResponse, error) {
+func (m *MockQueueService) SendBatch(arg0 context.Context, arg1 string, arg2 []queue.NitricTask) (*queue.SendBatchResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendBatch", arg0, arg1)
+	ret := m.ctrl.Call(m, "SendBatch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*queue.SendBatchResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SendBatch indicates an expected call of SendBatch.
-func (mr *MockQueueServiceMockRecorder) SendBatch(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockQueueServiceMockRecorder) SendBatch(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockQueueService)(nil).SendBatch), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockQueueService)(nil).SendBatch), arg0, arg1, arg2)
 }
