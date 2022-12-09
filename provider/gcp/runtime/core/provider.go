@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	apigateway "cloud.google.com/go/apigateway/apiv1"
-	apigatewaypb "google.golang.org/genproto/googleapis/cloud/apigateway/v1"
+	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 
 	"github.com/nitrictech/nitric/core/pkg/providers/common"
 	"github.com/nitrictech/nitric/core/pkg/utils"

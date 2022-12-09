@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
 	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
 	mocks "github.com/nitrictech/nitric/provider/gcp/mocks/gcp_secret"

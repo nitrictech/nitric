@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	"github.com/googleapis/gax-go/v2"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
 type PubsubClient interface {

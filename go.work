@@ -1,0 +1,9 @@
+go 1.19
+
+use (
+	./core
+	./provider/aws
+	./provider/azure
+	./provider/common
+	./provider/gcp
+)

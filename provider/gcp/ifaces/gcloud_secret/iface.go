@@ -17,8 +17,8 @@ package ifaces_gcloud_secret
 import (
 	"context"
 
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	gax "github.com/googleapis/gax-go/v2"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 type SecretIterator interface {

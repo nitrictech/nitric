@@ -17,8 +17,8 @@ package ifaces_cloudtasks
 import (
 	"context"
 
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/googleapis/gax-go/v2"
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 )
 
 type CloudtasksClient interface {
