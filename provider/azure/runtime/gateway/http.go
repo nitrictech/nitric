@@ -28,7 +28,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/triggers"
 	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/provider/azure/runtime/core"
-	"github.com/nitrictech/nitric/provider/common/runtime/gateway"
+	base_http "github.com/nitrictech/nitric/provider/common/runtime/gateway"
 )
 
 type azMiddleware struct {

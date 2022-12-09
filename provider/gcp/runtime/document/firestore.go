@@ -151,13 +151,16 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 			docsIter := subCol.Limit(maxBatchSize).Documents(ctx)
 			numDeleted := 0
 
-			batch := s.client.Batch()
+			batch := s.client.BulkWriter(ctx)
 			for subDoc, err := docsIter.Next(); !errors.Is(err, iterator.Done); subDoc, err = docsIter.Next() {
+				if err != nil {
+					return newErr(codes.Internal, "error deleting records", err)
+				}
+
+				_, err := batch.Delete(subDoc.Ref)
 				if err != nil {
 					return err
 				}
-
-				batch.Delete(subDoc.Ref)
 				numDeleted++
 			}
 
@@ -166,10 +169,7 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 				break
 			}
 
-			_, err := batch.Commit(ctx)
-			if err != nil {
-				return err
-			}
+			batch.End()
 		}
 	}
 
