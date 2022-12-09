@@ -3,6 +3,20 @@ binaries:
 	@cd ./provider/gcp && make
 	@cd ./provider/azure && make
 
+check: lint test
+
+fmt:
+	@cd ./core && make fmt
+	@cd ./provider/aws && make fmt
+	@cd ./provider/gcp && make fmt
+	@cd ./provider/azure && make fmt
+
+lint:
+	@cd ./core && make lint
+	@cd ./provider/aws && make lint
+	@cd ./provider/gcp && make lint
+	@cd ./provider/azure && make lint
+
 test:
 	@cd ./core && make test
 	@cd ./provider/aws && make test
