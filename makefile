@@ -1,186 +1,27 @@
-ifeq (/,${HOME})
-GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache/
-else
-GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
-endif
-GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
+binaries:
+	@cd ./provider/aws && make
+	@cd ./provider/gcp && make
+	@cd ./provider/azure && make
 
-include tools/tools.mk
+test:
+	@cd ./core && make test
+	@cd ./provider/aws && make test
+	@cd ./provider/gcp && make test
+	@cd ./provider/azure && make test
 
-init: check-gopath go-mod-download install-tools
-	@echo Installing git hooks
-	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
+test-coverage:
+	@cd ./core && make test
+	@cd ./provider/aws && make test-coverage
+	@cd ./provider/gcp && make test-coverage
+	@cd ./provider/azure && make test-coverage
 
-.PHONY: check fmt lint
-check: lint test
+license-check:
+	@cd ./provider/aws && make license-check
+	@cd ./provider/gcp && make license-check
+	@cd ./provider/azure && make license-check
 
-sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
-
-fmt:
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	$(GOLANGCI_LINT) run --fix
-
-lint:
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	$(GOLANGCI_LINT) run
-
-go-mod-download:
-	@echo installing go dependencies
-	@go mod download
-
-clean: check-gopath
-	@rm -rf ./bin/
-	@rm -rf ./lib/
-	@rm -rf ./interfaces/
-	@rm -f ${GOPATH}/bin/protoc-gen-go ${GOPATH}/bin/protoc-gen-go-grpc ${GOPATH}/bin/protoc-gen-validate:
-
-# Run the integration tests
-test-integration: install-tools generate-proto
-	@echo Running integration tests
-	@go run github.com/onsi/ginkgo/ginkgo ./tests/...
-
-# Run the unit tests
-test: install-tools generate-mocks generate-proto
-	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo ./pkg/...
-
-test-coverage: install-tools generate-proto generate-mocks
-	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./pkg/...
-
-license-check-dev: dev-static
-	@echo Checking Dev Membrane OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
-
-license-check-aws: aws-static
-	@echo Checking AWS Membrane OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
-
-license-check-gcp: gcp-static
-	@echo Checking GCP Membrane OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
-
-license-check-azure: azure-static
-	@echo Checking Azure Membrane OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/membrane
-
-license-check: install-tools license-check-dev license-check-aws license-check-gcp license-check-azure
-	@echo Checking OSS Licenses
-
-check-gopath:
-ifndef GOPATH
-  $(error GOPATH is undefined)
-endif
-
-.PHONY: generate generate-proto generate-mocks
-generate: generate-proto generate-mocks
-
-# Generate interfaces
-generate-proto: install-tools check-gopath
-	@echo Generating Proto Sources
-	@mkdir -p ./pkg/api/
-	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ./contracts/proto ./contracts/proto/*/**/*.proto -I ./contracts
-
-# BEGIN AWS Plugins
-aws-static: generate-proto
-	@echo Building static AWS membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws
-
-# Cross-platform Build
-aws-static-xp: generate-proto
-	@echo Building static AWS membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/aws
-# END AWS Plugins
-
-# BEGIN Azure Plugins
-azure-static: generate-proto
-	@echo Building static Azure membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure
-
-# Cross-platform Build
-azure-static-xp: generate-proto
-	@echo Building static Azure membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/azure
-# END Azure Plugins
-
-gcp-static: generate-proto
-	@echo Building static GCP membrane
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp
-
-# Cross-platform Build
-gcp-static-xp: generate-proto
-	@echo Building static GCP membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/gcp
-# END GCP Plugins
-
-# BEGIN Local Plugins
-# Cross-platform build only, this membrane is not for production use.
-dev-static: generate-proto
-	@echo Building static Local membrane
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/dev
-# END Local Plugins
-
-# BEGIN DigitalOcean Plugins
-do-static: generate-proto
-	@CGO_ENABLED=0 go build -o bin/membrane -ldflags="-extldflags=-static" ./pkg/providers/do
-# END DigitalOcean Plugins
-
-build-all-binaries: clean generate-proto
-	@echo Building all provider membranes
-	@CGO_ENABLED=0 go build -o bin/membrane-gcp -ldflags="-extldflags=-static" ./pkg/providers/gcp
-	@CGO_ENABLED=0 go build -o bin/membrane-aws -ldflags="-extldflags=-static" ./pkg/providers/aws
-	@CGO_ENABLED=0 go build -o bin/membrane-azure -ldflags="-extldflags=-static" ./pkg/providers/azure
-	@CGO_ENABLED=0 go build -o bin/membrane-do -ldflags="-extldflags=-static" ./pkg/providers/do
-	@CGO_ENABLED=0 go build -o bin/membrane-dev -ldflags="-extldflags=-static" ./pkg/providers/dev
-
-# generate mock implementations
-generate-mocks:
-	@echo Generating Mock Clients
-	@mkdir -p mocks/secret_manager
-	@mkdir -p mocks/secrets_manager
-	@mkdir -p mocks/key_vault
-	@mkdir -p mocks/storage
-	@mkdir -p mocks/s3
-	@mkdir -p mocks/sns
-	@mkdir -p mocks/sfn
-	@mkdir -p mocks/sqs
-	@mkdir -p mocks/azblob
-	@mkdir -p mocks/mock_event_grid
-	@mkdir -p mocks/azqueue
-	@mkdir -p mocks/worker
-	@mkdir -p mocks/nitric
-	@mkdir -p mocks/sync
-	@mkdir -p mocks/provider
-	@mkdir -p mocks/resourcetaggingapi
-	@mkdir -p mocks/gcp_storage
-	@mkdir -p mocks/plugins/events
-	@mkdir -p mocks/pubsub
-	@mkdir -p mocks/cloudtasks
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/resourcegroupstaggingapiiface ResourceGroupsTaggingAPIAPI > mocks/resourcetaggingapi/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/snsiface SNSAPI > mocks/sns/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sfniface SFNAPI > mocks/sfn/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/aws/core AwsProvider > mocks/provider/aws.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/azure/core AzProvider > mocks/provider/azure.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/providers/gcp/core GcpProvider > mocks/provider/gcp.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
-	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage/azblob/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret/key_vault KeyVaultClient > mocks/key_vault/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/document DocumentService > mocks/document/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/secret SecretService > mocks/secret/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/storage StorageService > mocks/storage/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue QueueService > mocks/queue/mock.go
-	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/pkg/worker Worker,Adapter > mocks/worker/mock.go
-	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
-	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/queue/azqueue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,AzqueueMessageIdUrlIface,DequeueMessagesResponseIface > mocks/azqueue/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/pubsub PubsubClient,TopicIterator,Topic,PublishResult > mocks/pubsub/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/cloudtasks CloudtasksClient > mocks/cloudtasks/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/ifaces/gcloud_secret SecretManagerClient,SecretIterator > mocks/gcp_secret/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/pkg/plugins/events EventService > mocks/plugins/events/mock.go
-
-generate-sources: generate-proto generate-mocks
+generate-sources:
+	@cd ./core && make generate-sources
+	@cd ./provider/aws && make generate-sources
+	@cd ./provider/gcp && make generate-sources
+	@cd ./provider/azure && make generate-sources

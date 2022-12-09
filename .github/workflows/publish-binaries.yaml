@@ -12,32 +12,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.19
-      - name: Install modules
-        run: make install-tools
       - name: Make binaries
-        run: make build-all-binaries
-      - name: Upload Dev
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/membrane-dev
-          asset_name: membrane-dev
-          asset_content_type: application/octet-stream
+        run: make
       - name: Upload AWS
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/membrane-aws
+          asset_path: ./provider/aws/bin/runtime-aws
           asset_name: membrane-aws
           asset_content_type: application/octet-stream
       - name: Upload GCP
@@ -46,7 +33,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/membrane-gcp
+          asset_path: ./provider/gcp/bin/runtime-gcp
           asset_name: membrane-gcp
           asset_content_type: application/octet-stream
       - name: Upload Azure
@@ -55,15 +42,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/membrane-azure
+          asset_path: ./provider/azure/bin/runtime-azure
           asset_name: membrane-azure
-          asset_content_type: application/octet-stream
-      - name: Upload Digital Ocean
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.NITRIC_BOT_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/membrane-do
-          asset_name: membrane-do
           asset_content_type: application/octet-stream
