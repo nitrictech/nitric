@@ -28,11 +28,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
-	mock_provider "github.com/nitrictech/nitric/core/mocks/provider"
-	dynamodb_service "github.com/nitrictech/nitric/core/pkg/plugins/document/dynamodb"
-	"github.com/nitrictech/nitric/core/pkg/providers/aws/core"
-	"github.com/nitrictech/nitric/core/tests/plugins"
-	test "github.com/nitrictech/nitric/core/tests/plugins/document"
+	"github.com/nitrictech/nitric/e2e"
+	test "github.com/nitrictech/nitric/e2e/document"
+	mock_provider "github.com/nitrictech/nitric/provider/aws/mocks/provider"
+	"github.com/nitrictech/nitric/provider/aws/runtime/core"
+	dynamodb_service "github.com/nitrictech/nitric/provider/aws/runtime/documents"
 )
 
 const (
@@ -57,7 +57,7 @@ var _ = Describe("DynamoDb", func() {
 		"--name " + containerName,
 		"amazon/dynamodb-local:latest",
 	}
-	plugins.StartContainer(containerName, args)
+	e2e.StartContainer(containerName, args)
 
 	// // Create DynamoDB client
 	db := createDynamoClient()
@@ -80,7 +80,7 @@ var _ = Describe("DynamoDb", func() {
 	})
 
 	AfterSuite(func() {
-		plugins.StopContainer(containerName)
+		e2e.StopContainer(containerName)
 	})
 
 	ctrl := gomock.NewController(GinkgoT())

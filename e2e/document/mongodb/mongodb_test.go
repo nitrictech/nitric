@@ -22,9 +22,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	mongodb_service "github.com/nitrictech/nitric/core/pkg/plugins/document/mongodb"
-	"github.com/nitrictech/nitric/core/tests/plugins"
-	test "github.com/nitrictech/nitric/core/tests/plugins/document"
+	"github.com/nitrictech/nitric/e2e"
+	test "github.com/nitrictech/nitric/e2e/document"
+	mongodb_service "github.com/nitrictech/nitric/provider/azure/runtime/document"
 )
 
 const containerName = "mongodb-nitric"
@@ -64,10 +64,10 @@ var _ = Describe("MongoDB", func() {
 		"--name " + containerName,
 		"mongo:4.0",
 	}
-	plugins.StartContainer(containerName, args)
+	e2e.StartContainer(containerName, args)
 
 	AfterSuite(func() {
-		plugins.StopContainer(containerName)
+		e2e.StopContainer(containerName)
 	})
 
 	ctx := context.Background()

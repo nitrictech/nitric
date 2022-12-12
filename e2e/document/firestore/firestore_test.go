@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"os"
 
-	firestore_service "github.com/nitrictech/nitric/core/pkg/plugins/document/firestore"
+	firestore_service "github.com/nitrictech/nitric/provider/gcp/runtime/document"
 
 	"cloud.google.com/go/firestore"
 	. "github.com/onsi/ginkgo"
 
-	"github.com/nitrictech/nitric/core/tests/plugins"
-	test "github.com/nitrictech/nitric/core/tests/plugins/document"
+	"github.com/nitrictech/nitric/e2e"
+	test "github.com/nitrictech/nitric/e2e/document"
 )
 
 const (
@@ -59,12 +59,12 @@ var _ = Describe("Firestore", func() {
 		"--name " + containerName,
 		"mtlynch/firestore-emulator-docker",
 	}
-	plugins.StartContainer(containerName, args)
+	e2e.StartContainer(containerName, args)
 
 	db := createFirestoreClient(context.TODO())
 
 	AfterSuite(func() {
-		plugins.StopContainer(containerName)
+		e2e.StopContainer(containerName)
 	})
 
 	docPlugin, err := firestore_service.NewWithClient(db)
