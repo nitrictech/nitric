@@ -17,6 +17,10 @@ lint:
 	@cd ./provider/gcp && make lint
 	@cd ./provider/azure && make lint
 
+test-integration:
+	@echo Running integration tests
+	@cd ./e2e && make
+
 test:
 	@cd ./core && make test
 	@cd ./provider/aws && make test
