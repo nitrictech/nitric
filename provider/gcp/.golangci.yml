@@ -12,7 +12,7 @@ linters:
   - govet
   - gofumpt
   - whitespace
-  - staticcheck
+  # - staticcheck
   - ineffassign
   - unused
   - misspell

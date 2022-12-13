@@ -146,21 +146,18 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 
 		// Loop over sub collection documents, performing batch deletes
 		// up to Firestore's maximum batch size
-		const maxBatchSize = 500
+		const maxBatchSize = 20
 		for {
 			docsIter := subCol.Limit(maxBatchSize).Documents(ctx)
 			numDeleted := 0
 
-			batch := s.client.BulkWriter(ctx)
+			batch := s.client.Batch()
 			for subDoc, err := docsIter.Next(); !errors.Is(err, iterator.Done); subDoc, err = docsIter.Next() {
 				if err != nil {
 					return newErr(codes.Internal, "error deleting records", err)
 				}
 
-				_, err := batch.Delete(subDoc.Ref)
-				if err != nil {
-					return err
-				}
+				batch.Delete(subDoc.Ref)
 				numDeleted++
 			}
 
@@ -169,7 +166,10 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 				break
 			}
 
-			batch.End()
+			_, err := batch.Commit(ctx)
+			if err != nil {
+				return newErr(codes.Internal, "error deleting records", err)
+			}
 		}
 	}
 
