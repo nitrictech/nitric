@@ -8,8 +8,6 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 include tools/tools.mk
 
 init: check-gopath go-mod-download install-tools
-	@echo Installing git hooks
-	@find .git/hooks -type l -exec rm {} \; && find .githooks -type f -exec ln -sf ../../{} .git/hooks/ \;
 
 .PHONY: check fmt lint
 check: lint test
