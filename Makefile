@@ -1,45 +1,44 @@
-binaries:
-	@cd ./provider/aws && make
-	@cd ./provider/gcp && make
-	@cd ./provider/azure && make
+all := core provider/aws provider/gcp provider/azure
+providers := provider/aws provider/gcp provider/azure
+
+binaries: $(providers)
+	for dir in $(providers); do \
+		$(MAKE) -C $$dir; \
+	done
 
 check: lint test
 
-fmt:
-	@cd ./core && make fmt
-	@cd ./provider/aws && make fmt
-	@cd ./provider/gcp && make fmt
-	@cd ./provider/azure && make fmt
+fmt: $(all)
+	for dir in $(all); do \
+		$(MAKE) fmt -C $$dir; \
+	done
 
-lint:
-	@cd ./core && make lint
-	@cd ./provider/aws && make lint
-	@cd ./provider/gcp && make lint
-	@cd ./provider/azure && make lint
+lint: $(all)
+	for dir in $(all); do \
+		$(MAKE) lint -C $$dir; \
+	done
 
 test-integration:
 	@echo Running integration tests
 	@cd ./e2e && make
 
-test:
-	@cd ./core && make test
-	@cd ./provider/aws && make test
-	@cd ./provider/gcp && make test
-	@cd ./provider/azure && make test
+test: $(all)
+	for dir in $(all); do \
+		$(MAKE) test -C $$dir; \
+	done
 
-test-coverage:
-	@cd ./core && make test
-	@cd ./provider/aws && make test-coverage
-	@cd ./provider/gcp && make test-coverage
-	@cd ./provider/azure && make test-coverage
+test-coverage: $(all)
+	for dir in $(all); do \
+		$(MAKE) test-coverage -C $$dir; \
+	done
 
-license-check:
-	@cd ./provider/aws && make license-check
-	@cd ./provider/gcp && make license-check
-	@cd ./provider/azure && make license-check
+license-check: $(providers)
+	for dir in $(providers); do \
+		$(MAKE) license-check -C $$dir; \
+	done
 
-generate-sources:
-	@cd ./core && make generate-sources
-	@cd ./provider/aws && make generate-sources
-	@cd ./provider/gcp && make generate-sources
-	@cd ./provider/azure && make generate-sources
+generate-sources: $(all)
+	for dir in $(all); do \
+		$(MAKE) generate-sources -C $$dir; \
+	done
+	
