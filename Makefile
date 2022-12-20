@@ -1,5 +1,5 @@
-all := core provider/aws provider/gcp provider/azure
-providers := provider/aws provider/gcp provider/azure
+all := core cloud/aws cloud/gcp cloud/azure
+providers := cloud/aws cloud/gcp cloud/azure
 
 install-tools:
 	$(MAKE) install-tools -C core

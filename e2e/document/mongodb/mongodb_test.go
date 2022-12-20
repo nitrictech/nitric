@@ -22,9 +22,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	mongodb_service "github.com/nitrictech/nitric/cloud/azure/runtime/document"
 	"github.com/nitrictech/nitric/e2e"
 	test "github.com/nitrictech/nitric/e2e/document"
-	mongodb_service "github.com/nitrictech/nitric/provider/azure/runtime/document"
 )
 
 const containerName = "mongodb-nitric"

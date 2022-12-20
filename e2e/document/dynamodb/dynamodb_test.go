@@ -28,11 +28,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
+	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
+	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/documents"
 	"github.com/nitrictech/nitric/e2e"
 	test "github.com/nitrictech/nitric/e2e/document"
-	mock_provider "github.com/nitrictech/nitric/provider/aws/mocks/provider"
-	"github.com/nitrictech/nitric/provider/aws/runtime/core"
-	dynamodb_service "github.com/nitrictech/nitric/provider/aws/runtime/documents"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	firestore_service "github.com/nitrictech/nitric/provider/gcp/runtime/document"
+	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/document"
 
 	"cloud.google.com/go/firestore"
 	. "github.com/onsi/ginkgo"

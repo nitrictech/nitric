@@ -3,8 +3,8 @@ go 1.19
 use (
 	./core
 	./e2e
-	./provider/aws
-	./provider/azure
-	./provider/common
-	./provider/gcp
+	./cloud/aws
+	./cloud/azure
+	./cloud/common
+	./cloud/gcp
 )
