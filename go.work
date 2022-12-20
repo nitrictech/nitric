@@ -1,0 +1,10 @@
+go 1.19
+
+use (
+	./core
+	./e2e
+	./cloud/aws
+	./cloud/azure
+	./cloud/common
+	./cloud/gcp
+)

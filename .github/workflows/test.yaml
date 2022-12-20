@@ -15,14 +15,19 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 2
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.19
-    - name: Install modules
-      run: make install-tools
+    - name: Setup Golang caches
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-golang-
     - name: Linting check
       run: make lint
     - name: Generate Sources
@@ -40,7 +45,7 @@ jobs:
       uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        files: all.coverprofile # optional
+        files: ./core/all.coverprofile,./provider/aws/all.coverprofile,./provider/gcp/all.coverprofile,./provider/azure/all.coverprofile # optional
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
   
@@ -56,7 +61,14 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.19
-    - name: Install modules
-      run: make install-tools
+    - name: Setup Golang caches
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-golang-
     - name: Run Integration Tests
       run: make test-integration
