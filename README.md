@@ -118,11 +118,11 @@ It can be useful to run the Membrane in a 'service only' mode, where the cloud A
 
 The Membrane project source code structure is outlined below:
 
-| Directory            | Description                                                |
-| -------------------- | ---------------------------------------------------------- |
-| `/core`              | Nitric core interfaces/contracts                           |
-| `/provider/common`   | Nitric provider common module                              |
-| `/provider/aws`      | Nitric AWS provider                                        |
-| `/provider/gcp`      | Nitric GPC provider                                        |
-| `/provider/azure`    | Nitric Azure provider                                      |
-| `/e2e`               | E2E and integration testing module                         |
+| Directory       | Description                        |
+| --------------- | ---------------------------------- |
+| `/core`         | Nitric core interfaces/contracts   |
+| `/cloud/common` | Nitric provider common module      |
+| `/cloud/aws`    | Nitric AWS provider                |
+| `/cloud/gcp`    | Nitric GPC provider                |
+| `/cloud/azure`  | Nitric Azure provider              |
+| `/e2e`          | E2E and integration testing module |
