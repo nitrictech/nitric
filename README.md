@@ -34,6 +34,8 @@ Nitric makes it easy to:
 - Securely store, retrieve and rotate secrets
 - Read and write files from buckets
 
+If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric roadmap](https://github.com/orgs/nitrictech/projects/4).
+
 ## Documentation
 
 The full documentation is available at [nitric.io/docs](https://nitric.io/docs).
