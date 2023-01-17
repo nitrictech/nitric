@@ -137,3 +137,89 @@ var FaasService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "faas/v1/faas.proto",
 }
+
+// FaasGatewayServiceClient is the client API for FaasGatewayService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type FaasGatewayServiceClient interface {
+	Trigger(ctx context.Context, in *TriggerRequest, opts ...grpc.CallOption) (*TriggerResponse, error)
+}
+
+type faasGatewayServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewFaasGatewayServiceClient(cc grpc.ClientConnInterface) FaasGatewayServiceClient {
+	return &faasGatewayServiceClient{cc}
+}
+
+func (c *faasGatewayServiceClient) Trigger(ctx context.Context, in *TriggerRequest, opts ...grpc.CallOption) (*TriggerResponse, error) {
+	out := new(TriggerResponse)
+	err := c.cc.Invoke(ctx, "/nitric.faas.v1.FaasGatewayService/Trigger", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FaasGatewayServiceServer is the server API for FaasGatewayService service.
+// All implementations must embed UnimplementedFaasGatewayServiceServer
+// for forward compatibility
+type FaasGatewayServiceServer interface {
+	Trigger(context.Context, *TriggerRequest) (*TriggerResponse, error)
+	mustEmbedUnimplementedFaasGatewayServiceServer()
+}
+
+// UnimplementedFaasGatewayServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedFaasGatewayServiceServer struct {
+}
+
+func (UnimplementedFaasGatewayServiceServer) Trigger(context.Context, *TriggerRequest) (*TriggerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Trigger not implemented")
+}
+func (UnimplementedFaasGatewayServiceServer) mustEmbedUnimplementedFaasGatewayServiceServer() {}
+
+// UnsafeFaasGatewayServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FaasGatewayServiceServer will
+// result in compilation errors.
+type UnsafeFaasGatewayServiceServer interface {
+	mustEmbedUnimplementedFaasGatewayServiceServer()
+}
+
+func RegisterFaasGatewayServiceServer(s grpc.ServiceRegistrar, srv FaasGatewayServiceServer) {
+	s.RegisterService(&FaasGatewayService_ServiceDesc, srv)
+}
+
+func _FaasGatewayService_Trigger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TriggerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FaasGatewayServiceServer).Trigger(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.faas.v1.FaasGatewayService/Trigger",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FaasGatewayServiceServer).Trigger(ctx, req.(*TriggerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// FaasGatewayService_ServiceDesc is the grpc.ServiceDesc for FaasGatewayService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var FaasGatewayService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "nitric.faas.v1.FaasGatewayService",
+	HandlerType: (*FaasGatewayServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Trigger",
+			Handler:    _FaasGatewayService_Trigger_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "faas/v1/faas.proto",
+}

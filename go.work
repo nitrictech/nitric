@@ -4,6 +4,7 @@ use (
 	./cloud/aws
 	./cloud/azure
 	./cloud/common
+	./cloud/custom
 	./cloud/gcp
 	./core
 	./e2e

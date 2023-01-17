@@ -29,7 +29,21 @@ import (
 
 type FaasServer struct {
 	pb.UnimplementedFaasServiceServer
+	pb.UnimplementedFaasGatewayServiceServer
 	pool pool.WorkerPool
+}
+
+func (s *FaasServer) Trigger(ctx context.Context, req *pb.TriggerRequest) (*pb.TriggerResponse, error) {
+	wrk, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+		Trigger: req,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := wrk.HandleTrigger(ctx, req)
+
+	return resp, err
 }
 
 // Starts a new stream

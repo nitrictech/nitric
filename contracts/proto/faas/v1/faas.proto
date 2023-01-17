@@ -15,6 +15,14 @@ service FaasService {
   rpc TriggerStream (stream ClientMessage) returns (stream ServerMessage);
 }
 
+// Service for unary FaaS communication
+// To be used when implementing a custom gateway
+// Workers will still connect to the core FaasService
+// But the gateway will communicate with the worker pool using this interface
+service FaasGatewayService {
+  rpc Trigger (TriggerRequest) returns (TriggerResponse);
+}
+
 // Messages the client is able to send to the server
 message ClientMessage {
   // Client message ID, used to pair requests/responses
