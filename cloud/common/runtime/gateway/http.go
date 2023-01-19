@@ -24,14 +24,15 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/core/pkg/span"
 	"github.com/nitrictech/nitric/core/pkg/triggers"
 	"github.com/nitrictech/nitric/core/pkg/utils"
-	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
-type HttpMiddleware func(*fasthttp.RequestCtx, worker.WorkerPool) bool
+type HttpMiddleware func(*fasthttp.RequestCtx, pool.WorkerPool) bool
 
 type BaseHttpGateway struct {
 	address string
@@ -44,44 +45,83 @@ type BaseHttpGateway struct {
 	mw HttpMiddleware
 }
 
-func (s *BaseHttpGateway) httpHandler(pool worker.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
 		if s.mw != nil {
-			if !s.mw(rc, pool) {
+			if !s.mw(rc, workerPool) {
 				// middleware has indicated that is has processed the request
 				// so we can exit here
 				return
 			}
 		}
 
-		httpTrigger := triggers.FromHttpRequest(rc)
+		headerMap := triggers.HttpHeaders(&rc.Request.Header)
 
-		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
-			Http: httpTrigger,
+		// httpTrigger := triggers.FromHttpRequest(rc)
+		headers := map[string]*v1.HeaderValue{}
+		for k, v := range headerMap {
+			headers[k] = &v1.HeaderValue{Value: v}
+		}
+
+		query := map[string]*v1.QueryValue{}
+		rc.QueryArgs().VisitAll(func(key []byte, val []byte) {
+			k := string(key)
+
+			if query[k] == nil {
+				query[k] = &v1.QueryValue{}
+			}
+
+			query[k].Value = append(query[k].Value, string(val))
+		})
+
+		httpTrigger := &v1.TriggerRequest{
+			Data: rc.Request.Body(),
+			Context: &v1.TriggerRequest_Http{
+				Http: &v1.HttpTriggerContext{
+					Method:      string(rc.Request.Header.Method()),
+					Path:        string(rc.URI().PathOriginal()),
+					Headers:     headers,
+					QueryParams: query,
+				},
+			},
+		}
+
+		wrkr, err := workerPool.GetWorker(&pool.GetWorkerOptions{
+			Trigger: httpTrigger,
 		})
 		if err != nil {
 			rc.Error("Unable to get worker to handle request", 500)
 			return
 		}
 
-		response, err := wrkr.HandleHttpRequest(span.FromHeaders(context.TODO(), httpTrigger.Header), httpTrigger)
+		response, err := wrkr.HandleTrigger(span.FromHeaders(context.TODO(), headerMap), httpTrigger)
 		if err != nil {
 			rc.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
 			return
 		}
 
-		if response.Header != nil {
-			response.Header.CopyTo(&rc.Response.Header)
+		if http := response.GetHttp(); http != nil {
+			// Copy headers across
+			for k, v := range http.Headers {
+				for _, val := range v.Value {
+					rc.Response.Header.Add(k, val)
+				}
+			}
+
+			// Avoid content length header duplication
+			rc.Response.Header.Del("Content-Length")
+			rc.Response.SetStatusCode(int(http.Status))
+			rc.Response.SetBody(response.Data)
+
+			return
 		}
 
-		// Avoid content length header duplication
-		rc.Response.Header.Del("Content-Length")
-		rc.Response.SetStatusCode(response.StatusCode)
-		rc.Response.SetBody(response.Body)
+		rc.Error("received invalid response type from worker", 500)
+
 	}
 }
 
-func (s *BaseHttpGateway) Start(pool worker.WorkerPool) error {
+func (s *BaseHttpGateway) Start(pool pool.WorkerPool) error {
 	s.server = &fasthttp.Server{
 		IdleTimeout:     time.Second * 1,
 		CloseOnShutdown: true,

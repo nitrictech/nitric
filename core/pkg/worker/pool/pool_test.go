@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package pool
 
 import (
 	"fmt"
@@ -24,7 +24,8 @@ import (
 
 	mock_sync "github.com/nitrictech/nitric/core/mocks/sync"
 	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker"
 )
 
 var _ = Describe("ProcessPool", func() {
@@ -35,7 +36,7 @@ var _ = Describe("ProcessPool", func() {
 
 			pp := &ProcessPool{
 				workerLock: lck,
-				workers:    make([]Worker, 0),
+				workers:    make([]worker.Worker, 0),
 				poolErr:    make(chan error),
 			}
 
@@ -55,14 +56,14 @@ var _ = Describe("ProcessPool", func() {
 
 		Context("getHttpWorkers", func() {
 			When("pool contains mix of event & http handlers", func() {
-				hw := &RouteWorker{}
-				ew := &SubscriptionWorker{}
-				fw := &FaasWorker{}
+				hw := &worker.RouteWorker{}
+				ew := &worker.SubscriptionWorker{}
+				fw := &worker.FaasWorker{}
 
 				pp := &ProcessPool{
 					maxWorkers: 3,
 					workerLock: &sync.Mutex{},
-					workers:    []Worker{hw, ew, fw},
+					workers:    []worker.Worker{hw, ew, fw},
 				}
 
 				wrkrs := pp.getHttpWorkers()
@@ -83,14 +84,14 @@ var _ = Describe("ProcessPool", func() {
 
 		Context("getEventWorkers", func() {
 			When("pool contains mix of event & http handlers", func() {
-				hw := &RouteWorker{}
-				ew := &SubscriptionWorker{}
-				fw := &FaasWorker{}
+				hw := &worker.RouteWorker{}
+				ew := &worker.SubscriptionWorker{}
+				fw := &worker.FaasWorker{}
 
 				pp := &ProcessPool{
 					maxWorkers: 3,
 					workerLock: &sync.Mutex{},
-					workers:    []Worker{hw, ew, fw},
+					workers:    []worker.Worker{hw, ew, fw},
 				}
 
 				wrkrs := pp.getEventWorkers()
@@ -157,7 +158,7 @@ var _ = Describe("ProcessPool", func() {
 
 		Context("WaitForMinimumWorkers", func() {
 			When("minimum worker count is not met before timeout", func() {
-				pp := &ProcessPool{minWorkers: 1, workers: make([]Worker, 0), workerLock: &sync.Mutex{}}
+				pp := &ProcessPool{minWorkers: 1, workers: make([]worker.Worker, 0), workerLock: &sync.Mutex{}}
 
 				It("should return an error", func() {
 					err := pp.WaitForMinimumWorkers(0)
@@ -167,7 +168,7 @@ var _ = Describe("ProcessPool", func() {
 			})
 
 			When("minimum worker count is eventually met", func() {
-				pp := &ProcessPool{minWorkers: 1, workers: make([]Worker, 0), workerLock: &sync.Mutex{}}
+				pp := &ProcessPool{minWorkers: 1, workers: make([]worker.Worker, 0), workerLock: &sync.Mutex{}}
 
 				It("should block the current thread until it is", func() {
 					wg := sync.WaitGroup{}
@@ -179,7 +180,7 @@ var _ = Describe("ProcessPool", func() {
 						err = pp.WaitForMinimumWorkers(100)
 					}()
 
-					err = pp.AddWorker(&FaasWorker{})
+					err = pp.AddWorker(&worker.FaasWorker{})
 					Expect(err).To(BeNil())
 
 					By("waiting for the worker")
@@ -196,14 +197,14 @@ var _ = Describe("ProcessPool", func() {
 				When("no compatible workers are available", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					badWrkr := mock_worker.NewMockWorker(ctrl)
-					pp := &ProcessPool{minWorkers: 0, workers: []Worker{badWrkr}, workerLock: &sync.Mutex{}}
+					pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{badWrkr}, workerLock: &sync.Mutex{}}
 
 					It("should return an error", func() {
 						By("testing the worker with the trigger")
-						badWrkr.EXPECT().HandlesHttpRequest(gomock.Any()).Return(false).Times(1)
+						badWrkr.EXPECT().HandlesTrigger(gomock.Any()).Return(false).Times(1)
 
 						By("returning a nil worker")
-						wrkr, err := pp.GetWorker(&GetWorkerOptions{Http: &triggers.HttpRequest{}})
+						wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: &v1.TriggerRequest{}})
 						Expect(wrkr).To(BeNil())
 
 						By("return an error")
@@ -214,15 +215,15 @@ var _ = Describe("ProcessPool", func() {
 				When("compatible workers are available", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					hw := mock_worker.NewMockWorker(ctrl)
-					pp := &ProcessPool{minWorkers: 0, workers: []Worker{hw}, workerLock: &sync.Mutex{}}
-					tr := &triggers.HttpRequest{}
+					pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{hw}, workerLock: &sync.Mutex{}}
+					tr := &v1.TriggerRequest{}
 
 					It("should return a compatible worker", func() {
 						By("Querying testing the worker with the trigger")
-						hw.EXPECT().HandlesHttpRequest(tr).Return(true).Times(1)
+						hw.EXPECT().HandlesTrigger(tr).Return(true).Times(1)
 
-						By("returning a nil worker")
-						wrkr, err := pp.GetWorker(&GetWorkerOptions{Http: tr})
+						By("not returning a nil worker")
+						wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: tr})
 						Expect(wrkr).To(Equal(hw))
 
 						By("not returning an error")
@@ -236,14 +237,14 @@ var _ = Describe("ProcessPool", func() {
 					When("no compatible workers are available", func() {
 						ctrl := gomock.NewController(GinkgoT())
 						badWrkr := mock_worker.NewMockWorker(ctrl)
-						pp := &ProcessPool{minWorkers: 0, workers: []Worker{badWrkr}, workerLock: &sync.Mutex{}}
+						pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{badWrkr}, workerLock: &sync.Mutex{}}
 
 						It("should return an error", func() {
 							By("testing the worker with the trigger")
-							badWrkr.EXPECT().HandlesEvent(gomock.Any()).Return(false).Times(1)
+							badWrkr.EXPECT().HandlesTrigger(gomock.Any()).Return(false).Times(1)
 
 							By("returning a nil worker")
-							wrkr, err := pp.GetWorker(&GetWorkerOptions{Event: &triggers.Event{}})
+							wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: &v1.TriggerRequest{}})
 							Expect(wrkr).To(BeNil())
 
 							By("return an error")
@@ -254,15 +255,15 @@ var _ = Describe("ProcessPool", func() {
 					When("compatible workers are available", func() {
 						ctrl := gomock.NewController(GinkgoT())
 						hw := mock_worker.NewMockWorker(ctrl)
-						pp := &ProcessPool{minWorkers: 0, workers: []Worker{hw}, workerLock: &sync.Mutex{}}
-						tr := &triggers.Event{}
+						pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{hw}, workerLock: &sync.Mutex{}}
+						tr := &v1.TriggerRequest{}
 
 						It("should return a compatible worker", func() {
 							By("Querying testing the worker with the trigger")
-							hw.EXPECT().HandlesEvent(tr).Return(true).Times(1)
+							hw.EXPECT().HandlesTrigger(tr).Return(true).Times(1)
 
 							By("returning a nil worker")
-							wrkr, err := pp.GetWorker(&GetWorkerOptions{Event: tr})
+							wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: tr})
 							Expect(wrkr).To(Equal(hw))
 
 							By("not returning an error")
@@ -281,7 +282,7 @@ var _ = Describe("ProcessPool", func() {
 
 				pp := &ProcessPool{
 					workerLock: lck,
-					workers:    []Worker{wkr},
+					workers:    []worker.Worker{wkr},
 					minWorkers: 0,
 					maxWorkers: 1,
 				}
@@ -310,7 +311,7 @@ var _ = Describe("ProcessPool", func() {
 
 				pp := &ProcessPool{
 					workerLock: lck,
-					workers:    []Worker{&FaasWorker{}},
+					workers:    []worker.Worker{&worker.FaasWorker{}},
 					minWorkers: 0,
 					maxWorkers: 1,
 				}
@@ -336,7 +337,7 @@ var _ = Describe("ProcessPool", func() {
 
 				pp := &ProcessPool{
 					workerLock: lck,
-					workers:    []Worker{},
+					workers:    []worker.Worker{},
 					minWorkers: 0,
 					maxWorkers: 1,
 				}
@@ -367,7 +368,7 @@ var _ = Describe("ProcessPool", func() {
 
 				pp := &ProcessPool{
 					workerLock: lck,
-					workers:    []Worker{wkr},
+					workers:    []worker.Worker{wkr},
 					minWorkers: 0,
 					maxWorkers: 1,
 				}

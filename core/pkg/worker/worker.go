@@ -15,35 +15,28 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
 )
 
 type Delegate interface {
-	HandlesHttpRequest(trigger *triggers.HttpRequest) bool
-	HandlesEvent(trigger *triggers.Event) bool
+	HandlesTrigger(*v1.TriggerRequest) bool
 }
 
 type Worker interface {
 	Delegate
-	Adapter
+	adapter.Adapter
 }
 
 type UnimplementedWorker struct{}
 
-func (*UnimplementedWorker) HandlesEvent(trigger *triggers.Event) bool {
+func (*UnimplementedWorker) HandlesTrigger(trig *v1.TriggerRequest) bool {
 	return false
 }
 
-func (*UnimplementedWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
-	return false
-}
-
-func (*UnimplementedWorker) HandleEvent(trigger *triggers.Event) error {
-	return fmt.Errorf("worker does not handle events")
-}
-
-func (*UnimplementedWorker) HandleHttpRequest(trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	return nil, fmt.Errorf("worker does not handle http requests")
+func (*UnimplementedWorker) HandleTrigger(ctx context.Context, trig *v1.TriggerRequest) (*v1.TriggerResponse, error) {
+	return nil, fmt.Errorf("unimplemented worker does not handle triggers")
 }

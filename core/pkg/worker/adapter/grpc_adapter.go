@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package adapter
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/valyala/fasthttp"
 
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/span"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
 )
 
 type GrpcAdapter struct {
@@ -116,67 +112,14 @@ func (gwb *GrpcAdapter) Start(errchan chan error) {
 	}
 }
 
-func (s *GrpcAdapter) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	// Generate an ID here
+func (s *GrpcAdapter) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
 	ID, returnChan := s.newTicket()
-
-	var mimeType string = ""
-	if trigger.Header != nil && len(trigger.Header["Content-Type"]) > 0 {
-		mimeType = trigger.Header["Content-Type"][0]
-	}
-
-	if mimeType == "" {
-		mimeType = http.DetectContentType(trigger.Body)
-	}
-
-	headers := make(map[string]*v1.HeaderValue)
-	headersOld := make(map[string]string)
-	for k, v := range trigger.Header {
-		if v != nil {
-			headers[k] = &v1.HeaderValue{
-				Value: v,
-			}
-			if len(v) > 0 {
-				headersOld[k] = v[0]
-			}
-		}
-	}
-
-	query := make(map[string]*v1.QueryValue)
-	queryOld := make(map[string]string)
-	for k, v := range trigger.Query {
-		if v != nil {
-			query[k] = &v1.QueryValue{
-				Value: v,
-			}
-			if len(v) > 0 {
-				queryOld[k] = v[0]
-			}
-		}
-	}
-
-	triggerRequest := &v1.TriggerRequest{
-		Data:         trigger.Body,
-		MimeType:     mimeType,
-		TraceContext: span.ToTraceContext(ctx),
-		Context: &v1.TriggerRequest_Http{
-			Http: &v1.HttpTriggerContext{
-				Path:           trigger.Path,
-				Method:         trigger.Method,
-				QueryParams:    query,
-				QueryParamsOld: queryOld,
-				Headers:        headers,
-				HeadersOld:     headersOld,
-				PathParams:     trigger.Params,
-			},
-		},
-	}
 
 	// construct the message
 	message := &v1.ServerMessage{
 		Id: ID,
 		Content: &v1.ServerMessage_TriggerRequest{
-			TriggerRequest: triggerRequest,
+			TriggerRequest: trigger,
 		},
 	}
 
@@ -187,86 +130,9 @@ func (s *GrpcAdapter) HandleHttpRequest(ctx context.Context, trigger *triggers.H
 		return nil, err
 	}
 
-	// wait for the response
 	triggerResponse := <-returnChan
 
-	httpResponse := triggerResponse.GetHttp()
-
-	if httpResponse == nil {
-		return nil, fmt.Errorf("fatal: Error handling event, incorrect response received from function")
-	}
-
-	fasthttpHeader := &fasthttp.ResponseHeader{}
-
-	for key, val := range httpResponse.GetHeaders() {
-		headerList := val.Value
-		if key == "Set-Cookie" || key == "Cookie" {
-			for _, v := range headerList {
-				fasthttpHeader.Add(key, v)
-			}
-		} else if len(headerList) > 0 {
-			fasthttpHeader.Set(key, headerList[0])
-		}
-	}
-
-	response := &triggers.HttpResponse{
-		Body: triggerResponse.Data,
-		// No need to worry about integer truncation
-		// as this should be a HTTP status code...
-		StatusCode: int(httpResponse.Status),
-		Header:     fasthttpHeader,
-	}
-
-	return response, nil
-}
-
-func (s *GrpcAdapter) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
-	// Generate an ID here
-	ID, returnChan := s.newTicket()
-	triggerRequest := &v1.TriggerRequest{
-		Data:         trigger.Payload,
-		MimeType:     http.DetectContentType(trigger.Payload),
-		TraceContext: span.ToTraceContext(ctx),
-		Context: &v1.TriggerRequest_Topic{
-			Topic: &v1.TopicTriggerContext{
-				Topic: trigger.Topic,
-				// FIXME: Add missing fields here...
-			},
-		},
-	}
-
-	// construct the message
-	message := &v1.ServerMessage{
-		Id: ID,
-		Content: &v1.ServerMessage_TriggerRequest{
-			TriggerRequest: triggerRequest,
-		},
-	}
-
-	// send the message
-	err := s.send(message)
-	if err != nil {
-		// There was an error enqueuing the message
-		return err
-	}
-
-	// wait for the response
-	// FIXME: Need to handle timeouts here...
-	response := <-returnChan
-
-	topic := response.GetTopic()
-
-	if topic == nil {
-		// Fatal error in this case
-		// We don't have the correct response type for this handler
-		return fmt.Errorf("Fatal: Error handling event, incorrect response received from function")
-	}
-
-	if topic.GetSuccess() {
-		return nil
-	}
-
-	return fmt.Errorf("Error occurred handling the event")
+	return triggerResponse, nil
 }
 
 func NewGrpcAdapter(stream v1.FaasService_TriggerStreamServer) *GrpcAdapter {

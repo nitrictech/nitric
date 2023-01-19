@@ -21,23 +21,28 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	mock "github.com/nitrictech/nitric/core/mocks/worker"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	mock "github.com/nitrictech/nitric/core/mocks/adapter"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 var _ = Describe("SubscriptionWorker", func() {
 	Context("Http", func() {
+		httpTrigger := &v1.TriggerRequest{
+			Context: &v1.TriggerRequest_Http{
+				Http: &v1.HttpTriggerContext{},
+			},
+		}
 		subWrkr := &SubscriptionWorker{}
 
 		When("calling HandlesHttpRequest", func() {
 			It("should return false", func() {
-				Expect(subWrkr.HandlesHttpRequest(&triggers.HttpRequest{})).To(BeFalse())
+				Expect(subWrkr.HandlesTrigger(httpTrigger)).To(BeFalse())
 			})
 		})
 
 		When("calling HandleHttpRequest", func() {
 			It("should return an error", func() {
-				_, err := subWrkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{})
+				_, err := subWrkr.HandleTrigger(context.TODO(), httpTrigger)
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -49,9 +54,9 @@ var _ = Describe("SubscriptionWorker", func() {
 				topic: "bad",
 			}
 
-			It("should return true", func() {
-				Expect(subWrkr.HandlesEvent(&triggers.Event{
-					Topic: "test",
+			It("should return false", func() {
+				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Topic{Topic: &v1.TopicTriggerContext{Topic: "test"}},
 				})).To(BeFalse())
 			})
 		})
@@ -62,8 +67,8 @@ var _ = Describe("SubscriptionWorker", func() {
 			}
 
 			It("should return true", func() {
-				Expect(subWrkr.HandlesEvent(&triggers.Event{
-					Topic: "test",
+				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Topic{Topic: &v1.TopicTriggerContext{Topic: "test"}},
 				})).To(BeTrue())
 			})
 		})
@@ -74,14 +79,20 @@ var _ = Describe("SubscriptionWorker", func() {
 				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
-				hndlr.EXPECT().HandleEvent(gomock.Any(), gomock.Any()).Times(1)
+				hndlr.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1)
 
 				subWrkr := &SubscriptionWorker{
 					topic:   "test",
 					Adapter: hndlr,
 				}
 
-				err := subWrkr.HandleEvent(context.TODO(), &triggers.Event{})
+				_, err := subWrkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Topic{
+						Topic: &v1.TopicTriggerContext{
+							Topic: "test",
+						},
+					},
+				})
 
 				Expect(err).ShouldNot(HaveOccurred())
 				ctrl.Finish()

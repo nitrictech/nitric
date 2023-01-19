@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package adapter
 
 import (
-	"context"
+	"testing"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// Adapter - An interface for defining the delivery of events
-type Adapter interface {
-	HandleEvent(ctx context.Context, trigger *triggers.Event) error
-	HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error)
+func TestWorker(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Adapter Suite")
 }

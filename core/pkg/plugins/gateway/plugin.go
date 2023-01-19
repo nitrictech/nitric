@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
 type NitricContext struct {
@@ -43,7 +43,7 @@ type NitricResponse struct {
 
 type GatewayService interface {
 	// Start the Gateway
-	Start(pool worker.WorkerPool) error
+	Start(pool pool.WorkerPool) error
 	// Stop the Gateway
 	Stop() error
 }
@@ -52,7 +52,7 @@ type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ worker.WorkerPool) error {
+func (*UnimplementedGatewayPlugin) Start(_ pool.WorkerPool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

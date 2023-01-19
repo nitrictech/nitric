@@ -65,16 +65,22 @@ generate-mocks:
 	@echo Generating Mock Clients
 	@mkdir -p mocks/storage
 	@mkdir -p mocks/worker
+	@mkdir -p mocks/adapter
+	@mkdir -p mocks/pool
 	@mkdir -p mocks/nitric
 	@mkdir -p mocks/sync
 	@mkdir -p mocks/plugins/events
+	@mkdir -p mocks/gateway
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/document DocumentService > mocks/document/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/secret SecretService > mocks/secret/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/storage StorageService > mocks/storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/queue QueueService > mocks/queue/mock.go
-	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker Worker,Adapter > mocks/worker/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/gateway GatewayService > mocks/gateway/mock.go
+	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker Worker > mocks/worker/mock.go
+	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker/pool WorkerPool > mocks/pool/mock.go
+	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker/adapter Adapter > mocks/adapter/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/events EventService > mocks/plugins/events/mock.go
 
 generate-sources: generate-proto generate-mocks

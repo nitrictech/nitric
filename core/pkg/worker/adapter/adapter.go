@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package adapter
 
 import (
+	"context"
+
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
 )
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
-	adapter.Adapter
-}
-
-var _ Worker = &FaasWorker{}
-
-func (s *FaasWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
-	return true
-}
-
-// NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(adapter adapter.Adapter) *FaasWorker {
-	return &FaasWorker{
-		Adapter: adapter,
-	}
+// Adapter - An interface for defining the delivery of events
+type Adapter interface {
+	HandleTrigger(context.Context, *v1.TriggerRequest) (*v1.TriggerResponse, error)
 }

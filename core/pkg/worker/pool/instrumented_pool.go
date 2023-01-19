@@ -1,4 +1,4 @@
-// Copyright 2021 Nitric Pty Ltd.
+// Copyright 2021 Nitric Technologies Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package pool
 
-import (
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
-)
+import "github.com/nitrictech/nitric/core/pkg/worker"
 
-// FaasWorker
-// Worker representation for a Nitric FaaS function using gRPC
-type FaasWorker struct {
-	adapter.Adapter
+type WrappedWorkerFn func(worker.Worker) worker.Worker
+
+type InstrumentedWorkerPool struct {
+	WorkerPool
+	Wrapper WrappedWorkerFn
 }
 
-var _ Worker = &FaasWorker{}
+var _ WorkerPool = &InstrumentedWorkerPool{}
 
-func (s *FaasWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
-	return true
-}
-
-// NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(adapter adapter.Adapter) *FaasWorker {
-	return &FaasWorker{
-		Adapter: adapter,
-	}
+// AddWorker - Adds the given worker to this pool
+func (iwp *InstrumentedWorkerPool) AddWorker(w worker.Worker) error {
+	return iwp.WorkerPool.AddWorker(iwp.Wrapper(w))
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 Nitric Technologies Pty Ltd.
+// Copyright 2021 Nitric Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package pool
 
-type WrappedWorkerFn func(Worker) Worker
+import (
+	"testing"
 
-type InstrumentedWorkerPool struct {
-	WorkerPool
-	Wrapper WrappedWorkerFn
-}
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
 
-var _ WorkerPool = &InstrumentedWorkerPool{}
-
-// AddWorker - Adds the given worker to this pool
-func (iwp *InstrumentedWorkerPool) AddWorker(w Worker) error {
-	return iwp.WorkerPool.AddWorker(iwp.Wrapper(w))
+func TestWorker(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Pool Suite")
 }
