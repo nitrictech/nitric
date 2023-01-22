@@ -1,0 +1,189 @@
+syntax = "proto3";
+package nitric.deploy.v1;
+
+//protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1";
+option java_package = "io.nitric.proto.deploy.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Deploys";
+option php_namespace = "Nitric\\Proto\\Deploy\\V1";
+option csharp_namespace = "Nitric.Proto.Deploy.v1";
+
+import "proto/resource/v1/resource.proto";
+
+// The Nitric Deloyment Service contract
+service DeployService {
+    // Begins a new deployment
+    // Server will stream updates back to the connected client
+    // on the status of the deployment
+    rpc Up (DeployUpRequest) returns (stream DeployUpEvent);
+    // Tears down an existing deployment
+    // Server will stream updates back to the connected client
+    // on the status of the teardown
+    rpc Down (DeployDownRequest) returns (stream DeployDownEvent);
+}
+
+message DeployUpRequest {
+    // The spec to deploy
+    Spec spec = 1;
+
+    // A map of attributes related to the deploy request
+    // this allows for adding project identifiers etc.
+    map<string, string> attributes = 2;
+}
+
+
+
+message DeployUpEvent {
+    oneof content {
+        DeployEventMessage message = 1;
+        DeployUpEventResult result = 2;
+    }
+}
+
+// Messages to provide status updates on the deployment
+message DeployEventMessage {
+    string message = 1;
+}
+
+// Terminal message indicating deployment success
+message DeployUpEventResult {
+    // Indicate the success status
+    bool success = 1;
+
+    // TODO: Provide the new state of the deployment
+}
+
+message DeployDownRequest {
+    // A map of attributes related to the deploy request
+    // this allows for adding project identifiers etc.
+    map<string, string> attributes = 1;
+}
+
+message DeployDownEvent {
+    oneof content {
+        DeployEventMessage message = 1;
+        DeployDownEventResult result = 2;
+    }
+}
+
+// Terminal message indicating deployment success
+message DeployDownEventResult {}
+
+// An image source to be used for execution unit deployment
+message ImageSource {
+    // URI of the docker image
+    // TODO: May also need to provide auth information (although this should just be configured on the running client already)
+    string uri = 1;
+}
+
+// A unit of execution (i.e. function/container)
+message ExecutionUnit {
+    // Source of the exection unit
+    oneof source {
+        // Container image as a execution unit
+        ImageSource image = 1;
+        // Alternative sources could include 
+        // - zipped code sources
+        // - git/scm repository URIs
+        
+    }
+
+    // Expected worker count for this execution unit
+    int32 workers = 10;
+    // Configurable timeout for request handling
+    int32 timeout = 11;
+    // Configurable memory size for this instance
+    int32 memory = 12;
+}
+
+message Bucket {
+    // TODO: Include bucket specifications here
+}
+
+message Topic {
+    // TODO: Include topic specifications here
+    repeated SubscriptionTarget subscriptions = 1;
+}
+
+message Queue {
+    // TODO: Include queue specifications here
+}
+
+message Collection {
+
+}
+
+message SubscriptionTarget {
+    // TODO: Include subscription specifications here
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+        // - Queues
+    }
+}
+
+message TopicSubscription {
+    SubscriptionTarget target = 1;
+}
+
+message Api {
+    // TODO: Include API specifications here
+    oneof document {
+        // An OpenAPI document for deployment
+        // This document will contain extensions that hint of execution units that should be targeted as part of the deployment
+        string openapi = 1;
+    }
+}
+
+message ScheduleTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+    }
+}
+
+message Schedule {
+    string cron = 1;
+    ScheduleTarget target = 2;
+}
+
+message Resource {
+    string name = 1;
+
+    nitric.resource.v1.ResourceType type = 2;
+
+    oneof config {
+        ExecutionUnit execution_unit = 10;
+        Bucket bucket = 11;
+        Topic topic = 12;
+        Queue queue = 13;
+        Api api = 14;
+        Policy policy = 15;
+        Schedule schedule = 16;
+        Collection collection = 17;
+    }
+}
+
+// TODO: This is already defined in our resource contracts...
+// Need to determine if it's worth re-using
+// unfortunately there are parts we don't want to duplicate, such as API config
+message Policy {
+    repeated Resource principals = 1;
+    // TODO: Split out discrete action definitions from resources
+    // Also need to allow custom action types as well
+    // Should incorporate action re-use here...
+    repeated nitric.resource.v1.Action actions = 2;
+    repeated Resource resources = 3;
+}
+
+message Spec {
+    // list of resources to deploy
+    repeated Resource resources = 1;
+}

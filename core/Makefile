@@ -58,7 +58,7 @@ generate: generate-proto generate-mocks
 generate-proto: install-tools check-gopath
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
-	@$(PROTOC) --go_out=./pkg/api/ --validate_out="lang=go:./pkg/api" --go-grpc_out=./pkg/api -I ../contracts/proto ../contracts/proto/*/**/*.proto -I ../contracts
+	@$(PROTOC) --go_out=./pkg/api/ --go_opt=module=github.com/nitrictech/nitric/core/pkg/api --validate_out="lang=go,module=github.com/nitrictech/nitric/core/pkg/api:./pkg/api" --go-grpc_out=module=github.com/nitrictech/nitric/core/pkg/api:./pkg/api ../contracts/proto/*/**/*.proto -I ../contracts
 
 # generate mock implementations
 generate-mocks:
