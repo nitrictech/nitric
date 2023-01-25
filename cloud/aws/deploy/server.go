@@ -46,19 +46,19 @@ func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails,
 	project, ok := attributes["x-nitric-project"]
 	if !ok || project == "" {
 		// need a valid project name
-		return nil, fmt.Errorf("x-nitric-project is not set of invalid")
+		return nil, fmt.Errorf("x-nitric-project is not set or invalid")
 	}
 
 	stack, ok := attributes["x-nitric-stack"]
 	if !ok || stack == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("x-nitric-stack is not set of invalid")
+		return nil, fmt.Errorf("x-nitric-stack is not set or invalid")
 	}
 
-	region, ok := attributes["aws-region"]
+	region, ok := attributes["region"]
 	if !ok || stack == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("aws-region is not set of invalid")
+		return nil, fmt.Errorf("region is not set or invalid")
 	}
 
 	return &StackDetails{

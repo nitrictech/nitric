@@ -39,15 +39,6 @@ func md5Hash(b []byte) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func policyResourceName(policy *deploy.Policy) (string, error) {
-	policyDoc, err := json.Marshal(policy)
-	if err != nil {
-		return "", err
-	}
-
-	return md5Hash(policyDoc), nil
-}
-
 type Policy struct {
 	pulumi.ResourceState
 

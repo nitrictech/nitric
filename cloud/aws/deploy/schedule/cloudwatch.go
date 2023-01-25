@@ -34,7 +34,7 @@ type AwsCloudwatchSchedule struct {
 
 type AwsCloudwatchScheduleArgs struct {
 	StackID pulumi.StringInput
-	Exec    exec.LambdaExecUnit
+	Exec    *exec.LambdaExecUnit
 	Cron    string
 }
 

@@ -97,6 +97,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		_, err = stack.NewAwsResourceGroup(ctx, details.Stack, &stack.AwsResourceGroupArgs{
 			StackID: stackID,
 		})
+		if err != nil {
+			return err
+		}
 
 		// Deploy all buckets
 		buckets := map[string]*bucket.S3Bucket{}
@@ -247,7 +250,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				// Create schedule targeting a given lambda
 				schedules[res.Name], err = schedule.NewAwsCloudwatchSchedule(ctx, res.Name, &schedule.AwsCloudwatchScheduleArgs{
 					StackID: stackID,
-					Exec:    *execUnit,
+					Exec:    execUnit,
 					Cron:    t.Schedule.Cron,
 				})
 				if err != nil {
@@ -294,7 +297,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		for _, res := range request.Spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Policy:
-				policy.NewIAMPolicy(ctx, res.Name, &policy.PolicyArgs{
+				_, err = policy.NewIAMPolicy(ctx, res.Name, &policy.PolicyArgs{
 					Policy: t.Policy,
 					Resources: &policy.StackResources{
 						Buckets: buckets,
@@ -303,13 +306,19 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					},
 					Principals: principals,
 				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
-	pulumiStack.SetConfig(context.TODO(), "aws:region", auto.ConfigValue{Value: details.Region})
+	_ = pulumiStack.SetConfig(context.TODO(), "aws:region", auto.ConfigValue{Value: details.Region})
 
 	messageWriter := &UpStreamMessageWriter{
 		stream: stream,

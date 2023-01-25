@@ -29,6 +29,10 @@ import (
 // Start the deployment server
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("error listening on port 50051 %v", err)
+	}
+
 	srv := grpc.NewServer()
 
 	deploySrv, err := deploy.NewServer()
@@ -39,5 +43,8 @@ func main() {
 	v1.RegisterDeployServiceServer(srv, deploySrv)
 
 	fmt.Printf("Deployment server started on %s\n", lis.Addr().String())
-	srv.Serve(lis)
+	err = srv.Serve(lis)
+	if err != nil {
+		log.Fatalf("error serving requests %v", err)
+	}
 }
