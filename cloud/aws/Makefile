@@ -7,9 +7,17 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 
 binaries: runtimebin
 
+# build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 runtimebin:
 	@echo Building AWS Runtime Server
-	@CGO_ENABLED=0 go build -o bin/runtime-aws -ldflags="-extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 go build -o deploy/runtime-aws -ldflags="-extldflags=-static" ./runtime/cmd
+
+# FIXME: proto server registration error
+# There appears to be an old namespace conflict with the protobuf definitions
+deploybin: runtimebin
+	@echo Building AWS Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@rm deploy/runtime-aws
 
 license-check: runtimebin
 	@echo Checking AWS Membrane OSS Licenses
