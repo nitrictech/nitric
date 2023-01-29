@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.1
-// source: queue/v1/queue.proto
+// source: proto/queue/v1/queue.proto
 
 package v1
 
@@ -217,5 +217,5 @@ var QueueService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "queue/v1/queue.proto",
+	Metadata: "proto/queue/v1/queue.proto",
 }

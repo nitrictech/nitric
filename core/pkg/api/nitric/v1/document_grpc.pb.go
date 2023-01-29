@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.1
-// source: document/v1/document.proto
+// source: proto/document/v1/document.proto
 
 package v1
 
@@ -283,5 +283,5 @@ var DocumentService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "document/v1/document.proto",
+	Metadata: "proto/document/v1/document.proto",
 }

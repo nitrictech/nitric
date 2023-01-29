@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.1
-// source: faas/v1/faas.proto
+// source: proto/faas/v1/faas.proto
 
 package v1
 
@@ -135,5 +135,5 @@ var FaasService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "faas/v1/faas.proto",
+	Metadata: "proto/faas/v1/faas.proto",
 }
