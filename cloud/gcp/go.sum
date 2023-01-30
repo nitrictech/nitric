@@ -486,8 +486,7 @@ github.com/nitrictech/nitric/cloud/common v0.0.0-20230117221623-1d4e2d25c7ce h1:
 github.com/nitrictech/nitric/cloud/common v0.0.0-20230117221623-1d4e2d25c7ce/go.mod h1:j9dHRY6R9moF5E8woVD/mvT7kgnSfpHyAuSVjiY94r4=
 github.com/nitrictech/nitric/core v0.0.0-20230117221623-1d4e2d25c7ce h1:bPIlV4I+pGDR64VhNb1NsQsQdagn4ZX88nNzolI8qxs=
 github.com/nitrictech/nitric/core v0.0.0-20230117221623-1d4e2d25c7ce/go.mod h1:65e4Wjaw3zEf9oLuYsb96m/1O8odX7oMcJM9idHFJeo=
-github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27 h1:9TRWFdhnlG1E4yIPGDZwgfXd7KXRGEUOCNrbS7/pexY=
-github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27/go.mod h1:foTDKqoQFITPHBz73s77dyIE9SRN2ZLO3HoTydxauiw=
+github.com/nitrictech/protoutils v0.0.0-20220321044654-02667a814cdf h1:8MB8W8ylM8sCM2COGfiO39/tB6BTdiawLszaUGCNL5w=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=

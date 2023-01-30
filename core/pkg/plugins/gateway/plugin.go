@@ -17,33 +17,12 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
-
-type NitricContext struct {
-	RequestId   string
-	PayloadType string
-	Trigger     string
-	TriggerType triggers.TriggerType
-}
-
-// Normalized NitricRequest
-type NitricRequest struct {
-	Context     *NitricContext
-	ContentType string
-	Payload     []byte
-}
-
-type NitricResponse struct {
-	Headers map[string]string
-	Status  int
-	Body    []byte
-}
 
 type GatewayService interface {
 	// Start the Gateway
-	Start(pool worker.WorkerPool) error
+	Start(pool pool.WorkerPool) error
 	// Stop the Gateway
 	Stop() error
 }
@@ -52,7 +31,7 @@ type UnimplementedGatewayPlugin struct {
 	GatewayService
 }
 
-func (*UnimplementedGatewayPlugin) Start(_ worker.WorkerPool) error {
+func (*UnimplementedGatewayPlugin) Start(_ pool.WorkerPool) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 

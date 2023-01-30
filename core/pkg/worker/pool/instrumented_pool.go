@@ -1,4 +1,4 @@
-// Copyright 2021 Nitric Pty Ltd.
+// Copyright 2021 Nitric Technologies Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package triggers
+package pool
 
-// Event - A nitric event that has come from a trigger source
-type Event struct {
-	ID         string
-	Topic      string
-	Payload    []byte
-	Attributes map[string]string
+import "github.com/nitrictech/nitric/core/pkg/worker"
+
+type WrappedWorkerFn func(worker.Worker) worker.Worker
+
+type InstrumentedWorkerPool struct {
+	WorkerPool
+	Wrapper WrappedWorkerFn
 }
 
-func (*Event) GetTriggerType() TriggerType {
-	return TriggerType_Subscription
+var _ WorkerPool = &InstrumentedWorkerPool{}
+
+// AddWorker - Adds the given worker to this pool
+func (iwp *InstrumentedWorkerPool) AddWorker(w worker.Worker) error {
+	return iwp.WorkerPool.AddWorker(iwp.Wrapper(w))
 }

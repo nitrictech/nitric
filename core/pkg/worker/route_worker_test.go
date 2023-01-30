@@ -21,8 +21,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	mock "github.com/nitrictech/nitric/core/mocks/worker"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	mock "github.com/nitrictech/nitric/core/mocks/adapter"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 var _ = Describe("RouteWorker", func() {
@@ -32,29 +32,41 @@ var _ = Describe("RouteWorker", func() {
 			path:    "/test/:param",
 		}
 
-		When("calling HandlesHttpRequest with bad path", func() {
+		When("calling HandlesTrigger with bad path", func() {
 			It("should return false", func() {
-				Expect(rWrkr.HandlesHttpRequest(&triggers.HttpRequest{
-					Method: "GET",
-					Path:   "/test/",
+				Expect(rWrkr.HandlesTrigger(&v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "GET",
+							Path:   "/test/",
+						},
+					},
 				})).To(BeFalse())
 			})
 		})
 
-		When("calling HandlesHttpRequest with bad method", func() {
+		When("calling HandlesTrigger with bad method", func() {
 			It("should return false", func() {
-				Expect(rWrkr.HandlesHttpRequest(&triggers.HttpRequest{
-					Method: "POST",
-					Path:   "/test/test",
+				Expect(rWrkr.HandlesTrigger(&v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "POST",
+							Path:   "/test/test",
+						},
+					},
 				})).To(BeFalse())
 			})
 		})
 
 		When("calling HandlesHttpRequest with matching path and method", func() {
 			It("should return true", func() {
-				Expect(rWrkr.HandlesHttpRequest(&triggers.HttpRequest{
-					Method: "GET",
-					Path:   "/test/test",
+				Expect(rWrkr.HandlesTrigger(&v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "GET",
+							Path:   "/test/test",
+						},
+					},
 				})).To(BeTrue())
 			})
 		})
@@ -65,11 +77,15 @@ var _ = Describe("RouteWorker", func() {
 				hndlr := mock.NewMockAdapter(ctrl)
 
 				By("calling the base grpc handler HandleEvent method")
-				hndlr.EXPECT().HandleHttpRequest(context.TODO(), &triggers.HttpRequest{
-					Method: "GET",
-					Path:   "/test/name",
-					Params: map[string]string{
-						"param": "name",
+				hndlr.EXPECT().HandleTrigger(context.TODO(), &v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "GET",
+							Path:   "/test/name",
+							PathParams: map[string]string{
+								"param": "name",
+							},
+						},
 					},
 				}).Times(1)
 
@@ -79,9 +95,13 @@ var _ = Describe("RouteWorker", func() {
 					Adapter: hndlr,
 				}
 
-				_, err := subWrkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{
-					Method: "GET",
-					Path:   "/test/name",
+				_, err := subWrkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "GET",
+							Path:   "/test/name",
+						},
+					},
 				})
 
 				Expect(err).ShouldNot(HaveOccurred())
@@ -91,11 +111,16 @@ var _ = Describe("RouteWorker", func() {
 	})
 
 	Context("Event", func() {
-		When("calling HandlesEvent", func() {
+		eventTrigger := &v1.TriggerRequest{
+			Context: &v1.TriggerRequest_Topic{
+				Topic: &v1.TopicTriggerContext{},
+			},
+		}
+		When("calling HandlesTrigger wth an Event", func() {
 			rWrkr := &RouteWorker{}
 
 			It("should return false", func() {
-				Expect(rWrkr.HandlesEvent(&triggers.Event{})).To(BeFalse())
+				Expect(rWrkr.HandlesTrigger(eventTrigger)).To(BeFalse())
 			})
 		})
 
@@ -103,7 +128,7 @@ var _ = Describe("RouteWorker", func() {
 			subWrkr := &RouteWorker{}
 
 			It("should return an error", func() {
-				err := subWrkr.HandleEvent(context.TODO(), &triggers.Event{})
+				_, err := subWrkr.HandleTrigger(context.TODO(), eventTrigger)
 
 				Expect(err).Should(HaveOccurred())
 			})
