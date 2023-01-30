@@ -152,7 +152,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nishanths/exhaustive v0.8.3 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect
-	github.com/nitrictech/protoutils v0.0.0-20220321024151-14f05ec4cd27 // indirect
+	github.com/nitrictech/protoutils v0.0.0-20220321044654-02667a814cdf // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect

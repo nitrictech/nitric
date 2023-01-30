@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package triggers
+package adapter
 
-// SourceType enum
-type TriggerType int
+import (
+	"context"
 
-const (
-	TriggerType_Subscription TriggerType = iota
-	TriggerType_Request
-	TriggerType_Custom
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
-func (e TriggerType) String() string {
-	return []string{"SUBSCRIPTION", "REQUEST", "CUSTOM"}[e]
+// Adapter - An interface for defining the delivery of events
+type Adapter interface {
+	HandleTrigger(context.Context, *v1.TriggerRequest) (*v1.TriggerResponse, error)
 }

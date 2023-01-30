@@ -40,6 +40,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/providers/common"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
 type MembraneOptions struct {
@@ -71,7 +72,7 @@ type MembraneOptions struct {
 	Mode *Mode
 
 	// Supply your own worker pool
-	Pool worker.WorkerPool
+	Pool pool.WorkerPool
 }
 
 type Membrane struct {
@@ -114,7 +115,7 @@ type Membrane struct {
 	grpcServer *grpc.Server
 
 	// Worker pool
-	pool worker.WorkerPool
+	pool pool.WorkerPool
 }
 
 func (s *Membrane) log(msg string) {
@@ -362,7 +363,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)
 		}
 
-		options.Pool = worker.NewProcessPool(&worker.ProcessPoolOptions{
+		options.Pool = pool.NewProcessPool(&pool.ProcessPoolOptions{
 			MinWorkers: minWorkers,
 			MaxWorkers: maxWorkers,
 		})
@@ -381,7 +382,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			},
 		}
 
-		options.Pool = &worker.InstrumentedWorkerPool{
+		options.Pool = &pool.InstrumentedWorkerPool{
 			WorkerPool: options.Pool,
 			Wrapper:    worker.InstrumentedWorkerFn,
 		}

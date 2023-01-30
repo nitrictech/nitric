@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package adapter
 
 import (
 	"context"
@@ -28,7 +28,6 @@ import (
 	mock_nitric "github.com/nitrictech/nitric/core/mocks/nitric"
 	mock_sync "github.com/nitrictech/nitric/core/mocks/sync"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
 )
 
 var _ = Describe("grpcAdapter", func() {
@@ -287,7 +286,7 @@ var _ = Describe("grpcAdapter", func() {
 				stream.EXPECT().Send(gomock.Any()).Return(mockErr)
 
 				By("returning the error")
-				_, err := wkr.HandleHttpRequest(context.TODO(), &triggers.HttpRequest{})
+				_, err := wkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{})
 				Expect(err).To(Equal(mockErr))
 			})
 		})
@@ -313,7 +312,7 @@ var _ = Describe("grpcAdapter", func() {
 				stream.EXPECT().Send(gomock.Any()).Return(mockErr)
 
 				By("returning the error")
-				err := wkr.HandleEvent(context.TODO(), &triggers.Event{})
+				_, err := wkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{})
 				Expect(err).To(Equal(mockErr))
 			})
 		})

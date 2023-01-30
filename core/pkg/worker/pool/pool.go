@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package worker
+package pool
 
 import (
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker"
 )
 
 type WorkerPool interface {
 	// WaitForMinimumWorkers - A blocking method
 	WaitForMinimumWorkers(timeout int) error
 	GetWorkerCount() int
-	GetWorker(*GetWorkerOptions) (Worker, error)
-	GetWorkers(*GetWorkerOptions) []Worker
-	AddWorker(Worker) error
-	RemoveWorker(Worker) error
+	GetWorker(*GetWorkerOptions) (worker.Worker, error)
+	GetWorkers(*GetWorkerOptions) []worker.Worker
+	AddWorker(worker.Worker) error
+	RemoveWorker(worker.Worker) error
 	Monitor() error
 }
 
@@ -43,7 +44,7 @@ type ProcessPool struct {
 	minWorkers int
 	maxWorkers int
 	workerLock sync.Locker
-	workers    []Worker
+	workers    []worker.Worker
 	poolErr    chan error
 }
 
@@ -53,21 +54,21 @@ func (p *ProcessPool) GetWorkerCount() int {
 	return len(p.workers)
 }
 
-func prepend(slice []Worker, elems ...Worker) []Worker {
+func prepend(slice []worker.Worker, elems ...worker.Worker) []worker.Worker {
 	return append(elems, slice...)
 }
 
 // return route workers
-func (p *ProcessPool) getHttpWorkers() []Worker {
-	hws := make([]Worker, 0)
+func (p *ProcessPool) getHttpWorkers() []worker.Worker {
+	hws := make([]worker.Worker, 0)
 
 	for _, w := range p.workers {
 		switch w.(type) {
-		case *ScheduleWorker:
+		case *worker.ScheduleWorker:
 			break
-		case *SubscriptionWorker:
+		case *worker.SubscriptionWorker:
 			break
-		case *RouteWorker:
+		case *worker.RouteWorker:
 			// Prioritise Route Workers
 			hws = prepend(hws, w)
 			break
@@ -80,17 +81,17 @@ func (p *ProcessPool) getHttpWorkers() []Worker {
 }
 
 // return route workers
-func (p *ProcessPool) getEventWorkers() []Worker {
-	hws := make([]Worker, 0)
+func (p *ProcessPool) getEventWorkers() []worker.Worker {
+	hws := make([]worker.Worker, 0)
 
 	for _, w := range p.workers {
 		switch w.(type) {
-		case *RouteWorker:
+		case *worker.RouteWorker:
 			// Ignore route workers
 			break
-		case *ScheduleWorker:
+		case *worker.ScheduleWorker:
 			hws = prepend(hws, w)
-		case *SubscriptionWorker:
+		case *worker.SubscriptionWorker:
 			hws = prepend(hws, w)
 		default:
 			hws = append(hws, w)
@@ -144,13 +145,12 @@ func (p *ProcessPool) WaitForMinimumWorkers(timeout int) error {
 }
 
 type GetWorkerOptions struct {
-	Http   *triggers.HttpRequest
-	Event  *triggers.Event
-	Filter func(w Worker) bool
+	Trigger *v1.TriggerRequest
+	Filter  func(w worker.Worker) bool
 }
 
-func filterWorkers(ws []Worker, f func(w Worker) bool) []Worker {
-	newWs := make([]Worker, 0)
+func filterWorkers(ws []worker.Worker, f func(w worker.Worker) bool) []worker.Worker {
+	newWs := make([]worker.Worker, 0)
 	for _, w := range ws {
 		if f(w) {
 			newWs = append(newWs, w)
@@ -162,21 +162,15 @@ func filterWorkers(ws []Worker, f func(w Worker) bool) []Worker {
 
 // GetWorkers - return a slice of all workers matching the input options.
 // useful for retrieving a list of all topic subscribers (for example)
-func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
+func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []worker.Worker {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	workers := append([]Worker{}, p.workers...)
+	workers := append([]worker.Worker{}, p.workers...)
 
-	if opts.Http != nil {
-		workers = filterWorkers(workers, func(w Worker) bool {
-			return w.HandlesHttpRequest(opts.Http)
-		})
-	}
-
-	if opts.Event != nil {
-		workers = filterWorkers(workers, func(w Worker) bool {
-			return w.HandlesEvent(opts.Event)
+	if opts.Trigger != nil {
+		workers = filterWorkers(workers, func(w worker.Worker) bool {
+			return w.HandlesTrigger(opts.Trigger)
 		})
 	}
 
@@ -188,35 +182,30 @@ func (p *ProcessPool) GetWorkers(opts *GetWorkerOptions) []Worker {
 }
 
 // GetWorker - Retrieves a worker from this pool
-func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
+func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (worker.Worker, error) {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
-	if opts.Http != nil {
-		ws := p.getHttpWorkers()
+	ws := p.workers
 
-		if opts.Filter != nil {
-			ws = filterWorkers(ws, opts.Filter)
-		}
-
-		for _, w := range ws {
-			if w.HandlesHttpRequest(opts.Http) {
-				return w, nil
-			}
-		}
+	if opts.Trigger.GetHttp() != nil {
+		// prioritise http workers
+		ws = p.getHttpWorkers()
 	}
 
-	if opts.Event != nil {
-		ws := p.getEventWorkers()
+	if opts.Trigger.GetTopic() != nil {
+		// prioritise event workers
+		ws = p.getEventWorkers()
+	}
 
-		if opts.Filter != nil {
-			ws = filterWorkers(ws, opts.Filter)
-		}
+	// fallback to all workers (don't prioritise order based on trigger type)
+	if opts.Filter != nil {
+		ws = filterWorkers(ws, opts.Filter)
+	}
 
-		for _, w := range ws {
-			if w.HandlesEvent(opts.Event) {
-				return w, nil
-			}
+	for _, w := range ws {
+		if w.HandlesTrigger(opts.Trigger) {
+			return w, nil
 		}
 	}
 
@@ -224,7 +213,7 @@ func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (Worker, error) {
 }
 
 // RemoveWorker - Removes the given worker from this pool
-func (p *ProcessPool) RemoveWorker(wrkr Worker) error {
+func (p *ProcessPool) RemoveWorker(wrkr worker.Worker) error {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
@@ -243,7 +232,7 @@ func (p *ProcessPool) RemoveWorker(wrkr Worker) error {
 }
 
 // AddWorker - Adds the given worker to this pool
-func (p *ProcessPool) AddWorker(wrkr Worker) error {
+func (p *ProcessPool) AddWorker(wrkr worker.Worker) error {
 	p.workerLock.Lock()
 	defer p.workerLock.Unlock()
 
@@ -269,7 +258,7 @@ func NewProcessPool(opts *ProcessPoolOptions) WorkerPool {
 		minWorkers: opts.MinWorkers,
 		maxWorkers: opts.MaxWorkers,
 		workerLock: &sync.Mutex{},
-		workers:    make([]Worker, 0),
+		workers:    make([]worker.Worker, 0),
 		poolErr:    make(chan error),
 	}
 }
