@@ -53,7 +53,7 @@ func NewAwsCloudwatchSchedule(ctx *pulumi.Context, name string, args *AwsCloudwa
 
 	res.EventRule, err = cloudwatch.NewEventRule(ctx, name, &cloudwatch.EventRuleArgs{
 		ScheduleExpression: pulumi.String(awsCronValue),
-		Tags:               common.Tags(ctx, args.StackID, name+"Schedule"),
+		Tags:               common.Tags(ctx, args.StackID, name),
 	}, opts...)
 	if err != nil {
 		return nil, err

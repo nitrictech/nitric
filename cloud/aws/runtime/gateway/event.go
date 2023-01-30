@@ -14,7 +14,9 @@
 
 package gateway
 
-import "github.com/aws/aws-lambda-go/events"
+import (
+	"github.com/aws/aws-lambda-go/events"
+)
 
 type eventType int
 
@@ -23,6 +25,7 @@ const (
 	sns
 	httpEvent
 	healthcheck
+	cloudwatch
 	xforwardHeader string = "x-forwarded-for"
 )
 
@@ -34,7 +37,8 @@ type healthCheckEvent struct {
 type Event struct {
 	events.APIGatewayV2HTTPRequest `json:",omitempty"`
 	// The base serializable type here matches other embeddable repeated constructs
-	events.SNSEvent `json:",omitempty"`
+	events.SNSEvent        `json:",omitempty"`
+	events.CloudWatchEvent `json:",omitempty"`
 	healthCheckEvent
 }
 
@@ -46,6 +50,8 @@ func (e *Event) Type() eventType {
 		return healthcheck
 	} else if len(e.Records) > 0 && e.Records[0].EventSource == "aws:sns" {
 		return sns
+	} else if e.Source != "" {
+		return cloudwatch
 	}
 
 	return unknown
