@@ -32,6 +32,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
@@ -50,6 +51,21 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 	}
 
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
+}
+
+func (s *LambdaGateway) getScheduleNameForArn(ctx context.Context, eventRuleArn string) (string, error) {
+	topics, err := s.provider.GetResources(ctx, core.AwsResource_EventRule)
+	if err != nil {
+		return "", fmt.Errorf("error retreiving event rules: %w", err)
+	}
+
+	for name, arn := range topics {
+		if arn == eventRuleArn {
+			return name, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find event rule for arn %s", eventRuleArn)
 }
 
 type LambdaGateway struct {
@@ -141,6 +157,48 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 	}, nil
 }
 
+func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.CloudWatchEvent) (interface{}, error) {
+	evtRuleArn := evt.Resources[0]
+	sched, err := s.getScheduleNameForArn(ctx, evtRuleArn)
+	if err != nil {
+		log.Default().Println("unable to locate nitric schedule")
+		return nil, fmt.Errorf("unable to find nitric schedule: %w", err)
+	}
+
+	request := &v1.TriggerRequest{
+		// Send empty data for now (no reason to send data for schedules at the moment)
+		Data: nil,
+		Context: &v1.TriggerRequest_Topic{
+			Topic: &v1.TopicTriggerContext{
+				Topic: worker.ScheduleKeyToTopicName(sched),
+			},
+		},
+	}
+
+	wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+		Trigger: request,
+		// Only send Cloudwatch events to schedule workers
+		Filter: func(w worker.Worker) bool {
+			_, ok := w.(*worker.ScheduleWorker)
+			return ok
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("no worker available to handle schedule %s", sched)
+	}
+
+	resp, err := wrkr.HandleTrigger(context.TODO(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.GetTopic().Success {
+		return nil, fmt.Errorf("schedule execution failed")
+	}
+
+	return nil, nil
+}
+
 func (s *LambdaGateway) handleSnsEvents(ctx context.Context, evt events.SNSEvent) (interface{}, error) {
 	for _, snsRecord := range evt.Records {
 		messageString := snsRecord.SNS.Message
@@ -171,6 +229,11 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, evt events.SNSEvent
 
 		wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
 			Trigger: request,
+			// Only send SNS events to subscription workers
+			Filter: func(w worker.Worker) bool {
+				_, ok := w.(*worker.SubscriptionWorker)
+				return ok
+			},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get worker to event trigger")
@@ -201,6 +264,8 @@ func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{},
 		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
 	case sns:
 		return s.handleSnsEvents(ctx, evt.SNSEvent)
+	case cloudwatch:
+		return s.handleCloudwatchEvent(ctx, evt.CloudWatchEvent)
 	default:
 		return nil, fmt.Errorf("unhandled lambda event type")
 	}
