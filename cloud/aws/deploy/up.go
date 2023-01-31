@@ -300,9 +300,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				_, err = policy.NewIAMPolicy(ctx, res.Name, &policy.PolicyArgs{
 					Policy: t.Policy,
 					Resources: &policy.StackResources{
-						Buckets: buckets,
-						Topics:  topics,
-						Queues:  queues,
+						Buckets:     buckets,
+						Topics:      topics,
+						Queues:      queues,
+						Collections: collections,
 					},
 					Principals: principals,
 				})

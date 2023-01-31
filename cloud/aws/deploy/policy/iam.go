@@ -26,6 +26,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -47,10 +48,10 @@ type Policy struct {
 }
 
 type StackResources struct {
-	Topics  map[string]*topic.SNSTopic
-	Queues  map[string]*queue.SQSQueue
-	Buckets map[string]*bucket.S3Bucket
-	// Collections map[string]*dynamodb.Table
+	Topics      map[string]*topic.SNSTopic
+	Queues      map[string]*queue.SQSQueue
+	Buckets     map[string]*bucket.S3Bucket
+	Collections map[string]*collection.DynamodbCollection
 	// Secrets     map[string]*secretsmanager.Secret
 }
 
@@ -157,10 +158,10 @@ func arnForResource(resource *deploy.Resource, resources *StackResources) ([]int
 		if q, ok := resources.Queues[resource.Name]; ok {
 			return []interface{}{q.Sqs.Arn}, nil
 		}
-	// case v1.ResourceType_Collection:
-	// 	if c, ok := resources.Collections[resource.Name]; ok {
-	// 		return []interface{}{c.Arn}, nil
-	// 	}
+	case *deploy.Resource_Collection:
+		if c, ok := resources.Collections[resource.Name]; ok {
+			return []interface{}{c.Table.Arn}, nil
+		}
 	// case v1.ResourceType_Secret:
 	// 	if s, ok := resources.Secrets[resource.Name]; ok {
 	// 		return []interface{}{s.Arn}, nil
