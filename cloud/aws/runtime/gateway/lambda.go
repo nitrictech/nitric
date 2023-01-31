@@ -56,7 +56,7 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 func (s *LambdaGateway) getScheduleNameForArn(ctx context.Context, eventRuleArn string) (string, error) {
 	topics, err := s.provider.GetResources(ctx, core.AwsResource_EventRule)
 	if err != nil {
-		return "", fmt.Errorf("error retreiving event rules: %v", err)
+		return "", fmt.Errorf("error retreiving event rules: %w", err)
 	}
 
 	for name, arn := range topics {
@@ -160,10 +160,9 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.CloudWatchEvent) (interface{}, error) {
 	evtRuleArn := evt.Resources[0]
 	sched, err := s.getScheduleNameForArn(ctx, evtRuleArn)
-
 	if err != nil {
 		log.Default().Println("unable to locate nitric schedule")
-		return nil, fmt.Errorf("unable to find nitric schedule: %v", err)
+		return nil, fmt.Errorf("unable to find nitric schedule: %w", err)
 	}
 
 	request := &v1.TriggerRequest{
