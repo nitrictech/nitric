@@ -20,20 +20,27 @@ deploybin: runtimebin
 	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-gcp
 
-sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
-
-fmt:
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	$(GOLANGCI_LINT) run --fix
-
-lint:
-	@touch deploy/runtime-gcp
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	$(GOLANGCI_LINT) run
+dockerimage: deploybin
+	@echo Building AWS Deployment Server Docker Image
+	@docker build -t nitrictech/deploy-gcp:latest -f deploy/Dockerfile bin/
 
 license-check: runtimebin
 	@echo Checking GCP Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-gcp
+
+sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
+
+fmt:
+	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-aws
+	$(GOLANGCI_LINT) run --fix
+	@rm deploy/runtime-aws
+
+lint:
+	@touch deploy/runtime-gcp
+	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-aws
+	$(GOLANGCI_LINT) run
 
 test: generate-mocks
 	@echo Running unit tests

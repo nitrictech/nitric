@@ -9,6 +9,10 @@ binaries: $(providers)
 		$(MAKE) -C $$dir || exit 1; \
 	done
 
+dockerimage:
+	$(MAKE) dockerimage -C cloud/aws
+	$(MAKE) dockerimage -C cloud/azure
+
 check: lint test
 
 fmt: $(all)

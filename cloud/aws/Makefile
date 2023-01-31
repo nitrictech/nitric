@@ -20,6 +20,10 @@ deploybin: runtimebin
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-aws
 
+dockerimage: deploybin
+	@echo Building AWS Deployment Server Docker Image
+	@docker build -t nitrictech/deploy-aws:latest -f deploy/Dockerfile bin/
+
 license-check: runtimebin
 	@echo Checking AWS Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-aws
