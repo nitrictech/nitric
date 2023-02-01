@@ -1,3 +1,15 @@
+# Build the deployment binary
+FROM golang:buster as build
+
+WORKDIR /app/
+
+# Optimize this to copy go workspace mod/sum files only
+COPY . .
+
+WORKDIR cloud/azure
+
+RUN make deploybin
+
 FROM python:3.9-slim AS base
 
 LABEL "repository"="https://github.com/nitrictech/nitric"
@@ -5,7 +17,7 @@ LABEL "homepage"="https://nitric.io"
 LABEL "maintainer"="Nitric Team <team@nitric.io>"
 LABEL org.opencontainers.image.description="Nitric azure deployer, in a Docker container."
 
-ADD runtime-azure /usr/bin/
+COPY --from=build app/cloud/azure/bin/deploy-azure /usr/bin
 
 # Install deps all in one step
 RUN apt-get update -y && \
@@ -43,4 +55,4 @@ ARG PULUMI_VERSION
 RUN curl -fsSL https://get.pulumi.com/ | bash -s -- --version $PULUMI_VERSION && \
   mv ~/.pulumi/bin/* /usr/bin
 
-ENTRYPOINT ["runtime-azure"]
+ENTRYPOINT ["deploy-azure"]

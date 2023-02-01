@@ -20,9 +20,9 @@ deploybin: runtimebin
 	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-gcp
 
-dockerimage: deploybin
-	@echo Building AWS Deployment Server Docker Image
-	@docker build -t nitrictech/deploy-gcp:latest -f deploy/Dockerfile bin/
+dockerimage:
+	@echo Building GCP Deployment Server Docker Image
+	@docker build -t nitrictech/deploy-gcp:latest -f deploy/Dockerfile ../../
 
 license-check: runtimebin
 	@echo Checking GCP Membrane OSS Licenses

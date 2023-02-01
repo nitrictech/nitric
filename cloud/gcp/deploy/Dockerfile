@@ -1,3 +1,15 @@
+# Build the deployment binary
+FROM golang:buster as build
+
+WORKDIR /app/
+
+# Optimize this to copy go workspace mod/sum files only
+COPY . .
+
+WORKDIR cloud/gcp
+
+RUN make deploybin
+
 FROM python:3.9-slim AS base
 
 LABEL "repository"="https://github.com/nitrictech/nitric"
@@ -5,7 +17,8 @@ LABEL "homepage"="https://nitric.io"
 LABEL "maintainer"="Nitric Team <team@nitric.io>"
 LABEL org.opencontainers.image.description="Nitric gcp deployer, in a Docker container."
 
-ADD deploy-gcp /usr/bin/
+# Copy the deploy binary from the build step
+COPY --from=build app/cloud/gcp/bin/deploy-gcp /usr/bin
 
 # Install deps all in one step
 RUN apt-get update -y && \
