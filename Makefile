@@ -10,8 +10,10 @@ binaries: $(providers)
 	done
 
 dockerimage:
-	$(MAKE) dockerimage -C cloud/aws
-	$(MAKE) dockerimage -C cloud/azure
+	docker build -t nitric-deploy-common -f cloud/Dockerfile .
+	for dir in $(providers); do \
+		$(MAKE) dockerimage -C $$dir || exit 1; \
+	done
 
 check: lint test
 
