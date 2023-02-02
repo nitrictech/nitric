@@ -64,11 +64,18 @@ func wrapDockerImage(wrapper string, sourceImage string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
 	}
+
 	// Get the original command of the source image
 	// and inject it into the wrapper image
-	cmd := append(ii.ContainerConfig.Entrypoint, ii.ContainerConfig.Cmd...)
+	cmd := append(ii.Config.Entrypoint, ii.Config.Cmd...)
 
-	return fmt.Sprintf(wrapper, strings.Join(cmd, ",")), nil
+	// Wrap each command in string quotes
+	cmdStr := []string{}
+	for _, c := range cmd {
+		cmdStr = append(cmdStr, "\""+c+"\"")
+	}
+
+	return fmt.Sprintf(wrapper, strings.Join(cmdStr, ",")), nil
 }
 
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
