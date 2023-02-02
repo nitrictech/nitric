@@ -77,6 +77,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
 			Length:  pulumi.Int(8),
+			Upper:   pulumi.Bool(false),
 			Keepers: pulumi.ToMap(map[string]interface{}{
 				"stack-name": ctx.Stack(),
 			}),
@@ -88,15 +89,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
 
 		// Deploy all buckets
-		var buckets map[string]*bucket.CloudStorageBucket
+		buckets := map[string]*bucket.CloudStorageBucket{}
 		for _, res := range request.Spec.Resources {
 			switch b := res.Config.(type) {
 			case *deploy.Resource_Bucket:
 				buckets[res.Name], err = bucket.NewCloudStorageBucket(ctx, res.Name, &bucket.CloudStorageBucketArgs{
-					StackID:   stackID,
-					Bucket:    b.Bucket,
-					ProjectId: details.Project,
-					Location:  details.Region,
+					StackID:  stackID,
+					Bucket:   b.Bucket,
+					Location: details.Region,
 				})
 				if err != nil {
 					return err
@@ -105,15 +105,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		// Deploy all queues
-		var queues map[string]*queue.PubSubTopic
+		queues := map[string]*queue.PubSubTopic{}
 		for _, res := range request.Spec.Resources {
 			switch q := res.Config.(type) {
 			case *deploy.Resource_Queue:
 				queues[res.Name], err = queue.NewPubSubTopic(ctx, res.Name, &queue.PubSubTopicArgs{
-					StackID:   stackID,
-					Queue:     q.Queue,
-					ProjectId: details.Project,
-					Location:  details.Region,
+					StackID:  stackID,
+					Queue:    q.Queue,
+					Location: details.Region,
 				})
 				if err != nil {
 					return err
@@ -137,7 +136,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		var execs map[string]*exec.CloudRunner
+		execs := map[string]*exec.CloudRunner{}
 
 		baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", details.Stack), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
@@ -196,7 +195,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				image, err := image.NewImage(ctx, res.Name, &image.ImageArgs{
 					SourceImage:   eu.ExecutionUnit.GetImage().GetUri(),
-					RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", details.Project, imageName),
+					RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", details.ProjectId, imageName),
 					Username:      pulumi.String("oauth2accesstoken"),
 					Password:      pulumi.String(authToken.AccessToken),
 					Server:        pulumi.String("https://gcr.io"),
@@ -216,7 +215,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
 					Location:        pulumi.String(details.Region),
-					ProjectId:       details.Project,
+					ProjectId:       details.ProjectId,
 					Topics:          map[string]*pubsub.Topic{},
 					Compute:         res.GetExecutionUnit(),
 					Image:           image,
@@ -224,6 +223,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					DelayQueue:      topicDelayQueue,
 					ServiceAccount:  sa,
 					BaseComputeRole: baseComputeRole,
+					StackID:         stackID,
 				})
 				if err != nil {
 					return err
@@ -233,14 +233,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
-		var topics map[string]*events.PubSubTopic
+		topics := map[string]*events.PubSubTopic{}
 		for _, res := range request.Spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Topic:
 				topics[res.Name], err = events.NewPubSubTopic(ctx, res.Name, &events.PubSubTopicArgs{
 					Topic:     t.Topic,
 					Location:  details.Region,
-					ProjectId: details.Project,
+					ProjectId: details.ProjectId,
 					StackID:   stackID,
 				})
 				if err != nil {
@@ -290,6 +290,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	})
 
 	err = pulumiStack.SetConfig(context.TODO(), "gcp:region", auto.ConfigValue{Value: details.Region})
+	if err != nil {
+		return err
+	}
+
+	err = pulumiStack.SetConfig(context.TODO(), "gcp:project", auto.ConfigValue{Value: details.ProjectId})
 	if err != nil {
 		return err
 	}

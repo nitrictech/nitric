@@ -31,9 +31,8 @@ type PubSubTopic struct {
 }
 
 type PubSubTopicArgs struct {
-	Location  string
-	StackID   pulumi.StringInput
-	ProjectId string
+	Location string
+	StackID  pulumi.StringInput
 
 	Queue *v1.Queue
 }
