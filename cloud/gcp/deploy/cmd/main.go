@@ -41,7 +41,7 @@ func main() {
 	}
 	v1.RegisterDeployServiceServer(srv, deploySrv)
 
-	fmt.Printf("Deployment server started on %s\n", "") // lis.Addr().String()
+	fmt.Printf("Deployment server starting on %s\n", lis.Addr().String())
 	err = srv.Serve(lis)
 	if err != nil {
 		log.Fatalf("error serving requests %v", err)

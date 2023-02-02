@@ -36,35 +36,43 @@ type DeployServer struct {
 var runtime []byte
 
 type StackDetails struct {
-	Project string
-	Stack   string
-	Region  string
+	Project   string
+	ProjectId string
+	Stack     string
+	Region    string
 }
 
 // Read nitric attributes from the provided deployment attributes
 func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
-	project, ok := attributes["x-nitric-project"]
+	project, ok := attributes["project"]
 	if !ok || project == "" {
 		// need a valid project name
-		return nil, fmt.Errorf("x-nitric-project is not set of invalid")
+		return nil, fmt.Errorf("project is not set of invalid")
 	}
 
-	stack, ok := attributes["x-nitric-stack"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("x-nitric-stack is not set of invalid")
+	projectId, ok := attributes["gcp-project-id"]
+	if !ok || projectId == "" {
+		// need a valid project name
+		return nil, fmt.Errorf("gcp-project-id is not set of invalid")
 	}
 
-	region, ok := attributes["gcp-region"]
+	stack, ok := attributes["stack"]
 	if !ok || stack == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("gcp-region is not set of invalid")
+		return nil, fmt.Errorf("stack is not set of invalid")
+	}
+
+	region, ok := attributes["region"]
+	if !ok || stack == "" {
+		// need a valid stack name
+		return nil, fmt.Errorf("region is not set of invalid")
 	}
 
 	return &StackDetails{
-		Project: project,
-		Stack:   stack,
-		Region:  region,
+		Project:   project,
+		ProjectId: projectId,
+		Stack:     stack,
+		Region:    region,
 	}, nil
 }
 

@@ -217,7 +217,7 @@ func getCloudRunnerEnvs(args *CloudRunnerArgs) cloudrun.ServiceTemplateSpecConta
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
-			Value: pulumi.String(fmt.Sprint(0)),
+			Value: pulumi.String(fmt.Sprintf("%d", args.Compute.Workers)),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_STACK"),
