@@ -37,4 +37,6 @@ RUN curl -fsSLo /usr/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.a
   # Clean up the lists work
   rm -rf /var/lib/apt/lists/*
 
+RUN pulumi plugin install resource aws 5.26.0
+
 ENTRYPOINT ["deploy-aws"]

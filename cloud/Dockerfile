@@ -36,3 +36,6 @@ ARG PULUMI_VERSION
 # Install the Pulumi SDK, including the CLI and language runtimes.
 RUN curl -fsSL https://get.pulumi.com/ | bash -s -- --version $PULUMI_VERSION && \
   mv ~/.pulumi/bin/* /usr/bin
+
+RUN pulumi plugin install resource random 4.8.2 && \
+    pulumi plugin install resource docker-buildkit 0.1.21 --server https://github.com/MaterializeInc/pulumi-docker-buildkit/releases/download/v0.1.21

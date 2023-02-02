@@ -31,4 +31,8 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
   # Clean up the lists work
   rm -rf /var/lib/apt/lists/*
 
+RUN pulumi plugin install resource azure 5.13.0 &&\
+    pulumi plugin install resource azure-native 1.90.0 &&\
+    pulumi plugin install resource azuread 5.32.0
+
 ENTRYPOINT ["deploy-azure"]
