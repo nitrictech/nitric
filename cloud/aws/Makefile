@@ -24,6 +24,10 @@ deploybin: predeploybin
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-aws
 
+installdeploy: deploybin
+	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
+
 license-check: runtimebin
 	@echo Checking AWS Membrane OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-aws

@@ -22,6 +22,10 @@ deploybin: predeploybin
 	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-gcp
 
+installdeploy: deploybin
+	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
