@@ -288,9 +288,9 @@ func keepOperation(opExt map[string]interface{}) (string, bool) {
 	name := ""
 
 	if v, ok := opExt["x-nitric-target"]; ok {
-		targetMap, isMap := v.(map[string]string)
+		targetMap, isMap := v.(map[string]interface{})
 		if isMap {
-			name = targetMap["name"]
+			name, _ = targetMap["name"].(string)
 		}
 	}
 

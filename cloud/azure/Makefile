@@ -9,13 +9,15 @@ binaries: runtimebin
 
 runtimebin:
 	@echo Building Azure Runtime Server
-	@CGO_ENABLED=0 go build -o bin/runtime-azure -ldflags="-extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-azure -ldflags="-extldflags=-static" ./runtime/cmd
+
+predeploybin: runtimebin
+	@cp bin/runtime-azure deploy/runtime-azure
 
 # FIXME: proto server registration error
 # There appears to be an old namespace conflict with the protobuf definitions
-deploybin: runtimebin
+deploybin: predeploybin
 	@echo Building Azure Deployment Server
-	cp bin/runtime-azure deploy/runtime-azure
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-azure
 

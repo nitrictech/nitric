@@ -176,9 +176,9 @@ func awsOperation(op *openapi3.Operation, funcs map[string]string) *openapi3.Ope
 	name := ""
 
 	if v, ok := op.Extensions["x-nitric-target"]; ok {
-		targetMap, isMap := v.(map[string]string)
+		targetMap, isMap := v.(map[string]any)
 		if isMap {
-			name = targetMap["name"]
+			name = targetMap["name"].(string)
 		}
 	}
 
