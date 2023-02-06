@@ -21,6 +21,7 @@ import (
 
 	_ "embed"
 
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 )
 
@@ -36,51 +37,34 @@ type DeployServer struct {
 var runtime []byte
 
 type StackDetails struct {
-	Project    string
-	Stack      string
-	Region     string
+	*commonDeploy.CommonStackDetails
 	Org        string
 	AdminEmail string
 }
 
 // Read nitric attributes from the provided deployment attributes
 func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
-	project, ok := attributes["x-nitric-project"]
-	if !ok || project == "" {
-		// need a valid project name
-		return nil, fmt.Errorf("x-nitric-project is not set of invalid")
-	}
-
-	stack, ok := attributes["x-nitric-stack"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("x-nitric-stack is not set of invalid")
-	}
-
-	region, ok := attributes["region"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("azure-region is not set of invalid")
+	commonDetails, err := commonDeploy.CommonStackDetailsFromAttributes(attributes)
+	if err != nil {
+		return nil, err
 	}
 
 	org, ok := attributes["org"]
-	if !ok || stack == "" {
+	if !ok || org == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("region is not set of invalid")
+		return nil, fmt.Errorf("org is not set of invalid")
 	}
 
 	adminEmail, ok := attributes["admin-email"]
-	if !ok || stack == "" {
+	if !ok || adminEmail == "" {
 		// need a valid stack name
 		return nil, fmt.Errorf("admin-email is not set of invalid")
 	}
 
 	return &StackDetails{
-		Project:    project,
-		Stack:      stack,
-		Region:     region,
-		Org:        org,
-		AdminEmail: adminEmail,
+		CommonStackDetails: commonDetails,
+		Org:                org,
+		AdminEmail:         adminEmail,
 	}, nil
 }
 
