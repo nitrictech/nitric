@@ -82,8 +82,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.Stack, details.Project, func(ctx *pulumi.Context) error {
 		principals := map[v1.ResourceType]map[string]*iam.Role{}
 
-		ctx.Log.Info(fmt.Sprintf("got spec %+v", request.Spec), &pulumi.LogArgs{})
-
 		// Calculate unique stackID
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
