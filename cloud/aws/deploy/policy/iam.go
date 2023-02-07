@@ -145,20 +145,20 @@ func actionsToAwsActions(actions []v1.Action) []string {
 
 // discover the arn of a deployed resource
 func arnForResource(resource *deploy.Resource, resources *StackResources) ([]interface{}, error) {
-	switch resource.Config.(type) {
-	case *deploy.Resource_Bucket:
+	switch resource.Type {
+	case v1.ResourceType_Bucket:
 		if b, ok := resources.Buckets[resource.Name]; ok {
 			return []interface{}{b.S3.Arn, pulumi.Sprintf("%s/*", b.S3.Arn)}, nil
 		}
-	case *deploy.Resource_Topic:
+	case v1.ResourceType_Topic:
 		if t, ok := resources.Topics[resource.Name]; ok {
 			return []interface{}{t.Sns.Arn, t.Sfn.Arn}, nil
 		}
-	case *deploy.Resource_Queue:
+	case v1.ResourceType_Queue:
 		if q, ok := resources.Queues[resource.Name]; ok {
 			return []interface{}{q.Sqs.Arn}, nil
 		}
-	case *deploy.Resource_Collection:
+	case v1.ResourceType_Collection:
 		if c, ok := resources.Collections[resource.Name]; ok {
 			return []interface{}{c.Table.Arn}, nil
 		}
