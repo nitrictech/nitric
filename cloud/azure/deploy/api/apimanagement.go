@@ -186,12 +186,15 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 				jwtTemplateString := strings.Join(jwtTemplates, "\n")
 				target := ""
 
-				targetMap, isMap := v.(map[string]string)
+				targetMap, isMap := v.(map[string]interface{})
 				if !isMap {
 					continue
 				}
 
-				target = targetMap["name"]
+				target, isString := targetMap["name"].(string)
+				if !isString {
+					continue
+				}
 
 				app, ok := args.Apps[target]
 				if !ok {

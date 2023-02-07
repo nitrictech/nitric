@@ -21,6 +21,7 @@ import (
 
 	_ "embed"
 
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 )
 
@@ -36,18 +37,15 @@ type DeployServer struct {
 var runtime []byte
 
 type StackDetails struct {
-	Project   string
+	*commonDeploy.CommonStackDetails
 	ProjectId string
-	Stack     string
-	Region    string
 }
 
 // Read nitric attributes from the provided deployment attributes
 func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
-	project, ok := attributes["project"]
-	if !ok || project == "" {
-		// need a valid project name
-		return nil, fmt.Errorf("project is not set of invalid")
+	commonDetails, err := commonDeploy.CommonStackDetailsFromAttributes(attributes)
+	if err != nil {
+		return nil, err
 	}
 
 	projectId, ok := attributes["gcp-project-id"]
@@ -56,23 +54,9 @@ func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails,
 		return nil, fmt.Errorf("gcp-project-id is not set of invalid")
 	}
 
-	stack, ok := attributes["stack"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("stack is not set of invalid")
-	}
-
-	region, ok := attributes["region"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("region is not set of invalid")
-	}
-
 	return &StackDetails{
-		Project:   project,
-		ProjectId: projectId,
-		Stack:     stack,
-		Region:    region,
+		CommonStackDetails: commonDetails,
+		ProjectId:          projectId,
 	}, nil
 }
 

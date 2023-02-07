@@ -17,8 +17,6 @@
 package deploy
 
 import (
-	"fmt"
-
 	_ "embed"
 
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -34,39 +32,6 @@ type DeployServer struct {
 //
 //go:embed runtime-aws
 var runtime []byte
-
-type StackDetails struct {
-	Project string
-	Stack   string
-	Region  string
-}
-
-// Read nitric attributes from the provided deployment attributes
-func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
-	project, ok := attributes["x-nitric-project"]
-	if !ok || project == "" {
-		// need a valid project name
-		return nil, fmt.Errorf("x-nitric-project is not set or invalid")
-	}
-
-	stack, ok := attributes["x-nitric-stack"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("x-nitric-stack is not set or invalid")
-	}
-
-	region, ok := attributes["region"]
-	if !ok || stack == "" {
-		// need a valid stack name
-		return nil, fmt.Errorf("region is not set or invalid")
-	}
-
-	return &StackDetails{
-		Project: project,
-		Stack:   stack,
-		Region:  region,
-	}, nil
-}
 
 func NewServer() (*DeployServer, error) {
 	return &DeployServer{}, nil

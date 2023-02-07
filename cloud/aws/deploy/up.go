@@ -33,6 +33,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -68,7 +69,7 @@ func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
 
 // Up - Deploy requested infrastructure for a stack
 func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
-	details, err := getStackDetailsFromAttributes(request.Attributes)
+	details, err := commonDeploy.CommonStackDetailsFromAttributes(request.Attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}

@@ -82,13 +82,14 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 	headerCopy := map[string]*v1.HeaderValue{}
 
 	for key, val := range evt.Headers {
-		if headerCopy[key] == nil {
-			headerCopy[key] = &v1.HeaderValue{}
-		}
-
 		if strings.ToLower(key) == "host" {
-			headerCopy[xforwardHeader].Value = append(headerCopy[xforwardHeader].Value, val)
+			headerCopy[xforwardHeader] = &v1.HeaderValue{
+				Value: []string{val},
+			}
 		} else {
+			if headerCopy[key] == nil {
+				headerCopy[key] = &v1.HeaderValue{}
+			}
 			headerCopy[key].Value = append(headerCopy[key].Value, val)
 		}
 	}

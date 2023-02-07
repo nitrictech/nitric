@@ -30,7 +30,7 @@ const (
 )
 
 type healthCheckEvent struct {
-	Check string `json:"x-nitric-healthcheck,omitempty"`
+	Check bool `json:"x-nitric-healthcheck,omitempty"`
 }
 
 // An event struct that embeds the AWS event types that we handle
@@ -46,7 +46,7 @@ func (e *Event) Type() eventType {
 	// check if this event type contains valid data
 	if e.APIGatewayV2HTTPRequest.RouteKey != "" {
 		return httpEvent
-	} else if e.Check != "" {
+	} else if e.Check {
 		return healthcheck
 	} else if len(e.Records) > 0 && e.Records[0].EventSource == "aws:sns" {
 		return sns

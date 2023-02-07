@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
@@ -46,7 +47,7 @@ func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 }
 
 func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
-	details, err := getStackDetailsFromAttributes(request.Attributes)
+	details, err := commonDeploy.CommonStackDetailsFromAttributes(request.Attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
