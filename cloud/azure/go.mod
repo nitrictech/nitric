@@ -228,6 +228,7 @@ require (
 	github.com/ryancurrah/gomodguard v1.2.4 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.3.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
+	github.com/samber/lo v1.37.0 // indirect
 	github.com/sanposhiho/wastedassign/v2 v2.0.6 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0 // indirect
 	github.com/sashamelentyev/interfacebloat v1.1.0 // indirect
