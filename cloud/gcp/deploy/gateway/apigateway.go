@@ -23,10 +23,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
@@ -36,15 +36,14 @@ import (
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type ApiGatewayArgs struct {
-	ProjectId           pulumi.StringInput
+	ProjectId           string
 	StackID             pulumi.StringInput
 	OpenAPISpec         *openapi2.T
 	Functions           map[string]*exec.CloudRunner
-	SecurityDefinitions map[string]*v1.ApiSecurityDefinition
+	SecuritySchemes openapi3.SecuritySchemes
 }
 
 type ApiGateway struct {
@@ -61,19 +60,18 @@ type nameUrlPair struct {
 }
 
 type openIdConfig struct {
+	Issuer string `json:"issuer"`
 	JwksUri       string `json:"jwks_uri"`
 	TokenEndpoint string `json:"token_endpoint"`
 	AuthEndpoint  string `json:"authorization_endpoint"`
 }
 
-func getOpenIdConnectConfig(issuer string) (*openIdConfig, error) {
+func getOpenIdConnectConfig(openIdConnectUrl string) (*openIdConfig, error) {
 	// append well-known configuration to issuer
-	url, err := url.Parse(issuer)
+	url, err := url.Parse(openIdConnectUrl)
 	if err != nil {
 		return nil, err
 	}
-
-	url.Path = path.Join(url.Path, ".well-known/openid-configuration")
 
 	// get the configuration document
 	resp, err := http.Get(url.String())
@@ -107,32 +105,42 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		return nil, err
 	}
 
-	opts = append(opts, pulumi.Parent(res))
+	opts = append(opts, pulumi.Parent(res))	
 
 	// augment document with security definitions
-	for sn, sd := range args.SecurityDefinitions {
-		if args.OpenAPISpec.SecurityDefinitions == nil {
-			args.OpenAPISpec.SecurityDefinitions = make(map[string]*openapi2.SecurityScheme)
+	for sn, sd := range args.OpenAPISpec.SecurityDefinitions {
+		audiences, ok := sd.Extensions["x-nitric-audiences"].([]string)
+		if !ok {
+			return nil, fmt.Errorf("unable to get audiences from api spec")
+		}
+		
+		// Look through the OpenAPIv3 security scheme to find matching definition
+		oidConnUrl := ""
+		for _, scheme := range args.SecuritySchemes {
+			if scheme.Value.Name == sn {
+				oidConnUrl = scheme.Value.OpenIdConnectUrl
+				break
+			}
 		}
 
-		if sd.GetJwt() != nil {
-			oidConf, err := getOpenIdConnectConfig(sd.GetJwt().GetIssuer())
-			if err != nil {
-				return nil, err
-			}
+		if oidConnUrl == "" {
+			return nil, fmt.Errorf("unable to get issuer for security definition %s", sn)
+		}
 
-			args.OpenAPISpec.SecurityDefinitions[sn] = &openapi2.SecurityScheme{
-				Type:             "oauth2",
-				Flow:             "implicit",
-				AuthorizationURL: oidConf.AuthEndpoint,
-				Extensions: map[string]interface{}{
-					"x-google-issuer":    sd.GetJwt().Issuer,
-					"x-google-jwks_uri":  oidConf.JwksUri,
-					"x-google-audiences": strings.Join(sd.GetJwt().GetAudiences(), ","),
-				},
-			}
-		} else {
-			return nil, fmt.Errorf("error deploying gateway: unsupported security definition provided")
+		oidConf, err := getOpenIdConnectConfig(oidConnUrl)
+		if err != nil {
+			return nil, err
+		}			
+
+		args.OpenAPISpec.SecurityDefinitions[sn] = &openapi2.SecurityScheme{
+			Type:             "oauth2",
+			Flow:             "implicit",
+			AuthorizationURL: oidConf.AuthEndpoint,				
+			Extensions: map[string]interface{}{
+				"x-google-issuer":    oidConf.Issuer,
+				"x-google-jwks_uri":  oidConf.JwksUri,
+				"x-google-audiences": strings.Join(audiences, ","),
+			},
 		}
 	}
 
@@ -240,7 +248,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 
 	// Deploy the config
 	config, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
-		Project:     args.ProjectId,
+		Project:     pulumi.String(args.ProjectId),
 		Api:         res.Api.ApiId,
 		DisplayName: pulumi.String(name + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{

@@ -22,11 +22,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -230,6 +233,38 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				principalMap[v1.ResourceType_Function][res.Name] = sa
+			}
+		}
+
+		apis := map[string]*gateway.ApiGateway{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Api:
+				if t.Api.GetOpenapi() == "" {
+					return fmt.Errorf("gcp provider can only deploy OpenAPI specs")
+				}
+
+				doc := &openapi3.T{}
+				err := doc.UnmarshalJSON([]byte(t.Api.GetOpenapi()))
+				if err != nil {
+					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
+				}
+
+				v2doc, err := openapi2conv.FromV3(doc)
+				if err != nil {
+					return err
+				}
+				
+				apis[res.Name], err = gateway.NewApiGateway(ctx, res.Name, &gateway.ApiGatewayArgs{
+					StackID: stackID,
+					ProjectId: details.ProjectId,
+					Functions: execs,
+					OpenAPISpec: v2doc,
+					SecuritySchemes: doc.Components.SecuritySchemes,
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 
