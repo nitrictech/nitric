@@ -21,24 +21,27 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
-	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
+	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/api"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/storage"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/subscription"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	azureStorage "github.com/pulumi/pulumi-azure-native-sdk/storage"
 )
 
 type UpStreamMessageWriter struct {
@@ -94,23 +97,36 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return errors.WithMessage(err, "resource group create")
 		}
 
+		// Get Execution units
+		executionUnits := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetExecutionUnit() != nil
+		})
+
+		// Get Queues
+		queues := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetQueue() != nil
+		})
+
+		// Get Buckets
+		buckets := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetBucket() != nil
+		})
+
+		// Get Topics
+		topics := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetTopic() != nil
+		})
+
+		// Get Topics
+		schedules := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetSchedule() != nil
+		})
+
+		apis := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetApi() != nil
+		})
+
 		envMap := map[string]string{}
-		hasExecUnit := false
-		bucketNames := []string{}
-		queueNames := []string{}
-		execUnits := map[string]*deploy.ExecutionUnit{}
-
-		for _, res := range request.Spec.Resources {
-			switch t := res.Config.(type) {
-			case *deploy.Resource_ExecutionUnit:
-				execUnits[res.Name] = t.ExecutionUnit
-			case *deploy.Resource_Queue:
-				queueNames = append(queueNames, res.Name)
-			case *deploy.Resource_Bucket:
-				bucketNames = append(bucketNames, res.Name)
-			}
-		}
-
 		contEnvArgs := &exec.ContainerEnvArgs{
 			ResourceGroupName: rg.Name,
 			Location:          rg.Location,
@@ -142,81 +158,79 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		contEnvArgs.KVaultName = kv.Name
 
-		if len(bucketNames) > 0 || len(queueNames) > 0 {
-			sr, err := storage.NewStorageResources(ctx, "storage", &storage.StorageArgs{
+		// Create a storage account if buckets or queues are required
+		var storageAccount *azureStorage.StorageAccount
+		if len(buckets) > 0 || len(queues) > 0 {
+			accName := utils.ResourceName(ctx, details.Stack, utils.StorageAccountRT)
+			storageAccount, err = azureStorage.NewStorageAccount(ctx, accName, &storage.StorageAccountArgs{
+				AccessTier:        azureStorage.AccessTierHot,
 				ResourceGroupName: rg.Name,
-				StackID:           stackID,
-				BucketNames:       bucketNames,
-				QueueNames:        queueNames,
+				Kind:              pulumi.String("StorageV2"),
+				Sku: azureStorage.SkuArgs{
+					Name: pulumi.String(storage.SkuName_Standard_LRS),
+				},
+				Tags: common.Tags(ctx, stackID, accName),
 			})
 			if err != nil {
-				return errors.WithMessage(err, "storage create")
+				return err
 			}
 
-			contEnvArgs.StorageAccountBlobEndpoint = sr.Account.PrimaryEndpoints.Blob()
-			contEnvArgs.StorageAccountQueueEndpoint = sr.Account.PrimaryEndpoints.Queue()
+			contEnvArgs.StorageAccountBlobEndpoint = storageAccount.PrimaryEndpoints.Blob()
+			contEnvArgs.StorageAccountQueueEndpoint = storageAccount.PrimaryEndpoints.Queue()
 		}
 
-		topics := map[string]*eventgrid.Topic{}
-		execSubscriptions := map[string]map[string]*eventgrid.Topic{}
-
-		for _, res := range request.Spec.Resources {
-			switch t := res.Config.(type) {
-			case *deploy.Resource_Schedule:
-				// TODO: Add schedule support
-				// NOTE: Currently CRONTAB support is required, we either need to revisit the design of
-				// our scheduled expressions or implement a workaround or request a feature.
-				_ = ctx.Log.Warn("Schedules are not currently supported for Azure deployments", &pulumi.LogArgs{})
-
-			case *deploy.Resource_Topic:
-				topics[res.Name], err = eventgrid.NewTopic(ctx, utils.ResourceName(ctx, res.Name, utils.EventGridRT), &eventgrid.TopicArgs{
-					ResourceGroupName: rg.Name,
-					Location:          rg.Location,
-					Tags:              common.Tags(ctx, stackID, res.Name),
-				})
-				if err != nil {
-					return errors.WithMessage(err, "eventgrid topic "+res.Name)
-				}
-
-				for _, s := range t.Topic.Subscriptions {
-					targ := s.Target.(*deploy.SubscriptionTarget_ExecutionUnit)
-					subs, ok := execSubscriptions[targ.ExecutionUnit]
-					if ok {
-						subs[res.Name] = topics[res.Name]
-						execSubscriptions[targ.ExecutionUnit] = subs
-					} else {
-						execSubscriptions[targ.ExecutionUnit] = map[string]*eventgrid.Topic{res.Name: topics[res.Name]}
-					}
-				}
+		// For each bucket create a new bucket
+		for _, b := range buckets {
+			_, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
+				StackID:       stackID,
+				Account:       storageAccount,
+				ResourceGroup: rg,
+			})
+			if err != nil {
+				return err
 			}
 		}
+
+		// For each queue create a new queue
+		for _, q := range queues {
+			_, err := queue.NewAzureStorageQueue(ctx, q.Name, &queue.AzureStorageQueueArgs{
+				StackID:       stackID,
+				Account:       storageAccount,
+				ResourceGroup: rg,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		deployedTopics := map[string]*topic.AzureEventGridTopic{}
 
 		var contEnv *exec.ContainerEnv
 
 		apps := map[string]*exec.ContainerApp{}
 
-		if hasExecUnit {
+		if len(executionUnits) > 0 {
 			contEnv, err = exec.NewContainerEnv(ctx, "containerEnv", contEnvArgs)
 			if err != nil {
 				return errors.WithMessage(err, "containerApps")
 			}
 
-			for name, eu := range execUnits {
-				repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", contEnv.Registry.LoginServer, details.Project, name, "azure")
+			for _, eu := range executionUnits {
+				repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", contEnv.Registry.LoginServer, details.Project, eu.Name, "azure")
 
-				image, err := image.NewImage(ctx, name, &image.ImageArgs{
-					SourceImage:   eu.GetImage().GetUri(),
+				image, err := image.NewImage(ctx, eu.Name, &image.ImageArgs{
+					SourceImage:   eu.GetExecutionUnit().GetImage().GetUri(),
 					RepositoryUrl: repositoryUrl,
 					Username:      contEnv.RegistryUser.Elem(),
-					Password:      contEnv.RegistryUser.Elem(),
+					Password:      contEnv.RegistryPass.Elem(),
 					Server:        contEnv.Registry.LoginServer,
 					Runtime:       runtime,
 				}, pulumi.Parent(contEnv))
 				if err != nil {
-					return errors.WithMessage(err, "function image tag "+name)
+					return err
 				}
 
-				apps[name], err = exec.NewContainerApp(ctx, name, &exec.ContainerAppArgs{
+				apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
 					ResourceGroupName: rg.Name,
 					Location:          pulumi.String(details.Region),
 					SubscriptionID:    pulumi.String(clientConfig.SubscriptionId),
@@ -226,51 +240,64 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					ManagedEnv:        contEnv.ManagedEnv,
 					ImageUri:          image.URI(),
 					Env:               contEnv.Env,
-					ExecutionUnit:     eu,
+					ExecutionUnit:     eu.GetExecutionUnit(),
 					ManagedIdentityID: contEnv.ManagedUser.ClientId,
 				}, pulumi.Parent(contEnv))
 				if err != nil {
 					return err
 				}
+			}
+		}
 
-				_, err = subscription.NewSubscription(ctx, name+"-subscription", &subscription.SubscriptionArgs{
-					ResourceGroupName:  rg.Name,
-					Sp:                 apps[name].Sp,
-					AppName:            name,
-					LatestRevisionFqdn: apps[name].App.LatestRevisionFqdn,
-					Subscriptions:      execSubscriptions[name],
-				}, pulumi.Parent(apps[name]))
+		for _, t := range topics {
+			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, utils.ResourceName(ctx, t.Name, utils.EventGridRT), &topic.AzureEventGridTopicArgs{
+				ResourceGroup: rg,
+				StackID:       stackID,
+			})
+			if err != nil {
+				return err
+			}
+
+			for _, s := range t.GetTopic().Subscriptions {
+				_, err = topic.NewAzureEventGridTopicSubscription(ctx, utils.ResourceName(ctx, fmt.Sprintf("%s-%s", t.Name, s.GetExecutionUnit()), utils.EventSubscriptionRT), &topic.AzureEventGridTopicSubscriptionArgs{
+					Topic:  deployedTopics[t.Name],
+					Target: apps[s.GetExecutionUnit()],
+				})
 				if err != nil {
-					return errors.WithMessage(err, "subscriptions")
+					return err
 				}
 			}
 		}
 
-		for _, res := range request.Spec.Resources {
-			switch t := res.Config.(type) {
-			case *deploy.Resource_Api:
-				if t.Api.GetOpenapi() == "" {
-					return fmt.Errorf("azure provider can only deploy OpenAPI specs")
-				}
+		if len(schedules) > 0 {
+			// TODO: Add schedule support
+			// NOTE: Currently CRONTAB support is required, we either need to revisit the design of
+			// our scheduled expressions or implement a workaround or request a feature.
+			_ = ctx.Log.Warn("Schedules are not currently supported for Azure deployments", &pulumi.LogArgs{})
+		}
 
-				doc := &openapi3.T{}
-				err := doc.UnmarshalJSON([]byte(t.Api.GetOpenapi()))
-				if err != nil {
-					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
-				}
+		for _, a := range apis {
+			if a.GetApi().GetOpenapi() == "" {
+				return fmt.Errorf("azure provider can only deploy OpenAPI specs")
+			}
 
-				_, err = api.NewAzureApiManagement(ctx, res.Name, &api.AzureApiManagementArgs{
-					ResourceGroupName: rg.Name,
-					OrgName:           pulumi.String(details.Org),
-					AdminEmail:        pulumi.String(details.AdminEmail),
-					OpenAPISpec:       doc,
-					Apps:              apps,
-					ManagedIdentity:   contEnv.ManagedUser,
-					StackID:           stackID,
-				})
-				if err != nil {
-					return errors.WithMessage(err, "gateway "+res.Name)
-				}
+			doc := &openapi3.T{}
+			err := doc.UnmarshalJSON([]byte(a.GetApi().GetOpenapi()))
+			if err != nil {
+				return fmt.Errorf("invalid document suppled for api: %s", a.Name)
+			}
+
+			_, err = api.NewAzureApiManagement(ctx, a.Name, &api.AzureApiManagementArgs{
+				ResourceGroupName: rg.Name,
+				OrgName:           pulumi.String(details.Org),
+				AdminEmail:        pulumi.String(details.AdminEmail),
+				OpenAPISpec:       doc,
+				Apps:              apps,
+				ManagedIdentity:   contEnv.ManagedUser,
+				StackID:           stackID,
+			})
+			if err != nil {
+				return err
 			}
 		}
 
@@ -280,14 +307,16 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	_ = pulumiStack.SetConfig(context.TODO(), "azure:region", auto.ConfigValue{Value: details.Region})
+	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
+	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})
 
 	messageWriter := &UpStreamMessageWriter{
 		stream: stream,
 	}
 
-	// Run the program
 	_, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
+	// Run the program
+	// _, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
 	if err != nil {
 		return err
 	}

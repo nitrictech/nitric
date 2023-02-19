@@ -15,8 +15,13 @@
 package exec
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"net/http"
+	"time"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
@@ -46,9 +51,71 @@ type ContainerAppArgs struct {
 type ContainerApp struct {
 	pulumi.ResourceState
 
-	Name string
-	Sp   *policy.ServicePrincipal
-	App  *app.ContainerApp
+	Name    string
+	hostUrl *pulumi.StringOutput
+	Sp      *policy.ServicePrincipal
+	App     *app.ContainerApp
+}
+
+// HostUrl - Returns the HostURL of the application
+// this will also ensure that the application has been successfully deployed
+func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
+	if c.hostUrl == nil {
+		// Set the hostUrl from the App FQDN
+		hostUrl := c.App.LatestRevisionFqdn.ApplyT(func(fqdn string) (string, error) {
+			// Get the full URL of the deployed container
+			hostUrl := "https://" + fqdn
+
+			hCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			// Poll the URL until the host has started.
+			for {
+				// Provide data in the expected shape. The content is current not important.
+				empty := ""
+				dummyEvgt := eventgrid.Event{
+					ID:          &empty,
+					Data:        &empty,
+					EventType:   &empty,
+					Subject:     &empty,
+					DataVersion: &empty,
+				}
+
+				jsonStr, err := dummyEvgt.MarshalJSON()
+				if err != nil {
+					return "", err
+				}
+
+				body := bytes.NewBuffer(jsonStr)
+
+				req, err := http.NewRequestWithContext(hCtx, "POST", hostUrl, body)
+				if err != nil {
+					return "", err
+				}
+
+				// TODO: Implement a membrane health check handler in the Membrane and trigger that instead.
+				// Set event type header to simulate a subscription validation event.
+				// These events are automatically resolved by the Membrane and won't be processed by handlers.
+				req.Header.Set("aeg-event-type", "SubscriptionValidation")
+				req.Header.Set("Content-Type", "application/json")
+				client := &http.Client{
+					Timeout: 10 * time.Second,
+				}
+
+				resp, err := client.Do(req)
+				if err == nil {
+					resp.Body.Close()
+					break
+				}
+			}
+
+			return hostUrl, nil
+		}).(pulumi.StringOutput)
+
+		c.hostUrl = &hostUrl
+	}
+
+	return *c.hostUrl, nil
 }
 
 // Built in role definitions for Azure
