@@ -302,7 +302,7 @@ func (s *FirestoreDocService) QueryStream(ctx context.Context, collection *docum
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
 			)
 		}
 	}
