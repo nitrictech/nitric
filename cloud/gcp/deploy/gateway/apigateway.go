@@ -23,10 +23,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
@@ -36,15 +37,14 @@ import (
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type ApiGatewayArgs struct {
-	ProjectId           pulumi.StringInput
-	StackID             pulumi.StringInput
-	OpenAPISpec         *openapi2.T
-	Functions           map[string]*exec.CloudRunner
-	SecurityDefinitions map[string]*v1.ApiSecurityDefinition
+	ProjectId       string
+	StackID         pulumi.StringInput
+	OpenAPISpec     *openapi3.T
+	Functions       map[string]*exec.CloudRunner
+	SecuritySchemes openapi3.SecuritySchemes
 }
 
 type ApiGateway struct {
@@ -61,19 +61,18 @@ type nameUrlPair struct {
 }
 
 type openIdConfig struct {
+	Issuer        string `json:"issuer"`
 	JwksUri       string `json:"jwks_uri"`
 	TokenEndpoint string `json:"token_endpoint"`
 	AuthEndpoint  string `json:"authorization_endpoint"`
 }
 
-func getOpenIdConnectConfig(issuer string) (*openIdConfig, error) {
+func getOpenIdConnectConfig(openIdConnectUrl string) (*openIdConfig, error) {
 	// append well-known configuration to issuer
-	url, err := url.Parse(issuer)
+	url, err := url.Parse(fmt.Sprintf("%s/.well-known/openid-configuration", openIdConnectUrl))
 	if err != nil {
 		return nil, err
 	}
-
-	url.Path = path.Join(url.Path, ".well-known/openid-configuration")
 
 	// get the configuration document
 	resp, err := http.Get(url.String())
@@ -93,7 +92,7 @@ func getOpenIdConnectConfig(issuer string) (*openIdConfig, error) {
 	oidConf := &openIdConfig{}
 
 	if err := json.Unmarshal(body, oidConf); err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "error unmarshalling open id config")
 	}
 
 	return oidConf, nil
@@ -110,36 +109,54 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 	opts = append(opts, pulumi.Parent(res))
 
 	// augment document with security definitions
-	for sn, sd := range args.SecurityDefinitions {
-		if args.OpenAPISpec.SecurityDefinitions == nil {
-			args.OpenAPISpec.SecurityDefinitions = make(map[string]*openapi2.SecurityScheme)
-		}
+	for sn, sd := range args.OpenAPISpec.Components.SecuritySchemes {
+		if sd.Value.Type == "openIdConnect" {
+			// We need to extract audience values from the extensions
+			// the extension is type of []interface and cannot be converted to []string directly
+			audExt, ok := sd.Value.Extensions["x-nitric-audiences"].([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("unable to get audiences from api spec")
+			}
 
-		if sd.GetJwt() != nil {
-			oidConf, err := getOpenIdConnectConfig(sd.GetJwt().GetIssuer())
+			audiences := make([]string, len(audExt))
+			for i, v := range audExt {
+				audiences[i] = fmt.Sprint(v)
+			}
+
+			oidConf, err := getOpenIdConnectConfig(sd.Value.OpenIdConnectUrl)
 			if err != nil {
 				return nil, err
 			}
 
-			args.OpenAPISpec.SecurityDefinitions[sn] = &openapi2.SecurityScheme{
-				Type:             "oauth2",
-				Flow:             "implicit",
-				AuthorizationURL: oidConf.AuthEndpoint,
-				Extensions: map[string]interface{}{
-					"x-google-issuer":    sd.GetJwt().Issuer,
-					"x-google-jwks_uri":  oidConf.JwksUri,
-					"x-google-audiences": strings.Join(sd.GetJwt().GetAudiences(), ","),
+			args.OpenAPISpec.Components.SecuritySchemes[sn] = &openapi3.SecuritySchemeRef{
+				Value: &openapi3.SecurityScheme{
+					Type: "oauth2",
+					Flows: &openapi3.OAuthFlows{
+						Implicit: &openapi3.OAuthFlow{
+							AuthorizationURL: oidConf.AuthEndpoint,
+						},
+					},
+					Extensions: map[string]interface{}{
+						"x-google-issuer":    oidConf.Issuer,
+						"x-google-jwks_uri":  oidConf.JwksUri,
+						"x-google-audiences": strings.Join(audiences, ","),
+					},
 				},
 			}
 		} else {
-			return nil, fmt.Errorf("error deploying gateway: unsupported security definition provided")
+			return nil, fmt.Errorf("unsupported security definition supplied")
 		}
+	}
+
+	v2doc, err := openapi2conv.FromV3(args.OpenAPISpec)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get service targets for IAM binding
 	funcs := map[string]*exec.CloudRunner{}
 
-	for _, pi := range args.OpenAPISpec.Paths {
+	for _, pi := range v2doc.Paths {
 		for _, m := range []string{http.MethodGet, http.MethodPatch, http.MethodDelete, http.MethodPost, http.MethodPut} {
 			if pi.GetOperation(m) == nil {
 				continue
@@ -190,17 +207,17 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 			}
 		}
 
-		for k, p := range args.OpenAPISpec.Paths {
+		for k, p := range v2doc.Paths {
 			p.Get = gcpOperation(p.Get, naps)
 			p.Post = gcpOperation(p.Post, naps)
 			p.Patch = gcpOperation(p.Patch, naps)
 			p.Put = gcpOperation(p.Put, naps)
 			p.Delete = gcpOperation(p.Delete, naps)
 			p.Options = gcpOperation(p.Options, naps)
-			args.OpenAPISpec.Paths[k] = p
+			v2doc.Paths[k] = p
 		}
 
-		b, err := args.OpenAPISpec.MarshalJSON()
+		b, err := v2doc.MarshalJSON()
 		if err != nil {
 			return "", err
 		}
@@ -240,7 +257,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 
 	// Deploy the config
 	config, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
-		Project:     args.ProjectId,
+		Project:     pulumi.String(args.ProjectId),
 		Api:         res.Api.ApiId,
 		DisplayName: pulumi.String(name + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{

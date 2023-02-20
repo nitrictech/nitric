@@ -17,11 +17,14 @@
 package events
 
 import (
+	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -70,15 +73,35 @@ type PubSubSubscription struct {
 }
 
 type PubSubSubscriptionArgs struct {
-	Function       *exec.CloudRunner
-	Topic          string
-	Url            pulumi.StringInput
-	ServiceAccount pulumi.StringOutput
+	Function *exec.CloudRunner
+	Topic    string
 }
 
 func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscriptionArgs, opts ...pulumi.ResourceOption) (*PubSubSubscription, error) {
 	res := &PubSubSubscription{
 		Name: name,
+	}
+
+	// Create an account for invoking this func via subscriptions
+	// TODO: Do we want to make this one account for subscription in future
+	// TODO: We will likely configure this via eventarc in the future
+	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"subacct", &serviceaccount.AccountArgs{
+		// accountId accepts a max of 30 chars, limit our generated name to this length
+		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
+	}, append(opts, pulumi.Parent(res))...)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invokerAccount "+name)
+	}
+
+	// Apply permissions for the above account to the newly deployed cloud run service
+	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
+		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
+		Role:     pulumi.String("roles/run.invoker"),
+		Service:  args.Function.Service.Name,
+		Location: args.Function.Service.Location,
+	}, append(opts, pulumi.Parent(res))...)
+	if err != nil {
+		return nil, errors.WithMessage(err, "iam member "+name)
 	}
 
 	s, err := pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
@@ -90,9 +113,9 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 		},
 		PushConfig: pubsub.SubscriptionPushConfigArgs{
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: args.ServiceAccount,
+				ServiceAccountEmail: invokerAccount.Email,
 			},
-			PushEndpoint: args.Url,
+			PushEndpoint: args.Function.Url,
 		},
 	}, append(opts, pulumi.Parent(args.Function))...)
 	if err != nil {

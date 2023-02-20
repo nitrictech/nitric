@@ -22,17 +22,20 @@ import (
 	"os"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
@@ -74,6 +77,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.Stack, details.Project, func(ctx *pulumi.Context) error {
+		project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
+			ProjectId: &details.ProjectId,
+		}, nil)
+		if err != nil {
+			return err
+		}
+
+		nitricProj, err := NewProject(ctx, "project", &ProjectArgs{
+			ProjectId:     details.ProjectId,
+			ProjectNumber: project.Number,
+		})
+		if err != nil {
+			return err
+		}
+
+		defaultResourceOptions := pulumi.DependsOn([]pulumi.Resource{nitricProj})
+
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
 			Length:  pulumi.Int(8),
@@ -81,7 +101,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			Keepers: pulumi.ToMap(map[string]interface{}{
 				"stack-name": ctx.Stack(),
 			}),
-		})
+		}, defaultResourceOptions)
 		if err != nil {
 			return err
 		}
@@ -97,7 +117,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					StackID:  stackID,
 					Bucket:   b.Bucket,
 					Location: details.Region,
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
@@ -113,7 +133,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					StackID:  stackID,
 					Queue:    q.Queue,
 					Location: details.Region,
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
@@ -125,7 +145,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// to apply to push actions to pubsub, so their scope should still be limited to that
 		topicDelayQueue, err := cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
 			Location: pulumi.String(details.Region),
-		})
+		}, defaultResourceOptions)
 		if err != nil {
 			return err
 		}
@@ -173,7 +193,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			Title:       pulumi.String(details.Stack + "-functions-base-role"),
 			Permissions: pulumi.ToStringArray(exec.GetPerms()),
 			RoleId:      baseCustomRoleId.ID(),
-		})
+		}, defaultResourceOptions)
 		if err != nil {
 			return errors.WithMessage(err, "base customRole")
 		}
@@ -200,7 +220,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Password:      pulumi.String(authToken.AccessToken),
 					Server:        pulumi.String("https://gcr.io"),
 					Runtime:       runtime,
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
@@ -208,7 +228,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				// Create a service account for this cloud run instance
 				sa, err := serviceaccount.NewAccount(ctx, res.Name+"acct", &serviceaccount.AccountArgs{
 					AccountId: pulumi.String(utils.StringTrunc(res.Name, 30-5) + "-acct"),
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
@@ -224,12 +244,38 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					ServiceAccount:  sa,
 					BaseComputeRole: baseComputeRole,
 					StackID:         stackID,
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
 
 				principalMap[v1.ResourceType_Function][res.Name] = sa
+			}
+		}
+
+		apis := map[string]*gateway.ApiGateway{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Api:
+				if t.Api.GetOpenapi() == "" {
+					return fmt.Errorf("gcp provider can only deploy OpenAPI specs")
+				}
+
+				doc := &openapi3.T{}
+				err := doc.UnmarshalJSON([]byte(t.Api.GetOpenapi()))
+				if err != nil {
+					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
+				}
+
+				apis[res.Name], err = gateway.NewApiGateway(ctx, res.Name, &gateway.ApiGatewayArgs{
+					StackID:     stackID,
+					ProjectId:   details.ProjectId,
+					Functions:   execs,
+					OpenAPISpec: doc,
+				}, defaultResourceOptions)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -242,7 +288,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Location:  details.Region,
 					ProjectId: details.ProjectId,
 					StackID:   stackID,
-				})
+				}, defaultResourceOptions)
 				if err != nil {
 					return err
 				}
@@ -259,7 +305,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					_, err = events.NewPubSubSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
 						Topic:    res.Name,
 						Function: unit,
-					})
+					}, defaultResourceOptions)
 					if err != nil {
 						return err
 					}
@@ -279,6 +325,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Queues:  queues,
 					},
 					Principals: principalMap,
+					ProjectID:  pulumi.String(details.ProjectId),
 				})
 				if err != nil {
 					return err

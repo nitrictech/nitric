@@ -161,47 +161,6 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 		return *ss[0].Url, nil
 	}).(pulumi.StringInput)
 
-	// wire up its subscriptions
-	// if len(args.Topics) > 0 {
-	// 	// Create an account for invoking this func via subscriptions
-	// 	// TODO: Do we want to make this one account for subscription in future
-	// 	// TODO: We will likely configure this via eventarc in the future
-	// 	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"subacct", &serviceaccount.AccountArgs{
-	// 		// accountId accepts a max of 30 chars, limit our generated name to this length
-	// 		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
-	// 	}, append(opts, pulumi.Parent(res))...)
-	// 	if err != nil {
-	// 		return nil, errors.WithMessage(err, "invokerAccount "+name)
-	// 	}
-
-	// 	// Apply permissions for the above account to the newly deployed cloud run service
-	// 	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
-	// 		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
-	// 		Role:     pulumi.String("roles/run.invoker"),
-	// 		Service:  res.Service.Name,
-	// 		Location: res.Service.Location,
-	// 	}, append(opts, pulumi.Parent(res))...)
-	// 	if err != nil {
-	// 		return nil, errors.WithMessage(err, "iam member "+name)
-	// 	}
-
-	// 	for _, t := range args.Topics {
-	// 		t.Name.ApplyT(func (topicName string) (*events.PubSubSubscription, error) {
-	// 			s, err := events.NewPubSubSubscription(ctx, name, &events.PubSubSubscriptionArgs{
-	// 				Topic: topicName,
-	// 				Url: res.Url,
-	// 				ServiceAccount: invokerAccount.Email,
-	// 				Function: res.Service,
-	// 			})
-	// 			if err != nil {
-	// 				return nil, err
-	// 			}
-
-	// 			return s, nil
-	// 		})
-	// 	}
-	// }
-
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":    pulumi.String(res.Name),
 		"service": res.Service,
