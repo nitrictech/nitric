@@ -32,13 +32,13 @@ Nitric makes it easy to:
 - Securely store, retrieve and rotate secrets
 - Read and write files from buckets
 
-If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric roadmap](https://github.com/orgs/nitrictech/projects/4).
+If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric Roadmap](https://github.com/orgs/nitrictech/projects/4).
 
 ## Documentation
 
 The full documentation is available at [nitric.io/docs](https://nitric.io/docs).
 
-We're completely opensource and encourage [code contributions](https://nitric.io/docs/contributions).
+The Nitric Framework is open source and encourages [code contributions](https://nitric.io/docs/contributions).
 
 ## Status
 
@@ -64,7 +64,7 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
 - Document Store
 - Secret Store
 
-We provide an expressive infrastructure-as-code style SDK for [Node.js](https://github.com/nitrictech/node-sdk). However, Nitric is built on gRPC, so support for many languages is possible.
+We provide an expressive infrastructure-as-code style SDK for [Node.js](https://nitric.io/docs/reference/nodejs/v0), [Python](https://nitric.io/docs/reference/python/v0) and [C#](https://nitric.io/docs/reference/csharp/v0). However, Nitric is built on gRPC, so support for many languages is possible.
 
 > If you have additional languages you'd like supported, let us know in the issues, we also welcome community contributions for new language support.
 
