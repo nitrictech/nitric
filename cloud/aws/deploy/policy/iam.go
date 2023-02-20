@@ -28,6 +28,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
@@ -52,7 +53,7 @@ type StackResources struct {
 	Queues      map[string]*queue.SQSQueue
 	Buckets     map[string]*bucket.S3Bucket
 	Collections map[string]*collection.DynamodbCollection
-	// Secrets     map[string]*secretsmanager.Secret
+	Secrets     map[string]*secret.SecretsManagerSecret
 }
 
 type PrincipalMap = map[v1.ResourceType]map[string]*iam.Role
@@ -162,10 +163,10 @@ func arnForResource(resource *deploy.Resource, resources *StackResources) ([]int
 		if c, ok := resources.Collections[resource.Name]; ok {
 			return []interface{}{c.Table.Arn}, nil
 		}
-	// case v1.ResourceType_Secret:
-	// 	if s, ok := resources.Secrets[resource.Name]; ok {
-	// 		return []interface{}{s.Arn}, nil
-	// 	}
+	case v1.ResourceType_Secret:
+		if s, ok := resources.Secrets[resource.Name]; ok {
+			return []interface{}{s.SecretsManager.Arn}, nil
+		}
 	default:
 		return nil, fmt.Errorf(
 			"invalid resource type: %s. Did you mean to define it as a principal?", resource.Type)
