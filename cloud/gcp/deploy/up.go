@@ -22,7 +22,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
@@ -267,18 +266,12 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				if err != nil {
 					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
 				}
-
-				v2doc, err := openapi2conv.FromV3(doc)
-				if err != nil {
-					return err
-				}
 				
 				apis[res.Name], err = gateway.NewApiGateway(ctx, res.Name, &gateway.ApiGatewayArgs{
 					StackID: stackID,
 					ProjectId: details.ProjectId,
 					Functions: execs,
-					OpenAPISpec: v2doc,
-					SecuritySchemes: doc.Components.SecuritySchemes,
+					OpenAPISpec: doc,
 				}, defaultResourceOptions)
 				if err != nil {
 					return err
