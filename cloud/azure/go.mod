@@ -24,6 +24,7 @@ require (
 	github.com/pulumi/pulumi-azure-native-sdk/app v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0
+	github.com/pulumi/pulumi-azure-native-sdk/documentdb v1.95.0
 	github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/keyvault v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/managedidentity v1.92.0
@@ -220,7 +221,7 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	github.com/pulumi/pulumi-azure-native-sdk v1.92.0 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk v1.95.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.3.19 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
 	github.com/quasilyte/regex/syntax v0.0.0-20200407221936-30656e2c4a95 // indirect

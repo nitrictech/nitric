@@ -34,6 +34,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/api"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/bucket"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
@@ -105,6 +106,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// Get Queues
 		queues := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetQueue() != nil
+		})
+
+		// Get Collections
+		collections := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetCollection() != nil
 		})
 
 		// Get Buckets
@@ -191,6 +197,17 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
+		var mongoCollections *collection.MongoCollections
+		if len(collections) > 0 {
+			mongoCollections, err = collection.NewMongoCollections(ctx, "", &collection.MongoCollectionsArgs{
+				ResourceGroup: rg,
+				Collections:   collections,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
 		// For each queue create a new queue
 		for _, q := range queues {
 			_, err := queue.NewAzureStorageQueue(ctx, q.Name, &queue.AzureStorageQueueArgs{
@@ -230,18 +247,27 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
+				mongodbName := pulumi.String("").ToStringOutput()
+				mongoConnectionString := pulumi.String("").ToStringOutput()
+				if mongoCollections != nil {
+					mongodbName = mongoCollections.MongoDB.Name
+					mongoConnectionString = mongoCollections.ConnectionString
+				}
+
 				apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
-					ResourceGroupName: rg.Name,
-					Location:          pulumi.String(details.Region),
-					SubscriptionID:    pulumi.String(clientConfig.SubscriptionId),
-					Registry:          contEnv.Registry,
-					RegistryUser:      contEnv.RegistryUser,
-					RegistryPass:      contEnv.RegistryPass,
-					ManagedEnv:        contEnv.ManagedEnv,
-					ImageUri:          image.URI(),
-					Env:               contEnv.Env,
-					ExecutionUnit:     eu.GetExecutionUnit(),
-					ManagedIdentityID: contEnv.ManagedUser.ClientId,
+					ResourceGroupName:             rg.Name,
+					Location:                      pulumi.String(details.Region),
+					SubscriptionID:                pulumi.String(clientConfig.SubscriptionId),
+					Registry:                      contEnv.Registry,
+					RegistryUser:                  contEnv.RegistryUser,
+					RegistryPass:                  contEnv.RegistryPass,
+					ManagedEnv:                    contEnv.ManagedEnv,
+					ImageUri:                      image.URI(),
+					Env:                           contEnv.Env,
+					ExecutionUnit:                 eu.GetExecutionUnit(),
+					ManagedIdentityID:             contEnv.ManagedUser.ClientId,
+					MongoDatabaseName:             mongodbName,
+					MongoDatabaseConnectionString: mongoConnectionString,
 				}, pulumi.Parent(contEnv))
 				if err != nil {
 					return err
