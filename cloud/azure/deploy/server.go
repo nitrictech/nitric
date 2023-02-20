@@ -22,6 +22,7 @@ import (
 	_ "embed"
 
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 )
 
@@ -69,5 +70,10 @@ func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails,
 }
 
 func NewServer() (*DeployServer, error) {
+	err := pulumi.InstallResources()
+	if err != nil {
+		return nil, err
+	}
+
 	return &DeployServer{}, nil
 }
