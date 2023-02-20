@@ -160,7 +160,7 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 
 		return *ss[0].Url, nil
 	}).(pulumi.StringInput)
-	
+
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":    pulumi.String(res.Name),
 		"service": res.Service,

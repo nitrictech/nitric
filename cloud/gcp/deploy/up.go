@@ -91,7 +91,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		if err != nil {
 			return err
 		}
-		
+
 		defaultResourceOptions := pulumi.DependsOn([]pulumi.Resource{nitricProj})
 
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
@@ -266,11 +266,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				if err != nil {
 					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
 				}
-				
+
 				apis[res.Name], err = gateway.NewApiGateway(ctx, res.Name, &gateway.ApiGatewayArgs{
-					StackID: stackID,
-					ProjectId: details.ProjectId,
-					Functions: execs,
+					StackID:     stackID,
+					ProjectId:   details.ProjectId,
+					Functions:   execs,
 					OpenAPISpec: doc,
 				}, defaultResourceOptions)
 				if err != nil {
@@ -304,7 +304,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 					_, err = events.NewPubSubSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
 						Topic:    res.Name,
-						Function: unit,						
+						Function: unit,
 					}, defaultResourceOptions)
 					if err != nil {
 						return err
@@ -325,7 +325,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Queues:  queues,
 					},
 					Principals: principalMap,
-					ProjectID: pulumi.String(details.ProjectId),
+					ProjectID:  pulumi.String(details.ProjectId),
 				})
 				if err != nil {
 					return err

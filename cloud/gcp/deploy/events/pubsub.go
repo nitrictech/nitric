@@ -73,8 +73,8 @@ type PubSubSubscription struct {
 }
 
 type PubSubSubscriptionArgs struct {
-	Function       *exec.CloudRunner
-	Topic          string
+	Function *exec.CloudRunner
+	Topic    string
 }
 
 func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscriptionArgs, opts ...pulumi.ResourceOption) (*PubSubSubscription, error) {

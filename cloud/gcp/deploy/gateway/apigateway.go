@@ -40,10 +40,10 @@ import (
 )
 
 type ApiGatewayArgs struct {
-	ProjectId           string
-	StackID             pulumi.StringInput
-	OpenAPISpec         *openapi3.T
-	Functions           map[string]*exec.CloudRunner
+	ProjectId       string
+	StackID         pulumi.StringInput
+	OpenAPISpec     *openapi3.T
+	Functions       map[string]*exec.CloudRunner
 	SecuritySchemes openapi3.SecuritySchemes
 }
 
@@ -61,7 +61,7 @@ type nameUrlPair struct {
 }
 
 type openIdConfig struct {
-	Issuer string `json:"issuer"`
+	Issuer        string `json:"issuer"`
 	JwksUri       string `json:"jwks_uri"`
 	TokenEndpoint string `json:"token_endpoint"`
 	AuthEndpoint  string `json:"authorization_endpoint"`
@@ -87,7 +87,7 @@ func getOpenIdConnectConfig(openIdConnectUrl string) (*openIdConfig, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
-	}	
+	}
 
 	oidConf := &openIdConfig{}
 
@@ -106,7 +106,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		return nil, err
 	}
 
-	opts = append(opts, pulumi.Parent(res))	
+	opts = append(opts, pulumi.Parent(res))
 
 	// augment document with security definitions
 	for sn, sd := range args.OpenAPISpec.Components.SecuritySchemes {
@@ -117,22 +117,22 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 			if !ok {
 				return nil, fmt.Errorf("unable to get audiences from api spec")
 			}
-	
+
 			audiences := make([]string, len(audExt))
 			for i, v := range audExt {
-					audiences[i] = fmt.Sprint(v)
+				audiences[i] = fmt.Sprint(v)
 			}
-	
+
 			oidConf, err := getOpenIdConnectConfig(sd.Value.OpenIdConnectUrl)
 			if err != nil {
 				return nil, err
-			}			
-	
+			}
+
 			args.OpenAPISpec.Components.SecuritySchemes[sn] = &openapi3.SecuritySchemeRef{
 				Value: &openapi3.SecurityScheme{
-					Type:             "oauth2",
-					Flows: &openapi3.OAuthFlows{ 
-						Implicit: &openapi3.OAuthFlow{ 
+					Type: "oauth2",
+					Flows: &openapi3.OAuthFlows{
+						Implicit: &openapi3.OAuthFlow{
 							AuthorizationURL: oidConf.AuthEndpoint,
 						},
 					},
