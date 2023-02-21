@@ -31,6 +31,8 @@ type WorkerPool interface {
 	AddWorker(Worker) error
 	RemoveWorker(Worker) error
 	Monitor() error
+	GetMinWorkers() int
+	GetMaxWorkers() int
 }
 
 type ProcessPoolOptions struct {
