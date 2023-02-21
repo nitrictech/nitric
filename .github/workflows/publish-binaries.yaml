@@ -26,7 +26,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-golang-
       - name: Make binaries
-        run: make
+        run: make binaries
       - name: Upload AWS
         uses: actions/upload-release-asset@v1
         env:
