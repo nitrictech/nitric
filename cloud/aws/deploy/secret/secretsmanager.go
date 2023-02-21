@@ -40,7 +40,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 		Name: name,
 	}
 
-	err := ctx.RegisterComponentResource("nitric:secrete:AwsSecretsManager", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitric:secret:AwsSecretsManager", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}
