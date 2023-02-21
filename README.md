@@ -9,16 +9,14 @@
 </p>
 
 <p align="center">
-  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?sort=semver">
-  <img alt="GitHub" src="https://img.shields.io/github/license/nitrictech/nitric">
-  <!-- <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/nitrictech/cli/total"> -->
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/nitrictech/nitric/Tests?label=build">
-  <img alt="codecov" src="https://codecov.io/gh/nitrictech/nitric/branch/develop/graph/badge.svg?token=20TYFIQS2P">
-  <!-- <a href="" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a> -->
+  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?style=for-the-badge">
+  <img alt="GitHub" src="https://img.shields.io/github/license/nitrictech/nitric?style=for-the-badge">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nitrictech/nitric/test.yaml?branch=develop&style=for-the-badge">
+  <img alt="Codecov" src="https://img.shields.io/codecov/c/github/nitrictech/nitric?style=for-the-badge">
   <a href="https://twitter.com/nitric_io">
-    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/nitric_io?label=Follow&style=social">
+    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/nitric_io?label=Twitter&style=for-the-badge">
   </a>
-  <a href="https://discord.gg/Webemece5C"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord"></a>
+  <a href="https://discord.gg/Webemece5C"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord&style=for-the-badge"></a>
 </p>
 
 ## About Nitric
@@ -34,11 +32,13 @@ Nitric makes it easy to:
 - Securely store, retrieve and rotate secrets
 - Read and write files from buckets
 
+If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric Roadmap](https://github.com/orgs/nitrictech/projects/4).
+
 ## Documentation
 
 The full documentation is available at [nitric.io/docs](https://nitric.io/docs).
 
-We're completely opensource and encourage [code contributions](https://nitric.io/docs/contributions).
+The Nitric Framework is open source and encourages [code contributions](https://nitric.io/docs/contributions).
 
 ## Status
 
@@ -64,7 +64,7 @@ The Membrane is at the heart of the solution. Nitric applications communicate wi
 - Document Store
 - Secret Store
 
-We provide an expressive infrastructure-as-code style SDK for [Node.js](https://github.com/nitrictech/node-sdk). However, Nitric is built on gRPC, so support for many languages is possible.
+We provide an expressive infrastructure-as-code style SDK for [Node.js](https://nitric.io/docs/reference/nodejs/v0), [Python](https://nitric.io/docs/reference/python/v0) and [C#](https://nitric.io/docs/reference/csharp/v0). However, Nitric is built on gRPC, so support for many languages is possible.
 
 > If you have additional languages you'd like supported, let us know in the issues, we also welcome community contributions for new language support.
 
@@ -76,7 +76,7 @@ We provide an expressive infrastructure-as-code style SDK for [Node.js](https://
 - Golang (1.16)
 - Make
 - Docker
-- Google Protocol Buffers Compiler
+- Google Protocol Buffers Compiler (protoc)
 
 ### Getting Started
 
@@ -85,13 +85,6 @@ We provide an expressive infrastructure-as-code style SDK for [Node.js](https://
 ```bash
 make install-tools
 ```
-
-##### Install Protocol Buffers
-
-Download the Google Protobuf Compiler (standalone binary called `protoc`) from https://github.com/protocolbuffers/protobuf and add it to your $PATH.
-
-> On MacOS with Homebrew, you can run `brew install protobuf`
-> On Fedora, run `sudo dnf install -y protobuf protobuf-compiler protobuf-devel`
 
 ### Run unit tests
 
@@ -105,96 +98,14 @@ make test
 make test-integration
 ```
 
-### Build Static Membranes
+### Building
 
-#### AWS
-
-##### Standard Binary
+#### Standard Runtime Binaries
 
 > Linux support only - used in container images and for production.
 
 ```bash
-make aws-static
-```
-
-##### Cross-platform Binary
-
-Useful for local testing
-
-```bash
-make aws-static-xp
-```
-
-##### Container Images
-
-```bash
-make aws-docker
-```
-
-#### Google Cloud Platform
-
-##### Standard Binary
-
-> Linux support only - used in container images and for production.
-
-```bash
-make gcp-static
-```
-
-##### Cross-platform Binary
-
-Useful for local testing
-
-```bash
-make gcp-static-xp
-```
-
-##### Container Images
-
-```bash
-make gcp-docker
-```
-
-#### Dev Membrane
-
-> Note: the Dev Membrane should only be used for local development and testing.
-
-##### Standard Binary
-
-The dev binary is always cross-platform, since it doesn't need to be optimized for production deployments.
-
-```bash
-make dev-static
-```
-
-##### Container Images
-
-```bash
-make dev-docker
-```
-
-### Run Locally
-
-To run the membrane server locally, perform a local build of the membrane binary for the platform you're targeting, then run the resulting binary.
-
-##### Example building and running the static Google Cloud Membrane locally
-
-```bash
-# Make the GCP Static Cross-platform binary
-make gcp-static-xp
-
-# Run the membrane binary
-./bin/membrane
-```
-
-> Note: for the AWS membrane, the Lambda Gateway (default) will fail to start. Instead, set the `GATEWAY_ENVIRONMENT` environment variable so that the HTTP gateway is launched instead.
-
-```bash
-# Make the AWS Static Cross-platform binary
-make aws-static-xp
-
-# Set environment variable in subshell, then run the membrane binary
-(export GATEWAY_ENVIRONMENT=http; ./bin/membrane)
+make binaries
 ```
 
 ##### Running without a child process
@@ -207,28 +118,11 @@ It can be useful to run the Membrane in a 'service only' mode, where the cloud A
 
 The Membrane project source code structure is outlined below:
 
-| Directory               | Package    | Description                                                |
-| ----------------------- | ---------- | ---------------------------------------------------------- |
-| `/interfaces/nitric/v1` | `v1`       | protoc generated GRPC services code                        |
-| `/pkg/adapters/grpc`    | `grpc`     | GRPC service to SDK adaptors                               |
-| `/pkg/membrane`         | `membrane` | membrane application                                       |
-| `/pkg/plugins/...`      | `...`      | Cloud service SDK plugins                                  |
-| `/pkg/providers/...`    | `main`     | Cloud provider main application and plugin injection       |
-| `/pkg/sdk`              | `sdk`      | SDK service interfaces                                     |
-| `/pkg/triggers`         | `triggers` | provides Nitric event triggers                             |
-| `/pkg/utils`            | `utils`    | provides utility functions                                 |
-| `/pkg/worker`           | `worker`   | Membrane workers representing function/service connections |
-| `/tests/mocks/...`      | `...`      | Cloud service SDK mocks                                    |
-| `/tests/plugins/...`    | `...`      | Plugin services integration test suites                    |
-| `/tools`                | `tools`    | include for 3rd party build tools                          |
-
-## Ideas for using Nitric
-
-Examples of projects built with Nitric:
-
-- Identity verification APIs
-- FinTech APIs with complex business rules
-- Move from Express.js or koa to serverless and distributed architectures
-- Migrate from on-prem to the cloud (AWS, Azure or GCP)
-
-Even though your apps are portable across clouds, they'll still make the best use of the fully-managed and serverless offerings of each cloud provider. Nitric deploys using services like Lambda, CloudRun, DynamoDB, FireStore, CosmosDB, SNS, Event Grid, PubSub... the list is super long. Nitric also makes sure IAM and other access is correctly configured in your deployed applications, so everything stays secure and just works.
+| Directory       | Description                        |
+| --------------- | ---------------------------------- |
+| `/core`         | Nitric core interfaces/contracts   |
+| `/cloud/common` | Nitric provider common module      |
+| `/cloud/aws`    | Nitric AWS provider                |
+| `/cloud/gcp`    | Nitric GPC provider                |
+| `/cloud/azure`  | Nitric Azure provider              |
+| `/e2e`          | E2E and integration testing module |
