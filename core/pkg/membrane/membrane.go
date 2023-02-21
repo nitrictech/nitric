@@ -157,7 +157,9 @@ func (s *Membrane) Start() error {
 		return err
 	}
 
-	var opts []grpc.ServerOption
+	opts := []grpc.ServerOption{
+		grpc.MaxConcurrentStreams(uint32(s.pool.GetMaxWorkers())),
+	}
 
 	if s.createTracerProvider != nil {
 		tp, err := s.createTracerProvider(context.Background())
@@ -356,10 +358,14 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
 		}
 
-		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "100")
+		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "300")
 		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
 		if err != nil || minWorkers < 0 {
 			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)
+		}
+
+		if minWorkers > maxWorkers {
+			maxWorkers = minWorkers
 		}
 
 		options.Pool = worker.NewProcessPool(&worker.ProcessPoolOptions{
