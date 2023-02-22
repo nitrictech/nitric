@@ -31,6 +31,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/schedule"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
@@ -111,6 +112,21 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					// TODO: Calculate stack ID
 					StackID: stackID,
 					Bucket:  b.Bucket,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// Deploy all secrets
+		secrets := map[string]*secret.SecretsManagerSecret{}
+		for _, res := range request.Spec.Resources {
+			switch c := res.Config.(type) {
+			case *deploy.Resource_Secret:
+				secrets[res.Name], err = secret.NewSecretsManagerSecret(ctx, res.Name, &secret.SecretsManagerSecretArgs{
+					StackID: stackID,
+					Secret:  c.Secret,
 				})
 				if err != nil {
 					return err
@@ -305,6 +321,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Topics:      topics,
 						Queues:      queues,
 						Collections: collections,
+						Secrets:     secrets,
 					},
 					Principals: principals,
 				})

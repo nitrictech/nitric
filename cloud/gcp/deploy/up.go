@@ -31,6 +31,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
@@ -279,6 +280,20 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
+		secrets := map[string]*secret.SecretManagerSecret{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Secret:
+				secrets[res.Name], err = secret.NewSecretManagerSecret(ctx, res.Name, &secret.SecretManagerSecretArgs{
+					StackID: stackID,
+					Secret:  t.Secret,
+				}, defaultResourceOptions)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		topics := map[string]*events.PubSubTopic{}
 		for _, res := range request.Spec.Resources {
 			switch t := res.Config.(type) {
@@ -323,6 +338,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Buckets: buckets,
 						Topics:  topics,
 						Queues:  queues,
+						Secrets: secrets,
 					},
 					Principals: principalMap,
 					ProjectID:  pulumi.String(details.ProjectId),

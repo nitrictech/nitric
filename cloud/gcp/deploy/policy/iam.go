@@ -22,10 +22,12 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -44,6 +46,7 @@ type StackResources struct {
 	Queues        map[string]*queue.PubSubTopic
 	Subscriptions map[string]*pubsub.Subscription
 	Buckets       map[string]*bucket.CloudStorageBucket
+	Secrets       map[string]*secret.SecretManagerSecret
 }
 
 type PrincipalMap = map[v1.ResourceType]map[string]*serviceaccount.Account
@@ -315,17 +318,17 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 					return nil, err
 				}
 
-				// case v1.ResourceType_Secret:
-				// 	s := args.Resources.Secrets[resource.Name]
+			case v1.ResourceType_Secret:
+				s := args.Resources.Secrets[resource.Name]
 
-				// 	_, err = secretmanager.NewSecretIamMember(ctx, memberName, &secretmanager.SecretIamMemberArgs{
-				// 		SecretId: s.SecretId,
-				// 		Member:   memberId,
-				// 		Role:     rolePolicy.Name,
-				// 	}, pulumi.Parent(res))
-				// 	if err != nil {
-				// 		return nil, err
-				// 	}
+				_, err = secretmanager.NewSecretIamMember(ctx, memberName, &secretmanager.SecretIamMemberArgs{
+					SecretId: s.Secret.SecretId,
+					Member:   memberId,
+					Role:     rolePolicy.Name,
+				}, pulumi.Parent(res))
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

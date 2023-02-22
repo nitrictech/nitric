@@ -114,6 +114,10 @@ message Collection {
 
 }
 
+message Secret {
+    
+}
+
 message SubscriptionTarget {
     // TODO: Include subscription specifications here
     oneof target {
@@ -168,6 +172,7 @@ message Resource {
         Policy policy = 15;
         Schedule schedule = 16;
         Collection collection = 17;
+        Secret secret = 18;
     }
 }
 

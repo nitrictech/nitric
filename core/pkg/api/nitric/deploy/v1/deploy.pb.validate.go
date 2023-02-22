@@ -1581,6 +1581,104 @@ var _ interface {
 	ErrorName() string
 } = CollectionValidationError{}
 
+// Validate checks the field values on Secret with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Secret) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Secret with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in SecretMultiError, or nil if none found.
+func (m *Secret) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Secret) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return SecretMultiError(errors)
+	}
+
+	return nil
+}
+
+// SecretMultiError is an error wrapping multiple validation errors returned by
+// Secret.ValidateAll() if the designated constraints aren't met.
+type SecretMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SecretMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SecretMultiError) AllErrors() []error { return m }
+
+// SecretValidationError is the validation error returned by Secret.Validate if
+// the designated constraints aren't met.
+type SecretValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SecretValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SecretValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SecretValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SecretValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SecretValidationError) ErrorName() string { return "SecretValidationError" }
+
+// Error satisfies the builtin error interface
+func (e SecretValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSecret.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SecretValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SecretValidationError{}
+
 // Validate checks the field values on SubscriptionTarget with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -2433,6 +2531,37 @@ func (m *Resource) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ResourceValidationError{
 					field:  "Collection",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Resource_Secret:
+
+		if all {
+			switch v := interface{}(m.GetSecret()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Secret",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Secret",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSecret()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceValidationError{
+					field:  "Secret",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

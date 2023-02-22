@@ -716,8 +716,8 @@ github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.8.0 h1:ODq8ZFEaYeCaZOJlZZdJA2AbQR98dSHSM1KW/You5mo=
 github.com/prometheus/procfs v0.8.0/go.mod h1:z7EfXMXOkbkqb9IINtpCn86r/to3BnA0uaxHdg830/4=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/pulumi/pulumi-azure-native-sdk v1.92.0 h1:Com2wvpDAIpYz+cGBZryUh/QfuZh8bPORX/5IpEdQBs=
-github.com/pulumi/pulumi-azure-native-sdk v1.92.0/go.mod h1:YABoJT4dQxYgHkZYzG8y2me8XHxKn5ET0ekuPDF+qog=
+github.com/pulumi/pulumi-azure-native-sdk v1.95.0 h1:VU9KLzZXUTIkah8yNEDEBbMiEyXa9PowiwKV6WAAYcs=
+github.com/pulumi/pulumi-azure-native-sdk v1.95.0/go.mod h1:YABoJT4dQxYgHkZYzG8y2me8XHxKn5ET0ekuPDF+qog=
 github.com/pulumi/pulumi-azure-native-sdk/apimanagement v1.92.0 h1:DzQjuM7BN+fAsxz9EX5Pe3PqMbV5qNU3iiCQ4ZnqDho=
 github.com/pulumi/pulumi-azure-native-sdk/apimanagement v1.92.0/go.mod h1:aX2VEzaupKXhJdXegJFcQTfALL7cVoieTH5ep8xmgFs=
 github.com/pulumi/pulumi-azure-native-sdk/app v1.92.0 h1:OW5jrUXfpKPnYxwVu+KoSTl+awdcSCVp1E4LPtLLhqE=
@@ -726,6 +726,8 @@ github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0 h1:6SJ33P9H8XoMa
 github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0/go.mod h1:Eq87ISOSa20In+spCPIK0cB8Kee3R/hvlYZYS9T+zZY=
 github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0 h1:o85YIc4N7HvkOhFTPslBGpMG/UMZ80o0ZJd9a1E4h9g=
 github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0/go.mod h1:AQvkelA3KmPH3sHznrnrkv+3+gkqg3Aqiq8Y1onKi88=
+github.com/pulumi/pulumi-azure-native-sdk/documentdb v1.95.0 h1:viP8lDL0WhK9kYimP0CnH0l0Zc0QD2WjnI2k6iyO9D0=
+github.com/pulumi/pulumi-azure-native-sdk/documentdb v1.95.0/go.mod h1:CK9dIt29XgaJBUi3uFzRAYi1GLi2MWGhbfRn1tJHALo=
 github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.92.0 h1:2SJeXs8vym8/1JfybRNK5o4bekGbrFxxYASh1Ah+AqE=
 github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.92.0/go.mod h1:cvvxs9mU/9cljKVauNuHjm80S8n7/AFvZDEw7pHFfcQ=
 github.com/pulumi/pulumi-azure-native-sdk/keyvault v1.92.0 h1:gm1DIEV8DxsWysu29moSg0/gSrin/XTkNXEerGJe0ys=

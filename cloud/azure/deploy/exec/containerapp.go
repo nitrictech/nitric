@@ -34,18 +34,20 @@ import (
 )
 
 type ContainerAppArgs struct {
-	ResourceGroupName pulumi.StringInput
-	Location          pulumi.StringInput
-	StackID           pulumi.StringInput
-	SubscriptionID    pulumi.StringInput
-	Registry          *containerregistry.Registry
-	RegistryUser      pulumi.StringPtrInput
-	RegistryPass      pulumi.StringPtrInput
-	ManagedEnv        *app.ManagedEnvironment
-	ImageUri          pulumi.StringInput
-	Env               app.EnvironmentVarArray
-	ExecutionUnit     *deploy.ExecutionUnit
-	ManagedIdentityID pulumi.StringOutput
+	ResourceGroupName             pulumi.StringInput
+	Location                      pulumi.StringInput
+	StackID                       pulumi.StringInput
+	SubscriptionID                pulumi.StringInput
+	Registry                      *containerregistry.Registry
+	RegistryUser                  pulumi.StringPtrInput
+	RegistryPass                  pulumi.StringPtrInput
+	ManagedEnv                    *app.ManagedEnvironment
+	ImageUri                      pulumi.StringInput
+	Env                           app.EnvironmentVarArray
+	ExecutionUnit                 *deploy.ExecutionUnit
+	ManagedIdentityID             pulumi.StringOutput
+	MongoDatabaseName             pulumi.StringInput
+	MongoDatabaseConnectionString pulumi.StringInput
 }
 
 type ContainerApp struct {
@@ -194,6 +196,14 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("TOLERATE_MISSING_SERVICES"),
 			Value: pulumi.String("true"),
+		},
+		app.EnvironmentVarArgs{
+			Name:  pulumi.String("MONGODB_CONNECTION_STRING"),
+			Value: args.MongoDatabaseConnectionString,
+		},
+		app.EnvironmentVarArgs{
+			Name:  pulumi.String("MONGODB_DATABASE"),
+			Value: args.MongoDatabaseName,
 		},
 	}
 
