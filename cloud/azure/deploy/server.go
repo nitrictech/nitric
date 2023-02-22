@@ -53,13 +53,13 @@ func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails,
 	org, ok := attributes["org"]
 	if !ok || org == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("org is not set of invalid")
+		return nil, fmt.Errorf("org is not set or invalid")
 	}
 
-	adminEmail, ok := attributes["admin-email"]
+	adminEmail, ok := attributes["adminemail"]
 	if !ok || adminEmail == "" {
 		// need a valid stack name
-		return nil, fmt.Errorf("admin-email is not set of invalid")
+		return nil, fmt.Errorf("adminemail is not set or invalid")
 	}
 
 	return &StackDetails{
