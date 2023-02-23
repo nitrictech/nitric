@@ -165,7 +165,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 				if err != nil {
 					return nil, err
 				}
-	
+
 				oidConf, err := commonutils.GetOpenIdConnectConfig(scheme.Value.OpenIdConnectUrl)
 				if err != nil {
 					return nil, err
@@ -173,7 +173,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 
 				secDef[apiName] = securityDefinition{
 					Audiences: audiences,
-					Issuer: oidConf.Issuer,
+					Issuer:    oidConf.Issuer,
 				}
 			}
 		}
