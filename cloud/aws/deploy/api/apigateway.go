@@ -69,6 +69,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 				// We need to extract audience values as well
 				// lets use an extension to store these with the document
 				audiences := scheme.Value.Extensions["x-nitric-audiences"]
+
 				// Augment extensions with aws specific extensions
 				scheme.Value.Extensions["x-amazon-apigateway-authorizer"] = map[string]interface{}{
 					"type": "jwt",
@@ -125,7 +126,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		}
 
 		return string(b), nil
-	}).(pulumi.StringOutput)
+	}).(pulumi.StringOutput)	
 
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:         doc,

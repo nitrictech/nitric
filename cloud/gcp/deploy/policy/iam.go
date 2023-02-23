@@ -59,6 +59,8 @@ type PolicyArgs struct {
 	Principals PrincipalMap
 
 	ProjectID pulumi.StringInput
+
+	StackID pulumi.StringInput
 }
 
 var gcpListActions []string = []string{
@@ -216,7 +218,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 	}
 
 	// for project level listings
-	listRolePolicy, err := newCustomRole(ctx, name+"list", gcpListActions, pulumi.Parent(res))
+	listRolePolicy, err := newCustomRole(ctx, name+"-list", gcpListActions, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}
@@ -229,14 +231,15 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 			memberId := pulumi.Sprintf("serviceAccount:%s", sa.Email)
 
 			// for project level listings
-			_, err = projects.NewIAMMember(ctx, memberName+"list", &projects.IAMMemberArgs{
-				Member:  memberId,
-				Project: args.ProjectID,
-				Role:    listRolePolicy.Name,
-			}, pulumi.Parent(res))
-			if err != nil {
-				return nil, err
-			}
+			listRolePolicy.Title.ToStringOutput().ApplyT(func (id string) (string, error) {
+				_, err = projects.NewIAMMember(ctx, id+"-member", &projects.IAMMemberArgs{					
+					Member:  memberId,
+					Project: args.ProjectID,
+					Role:    listRolePolicy.Name,
+				}, pulumi.Parent(res))
+
+				return "", err
+			})			
 
 			switch resource.Type {
 			case v1.ResourceType_Bucket:

@@ -18,11 +18,8 @@ package gateway
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi2"
@@ -60,43 +57,6 @@ type nameUrlPair struct {
 	invokeUrl string
 }
 
-type openIdConfig struct {
-	Issuer        string `json:"issuer"`
-	JwksUri       string `json:"jwks_uri"`
-	TokenEndpoint string `json:"token_endpoint"`
-	AuthEndpoint  string `json:"authorization_endpoint"`
-}
-
-func getOpenIdConnectConfig(openIdConnectUrl string) (*openIdConfig, error) {
-	// append well-known configuration to issuer
-	url, err := url.Parse(fmt.Sprintf("%s/.well-known/openid-configuration", openIdConnectUrl))
-	if err != nil {
-		return nil, err
-	}
-
-	// get the configuration document
-	resp, err := http.Get(url.String())
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("received non 200 status retrieving openid-configuration: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	oidConf := &openIdConfig{}
-
-	if err := json.Unmarshal(body, oidConf); err != nil {
-		return nil, errors.WithMessage(err, "error unmarshalling open id config")
-	}
-
-	return oidConf, nil
-}
 
 func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts ...pulumi.ResourceOption) (*ApiGateway, error) {
 	res := &ApiGateway{Name: name}
@@ -113,17 +73,12 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		if sd.Value.Type == "openIdConnect" {
 			// We need to extract audience values from the extensions
 			// the extension is type of []interface and cannot be converted to []string directly
-			audExt, ok := sd.Value.Extensions["x-nitric-audiences"].([]interface{})
-			if !ok {
-				return nil, fmt.Errorf("unable to get audiences from api spec")
+			audiences, err := utils.GetAudiencesFromExtension(sd.Value.Extensions)
+			if err != nil {
+				return nil, err
 			}
 
-			audiences := make([]string, len(audExt))
-			for i, v := range audExt {
-				audiences[i] = fmt.Sprint(v)
-			}
-
-			oidConf, err := getOpenIdConnectConfig(sd.Value.OpenIdConnectUrl)
+			oidConf, err := utils.GetOpenIdConnectConfig(sd.Value.OpenIdConnectUrl)
 			if err != nil {
 				return nil, err
 			}
