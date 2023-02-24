@@ -231,15 +231,15 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 			memberId := pulumi.Sprintf("serviceAccount:%s", sa.Email)
 
 			// for project level listings
-			listRolePolicy.Title.ToStringOutput().ApplyT(func (id string) (string, error) {
-				_, err = projects.NewIAMMember(ctx, id+"-member", &projects.IAMMemberArgs{					
+			listRolePolicy.Title.ToStringOutput().ApplyT(func(id string) (string, error) {
+				_, err = projects.NewIAMMember(ctx, id+"-member", &projects.IAMMemberArgs{
 					Member:  memberId,
 					Project: args.ProjectID,
 					Role:    listRolePolicy.Name,
 				}, pulumi.Parent(res))
 
 				return "", err
-			})			
+			})
 
 			switch resource.Type {
 			case v1.ResourceType_Bucket:

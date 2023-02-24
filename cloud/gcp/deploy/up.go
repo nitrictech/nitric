@@ -342,7 +342,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					},
 					Principals: principalMap,
 					ProjectID:  pulumi.String(details.ProjectId),
-					StackID: stackID,
+					StackID:    stackID,
 				})
 				if err != nil {
 					return err

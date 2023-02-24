@@ -57,7 +57,6 @@ type nameUrlPair struct {
 	invokeUrl string
 }
 
-
 func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts ...pulumi.ResourceOption) (*ApiGateway, error) {
 	res := &ApiGateway{Name: name}
 

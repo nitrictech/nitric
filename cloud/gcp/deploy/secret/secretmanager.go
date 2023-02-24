@@ -54,7 +54,7 @@ func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManage
 			Automatic: pulumi.Bool(true),
 		},
 		SecretId: secId,
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels:   common.Tags(ctx, args.StackID, name),
 	})
 	if err != nil {
 		return nil, err
