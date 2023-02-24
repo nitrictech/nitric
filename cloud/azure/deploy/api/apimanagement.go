@@ -29,6 +29,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 )
 
 type AzureApiManagementArgs struct {
@@ -160,9 +161,19 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 			if scheme.Value.Type == "openIdConnect" {
 				// We need to extract audience values as well
 				// lets use an extension to store these with the document
+				audiences, err := commonutils.GetAudiencesFromExtension(scheme.Value.Extensions)
+				if err != nil {
+					return nil, err
+				}
+
+				oidConf, err := commonutils.GetOpenIdConnectConfig(scheme.Value.OpenIdConnectUrl)
+				if err != nil {
+					return nil, err
+				}
+
 				secDef[apiName] = securityDefinition{
-					Audiences: args.OpenAPISpec.Extensions["x-nitric-audiences"].([]string),
-					Issuer:    scheme.Value.Extensions["x-nitric-issuer"].(string),
+					Audiences: audiences,
+					Issuer:    oidConf.Issuer,
 				}
 			}
 		}

@@ -58,7 +58,7 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 		return string(b), nil
 	}).(pulumi.StringOutput)
 
-	res.ResourceGroup, err = resourcegroups.NewGroup(ctx, ctx.Stack(), &resourcegroups.GroupArgs{
+	res.ResourceGroup, err = resourcegroups.NewGroup(ctx, "rg-"+ctx.Stack(), &resourcegroups.GroupArgs{
 		Description: pulumi.Sprintf("Nitric RG for stack %s", res.Name),
 		ResourceQuery: &resourcegroups.GroupResourceQueryArgs{
 			Query: rgQueryJSON,

@@ -47,8 +47,14 @@ func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManage
 		return nil, err
 	}
 
+	secId := pulumi.Sprintf("%s-%s", args.StackID, name)
+
 	res.Secret, err = secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
-		Labels: common.Tags(ctx, args.StackID, name),
+		Replication: secretmanager.SecretReplicationArgs{
+			Automatic: pulumi.Bool(true),
+		},
+		SecretId: secId,
+		Labels:   common.Tags(ctx, args.StackID, name),
 	})
 	if err != nil {
 		return nil, err
