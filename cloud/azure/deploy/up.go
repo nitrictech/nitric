@@ -330,7 +330,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	// Send terminal message
-	stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
+	err = stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
 
-	return nil
+	return err
 }
