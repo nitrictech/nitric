@@ -36,6 +36,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
@@ -48,25 +49,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type UpStreamMessageWriter struct {
-	stream deploy.DeployService_UpServer
-}
-
-func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployUpEvent{
-		Content: &deploy.DeployUpEvent_Message{
-			Message: &deploy.DeployEventMessage{
-				Message: string(bytes),
-			},
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return len(bytes), nil
-}
 
 // Up - Deploy requested infrastructure for a stack
 func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
@@ -339,15 +321,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	_ = pulumiStack.SetConfig(context.TODO(), "aws:region", auto.ConfigValue{Value: details.Region})
 
-	messageWriter := &UpStreamMessageWriter{
-		stream: stream,
+	messageWriter := &pulumiutils.UpStreamMessageWriter{
+		Stream: stream,
 	}
 
 	// Run the program
-	_, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
+	res, err := pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
 	if err != nil {
 		return err
 	}
+
+	// Send terminal message
+	stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
 
 	return nil
 }

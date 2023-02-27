@@ -46,12 +46,25 @@ message DeployEventMessage {
     string message = 1;
 }
 
+message UpResult {
+    oneof content {
+        // Simple formatted string output as result
+        string string_result = 1;
+
+        // Additional result content types could be
+        // Struct (as a machine readable JSON value)
+        // Tabular? (display table output results)
+    }
+}
+
 // Terminal message indicating deployment success
 message DeployUpEventResult {
     // Indicate the success status
     bool success = 1;
 
-    // TODO: Provide the new state of the deployment
+    // Output state as a struct, this can be provided as an output file
+    // or pretty printed for CLI output
+    UpResult result = 2;
 }
 
 message DeployDownRequest {

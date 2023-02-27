@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 
+	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
@@ -27,33 +28,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type DownStreamMessageWriter struct {
-	stream deploy.DeployService_DownServer
-}
-
-func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployDownEvent{
-		Content: &deploy.DeployDownEvent_Message{
-			Message: &deploy.DeployEventMessage{
-				Message: string(bytes),
-			},
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return len(bytes), nil
-}
-
 func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
 	details, err := getStackDetailsFromAttributes(request.Attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	dsMessageWriter := &DownStreamMessageWriter{
-		stream: stream,
+	dsMessageWriter := &pulumiutils.DownStreamMessageWriter{
+		Stream: stream,
 	}
 
 	s, err := auto.UpsertStackInlineSource(context.TODO(), details.Stack, details.Project, nil)

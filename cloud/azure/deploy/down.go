@@ -17,6 +17,7 @@ package deploy
 import (
 	"context"
 
+	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
@@ -50,8 +51,8 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 	}
 
 	// TODO: Tear down the requested stack
-	dsMessageWriter := &DownStreamMessageWriter{
-		stream: stream,
+	dsMessageWriter := &pulumiutils.DownStreamMessageWriter{
+		Stream: stream,
 	}
 
 	s, err := auto.UpsertStackInlineSource(context.TODO(), details.Stack, details.Project, nil)

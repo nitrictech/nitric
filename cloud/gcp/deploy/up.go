@@ -24,6 +24,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
@@ -50,25 +51,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type UpStreamMessageWriter struct {
-	stream deploy.DeployService_UpServer
-}
-
-func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployUpEvent{
-		Content: &deploy.DeployUpEvent_Message{
-			Message: &deploy.DeployEventMessage{
-				Message: string(bytes),
-			},
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return len(bytes), nil
-}
 
 // Up - Deploy requested infrastructure for a stack
 func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
@@ -363,15 +345,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	messageWriter := &UpStreamMessageWriter{
-		stream: stream,
+	messageWriter := &pulumiutils.UpStreamMessageWriter{
+		Stream: stream,
 	}
 
 	// Run the program
-	_, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
+	res, err := pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
 	if err != nil {
 		return err
 	}
+
+	// Send terminal message
+	stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
 
 	return nil
 }

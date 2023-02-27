@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -44,25 +45,6 @@ import (
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	azureStorage "github.com/pulumi/pulumi-azure-native-sdk/storage"
 )
-
-type UpStreamMessageWriter struct {
-	stream deploy.DeployService_UpServer
-}
-
-func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployUpEvent{
-		Content: &deploy.DeployUpEvent_Message{
-			Message: &deploy.DeployEventMessage{
-				Message: string(bytes),
-			},
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return len(bytes), nil
-}
 
 // Up - Deploy requested infrastructure for a stack
 func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
@@ -336,16 +318,19 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
 	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})
 
-	messageWriter := &UpStreamMessageWriter{
-		stream: stream,
+	messageWriter := &pulumiutils.UpStreamMessageWriter{
+		Stream: stream,
 	}
 
-	_, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
+	res, err := pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
 	// Run the program
 	// _, err = pulumiStack.Up(context.TODO(), optup.ProgressStreams(messageWriter))
 	if err != nil {
 		return err
 	}
+
+	// Send terminal message
+	stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
 
 	return nil
 }
