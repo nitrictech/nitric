@@ -355,7 +355,7 @@ func (s *DynamoDocService) QueryStream(ctx context.Context, collection *document
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
 			)
 		}
 	}

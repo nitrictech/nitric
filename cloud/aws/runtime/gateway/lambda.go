@@ -17,7 +17,6 @@ package gateway
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -31,48 +30,13 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	ep "github.com/nitrictech/nitric/core/pkg/plugins/events"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
 	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
-type eventType int
-
-const (
-	unknown eventType = iota
-	sns
-	httpEvent
-	healthcheck
-	xforwardHeader string = "x-forwarded-for"
-)
-
-type LambdaRuntimeHandler func(handler interface{})
-
-func getEventType(request map[string]interface{}) eventType {
-	// If our event is a HTTP request
-	if _, ok := request["rawPath"]; ok {
-		return httpEvent
-	} else if records, ok := request["Records"]; ok {
-		recordsList, _ := records.([]interface{})
-		record, _ := recordsList[0].(map[string]interface{})
-		// We have some kind of event here...
-		// we'll assume its an SNS
-		var eventSource string
-		if es, ok := record["EventSource"]; ok {
-			eventSource = es.(string)
-		} else if es, ok := record["eventSource"]; ok {
-			eventSource = es.(string)
-		}
-
-		switch eventSource {
-		case "aws:sns":
-			return sns
-		}
-	}
-
-	return unknown
-}
+type LambdaRuntimeHandler func(interface{})
 
 func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string) (string, error) {
 	topics, err := s.provider.GetResources(ctx, core.AwsResource_Topic)
@@ -89,201 +53,231 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
 }
 
-func (s *LambdaGateway) isHealthCheck(data map[string]interface{}) bool {
-	_, ok := data["x-nitric-healthcheck"]
-
-	return ok
-}
-
-func (s *LambdaGateway) triggersFromRequest(ctx context.Context, data map[string]interface{}) ([]triggers.Trigger, error) {
-	bytes, _ := json.Marshal(data)
-	trigs := make([]triggers.Trigger, 0)
-
-	switch getEventType(data) {
-	case sns:
-		snsEvent := &events.SNSEvent{}
-		if err := json.Unmarshal(bytes, snsEvent); err == nil {
-			for _, snsRecord := range snsEvent.Records {
-				messageString := snsRecord.SNS.Message
-				// FIXME: What about non-nitric SNS events???
-				messageJson := &ep.NitricEvent{}
-				var payloadBytes []byte
-				var id string
-				attrs := map[string]string{}
-
-				for k, v := range snsRecord.SNS.MessageAttributes {
-					sv, ok := v.(string)
-					if ok {
-						attrs[k] = sv
-					}
-				}
-
-				// Populate the JSON
-				if err := json.Unmarshal([]byte(messageString), messageJson); err == nil {
-					payloadMap := messageJson.Payload
-					id = messageJson.ID
-					payloadBytes, _ = json.Marshal(&payloadMap)
-				} else {
-					// just try to capture the raw message
-					payloadBytes = []byte(messageString)
-					id = snsRecord.SNS.MessageID
-				}
-
-				tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
-
-				if err == nil {
-					trigs = append(trigs, &triggers.Event{
-						ID:         id,
-						Topic:      tName,
-						Payload:    payloadBytes,
-						Attributes: attrs,
-					})
-				} else {
-					log.Default().Printf("unable to find nitric topic: %v", err)
-				}
-			}
-		}
-	case httpEvent:
-		evt := &events.APIGatewayV2HTTPRequest{}
-
-		err := json.Unmarshal(bytes, evt)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal httpEvent: %w", err)
-		}
-
-		// Copy the headers and re-write for the proxy
-		headerCopy := make(map[string][]string)
-
-		for key, val := range evt.Headers {
-			if strings.ToLower(key) == "host" {
-				headerCopy[xforwardHeader] = append(headerCopy[xforwardHeader], val)
-			} else {
-				headerCopy[key] = append(headerCopy[key], val)
-			}
-		}
-
-		// Copy the cookies over
-		headerCopy["Cookie"] = evt.Cookies
-
-		// Parse the raw query string
-		qVals, err := url.ParseQuery(evt.RawQueryString)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing query for httpEvent: %w", err)
-		}
-
-		trigs = append(trigs, &triggers.HttpRequest{
-			// FIXME: Translate to http.Header
-			Header: headerCopy,
-			Body:   []byte(evt.Body),
-			Method: evt.RequestContext.HTTP.Method,
-			Path:   evt.RawPath,
-			URL:    evt.RawPath,
-			Query:  qVals,
-		})
-
-	case healthcheck:
-
-	default:
-		return nil, fmt.Errorf("unhandled event type %v", data)
+func (s *LambdaGateway) getScheduleNameForArn(ctx context.Context, eventRuleArn string) (string, error) {
+	topics, err := s.provider.GetResources(ctx, core.AwsResource_EventRule)
+	if err != nil {
+		return "", fmt.Errorf("error retreiving event rules: %w", err)
 	}
 
-	return trigs, nil
+	for name, arn := range topics {
+		if arn == eventRuleArn {
+			return name, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find event rule for arn %s", eventRuleArn)
 }
 
 type LambdaGateway struct {
-	pool     worker.WorkerPool
+	pool     pool.WorkerPool
 	provider core.AwsProvider
 	runtime  LambdaRuntimeHandler
 	gateway.UnimplementedGatewayPlugin
 	finished chan int
 }
 
-func (s *LambdaGateway) handle(ctx context.Context, data map[string]interface{}) (interface{}, error) {
-	if s.isHealthCheck(data) {
-		return map[string]interface{}{
-			"healthy": true,
-		}, nil
+// Handle API events
+func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+	// Copy the headers and re-write for the proxy
+	headerCopy := map[string]*v1.HeaderValue{}
+
+	for key, val := range evt.Headers {
+		if strings.ToLower(key) == "host" {
+			headerCopy[xforwardHeader] = &v1.HeaderValue{
+				Value: []string{val},
+			}
+		} else {
+			if headerCopy[key] == nil {
+				headerCopy[key] = &v1.HeaderValue{}
+			}
+			headerCopy[key].Value = append(headerCopy[key].Value, val)
+		}
 	}
 
-	trigs, err := s.triggersFromRequest(ctx, data)
+	// Copy the cookies over
+	headerCopy["Cookie"] = &v1.HeaderValue{
+		Value: evt.Cookies,
+	}
+
+	// Parse the raw query string
+	qVals, err := url.ParseQuery(evt.RawQueryString)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing query for httpEvent: %w", err)
+	}
+	query := map[string]*v1.QueryValue{}
+	for k, v := range qVals {
+		query[k] = &v1.QueryValue{
+			Value: v,
+		}
+	}
+
+	req := &v1.TriggerRequest{
+		Data: []byte(evt.Body),
+		Context: &v1.TriggerRequest_Http{
+			Http: &v1.HttpTriggerContext{
+				Method:      evt.RequestContext.HTTP.Method,
+				Path:        evt.RawPath,
+				QueryParams: query,
+				Headers:     headerCopy,
+			},
+		},
+	}
+
+	wrk, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+		Trigger: req,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, request := range trigs {
-		switch request.GetTriggerType() {
-		case triggers.TriggerType_Request:
-			if httpEvent, ok := request.(*triggers.HttpRequest); ok {
-				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
-					Http: httpEvent,
-				})
-				if err != nil {
-					return nil, fmt.Errorf("unable to get worker to handle http trigger")
-				}
+	response, err := wrk.HandleTrigger(ctx, req)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       "Error processing lambda request",
+			// TODO: Need to determine best case when to use this...
+			IsBase64Encoded: false,
+		}, nil
+	}
 
-				var hc propagation.HeaderCarrier = httpEvent.Header
+	lambdaHTTPHeaders := make(map[string]string)
+	if response.GetHttp().Headers != nil {
+		for k, v := range response.GetHttp().Headers {
+			lambdaHTTPHeaders[k] = v.Value[0]
+		}
+	}
 
-				response, err := wrkr.HandleHttpRequest(xray.Propagator{}.Extract(ctx, hc), httpEvent)
-				if err != nil {
-					return events.APIGatewayProxyResponse{
-						StatusCode: 500,
-						Body:       "Error processing lambda request",
-						// TODO: Need to determine best case when to use this...
-						IsBase64Encoded: true,
-					}, nil
-				}
+	responseString := base64.StdEncoding.EncodeToString(response.Data)
 
-				lambdaHTTPHeaders := make(map[string]string)
+	return events.APIGatewayProxyResponse{
+		StatusCode: int(response.GetHttp().Status),
+		Headers:    lambdaHTTPHeaders,
+		Body:       responseString,
+		// TODO: Need to determine best case when to use this...
+		IsBase64Encoded: true,
+	}, nil
+}
 
-				if response.Header != nil {
-					response.Header.VisitAll(func(key []byte, val []byte) {
-						lambdaHTTPHeaders[string(key)] = string(val)
-					})
-				}
+func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.CloudWatchEvent) (interface{}, error) {
+	evtRuleArn := evt.Resources[0]
+	sched, err := s.getScheduleNameForArn(ctx, evtRuleArn)
+	if err != nil {
+		log.Default().Println("unable to locate nitric schedule")
+		return nil, fmt.Errorf("unable to find nitric schedule: %w", err)
+	}
 
-				responseString := base64.StdEncoding.EncodeToString(response.Body)
+	request := &v1.TriggerRequest{
+		// Send empty data for now (no reason to send data for schedules at the moment)
+		Data: nil,
+		Context: &v1.TriggerRequest_Topic{
+			Topic: &v1.TopicTriggerContext{
+				Topic: worker.ScheduleKeyToTopicName(sched),
+			},
+		},
+	}
 
-				// We want to sniff the content type of the body that we have here as lambda cannot gzip it...
-				return events.APIGatewayProxyResponse{
-					StatusCode: response.StatusCode,
-					Headers:    lambdaHTTPHeaders,
-					Body:       responseString,
-					// TODO: Need to determine best case when to use this...
-					IsBase64Encoded: true,
-				}, nil
-			} else {
-				return nil, fmt.Errorf("found non HttpRequest in event with trigger type: %s", triggers.TriggerType_Request.String())
+	wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+		Trigger: request,
+		// Only send Cloudwatch events to schedule workers
+		Filter: func(w worker.Worker) bool {
+			_, ok := w.(*worker.ScheduleWorker)
+			return ok
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("no worker available to handle schedule %s", sched)
+	}
+
+	resp, err := wrkr.HandleTrigger(context.TODO(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.GetTopic().Success {
+		return nil, fmt.Errorf("schedule execution failed")
+	}
+
+	return nil, nil
+}
+
+func (s *LambdaGateway) handleSnsEvents(ctx context.Context, evt events.SNSEvent) (interface{}, error) {
+	for _, snsRecord := range evt.Records {
+		messageString := snsRecord.SNS.Message
+		// var id string
+		attrs := map[string]string{}
+
+		for k, v := range snsRecord.SNS.MessageAttributes {
+			sv, ok := v.(string)
+			if ok {
+				attrs[k] = sv
 			}
-		case triggers.TriggerType_Subscription:
-			if event, ok := request.(*triggers.Event); ok {
-				wrkr, err := s.pool.GetWorker(&worker.GetWorkerOptions{
-					Event: event,
-				})
-				if err != nil {
-					return nil, fmt.Errorf("unable to get worker to event trigger")
-				}
+		}
 
-				var mc propagation.MapCarrier = event.Attributes
+		tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
+		if err != nil {
+			log.Default().Printf("unable to find nitric topic: %v", err)
+			continue
+		}
 
-				if err := wrkr.HandleEvent(xray.Propagator{}.Extract(ctx, mc), event); err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, fmt.Errorf("found non Event in event with trigger type: %s", triggers.TriggerType_Subscription.String())
-			}
+		request := &v1.TriggerRequest{
+			Data: []byte(messageString),
+			Context: &v1.TriggerRequest_Topic{
+				Topic: &v1.TopicTriggerContext{
+					Topic: tName,
+				},
+			},
+		}
+
+		wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+			Trigger: request,
+			// Only send SNS events to subscription workers
+			Filter: func(w worker.Worker) bool {
+				_, ok := w.(*worker.SubscriptionWorker)
+				return ok
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to get worker to event trigger")
+		}
+
+		var mc propagation.MapCarrier = attrs
+
+		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return nil, nil
 }
 
+func (s *LambdaGateway) handleHealthCheck(ctx context.Context, evt healthCheckEvent) (interface{}, error) {
+	return map[string]interface{}{
+		"healthy": true,
+	}, nil
+}
+
+func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{}, error) {
+	switch evt.Type() {
+	case httpEvent:
+		return s.handleApiEvent(ctx, evt.APIGatewayV2HTTPRequest)
+	case healthcheck:
+		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
+	case sns:
+		return s.handleSnsEvents(ctx, evt.SNSEvent)
+	case cloudwatch:
+		return s.handleCloudwatchEvent(ctx, evt.CloudWatchEvent)
+	default:
+		return nil, fmt.Errorf("unhandled lambda event type")
+	}
+}
+
 // Start the lambda gateway handler
-func (s *LambdaGateway) Start(pool worker.WorkerPool) error {
-	// s.finished = make(chan int)
+func (s *LambdaGateway) Start(pool pool.WorkerPool) error {
 	s.pool = pool
 	// Here we want to begin polling lambda for incoming requests...
-	s.runtime(func(ctx context.Context, data map[string]interface{}) (interface{}, error) {
-		a, err := s.handle(ctx, data)
+	s.runtime(func(ctx context.Context, evt Event) (interface{}, error) {
+		a, err := s.routeEvent(ctx, evt)
 
 		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
 		if ok {

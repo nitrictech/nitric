@@ -1,0 +1,37 @@
+---
+project_name: gcp
+release:
+  prerelease: auto
+before:
+  hooks:
+    - go work sync
+    - make predeploybin
+builds:
+  - env:
+      # - GOWORK=on
+      - CGO_ENABLED=0
+    id: gcp
+    binary: gcp
+    main: ./deploy/cmd
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- tolower .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ tolower .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  skip: true

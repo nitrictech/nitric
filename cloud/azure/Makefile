@@ -9,7 +9,21 @@ binaries: runtimebin
 
 runtimebin:
 	@echo Building Azure Runtime Server
-	@CGO_ENABLED=0 go build -o bin/runtime-azure -ldflags="-extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-azure -ldflags="-extldflags=-static" ./runtime/cmd
+
+predeploybin: runtimebin
+	@cp bin/runtime-azure deploy/runtime-azure
+
+# FIXME: proto server registration error
+# There appears to be an old namespace conflict with the protobuf definitions
+deploybin: predeploybin
+	@echo Building Azure Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@rm deploy/runtime-azure
+
+installdeploy: deploybin
+	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@cp bin/deploy-azure ${HOME}/.nitric/providers/nitric/azure-0.0.1
 
 license-check: runtimebin
 	@echo Checking Azure Runtime OSS Licenses
@@ -19,11 +33,15 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-azure
 	$(GOLANGCI_LINT) run --fix
+	@rm deploy/runtime-azure
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-azure
 	$(GOLANGCI_LINT) run
+	@rm deploy/runtime-azure
 
 test: generate-mocks
 	@echo Running unit tests

@@ -18,14 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
 )
 
 // RouteWorker - Worker representation for an http api route handler
 type SubscriptionWorker struct {
 	topic string
 	Delegate
-	Adapter
+	adapter.Adapter
 }
 
 var _ Worker = &SubscriptionWorker{}
@@ -34,17 +35,20 @@ func (s *SubscriptionWorker) Topic() string {
 	return s.topic
 }
 
-func (s *SubscriptionWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+func (s *SubscriptionWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
+	if topic := trigger.GetTopic(); topic != nil {
+		return topic.Topic == s.topic
+	}
+
 	return false
 }
 
-func (s *SubscriptionWorker) HandlesEvent(trigger *triggers.Event) bool {
-	return trigger.Topic == s.topic
-}
+func (s *SubscriptionWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
+	if trigger.GetTopic() == nil {
+		return nil, fmt.Errorf("subscription workers cannot handle HTTP requests")
+	}
 
-func (s *SubscriptionWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	// Generate an ID here
-	return nil, fmt.Errorf("subscription workers cannot handle HTTP requests")
+	return s.Adapter.HandleTrigger(ctx, trigger)
 }
 
 type SubscriptionWorkerOptions struct {
@@ -53,7 +57,7 @@ type SubscriptionWorkerOptions struct {
 
 // Package private method
 // Only a pool may create a new faas worker
-func NewSubscriptionWorker(adapter Adapter, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
+func NewSubscriptionWorker(adapter adapter.Adapter, opts *SubscriptionWorkerOptions) *SubscriptionWorker {
 	return &SubscriptionWorker{
 		topic:   opts.Topic,
 		Adapter: adapter,

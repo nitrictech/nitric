@@ -304,7 +304,7 @@ func (s *MongoDocService) Query(ctx context.Context, collection *document.Collec
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid arguments",
-			fmt.Errorf("collection: %w, expressions%v", colErr, expErr),
+			fmt.Errorf("collection: %w, expressions %w", colErr, expErr),
 		)
 	}
 
@@ -368,7 +368,7 @@ func (s *MongoDocService) QueryStream(ctx context.Context, collection *document.
 			return nil, newErr(
 				codes.InvalidArgument,
 				"invalid arguments",
-				fmt.Errorf("collection error:%w, expression error: %v", colErr, expErr),
+				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
 			)
 		}
 	}

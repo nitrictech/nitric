@@ -27,11 +27,12 @@ import (
 
 	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
+	mock_pool "github.com/nitrictech/nitric/core/mocks/pool"
+	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	ep "github.com/nitrictech/nitric/core/pkg/plugins/events"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
-	mock_worker "github.com/nitrictech/nitric/core/tests/mocks/worker"
 )
 
 type MockLambdaRuntime struct {
@@ -42,10 +43,10 @@ type MockLambdaRuntime struct {
 
 func (m *MockLambdaRuntime) Start(handler interface{}) {
 	// cast the function type to what we know it will be
-	typedFunc := handler.(func(ctx context.Context, data map[string]interface{}) (interface{}, error))
+	typedFunc := handler.(func(ctx context.Context, data gateway.Event) (interface{}, error))
 	for _, event := range m.eventQueue {
 		bytes, _ := json.Marshal(event)
-		evt := map[string]interface{}{}
+		evt := gateway.Event{}
 
 		err := json.Unmarshal(bytes, &evt)
 		Expect(err).To(BeNil())
@@ -58,24 +59,12 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 }
 
 var _ = Describe("Lambda", func() {
-	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
-
-	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
-		ReturnHttp: &triggers.HttpResponse{
-			Body:       []byte("success"),
-			StatusCode: 200,
-		},
-	})
-	err := pool.AddWorker(mockHandler)
-	Expect(err).NotTo(HaveOccurred())
-
-	AfterEach(func() {
-		mockHandler.Reset()
-	})
-
 	Context("Http Events", func() {
 		When("Sending a compliant HTTP Event", func() {
 			ctrl := gomock.NewController(GinkgoT())
+			pool := mock_pool.NewMockWorkerPool(ctrl)
+
+			mockHandler := mock_worker.NewMockWorker(ctrl)
 			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
 
 			runtime := MockLambdaRuntime{
@@ -87,6 +76,7 @@ var _ = Describe("Lambda", func() {
 						"x-nitric-request-id":   "test-request-id",
 						"Content-Type":          "text/plain",
 					},
+					RouteKey:       "non-null",
 					RawPath:        "/test/test",
 					RawQueryString: "key=test&key2=test1&key=test2",
 					Body:           "Test Payload",
@@ -106,30 +96,41 @@ var _ = Describe("Lambda", func() {
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
-				err := client.Start(pool)
-				Expect(err).To(BeNil())
+				By("Returning the worker")
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				By("Handling all request types")
+				mockHandler.EXPECT().HandlesTrigger(gomock.Any()).Return(true)
 
 				By("Handling a single HTTP request")
-				Expect(len(mockHandler.ReceivedRequests)).To(Equal(1))
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Data: []byte("Test Payload"),
+					Context: &v1.TriggerRequest_Http{
+						Http: &v1.HttpTriggerContext{
+							Method: "GET",
+							Path:   "/test/test",
+							Headers: map[string]*v1.HeaderValue{
+								"User-Agent":            {Value: []string{"Test"}},
+								"x-nitric-payload-type": {Value: []string{"TestPayload"}},
+								"x-nitric-request-id":   {Value: []string{"test-request-id"}},
+								"Content-Type":          {Value: []string{"text/plain"}},
+								"Cookie":                {Value: []string{"test1=testcookie1", "test2=testcookie2"}},
+							},
+							QueryParams: map[string]*v1.QueryValue{
+								"key":  {Value: []string{"test", "test2"}},
+								"key2": {Value: []string{"test1"}},
+							},
+						},
+					},
+				}).Return(&v1.TriggerResponse{
+					Data: []byte("success"),
+					Context: &v1.TriggerResponse_Http{
+						Http: &v1.HttpResponseContext{},
+					},
+				}, nil)
 
-				request := mockHandler.ReceivedRequests[0]
-
-				By("Retaining the body")
-				Expect(string(request.Body)).To(BeEquivalentTo("Test Payload"))
-				By("Retaining the Headers")
-				Expect(request.Header["User-Agent"][0]).To(Equal("Test"))
-				Expect(request.Header["x-nitric-payload-type"][0]).To(Equal("TestPayload"))
-				Expect(request.Header["x-nitric-request-id"][0]).To(Equal("test-request-id"))
-				Expect(request.Header["Content-Type"][0]).To(Equal("text/plain"))
-				Expect(request.Header["Cookie"]).To(Equal([]string{"test1=testcookie1", "test2=testcookie2"}))
-				By("Retaining the method")
-				Expect(request.Method).To(Equal("GET"))
-				By("Retaining the path")
-				Expect(request.Path).To(Equal("/test/test"))
-
-				By("Retaining the query parameters")
-				Expect(request.Query["key"]).To(BeEquivalentTo([]string{"test", "test2"}))
-				Expect(request.Query["key2"]).To(BeEquivalentTo([]string{"test1"}))
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -139,11 +140,13 @@ var _ = Describe("Lambda", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
 
+			pool := mock_pool.NewMockWorkerPool(ctrl)
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+
 			topicName := "MyTopic"
 			eventPayload := map[string]interface{}{
 				"test": "test",
 			}
-			// eventBytes, _ := json.Marshal(&eventPayload)
 
 			event := ep.NitricEvent{
 				ID:          "test-request-id",
@@ -180,19 +183,26 @@ var _ = Describe("Lambda", func() {
 					"MyTopic": "some:arbitrary:topic:arn:MyTopic",
 				}, nil)
 
+				By("Returning the worker")
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				By("Handling all request types")
+				mockHandler.EXPECT().HandlesTrigger(gomock.Any()).Return(true)
+
+				By("Handling a single event")
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Data: messageBytes,
+					Context: &v1.TriggerRequest_Topic{
+						Topic: &v1.TopicTriggerContext{
+							Topic: "MyTopic",
+						},
+					},
+				})
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request
 				err := client.Start(pool)
 				Expect(err).To(BeNil())
-
-				By("Handling a single event")
-				Expect(len(mockHandler.ReceivedEvents)).To(Equal(1))
-
-				request := mockHandler.ReceivedEvents[0]
-
-				By("Containing the Source Topic")
-				Expect(request.Topic).To(Equal("MyTopic"))
 			})
 		})
 	})

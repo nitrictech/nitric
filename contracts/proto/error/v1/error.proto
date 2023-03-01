@@ -2,7 +2,7 @@ syntax = "proto3";
 package nitric.error.v1;
 
 // protoc plugin options for code generation
-option go_package = "nitric/v1;v1";
+option go_package = "github.com/nitrictech/nitric/core/pkg/api/nitric/v1";
 option java_package = "io.nitric.proto.error.v1";
 option java_multiple_files = true;
 option java_outer_classname = "Errors";
