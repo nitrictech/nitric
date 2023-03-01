@@ -10,21 +10,24 @@ type CommonStackDetails struct {
 }
 
 // Read nitric attributes from the provided deployment attributes
-func CommonStackDetailsFromAttributes(attributes map[string]string) (*CommonStackDetails, error) {
-	project, ok := attributes["project"]
-	if !ok || project == "" {
+func CommonStackDetailsFromAttributes(attributes map[string]interface{}) (*CommonStackDetails, error) {
+	iProject, hasProject := attributes["project"]
+	project, isString := iProject.(string)
+	if !hasProject || !isString || project == "" {
 		// need a valid project name
 		return nil, fmt.Errorf("project is not set or invalid")
 	}
 
-	stack, ok := attributes["stack"]
-	if !ok || stack == "" {
+	iStack, hasStack := attributes["stack"]
+	stack, isString := iStack.(string)
+	if !hasStack || !isString || stack == "" {
 		// need a valid stack name
 		return nil, fmt.Errorf("stack is not set or invalid")
 	}
 
-	region, ok := attributes["region"]
-	if !ok || stack == "" {
+	iRegion, hasRegion := attributes["region"]
+	region, isString := iRegion.(string)
+	if !hasRegion || !isString || stack == "" {
 		// need a valid stack name
 		return nil, fmt.Errorf("region is not set or invalid")
 	}

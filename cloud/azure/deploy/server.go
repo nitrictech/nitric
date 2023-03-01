@@ -44,20 +44,22 @@ type StackDetails struct {
 }
 
 // Read nitric attributes from the provided deployment attributes
-func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
+func getStackDetailsFromAttributes(attributes map[string]interface{}) (*StackDetails, error) {
 	commonDetails, err := commonDeploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
 		return nil, err
 	}
 
-	org, ok := attributes["org"]
-	if !ok || org == "" {
+	iOrg, hasOrg := attributes["org"]
+	org, isString := iOrg.(string)
+	if !hasOrg || !isString || org == "" {
 		// need a valid stack name
 		return nil, fmt.Errorf("org is not set or invalid")
 	}
 
-	adminEmail, ok := attributes["adminemail"]
-	if !ok || adminEmail == "" {
+	iAdminEmail, hasAdminEmail := attributes["adminemail"]
+	adminEmail, isString := iAdminEmail.(string)
+	if !hasAdminEmail || !isString || adminEmail == "" {
 		// need a valid stack name
 		return nil, fmt.Errorf("adminemail is not set or invalid")
 	}

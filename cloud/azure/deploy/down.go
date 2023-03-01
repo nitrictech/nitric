@@ -45,7 +45,7 @@ func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 }
 
 func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
-	details, err := getStackDetailsFromAttributes(request.Attributes)
+	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}

@@ -43,14 +43,15 @@ type StackDetails struct {
 }
 
 // Read nitric attributes from the provided deployment attributes
-func getStackDetailsFromAttributes(attributes map[string]string) (*StackDetails, error) {
+func getStackDetailsFromAttributes(attributes map[string]interface{}) (*StackDetails, error) {
 	commonDetails, err := commonDeploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
 		return nil, err
 	}
 
-	projectId, ok := attributes["gcp-project-id"]
-	if !ok || projectId == "" {
+	iProjectId, hasProjectId := attributes["gcp-project-id"]
+	projectId, isString := iProjectId.(string)
+	if !hasProjectId || !isString || projectId == "" {
 		// need a valid project name
 		return nil, fmt.Errorf("gcp-project-id is not set of invalid")
 	}

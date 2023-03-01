@@ -9,6 +9,8 @@ option java_outer_classname = "Deploys";
 option php_namespace = "Nitric\\Proto\\Deploy\\V1";
 option csharp_namespace = "Nitric.Proto.Deploy.v1";
 
+
+import "google/protobuf/struct.proto";
 import "proto/resource/v1/resource.proto";
 
 // The Nitric Deloyment Service contract
@@ -29,10 +31,8 @@ message DeployUpRequest {
 
     // A map of attributes related to the deploy request
     // this allows for adding project identifiers etc.
-    map<string, string> attributes = 2;
+    google.protobuf.Struct attributes = 2;
 }
-
-
 
 message DeployUpEvent {
     oneof content {
@@ -70,7 +70,7 @@ message DeployUpEventResult {
 message DeployDownRequest {
     // A map of attributes related to the deploy request
     // this allows for adding project identifiers etc.
-    map<string, string> attributes = 1;
+    google.protobuf.Struct attributes = 1;
 }
 
 message DeployDownEvent {

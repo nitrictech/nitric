@@ -48,7 +48,7 @@ import (
 
 // Up - Deploy requested infrastructure for a stack
 func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
-	details, err := getStackDetailsFromAttributes(request.Attributes)
+	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
