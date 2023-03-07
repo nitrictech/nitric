@@ -14,26 +14,25 @@
 
 package worker
 
-import "github.com/nitrictech/nitric/core/pkg/triggers"
+import (
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
+)
 
 // FaasWorker
 // Worker representation for a Nitric FaaS function using gRPC
 type FaasWorker struct {
-	Adapter
+	adapter.Adapter
 }
 
 var _ Worker = &FaasWorker{}
 
-func (s *FaasWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
-	return true
-}
-
-func (s *FaasWorker) HandlesEvent(trigger *triggers.Event) bool {
+func (s *FaasWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 	return true
 }
 
 // NewFaasWorker - Create a new FaaS worker
-func NewFaasWorker(adapter Adapter) *FaasWorker {
+func NewFaasWorker(adapter adapter.Adapter) *FaasWorker {
 	return &FaasWorker{
 		Adapter: adapter,
 	}

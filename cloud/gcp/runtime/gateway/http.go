@@ -25,10 +25,9 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
-	ep "github.com/nitrictech/nitric/core/pkg/plugins/events"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
 type PubSubMessage struct {
@@ -40,7 +39,7 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
+func middleware(rc *fasthttp.RequestCtx, workerPool pool.WorkerPool) bool {
 	bodyBytes := rc.Request.Body()
 
 	// Check if the payload contains a pubsub event
@@ -49,36 +48,19 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 	var pubsubEvent PubSubMessage
 	if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 		// We have an event from pubsub here...
-
 		topic := pubsubEvent.Message.Attributes["x-nitric-topic"]
 
-		// need to determine if the underlying data is a nitric event
-		var event *triggers.Event
-		messageJson := &ep.NitricEvent{}
-		// Check if it's a nitric event
-		if err := json.Unmarshal(pubsubEvent.Message.Data, messageJson); err == nil && messageJson.ID != "" {
-			// reserialize the nitric event payload
-			payload, _ := json.Marshal(messageJson.Payload)
-
-			event = &triggers.Event{
-				ID:         messageJson.ID,
-				Topic:      topic,
-				Payload:    payload,
-				Attributes: pubsubEvent.Message.Attributes,
-			}
-		} else {
-			event = &triggers.Event{
-				ID: pubsubEvent.Message.ID,
-				// Set the topic
-				Topic: topic,
-				// Set the original full payload payload
-				Payload:    pubsubEvent.Message.Data,
-				Attributes: pubsubEvent.Message.Attributes,
-			}
+		event := &v1.TriggerRequest{
+			Data: pubsubEvent.Message.Data,
+			Context: &v1.TriggerRequest_Topic{
+				Topic: &v1.TopicTriggerContext{
+					Topic: topic,
+				},
+			},
 		}
 
-		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
-			Event: event,
+		wrkr, err := workerPool.GetWorker(&pool.GetWorkerOptions{
+			Trigger: event,
 		})
 		if err != nil {
 			rc.Error("Could not find handle for event", 500)
@@ -92,11 +74,11 @@ func middleware(rc *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
 			var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
 			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, mc)
 		} else {
-			var hc propagation.HeaderCarrier = triggers.HttpHeaders(&rc.Request.Header)
+			var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&rc.Request.Header)
 			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, hc)
 		}
 
-		if err := wrkr.HandleEvent(ctx, event); err == nil {
+		if _, err := wrkr.HandleTrigger(ctx, event); err == nil {
 			// return a successful response
 			rc.SuccessString("text/plain", "success")
 		} else {

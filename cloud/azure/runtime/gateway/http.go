@@ -26,9 +26,9 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
 type azMiddleware struct {
@@ -51,7 +51,7 @@ func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, ev
 	ctx.Success("application/json", responseBody)
 }
 
-func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, pool worker.WorkerPool) {
+func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []eventgrid.Event, workerPool pool.WorkerPool) {
 	// TODO: As we are batch handling events
 	// how do we notify of failed event handling?
 	for _, event := range events {
@@ -68,7 +68,6 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			payloadBytes, _ = json.Marshal(event.Data)
 		}
 
-		var evt *triggers.Event
 		topics, err := a.provider.GetResources(context.TODO(), core.AzResource_Topic)
 		if err != nil {
 			log.Default().Println("could not get topic resources")
@@ -88,15 +87,17 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 		}
 
 		// Just extract the payload from the event type (payload from nitric event is directly mapped)
-		evt = &triggers.Event{
-			ID:         *event.ID,
-			Topic:      topicName,
-			Payload:    payloadBytes,
-			Attributes: map[string]string{},
+		evt := &v1.TriggerRequest{
+			Data: payloadBytes,
+			Context: &v1.TriggerRequest_Topic{
+				Topic: &v1.TopicTriggerContext{
+					Topic: topicName,
+				},
+			},
 		}
 
-		wrkr, err := pool.GetWorker(&worker.GetWorkerOptions{
-			Event: evt,
+		wrkr, err := workerPool.GetWorker(&pool.GetWorkerOptions{
+			Trigger: evt,
 		})
 		if err != nil {
 			log.Default().Println("could not get worker for topic: ", topicName)
@@ -104,7 +105,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 			continue
 		}
 
-		err = wrkr.HandleEvent(context.TODO(), evt)
+		_, err = wrkr.HandleTrigger(context.TODO(), evt)
 		if err != nil {
 			log.Default().Println("could not handle event: ", evt)
 			// TODO: Handle error
@@ -117,7 +118,7 @@ func (a *azMiddleware) handleNotifications(ctx *fasthttp.RequestCtx, events []ev
 	ctx.SuccessString("text/plain", "success")
 }
 
-func (a *azMiddleware) middleware(ctx *fasthttp.RequestCtx, pool worker.WorkerPool) bool {
+func (a *azMiddleware) middleware(ctx *fasthttp.RequestCtx, pool pool.WorkerPool) bool {
 	eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 
 	// Handle an eventgrid webhook event
