@@ -117,6 +117,9 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 			},
 			PushEndpoint: args.Function.Url,
 		},
+		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
+			Ttl: pulumi.String(""),
+		},
 	}, append(opts, pulumi.Parent(args.Function))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
