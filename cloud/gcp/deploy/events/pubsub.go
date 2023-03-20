@@ -82,6 +82,11 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 		Name: name,
 	}
 
+	err := ctx.RegisterComponentResource("nitric:topic:GCPPubSubTopicSubscription", name, res, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create an account for invoking this func via subscriptions
 	// TODO: Do we want to make this one account for subscription in future
 	// TODO: We will likely configure this via eventarc in the future
@@ -115,7 +120,7 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
 				ServiceAccountEmail: invokerAccount.Email,
 			},
-			PushEndpoint: args.Function.Url,
+			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic),
 		},
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),

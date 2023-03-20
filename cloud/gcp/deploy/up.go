@@ -32,10 +32,12 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudscheduler"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
@@ -308,6 +310,32 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						return err
 					}
 				}
+			}
+		}
+
+		schedules := map[string]*cloudscheduler.Job{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Schedule:
+				// get the target of the schedule
+
+				execUnitName := t.Schedule.Target.GetExecutionUnit()
+				execUnit, ok := execs[execUnitName]
+				if !ok {
+					return fmt.Errorf("no execution unit with name %s", execUnitName)
+				}
+
+				// Create schedule targeting a given lambda
+				job, err := schedule.NewCloudSchedulerJob(ctx, res.Name, &schedule.CloudSchedulerArgs{
+					StackID: stackID,
+					Exec:    execUnit,
+					Schedule:    t.Schedule,
+				})
+				if err != nil {
+					return err
+				}
+
+				schedules[res.Name] = job.Job
 			}
 		}
 

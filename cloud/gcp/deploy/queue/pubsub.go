@@ -42,7 +42,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		Name: name,
 	}
 
-	err := ctx.RegisterComponentResource("nitric:topic:GCPPubSubTopic", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitric:queue:GCPPubSubTopic", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}

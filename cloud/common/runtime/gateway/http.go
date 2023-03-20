@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -33,6 +34,22 @@ import (
 )
 
 type HttpMiddleware func(*fasthttp.RequestCtx, pool.WorkerPool) bool
+type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+
+type RouteRegister func(*router.Router, pool.WorkerPool)
+
+const (
+	DefaultTopicRoute    = "/x-nitric-topic/{name}"
+	DefaultScheduleRoute = "/x-nitric-schedule/{name}"
+)
+
+type BaseHttpGatewayOptions struct {
+	// Middleware for handling events
+	// return bool will indicate whether to continue
+	// to the next (default) behaviour or not...
+	Middleware HttpMiddleware
+	Router     RouteRegister
+}
 
 type BaseHttpGateway struct {
 	address string
@@ -43,6 +60,7 @@ type BaseHttpGateway struct {
 	// return bool will indicate whether to continue
 	// to the next (default) behaviour or not...
 	mw HttpMiddleware
+	routeReg RouteRegister
 }
 
 func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
@@ -139,10 +157,19 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 }
 
 func (s *BaseHttpGateway) Start(pool pool.WorkerPool) error {
+	r := router.New()
+
+	// Allow custom provider level routing for handling events/schedules etc.
+	if s.routeReg != nil {
+		s.routeReg(r, pool)
+	}
+
+	r.ANY("/{path?:*}", s.httpHandler(pool))
+
 	s.server = &fasthttp.Server{
 		IdleTimeout:     time.Second * 1,
 		CloseOnShutdown: true,
-		Handler:         s.httpHandler(pool),
+		Handler:         r.Handler,
 		ReadBufferSize:  8192,
 	}
 
@@ -164,11 +191,12 @@ func (s *BaseHttpGateway) Stop() error {
 
 // Create new HTTP gateway
 // XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New(mw HttpMiddleware) (gateway.GatewayService, error) {
+func New(opts *BaseHttpGatewayOptions) (gateway.GatewayService, error) {
 	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
 
 	return &BaseHttpGateway{
-		address: address,
-		mw:      mw,
+		address:  address,
+		mw:       opts.Middleware,
+		routeReg: opts.Router,
 	}, nil
 }
