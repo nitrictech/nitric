@@ -174,7 +174,7 @@ var _ = Describe("Http", func() {
 					}, nil
 				})
 
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payloadBytes))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(payloadBytes))
 				Expect(err).To(BeNil())
 				request.Header.Add("Content-Type", "application/json")
 				resp, err := http.DefaultClient.Do(request)
