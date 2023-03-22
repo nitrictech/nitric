@@ -21,9 +21,12 @@ else
         endif
     endif
     ifeq ($(UNAME_S),Darwin)
-        UNAME_P := $(findstring X86_64,$(shell uname -v))
+        UNAME_P := $(shell uname -m)
         ifeq ($(UNAME_P),X86_64)
 	    PROTOC_PLATFORM := osx-x86_64
+        endif
+        ifeq ($(UNAME_P),arm64)
+        PROTOC_PLATFORM := osx-aarch_64
         endif
     endif
 endif

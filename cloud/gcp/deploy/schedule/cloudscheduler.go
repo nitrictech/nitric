@@ -34,15 +34,15 @@ import (
 type CloudScheduler struct {
 	pulumi.ResourceState
 
-	Name   string
-	Job *cloudscheduler.Job
+	Name string
+	Job  *cloudscheduler.Job
 }
 
 type CloudSchedulerArgs struct {
 	Location string
 	StackID  pulumi.StringInput
 
-	Exec *exec.CloudRunner
+	Exec     *exec.CloudRunner
 	Schedule *deploy.Schedule
 }
 
@@ -51,7 +51,7 @@ type ScheduleEvent struct {
 	Payload     map[string]interface{} `yaml:"payload,omitempty"`
 }
 
-func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudSchedulerArgs, opts ...pulumi.ResourceOption) (*CloudScheduler, error) {			
+func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudSchedulerArgs, opts ...pulumi.ResourceOption) (*CloudScheduler, error) {
 	res := &CloudScheduler{
 		Name: name,
 	}
@@ -79,7 +79,7 @@ func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudScheduler
 	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "iam member "+name)
-	}	
+	}
 
 	eventJSON, err := json.Marshal(map[string]interface{}{
 		"schedule": name,
@@ -91,11 +91,11 @@ func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudScheduler
 	payload := base64.StdEncoding.EncodeToString(eventJSON)
 
 	res.Job, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
-		TimeZone: pulumi.String("UTC"),		
+		TimeZone: pulumi.String("UTC"),
 		HttpTarget: &cloudscheduler.JobHttpTargetArgs{
 			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s", args.Exec.Url, name),
 			OidcToken: &cloudscheduler.JobHttpTargetOidcTokenArgs{
-				ServiceAccountEmail: invokerAccount.Email,				
+				ServiceAccountEmail: invokerAccount.Email,
 			},
 			Body: pulumi.String(payload),
 		},

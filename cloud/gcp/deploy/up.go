@@ -327,9 +327,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				// Create schedule targeting a given lambda
 				job, err := schedule.NewCloudSchedulerJob(ctx, res.Name, &schedule.CloudSchedulerArgs{
-					StackID: stackID,
-					Exec:    execUnit,
-					Schedule:    t.Schedule,
+					StackID:  stackID,
+					Exec:     execUnit,
+					Schedule: t.Schedule,
 				})
 				if err != nil {
 					return err

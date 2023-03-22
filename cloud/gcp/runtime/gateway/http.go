@@ -38,7 +38,6 @@ type gcpMiddleware struct {
 	provider core.GcpProvider
 }
 
-
 type PubSubMessage struct {
 	Message struct {
 		Attributes map[string]string `json:"attributes"`
@@ -59,7 +58,7 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 			// We have an event from pubsub here...
 			topicName := ctx.UserValue("name").(string)
-	
+
 			event := &v1.TriggerRequest{
 				Data: pubsubEvent.Message.Data,
 				Context: &v1.TriggerRequest_Topic{
@@ -68,17 +67,17 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 					},
 				},
 			}
-	
+
 			worker, err := process.GetWorker(&pool.GetWorkerOptions{
 				Trigger: event,
 			})
 			if err != nil {
 				ctx.Error("Could not find handle for event", 500)
 			}
-	
+
 			traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
 			traceCtx := context.TODO()
-		
+
 			if pubsubEvent.Message.Attributes[traceKey] != "" {
 				var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
 				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, mc)
@@ -86,7 +85,7 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 				var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
 				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, hc)
 			}
-			
+
 			if _, err := worker.HandleTrigger(traceCtx, event); err == nil {
 				// return a successful response
 				ctx.SuccessString("text/plain", "success")
@@ -99,7 +98,7 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 
 func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		scheduleName := ctx.UserValue("name").(string)		
+		scheduleName := ctx.UserValue("name").(string)
 
 		evt := &v1.TriggerRequest{
 			// Send empty data for now (no reason to send data for schedules at the moment)
@@ -121,7 +120,7 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 		if err != nil {
 			log.Default().Println("could not get worker for schedule: ", scheduleName)
 		}
-	
+
 		var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
 		traceCtx := propagator.CloudTraceFormatPropagator{}.Extract(context.TODO(), hc)
 
@@ -133,7 +132,6 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 		ctx.SuccessString("text/plain", "success")
 	}
 }
-
 
 func (g *gcpMiddleware) router(r *router.Router, pool pool.WorkerPool) {
 	r.ANY(base_http.DefaultTopicRoute, g.handleSubscription(pool))
