@@ -19,16 +19,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
+	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/propagation"
 
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/core"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
+
+type gcpMiddleware struct {
+	provider core.GcpProvider
+}
 
 type PubSubMessage struct {
 	Message struct {
@@ -39,63 +47,104 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
-func middleware(rc *fasthttp.RequestCtx, workerPool pool.WorkerPool) bool {
-	bodyBytes := rc.Request.Body()
+func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		bodyBytes := ctx.Request.Body()
 
-	// Check if the payload contains a pubsub event
-	// TODO: We probably want to use a simpler method than this
-	// like reading off the request origin to ensure it is from pubsub
-	var pubsubEvent PubSubMessage
-	if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
-		// We have an event from pubsub here...
-		topic := pubsubEvent.Message.Attributes["x-nitric-topic"]
+		// Check if the payload contains a pubsub event
+		// TODO: We probably want to use a simpler method than this
+		// like reading off the request origin to ensure it is from pubsub
+		var pubsubEvent PubSubMessage
+		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
+			// We have an event from pubsub here...
+			topicName := ctx.UserValue("name").(string)
 
-		event := &v1.TriggerRequest{
-			Data: pubsubEvent.Message.Data,
+			event := &v1.TriggerRequest{
+				Data: pubsubEvent.Message.Data,
+				Context: &v1.TriggerRequest_Topic{
+					Topic: &v1.TopicTriggerContext{
+						Topic: topicName,
+					},
+				},
+			}
+
+			worker, err := process.GetWorker(&pool.GetWorkerOptions{
+				Trigger: event,
+			})
+			if err != nil {
+				ctx.Error("Could not find handle for event", 500)
+			}
+
+			traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
+			traceCtx := context.TODO()
+
+			if pubsubEvent.Message.Attributes[traceKey] != "" {
+				var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
+				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, mc)
+			} else {
+				var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
+				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, hc)
+			}
+
+			if _, err := worker.HandleTrigger(traceCtx, event); err == nil {
+				// return a successful response
+				ctx.SuccessString("text/plain", "success")
+			} else {
+				ctx.Error(fmt.Sprintf("Error handling event %v", err), 500)
+			}
+		}
+	}
+}
+
+func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		scheduleName := ctx.UserValue("name").(string)
+
+		evt := &v1.TriggerRequest{
+			// Send empty data for now (no reason to send data for schedules at the moment)
+			Data: nil,
 			Context: &v1.TriggerRequest_Topic{
 				Topic: &v1.TopicTriggerContext{
-					Topic: topic,
+					Topic: scheduleName,
 				},
 			},
 		}
 
-		wrkr, err := workerPool.GetWorker(&pool.GetWorkerOptions{
-			Trigger: event,
+		worker, err := process.GetWorker(&pool.GetWorkerOptions{
+			Trigger: evt,
+			Filter: func(w worker.Worker) bool {
+				_, isSchedule := w.(*worker.ScheduleWorker)
+				return isSchedule
+			},
 		})
 		if err != nil {
-			rc.Error("Could not find handle for event", 500)
-			return false
+			log.Default().Println("could not get worker for schedule: ", scheduleName)
 		}
 
-		traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
-		ctx := context.TODO()
+		var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
+		traceCtx := propagator.CloudTraceFormatPropagator{}.Extract(context.TODO(), hc)
 
-		if pubsubEvent.Message.Attributes[traceKey] != "" {
-			var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
-			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, mc)
-		} else {
-			var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&rc.Request.Header)
-			ctx = propagator.CloudTraceFormatPropagator{}.Extract(ctx, hc)
+		_, err = worker.HandleTrigger(traceCtx, evt)
+		if err != nil {
+			log.Default().Println("could not handle event: ", evt)
 		}
 
-		if _, err := wrkr.HandleTrigger(ctx, event); err == nil {
-			// return a successful response
-			rc.SuccessString("text/plain", "success")
-		} else {
-			rc.Error(fmt.Sprintf("Error handling event %v", err), 500)
-		}
-
-		// We've already handled the request
-		// do not continue processing
-		return false
+		ctx.SuccessString("text/plain", "success")
 	}
+}
 
-	// Let the base plugin handle the request
-	return true
+func (g *gcpMiddleware) router(r *router.Router, pool pool.WorkerPool) {
+	r.ANY(base_http.DefaultTopicRoute, g.handleSubscription(pool))
+	r.ANY(base_http.DefaultScheduleRoute, g.handleSchedule(pool))
 }
 
 // New - Create a New cloudrun gateway plugin
-func New() (gateway.GatewayService, error) {
-	// plugin is derived from base http plugin
-	return base_http.New(middleware)
+func New(provider core.GcpProvider) (gateway.GatewayService, error) {
+	mw := &gcpMiddleware{
+		provider: provider,
+	}
+
+	return base_http.New(&base_http.BaseHttpGatewayOptions{
+		Router: mw.router,
+	})
 }

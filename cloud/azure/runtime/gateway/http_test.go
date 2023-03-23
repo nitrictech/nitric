@@ -135,7 +135,7 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "SubscriptionValidation")
 				resp, err := http.DefaultClient.Do(request)
@@ -191,7 +191,7 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "Notification")
 				_, _ = http.DefaultClient.Do(request)

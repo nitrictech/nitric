@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mock_provider "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
 	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
@@ -55,7 +56,9 @@ var _ = Describe("Http", func() {
 	err := pool.AddWorker(mockHandler)
 	Expect(err).To(BeNil())
 
-	httpPlugin, err := cloudrun_plugin.New()
+	provider := mock_provider.NewMockGcpProvider(ctrl)
+
+	httpPlugin, err := cloudrun_plugin.New(provider)
 	Expect(err).To(BeNil())
 
 	// Run on a non-blocking thread
@@ -171,7 +174,7 @@ var _ = Describe("Http", func() {
 					}, nil
 				})
 
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(payloadBytes))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(payloadBytes))
 				Expect(err).To(BeNil())
 				request.Header.Add("Content-Type", "application/json")
 				resp, err := http.DefaultClient.Do(request)
