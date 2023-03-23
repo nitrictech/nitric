@@ -13,9 +13,6 @@
   <img alt="GitHub" src="https://img.shields.io/github/license/nitrictech/nitric?style=for-the-badge">
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nitrictech/nitric/test.yaml?branch=develop&style=for-the-badge">
   <img alt="Codecov" src="https://img.shields.io/codecov/c/github/nitrictech/nitric?style=for-the-badge">
-  <a href="https://twitter.com/nitric_io">
-    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/nitric_io?label=Twitter&style=for-the-badge">
-  </a>
   <a href="https://discord.gg/Webemece5C"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord&style=for-the-badge"></a>
 </p>
 
