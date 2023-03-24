@@ -50,17 +50,3 @@ Nitric is currently in Public Preview. Anyone can use or deploy applications, bu
 - Find us on [Twitter](https://twitter.com/nitric_io)
 
 - Send us an [email](mailto:maintainers@nitric.io)
-
-## Nitric Membrane
-
-The Membrane is at the heart of the solution. Nitric applications communicate with the Membrane via gRPC to access the following services in a provider agnostic way:
-
-- Events
-- Queues
-- Storage & Buckets
-- Document Store
-- Secret Store
-
-We provide an expressive infrastructure-as-code style SDK for [Node.js](https://nitric.io/docs/reference/nodejs/v0), [Python](https://nitric.io/docs/reference/python/v0) and [C#](https://nitric.io/docs/reference/csharp/v0). However, Nitric is built on gRPC, so support for many languages is possible.
-
-> If you have additional languages you'd like supported, let us know in the issues, we also welcome community contributions for new language support.
