@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  A fast & fun way to build portable cloud-native applications
+  A cloud framework with infrastructure in code
 </p>
 
 <p align="center">
@@ -18,20 +18,17 @@
 
 ## About Nitric
 
-<p align="center">
-  <img alt="Nitric Diagram" src="docs/assets/diagram.svg">
-</p>
+
 
 [Nitric](https://nitric.io) is a framework for rapid development of cloud-native and serverless applications. Define your apps in terms of the resources they need, then write the code for serverless function based APIs, event subscribers and scheduled jobs.
 
 Apps built with Nitric can be deployed to AWS, Azure or Google Cloud all from the same code base so you can focus on your products, not your cloud provider.
 
-Nitric makes it easy to:
+Nitric makes it easy to architect cloud applications directly in application code, building scalable & secure applications with least priviledge security out of the box.
 
-- Create smart serverless functions and APIs
-- Build reliable distributed apps that use events and/or queues
-- Securely store, retrieve and rotate secrets
-- Read and write files from buckets
+<p align="center">
+  <img alt="Nitric Diagram" src="docs/assets/diagram.svg">
+</p>
 
 If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric Roadmap](https://github.com/orgs/nitrictech/projects/4).
 
