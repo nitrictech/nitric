@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
 
-	"github.com/nitrictech/nitric/core/pkg/triggers"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 // A Nitric HTTP worker
@@ -31,70 +31,83 @@ type HttpWorker struct {
 	address string
 }
 
-func (s *HttpWorker) HandlesHttpRequest(trigger *triggers.HttpRequest) bool {
+func (s *HttpWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 	return true
 }
 
-func (s *HttpWorker) HandlesEvent(trigger *triggers.Event) bool {
-	return true
-}
+func (h *HttpWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
+	if http := trigger.GetHttp(); http != nil {
+		address := fmt.Sprintf("http://%s%s", h.address, http.Path)
 
-// HandleEvent - Handles an event from a subscription by converting it to an HTTP request.
-func (h *HttpWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
-	address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, trigger.Topic)
+		httpRequest := fasthttp.AcquireRequest()
+		httpRequest.SetRequestURI(address)
 
-	httpRequest := fasthttp.AcquireRequest()
-	httpRequest.SetRequestURI(address)
-	httpRequest.Header.Add("x-nitric-request-id", trigger.ID)
-	httpRequest.Header.Add("x-nitric-source-type", triggers.TriggerType_Subscription.String())
-	httpRequest.Header.Add("x-nitric-source", trigger.Topic)
-
-	var resp fasthttp.Response
-
-	httpRequest.SetBody(trigger.Payload)
-	httpRequest.Header.SetContentLength(len(trigger.Payload))
-
-	// TODO: Handle response or error and respond appropriately
-	err := fasthttp.Do(httpRequest, &resp)
-	if err == nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
-		return nil
-	}
-	if err != nil {
-		return errors.Wrapf(err, "Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
-	}
-	return errors.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
-}
-
-// HandleHttpRequest - Handles an HTTP request by forwarding it as an HTTP request.
-func (h *HttpWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
-	address := fmt.Sprintf("http://%s%s", h.address, trigger.Path)
-
-	httpRequest := fasthttp.AcquireRequest()
-	httpRequest.SetRequestURI(address)
-
-	for key, val := range trigger.Query {
-		for _, v := range val {
-			httpRequest.URI().QueryArgs().Add(key, v)
+		for key, val := range http.QueryParams {
+			for _, v := range val.Value {
+				httpRequest.URI().QueryArgs().Add(key, v)
+			}
 		}
-	}
 
-	for key, val := range trigger.Header {
-		for _, v := range val {
-			httpRequest.Header.Add(key, v)
+		for key, val := range http.Headers {
+			for _, v := range val.Value {
+				httpRequest.Header.Add(key, v)
+			}
 		}
+
+		httpRequest.Header.Del("Content-Length")
+		httpRequest.SetBody(trigger.Data)
+		httpRequest.Header.SetContentLength(len(trigger.Data))
+
+		var resp fasthttp.Response
+		err := fasthttp.Do(httpRequest, &resp)
+		if err != nil {
+			return nil, err
+		}
+
+		headers := map[string]*v1.HeaderValue{}
+		resp.Header.VisitAll(func(key []byte, val []byte) {
+			headers[string(key)] = &v1.HeaderValue{
+				Value: []string{string(val)},
+			}
+		})
+
+		return &v1.TriggerResponse{
+			Data: resp.Body(),
+			Context: &v1.TriggerResponse_Http{
+				Http: &v1.HttpResponseContext{
+					Headers: headers,
+					Status:  int32(resp.StatusCode()),
+				},
+			},
+		}, nil
+	} else if topic := trigger.GetTopic(); topic != nil {
+		address := fmt.Sprintf("http://%s/subscriptions/%s", h.address, topic.Topic)
+
+		httpRequest := fasthttp.AcquireRequest()
+		httpRequest.SetRequestURI(address)
+
+		var resp fasthttp.Response
+
+		httpRequest.SetBody(trigger.Data)
+		httpRequest.Header.SetContentLength(len(trigger.Data))
+
+		err := fasthttp.Do(httpRequest, &resp)
+		if err == nil && resp.StatusCode() >= 200 && resp.StatusCode() <= 299 {
+			return &v1.TriggerResponse{
+				Context: &v1.TriggerResponse_Topic{
+					Topic: &v1.TopicResponseContext{
+						Success: true,
+					},
+				},
+			}, nil
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
+		}
+		return nil, errors.Errorf("Error processing event (%d): %s", resp.StatusCode(), string(resp.Body()))
 	}
 
-	httpRequest.Header.Del("Content-Length")
-	httpRequest.SetBody(trigger.Body)
-	httpRequest.Header.SetContentLength(len(trigger.Body))
-
-	var resp fasthttp.Response
-	err := fasthttp.Do(httpRequest, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return triggers.FromHttpResponse(&resp), nil
+	return nil, fmt.Errorf("invalid trigger provided")
 }
 
 // Creates a new HttpWorker

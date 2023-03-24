@@ -27,3 +27,7 @@ issues:
 linters-settings:
   govet:
     check-shadowing: false
+    disable:
+      # lambda gateway requires struct tag shadowing
+      # for deserializing typed lambda events
+      - structtag

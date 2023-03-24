@@ -5,11 +5,28 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-binaries: runtimebin
+binaries: deploybin
 
+# build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
+# We only build a linux amd64 binary here to be packaged for cloud runtimes with docker
+# More binaries can be distributed in future if required
 runtimebin:
 	@echo Building AWS Runtime Server
-	@CGO_ENABLED=0 go build -o bin/runtime-aws -ldflags="-extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-extldflags=-static" ./runtime/cmd
+
+predeploybin: runtimebin
+	@cp bin/runtime-aws deploy/runtime-aws
+
+# FIXME: proto server registration error
+# There appears to be an old namespace conflict with the protobuf definitions
+deploybin: predeploybin
+	@echo Building AWS Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@rm deploy/runtime-aws
+
+installdeploy: deploybin
+	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
 
 license-check: runtimebin
 	@echo Checking AWS Membrane OSS Licenses
@@ -19,11 +36,15 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-aws
 	$(GOLANGCI_LINT) run --fix
+	@rm deploy/runtime-aws
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-aws
 	$(GOLANGCI_LINT) run
+	@rm deploy/runtime-aws
 
 test: generate-mocks
 	@echo Running unit tests

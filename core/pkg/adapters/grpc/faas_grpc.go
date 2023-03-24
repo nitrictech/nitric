@@ -23,11 +23,13 @@ import (
 
 	pb "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/worker"
+	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
+	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
 type FaasServer struct {
 	pb.UnimplementedFaasServiceServer
-	pool worker.WorkerPool
+	pool pool.WorkerPool
 }
 
 // Starts a new stream
@@ -48,7 +50,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	}
 
 	var wrkr worker.Worker
-	adapter := worker.NewGrpcAdapter(stream)
+	adapter := adapter.NewGrpcAdapter(stream)
 
 	if api := ir.GetApi(); api != nil {
 		// Create a new route worker
@@ -100,7 +102,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 	return err
 }
 
-func NewFaasServer(workerPool worker.WorkerPool) *FaasServer {
+func NewFaasServer(workerPool pool.WorkerPool) *FaasServer {
 	return &FaasServer{
 		pool: workerPool,
 	}

@@ -67,7 +67,7 @@ func (c blobUrl) Url() url.URL {
 }
 
 func (c blobUrl) Upload(ctx context.Context, r io.ReadSeeker, h azblob.BlobHTTPHeaders, m azblob.Metadata, bac azblob.BlobAccessConditions, att azblob.AccessTierType, btm azblob.BlobTagsMap, cpk azblob.ClientProvidedKeyOptions) (*azblob.BlockBlobUploadResponse, error) {
-	return c.c.Upload(ctx, r, h, m, bac, att, btm, cpk)
+	return c.c.Upload(ctx, r, h, m, bac, att, btm, cpk, azblob.ImmutabilityPolicyOptions{})
 }
 
 func (c blobUrl) Delete(ctx context.Context, dot azblob.DeleteSnapshotsOptionType, bac azblob.BlobAccessConditions) (*azblob.BlobDeleteResponse, error) {

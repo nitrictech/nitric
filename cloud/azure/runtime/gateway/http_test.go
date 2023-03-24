@@ -32,16 +32,17 @@ import (
 	mock_provider "github.com/nitrictech/nitric/cloud/azure/mocks/provider"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
+	mock_pool "github.com/nitrictech/nitric/core/mocks/pool"
+	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
-	"github.com/nitrictech/nitric/core/pkg/worker"
-	mock_worker "github.com/nitrictech/nitric/core/tests/mocks/worker"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Http", func() {
-	pool := worker.NewProcessPool(&worker.ProcessPoolOptions{})
+	ctrl := gomock.NewController(GinkgoT())
+	pool := mock_pool.NewMockWorkerPool(ctrl)
 
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
 	// Set this to loopback to ensure its not public in our CI/Testing environments
@@ -49,16 +50,6 @@ var _ = Describe("Http", func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := mock_worker.NewMockWorker(&mock_worker.MockWorkerOptions{
-		ReturnHttp: &triggers.HttpResponse{
-			Body:       []byte("Testing Response"),
-			StatusCode: 200,
-		},
-	})
-	err := pool.AddWorker(mockHandler)
-	Expect(err).To(BeNil())
-
-	ctrl := gomock.NewController(GinkgoT())
 	provider := mock_provider.NewMockAzProvider(ctrl)
 
 	provider.EXPECT().GetResources(gomock.Any(), core.AzResource_Topic).AnyTimes().Return(map[string]core.AzGenericResource{
@@ -73,6 +64,7 @@ var _ = Describe("Http", func() {
 	Expect(err).To(BeNil())
 	// Run on a non-blocking thread
 	go func(gw gateway.GatewayService) {
+		defer GinkgoRecover()
 		_ = gw.Start(pool)
 	}(httpPlugin)
 
@@ -80,14 +72,35 @@ var _ = Describe("Http", func() {
 	// FIXME: Should block on channels...
 	time.Sleep(1000 * time.Millisecond)
 
-	AfterEach(func() {
-		mockHandler.Reset()
-	})
-
 	When("Invoking the Azure AppService HTTP Gateway", func() {
 		When("with a standard Nitric Request", func() {
+			payload := []byte("Test")
+			ctrl := gomock.NewController(GinkgoT())
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+
 			It("Should be handled successfully", func() {
-				request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test/", gatewayUrl), bytes.NewReader([]byte("Test")))
+				By("Returning the expected worker")
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				var capturedRequest *v1.TriggerRequest
+
+				By("Handling exactly 1 request")
+				// TODO: Capture and validate payload
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*v1.TriggerResponse, error) {
+					capturedRequest = arg1.(*v1.TriggerRequest)
+
+					return &v1.TriggerResponse{
+						Data: []byte("success"),
+						Context: &v1.TriggerResponse_Http{
+							Http: &v1.HttpResponseContext{
+								Status: 200,
+							},
+						},
+					}, nil
+				})
+
+				By("Generating a HTTP trigger")
+				request, _ := http.NewRequest("POST", fmt.Sprintf("%s/test/", gatewayUrl), bytes.NewReader(payload))
 				request.Header.Add("x-nitric-request-id", "1234")
 				request.Header.Add("x-nitric-payload-type", "Test Payload")
 				request.Header.Add("User-Agent", "Test")
@@ -96,13 +109,15 @@ var _ = Describe("Http", func() {
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
-				By("Handling exactly 1 request")
-				Expect(mockHandler.ReceivedRequests).To(HaveLen(1))
-
-				handledRequest := mockHandler.ReceivedRequests[0]
-
 				By("Having the provided path")
-				Expect(handledRequest.Path).To((Equal("/test/")))
+				Expect(capturedRequest.GetHttp().Path).To((Equal("/test/")))
+
+				By("Having expected headers")
+				Expect(capturedRequest.GetHttp().Headers["X-Nitric-Request-Id"].Value[0]).To((Equal("1234")))
+				Expect(capturedRequest.GetHttp().Headers["X-Nitric-Payload-Type"].Value[0]).To((Equal("Test Payload")))
+				Expect(capturedRequest.GetHttp().Headers["User-Agent"].Value[0]).To((Equal("Test")))
+
+				ctrl.Finish()
 			})
 		})
 
@@ -120,14 +135,11 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "SubscriptionValidation")
 				resp, err := http.DefaultClient.Do(request)
 				Expect(err).To(BeNil())
-
-				By("Not invoking the nitric application")
-				Expect(mockHandler.ReceivedRequests).To(BeEmpty())
 
 				By("Returning a 200 response")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -145,12 +157,29 @@ var _ = Describe("Http", func() {
 		})
 
 		When("With a Notification event", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+
 			It("Should successfully handle the notification", func() {
 				payload := map[string]string{
 					"testing": "test",
 				}
 				payloadBytes, _ := json.Marshal(payload)
 				testTopic := "test"
+
+				By("Returning the expected worker")
+				pool.EXPECT().GetWorker(gomock.Any()).AnyTimes().Return(mockHandler, nil)
+
+				By("Handling exactly 1 request")
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Data: payloadBytes,
+					Context: &v1.TriggerRequest_Topic{
+						Topic: &v1.TopicTriggerContext{
+							Topic: testTopic,
+						},
+					},
+				})
+
 				testID := "1234"
 				evt := []eventgrid.Event{
 					{
@@ -162,23 +191,10 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", gatewayUrl, bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "Notification")
 				_, _ = http.DefaultClient.Do(request)
-
-				By("Passing the event to the Nitric Application")
-				Expect(mockHandler.ReceivedEvents).To(HaveLen(1))
-
-				event := mockHandler.ReceivedEvents[0]
-				By("Having the provided requestId")
-				Expect(event.ID).To(Equal("1234"))
-
-				By("Having the provided topic")
-				Expect(event.Topic).To(Equal("test"))
-
-				By("Having the provided payload")
-				Expect(event.Payload).To(BeEquivalentTo(payloadBytes))
 			})
 		})
 	})

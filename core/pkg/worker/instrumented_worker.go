@@ -16,14 +16,15 @@ package worker
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/span"
-	"github.com/nitrictech/nitric/core/pkg/triggers"
 )
 
 type instrumentedWorker struct {
@@ -38,50 +39,46 @@ func InstrumentedWorkerFn(w Worker) Worker {
 	}
 }
 
-// HandleEvent implements worker.Adapter
-func (a *instrumentedWorker) HandleEvent(ctx context.Context, trigger *triggers.Event) error {
-	var s trace.Span
+func (a *instrumentedWorker) tracerFromTrigger(ctx context.Context, trigger *v1.TriggerRequest) (context.Context, trace.Span, error) {
+	if http := trigger.GetHttp(); http != nil {
+		ctx, s := otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
+			Start(ctx, span.Name(http.Path))
 
-	ctx, s = otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
-		Start(ctx, span.Name("topic-"+trigger.Topic))
+		s.SetAttributes(
+			semconv.CodeFunctionKey.String("HandleHttp"),
+			semconv.HTTPMethodKey.String(http.Method),
+			semconv.HTTPTargetKey.String(http.Path),
+		)
 
-	s.SetAttributes(
-		semconv.CodeFunctionKey.String("HandleEvent"),
-		semconv.MessagingDestinationKindTopic,
-		semconv.MessagingDestinationKey.String(trigger.Topic),
-		semconv.MessagingMessageIDKey.String(trigger.ID),
-	)
+		return ctx, s, nil
+	} else if topic := trigger.GetTopic(); topic != nil {
+		ctx, s := otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
+			Start(ctx, span.Name("topic-"+topic.Topic))
 
-	defer s.End()
+		s.SetAttributes(
+			semconv.CodeFunctionKey.String("HandleEvent"),
+			semconv.MessagingSystemKey.String("nitric"),
+			semconv.MessagingDestinationKindTopic,
+			semconv.MessagingDestinationKey.String(topic.Topic),
+		)
 
-	err := a.Worker.HandleEvent(ctx, trigger)
-	if err != nil {
-		s.SetStatus(codes.Error, "Event Handler returned an error")
-		s.RecordError(err)
-	} else {
-		s.SetStatus(codes.Ok, "Event Handled Successfully")
+		return ctx, s, nil
 	}
 
-	return err
+	return nil, nil, fmt.Errorf("invalid trigger provided")
 }
 
-// HandleHttpRequest implements worker.Adapter
-func (a *instrumentedWorker) HandleHttpRequest(ctx context.Context, trigger *triggers.HttpRequest) (*triggers.HttpResponse, error) {
+func (a *instrumentedWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
 	var s trace.Span
 
-	ctx, s = otel.Tracer("membrane/pkg/worker", trace.WithInstrumentationVersion(span.MembraneVersion)).
-		Start(ctx, span.Name(trigger.Path))
-
-	s.SetAttributes(
-		semconv.CodeFunctionKey.String("HandleHttpRequest"),
-		semconv.HTTPMethodKey.String(trigger.Method),
-		semconv.HTTPTargetKey.String(trigger.Path),
-		semconv.HTTPURLKey.String(trigger.URL),
-	)
+	ctx, s, err := a.tracerFromTrigger(ctx, trigger)
+	if err != nil {
+		return nil, err
+	}
 
 	defer s.End()
 
-	resp, err := a.Worker.HandleHttpRequest(ctx, trigger)
+	resp, err := a.Worker.HandleTrigger(ctx, trigger)
 	if err != nil {
 		s.SetStatus(codes.Error, "Request Handler returned an error")
 		s.RecordError(err)
@@ -89,8 +86,8 @@ func (a *instrumentedWorker) HandleHttpRequest(ctx context.Context, trigger *tri
 		s.SetStatus(codes.Ok, "Request Handled Successfully")
 	}
 
-	if resp != nil {
-		s.SetAttributes(semconv.HTTPStatusCodeKey.Int(resp.StatusCode))
+	if http := resp.GetHttp(); http != nil {
+		s.SetAttributes(semconv.HTTPStatusCodeKey.Int(int(http.Status)))
 	}
 
 	return resp, err

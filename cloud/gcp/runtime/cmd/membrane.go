@@ -63,7 +63,7 @@ func main() {
 		log.Default().Println("Failed to load storage plugin:", err.Error())
 	}
 
-	membraneOpts.GatewayPlugin, err = cloudrun_plugin.New()
+	membraneOpts.GatewayPlugin, err = cloudrun_plugin.New(provider)
 	if err != nil {
 		log.Default().Println("Failed to load gateway plugin:", err.Error())
 	}
