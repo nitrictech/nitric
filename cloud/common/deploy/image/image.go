@@ -26,9 +26,8 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-
-	"github.com/nitrictech/pulumi-docker-buildkit/sdk/v0.1.21/dockerbuildkit"
 )
 
 type ImageArgs struct {
@@ -44,7 +43,7 @@ type Image struct {
 	pulumi.ResourceState
 
 	Name        string
-	DockerImage *dockerbuildkit.Image
+	DockerImage *docker.Image
 }
 
 //go:embed wrapper.dockerfile
@@ -108,38 +107,32 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	runtimefile.Write(args.Runtime)
 	runtimefile.Close()
 
-	imageArgs := &dockerbuildkit.ImageArgs{
-		Name:       args.RepositoryUrl,
-		Context:    pulumi.String(buildContext),
-		Dockerfile: pulumi.String("Dockerfile"),
-		Args: dockerbuildkit.BuildArgArray{
-			dockerbuildkit.BuildArgArgs{
-				Name:  pulumi.String("BASE_IMAGE"),
-				Value: pulumi.String(args.SourceImage),
-			},
-			dockerbuildkit.BuildArgArgs{
-				Name:  pulumi.String("RUNTIME_FILE"),
-				Value: pulumi.String("runtime"),
-			},
-		},
-		Registry: dockerbuildkit.RegistryArgs{
+	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+		ImageName: args.RepositoryUrl,
+		Registry: &docker.RegistryArgs{
 			Server:   args.Server,
 			Username: args.Username,
 			Password: args.Password,
 		},
-	}
-
-	res.DockerImage, err = dockerbuildkit.NewImage(ctx, name+"-image", imageArgs, append(opts, pulumi.Parent(res))...)
+		Build: docker.DockerBuildArgs{
+			Context:    pulumi.String(buildContext),
+			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
+			Args: pulumi.StringMap{
+				"BASE_IMAGE":   pulumi.String(args.SourceImage),
+				"RUNTIME_FILE": pulumi.String("runtime"),
+			},
+		},
+	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
 		return nil, err
 	}
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":     pulumi.String(res.Name),
-		"imageUri": res.DockerImage.Name,
+		"imageUri": res.DockerImage.ImageName,
 	})
 }
 
 func (d *Image) URI() pulumi.StringOutput {
-	return d.DockerImage.RepoDigest
+	return d.DockerImage.RepoDigest.Elem().ToStringOutput()
 }
