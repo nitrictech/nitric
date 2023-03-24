@@ -4,9 +4,8 @@
   </a>
 </p>
 
-<p align="center">
-  A cloud framework with infrastructure in code
-</p>
+
+<h3 align="center">A cloud framework with infrastructure in code</h3>
 
 <p align="center">
   <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?style=for-the-badge">
