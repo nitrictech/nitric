@@ -28,6 +28,7 @@ import (
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
+	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -40,6 +41,7 @@ type LambdaExecUnitArgs struct {
 	DockerImage *image.Image
 	Compute     *v1.ExecutionUnit
 	EnvMap      map[string]string
+	Config      config.AwsLambdaConfig
 }
 
 type LambdaExecUnit struct {
@@ -151,26 +153,29 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		envVars[k] = pulumi.String(v)
 	}
 
-	// Set defaults if not already provided
-	if args.Compute.Memory == 0 {
-		args.Compute.Memory = 128
-	}
-
-	if args.Compute.Timeout == 0 {
-		args.Compute.Timeout = 10
-	}
-
 	res.Function, err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		ImageUri:    args.DockerImage.URI(),
-		MemorySize:  pulumi.IntPtr(int(args.Compute.Memory)),
-		Timeout:     pulumi.IntPtr(int(args.Compute.Timeout)),
+		MemorySize:  pulumi.IntPtr(args.Config.Memory),
+		Timeout:     pulumi.IntPtr(args.Config.Timeout),
 		PackageType: pulumi.String("Image"),
+
 		Role:        res.Role.Arn,
 		Tags:        common.Tags(ctx, args.StackID, name),
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)
 	if err != nil {
 		return nil, err
+	}
+
+	if args.Config.ProvisionedConcurreny > 0 {
+		_, err := awslambda.NewProvisionedConcurrencyConfig(ctx, name, &awslambda.ProvisionedConcurrencyConfigArgs{
+			FunctionName:                    res.Function.Arn,
+			ProvisionedConcurrentExecutions: pulumi.Int(args.Config.ProvisionedConcurreny),
+			Qualifier:                       res.Function.Name,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// ensure that the lambda was deployed successfully

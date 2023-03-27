@@ -570,9 +570,20 @@ type ExecutionUnit struct {
 	// Expected worker count for this execution unit
 	Workers int32 `protobuf:"varint,10,opt,name=workers,proto3" json:"workers,omitempty"`
 	// Configurable timeout for request handling
+	//
+	// Deprecated: Do not use.
 	Timeout int32 `protobuf:"varint,11,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	// Configurable memory size for this instance
+	//
+	// Deprecated: Do not use.
 	Memory int32 `protobuf:"varint,12,opt,name=memory,proto3" json:"memory,omitempty"`
+	// A simple type property
+	// describes the requested type of execution unit that this should be
+	// for this project, a provider can implement how this request is satisfied
+	// in any way
+	Type string `protobuf:"bytes,13,opt,name=type,proto3" json:"type,omitempty"`
+	// Environment variables for this execution unit
+	Env map[string]string `protobuf:"bytes,14,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *ExecutionUnit) Reset() {
@@ -628,6 +639,7 @@ func (x *ExecutionUnit) GetWorkers() int32 {
 	return 0
 }
 
+// Deprecated: Do not use.
 func (x *ExecutionUnit) GetTimeout() int32 {
 	if x != nil {
 		return x.Timeout
@@ -635,11 +647,26 @@ func (x *ExecutionUnit) GetTimeout() int32 {
 	return 0
 }
 
+// Deprecated: Do not use.
 func (x *ExecutionUnit) GetMemory() int32 {
 	if x != nil {
 		return x.Memory
 	}
 	return 0
+}
+
+func (x *ExecutionUnit) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *ExecutionUnit) GetEnv() map[string]string {
+	if x != nil {
+		return x.Env
+	}
+	return nil
 }
 
 type isExecutionUnit_Source interface {
@@ -1535,16 +1562,25 @@ var file_proto_deploy_v1_deploy_proto_rawDesc = []byte{
 	0x15, 0x44, 0x65, 0x70, 0x6c, 0x6f, 0x79, 0x44, 0x6f, 0x77, 0x6e, 0x45, 0x76, 0x65, 0x6e, 0x74,
 	0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x1f, 0x0a, 0x0b, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x53,
 	0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x69, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x69, 0x22, 0x9c, 0x01, 0x0a, 0x0d, 0x45, 0x78, 0x65, 0x63,
+	0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x69, 0x22, 0xac, 0x02, 0x0a, 0x0d, 0x45, 0x78, 0x65, 0x63,
 	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x69, 0x74, 0x12, 0x35, 0x0a, 0x05, 0x69, 0x6d, 0x61,
 	0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6e, 0x69, 0x74, 0x72, 0x69,
 	0x63, 0x2e, 0x64, 0x65, 0x70, 0x6c, 0x6f, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6d, 0x61, 0x67,
 	0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x48, 0x00, 0x52, 0x05, 0x69, 0x6d, 0x61, 0x67, 0x65,
 	0x12, 0x18, 0x0a, 0x07, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x73, 0x18, 0x0a, 0x20, 0x01, 0x28,
-	0x05, 0x52, 0x07, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x74, 0x69,
-	0x6d, 0x65, 0x6f, 0x75, 0x74, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x69, 0x6d,
-	0x65, 0x6f, 0x75, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x18, 0x0c,
-	0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x42, 0x08, 0x0a, 0x06,
+	0x05, 0x52, 0x07, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x73, 0x12, 0x1c, 0x0a, 0x07, 0x74, 0x69,
+	0x6d, 0x65, 0x6f, 0x75, 0x74, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x05, 0x42, 0x02, 0x18, 0x01, 0x52,
+	0x07, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x12, 0x1a, 0x0a, 0x06, 0x6d, 0x65, 0x6d, 0x6f,
+	0x72, 0x79, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x05, 0x42, 0x02, 0x18, 0x01, 0x52, 0x06, 0x6d, 0x65,
+	0x6d, 0x6f, 0x72, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x0d, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x3a, 0x0a, 0x03, 0x65, 0x6e, 0x76, 0x18,
+	0x0e, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x6e, 0x69, 0x74, 0x72, 0x69, 0x63, 0x2e, 0x64,
+	0x65, 0x70, 0x6c, 0x6f, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x55, 0x6e, 0x69, 0x74, 0x2e, 0x45, 0x6e, 0x76, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52,
+	0x03, 0x65, 0x6e, 0x76, 0x1a, 0x36, 0x0a, 0x08, 0x45, 0x6e, 0x76, 0x45, 0x6e, 0x74, 0x72, 0x79,
+	0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b,
+	0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x42, 0x08, 0x0a, 0x06,
 	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x22, 0x08, 0x0a, 0x06, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74,
 	0x22, 0x53, 0x0a, 0x05, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x4a, 0x0a, 0x0d, 0x73, 0x75, 0x62,
 	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
@@ -1664,7 +1700,7 @@ func file_proto_deploy_v1_deploy_proto_rawDescGZIP() []byte {
 	return file_proto_deploy_v1_deploy_proto_rawDescData
 }
 
-var file_proto_deploy_v1_deploy_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_proto_deploy_v1_deploy_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_proto_deploy_v1_deploy_proto_goTypes = []interface{}{
 	(*DeployUpRequest)(nil),       // 0: nitric.deploy.v1.DeployUpRequest
 	(*DeployUpEvent)(nil),         // 1: nitric.deploy.v1.DeployUpEvent
@@ -1689,46 +1725,48 @@ var file_proto_deploy_v1_deploy_proto_goTypes = []interface{}{
 	(*Resource)(nil),              // 20: nitric.deploy.v1.Resource
 	(*Policy)(nil),                // 21: nitric.deploy.v1.Policy
 	(*Spec)(nil),                  // 22: nitric.deploy.v1.Spec
-	(*structpb.Struct)(nil),       // 23: google.protobuf.Struct
-	(v1.ResourceType)(0),          // 24: nitric.resource.v1.ResourceType
-	(v1.Action)(0),                // 25: nitric.resource.v1.Action
+	nil,                           // 23: nitric.deploy.v1.ExecutionUnit.EnvEntry
+	(*structpb.Struct)(nil),       // 24: google.protobuf.Struct
+	(v1.ResourceType)(0),          // 25: nitric.resource.v1.ResourceType
+	(v1.Action)(0),                // 26: nitric.resource.v1.Action
 }
 var file_proto_deploy_v1_deploy_proto_depIdxs = []int32{
 	22, // 0: nitric.deploy.v1.DeployUpRequest.spec:type_name -> nitric.deploy.v1.Spec
-	23, // 1: nitric.deploy.v1.DeployUpRequest.attributes:type_name -> google.protobuf.Struct
+	24, // 1: nitric.deploy.v1.DeployUpRequest.attributes:type_name -> google.protobuf.Struct
 	2,  // 2: nitric.deploy.v1.DeployUpEvent.message:type_name -> nitric.deploy.v1.DeployEventMessage
 	4,  // 3: nitric.deploy.v1.DeployUpEvent.result:type_name -> nitric.deploy.v1.DeployUpEventResult
 	3,  // 4: nitric.deploy.v1.DeployUpEventResult.result:type_name -> nitric.deploy.v1.UpResult
-	23, // 5: nitric.deploy.v1.DeployDownRequest.attributes:type_name -> google.protobuf.Struct
+	24, // 5: nitric.deploy.v1.DeployDownRequest.attributes:type_name -> google.protobuf.Struct
 	2,  // 6: nitric.deploy.v1.DeployDownEvent.message:type_name -> nitric.deploy.v1.DeployEventMessage
 	7,  // 7: nitric.deploy.v1.DeployDownEvent.result:type_name -> nitric.deploy.v1.DeployDownEventResult
 	8,  // 8: nitric.deploy.v1.ExecutionUnit.image:type_name -> nitric.deploy.v1.ImageSource
-	15, // 9: nitric.deploy.v1.Topic.subscriptions:type_name -> nitric.deploy.v1.SubscriptionTarget
-	15, // 10: nitric.deploy.v1.TopicSubscription.target:type_name -> nitric.deploy.v1.SubscriptionTarget
-	18, // 11: nitric.deploy.v1.Schedule.target:type_name -> nitric.deploy.v1.ScheduleTarget
-	24, // 12: nitric.deploy.v1.Resource.type:type_name -> nitric.resource.v1.ResourceType
-	9,  // 13: nitric.deploy.v1.Resource.execution_unit:type_name -> nitric.deploy.v1.ExecutionUnit
-	10, // 14: nitric.deploy.v1.Resource.bucket:type_name -> nitric.deploy.v1.Bucket
-	11, // 15: nitric.deploy.v1.Resource.topic:type_name -> nitric.deploy.v1.Topic
-	12, // 16: nitric.deploy.v1.Resource.queue:type_name -> nitric.deploy.v1.Queue
-	17, // 17: nitric.deploy.v1.Resource.api:type_name -> nitric.deploy.v1.Api
-	21, // 18: nitric.deploy.v1.Resource.policy:type_name -> nitric.deploy.v1.Policy
-	19, // 19: nitric.deploy.v1.Resource.schedule:type_name -> nitric.deploy.v1.Schedule
-	13, // 20: nitric.deploy.v1.Resource.collection:type_name -> nitric.deploy.v1.Collection
-	14, // 21: nitric.deploy.v1.Resource.secret:type_name -> nitric.deploy.v1.Secret
-	20, // 22: nitric.deploy.v1.Policy.principals:type_name -> nitric.deploy.v1.Resource
-	25, // 23: nitric.deploy.v1.Policy.actions:type_name -> nitric.resource.v1.Action
-	20, // 24: nitric.deploy.v1.Policy.resources:type_name -> nitric.deploy.v1.Resource
-	20, // 25: nitric.deploy.v1.Spec.resources:type_name -> nitric.deploy.v1.Resource
-	0,  // 26: nitric.deploy.v1.DeployService.Up:input_type -> nitric.deploy.v1.DeployUpRequest
-	5,  // 27: nitric.deploy.v1.DeployService.Down:input_type -> nitric.deploy.v1.DeployDownRequest
-	1,  // 28: nitric.deploy.v1.DeployService.Up:output_type -> nitric.deploy.v1.DeployUpEvent
-	6,  // 29: nitric.deploy.v1.DeployService.Down:output_type -> nitric.deploy.v1.DeployDownEvent
-	28, // [28:30] is the sub-list for method output_type
-	26, // [26:28] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	23, // 9: nitric.deploy.v1.ExecutionUnit.env:type_name -> nitric.deploy.v1.ExecutionUnit.EnvEntry
+	15, // 10: nitric.deploy.v1.Topic.subscriptions:type_name -> nitric.deploy.v1.SubscriptionTarget
+	15, // 11: nitric.deploy.v1.TopicSubscription.target:type_name -> nitric.deploy.v1.SubscriptionTarget
+	18, // 12: nitric.deploy.v1.Schedule.target:type_name -> nitric.deploy.v1.ScheduleTarget
+	25, // 13: nitric.deploy.v1.Resource.type:type_name -> nitric.resource.v1.ResourceType
+	9,  // 14: nitric.deploy.v1.Resource.execution_unit:type_name -> nitric.deploy.v1.ExecutionUnit
+	10, // 15: nitric.deploy.v1.Resource.bucket:type_name -> nitric.deploy.v1.Bucket
+	11, // 16: nitric.deploy.v1.Resource.topic:type_name -> nitric.deploy.v1.Topic
+	12, // 17: nitric.deploy.v1.Resource.queue:type_name -> nitric.deploy.v1.Queue
+	17, // 18: nitric.deploy.v1.Resource.api:type_name -> nitric.deploy.v1.Api
+	21, // 19: nitric.deploy.v1.Resource.policy:type_name -> nitric.deploy.v1.Policy
+	19, // 20: nitric.deploy.v1.Resource.schedule:type_name -> nitric.deploy.v1.Schedule
+	13, // 21: nitric.deploy.v1.Resource.collection:type_name -> nitric.deploy.v1.Collection
+	14, // 22: nitric.deploy.v1.Resource.secret:type_name -> nitric.deploy.v1.Secret
+	20, // 23: nitric.deploy.v1.Policy.principals:type_name -> nitric.deploy.v1.Resource
+	26, // 24: nitric.deploy.v1.Policy.actions:type_name -> nitric.resource.v1.Action
+	20, // 25: nitric.deploy.v1.Policy.resources:type_name -> nitric.deploy.v1.Resource
+	20, // 26: nitric.deploy.v1.Spec.resources:type_name -> nitric.deploy.v1.Resource
+	0,  // 27: nitric.deploy.v1.DeployService.Up:input_type -> nitric.deploy.v1.DeployUpRequest
+	5,  // 28: nitric.deploy.v1.DeployService.Down:input_type -> nitric.deploy.v1.DeployDownRequest
+	1,  // 29: nitric.deploy.v1.DeployService.Up:output_type -> nitric.deploy.v1.DeployUpEvent
+	6,  // 30: nitric.deploy.v1.DeployService.Down:output_type -> nitric.deploy.v1.DeployDownEvent
+	29, // [29:31] is the sub-list for method output_type
+	27, // [27:29] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_proto_deploy_v1_deploy_proto_init() }
@@ -2054,7 +2092,7 @@ func file_proto_deploy_v1_deploy_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_deploy_v1_deploy_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

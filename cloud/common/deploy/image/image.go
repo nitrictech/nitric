@@ -117,6 +117,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 		Build: docker.DockerBuildArgs{
 			Context:    pulumi.String(buildContext),
 			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
+			Platform:   pulumi.String("linux/amd64"),
 			Args: pulumi.StringMap{
 				"BASE_IMAGE":   pulumi.String(args.SourceImage),
 				"RUNTIME_FILE": pulumi.String("runtime"),
