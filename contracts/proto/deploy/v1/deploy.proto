@@ -114,6 +114,9 @@ message ExecutionUnit {
     // for this project, a provider can implement how this request is satisfied
     // in any way
     string type = 13;
+
+    // Environment variables for this execution unit
+    map<string, string> env = 14; 
 }
 
 message Bucket {

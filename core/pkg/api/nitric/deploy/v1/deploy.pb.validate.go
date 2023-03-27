@@ -1232,6 +1232,8 @@ func (m *ExecutionUnit) validate(all bool) error {
 
 	// no validation rules for Type
 
+	// no validation rules for Env
+
 	switch m.Source.(type) {
 
 	case *ExecutionUnit_Image:
