@@ -1230,6 +1230,8 @@ func (m *ExecutionUnit) validate(all bool) error {
 
 	// no validation rules for Memory
 
+	// no validation rules for Type
+
 	switch m.Source.(type) {
 
 	case *ExecutionUnit_Image:

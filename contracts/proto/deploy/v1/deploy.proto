@@ -105,9 +105,15 @@ message ExecutionUnit {
     // Expected worker count for this execution unit
     int32 workers = 10;
     // Configurable timeout for request handling
-    int32 timeout = 11;
+    int32 timeout = 11 [deprecated = true];
     // Configurable memory size for this instance
-    int32 memory = 12;
+    int32 memory = 12 [deprecated = true];
+
+    // A simple type property
+    // describes the requested type of execution unit that this should be
+    // for this project, a provider can implement how this request is satisfied
+    // in any way
+    string type = 13;
 }
 
 message Bucket {

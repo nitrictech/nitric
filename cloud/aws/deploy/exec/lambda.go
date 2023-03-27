@@ -152,18 +152,18 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 	}
 
 	// Set defaults if not already provided
-	if args.Compute.Memory == 0 {
-		args.Compute.Memory = 128
+	if args.Compute.Memory == 0 { //nolint:staticcheck
+		args.Compute.Memory = 128 //nolint:staticcheck
 	}
 
-	if args.Compute.Timeout == 0 {
-		args.Compute.Timeout = 10
+	if args.Compute.Timeout == 0 { //nolint:staticcheck
+		args.Compute.Timeout = 10 //nolint:staticcheck
 	}
 
 	res.Function, err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		ImageUri:    args.DockerImage.URI(),
-		MemorySize:  pulumi.IntPtr(int(args.Compute.Memory)),
-		Timeout:     pulumi.IntPtr(int(args.Compute.Timeout)),
+		MemorySize:  pulumi.IntPtr(int(args.Compute.Memory)),  //nolint:staticcheck
+		Timeout:     pulumi.IntPtr(int(args.Compute.Timeout)), //nolint:staticcheck
 		PackageType: pulumi.String("Image"),
 		Role:        res.Role.Arn,
 		Tags:        common.Tags(ctx, args.StackID, name),
