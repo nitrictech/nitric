@@ -52,8 +52,6 @@ type CloudRunnerArgs struct {
 	StackID pulumi.StringInput
 }
 
-var defaultConcurrency = 300
-
 func GetPerms() []string {
 	return []string{
 		"storage.buckets.list",
