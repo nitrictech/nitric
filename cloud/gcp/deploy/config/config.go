@@ -44,7 +44,7 @@ var defaultGcpConfig = &GcpConfig{
 		"default": {
 			CloudRun: GcpCloudRunConfig{
 				Memory:       512,
-				Timeout:      15,
+				Timeout:      300,
 				MinInstances: 0,
 				MaxInstances: 80,
 				Concurrency:  300,

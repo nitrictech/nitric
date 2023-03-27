@@ -132,6 +132,7 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 			Spec: cloudrun.ServiceTemplateSpecArgs{
 				ServiceAccountName:   args.ServiceAccount.Email,
 				ContainerConcurrency: pulumi.Int(args.Config.Concurrency),
+				TimeoutSeconds:       pulumi.Int(args.Config.Timeout),
 				Containers: cloudrun.ServiceTemplateSpecContainerArray{
 					cloudrun.ServiceTemplateSpecContainerArgs{
 						Envs:  env,
