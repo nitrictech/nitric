@@ -17,13 +17,8 @@
 package config
 
 import (
-	"github.com/imdario/mergo"
-	"github.com/mitchellh/mapstructure"
+	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
-
-type GcpConfig struct {
-	Config map[string]GcpConfigItem
-}
 
 type GcpConfigItem struct {
 	CloudRun  GcpCloudRunConfig
@@ -39,50 +34,22 @@ type GcpCloudRunConfig struct {
 	Concurrency  int
 }
 
-var defaultGcpConfig = &GcpConfig{
-	Config: map[string]GcpConfigItem{
-		"default": {
-			CloudRun: GcpCloudRunConfig{
-				Memory:       512,
-				Timeout:      300,
-				MinInstances: 0,
-				MaxInstances: 80,
-				Concurrency:  300,
-			},
-			Telemetry: 0,
-			Target:    "cloudrun",
-		},
+type GcpConfig = config.AbstractConfig[GcpConfigItem]
+
+var defaultGcpConfigItem = GcpConfigItem{
+	CloudRun: GcpCloudRunConfig{
+		Memory:       512,
+		Timeout:      300,
+		MinInstances: 0,
+		MaxInstances: 80,
+		Concurrency:  300,
 	},
+	Telemetry: 0,
+	Target:    "cloudrun",
 }
 
-// Return AwsConfig from stack attributes
-func ConfigFromAttributes(attributes map[string]interface{}) (GcpConfig, error) {
-	config := GcpConfig{}
-
-	err := mapstructure.Decode(attributes, &config)
-
-	// deep merge with defaults
-	if err := mergo.Merge(&config, defaultGcpConfig); err != nil {
-		return config, err
-	}
-
-	// capture default config and have other configs inherit it
-	defaultConfig := config.Config["default"]
-
-	// merge each no default key with defaults as well
-	for name, val := range config.Config {
-		if name == "default" {
-			continue
-		}
-
-		defaultVal := defaultConfig
-
-		if err := mergo.Merge(&defaultVal, &val, mergo.WithOverride); err != nil {
-			return config, err
-		}
-
-		config.Config[name] = defaultVal
-	}
-
-	return config, err
+// Return GcpConfig from stack attributes
+func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error) {
+	// Use common ConfigFromAttributes
+	return config.ConfigFromAttributes(attributes, defaultGcpConfigItem)
 }

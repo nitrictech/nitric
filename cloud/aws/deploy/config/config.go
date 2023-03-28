@@ -17,13 +17,10 @@
 package config
 
 import (
-	"github.com/imdario/mergo"
-	"github.com/mitchellh/mapstructure"
+	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
-type AwsConfig struct {
-	Config map[string]AwsConfigItem
-}
+type AwsConfig = config.AbstractConfig[AwsConfigItem]
 
 type AwsConfigItem struct {
 	Lambda    AwsLambdaConfig
@@ -37,48 +34,18 @@ type AwsLambdaConfig struct {
 	ProvisionedConcurreny int `mapstructure:"provisioned-concurrency"`
 }
 
-var defaultAwsConfig = &AwsConfig{
-	Config: map[string]AwsConfigItem{
-		"default": {
-			Lambda: AwsLambdaConfig{
-				Memory:                128,
-				Timeout:               15,
-				ProvisionedConcurreny: 0,
-			},
-			Telemetry: 0,
-			Target:    "lambda",
-		},
+var defaultAwsConfigItem = AwsConfigItem{
+	Lambda: AwsLambdaConfig{
+		Memory:                128,
+		Timeout:               15,
+		ProvisionedConcurreny: 0,
 	},
+	Telemetry: 0,
+	Target:    "lambda",
 }
 
-// Return AwsConfig from stack attributes
-func ConfigFromAttributes(attributes map[string]interface{}) (AwsConfig, error) {
-	config := AwsConfig{}
-
-	err := mapstructure.Decode(attributes, &config)
-
-	// deep merge with defaults
-	if err := mergo.Merge(&config, defaultAwsConfig); err != nil {
-		return config, err
-	}
-
-	// capture default config and have other configs inherit it
-	defaultConfig := config.Config["default"]
-
-	// merge each no default key with defaults as well
-	for name, val := range config.Config {
-		if name == "default" {
-			continue
-		}
-
-		defaultVal := defaultConfig
-
-		if err := mergo.Merge(&defaultVal, &val, mergo.WithOverride); err != nil {
-			return config, err
-		}
-
-		config.Config[name] = defaultVal
-	}
-
-	return config, err
+// Return GcpConfig from stack attributes
+func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error) {
+	// Use common ConfigFromAttributes
+	return config.ConfigFromAttributes(attributes, defaultAwsConfigItem)
 }
