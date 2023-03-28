@@ -221,7 +221,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 
 			for _, eu := range executionUnits {
-
 				repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", contEnv.Registry.LoginServer, details.Project, eu.Name, "azure")
 
 				image, err := image.NewImage(ctx, eu.Name, &image.ImageArgs{
