@@ -264,7 +264,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 					Image: args.ImageUri,
 					Resources: app.ContainerResourcesArgs{
 						Cpu:    pulumi.Float64(args.Config.Cpu),
-						Memory: pulumi.Sprintf("%sGi", args.Config.Memory),
+						Memory: pulumi.Sprintf("%.2fGi", args.Config.Memory),
 					},
 					Env: env,
 				},

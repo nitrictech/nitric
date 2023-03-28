@@ -21,7 +21,7 @@ import (
 )
 
 type AzureConfigItem struct {
-	ContainerApps AzureContainerAppsConfig
+	ContainerApps AzureContainerAppsConfig `mapstructure:"containerapps"`
 	Telemetry     int
 	Target        string
 }
@@ -37,7 +37,7 @@ type AzureConfig = config.AbstractConfig[AzureConfigItem]
 
 var defaultAzureConfigItem = AzureConfigItem{
 	ContainerApps: AzureContainerAppsConfig{
-		Cpu:         0.5,
+		Cpu:         0.25,
 		Memory:      0.5,
 		MinReplicas: 0,
 		MaxReplicas: 10,
