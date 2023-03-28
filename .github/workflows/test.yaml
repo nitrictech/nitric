@@ -25,7 +25,7 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
         restore-keys: |
           ${{ runner.os }}-golang-
     - name: Linting check

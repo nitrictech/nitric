@@ -20,32 +20,34 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
-type AwsConfig = config.AbstractConfig[AwsConfigItem]
-
-type AwsConfigItem struct {
-	Lambda    AwsLambdaConfig
-	Telemetry int
-	Target    string
+type AzureConfigItem struct {
+	ContainerApps AzureContainerAppsConfig `mapstructure:"containerapps"`
+	Telemetry     int
+	Target        string
 }
 
-type AwsLambdaConfig struct {
-	Memory                int
-	Timeout               int
-	ProvisionedConcurreny int `mapstructure:"provisioned-concurrency"`
+type AzureContainerAppsConfig struct {
+	Cpu         float64
+	Memory      float64
+	MinReplicas int `mapstructure:"min-replicas"`
+	MaxReplicas int `mapstructure:"max-replicas"`
 }
 
-var defaultAwsConfigItem = AwsConfigItem{
-	Lambda: AwsLambdaConfig{
-		Memory:                128,
-		Timeout:               15,
-		ProvisionedConcurreny: 0,
+type AzureConfig = config.AbstractConfig[AzureConfigItem]
+
+var defaultAzureConfigItem = AzureConfigItem{
+	ContainerApps: AzureContainerAppsConfig{
+		Cpu:         0.25,
+		Memory:      0.5,
+		MinReplicas: 0,
+		MaxReplicas: 10,
 	},
 	Telemetry: 0,
-	Target:    "lambda",
+	Target:    "containerapps",
 }
 
-// Return GcpConfig from stack attributes
-func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error) {
+// Return AzureConfig from stack attributes
+func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, error) {
 	// Use common ConfigFromAttributes
-	return config.ConfigFromAttributes(attributes, defaultAwsConfigItem)
+	return config.ConfigFromAttributes(attributes, defaultAzureConfigItem)
 }
