@@ -27,6 +27,7 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
+	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -43,11 +44,11 @@ type ContainerAppArgs struct {
 	RegistryPass                  pulumi.StringPtrInput
 	ManagedEnv                    *app.ManagedEnvironment
 	ImageUri                      pulumi.StringInput
-	Env                           app.EnvironmentVarArray
 	ExecutionUnit                 *deploy.ExecutionUnit
 	ManagedIdentityID             pulumi.StringOutput
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
+	Config                        config.AzureContainerAppsConfig
 }
 
 type ContainerApp struct {
@@ -207,8 +208,13 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		},
 	}
 
-	// memory := common.IntValueOrDefault(args.Compute.Unit().Memory, 128)
-	// we can't define memory without defining the cpu..
+	for k, v := range args.ExecutionUnit.Env {
+		env = append(env, app.EnvironmentVarArgs{
+			Name:  pulumi.String(k),
+			Value: pulumi.String(v),
+		})
+	}
+
 	appName := utils.ResourceName(ctx, name, utils.ContainerAppRT)
 
 	res.App, err = app.NewContainerApp(ctx, appName, &app.ContainerAppArgs{
@@ -248,11 +254,19 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		},
 		Tags: common.Tags(ctx, args.StackID, name),
 		Template: app.TemplateArgs{
+			Scale: app.ScaleArgs{
+				MaxReplicas: pulumi.Int(args.Config.MaxReplicas),
+				MinReplicas: pulumi.Int(args.Config.MinReplicas),
+			},
 			Containers: app.ContainerArray{
 				app.ContainerArgs{
 					Name:  pulumi.String("myapp"),
 					Image: args.ImageUri,
-					Env:   append(env, args.Env...),
+					Resources: app.ContainerResourcesArgs{
+						Cpu:    pulumi.Float64(args.Config.Cpu),
+						Memory: pulumi.Sprintf("%sGi", args.Config.Memory),
+					},
+					Env: env,
 				},
 			},
 		},
