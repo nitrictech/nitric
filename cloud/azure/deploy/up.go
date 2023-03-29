@@ -17,6 +17,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
@@ -59,7 +60,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) error {
+	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+			}
+		}()
+
 		// Calculate unique stackID
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),

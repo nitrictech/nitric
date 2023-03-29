@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -52,7 +53,14 @@ import (
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
+func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stack := string(debug.Stack())
+			err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+		}
+	}()
+
 	details, err := commonDeploy.CommonStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
