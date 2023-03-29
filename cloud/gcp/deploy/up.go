@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -63,7 +64,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
 
-	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) error {
+	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+			}
+		}()
+
 		project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
 			ProjectId: &details.ProjectId,
 		}, nil)
