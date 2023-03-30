@@ -49,19 +49,19 @@ type Image struct {
 //go:embed wrapper.dockerfile
 var imageWrapper string
 
-func wrapDockerImage(wrapper string, sourceImage string) (string, error) {
+func wrapDockerImage(wrapper string, sourceImage string) (string, string, error) {
 	if sourceImage == "" {
-		return "", fmt.Errorf("blank sourceImage provided")
+		return "", "", fmt.Errorf("blank sourceImage provided")
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	ii, _, err := cli.ImageInspectWithRaw(context.Background(), sourceImage)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
+		return "", "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
 	}
 
 	// Get the original command of the source image
@@ -74,7 +74,7 @@ func wrapDockerImage(wrapper string, sourceImage string) (string, error) {
 		cmdStr = append(cmdStr, "\""+c+"\"")
 	}
 
-	return fmt.Sprintf(wrapper, strings.Join(cmdStr, ",")), nil
+	return fmt.Sprintf(wrapper, strings.Join(cmdStr, ",")), ii.ID, nil
 }
 
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
@@ -86,7 +86,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	}
 
 	// TODO: Need to re-add support for telemetry wrappers as well
-	dockerfileContent, err := wrapDockerImage(imageWrapper, args.SourceImage)
+	dockerfileContent, sourceImageID, err := wrapDockerImage(imageWrapper, args.SourceImage)
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +119,13 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
 			Platform:   pulumi.String("linux/amd64"),
 			Args: pulumi.StringMap{
-				"BASE_IMAGE":   pulumi.String(args.SourceImage),
-				"RUNTIME_FILE": pulumi.String("runtime"),
+				"BASE_IMAGE":    pulumi.String(args.SourceImage),
+				"RUNTIME_FILE":  pulumi.String("runtime"),
+				"BASE_IMAGE_ID": pulumi.String(sourceImageID),
 			},
 		},
-	}, append(opts, pulumi.Parent(res))...)
+		SkipPush: pulumi.Bool(false),
+	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}
