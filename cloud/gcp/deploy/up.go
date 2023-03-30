@@ -439,13 +439,13 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 		}
 
 		if accessToken == nil {
-			return nil, fmt.Errorf("Unable to impersonate service account.")
+			return nil, fmt.Errorf("unable to impersonate service account")
 		}
 
-		token = &oauth2.Token{AccessToken: token.AccessToken}
+		token = &oauth2.Token{AccessToken: accessToken.AccessToken}
 	}
 
-	if token == nil { // for unit testing
+	if token == nil {
 		creds, err := google.FindDefaultCredentialsWithParams(ctx.Context(), google.CredentialsParams{
 			Scopes: []string{
 				"https://www.googleapis.com/auth/cloud-platform",
