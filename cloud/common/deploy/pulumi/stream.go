@@ -11,6 +11,11 @@ type UpStreamMessageWriter struct {
 func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
 
+	if str == "." {
+		// skip progress dots
+		return len(bytes), nil
+	}
+
 	err := s.Stream.Send(&deploy.DeployUpEvent{
 		Content: &deploy.DeployUpEvent_Message{
 			Message: &deploy.DeployEventMessage{
@@ -31,6 +36,11 @@ type DownStreamMessageWriter struct {
 
 func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
+
+	if str == "." {
+		// skip progress dots
+		return len(bytes), nil
+	}
 
 	err := s.Stream.Send(&deploy.DeployDownEvent{
 		Content: &deploy.DeployDownEvent_Message{
