@@ -42,11 +42,10 @@ type Policy struct {
 }
 
 type StackResources struct {
-	Topics        map[string]*events.PubSubTopic
-	Queues        map[string]*queue.PubSubTopic
-	Subscriptions map[string]*pubsub.Subscription
-	Buckets       map[string]*bucket.CloudStorageBucket
-	Secrets       map[string]*secret.SecretManagerSecret
+	Topics  map[string]*events.PubSubTopic
+	Queues  map[string]*queue.PubSubTopic
+	Buckets map[string]*bucket.CloudStorageBucket
+	Secrets map[string]*secret.SecretManagerSecret
 }
 
 type PrincipalMap = map[v1.ResourceType]map[string]*serviceaccount.Account
@@ -248,7 +247,6 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 
 			case v1.ResourceType_Queue:
 				q := args.Resources.Queues[resource.Name]
-				s := args.Resources.Subscriptions[resource.Name] // the subscription and topic have the same name
 
 				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
 					Topic:  q.PubSub.Name,
@@ -275,7 +273,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 					}
 
 					_, err = pubsub.NewSubscriptionIAMMember(ctx, memberName, &pubsub.SubscriptionIAMMemberArgs{
-						Subscription: s.Name,
+						Subscription: q.Subscription.Name,
 						Member:       memberId,
 						Role:         subRolePolicy.Name,
 					}, pulumi.Parent(res))

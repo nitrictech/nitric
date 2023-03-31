@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -27,6 +28,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/collection"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
@@ -51,10 +53,22 @@ import (
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
+func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stack := string(debug.Stack())
+			err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+		}
+	}()
+
 	details, err := commonDeploy.CommonStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %+v", request.Attributes.AsMap())
 	}
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -188,15 +202,29 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
+				if eu.ExecutionUnit.Type == "" {
+					eu.ExecutionUnit.Type = "default"
+				}
+				typeConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
+				if !hasConfig {
+					return fmt.Errorf("could not find config for type %s in %+v", eu.ExecutionUnit.Type, config.Config)
+				}
+
 				// Create execution unit
-				execs[res.Name], err = exec.NewLambdaExecutionUnit(ctx, res.Name, &exec.LambdaExecUnitArgs{
-					DockerImage: image,
-					StackID:     stackID,
-					Compute:     eu.ExecutionUnit,
-					EnvMap:      map[string]string{},
-					Client:      lambdaClient,
-				})
-				execPrincipals[res.Name] = execs[res.Name].Role
+				switch typeConfig.Target {
+				case "lambda":
+					execs[res.Name], err = exec.NewLambdaExecutionUnit(ctx, res.Name, &exec.LambdaExecUnitArgs{
+						DockerImage: image,
+						StackID:     stackID,
+						Compute:     eu.ExecutionUnit,
+						EnvMap:      eu.ExecutionUnit.Env,
+						Client:      lambdaClient,
+						Config:      typeConfig.Lambda,
+					})
+					execPrincipals[res.Name] = execs[res.Name].Role
+				default:
+					return fmt.Errorf("unsupported target %s for execution unit %s", typeConfig.Target, res.Name)
+				}
 
 				if err != nil {
 					return err

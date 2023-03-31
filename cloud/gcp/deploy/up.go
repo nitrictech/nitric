@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -27,6 +28,7 @@ import (
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
@@ -41,7 +43,6 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
@@ -61,7 +62,16 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) error {
+	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
+
+	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+			}
+		}()
+
 		project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
 			ProjectId: &details.ProjectId,
 		}, nil)
@@ -218,20 +228,35 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
-					Location:        pulumi.String(details.Region),
-					ProjectId:       details.ProjectId,
-					Topics:          map[string]*pubsub.Topic{},
-					Compute:         res.GetExecutionUnit(),
-					Image:           image,
-					EnvMap:          map[string]string{},
-					DelayQueue:      topicDelayQueue,
-					ServiceAccount:  sa,
-					BaseComputeRole: baseComputeRole,
-					StackID:         stackID,
-				}, defaultResourceOptions)
-				if err != nil {
-					return err
+				if eu.ExecutionUnit.Type == "" {
+					eu.ExecutionUnit.Type = "default"
+				}
+
+				// get config for execution unit
+				unitConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
+				if !hasConfig {
+					return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", eu.ExecutionUnit.Type, config.Config)
+				}
+
+				switch unitConfig.Target {
+				case "cloudrun":
+					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
+						Location:        pulumi.String(details.Region),
+						ProjectId:       details.ProjectId,
+						Compute:         res.GetExecutionUnit(),
+						Image:           image,
+						EnvMap:          eu.ExecutionUnit.Env,
+						DelayQueue:      topicDelayQueue,
+						ServiceAccount:  sa,
+						BaseComputeRole: baseComputeRole,
+						StackID:         stackID,
+						Config:          unitConfig.CloudRun,
+					}, defaultResourceOptions)
+					if err != nil {
+						return err
+					}
+				default:
+					return status.Errorf(codes.InvalidArgument, "unsupported target %s in stack config %+v", unitConfig.Target, unitConfig)
 				}
 
 				principalMap[v1.ResourceType_Function][res.Name] = sa
@@ -414,13 +439,13 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 		}
 
 		if accessToken == nil {
-			return nil, fmt.Errorf("Unable to impersonate service account.")
+			return nil, fmt.Errorf("unable to impersonate service account")
 		}
 
-		token = &oauth2.Token{AccessToken: token.AccessToken}
+		token = &oauth2.Token{AccessToken: accessToken.AccessToken}
 	}
 
-	if token == nil { // for unit testing
+	if token == nil {
 		creds, err := google.FindDefaultCredentialsWithParams(ctx.Context(), google.CredentialsParams{
 			Scopes: []string{
 				"https://www.googleapis.com/auth/cloud-platform",

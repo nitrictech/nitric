@@ -17,6 +17,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
@@ -36,6 +37,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/api"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/collection"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
@@ -53,7 +55,19 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) error {
+	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
+			}
+		}()
+
 		// Calculate unique stackID
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
@@ -236,23 +250,37 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					mongoConnectionString = mongoCollections.ConnectionString
 				}
 
-				apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
-					ResourceGroupName:             rg.Name,
-					Location:                      pulumi.String(details.Region),
-					SubscriptionID:                pulumi.String(clientConfig.SubscriptionId),
-					Registry:                      contEnv.Registry,
-					RegistryUser:                  contEnv.RegistryUser,
-					RegistryPass:                  contEnv.RegistryPass,
-					ManagedEnv:                    contEnv.ManagedEnv,
-					ImageUri:                      image.URI(),
-					Env:                           contEnv.Env,
-					ExecutionUnit:                 eu.GetExecutionUnit(),
-					ManagedIdentityID:             contEnv.ManagedUser.ClientId,
-					MongoDatabaseName:             mongodbName,
-					MongoDatabaseConnectionString: mongoConnectionString,
-				}, pulumi.Parent(contEnv))
-				if err != nil {
-					return err
+				if eu.GetExecutionUnit().Type == "" {
+					eu.GetExecutionUnit().Type = "default"
+				}
+
+				euConfig, hasConfig := config.Config[eu.GetExecutionUnit().Type]
+				if !hasConfig {
+					return status.Errorf(codes.InvalidArgument, "Could not find type %s in config %+v", eu.GetExecutionUnit().Type, config)
+				}
+
+				switch euConfig.Target {
+				case "containerapps":
+					apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
+						ResourceGroupName:             rg.Name,
+						Location:                      pulumi.String(details.Region),
+						SubscriptionID:                pulumi.String(clientConfig.SubscriptionId),
+						Registry:                      contEnv.Registry,
+						RegistryUser:                  contEnv.RegistryUser,
+						RegistryPass:                  contEnv.RegistryPass,
+						ManagedEnv:                    contEnv.ManagedEnv,
+						ImageUri:                      image.URI(),
+						ExecutionUnit:                 eu.GetExecutionUnit(),
+						ManagedIdentityID:             contEnv.ManagedUser.ClientId,
+						MongoDatabaseName:             mongodbName,
+						MongoDatabaseConnectionString: mongoConnectionString,
+						Config:                        euConfig.ContainerApps,
+					}, pulumi.Parent(contEnv))
+					if err != nil {
+						return err
+					}
+				default:
+					return status.Errorf(codes.InvalidArgument, "Invalid target %s for execution unit %s", euConfig.Target, eu.Name)
 				}
 			}
 		}

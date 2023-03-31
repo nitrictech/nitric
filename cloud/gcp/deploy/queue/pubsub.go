@@ -26,8 +26,9 @@ import (
 type PubSubTopic struct {
 	pulumi.ResourceState
 
-	Name   string
-	PubSub *pubsub.Topic
+	Name         string
+	PubSub       *pubsub.Topic
+	Subscription *pubsub.Subscription
 }
 
 type PubSubTopicArgs struct {
@@ -55,7 +56,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
-	_, err = pubsub.NewSubscription(ctx, name+"-sub", &pubsub.SubscriptionArgs{
+	res.Subscription, err = pubsub.NewSubscription(ctx, name+"-sub", &pubsub.SubscriptionArgs{
 		Name:   pulumi.Sprintf("%s-nitricqueue", name),
 		Topic:  res.PubSub.Name,
 		Labels: common.Tags(ctx, args.StackID, name+"-sub"),

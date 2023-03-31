@@ -20,12 +20,12 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -44,15 +44,13 @@ type CloudRunnerArgs struct {
 	Compute         *v1.ExecutionUnit
 	Image           *image.Image
 	EnvMap          map[string]string
-	Topics          map[string]*pubsub.Topic
 	DelayQueue      *cloudtasks.Queue
 	BaseComputeRole *projects.IAMCustomRole
 	ServiceAccount  *serviceaccount.Account
+	Config          config.GcpCloudRunConfig
 
 	StackID pulumi.StringInput
 }
-
-var defaultConcurrency = 300
 
 func GetPerms() []string {
 	return []string{
@@ -120,10 +118,6 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 		})
 	}
 
-	// Deploy the func
-	maxScale := 10
-	minScale := 0
-
 	res.Service, err = cloudrun.NewService(ctx, name, &cloudrun.ServiceArgs{
 		AutogenerateRevisionName: pulumi.BoolPtr(true),
 		Location:                 args.Location,
@@ -131,13 +125,14 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 		Template: cloudrun.ServiceTemplateArgs{
 			Metadata: cloudrun.ServiceTemplateMetadataArgs{
 				Annotations: pulumi.StringMap{
-					"autoscaling.knative.dev/minScale": pulumi.Sprintf("%d", minScale),
-					"autoscaling.knative.dev/maxScale": pulumi.Sprintf("%d", maxScale),
+					"autoscaling.knative.dev/minScale": pulumi.Sprintf("%d", args.Config.MinInstances),
+					"autoscaling.knative.dev/maxScale": pulumi.Sprintf("%d", args.Config.MaxInstances),
 				},
 			},
 			Spec: cloudrun.ServiceTemplateSpecArgs{
 				ServiceAccountName:   args.ServiceAccount.Email,
-				ContainerConcurrency: pulumi.Int(defaultConcurrency),
+				ContainerConcurrency: pulumi.Int(args.Config.Concurrency),
+				TimeoutSeconds:       pulumi.Int(args.Config.Timeout),
 				Containers: cloudrun.ServiceTemplateSpecContainerArray{
 					cloudrun.ServiceTemplateSpecContainerArgs{
 						Envs:  env,
@@ -148,7 +143,9 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 							},
 						},
 						Resources: cloudrun.ServiceTemplateSpecContainerResourcesArgs{
-							// Limits: pulumi.StringMap{"memory": pulumi.Sprintf("%dMi", args.Compute.Unit().Memory)},
+							Limits: pulumi.StringMap{
+								"memory": pulumi.Sprintf("%dMi", args.Config.Memory),
+							},
 						},
 					},
 				},
