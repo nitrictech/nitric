@@ -56,7 +56,7 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Println(reqJson)
 
 	return nil

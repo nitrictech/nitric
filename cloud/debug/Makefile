@@ -24,11 +24,3 @@ fmt:
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
-
-test: generate-mocks
-	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo ./runtime/...
-
-test-coverage: generate-mocks
-	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
