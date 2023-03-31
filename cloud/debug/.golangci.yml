@@ -1,0 +1,33 @@
+run:
+  timeout: "5m"
+  skip-files:
+  - tools/tools.go
+  go: 1.18
+
+linters:
+  disable-all: true
+  enable:
+  - goimports
+  - gofmt
+  - govet
+  - gofumpt
+  - whitespace
+  - staticcheck
+  - ineffassign
+  - unused
+  - misspell
+  - unconvert
+  - errcheck
+  - errorlint
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters-settings:
+  govet:
+    check-shadowing: false
+    disable:
+      # lambda gateway requires struct tag shadowing
+      # for deserializing typed lambda events
+      - structtag
