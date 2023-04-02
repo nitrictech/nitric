@@ -31,7 +31,6 @@ func CommonStackDetailsFromAttributes(attributes map[string]interface{}) (*Commo
 		// need a valid stack name
 		return nil, fmt.Errorf("region is not set or invalid")
 	}
-
 	// Backwards compatible stack name
 	// The existing providers in the CLI
 	// Use the combined project and stack name

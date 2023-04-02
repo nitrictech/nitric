@@ -26,6 +26,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
+	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
@@ -167,34 +168,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return errors.WithMessage(err, "base customRole id")
 		}
 
-		// Telemetry permissions
-		// for _, fc := range g.sc.Config {
-		// 	if fc.Telemetry != nil && *fc.Telemetry > 0 {
-		// 		perms = append(perms, []string{
-		// 			"monitoring.metricDescriptors.create",
-		// 			"monitoring.metricDescriptors.get",
-		// 			"monitoring.metricDescriptors.list",
-		// 			"monitoring.monitoredResourceDescriptors.get",
-		// 			"monitoring.monitoredResourceDescriptors.list",
-		// 			"monitoring.timeSeries.create",
-		// 		}...)
-
-		// 		break
-		// 	}
-		// }
-
 		principalMap := make(policy.PrincipalMap)
 		principalMap[v1.ResourceType_Function] = make(map[string]*serviceaccount.Account)
 
 		// setup a basic IAM role for general access and resource discovery
-		baseComputeRole, err := projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
-			Title:       pulumi.String(details.FullStackName + "-functions-base-role"),
-			Permissions: pulumi.ToStringArray(exec.GetPerms()),
-			RoleId:      baseCustomRoleId.ID(),
-		}, defaultResourceOptions)
-		if err != nil {
-			return errors.WithMessage(err, "base customRole")
-		}
+		var baseComputeRole *projects.IAMCustomRole
 
 		for _, res := range request.Spec.Resources {
 			switch eu := res.Config.(type) {
@@ -205,6 +183,28 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				if eu.ExecutionUnit.GetImage().GetUri() == "" {
 					return fmt.Errorf("gcp provider can only deploy execution with an image source")
+				}
+
+				if eu.ExecutionUnit.Type == "" {
+					eu.ExecutionUnit.Type = "default"
+				}
+
+				// get config for execution unit
+				unitConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
+				if !hasConfig {
+					return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", eu.ExecutionUnit.Type, config.Config)
+				}
+
+				// Set here because we need access to the config
+				if baseComputeRole == nil {
+					baseComputeRole, err = projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
+						Title:       pulumi.String(details.FullStackName + "-functions-base-role"),
+						Permissions: pulumi.ToStringArray(exec.GetPerms(unitConfig.Telemetry)),
+						RoleId:      baseCustomRoleId.ID(),
+					}, defaultResourceOptions)
+					if err != nil {
+						return errors.WithMessage(err, "base customRole")
+					}
 				}
 
 				// Get the image name:tag from the uri
@@ -218,6 +218,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Password:      pulumi.String(authToken.AccessToken),
 					Server:        pulumi.String("https://gcr.io"),
 					Runtime:       runtime,
+					Telemetry: &telemetry.TelemetryConfigArgs{
+						TraceSampling:       unitConfig.Telemetry,
+						TraceName:           "googlecloud",
+						MetricName:          "googlecloud",
+						TraceExporterConfig: `{"retry_on_failure": {"enabled": false}}`,
+						Extensions:          []string{},
+					},
 				}, defaultResourceOptions)
 				if err != nil {
 					return err
@@ -390,6 +397,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	err = pulumiStack.SetConfig(context.TODO(), "gcp:region", auto.ConfigValue{Value: details.Region})
 	if err != nil {

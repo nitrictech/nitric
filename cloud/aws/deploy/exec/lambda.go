@@ -95,14 +95,13 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		return nil, err
 	}
 
-	telemeteryActions := []string{
+	telemetryActions := []string{
 		"xray:PutTraceSegments",
 		"xray:PutTelemetryRecords",
 		"xray:GetSamplingRules",
 		"xray:GetSamplingTargets",
 		"xray:GetSamplingStatisticSummaries",
 		"ssm:GetParameters",
-		//		"logs:CreateLogGroup",
 		"logs:CreateLogStream",
 		"logs:PutLogEvents",
 	}
@@ -122,7 +121,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		"Version": "2012-10-17",
 		"Statement": []map[string]interface{}{
 			{
-				"Action":   append(listActions, telemeteryActions...),
+				"Action":   append(listActions, telemetryActions...),
 				"Effect":   "Allow",
 				"Resource": "*",
 			},
@@ -198,33 +197,6 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 		return true, nil
 	})
-
-	// Deploy subscription separately
-	// for _, t := range args.Compute.Unit().Triggers.Topics {
-	// 	topic, ok := args.Topics[t]
-	// 	if ok {
-	// 		_, err = awslambda.NewPermission(ctx, name+t+"Permission", &awslambda.PermissionArgs{
-	// 			SourceArn: topic.Sns.Arn,
-	// 			Function:  res.Function.Name,
-	// 			Principal: pulumi.String("sns.amazonaws.com"),
-	// 			Action:    pulumi.String("lambda:InvokeFunction"),
-	// 		}, opts...)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-
-	// 		_, err = sns.NewTopicSubscription(ctx, name+t+"Subscription", &sns.TopicSubscriptionArgs{
-	// 			Endpoint: res.Function.Arn,
-	// 			Protocol: pulumi.String("lambda"),
-	// 			Topic:    topic.Sns.ID(),
-	// 		}, opts...)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 	} else {
-	// 		fmt.Printf("WARNING: Function %s has a Trigger %s, but the topic is missing", name, t)
-	// 	}
-	// }
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":    pulumi.String(res.Name),
