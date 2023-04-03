@@ -17,19 +17,10 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
-
-type RawConfig = config.AbstractConfig[*RawConfigItem]
-
-type RawConfigItem struct {
-	Extras    map[string]any `mapstructure:",remain"`
-	Telemetry int
-}
 
 type GcpConfigItem struct {
 	CloudRun  *GcpCloudRunConfig `mapstructure:",omitempty"`
@@ -60,20 +51,9 @@ var defaultGcpConfigItem = GcpConfigItem{
 
 // Return GcpConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error) {
-	rawConfig := RawConfig{}
-	err := mapstructure.Decode(attributes, &rawConfig)
+	err := config.ValidateRawConfigKeys(attributes, []string{"cloudrun"})
 	if err != nil {
 		return nil, err
-	}
-
-	for configName, configVal := range rawConfig.Config {
-		if configVal == nil {
-			return nil, fmt.Errorf("configuration key %s should not be empty", configName)
-		}
-
-		if len(configVal.Extras) > 1 {
-			return nil, fmt.Errorf("config items should not contain more than one runtime config")
-		}
 	}
 
 	gcpConfig := &GcpConfig{}

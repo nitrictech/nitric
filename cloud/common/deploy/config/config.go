@@ -17,14 +17,50 @@
 package config
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
+	"github.com/samber/lo"
 )
+
+type RawConfig = AbstractConfig[*RawConfigItem]
+type RawConfigItem struct {
+	Extras    map[string]any `mapstructure:",remain"`
+	Telemetry int
+}
 
 type AbstractItem = any
 
 type AbstractConfig[T AbstractItem] struct {
 	Config map[string]T
+}
+
+func ValidateRawConfigKeys(attributes map[string]interface{}, knownKeys []string) error {
+	rawConfig := RawConfig{}
+	err := mapstructure.Decode(attributes, &rawConfig)
+	if err != nil {
+		return err
+	}
+
+	for configName, configVal := range rawConfig.Config {
+		if configVal == nil {
+			return fmt.Errorf("configuration key %s should not be empty", configName)
+		}
+
+		if len(configVal.Extras) > 1 {
+			return fmt.Errorf("config items should not contain more than one runtime config")
+		}
+
+		extraKeys := lo.Keys(configVal.Extras)
+
+		if len(lo.Intersect(knownKeys, extraKeys)) != 1 {
+			return fmt.Errorf("target runtime config must only be one of the following keys: %s. got: %s", strings.Join(knownKeys, ", "), strings.Join(extraKeys, ", "))
+		}
+	}
+
+	return nil
 }
 
 // ConfigFromAttributes - Merges given attributes into a useable config, all types are updated with the provided default config item

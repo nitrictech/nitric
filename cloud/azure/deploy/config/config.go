@@ -17,19 +17,10 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
-
-type RawConfig = config.AbstractConfig[*RawConfigItem]
-
-type RawConfigItem struct {
-	Extras    map[string]any `mapstructure:",remain"`
-	Telemetry int
-}
 
 type AzureConfigItem struct {
 	ContainerApps *AzureContainerAppsConfig `mapstructure:"containerapps,omitempty"`
@@ -58,39 +49,28 @@ var defaultAzureConfigItem = AzureConfigItem{
 
 // Return GcpConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, error) {
-	rawConfig := RawConfig{}
-	err := mapstructure.Decode(attributes, &rawConfig)
+	err := config.ValidateRawConfigKeys(attributes, []string{"containerapps"})
 	if err != nil {
 		return nil, err
 	}
 
-	for configName, configVal := range rawConfig.Config {
-		if configVal == nil {
-			return nil, fmt.Errorf("configuration key %s should not be empty", configName)
-		}
-
-		if len(configVal.Extras) > 1 {
-			return nil, fmt.Errorf("config items should not contain more than one runtime config")
-		}
-	}
-
-	gcpConfig := &AzureConfig{}
-	err = mapstructure.Decode(attributes, gcpConfig)
+	azureConfig := &AzureConfig{}
+	err = mapstructure.Decode(attributes, azureConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	if gcpConfig.Config == nil {
-		gcpConfig.Config = map[string]*AzureConfigItem{}
+	if azureConfig.Config == nil {
+		azureConfig.Config = map[string]*AzureConfigItem{}
 	}
 
 	// if no default then set provider level defaults
-	if _, hasDefault := gcpConfig.Config["default"]; !hasDefault {
-		gcpConfig.Config["default"] = &defaultAzureConfigItem
-		gcpConfig.Config["default"].ContainerApps = defaultContainerAppsConfig
+	if _, hasDefault := azureConfig.Config["default"]; !hasDefault {
+		azureConfig.Config["default"] = &defaultAzureConfigItem
+		azureConfig.Config["default"].ContainerApps = defaultContainerAppsConfig
 	}
 
-	for configName, configVal := range gcpConfig.Config {
+	for configName, configVal := range azureConfig.Config {
 		// Add omitted values from default configs where needed.
 		err := mergo.Merge(configVal, defaultAzureConfigItem)
 		if err != nil {
@@ -106,8 +86,8 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, erro
 			}
 		}
 
-		gcpConfig.Config[configName] = configVal
+		azureConfig.Config[configName] = configVal
 	}
 
-	return gcpConfig, nil
+	return azureConfig, nil
 }
