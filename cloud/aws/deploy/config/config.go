@@ -17,15 +17,24 @@
 package config
 
 import (
+	"fmt"
+
+	"github.com/imdario/mergo"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
-type AwsConfig = config.AbstractConfig[AwsConfigItem]
+type AwsConfig = config.AbstractConfig[*AwsConfigItem]
+type RawConfig = config.AbstractConfig[*RawConfigItem]
+
+type RawConfigItem struct {
+	Extras    map[string]any `mapstructure:",remain"`
+	Telemetry int
+}
 
 type AwsConfigItem struct {
-	Lambda    AwsLambdaConfig
+	Lambda    *AwsLambdaConfig `mapstructure:",omitempty"`
 	Telemetry int
-	Target    string
 }
 
 type AwsLambdaConfig struct {
@@ -34,18 +43,68 @@ type AwsLambdaConfig struct {
 	ProvisionedConcurreny int `mapstructure:"provisioned-concurrency"`
 }
 
-var defaultAwsConfigItem = AwsConfigItem{
-	Lambda: AwsLambdaConfig{
-		Memory:                128,
-		Timeout:               15,
-		ProvisionedConcurreny: 0,
-	},
-	Telemetry: 0,
-	Target:    "lambda",
+var defaultLambdaConfig = &AwsLambdaConfig{
+	Memory:                128,
+	Timeout:               15,
+	ProvisionedConcurreny: 0,
 }
 
-// Return GcpConfig from stack attributes
+var defaultAwsConfigItem = AwsConfigItem{
+	Telemetry: 0,
+}
+
+// Return AwsConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error) {
-	// Use common ConfigFromAttributes
-	return config.ConfigFromAttributes(attributes, defaultAwsConfigItem)
+	rawConfig := RawConfig{}
+	err := mapstructure.Decode(attributes, &rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	for configName, configVal := range rawConfig.Config {
+		if configVal == nil {
+			return nil, fmt.Errorf("configuration key %s should not be empty", configName)
+		}
+
+		if len(configVal.Extras) > 1 {
+			return nil, fmt.Errorf("config items should not contain more than one runtime config")
+		}
+	}
+
+	awsConfig := &AwsConfig{}
+	err = mapstructure.Decode(attributes, awsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if awsConfig.Config == nil {
+		awsConfig.Config = map[string]*AwsConfigItem{}
+	}
+
+	// if no default then set provider level defaults
+	if _, hasDefault := awsConfig.Config["default"]; !hasDefault {
+		awsConfig.Config["default"] = &defaultAwsConfigItem
+		awsConfig.Config["default"].Lambda = defaultLambdaConfig
+	}
+
+	for configName, configVal := range awsConfig.Config {
+		// Add omitted values from default configs where needed.
+		err := mergo.Merge(configVal, defaultAwsConfigItem)
+		if err != nil {
+			return nil, err
+		}
+
+		if configVal.Lambda == nil { // check if no runtime config provided, default to Lambda.
+			configVal.Lambda = defaultLambdaConfig
+		} else {
+			err := mergo.Merge(configVal.Lambda, defaultLambdaConfig)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		awsConfig.Config[configName] = configVal
+	}
+
+	return awsConfig, nil
 }
