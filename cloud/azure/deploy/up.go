@@ -276,7 +276,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Config:                        *euConfig.ContainerApps,
 					}, pulumi.Parent(contEnv))
 				} else {
-					return status.Errorf(codes.InvalidArgument, "Invalid target for execution unit %s", eu.Name)
+					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
 				}
 			}
 		}
