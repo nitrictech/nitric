@@ -320,8 +320,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-
-				var invokerAccount *serviceaccount.Account				
+				var invokerAccount *serviceaccount.Account
 				for _, sub := range t.Topic.Subscriptions {
 					if invokerAccount == nil {
 						invokerAccount, err = serviceaccount.NewAccount(ctx, "subscription-invokeracct", &serviceaccount.AccountArgs{
@@ -340,8 +339,8 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					}
 
 					_, err = events.NewPubSubPushSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
-						Topic:    topics[res.Name],
-						Function: unit,
+						Topic:          topics[res.Name],
+						Function:       unit,
 						InvokerAccount: invokerAccount,
 					}, defaultResourceOptions)
 					if err != nil {
