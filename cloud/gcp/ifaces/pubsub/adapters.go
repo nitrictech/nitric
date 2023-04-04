@@ -89,12 +89,30 @@ func (t topic) ID() string {
 	return t.Topic.ID()
 }
 
+func (t topic) Labels(ctx context.Context) (map[string]string, error) {
+	config, err := t.Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return config.Labels, nil
+}
+
 func (s subscription) ID() string {
 	return s.Subscription.ID()
 }
 
 func (s subscription) String() string {
 	return s.Subscription.String()
+}
+
+func (s subscription) Labels(ctx context.Context) (map[string]string, error) {
+	config, err := s.Subscription.Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return config.Labels, nil
 }
 
 func (m message) ID() string {

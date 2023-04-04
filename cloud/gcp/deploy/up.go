@@ -320,18 +320,29 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				for _, sub := range t.Topic.Subscriptions {
-					subName := fmt.Sprintf("%s-%s-sub", sub.GetExecutionUnit(), res.Name)
 
+				var invokerAccount *serviceaccount.Account				
+				for _, sub := range t.Topic.Subscriptions {
+					if invokerAccount == nil {
+						invokerAccount, err = serviceaccount.NewAccount(ctx, "subscription-invokeracct", &serviceaccount.AccountArgs{
+							AccountId: pulumi.String("subscription-invokeracct"),
+						})
+						if err != nil {
+							return fmt.Errorf("error creating subscription account")
+						}
+					}
+
+					subName := events.GetSubName(sub.GetExecutionUnit(), res.Name)
 					// Get the deployed execution unit
 					unit, ok := execs[sub.GetExecutionUnit()]
 					if !ok {
 						return fmt.Errorf("invalid execution unit %s given for topic subscription", sub.GetExecutionUnit())
 					}
 
-					_, err = events.NewPubSubSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
-						Topic:    res.Name,
+					_, err = events.NewPubSubPushSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
+						Topic:    topics[res.Name],
 						Function: unit,
+						InvokerAccount: invokerAccount,
 					}, defaultResourceOptions)
 					if err != nil {
 						return err

@@ -23,11 +23,8 @@ import (
 )
 
 type PubsubClient interface {
-	// CreateTopic(ctx context.Context, topicID string) (Topic, error)
 	Topic(id string) Topic
 	Topics(ctx context.Context) TopicIterator
-	// CreateSubscription(ctx context.Context, id string, cfg SubscriptionConfig) (Subscription, error)
-	// Subscription(id string) Subscription
 }
 
 type TopicIterator interface {
@@ -40,6 +37,7 @@ type Topic interface {
 	Exists(ctx context.Context) (bool, error)
 	Subscriptions(ctx context.Context) SubscriptionIterator
 	ID() string
+	Labels(ctx context.Context) (map[string]string, error)
 }
 
 type SubscriptionIterator interface {
@@ -49,6 +47,7 @@ type SubscriptionIterator interface {
 type Subscription interface {
 	ID() string
 	String() string
+	Labels(ctx context.Context) (map[string]string, error)
 }
 
 type Message interface {

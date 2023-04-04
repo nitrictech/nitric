@@ -17,7 +17,8 @@
 package events
 
 import (
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	"fmt"
+
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -54,7 +55,6 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 	}
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Name:   pulumi.String(name),
 		Labels: common.Tags(ctx, args.StackID, name),
 	})
 	if err != nil {
@@ -73,11 +73,16 @@ type PubSubSubscription struct {
 }
 
 type PubSubSubscriptionArgs struct {
-	Function *exec.CloudRunner
-	Topic    string
+	Function       *exec.CloudRunner
+	Topic          *PubSubTopic
+	InvokerAccount *serviceaccount.Account
 }
 
-func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscriptionArgs, opts ...pulumi.ResourceOption) (*PubSubSubscription, error) {
+func GetSubName(executionName string, topicName string) string {
+	return fmt.Sprintf("%s-%s-sub", executionName, topicName)
+}
+
+func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSubscriptionArgs, opts ...pulumi.ResourceOption) (*PubSubSubscription, error) {
 	res := &PubSubSubscription{
 		Name: name,
 	}
@@ -87,30 +92,18 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 		return nil, err
 	}
 
-	// Create an account for invoking this func via subscriptions
-	// TODO: Do we want to make this one account for subscription in future
-	// TODO: We will likely configure this via eventarc in the future
-	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"subacct", &serviceaccount.AccountArgs{
-		// accountId accepts a max of 30 chars, limit our generated name to this length
-		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
-	}, append(opts, pulumi.Parent(res))...)
-	if err != nil {
-		return nil, errors.WithMessage(err, "invokerAccount "+name)
-	}
-
-	// Apply permissions for the above account to the newly deployed cloud run service
 	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
-		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
+		Member:   pulumi.Sprintf("serviceAccount:%s", args.InvokerAccount.Email),
 		Role:     pulumi.String("roles/run.invoker"),
 		Service:  args.Function.Service.Name,
 		Location: args.Function.Service.Location,
 	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
-		return nil, errors.WithMessage(err, "iam member "+name)
+		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
 	}
 
 	s, err := pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
-		Topic:              pulumi.String(args.Topic),
+		Topic:              args.Topic.PubSub.Name, // The GCP topic name
 		AckDeadlineSeconds: pulumi.Int(300),
 		RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
 			MinimumBackoff: pulumi.String("15s"),
@@ -118,9 +111,9 @@ func NewPubSubSubscription(ctx *pulumi.Context, name string, args *PubSubSubscri
 		},
 		PushConfig: pubsub.SubscriptionPushConfigArgs{
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: invokerAccount.Email,
+				ServiceAccountEmail: args.InvokerAccount.Email,
 			},
-			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic),
+			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic.Name),
 		},
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),

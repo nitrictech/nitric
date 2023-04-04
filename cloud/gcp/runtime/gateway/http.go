@@ -58,6 +58,9 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 			// We have an event from pubsub here...
 			topicName := ctx.UserValue("name").(string)
+			if topicName == "" {
+				ctx.Error("Can not handle event for empty topic", 400)
+			}
 
 			event := &v1.TriggerRequest{
 				Data: pubsubEvent.Message.Data,
@@ -99,6 +102,9 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		scheduleName := ctx.UserValue("name").(string)
+		if scheduleName == "" {
+			ctx.Error("Can not handle event for empty schedule", 400)
+		}
 
 		evt := &v1.TriggerRequest{
 			// Send empty data for now (no reason to send data for schedules at the moment)

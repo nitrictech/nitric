@@ -17,6 +17,8 @@
 package queue
 
 import (
+	"fmt"
+
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
@@ -34,8 +36,7 @@ type PubSubTopic struct {
 type PubSubTopicArgs struct {
 	Location string
 	StackID  pulumi.StringInput
-
-	Queue *v1.Queue
+	Queue    *v1.Queue
 }
 
 func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opts ...pulumi.ResourceOption) (*PubSubTopic, error) {
@@ -49,17 +50,18 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 	}
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Name:   pulumi.String(name),
 		Labels: common.Tags(ctx, args.StackID, name),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	res.Subscription, err = pubsub.NewSubscription(ctx, name+"-sub", &pubsub.SubscriptionArgs{
-		Name:   pulumi.Sprintf("%s-nitricqueue", name),
+	res.Subscription, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
 		Topic:  res.PubSub.Name,
-		Labels: common.Tags(ctx, args.StackID, name+"-sub"),
+		Labels: common.Tags(ctx, args.StackID, name),
+		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
+			Ttl: pulumi.String(""),
+		},
 	})
 	if err != nil {
 		return nil, err
