@@ -275,6 +275,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						MongoDatabaseConnectionString: mongoConnectionString,
 						Config:                        *euConfig.ContainerApps,
 					}, pulumi.Parent(contEnv))
+					if err != nil {
+						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", eu.Name)
+					}
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
 				}
