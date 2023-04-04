@@ -47,7 +47,7 @@ var defaultAzureConfigItem = AzureConfigItem{
 	Telemetry: 0,
 }
 
-// Return GcpConfig from stack attributes
+// Return AzureConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, error) {
 	err := config.ValidateRawConfigKeys(attributes, []string{"containerapps"})
 	if err != nil {
