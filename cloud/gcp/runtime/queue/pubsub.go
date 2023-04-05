@@ -64,7 +64,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 			}
 
 			if name, ok := labels["x-nitric-name"]; ok {
-				s.cache[name] = s.client.Topic(t.ID())
+				s.cache[name] = t
 			}
 		}
 	}
