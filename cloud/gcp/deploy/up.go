@@ -63,6 +63,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) (err error) {
 		defer func() {
@@ -238,8 +241,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", eu.ExecutionUnit.Type, config.Config)
 				}
 
-				switch unitConfig.Target {
-				case "cloudrun":
+				if unitConfig.CloudRun != nil {
 					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
 						Location:        pulumi.String(details.Region),
 						ProjectId:       details.ProjectId,
@@ -250,13 +252,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						ServiceAccount:  sa,
 						BaseComputeRole: baseComputeRole,
 						StackID:         stackID,
-						Config:          unitConfig.CloudRun,
+						Config:          *unitConfig.CloudRun,
 					}, defaultResourceOptions)
 					if err != nil {
 						return err
 					}
-				default:
-					return status.Errorf(codes.InvalidArgument, "unsupported target %s in stack config %+v", unitConfig.Target, unitConfig)
+				} else {
+					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %+v", unitConfig)
 				}
 
 				principalMap[v1.ResourceType_Function][res.Name] = sa

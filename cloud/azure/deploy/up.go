@@ -259,8 +259,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return status.Errorf(codes.InvalidArgument, "Could not find type %s in config %+v", eu.GetExecutionUnit().Type, config)
 				}
 
-				switch euConfig.Target {
-				case "containerapps":
+				if euConfig.ContainerApps != nil {
 					apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
 						ResourceGroupName:             rg.Name,
 						Location:                      pulumi.String(details.Region),
@@ -274,13 +273,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						ManagedIdentityID:             contEnv.ManagedUser.ClientId,
 						MongoDatabaseName:             mongodbName,
 						MongoDatabaseConnectionString: mongoConnectionString,
-						Config:                        euConfig.ContainerApps,
+						Config:                        *euConfig.ContainerApps,
 					}, pulumi.Parent(contEnv))
 					if err != nil {
-						return err
+						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", eu.Name)
 					}
-				default:
-					return status.Errorf(codes.InvalidArgument, "Invalid target %s for execution unit %s", euConfig.Target, eu.Name)
+				} else {
+					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
 				}
 			}
 		}
