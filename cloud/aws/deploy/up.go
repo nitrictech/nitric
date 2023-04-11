@@ -216,14 +216,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				if eu.ExecutionUnit.Type == "" {
-					eu.ExecutionUnit.Type = "default"
-				}
-				typeConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
-				if !hasConfig {
-					return fmt.Errorf("could not find config for type %s in %+v", eu.ExecutionUnit.Type, config.Config)
-				}
-
 				if typeConfig.Lambda != nil {
 					execs[res.Name], err = exec.NewLambdaExecutionUnit(ctx, res.Name, &exec.LambdaExecUnitArgs{
 						DockerImage: image,

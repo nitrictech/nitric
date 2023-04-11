@@ -242,12 +242,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					eu.ExecutionUnit.Type = "default"
 				}
 
-				// get config for execution unit
-				unitConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
-				if !hasConfig {
-					return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", eu.ExecutionUnit.Type, config.Config)
-				}
-
 				if unitConfig.CloudRun != nil {
 					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
 						Location:        pulumi.String(details.Region),
