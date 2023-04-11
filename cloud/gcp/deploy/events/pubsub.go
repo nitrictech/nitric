@@ -19,6 +19,7 @@ package events
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -73,9 +74,8 @@ type PubSubSubscription struct {
 }
 
 type PubSubSubscriptionArgs struct {
-	Function       *exec.CloudRunner
-	Topic          *PubSubTopic
-	InvokerAccount *serviceaccount.Account
+	Function *exec.CloudRunner
+	Topic    *PubSubTopic
 }
 
 func GetSubName(executionName string, topicName string) string {
@@ -92,14 +92,21 @@ func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSub
 		return nil, err
 	}
 
+	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"-subacct", &serviceaccount.AccountArgs{
+		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "invokerAccount "+name)
+	}
+
 	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
-		Member:   pulumi.Sprintf("serviceAccount:%s", args.InvokerAccount.Email),
+		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
 		Role:     pulumi.String("roles/run.invoker"),
 		Service:  args.Function.Service.Name,
 		Location: args.Function.Service.Location,
 	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
-		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
+		return nil, errors.WithMessage(err, "iam member "+name)
 	}
 
 	s, err := pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
@@ -111,7 +118,7 @@ func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSub
 		},
 		PushConfig: pubsub.SubscriptionPushConfigArgs{
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: args.InvokerAccount.Email,
+				ServiceAccountEmail: invokerAccount.Email,
 			},
 			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic.Name),
 		},

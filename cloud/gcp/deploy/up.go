@@ -320,18 +320,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				var invokerAccount *serviceaccount.Account
 				for _, sub := range t.Topic.Subscriptions {
-					if invokerAccount == nil {
-						invokerAccount, err = serviceaccount.NewAccount(ctx, "subscription-invokeracct", &serviceaccount.AccountArgs{
-							AccountId: pulumi.String("subscription-invokeracct"),
-						})
-						if err != nil {
-							return fmt.Errorf("error creating subscription account")
-						}
-					}
-
 					subName := events.GetSubName(sub.GetExecutionUnit(), res.Name)
+
 					// Get the deployed execution unit
 					unit, ok := execs[sub.GetExecutionUnit()]
 					if !ok {
@@ -339,9 +330,8 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					}
 
 					_, err = events.NewPubSubPushSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
-						Topic:          topics[res.Name],
-						Function:       unit,
-						InvokerAccount: invokerAccount,
+						Topic:    topics[res.Name],
+						Function: unit,
 					}, defaultResourceOptions)
 					if err != nil {
 						return err
