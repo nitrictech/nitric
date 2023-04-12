@@ -28,7 +28,6 @@ import (
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
@@ -37,6 +36,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
@@ -106,22 +106,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
-
-		// Deploy all buckets
-		buckets := map[string]*bucket.CloudStorageBucket{}
-		for _, res := range request.Spec.Resources {
-			switch b := res.Config.(type) {
-			case *deploy.Resource_Bucket:
-				buckets[res.Name], err = bucket.NewCloudStorageBucket(ctx, res.Name, &bucket.CloudStorageBucketArgs{
-					StackID:  stackID,
-					Bucket:   b.Bucket,
-					Location: details.Region,
-				}, defaultResourceOptions)
-				if err != nil {
-					return err
-				}
-			}
-		}
 
 		// Deploy all queues
 		queues := map[string]*queue.PubSubTopic{}
@@ -263,6 +247,41 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				principalMap[v1.ResourceType_Function][res.Name] = sa
+			}
+		}
+
+		// Deploy all buckets
+		buckets := map[string]*storage.CloudStorageBucket{}
+		for _, res := range request.Spec.Resources {
+			switch b := res.Config.(type) {
+			case *deploy.Resource_Bucket:
+				buckets[res.Name], err = storage.NewCloudStorageBucket(ctx, res.Name, &storage.CloudStorageBucketArgs{
+					StackID:  stackID,
+					Bucket:   b.Bucket,
+					Location: details.Region,
+				}, defaultResourceOptions)
+				if err != nil {
+					return err
+				}
+
+				for _, notification := range b.Bucket.Notifications {
+					// Get the deployed execution unit
+					unit, ok := execs[notification.GetExecutionUnit()]
+					if !ok {
+						return fmt.Errorf("invalid execution unit %s given for topic subscription", notification.GetExecutionUnit())
+					}
+					
+					_, err = storage.NewCloudStorageNotification(ctx, res.Name+"-notification", &storage.CloudStorageNotificationArgs{
+						StackID:  stackID,
+						Location: details.Region,
+						Bucket: buckets[res.Name],
+						Config: notification.Config,
+						Function: unit,
+					}, defaultResourceOptions)
+					if err != nil {
+						return err
+					}					
+				}
 			}
 		}
 

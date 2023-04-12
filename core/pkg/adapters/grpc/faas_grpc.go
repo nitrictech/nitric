@@ -67,6 +67,10 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 		wrkr = worker.NewScheduleWorker(adapter, &worker.ScheduleWorkerOptions{
 			Key: schedule.Key,
 		})
+	} else if notification := ir.GetBucketNotification(); notification != nil {
+		wrkr = worker.NewBucketNotificationWorker(adapter, &worker.BucketNotificationWorkerOptions{
+			Bucket: notification.Bucket,
+		})
 	} else {
 		// XXX: Catch all worker type
 		wrkr = worker.NewFaasWorker(adapter)

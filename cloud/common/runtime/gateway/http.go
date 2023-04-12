@@ -41,6 +41,7 @@ type RouteRegister func(*router.Router, pool.WorkerPool)
 const (
 	DefaultTopicRoute    = "/x-nitric-topic/{name}"
 	DefaultScheduleRoute = "/x-nitric-schedule/{name}"
+	DefaultBucketNotificationRoute = "/x-nitric-notification/bucket/{name}"
 )
 
 type BaseHttpGatewayOptions struct {

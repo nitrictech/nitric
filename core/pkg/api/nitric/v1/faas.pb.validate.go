@@ -1225,6 +1225,245 @@ var _ interface {
 	ErrorName() string
 } = ScheduleCronValidationError{}
 
+// Validate checks the field values on BucketNotificationWorker with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *BucketNotificationWorker) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on BucketNotificationWorker with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// BucketNotificationWorkerMultiError, or nil if none found.
+func (m *BucketNotificationWorker) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *BucketNotificationWorker) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Bucket
+
+	if all {
+		switch v := interface{}(m.GetConfig()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, BucketNotificationWorkerValidationError{
+					field:  "Config",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, BucketNotificationWorkerValidationError{
+					field:  "Config",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetConfig()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return BucketNotificationWorkerValidationError{
+				field:  "Config",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return BucketNotificationWorkerMultiError(errors)
+	}
+
+	return nil
+}
+
+// BucketNotificationWorkerMultiError is an error wrapping multiple validation
+// errors returned by BucketNotificationWorker.ValidateAll() if the designated
+// constraints aren't met.
+type BucketNotificationWorkerMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m BucketNotificationWorkerMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m BucketNotificationWorkerMultiError) AllErrors() []error { return m }
+
+// BucketNotificationWorkerValidationError is the validation error returned by
+// BucketNotificationWorker.Validate if the designated constraints aren't met.
+type BucketNotificationWorkerValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e BucketNotificationWorkerValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e BucketNotificationWorkerValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e BucketNotificationWorkerValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e BucketNotificationWorkerValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e BucketNotificationWorkerValidationError) ErrorName() string {
+	return "BucketNotificationWorkerValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e BucketNotificationWorkerValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sBucketNotificationWorker.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = BucketNotificationWorkerValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = BucketNotificationWorkerValidationError{}
+
+// Validate checks the field values on BucketNotificationConfig with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *BucketNotificationConfig) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on BucketNotificationConfig with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// BucketNotificationConfigMultiError, or nil if none found.
+func (m *BucketNotificationConfig) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *BucketNotificationConfig) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for EventType
+
+	// no validation rules for EventFilter
+
+	if len(errors) > 0 {
+		return BucketNotificationConfigMultiError(errors)
+	}
+
+	return nil
+}
+
+// BucketNotificationConfigMultiError is an error wrapping multiple validation
+// errors returned by BucketNotificationConfig.ValidateAll() if the designated
+// constraints aren't met.
+type BucketNotificationConfigMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m BucketNotificationConfigMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m BucketNotificationConfigMultiError) AllErrors() []error { return m }
+
+// BucketNotificationConfigValidationError is the validation error returned by
+// BucketNotificationConfig.Validate if the designated constraints aren't met.
+type BucketNotificationConfigValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e BucketNotificationConfigValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e BucketNotificationConfigValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e BucketNotificationConfigValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e BucketNotificationConfigValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e BucketNotificationConfigValidationError) ErrorName() string {
+	return "BucketNotificationConfigValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e BucketNotificationConfigValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sBucketNotificationConfig.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = BucketNotificationConfigValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = BucketNotificationConfigValidationError{}
+
 // Validate checks the field values on InitRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1336,6 +1575,37 @@ func (m *InitRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return InitRequestValidationError{
 					field:  "Schedule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *InitRequest_BucketNotification:
+
+		if all {
+			switch v := interface{}(m.GetBucketNotification()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "BucketNotification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "BucketNotification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetBucketNotification()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return InitRequestValidationError{
+					field:  "BucketNotification",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1734,6 +2004,37 @@ func (m *TriggerRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return TriggerRequestValidationError{
 					field:  "Topic",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TriggerRequest_Notification:
+
+		if all {
+			switch v := interface{}(m.GetNotification()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "Notification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "Notification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetNotification()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerRequestValidationError{
+					field:  "Notification",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2326,6 +2627,112 @@ var _ interface {
 	ErrorName() string
 } = TopicTriggerContextValidationError{}
 
+// Validate checks the field values on NotificationTriggerContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *NotificationTriggerContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on NotificationTriggerContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// NotificationTriggerContextMultiError, or nil if none found.
+func (m *NotificationTriggerContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *NotificationTriggerContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Type
+
+	// no validation rules for Resource
+
+	if len(errors) > 0 {
+		return NotificationTriggerContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// NotificationTriggerContextMultiError is an error wrapping multiple
+// validation errors returned by NotificationTriggerContext.ValidateAll() if
+// the designated constraints aren't met.
+type NotificationTriggerContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m NotificationTriggerContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m NotificationTriggerContextMultiError) AllErrors() []error { return m }
+
+// NotificationTriggerContextValidationError is the validation error returned
+// by NotificationTriggerContext.Validate if the designated constraints aren't met.
+type NotificationTriggerContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e NotificationTriggerContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e NotificationTriggerContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e NotificationTriggerContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e NotificationTriggerContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e NotificationTriggerContextValidationError) ErrorName() string {
+	return "NotificationTriggerContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e NotificationTriggerContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sNotificationTriggerContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = NotificationTriggerContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = NotificationTriggerContextValidationError{}
+
 // Validate checks the field values on TriggerResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -2408,6 +2815,37 @@ func (m *TriggerResponse) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return TriggerResponseValidationError{
 					field:  "Topic",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TriggerResponse_Notification:
+
+		if all {
+			switch v := interface{}(m.GetNotification()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "Notification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "Notification",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetNotification()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerResponseValidationError{
+					field:  "Notification",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2749,3 +3187,108 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = TopicResponseContextValidationError{}
+
+// Validate checks the field values on NotificationResponseContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *NotificationResponseContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on NotificationResponseContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// NotificationResponseContextMultiError, or nil if none found.
+func (m *NotificationResponseContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *NotificationResponseContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return NotificationResponseContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// NotificationResponseContextMultiError is an error wrapping multiple
+// validation errors returned by NotificationResponseContext.ValidateAll() if
+// the designated constraints aren't met.
+type NotificationResponseContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m NotificationResponseContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m NotificationResponseContextMultiError) AllErrors() []error { return m }
+
+// NotificationResponseContextValidationError is the validation error returned
+// by NotificationResponseContext.Validate if the designated constraints
+// aren't met.
+type NotificationResponseContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e NotificationResponseContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e NotificationResponseContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e NotificationResponseContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e NotificationResponseContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e NotificationResponseContextValidationError) ErrorName() string {
+	return "NotificationResponseContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e NotificationResponseContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sNotificationResponseContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = NotificationResponseContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = NotificationResponseContextValidationError{}

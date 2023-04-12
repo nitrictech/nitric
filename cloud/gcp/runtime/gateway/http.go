@@ -139,9 +139,46 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 	}
 }
 
+func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		bucketName := ctx.UserValue("name").(string)
+
+		evt := &v1.TriggerRequest{
+			Context: &v1.TriggerRequest_Notification{
+				Notification: &v1.NotificationTriggerContext{
+					Type:     v1.NotificationType_Bucket,
+					Resource: bucketName,
+				},
+			},
+		}
+
+		worker, err := process.GetWorker(&pool.GetWorkerOptions{
+			Trigger: evt,
+			Filter: func(w worker.Worker) bool {
+				_, isNotification := w.(*worker.BucketNotificationWorker)
+				return isNotification
+			},
+		})
+		if err != nil {
+			log.Default().Println("could not get worker for bucket notification: ", bucketName)
+		}
+
+		var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
+		traceCtx := propagator.CloudTraceFormatPropagator{}.Extract(context.TODO(), hc)
+
+		_, err = worker.HandleTrigger(traceCtx, evt)
+		if err != nil {
+			log.Default().Println("could not handle event: ", evt)
+		}
+
+		ctx.SuccessString("text/plain", "success")
+	}
+}
+
 func (g *gcpMiddleware) router(r *router.Router, pool pool.WorkerPool) {
 	r.ANY(base_http.DefaultTopicRoute, g.handleSubscription(pool))
 	r.ANY(base_http.DefaultScheduleRoute, g.handleSchedule(pool))
+	r.ANY(base_http.DefaultBucketNotificationRoute, g.handleBucketNotification(pool))
 }
 
 // New - Create a New cloudrun gateway plugin

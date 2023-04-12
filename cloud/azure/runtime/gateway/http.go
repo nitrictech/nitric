@@ -169,9 +169,45 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 	}
 }
 
+func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		bucketName := ctx.UserValue("name").(string)
+
+		evt := &v1.TriggerRequest{
+			// Send empty data for now (no reason to send data for schedules at the moment)
+			Data: nil,
+			Context: &v1.TriggerRequest_Notification{
+				Notification: &v1.NotificationTriggerContext{
+					Type: v1.NotificationType_Bucket,
+					Resource: bucketName,
+				},
+			},
+		}
+
+		wrkr, err := process.GetWorker(&pool.GetWorkerOptions{
+			Trigger: evt,
+			Filter: func(w worker.Worker) bool {
+				_, isNotification := w.(*worker.BucketNotificationWorker)
+				return isNotification
+			},
+		})
+		if err != nil {
+			log.Default().Println("could not get worker for bucket notification: ", bucketName)
+		}
+
+		_, err = wrkr.HandleTrigger(context.TODO(), evt)
+		if err != nil {
+			log.Default().Println("could not handle event: ", evt)
+		}
+
+		ctx.SuccessString("text/plain", "success")
+	}
+}
+
 func (a *azMiddleware) router(r *router.Router, pool pool.WorkerPool) {
 	r.ANY(base_http.DefaultTopicRoute, a.handleSubscription(pool))
 	r.ANY(base_http.DefaultScheduleRoute, a.handleSchedule(pool))
+	r.ANY(base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(pool))
 }
 
 // Create a new HTTP Gateway plugin
