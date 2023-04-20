@@ -18,7 +18,9 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/samber/lo v1.38.1 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
+	golang.org/x/exp v0.0.0-20221114191408-850992195362 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
 

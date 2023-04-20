@@ -65,7 +65,9 @@ func GetPerms() []string {
 		"iam.serviceAccounts.signBlob",
 		// Basic list permissions
 		"pubsub.topics.list",
+		"pubsub.topics.get",
 		"pubsub.snapshots.list",
+		"pubsub.subscriptions.get",
 		"resourcemanager.projects.get",
 		"secretmanager.secrets.list",
 		"apigateway.gateways.list",

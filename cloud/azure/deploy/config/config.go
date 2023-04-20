@@ -17,13 +17,14 @@
 package config
 
 import (
+	"github.com/imdario/mergo"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
 type AzureConfigItem struct {
-	ContainerApps AzureContainerAppsConfig `mapstructure:"containerapps"`
+	ContainerApps *AzureContainerAppsConfig `mapstructure:"containerapps,omitempty"`
 	Telemetry     int
-	Target        string
 }
 
 type AzureContainerAppsConfig struct {
@@ -33,21 +34,60 @@ type AzureContainerAppsConfig struct {
 	MaxReplicas int `mapstructure:"max-replicas"`
 }
 
-type AzureConfig = config.AbstractConfig[AzureConfigItem]
+type AzureConfig = config.AbstractConfig[*AzureConfigItem]
+
+var defaultContainerAppsConfig = &AzureContainerAppsConfig{
+	Cpu:         0.25,
+	Memory:      0.5,
+	MinReplicas: 0,
+	MaxReplicas: 10,
+}
 
 var defaultAzureConfigItem = AzureConfigItem{
-	ContainerApps: AzureContainerAppsConfig{
-		Cpu:         0.25,
-		Memory:      0.5,
-		MinReplicas: 0,
-		MaxReplicas: 10,
-	},
 	Telemetry: 0,
-	Target:    "containerapps",
 }
 
 // Return AzureConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, error) {
-	// Use common ConfigFromAttributes
-	return config.ConfigFromAttributes(attributes, defaultAzureConfigItem)
+	err := config.ValidateRawConfigKeys(attributes, []string{"containerapps"})
+	if err != nil {
+		return nil, err
+	}
+
+	azureConfig := &AzureConfig{}
+	err = mapstructure.Decode(attributes, azureConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if azureConfig.Config == nil {
+		azureConfig.Config = map[string]*AzureConfigItem{}
+	}
+
+	// if no default then set provider level defaults
+	if _, hasDefault := azureConfig.Config["default"]; !hasDefault {
+		azureConfig.Config["default"] = &defaultAzureConfigItem
+		azureConfig.Config["default"].ContainerApps = defaultContainerAppsConfig
+	}
+
+	for configName, configVal := range azureConfig.Config {
+		// Add omitted values from default configs where needed.
+		err := mergo.Merge(configVal, defaultAzureConfigItem)
+		if err != nil {
+			return nil, err
+		}
+
+		if configVal.ContainerApps == nil { // check if no runtime config provided, default to Lambda.
+			configVal.ContainerApps = defaultContainerAppsConfig
+		} else {
+			err := mergo.Merge(configVal.ContainerApps, defaultContainerAppsConfig)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		azureConfig.Config[configName] = configVal
+	}
+
+	return azureConfig, nil
 }

@@ -39,12 +39,81 @@ type PubsubQueueService struct {
 	client              ifaces_pubsub.PubsubClient
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)
 	projectId           string
+	cache               map[string]ifaces_pubsub.Topic
 }
 
-// TODO: clearly document the reason for this subscription.
-// Get the default Nitric Queue Subscription name for a given queue name.
-func generateQueueSubscription(queue string) string {
-	return fmt.Sprintf("%s-nitricqueue", queue)
+// Retrieves the Nitric "Queue Topic" for the specified queue (PubSub Topic).
+//
+// This retrieves the default Nitric Queue for the Topic based on tagging conventions.
+func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub.Topic, error) {
+	if s.cache == nil {
+		topics := s.client.Topics(context.Background())
+		s.cache = make(map[string]ifaces_pubsub.Topic)
+		for {
+			t, err := topics.Next()
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("an error occurred finding queue: %s; %w", queue, err)
+			}
+
+			labels, err := t.Labels(context.TODO())
+			if err != nil {
+				return nil, fmt.Errorf("an error occurred finding queue labels: %s; %w", queue, err)
+			}
+
+			if name, ok := labels["x-nitric-name"]; ok {
+				s.cache[name] = t
+			}
+		}
+	}
+
+	if t, ok := s.cache[queue]; ok {
+		return t, nil
+	}
+
+	return nil, fmt.Errorf("queue not found")
+}
+
+// Retrieves the Nitric "Queue Subscription" for the specified queue (PubSub Topic).
+//
+// GCP PubSub requires a Subscription in order to Pull messages from a Topic.
+// we use this behavior to emulate a queue.
+//
+// This retrieves the default Nitric Pull subscription for the Topic base on convention.
+func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue string) (ifaces_pubsub.Subscription, error) {
+	// We'll be using pubsub with pull subscribers to facilitate queue functionality
+	topic, err := s.getPubsubTopicFromName(queue)
+	if err != nil {
+		return nil, err
+	}
+
+	subsIt := topic.Subscriptions(ctx)
+
+	for {
+		sub, err := subsIt.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve pull subscription for topic: %s\n%w", topic.ID(), err)
+		}
+
+		labels, err := sub.Labels(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve pull subscription labels for topic: %s\n%w", topic.ID(), err)
+		}
+
+		// The subscription's 'x-nitric-name' is its topic name
+		if name, ok := labels["x-nitric-name"]; ok {
+			if name == queue {
+				return sub, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
 func (s *PubsubQueueService) Send(ctx context.Context, queue string, task queue.NitricTask) error {
@@ -55,10 +124,10 @@ func (s *PubsubQueueService) Send(ctx context.Context, queue string, task queue.
 			"task":  task,
 		},
 	)
-	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic := s.client.Topic(queue)
 
-	if exists, err := topic.Exists(ctx); !exists || err != nil {
+	// We'll be using pubsub with pull subscribers to facilitate queue functionality
+	topic, err := s.getPubsubTopicFromName(queue)
+	if err != nil {
 		return newErr(
 			codes.NotFound,
 			"queue not found",
@@ -106,9 +175,8 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	)
 
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic := s.client.Topic(q)
-
-	if exists, err := topic.Exists(ctx); !exists || err != nil {
+	topic, err := s.getPubsubTopicFromName(q)
+	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
 			"queue not found",
@@ -157,33 +225,6 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	return &queue.SendBatchResponse{
 		FailedTasks: failedTasks,
 	}, nil
-}
-
-// Retrieves the Nitric "Queue Subscription" for the specified queue (PubSub Topic).
-//
-// GCP PubSub requires a Subscription in order to Pull messages from a Topic.
-// we use this behavior to emulate a queue.
-//
-// This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, q string) (ifaces_pubsub.Subscription, error) {
-	topic := s.client.Topic(q)
-	subsIt := topic.Subscriptions(ctx)
-
-	for {
-		sub, err := subsIt.Next()
-		if errors.Is(err, iterator.Done) {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve pull subscription for topic: %s\n%w", topic.ID(), err)
-		}
-		queueSubName := generateQueueSubscription(q)
-		if sub.ID() == queueSubName {
-			return sub, nil
-		}
-	}
-
-	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
 // Receives a collection of tasks off a given queue.
@@ -269,17 +310,17 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 }
 
 // Completes a previously popped queue item
-func (s *PubsubQueueService) Complete(ctx context.Context, q string, leaseId string) error {
+func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId string) error {
 	newErr := errors.ErrorsWithScope(
 		"PubsubQueueService.Complete",
 		map[string]interface{}{
-			"queue":   q,
+			"queue":   queue,
 			"leaseId": leaseId,
 		},
 	)
 
 	// Find the generic pull subscription for the provided topic (queue)
-	queueSubscription, err := s.getQueueSubscription(ctx, q)
+	queueSubscription, err := s.getQueueSubscription(ctx, queue)
 	if err != nil {
 		return newErr(
 			codes.NotFound,

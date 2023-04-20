@@ -43,6 +43,38 @@ type PubsubEventService struct {
 	core.GcpProvider
 	client      ifaces_pubsub.PubsubClient
 	tasksClient ifaces_cloudtasks.CloudtasksClient
+	cache       map[string]ifaces_pubsub.Topic
+}
+
+func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub.Topic, error) {
+	if s.cache == nil {
+		topics := s.client.Topics(context.Background())
+		s.cache = make(map[string]ifaces_pubsub.Topic)
+		for {
+			t, err := topics.Next()
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("an error occurred finding topic: %s; %w", topic, err)
+			}
+
+			labels, err := t.Labels(context.TODO())
+			if err != nil {
+				return nil, fmt.Errorf("an error occurred finding topic labels: %s; %w", topic, err)
+			}
+
+			if name, ok := labels["x-nitric-name"]; ok {
+				s.cache[name] = t
+			}
+		}
+	}
+
+	if topic, ok := s.cache[topic]; ok {
+		return topic, nil
+	}
+
+	return nil, fmt.Errorf("topic not found")
 }
 
 func (s *PubsubEventService) ListTopics(ctx context.Context) ([]string, error) {
@@ -76,9 +108,12 @@ type httpPubsubMessages struct {
 
 func (s *PubsubEventService) publish(ctx context.Context, topic string, pubsubMsg *pubsub.Message) error {
 	msg := ifaces_pubsub.AdaptPubsubMessage(pubsubMsg)
-	pubsubTopic := s.client.Topic(topic)
+	pubsubTopic, err := s.getPubsubTopicFromName(topic)
+	if err != nil {
+		return err
+	}
 
-	_, err := pubsubTopic.Publish(ctx, msg).Get(ctx)
+	_, err = pubsubTopic.Publish(ctx, msg).Get(ctx)
 	return err
 }
 
@@ -105,6 +140,11 @@ func (s *PubsubEventService) publishDelayed(ctx context.Context, topic string, d
 		return err
 	}
 
+	pubsubTopic, err := s.getPubsubTopicFromName(topic)
+	if err != nil {
+		return err
+	}
+
 	// Delay the message publishing
 	_, err = s.tasksClient.CreateTask(ctx, &tasks.CreateTaskRequest{
 		Parent: utils.GetEnv("DELAY_QUEUE_NAME", ""),
@@ -117,9 +157,8 @@ func (s *PubsubEventService) publishDelayed(ctx context.Context, topic string, d
 						},
 					},
 					HttpMethod: tasks.HttpMethod_POST,
-					Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics/%s:publish", projectId, topic),
-					// TODO: Add message body with attributes
-					Body: jsonBody,
+					Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics/%s:publish", projectId, pubsubTopic.String()),
+					Body:       jsonBody,
 				},
 			},
 			// schedule for the future

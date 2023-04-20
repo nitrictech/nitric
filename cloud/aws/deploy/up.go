@@ -68,7 +68,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %+v", request.Attributes.AsMap())
+		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -210,20 +210,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return fmt.Errorf("could not find config for type %s in %+v", eu.ExecutionUnit.Type, config.Config)
 				}
 
-				// Create execution unit
-				switch typeConfig.Target {
-				case "lambda":
+				if typeConfig.Lambda != nil {
 					execs[res.Name], err = exec.NewLambdaExecutionUnit(ctx, res.Name, &exec.LambdaExecUnitArgs{
 						DockerImage: image,
 						StackID:     stackID,
 						Compute:     eu.ExecutionUnit,
 						EnvMap:      eu.ExecutionUnit.Env,
 						Client:      lambdaClient,
-						Config:      typeConfig.Lambda,
+						Config:      *typeConfig.Lambda,
 					})
 					execPrincipals[res.Name] = execs[res.Name].Role
-				default:
-					return fmt.Errorf("unsupported target %s for execution unit %s", typeConfig.Target, res.Name)
+				} else {
+					return fmt.Errorf("no target execution unit specified for %s", res.Name)
 				}
 
 				if err != nil {

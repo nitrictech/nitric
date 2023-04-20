@@ -84,16 +84,23 @@ var _ = Describe("Pubsub Plugin", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
 			mockTopic := mock_pubsub.NewMockTopic(ctrl)
+			mockIterator := mock_pubsub.NewMockTopicIterator(ctrl)
 			mockPublishResult := mock_pubsub.NewMockPublishResult(ctrl)
 			pubsubPlugin, _ := pubsub_service.NewWithClient(nil, pubsubClient, nil)
 
 			It("should successfully publish the message", func() {
 				By("the publish being successful")
 				mockPublishResult.EXPECT().Get(gomock.Any()).Return("mock-server", nil)
-				mockTopic.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(mockPublishResult)
 
 				By("the topic existing")
-				pubsubClient.EXPECT().Topic(gomock.Any()).Return(mockTopic)
+				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
+				gomock.InOrder(
+					mockIterator.EXPECT().Next().Return(mockTopic, nil),
+					mockIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+				mockTopic.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(mockPublishResult)
+
+				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{"x-nitric-name": "Test"}, nil)
 
 				err := pubsubPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -112,9 +119,12 @@ var _ = Describe("Pubsub Plugin", func() {
 
 		When("To a topic that does exist", func() {
 			ctrl := gomock.NewController(GinkgoT())
+			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
 			cloudtasksClient := mock_cloudtasks.NewMockCloudtasksClient(ctrl)
 			mockGcp := mock_core.NewMockGcpProvider(ctrl)
-			pubsubPlugin, _ := pubsub_service.NewWithClient(mockGcp, nil, cloudtasksClient)
+			mockTopic := mock_pubsub.NewMockTopic(ctrl)
+			mockIterator := mock_pubsub.NewMockTopicIterator(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(mockGcp, pubsubClient, cloudtasksClient)
 
 			It("should successfully publish the message", func() {
 				By("having a valid service account email")
@@ -122,6 +132,16 @@ var _ = Describe("Pubsub Plugin", func() {
 
 				By("having a valid project id")
 				mockGcp.EXPECT().GetProjectID().Return("mock-project-id", nil)
+
+				By("the topic existing")
+				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
+
+				gomock.InOrder(
+					mockIterator.EXPECT().Next().Return(mockTopic, nil),
+					mockIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{"x-nitric-name": "Test"}, nil)
+				mockTopic.EXPECT().String().Return("test")
 
 				By("the publish being successful")
 				// TODO: We want to validate that create task is called with the correct parameters.

@@ -153,6 +153,21 @@ func (mr *MockTopicMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockTopic)(nil).ID))
 }
 
+// Labels mocks base method.
+func (m *MockTopic) Labels(arg0 context.Context) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Labels", arg0)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Labels indicates an expected call of Labels.
+func (mr *MockTopicMockRecorder) Labels(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Labels", reflect.TypeOf((*MockTopic)(nil).Labels), arg0)
+}
+
 // Publish mocks base method.
 func (m *MockTopic) Publish(arg0 context.Context, arg1 ifaces_pubsub.Message) ifaces_pubsub.PublishResult {
 	m.ctrl.T.Helper()
