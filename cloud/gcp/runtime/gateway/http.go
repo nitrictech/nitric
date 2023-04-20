@@ -139,39 +139,67 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 	}
 }
 
+// Converts the GCP event type to our abstract event type
+func notificationEventToEventType(eventType string) string {
+	switch eventType {
+	case "OBJECT_FINALIZE": return "created"
+	case "OBJECT_DELETE": return "deleted"
+	}
+	return ""
+}
+
 func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		bucketName := ctx.UserValue("name").(string)
+		bodyBytes := ctx.Request.Body()
 
-		evt := &v1.TriggerRequest{
-			Context: &v1.TriggerRequest_Notification{
-				Notification: &v1.NotificationTriggerContext{
-					Type:     v1.NotificationType_Bucket,
-					Resource: bucketName,
+		// Check if the payload contains a pubsub event
+		// TODO: We probably want to use a simpler method than this
+		// like reading off the request origin to ensure it is from pubsub
+		var pubsubEvent PubSubMessage
+		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
+			bucketName := ctx.UserValue("name").(string)
+
+			key := pubsubEvent.Message.Attributes["objectId"]
+			eventType := notificationEventToEventType(pubsubEvent.Message.Attributes["eventType"])			
+
+			evt := &v1.TriggerRequest{
+				Context: &v1.TriggerRequest_Notification{
+					Notification: &v1.NotificationTriggerContext{
+						Type:     v1.NotificationType_Bucket,
+						Resource: bucketName,
+						Attributes: map[string]string{
+							"key": key,
+							"type": eventType,
+						},
+					},
 				},
-			},
+			}
+
+			worker, err := process.GetWorker(&pool.GetWorkerOptions{
+				Trigger: evt,
+			})
+			if err != nil {
+				ctx.Error("Could not find handle for event", 500)
+			}
+
+			traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
+			traceCtx := context.TODO()
+
+			if pubsubEvent.Message.Attributes[traceKey] != "" {
+				var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
+				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, mc)
+			} else {
+				var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
+				traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, hc)
+			}
+
+			if _, err := worker.HandleTrigger(traceCtx, evt); err == nil {
+				// return a successful response
+				ctx.SuccessString("text/plain", "success")
+			} else {
+				ctx.Error(fmt.Sprintf("Error handling event %v", err), 500)
+			}
 		}
-
-		worker, err := process.GetWorker(&pool.GetWorkerOptions{
-			Trigger: evt,
-			Filter: func(w worker.Worker) bool {
-				_, isNotification := w.(*worker.BucketNotificationWorker)
-				return isNotification
-			},
-		})
-		if err != nil {
-			log.Default().Println("could not get worker for bucket notification: ", bucketName)
-		}
-
-		var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
-		traceCtx := propagator.CloudTraceFormatPropagator{}.Extract(context.TODO(), hc)
-
-		_, err = worker.HandleTrigger(traceCtx, evt)
-		if err != nil {
-			log.Default().Println("could not handle event: ", evt)
-		}
-
-		ctx.SuccessString("text/plain", "success")
 	}
 }
 

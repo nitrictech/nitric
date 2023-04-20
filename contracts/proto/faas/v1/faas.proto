@@ -203,6 +203,7 @@ message NotificationTriggerContext {
   // The resource the message was triggered by
   NotificationType type = 1;
   string resource = 2;
+  map<string, string> attributes = 3; // Convention for buckets is "key" and "type"
 }
 
 // The worker has successfully processed a trigger

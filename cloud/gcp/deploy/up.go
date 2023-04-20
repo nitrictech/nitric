@@ -264,14 +264,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				for _, notification := range b.Bucket.Notifications {
+				for idx, notification := range b.Bucket.Notifications {
 					// Get the deployed execution unit
 					unit, ok := execs[notification.GetExecutionUnit()]
 					if !ok {
 						return fmt.Errorf("invalid execution unit %s given for topic subscription", notification.GetExecutionUnit())
 					}
 					
-					_, err = storage.NewCloudStorageNotification(ctx, res.Name+"-notification", &storage.CloudStorageNotificationArgs{
+					_, err = storage.NewCloudStorageNotification(ctx, fmt.Sprintf("notification-%d-%s", int(idx), res.Name), &storage.CloudStorageNotificationArgs{
 						StackID:  stackID,
 						Location: details.Region,
 						Bucket: buckets[res.Name],

@@ -15,6 +15,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
@@ -66,23 +68,23 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, err
 	}
 
-	topic, err := pubsub.NewTopic(ctx, name+"-notificationtopic", &pubsub.TopicArgs{
+	topic, err := pubsub.NewTopic(ctx, name+"-topic", &pubsub.TopicArgs{
 		Labels: common.Tags(ctx, args.StackID, name),
-	}, opts...)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"subacct", &serviceaccount.AccountArgs{
+	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"acct", &serviceaccount.AccountArgs{
 		// accountId accepts a max of 30 chars, limit our generated name to this length
-		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
+		AccountId: pulumi.String(utils.StringTrunc(name, 25) + "acct"),
 	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "invokerAccount "+name)
 	}
 
 	// Apply permissions for the above account to the newly deployed cloud run service
-	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
+	_, err = cloudrun.NewIamMember(ctx, name+"-notifyrole", &cloudrun.IamMemberArgs{
 		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
 		Role:     pulumi.String("roles/run.invoker"),
 		Service:  args.Function.Service.Name,
@@ -92,7 +94,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, errors.WithMessage(err, "iam member "+name)
 	}
 
-	_, err = pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
+	_, err = pubsub.NewSubscription(ctx, name+"-notify", &pubsub.SubscriptionArgs{
 		Topic:              topic.Name,
 		AckDeadlineSeconds: pulumi.Int(300),
 		RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
@@ -108,9 +110,35 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),
 		},
-	}, append(opts, pulumi.Parent(topic))...)
+	}, append(opts, pulumi.Parent(args.Function))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
+	}
+
+	// Give the cloud storage service account publishing permissions
+	gcsAccount, err := storage.GetProjectServiceAccount(ctx, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	binding, err := pubsub.NewTopicIAMBinding(ctx, name+"-binding", &pubsub.TopicIAMBindingArgs{
+		Topic: topic.ID(),
+		Role:  pulumi.String("roles/pubsub.publisher"),
+		Members: pulumi.StringArray{
+			pulumi.String(fmt.Sprintf("serviceAccount:%v", gcsAccount.EmailAddress)),
+		},
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "topic binding "+name)
+	}
+
+	if args.Config == nil {
+		return nil, fmt.Errorf("invalid config provided for bucket notification")
+	}
+
+	prefix := args.Config.EventFilter
+	if prefix == "*" {
+		prefix = ""
 	}
 
 	res.Notification, err = storage.NewNotification(ctx, name, &storage.NotificationArgs{
@@ -118,10 +146,10 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		PayloadFormat:    pulumi.String("JSON_API_V1"),
 		Topic:            topic.ID(),
 		EventTypes:       pulumi.ToStringArray(EventTypeToStorageEventType(&args.Config.EventType)),
-		ObjectNamePrefix: pulumi.String(args.Config.EventFilter),
-	}, append(opts, pulumi.DependsOn([]pulumi.Resource{topic}))...)
+		ObjectNamePrefix: pulumi.String(prefix),
+	}, append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "storage notification "+name)
 	}
 
 	return res, nil

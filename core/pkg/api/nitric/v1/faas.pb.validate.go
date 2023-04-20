@@ -2653,6 +2653,8 @@ func (m *NotificationTriggerContext) validate(all bool) error {
 
 	// no validation rules for Resource
 
+	// no validation rules for Attributes
+
 	if len(errors) > 0 {
 		return NotificationTriggerContextMultiError(errors)
 	}

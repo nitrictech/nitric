@@ -73,7 +73,6 @@ func (p *ProcessPool) getHttpWorkers() []worker.Worker {
 		case *worker.RouteWorker:
 			// Prioritise Route Workers
 			hws = prepend(hws, w)
-			break
 		default:
 			hws = append(hws, w)
 		}
@@ -94,6 +93,25 @@ func (p *ProcessPool) getEventWorkers() []worker.Worker {
 		case *worker.ScheduleWorker:
 			hws = prepend(hws, w)
 		case *worker.SubscriptionWorker:
+			hws = prepend(hws, w)
+		default:
+			hws = append(hws, w)
+		}
+	}
+
+	return hws
+}
+
+// return notification workers
+func (p *ProcessPool) getNotificationWorkers() []worker.Worker {
+	hws := make([]worker.Worker, 0)
+
+	for _, w := range p.workers {
+		switch w.(type) {
+		case *worker.RouteWorker:
+			// Ignore route workers
+			break
+		case *worker.BucketNotificationWorker:
 			hws = prepend(hws, w)
 		default:
 			hws = append(hws, w)
@@ -204,6 +222,11 @@ func (p *ProcessPool) GetWorker(opts *GetWorkerOptions) (worker.Worker, error) {
 		ws = p.getEventWorkers()
 	}
 
+	if opts.Trigger.GetNotification() != nil {
+		// prioritise notification workers
+		ws = p.getNotificationWorkers()
+	}
+
 	// fallback to all workers (don't prioritise order based on trigger type)
 	if opts.Filter != nil {
 		ws = filterWorkers(ws, opts.Filter)
@@ -247,6 +270,17 @@ func (p *ProcessPool) AddWorker(wrkr worker.Worker) error {
 	// Ensure we haven't reached the maximum number of workers
 	if workerCount > p.maxWorkers {
 		return fmt.Errorf("max worker capacity reached! cannot add more workers")
+	}
+
+	// If the worker is a bucket notification validate it against the others
+
+	switch wrkr.(type) {
+	case *worker.BucketNotificationWorker:
+		notificationWorkers := p.getNotificationWorkers()
+		err := worker.ValidateBucketNotifications(append(notificationWorkers, wrkr))
+		if err != nil {
+			return err
+		}
 	}
 
 	p.workers = append(p.workers, wrkr)
