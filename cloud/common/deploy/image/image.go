@@ -25,9 +25,13 @@ import (
 	"strings"
 
 	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"golang.org/x/exp/maps"
+
+	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 )
 
 type ImageArgs struct {
@@ -37,6 +41,7 @@ type ImageArgs struct {
 	Server        pulumi.StringInput
 	Username      pulumi.StringInput
 	Password      pulumi.StringInput
+	Telemetry *telemetry.TelemetryConfigArgs
 }
 
 type Image struct {
@@ -46,36 +51,17 @@ type Image struct {
 	DockerImage *docker.Image
 }
 
-//go:embed wrapper.dockerfile
-var imageWrapper string
-
-func wrapDockerImage(wrapper string, sourceImage string) (string, string, error) {
-	if sourceImage == "" {
-		return "", "", fmt.Errorf("blank sourceImage provided")
-	}
-
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return "", "", err
-	}
-
-	ii, _, err := cli.ImageInspectWithRaw(context.Background(), sourceImage)
-	if err != nil {
-		return "", "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
-	}
-
-	// Get the original command of the source image
-	// and inject it into the wrapper image
-	cmd := append(ii.Config.Entrypoint, ii.Config.Cmd...)
-
-	// Wrap each command in string quotes
-	cmdStr := []string{}
-	for _, c := range cmd {
-		cmdStr = append(cmdStr, "\""+c+"\"")
-	}
-
-	return fmt.Sprintf(wrapper, strings.Join(cmdStr, ",")), ii.ID, nil
+type WrappedBuildInput struct {
+	Args       map[string]string
+	Dockerfile string
 }
+
+var (
+	//go:embed wrapper.dockerfile
+	imageWrapper string
+	//go:embed wrapper-telemetry.dockerfile
+	telemetryImageWrapper string
+)
 
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
@@ -85,11 +71,16 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 		return nil, err
 	}
 
-	// TODO: Need to re-add support for telemetry wrappers as well
-	dockerfileContent, sourceImageID, err := wrapDockerImage(imageWrapper, args.SourceImage)
+	imageWrapper, err := getWrapperDockerfile(args.Telemetry)
 	if err != nil {
 		return nil, err
 	}
+
+	dockerfileContent, sourceImageID, err := wrapDockerImage(imageWrapper.Dockerfile, args.SourceImage)
+	if err != nil {
+		return nil, err
+	}
+
 	buildContext := fmt.Sprintf("%s/build-%s", os.TempDir(), name)
 	os.MkdirAll(buildContext, os.ModePerm)
 
@@ -97,6 +88,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	if err != nil {
 		return nil, err
 	}
+
 	dockerfile.Write([]byte(dockerfileContent))
 	dockerfile.Close()
 
@@ -104,25 +96,28 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	if err != nil {
 		return nil, err
 	}
+
 	runtimefile.Write(args.Runtime)
-	runtimefile.Close()
+	runtimefile.Close()			
+	
+	buildArgs := combineBuildArgs(map[string]string{
+		"BASE_IMAGE": args.SourceImage,
+		"RUNTIME_FILE": "runtime",
+		"BASE_IMAGE_ID": sourceImageID,
+	}, imageWrapper.Args)
 
 	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
-		ImageName: args.RepositoryUrl,
-		Registry: &docker.RegistryArgs{
+		ImageName:       args.RepositoryUrl,
+		Build: docker.DockerBuildArgs{
+			Context: pulumi.String(buildContext),
+			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
+			Args: buildArgs,
+			Platform: pulumi.String("linux/amd64"),
+		},
+		Registry: docker.RegistryArgs{
 			Server:   args.Server,
 			Username: args.Username,
 			Password: args.Password,
-		},
-		Build: docker.DockerBuildArgs{
-			Context:    pulumi.String(buildContext),
-			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
-			Platform:   pulumi.String("linux/amd64"),
-			Args: pulumi.StringMap{
-				"BASE_IMAGE":    pulumi.String(args.SourceImage),
-				"RUNTIME_FILE":  pulumi.String("runtime"),
-				"BASE_IMAGE_ID": pulumi.String(sourceImageID),
-			},
 		},
 		SkipPush: pulumi.Bool(false),
 	}, pulumi.Parent(res))
@@ -138,4 +133,74 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 
 func (d *Image) URI() pulumi.StringOutput {
 	return d.DockerImage.RepoDigest.Elem().ToStringOutput()
+}
+
+// Returns the default docker file if telemetry sampling is disabled for this execution unit. Otherwise, will return a wrapped telemetry image.
+func getWrapperDockerfile(configArgs *telemetry.TelemetryConfigArgs) (*WrappedBuildInput, error) {
+	if configArgs != nil && configArgs.TraceSampling > 0 {
+		config, err := telemetry.NewTelemetryConfig(configArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		return &WrappedBuildInput{
+			Dockerfile: telemetryImageWrapper,
+			Args: map[string]string{
+				"OTELCOL_CONFIG":              config.Config,
+				"OTELCOL_CONTRIB_URI":         config.Uri,
+				"NITRIC_TRACE_SAMPLE_PERCENT": fmt.Sprint(configArgs.TraceSampling),
+			},
+		}, nil
+	}
+
+	return &WrappedBuildInput{
+		Dockerfile: imageWrapper,
+		Args: map[string]string{},
+	}, nil
+}
+
+func combineBuildArgs(baseArgs, wrapperArgs map[string]string) (pulumi.StringMap) {
+	maps.Copy(wrapperArgs, baseArgs)
+
+	return pulumi.ToStringMap(wrapperArgs)
+}
+
+
+// Wraps the source image with the wrapper image, acknowledging the command from the source image
+func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
+	if sourceImage == "" {
+		return "", "", fmt.Errorf("blank sourceImage provided")
+	}
+
+	client, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return "", "", err
+	}
+
+	imageInspect, _, err := client.ImageInspectWithRaw(context.Background(), sourceImage)
+	if err != nil {
+		return "", "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
+	}
+
+	cmdStr, err := commandFromImageInspect(imageInspect)
+	if err != nil {
+		return "", "", err
+	}
+
+	return fmt.Sprintf(wrapper, cmdStr), imageInspect.ID, nil
+}
+
+// Gets the command from the source image and returns as a comma separated string
+func commandFromImageInspect(imageInspect types.ImageInspect) (string, error) {
+	// Get the original command of the source image
+	// and inject it into the wrapper image
+	cmd := append(imageInspect.Config.Entrypoint, imageInspect.Config.Cmd...)
+
+	// Wrap each command in string quotes
+	cmdStr := []string{}
+	for _, c := range cmd {
+		cmdStr = append(cmdStr, "\""+c+"\"")
+	}
+
+	return strings.Join(cmdStr, ","), nil
 }
