@@ -100,22 +100,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		// Deploy all buckets
-		buckets := map[string]*bucket.S3Bucket{}
-		for _, res := range request.Spec.Resources {
-			switch b := res.Config.(type) {
-			case *deploy.Resource_Bucket:
-				buckets[res.Name], err = bucket.NewS3Bucket(ctx, res.Name, &bucket.S3BucketArgs{
-					// TODO: Calculate stack ID
-					StackID: stackID,
-					Bucket:  b.Bucket,
-				})
-				if err != nil {
-					return err
-				}
-			}
-		}
-
 		// Deploy all secrets
 		secrets := map[string]*secret.SecretsManagerSecret{}
 		for _, res := range request.Spec.Resources {
@@ -236,6 +220,36 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 		principals[v1.ResourceType_Function] = execPrincipals
+
+
+		// Deploy all buckets
+		buckets := map[string]*bucket.S3Bucket{}
+		for _, res := range request.Spec.Resources {
+			switch b := res.Config.(type) {
+			case *deploy.Resource_Bucket:
+				buckets[res.Name], err = bucket.NewS3Bucket(ctx, res.Name, &bucket.S3BucketArgs{
+					// TODO: Calculate stack ID
+					StackID: stackID,
+					Bucket:  b.Bucket,
+				})
+				if err != nil {
+					return err
+				}
+
+				if len(b.Bucket.Notifications) > 0 {
+					_, err = bucket.NewS3Notification(ctx, fmt.Sprintf("notification-%s", res.Name), &bucket.S3NotificationArgs{
+						StackID:  stackID,
+						Location: details.Region,
+						Bucket: buckets[res.Name],
+						Functions: execs,
+						Notification: b.Bucket.Notifications,
+					})
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
 
 		// deploy API Gateways
 		// gws := map[string]

@@ -53,6 +53,21 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
 }
 
+func (s *LambdaGateway) getBucketNameForArn(ctx context.Context, bucketArn string) (string, error) {
+	buckets, err := s.provider.GetResources(ctx, core.AwsResource_Bucket)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving topics: %w", err)
+	}
+
+	for name, arn := range buckets {
+		if arn == bucketArn {
+			return name, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find topic for arn %s", bucketArn)
+}
+
 type LambdaGateway struct {
 	pool     pool.WorkerPool
 	provider core.AwsProvider
@@ -186,8 +201,8 @@ func (s *LambdaGateway) handleScheduleEvent(ctx context.Context, evt nitricSched
 	return nil, nil
 }
 
-func (s *LambdaGateway) handleSnsEvents(ctx context.Context, evt events.SNSEvent) (interface{}, error) {
-	for _, snsRecord := range evt.Records {
+func (s *LambdaGateway) handleSnsEvents(ctx context.Context, records []Record) (interface{}, error) {
+	for _, snsRecord := range records {
 		messageString := snsRecord.SNS.Message
 		// var id string
 		attrs := map[string]string{}
@@ -226,6 +241,7 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, evt events.SNSEvent
 			return nil, fmt.Errorf("unable to get worker to event trigger")
 		}
 
+		
 		var mc propagation.MapCarrier = attrs
 
 		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
@@ -243,6 +259,65 @@ func (s *LambdaGateway) handleHealthCheck(ctx context.Context, evt healthCheckEv
 	}, nil
 }
 
+// Converts the GCP event type to our abstract event type
+func notificationEventToEventType(eventType string) string {
+	if ok := strings.Contains(eventType, "ObjectCreated:"); ok {
+		return "created"
+	} else if ok := strings.Contains(eventType, "ObjectRemoved:"); ok {
+		return "deleted"
+	}
+	return ""
+}
+
+func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (interface{}, error) {
+	for _, s3Record := range records {
+		bucketName, err := s.getBucketNameForArn(ctx, s3Record.EventSourceArn)
+		if err != nil {
+			log.Default().Println("unable to locate nitric bucket")
+			return nil, fmt.Errorf("unable to find nitric bucket: %v", err)
+		}
+
+		evtType := notificationEventToEventType(s3Record.EventName)
+		if evtType == "" {
+			return nil, fmt.Errorf("unable to handle event type: %s", s3Record.EventName)
+		}
+
+		request := &v1.TriggerRequest{
+			Context: &v1.TriggerRequest_Notification{
+				Notification: &v1.NotificationTriggerContext{
+					Type: v1.NotificationType_Bucket,
+					Resource: bucketName,
+					Attributes: map[string]string{
+						"key": s3Record.S3.Object.Key,
+						"type": evtType,
+					},
+				},
+			},
+		}
+
+		wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+			Trigger: request,
+			// Only send S3 events to bucket notification workers
+			Filter: func(w worker.Worker) bool {
+				_, ok := w.(*worker.BucketNotificationWorker)
+				return ok
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to get worker to event trigger")
+		}
+
+		var mc propagation.MapCarrier = s3Record.ResponseElements
+
+		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
 func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{}, error) {
 	switch evt.Type() {
 	case httpEvent:
@@ -250,7 +325,9 @@ func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{},
 	case healthcheck:
 		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
 	case sns:
-		return s.handleSnsEvents(ctx, evt.SNSEvent)
+		return s.handleSnsEvents(ctx, evt.Records)
+	case s3:
+		return s.handleS3Event(ctx, evt.Records)
 	case schedule:
 		return s.handleScheduleEvent(ctx, evt.nitricScheduleEvent)
 	default:

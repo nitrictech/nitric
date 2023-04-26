@@ -45,7 +45,7 @@ type CloudStorageNotificationArgs struct {
 	Function *exec.CloudRunner
 }
 
-func EventTypeToStorageEventType(eventType *v1.EventType) []string {
+func eventTypeToStorageEventType(eventType *v1.EventType) []string {
 	switch *eventType {
 	case v1.EventType_All:
 		return []string{"OBJECT_FINALIZE", "OBJECT_DELETE"}
@@ -145,7 +145,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		Bucket:           args.Bucket.CloudStorage.Name,
 		PayloadFormat:    pulumi.String("JSON_API_V1"),
 		Topic:            topic.ID(),
-		EventTypes:       pulumi.ToStringArray(EventTypeToStorageEventType(&args.Config.EventType)),
+		EventTypes:       pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.EventType)),
 		ObjectNamePrefix: pulumi.String(prefix),
 	}, append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)
 	if err != nil {

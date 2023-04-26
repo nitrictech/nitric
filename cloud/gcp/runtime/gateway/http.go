@@ -177,6 +177,10 @@ func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fastht
 
 			worker, err := process.GetWorker(&pool.GetWorkerOptions{
 				Trigger: evt,
+				Filter: func(w worker.Worker) bool {
+					_, ok := w.(*worker.BucketNotificationWorker)
+					return ok
+				},
 			})
 			if err != nil {
 				ctx.Error("Could not find handle for event", 500)
