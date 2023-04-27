@@ -5,7 +5,7 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-binaries: runtimebin
+binaries: deploybin
 
 runtimebin:
 	@echo Building Azure Runtime Server
