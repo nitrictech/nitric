@@ -5,6 +5,7 @@ use (
 	./cloud/azure
 	./cloud/common
 	./cloud/gcp
+	./cloud/debug
 	./core
 	./e2e
 )
