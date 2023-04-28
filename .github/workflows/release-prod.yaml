@@ -20,6 +20,7 @@ jobs:
           # Use GITHUB_TOKEN here to prevent further workflows
           # generated on 'tag' action
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
       - name: Create a GitHub release
         id: create_release
         uses: actions/create-release@v1
