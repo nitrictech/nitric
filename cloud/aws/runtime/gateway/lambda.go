@@ -53,21 +53,6 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 	return "", fmt.Errorf("could not find topic for arn %s", topicArn)
 }
 
-func (s *LambdaGateway) getScheduleNameForArn(ctx context.Context, eventRuleArn string) (string, error) {
-	topics, err := s.provider.GetResources(ctx, core.AwsResource_EventRule)
-	if err != nil {
-		return "", fmt.Errorf("error retreiving event rules: %w", err)
-	}
-
-	for name, arn := range topics {
-		if arn == eventRuleArn {
-			return name, nil
-		}
-	}
-
-	return "", fmt.Errorf("could not find event rule for arn %s", eventRuleArn)
-}
-
 type LambdaGateway struct {
 	pool     pool.WorkerPool
 	provider core.AwsProvider
@@ -158,12 +143,13 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 	}, nil
 }
 
-func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.CloudWatchEvent) (interface{}, error) {
-	evtRuleArn := evt.Resources[0]
-	sched, err := s.getScheduleNameForArn(ctx, evtRuleArn)
-	if err != nil {
-		log.Default().Println("unable to locate nitric schedule")
-		return nil, fmt.Errorf("unable to find nitric schedule: %w", err)
+type ScheduleMessage struct {
+	Schedule string
+}
+
+func (s *LambdaGateway) handleScheduleEvent(ctx context.Context, evt nitricScheduleEvent) (interface{}, error) {
+	if evt.Schedule == "" {
+		return nil, fmt.Errorf("unable to identify source nitric schedule")
 	}
 
 	request := &v1.TriggerRequest{
@@ -171,7 +157,7 @@ func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.Cl
 		Data: nil,
 		Context: &v1.TriggerRequest_Topic{
 			Topic: &v1.TopicTriggerContext{
-				Topic: worker.ScheduleKeyToTopicName(sched),
+				Topic: worker.ScheduleKeyToTopicName(evt.Schedule),
 			},
 		},
 	}
@@ -185,7 +171,7 @@ func (s *LambdaGateway) handleCloudwatchEvent(ctx context.Context, evt events.Cl
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("no worker available to handle schedule %s", sched)
+		return nil, fmt.Errorf("no worker available to handle schedule %s", evt.Schedule)
 	}
 
 	resp, err := wrkr.HandleTrigger(context.TODO(), request)
@@ -265,10 +251,10 @@ func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{},
 		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
 	case sns:
 		return s.handleSnsEvents(ctx, evt.SNSEvent)
-	case cloudwatch:
-		return s.handleCloudwatchEvent(ctx, evt.CloudWatchEvent)
+	case schedule:
+		return s.handleScheduleEvent(ctx, evt.nitricScheduleEvent)
 	default:
-		return nil, fmt.Errorf("unhandled lambda event type")
+		return nil, fmt.Errorf("unhandled lambda event type: %+v", evt)
 	}
 }
 

@@ -25,7 +25,8 @@ const (
 	sns
 	httpEvent
 	healthcheck
-	cloudwatch
+	// cloudwatch
+	schedule
 	xforwardHeader string = "x-forwarded-for"
 )
 
@@ -33,13 +34,17 @@ type healthCheckEvent struct {
 	Check bool `json:"x-nitric-healthcheck,omitempty"`
 }
 
+type nitricScheduleEvent struct {
+	Schedule string `json:"x-nitric-schedule,omitempty"`
+}
+
 // An event struct that embeds the AWS event types that we handle
 type Event struct {
 	events.APIGatewayV2HTTPRequest `json:",omitempty"`
 	// The base serializable type here matches other embeddable repeated constructs
-	events.SNSEvent        `json:",omitempty"`
-	events.CloudWatchEvent `json:",omitempty"`
+	events.SNSEvent `json:",omitempty"`
 	healthCheckEvent
+	nitricScheduleEvent
 }
 
 func (e *Event) Type() eventType {
@@ -50,8 +55,8 @@ func (e *Event) Type() eventType {
 		return healthcheck
 	} else if len(e.Records) > 0 && e.Records[0].EventSource == "aws:sns" {
 		return sns
-	} else if e.Source != "" {
-		return cloudwatch
+	} else if e.Schedule != "" {
+		return schedule
 	}
 
 	return unknown

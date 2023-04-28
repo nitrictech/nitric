@@ -22,7 +22,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
-type AwsConfig = config.AbstractConfig[*AwsConfigItem]
+type AwsConfig struct {
+	ScheduleTimezone string `mapstructure:"schedule-timezone,omitempty"`
+	config.AbstractConfig[*AwsConfigItem]
+}
 
 type AwsConfigItem struct {
 	Lambda    *AwsLambdaConfig `mapstructure:",omitempty"`
@@ -47,6 +50,7 @@ var defaultAwsConfigItem = AwsConfigItem{
 
 // Return AwsConfig from stack attributes
 func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error) {
+	// get config attributes
 	err := config.ValidateRawConfigKeys(attributes, []string{"lambda"})
 	if err != nil {
 		return nil, err
@@ -56,6 +60,12 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	err = mapstructure.Decode(attributes, awsConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	// Default timezone if not specified
+	if awsConfig.ScheduleTimezone == "" {
+		// default to UTC
+		awsConfig.ScheduleTimezone = "UTC"
 	}
 
 	if awsConfig.Config == nil {
