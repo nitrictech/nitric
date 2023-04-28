@@ -90,7 +90,7 @@ message ScheduleCron {
 }
 
 // Notification Workers
-enum EventType {
+enum BucketNotificationType {
   All = 0;
   Created = 1;
   Deleted = 2;
@@ -102,8 +102,10 @@ message BucketNotificationWorker {
 }
 
 message BucketNotificationConfig {
-	EventType eventType = 1;
-	string eventFilter = 2;
+	BucketNotificationType event_type = 1;
+  // An event filter is a prefix for a bucket object in which creations or deletions should trigger a notification:
+  // e.g. Event filter: /images/cat and Event Type: created, would trigger on creating /images/cat.png and /images/cat.jpg but not creating /cat.png
+	string event_filter = 2;
 }
 
 // Generic catch all worker (XXX: Do we need this for backwards compatibility?)
@@ -120,7 +122,7 @@ message InitRequest {
     ApiWorker api = 10;
     SubscriptionWorker subscription = 11;
     ScheduleWorker schedule = 12;
-    BucketNotificationWorker bucketNotification = 13;
+    BucketNotificationWorker bucket_notification = 13;
   }
 }
 

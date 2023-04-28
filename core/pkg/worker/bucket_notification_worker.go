@@ -33,13 +33,13 @@ type BucketNotificationWorker struct {
 
 var _ Worker = &BucketNotificationWorker{}
 
-func eventTypeToString(eventType v1.EventType) string {
+func eventTypeToString(eventType v1.BucketNotificationType) string {
 	switch eventType {
-	case v1.EventType_All:
+	case v1.BucketNotificationType_All:
 		return "all"
-	case v1.EventType_Created:
+	case v1.BucketNotificationType_Created:
 		return "created"
-	case v1.EventType_Deleted:
+	case v1.BucketNotificationType_Deleted:
 		return "deleted"
 	}
 	return ""
@@ -92,7 +92,7 @@ type BucketNotificationWorkerOptions struct {
 
 // Checks that there are no overlapping bucket notifications
 func ValidateBucketNotifications(workers []Worker) error {
-	notificationByEventType := make(map[string]map[v1.EventType][]string)
+	notificationByEventType := make(map[string]map[v1.BucketNotificationType][]string)
 
 	// Filter for only notification workers
 	notifications := []*v1.BucketNotificationWorker{}
@@ -110,14 +110,14 @@ func ValidateBucketNotifications(workers []Worker) error {
 		}
 
 		if notificationByEventType[n.Bucket] == nil {
-			notificationByEventType[n.Bucket] = make(map[v1.EventType][]string)
+			notificationByEventType[n.Bucket] = make(map[v1.BucketNotificationType][]string)
 		}
 
 		notificationByEventType[n.Bucket][n.Config.EventType] = append(notificationByEventType[n.Bucket][n.Config.EventType], eventFilter)
 	}
 
 	for bucketName := range notificationByEventType {
-		for _, eventType := range []v1.EventType{v1.EventType_Created, v1.EventType_Deleted} {
+		for _, eventType := range []v1.BucketNotificationType{v1.BucketNotificationType_Created, v1.BucketNotificationType_Deleted} {
 			// Sort by the path
 			events := notificationByEventType[bucketName][eventType]
 			sort.Strings(events)

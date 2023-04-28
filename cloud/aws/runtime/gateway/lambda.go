@@ -241,7 +241,6 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, records []Record) (
 			return nil, fmt.Errorf("unable to get worker to event trigger")
 		}
 
-		
 		var mc propagation.MapCarrier = attrs
 
 		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
@@ -274,7 +273,7 @@ func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (in
 		bucketName, err := s.getBucketNameForArn(ctx, s3Record.EventSourceArn)
 		if err != nil {
 			log.Default().Println("unable to locate nitric bucket")
-			return nil, fmt.Errorf("unable to find nitric bucket: %v", err)
+			return nil, fmt.Errorf("unable to find nitric bucket: %w", err)
 		}
 
 		evtType := notificationEventToEventType(s3Record.EventName)
@@ -285,10 +284,10 @@ func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (in
 		request := &v1.TriggerRequest{
 			Context: &v1.TriggerRequest_Notification{
 				Notification: &v1.NotificationTriggerContext{
-					Type: v1.NotificationType_Bucket,
+					Type:     v1.NotificationType_Bucket,
 					Resource: bucketName,
 					Attributes: map[string]string{
-						"key": s3Record.S3.Object.Key,
+						"key":  s3Record.S3.Object.Key,
 						"type": evtType,
 					},
 				},

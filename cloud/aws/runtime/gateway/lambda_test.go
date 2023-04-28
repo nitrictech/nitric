@@ -164,7 +164,7 @@ var _ = Describe("Lambda", func() {
 						{
 							EventVersion:         "",
 							EventSource:          "aws:sns",
-							EventSubscriptionArn: "some:arbitrary:subscription:arn:MySubscription",							
+							EventSubscriptionArn: "some:arbitrary:subscription:arn:MySubscription",
 							SNS: events.SNSEntity{
 								TopicArn: fmt.Sprintf("arn:aws:sns:us-east-1:12345678910:arn:%s", topicName),
 								Message:  string(messageBytes),
@@ -220,13 +220,13 @@ var _ = Describe("Lambda", func() {
 				eventQueue: []interface{}{&events.S3Event{
 					Records: []events.S3EventRecord{
 						{
-							EventVersion:         "",
-							EventSource:          "aws:s3",
-							EventName: "ObjectCreated:Put",							
+							EventVersion: "",
+							EventSource:  "aws:s3",
+							EventName:    "ObjectCreated:Put",
 							S3: events.S3Entity{
-								Bucket: events.S3Bucket {
+								Bucket: events.S3Bucket{
 									Name: "images",
-									Arn: "arn:aws:sns:us-east-1:12345678910:arn:images",
+									Arn:  "arn:aws:sns:us-east-1:12345678910:arn:images",
 								},
 								Object: events.S3Object{
 									Key: "cat.png",
@@ -258,10 +258,10 @@ var _ = Describe("Lambda", func() {
 				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
 					Context: &v1.TriggerRequest_Notification{
 						Notification: &v1.NotificationTriggerContext{
-							Type: v1.NotificationType_Bucket,
+							Type:     v1.NotificationType_Bucket,
 							Resource: "images",
 							Attributes: map[string]string{
-								"key": "cat.png",
+								"key":  "cat.png",
 								"type": "created",
 							},
 						},

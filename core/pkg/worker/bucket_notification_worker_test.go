@@ -106,7 +106,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 				notification: &v1.BucketNotificationWorker{
 					Bucket: "bad",
 					Config: &v1.BucketNotificationConfig{
-						EventType:   v1.EventType_Created,
+						EventType:   v1.BucketNotificationType_Created,
 						EventFilter: "*",
 					},
 				},
@@ -124,7 +124,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 				notification: &v1.BucketNotificationWorker{
 					Bucket: "test",
 					Config: &v1.BucketNotificationConfig{
-						EventType:   v1.EventType_Created,
+						EventType:   v1.BucketNotificationType_Created,
 						EventFilter: "*",
 					},
 				},
@@ -142,7 +142,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 				notification: &v1.BucketNotificationWorker{
 					Bucket: "test",
 					Config: &v1.BucketNotificationConfig{
-						EventType:   v1.EventType_Created,
+						EventType:   v1.BucketNotificationType_Created,
 						EventFilter: "file",
 					},
 				},
@@ -160,7 +160,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 				notification: &v1.BucketNotificationWorker{
 					Bucket: "test",
 					Config: &v1.BucketNotificationConfig{
-						EventType:   v1.EventType_Created,
+						EventType:   v1.BucketNotificationType_Created,
 						EventFilter: "file",
 					},
 				},
@@ -178,7 +178,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 				notification: &v1.BucketNotificationWorker{
 					Bucket: "test",
 					Config: &v1.BucketNotificationConfig{
-						EventType:   v1.EventType_Deleted,
+						EventType:   v1.BucketNotificationType_Deleted,
 						EventFilter: "*",
 					},
 				},
@@ -203,7 +203,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "*",
 						},
 					},
@@ -235,7 +235,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -244,7 +244,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Deleted,
+							EventType:   v1.BucketNotificationType_Deleted,
 							EventFilter: "/product",
 						},
 					},
@@ -253,7 +253,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/photos",
 						},
 					},
@@ -262,7 +262,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Deleted,
+							EventType:   v1.BucketNotificationType_Deleted,
 							EventFilter: "/photos",
 						},
 					},
@@ -280,7 +280,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -289,7 +289,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Deleted,
+							EventType:   v1.BucketNotificationType_Deleted,
 							EventFilter: "/product",
 						},
 					},
@@ -298,7 +298,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/photos",
 						},
 					},
@@ -307,7 +307,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product/images",
 						},
 					},
@@ -325,7 +325,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "*",
 						},
 					},
@@ -334,7 +334,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -352,7 +352,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -361,7 +361,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Deleted,
+							EventType:   v1.BucketNotificationType_Deleted,
 							EventFilter: "/product/photos/",
 						},
 					},
@@ -379,7 +379,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/photos",
 						},
 					},
@@ -388,7 +388,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product/photos/",
 						},
 					},
@@ -407,7 +407,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "test",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -416,7 +416,7 @@ var _ = Describe("BucketNotificationWorker", func() {
 					notification: &v1.BucketNotificationWorker{
 						Bucket: "tester",
 						Config: &v1.BucketNotificationConfig{
-							EventType:   v1.EventType_Created,
+							EventType:   v1.BucketNotificationType_Created,
 							EventFilter: "/product",
 						},
 					},
@@ -428,5 +428,4 @@ var _ = Describe("BucketNotificationWorker", func() {
 			})
 		})
 	})
-
 })

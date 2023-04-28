@@ -36,16 +36,16 @@ const (
 
 type healthCheckEvent struct {
 	Check bool `json:"x-nitric-healthcheck,omitempty"`
-} 
+}
 
 // An event struct that embeds the AWS event types that we handle
 type Record struct {
-	EventSource string 
-	EventSourceArn string
-	EventName string
+	EventSource      string
+	EventSourceArn   string
+	EventName        string
 	ResponseElements map[string]string
-	S3 events.S3Entity
-	SNS events.SNSEntity
+	S3               events.S3Entity
+	SNS              events.SNSEntity
 }
 
 type nitricScheduleEvent struct {
@@ -78,49 +78,47 @@ func (e *Event) Type() eventType {
 func (e *Event) UnmarshalJSON(data []byte) error {
 	var err error
 
-	fmt.Printf("Unmarshalling: %s\n", string(data))
+	switch e.getEventType(data) {
+	case s3:
+		s3Event := &events.S3Event{}
+		err = json.Unmarshal(data, s3Event)
 
-	switch e.getEventType(data) { 
-	case s3: 
-		s3Event := &events.S3Event{} 
-		err = json.Unmarshal(data, s3Event) 
-
-		if err != nil { 
+		if err != nil {
 			return err
 		}
 
 		e.Records = make([]Record, 0)
 
 		for _, s3Record := range s3Event.Records {
-			e.Records = append(e.Records, Record{ 
-				EventSource: s3Record.EventSource, 
-				EventSourceArn: s3Record.S3.Bucket.Arn, 
-				EventName: s3Record.EventName,
+			e.Records = append(e.Records, Record{
+				EventSource:      s3Record.EventSource,
+				EventSourceArn:   s3Record.S3.Bucket.Arn,
+				EventName:        s3Record.EventName,
 				ResponseElements: s3Record.ResponseElements,
-				S3: s3Record.S3, 
-			}) 
+				S3:               s3Record.S3,
+			})
 		}
 
-		return nil 
+		return nil
 
-	case sns: 
-		snsEvent := &events.SNSEvent{} 
-		err = json.Unmarshal(data, snsEvent) 
+	case sns:
+		snsEvent := &events.SNSEvent{}
+		err = json.Unmarshal(data, snsEvent)
 
-		if err != nil { 
+		if err != nil {
 			return err
 		}
 
-		e.Records = make([]Record, 0) 
+		e.Records = make([]Record, 0)
 
-		for _, snsRecord := range snsEvent.Records { 
-			e.Records = append(e.Records, Record{ 
-				EventSource: snsRecord.EventSource, 
-				EventSourceArn: snsRecord.SNS.TopicArn, 
-				EventName: snsRecord.SNS.Type,
+		for _, snsRecord := range snsEvent.Records {
+			e.Records = append(e.Records, Record{
+				EventSource:      snsRecord.EventSource,
+				EventSourceArn:   snsRecord.SNS.TopicArn,
+				EventName:        snsRecord.SNS.Type,
 				ResponseElements: map[string]string{},
-				SNS: snsRecord.SNS, 
-			}) 
+				SNS:              snsRecord.SNS,
+			})
 		}
 
 	case httpEvent:
@@ -158,8 +156,11 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 }
 
 func (e *Event) getEventType(data []byte) eventType {
-	temp := make(map[string]interface{}) 
-	json.Unmarshal(data, &temp)
+	temp := make(map[string]interface{})
+	err := json.Unmarshal(data, &temp)
+	if err != nil {
+		return unknown
+	}
 
 	// Handle non-record events
 	if _, ok := temp["routeKey"]; ok {
@@ -171,26 +172,25 @@ func (e *Event) getEventType(data []byte) eventType {
 	}
 
 	// Handle Events
-	recordsList, _ := temp["Records"].([]interface{}) 
+	recordsList, _ := temp["Records"].([]interface{})
 	if len(recordsList) == 0 {
 		return unknown
 	}
 
-	record, _ := recordsList[0].(map[string]interface{}) 
+	record, _ := recordsList[0].(map[string]interface{})
 
-	var eventSource string 
+	var eventSource string
 
-	if es, ok := record["EventSource"]; ok { 
-	eventSource = es.(string) 
-
+	if es, ok := record["EventSource"]; ok {
+		eventSource = es.(string)
 	} else if es, ok := record["eventSource"]; ok { 
 		eventSource = es.(string) 
 	}
 
-	switch eventSource { 
-		case "aws:s3": 
+	switch eventSource {
+	case "aws:s3":
 		return s3
-		case "aws:sns": 
+	case "aws:sns":
 		return sns
 	}
 

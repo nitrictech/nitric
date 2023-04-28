@@ -221,7 +221,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 		principals[v1.ResourceType_Function] = execPrincipals
 
-
 		// Deploy all buckets
 		buckets := map[string]*bucket.S3Bucket{}
 		for _, res := range request.Spec.Resources {
@@ -238,10 +237,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				if len(b.Bucket.Notifications) > 0 {
 					_, err = bucket.NewS3Notification(ctx, fmt.Sprintf("notification-%s", res.Name), &bucket.S3NotificationArgs{
-						StackID:  stackID,
-						Location: details.Region,
-						Bucket: buckets[res.Name],
-						Functions: execs,
+						StackID:      stackID,
+						Location:     details.Region,
+						Bucket:       buckets[res.Name],
+						Functions:    execs,
 						Notification: b.Bucket.Notifications,
 					})
 					if err != nil {
