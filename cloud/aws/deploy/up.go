@@ -266,7 +266,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		// Deploy all schedules
-		schedules := map[string]*schedule.AwsCloudwatchSchedule{}
+		schedules := map[string]*schedule.AwsEventbridgeSchedule{}
 		for _, res := range request.Spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Schedule:
@@ -279,10 +279,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				// Create schedule targeting a given lambda
-				schedules[res.Name], err = schedule.NewAwsCloudwatchSchedule(ctx, res.Name, &schedule.AwsCloudwatchScheduleArgs{
+				schedules[res.Name], err = schedule.NewAwsEventbridgeSchedule(ctx, res.Name, &schedule.AwsEventbridgeScheduleArgs{
 					StackID: stackID,
 					Exec:    execUnit,
 					Cron:    t.Schedule.Cron,
+					Tz:      config.ScheduleTimezone,
 				})
 				if err != nil {
 					return err
