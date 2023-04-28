@@ -35,7 +35,10 @@ type GcpCloudRunConfig struct {
 	Concurrency  int
 }
 
-type GcpConfig = config.AbstractConfig[*GcpConfigItem]
+type GcpConfig struct {
+	config.AbstractConfig[*GcpConfigItem]
+	ScheduleTimezone string `mapstructure:"schedule-timezone"`
+}
 
 var defaultCloudRunConfig = &GcpCloudRunConfig{
 	Memory:       512,
@@ -60,6 +63,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error)
 	err = mapstructure.Decode(attributes, gcpConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	if gcpConfig.ScheduleTimezone == "" {
+		gcpConfig.ScheduleTimezone = "UTC"
 	}
 
 	if gcpConfig.Config == nil {

@@ -358,6 +358,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					StackID:  stackID,
 					Exec:     execUnit,
 					Schedule: t.Schedule,
+					Tz:       config.ScheduleTimezone,
 				})
 				if err != nil {
 					return err
