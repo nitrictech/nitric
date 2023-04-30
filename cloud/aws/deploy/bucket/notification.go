@@ -90,17 +90,17 @@ func NewS3Notification(ctx *pulumi.Context, name string, args *S3NotificationArg
 			invokePerms[funcName] = perm
 		}
 
-		if notification.Config.EventFilter == "*" {
-			notification.Config.EventFilter = ""
+		if notification.Config.NotificationPrefixFilter == "*" {
+			notification.Config.NotificationPrefixFilter = ""
 		}
 
 		// Append notification
 		bucketNotifications = append(bucketNotifications, s3.BucketNotificationLambdaFunctionArgs{
 			LambdaFunctionArn: unit.Function.Arn,
 			Events: pulumi.ToStringArray(
-				eventTypeToStorageEventType(&notification.Config.EventType),
+				eventTypeToStorageEventType(&notification.Config.NotificationType),
 			),
-			FilterPrefix: pulumi.String(notification.Config.EventFilter),
+			FilterPrefix: pulumi.String(notification.Config.NotificationPrefixFilter),
 		}.ToBucketNotificationLambdaFunctionOutput())
 	}
 

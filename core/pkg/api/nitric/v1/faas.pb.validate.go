@@ -1443,9 +1443,9 @@ func (m *BucketNotificationConfig) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for EventType
+	// no validation rules for NotificationType
 
-	// no validation rules for EventFilter
+	// no validation rules for NotificationPrefixFilter
 
 	if len(errors) > 0 {
 		return BucketNotificationConfigMultiError(errors)

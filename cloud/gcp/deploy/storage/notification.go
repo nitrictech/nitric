@@ -45,7 +45,7 @@ type CloudStorageNotificationArgs struct {
 	Function *exec.CloudRunner
 }
 
-func eventTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
+func notificationTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
 	switch *eventType {
 	case v1.BucketNotificationType_All:
 		return []string{"OBJECT_FINALIZE", "OBJECT_DELETE"}
@@ -136,7 +136,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, fmt.Errorf("invalid config provided for bucket notification")
 	}
 
-	prefix := args.Config.EventFilter
+	prefix := args.Config.NotificationPrefixFilter
 	if prefix == "*" {
 		prefix = ""
 	}
@@ -145,7 +145,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		Bucket:           args.Bucket.CloudStorage.Name,
 		PayloadFormat:    pulumi.String("JSON_API_V1"),
 		Topic:            topic.ID(),
-		EventTypes:       pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.EventType)),
+		EventTypes:       pulumi.ToStringArray(notificationTypeToStorageEventType(&args.Config.NotificationType)),
 		ObjectNamePrefix: pulumi.String(prefix),
 	}, append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)
 	if err != nil {

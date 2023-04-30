@@ -102,10 +102,10 @@ message BucketNotificationWorker {
 }
 
 message BucketNotificationConfig {
-	BucketNotificationType event_type = 1;
-  // An event filter is a prefix for a bucket object in which creations or deletions should trigger a notification:
-  // e.g. Event filter: /images/cat and Event Type: created, would trigger on creating /images/cat.png and /images/cat.jpg but not creating /cat.png
-	string event_filter = 2;
+	BucketNotificationType notification_type = 1;
+  // A notification filter is a prefix for a bucket object in which creations or deletions should trigger a notification:
+  // e.g. Notification filter: /images/cat and Event Type: created, would trigger on creating /images/cat.png and /images/cat.jpg but not creating /cat.png
+	string notification_prefix_filter = 2;
 }
 
 // Generic catch all worker (XXX: Do we need this for backwards compatibility?)

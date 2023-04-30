@@ -48,7 +48,7 @@ func eventTypeToString(eventType v1.BucketNotificationType) string {
 func (s *BucketNotificationWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 	if notification := trigger.GetNotification(); notification != nil {
 		if notification.Type == v1.NotificationType_Bucket && s.notification.Bucket == notification.Resource {
-			eventFilter := s.EventFilter()
+			eventFilter := s.NotificationFilter()
 			if eventFilter == "*" {
 				eventFilter = ""
 			}
@@ -57,7 +57,7 @@ func (s *BucketNotificationWorker) HandlesTrigger(trigger *v1.TriggerRequest) bo
 
 			match, _ := regexp.MatchString(eventFilterRegex, notification.Attributes["key"])
 
-			if match && s.EventType() == notification.Attributes["type"] {
+			if match && s.NotificationType() == notification.Attributes["type"] {
 				return true
 			}
 		}
@@ -70,12 +70,12 @@ func (s *BucketNotificationWorker) Bucket() string {
 	return s.notification.Bucket
 }
 
-func (s *BucketNotificationWorker) EventType() string {
-	return eventTypeToString(s.notification.Config.EventType)
+func (s *BucketNotificationWorker) NotificationType() string {
+	return eventTypeToString(s.notification.Config.NotificationType)
 }
 
-func (s *BucketNotificationWorker) EventFilter() string {
-	return s.notification.Config.EventFilter
+func (s *BucketNotificationWorker) NotificationFilter() string {
+	return s.notification.Config.NotificationPrefixFilter
 }
 
 func (s *BucketNotificationWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
@@ -104,7 +104,7 @@ func ValidateBucketNotifications(workers []Worker) error {
 
 	// Separate the notifications by event type and bucket name
 	for _, n := range notifications {
-		eventFilter := n.Config.EventFilter
+		eventFilter := n.Config.NotificationPrefixFilter
 		if eventFilter == "*" {
 			eventFilter = ""
 		}
@@ -113,7 +113,7 @@ func ValidateBucketNotifications(workers []Worker) error {
 			notificationByEventType[n.Bucket] = make(map[v1.BucketNotificationType][]string)
 		}
 
-		notificationByEventType[n.Bucket][n.Config.EventType] = append(notificationByEventType[n.Bucket][n.Config.EventType], eventFilter)
+		notificationByEventType[n.Bucket][n.Config.NotificationType] = append(notificationByEventType[n.Bucket][n.Config.NotificationType], eventFilter)
 	}
 
 	for bucketName := range notificationByEventType {

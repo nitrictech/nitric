@@ -32,10 +32,10 @@ type AzureBucketNotification struct {
 }
 
 type AzureBucketNotificationArgs struct {
-	Bucket *AzureStorageBucket
+	Bucket         *AzureStorageBucket
 	StorageAccount *storage.StorageAccount
-	Config *v1.BucketNotificationConfig
-	Target *exec.ContainerApp
+	Config         *v1.BucketNotificationConfig
+	Target         *exec.ContainerApp
 }
 
 func NewAzureBucketNotification(ctx *pulumi.Context, name string, args *AzureBucketNotificationArgs, opts ...pulumi.ResourceOption) (*AzureBucketNotification, error) {
@@ -66,9 +66,9 @@ func NewAzureBucketNotification(ctx *pulumi.Context, name string, args *AzureBuc
 			MaxDeliveryAttempts: pulumi.Int(30),
 			EventTimeToLive:     pulumi.Int(5),
 		},
-		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.EventType)),
+		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.NotificationType)),
 		SubjectFilter: pulumiEventgrid.EventSubscriptionSubjectFilterArgs{
-			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", args.Bucket.Name, args.Config.EventFilter),
+			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", args.Bucket.Name, args.Config.NotificationPrefixFilter),
 		},
 	}, pulumi.Parent(res), pulumi.DependsOn([]pulumi.Resource{args.Target.App, args.Bucket.Container}))
 	if err != nil {
