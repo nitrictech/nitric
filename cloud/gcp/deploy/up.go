@@ -270,17 +270,17 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					if !ok {
 						return fmt.Errorf("invalid execution unit %s given for topic subscription", notification.GetExecutionUnit())
 					}
-					
-					_, err = storage.NewCloudStorageNotification(ctx, fmt.Sprintf("notification-%d-%s", int(idx), res.Name), &storage.CloudStorageNotificationArgs{
+
+					_, err = storage.NewCloudStorageNotification(ctx, fmt.Sprintf("notification-%d-%s", idx, res.Name), &storage.CloudStorageNotificationArgs{
 						StackID:  stackID,
 						Location: details.Region,
-						Bucket: buckets[res.Name],
-						Config: notification.Config,
+						Bucket:   buckets[res.Name],
+						Config:   notification.Config,
 						Function: unit,
 					}, defaultResourceOptions)
 					if err != nil {
 						return err
-					}					
+					}
 				}
 			}
 		}

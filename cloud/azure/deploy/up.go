@@ -290,10 +290,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				_, err := bucket.NewAzureBucketNotification(ctx, fmt.Sprintf("%s-%d-notification", b.Name, idx), &bucket.AzureBucketNotificationArgs{
-					Bucket: azBucket,
+					Bucket:         azBucket,
 					StorageAccount: storageAccount,
-					Config: notification.Config,
-					Target: unit,
+					Config:         notification.Config,
+					Target:         unit,
 				})
 				if err != nil {
 					return err

@@ -142,8 +142,10 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 // Converts the GCP event type to our abstract event type
 func notificationEventToEventType(eventType string) string {
 	switch eventType {
-	case "OBJECT_FINALIZE": return "created"
-	case "OBJECT_DELETE": return "deleted"
+	case "OBJECT_FINALIZE":
+		return "created"
+	case "OBJECT_DELETE":
+		return "deleted"
 	}
 	return ""
 }
@@ -160,7 +162,7 @@ func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fastht
 			bucketName := ctx.UserValue("name").(string)
 
 			key := pubsubEvent.Message.Attributes["objectId"]
-			eventType := notificationEventToEventType(pubsubEvent.Message.Attributes["eventType"])			
+			eventType := notificationEventToEventType(pubsubEvent.Message.Attributes["eventType"])
 
 			evt := &v1.TriggerRequest{
 				Context: &v1.TriggerRequest_Notification{
@@ -168,7 +170,7 @@ func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fastht
 						Type:     v1.NotificationType_Bucket,
 						Resource: bucketName,
 						Attributes: map[string]string{
-							"key": key,
+							"key":  key,
 							"type": eventType,
 						},
 					},

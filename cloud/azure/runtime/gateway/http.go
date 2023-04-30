@@ -169,6 +169,7 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 		ctx.SuccessString("text/plain", "success")
 	}
 }
+
 // Converts the GCP event type to our abstract event type
 func notificationEventToEventType(eventType *string) string {
 	switch *eventType {
@@ -179,6 +180,7 @@ func notificationEventToEventType(eventType *string) string {
 	}
 	return ""
 }
+
 func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
@@ -206,7 +208,7 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 				ctx.Error(fmt.Sprintf("unable to handle event type: %s", *event.EventType), 400)
 				return
 			}
-			
+
 			// Subject is in the form: "/blobServices/default/containers/test-container/blobs/new-file.txt"
 			evtKey := strings.SplitN(*event.Subject, "/", 7)
 			if len(evtKey) < 7 {
@@ -217,10 +219,10 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 			evt := &v1.TriggerRequest{
 				Context: &v1.TriggerRequest_Notification{
 					Notification: &v1.NotificationTriggerContext{
-						Type: v1.NotificationType_Bucket,
+						Type:     v1.NotificationType_Bucket,
 						Resource: bucketName,
 						Attributes: map[string]string{
-							"key": evtKey[6],
+							"key":  evtKey[6],
 							"type": evtType,
 						},
 					},
