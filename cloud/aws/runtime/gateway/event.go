@@ -68,6 +68,8 @@ func (e *Event) Type() eventType {
 		return healthcheck
 	} else if len(e.Records) > 0 && e.Records[0].EventSource == "aws:sns" {
 		return sns
+	} else if len(e.Records) > 0 && e.Records[0].EventSource == "aws:s3" {
+		return s3
 	} else if e.Schedule != "" {
 		return schedule
 	}
