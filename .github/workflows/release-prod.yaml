@@ -19,7 +19,6 @@ jobs:
         with:
           dry_run: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          dry_run: true
       - name: Create a GitHub release
         id: create_release
         uses: actions/create-release@v1
