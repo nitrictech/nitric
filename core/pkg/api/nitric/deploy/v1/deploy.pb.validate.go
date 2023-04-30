@@ -215,9 +215,18 @@ func (m *DeployUpEvent) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Content.(type) {
-
+	switch v := m.Content.(type) {
 	case *DeployUpEvent_Message:
+		if v == nil {
+			err := DeployUpEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetMessage()).(type) {
@@ -249,6 +258,16 @@ func (m *DeployUpEvent) validate(all bool) error {
 		}
 
 	case *DeployUpEvent_Result:
+		if v == nil {
+			err := DeployUpEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetResult()).(type) {
@@ -279,6 +298,8 @@ func (m *DeployUpEvent) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -485,11 +506,21 @@ func (m *UpResult) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Content.(type) {
-
+	switch v := m.Content.(type) {
 	case *UpResult_StringResult:
+		if v == nil {
+			err := UpResultValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for StringResult
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -855,9 +886,18 @@ func (m *DeployDownEvent) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Content.(type) {
-
+	switch v := m.Content.(type) {
 	case *DeployDownEvent_Message:
+		if v == nil {
+			err := DeployDownEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetMessage()).(type) {
@@ -889,6 +929,16 @@ func (m *DeployDownEvent) validate(all bool) error {
 		}
 
 	case *DeployDownEvent_Result:
+		if v == nil {
+			err := DeployDownEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetResult()).(type) {
@@ -919,6 +969,8 @@ func (m *DeployDownEvent) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -1234,9 +1286,18 @@ func (m *ExecutionUnit) validate(all bool) error {
 
 	// no validation rules for Env
 
-	switch m.Source.(type) {
-
+	switch v := m.Source.(type) {
 	case *ExecutionUnit_Image:
+		if v == nil {
+			err := ExecutionUnitValidationError{
+				field:  "Source",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetImage()).(type) {
@@ -1267,6 +1328,8 @@ func (m *ExecutionUnit) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -1530,11 +1593,21 @@ func (m *BucketNotificationTarget) validate(all bool) error {
 		}
 	}
 
-	switch m.Target.(type) {
-
+	switch v := m.Target.(type) {
 	case *BucketNotificationTarget_ExecutionUnit:
+		if v == nil {
+			err := BucketNotificationTargetValidationError{
+				field:  "Target",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for ExecutionUnit
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2066,11 +2139,21 @@ func (m *SubscriptionTarget) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Target.(type) {
-
+	switch v := m.Target.(type) {
 	case *SubscriptionTarget_ExecutionUnit:
+		if v == nil {
+			err := SubscriptionTargetValidationError{
+				field:  "Target",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for ExecutionUnit
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2305,11 +2388,21 @@ func (m *Api) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Document.(type) {
-
+	switch v := m.Document.(type) {
 	case *Api_Openapi:
+		if v == nil {
+			err := ApiValidationError{
+				field:  "Document",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Openapi
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2411,11 +2504,21 @@ func (m *ScheduleTarget) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Target.(type) {
-
+	switch v := m.Target.(type) {
 	case *ScheduleTarget_ExecutionUnit:
+		if v == nil {
+			err := ScheduleTargetValidationError{
+				field:  "Target",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for ExecutionUnit
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2652,9 +2755,18 @@ func (m *Resource) validate(all bool) error {
 
 	// no validation rules for Type
 
-	switch m.Config.(type) {
-
+	switch v := m.Config.(type) {
 	case *Resource_ExecutionUnit:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetExecutionUnit()).(type) {
@@ -2686,6 +2798,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Bucket:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetBucket()).(type) {
@@ -2717,6 +2839,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Topic:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTopic()).(type) {
@@ -2748,6 +2880,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Queue:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetQueue()).(type) {
@@ -2779,6 +2921,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Api:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetApi()).(type) {
@@ -2810,6 +2962,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Policy:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetPolicy()).(type) {
@@ -2841,6 +3003,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Schedule:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetSchedule()).(type) {
@@ -2872,6 +3044,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Collection:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetCollection()).(type) {
@@ -2903,6 +3085,16 @@ func (m *Resource) validate(all bool) error {
 		}
 
 	case *Resource_Secret:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetSecret()).(type) {
@@ -2933,6 +3125,8 @@ func (m *Resource) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {

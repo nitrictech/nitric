@@ -37,21 +37,21 @@ type CloudStorageNotification struct {
 }
 
 type CloudStorageNotificationArgs struct {
-	Location  string
-	StackID   pulumi.StringInput
+	Location string
+	StackID  pulumi.StringInput
 
-	Bucket *CloudStorageBucket
-	Config *v1.BucketNotificationConfig
+	Bucket   *CloudStorageBucket
+	Config   *v1.BucketNotificationConfig
 	Function *exec.CloudRunner
 }
 
-func eventTypeToStorageEventType(eventType *v1.EventType) []string {
+func eventTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
 	switch *eventType {
-	case v1.EventType_All:
+	case v1.BucketNotificationType_All:
 		return []string{"OBJECT_FINALIZE", "OBJECT_DELETE"}
-	case v1.EventType_Created:
+	case v1.BucketNotificationType_Created:
 		return []string{"OBJECT_FINALIZE"}
-	case v1.EventType_Deleted:
+	case v1.BucketNotificationType_Deleted:
 		return []string{"OBJECT_DELETE"}
 	default:
 		return []string{}

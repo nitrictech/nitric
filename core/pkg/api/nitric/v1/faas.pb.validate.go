@@ -59,9 +59,18 @@ func (m *ClientMessage) validate(all bool) error {
 
 	// no validation rules for Id
 
-	switch m.Content.(type) {
-
+	switch v := m.Content.(type) {
 	case *ClientMessage_InitRequest:
+		if v == nil {
+			err := ClientMessageValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetInitRequest()).(type) {
@@ -93,6 +102,16 @@ func (m *ClientMessage) validate(all bool) error {
 		}
 
 	case *ClientMessage_TriggerResponse:
+		if v == nil {
+			err := ClientMessageValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTriggerResponse()).(type) {
@@ -123,6 +142,8 @@ func (m *ClientMessage) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -227,9 +248,18 @@ func (m *ServerMessage) validate(all bool) error {
 
 	// no validation rules for Id
 
-	switch m.Content.(type) {
-
+	switch v := m.Content.(type) {
 	case *ServerMessage_InitResponse:
+		if v == nil {
+			err := ServerMessageValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetInitResponse()).(type) {
@@ -261,6 +291,16 @@ func (m *ServerMessage) validate(all bool) error {
 		}
 
 	case *ServerMessage_TriggerRequest:
+		if v == nil {
+			err := ServerMessageValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTriggerRequest()).(type) {
@@ -291,6 +331,8 @@ func (m *ServerMessage) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -879,9 +921,18 @@ func (m *ScheduleWorker) validate(all bool) error {
 
 	// no validation rules for Key
 
-	switch m.Cadence.(type) {
-
+	switch v := m.Cadence.(type) {
 	case *ScheduleWorker_Rate:
+		if v == nil {
+			err := ScheduleWorkerValidationError{
+				field:  "Cadence",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetRate()).(type) {
@@ -913,6 +964,16 @@ func (m *ScheduleWorker) validate(all bool) error {
 		}
 
 	case *ScheduleWorker_Cron:
+		if v == nil {
+			err := ScheduleWorkerValidationError{
+				field:  "Cadence",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetCron()).(type) {
@@ -943,6 +1004,8 @@ func (m *ScheduleWorker) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -1486,9 +1549,18 @@ func (m *InitRequest) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Worker.(type) {
-
+	switch v := m.Worker.(type) {
 	case *InitRequest_Api:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetApi()).(type) {
@@ -1520,6 +1592,16 @@ func (m *InitRequest) validate(all bool) error {
 		}
 
 	case *InitRequest_Subscription:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetSubscription()).(type) {
@@ -1551,6 +1633,16 @@ func (m *InitRequest) validate(all bool) error {
 		}
 
 	case *InitRequest_Schedule:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetSchedule()).(type) {
@@ -1582,6 +1674,16 @@ func (m *InitRequest) validate(all bool) error {
 		}
 
 	case *InitRequest_BucketNotification:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetBucketNotification()).(type) {
@@ -1612,6 +1714,8 @@ func (m *InitRequest) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -1946,9 +2050,18 @@ func (m *TriggerRequest) validate(all bool) error {
 		}
 	}
 
-	switch m.Context.(type) {
-
+	switch v := m.Context.(type) {
 	case *TriggerRequest_Http:
+		if v == nil {
+			err := TriggerRequestValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetHttp()).(type) {
@@ -1980,6 +2093,16 @@ func (m *TriggerRequest) validate(all bool) error {
 		}
 
 	case *TriggerRequest_Topic:
+		if v == nil {
+			err := TriggerRequestValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTopic()).(type) {
@@ -2011,6 +2134,16 @@ func (m *TriggerRequest) validate(all bool) error {
 		}
 
 	case *TriggerRequest_Notification:
+		if v == nil {
+			err := TriggerRequestValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetNotification()).(type) {
@@ -2041,6 +2174,8 @@ func (m *TriggerRequest) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2759,9 +2894,18 @@ func (m *TriggerResponse) validate(all bool) error {
 
 	// no validation rules for Data
 
-	switch m.Context.(type) {
-
+	switch v := m.Context.(type) {
 	case *TriggerResponse_Http:
+		if v == nil {
+			err := TriggerResponseValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetHttp()).(type) {
@@ -2793,6 +2937,16 @@ func (m *TriggerResponse) validate(all bool) error {
 		}
 
 	case *TriggerResponse_Topic:
+		if v == nil {
+			err := TriggerResponseValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTopic()).(type) {
@@ -2824,6 +2978,16 @@ func (m *TriggerResponse) validate(all bool) error {
 		}
 
 	case *TriggerResponse_Notification:
+		if v == nil {
+			err := TriggerResponseValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetNotification()).(type) {
@@ -2854,6 +3018,8 @@ func (m *TriggerResponse) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {

@@ -4,8 +4,8 @@ use (
 	./cloud/aws
 	./cloud/azure
 	./cloud/common
-	./cloud/gcp
 	./cloud/debug
+	./cloud/gcp
 	./core
 	./e2e
 )

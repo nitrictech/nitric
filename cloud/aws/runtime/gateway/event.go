@@ -130,15 +130,15 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 		}
 
 		e.APIGatewayV2HTTPRequest = apiEvent
-	case cloudwatch:
-		cloudWatchEvent := events.CloudWatchEvent{}
-		err = json.Unmarshal(data, &cloudWatchEvent)
+	case schedule:
+		nitricSchedule := nitricScheduleEvent{}
+		err = json.Unmarshal(data, &nitricSchedule)
 
 		if err != nil {
 			return err
 		}
 
-		e.CloudWatchEvent = cloudWatchEvent
+		e.nitricScheduleEvent = nitricSchedule
 	case healthcheck:
 		checkEvent := healthCheckEvent{}
 		err = json.Unmarshal(data, &checkEvent)
@@ -167,8 +167,8 @@ func (e *Event) getEventType(data []byte) eventType {
 		return httpEvent
 	} else if _, ok := temp["x-nitric-healthcheck"]; ok {
 		return healthcheck
-	} else if _, ok := temp["source"]; ok {
-		return cloudwatch
+	} else if _, ok := temp["x-nitric-schedule"]; ok {
+		return schedule
 	}
 
 	// Handle Events
@@ -183,8 +183,8 @@ func (e *Event) getEventType(data []byte) eventType {
 
 	if es, ok := record["EventSource"]; ok {
 		eventSource = es.(string)
-	} else if es, ok := record["eventSource"]; ok { 
-		eventSource = es.(string) 
+	} else if es, ok := record["eventSource"]; ok {
+		eventSource = es.(string)
 	}
 
 	switch eventSource {

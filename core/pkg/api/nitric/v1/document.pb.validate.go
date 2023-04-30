@@ -537,20 +537,57 @@ func (m *ExpressionValue) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Kind.(type) {
-
+	switch v := m.Kind.(type) {
 	case *ExpressionValue_IntValue:
+		if v == nil {
+			err := ExpressionValueValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for IntValue
-
 	case *ExpressionValue_DoubleValue:
+		if v == nil {
+			err := ExpressionValueValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for DoubleValue
-
 	case *ExpressionValue_StringValue:
+		if v == nil {
+			err := ExpressionValueValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for StringValue
-
 	case *ExpressionValue_BoolValue:
+		if v == nil {
+			err := ExpressionValueValidationError{
+				field:  "Kind",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for BoolValue
-
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {

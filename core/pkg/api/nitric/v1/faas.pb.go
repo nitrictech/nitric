@@ -772,8 +772,10 @@ type BucketNotificationConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	EventType   BucketNotificationType `protobuf:"varint,1,opt,name=event_type,json=eventType,proto3,enum=nitric.faas.v1.BucketNotificationType" json:"event_type,omitempty"`
-	EventFilter string                 `protobuf:"bytes,2,opt,name=event_filter,json=eventFilter,proto3" json:"event_filter,omitempty"`
+	EventType BucketNotificationType `protobuf:"varint,1,opt,name=event_type,json=eventType,proto3,enum=nitric.faas.v1.BucketNotificationType" json:"event_type,omitempty"`
+	// An event filter is a prefix for a bucket object in which creations or deletions should trigger a notification:
+	// e.g. Event filter: /images/cat and Event Type: created, would trigger on creating /images/cat.png and /images/cat.jpg but not creating /cat.png
+	EventFilter string `protobuf:"bytes,2,opt,name=event_filter,json=eventFilter,proto3" json:"event_filter,omitempty"`
 }
 
 func (x *BucketNotificationConfig) Reset() {
