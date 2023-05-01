@@ -197,15 +197,18 @@ message TopicTriggerContext {
   // TODO: Add the event ID to the trigger context here got transactional outbox?
 }
 
-enum NotificationType {
-  Bucket = 0;
+message BucketNotification {
+  string key = 1;
+  BucketNotificationType type = 2;
 }
 
 message NotificationTriggerContext {
-  // The resource the message was triggered by
-  NotificationType type = 1;
-  string resource = 2;
-  map<string, string> attributes = 3; // Convention for buckets is "key" and "type"
+  string source = 1;
+  
+  // Now we don't need to specify a type enum, the specific contents/type comes in a single field of the context.
+  oneof notification {
+     BucketNotification bucket = 10;
+  }
 }
 
 // The worker has successfully processed a trigger

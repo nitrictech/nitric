@@ -33,31 +33,19 @@ type BucketNotificationWorker struct {
 
 var _ Worker = &BucketNotificationWorker{}
 
-func eventTypeToString(eventType v1.BucketNotificationType) string {
-	switch eventType {
-	case v1.BucketNotificationType_All:
-		return "all"
-	case v1.BucketNotificationType_Created:
-		return "created"
-	case v1.BucketNotificationType_Deleted:
-		return "deleted"
-	}
-	return ""
-}
-
 func (s *BucketNotificationWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 	if notification := trigger.GetNotification(); notification != nil {
-		if notification.Type == v1.NotificationType_Bucket && s.notification.Bucket == notification.Resource {
-			eventFilter := s.NotificationFilter()
+		if s.notification.Bucket == notification.Source {
+			eventFilter := s.NotificationPrefixFilter()
 			if eventFilter == "*" {
 				eventFilter = ""
 			}
 
 			eventFilterRegex := fmt.Sprintf("^(%s)", strings.ReplaceAll(eventFilter, "/", "\\/"))
 
-			match, _ := regexp.MatchString(eventFilterRegex, notification.Attributes["key"])
+			match, _ := regexp.MatchString(eventFilterRegex, notification.GetBucket().Key)
 
-			if match && s.NotificationType() == notification.Attributes["type"] {
+			if match && s.notification.Config.NotificationType == notification.GetBucket().Type {
 				return true
 			}
 		}
@@ -70,11 +58,11 @@ func (s *BucketNotificationWorker) Bucket() string {
 	return s.notification.Bucket
 }
 
-func (s *BucketNotificationWorker) NotificationType() string {
-	return eventTypeToString(s.notification.Config.NotificationType)
+func (s *BucketNotificationWorker) NotificationType() v1.BucketNotificationType {
+	return s.notification.Config.NotificationType
 }
 
-func (s *BucketNotificationWorker) NotificationFilter() string {
+func (s *BucketNotificationWorker) NotificationPrefixFilter() string {
 	return s.notification.Config.NotificationPrefixFilter
 }
 

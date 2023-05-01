@@ -259,13 +259,13 @@ func (s *LambdaGateway) handleHealthCheck(ctx context.Context, evt healthCheckEv
 }
 
 // Converts the GCP event type to our abstract event type
-func notificationEventToEventType(eventType string) string {
+func notificationEventToEventType(eventType string) (v1.BucketNotificationType, error) {
 	if ok := strings.Contains(eventType, "ObjectCreated:"); ok {
-		return "created"
+		return v1.BucketNotificationType_Deleted, nil
 	} else if ok := strings.Contains(eventType, "ObjectRemoved:"); ok {
-		return "deleted"
+		return v1.BucketNotificationType_Created, nil
 	}
-	return ""
+	return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", eventType)
 }
 
 func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (interface{}, error) {
@@ -276,19 +276,20 @@ func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (in
 			return nil, fmt.Errorf("unable to find nitric bucket: %w", err)
 		}
 
-		evtType := notificationEventToEventType(s3Record.EventName)
-		if evtType == "" {
-			return nil, fmt.Errorf("unable to handle event type: %s", s3Record.EventName)
+		eventType, err := notificationEventToEventType(s3Record.EventName)
+		if err != nil {
+			return nil, err
 		}
 
 		request := &v1.TriggerRequest{
 			Context: &v1.TriggerRequest_Notification{
 				Notification: &v1.NotificationTriggerContext{
-					Type:     v1.NotificationType_Bucket,
-					Resource: bucketName,
-					Attributes: map[string]string{
-						"key":  s3Record.S3.Object.Key,
-						"type": evtType,
+					Source: bucketName,
+					Notification: &v1.NotificationTriggerContext_Bucket{
+						Bucket: &v1.BucketNotification{
+							Key:  s3Record.S3.Object.Key,
+							Type: eventType,
+						},
 					},
 				},
 			},

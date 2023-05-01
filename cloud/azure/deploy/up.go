@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
@@ -283,13 +284,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				return err
 			}
 
-			for idx, notification := range b.GetBucket().Notifications {
+			for _, notification := range b.GetBucket().Notifications {
 				unit, ok := apps[notification.GetExecutionUnit()]
 				if !ok {
 					return fmt.Errorf("invalid execution unit %s given for bucket subscription", notification.GetExecutionUnit())
 				}
 
-				_, err := bucket.NewAzureBucketNotification(ctx, fmt.Sprintf("%s-%d-notification", b.Name, idx), &bucket.AzureBucketNotificationArgs{
+				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Name, strings.ToLower(notification.Config.NotificationType.String()), notification.GetExecutionUnit())
+				_, err := bucket.NewAzureBucketNotification(ctx, notificationName, &bucket.AzureBucketNotificationArgs{
 					Bucket:         azBucket,
 					StorageAccount: storageAccount,
 					Config:         notification.Config,

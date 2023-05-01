@@ -114,7 +114,17 @@ var _ = Describe("BucketNotificationWorker", func() {
 
 			It("should return false", func() {
 				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Notification{Notification: &v1.NotificationTriggerContext{Resource: "test", Attributes: map[string]string{"key": "file.txt", "type": "created"}}},
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "file.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
 				})).To(BeFalse())
 			})
 		})
@@ -132,7 +142,17 @@ var _ = Describe("BucketNotificationWorker", func() {
 
 			It("should return true", func() {
 				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Notification{Notification: &v1.NotificationTriggerContext{Resource: "test", Attributes: map[string]string{"key": "file.txt", "type": "created"}}},
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "file.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
 				})).To(BeTrue())
 			})
 		})
@@ -150,7 +170,17 @@ var _ = Describe("BucketNotificationWorker", func() {
 
 			It("should return true", func() {
 				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Notification{Notification: &v1.NotificationTriggerContext{Resource: "test", Attributes: map[string]string{"key": "file.txt", "type": "created"}}},
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "file.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
 				})).To(BeTrue())
 			})
 		})
@@ -168,7 +198,17 @@ var _ = Describe("BucketNotificationWorker", func() {
 
 			It("should return false", func() {
 				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Notification{Notification: &v1.NotificationTriggerContext{Resource: "test", Attributes: map[string]string{"key": "blah.txt", "type": "created"}}},
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "blah.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
 				})).To(BeFalse())
 			})
 		})
@@ -186,7 +226,17 @@ var _ = Describe("BucketNotificationWorker", func() {
 
 			It("should return false", func() {
 				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Notification{Notification: &v1.NotificationTriggerContext{Resource: "test", Attributes: map[string]string{"key": "file.txt", "type": "created"}}},
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "file.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
 				})).To(BeFalse())
 			})
 		})
@@ -213,10 +263,12 @@ var _ = Describe("BucketNotificationWorker", func() {
 				_, err := subWrkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{
 					Context: &v1.TriggerRequest_Notification{
 						Notification: &v1.NotificationTriggerContext{
-							Resource: "test",
-							Attributes: map[string]string{
-								"key":  "file.txt",
-								"type": "created",
+							Source: "test",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "file.txt",
+									Type: v1.BucketNotificationType_Created,
+								},
 							},
 						},
 					},

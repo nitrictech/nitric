@@ -171,14 +171,15 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 }
 
 // Converts the GCP event type to our abstract event type
-func notificationEventToEventType(eventType *string) string {
+func notificationEventToEventType(eventType *string) (v1.BucketNotificationType, error) {
 	switch *eventType {
 	case "Microsoft.Storage.BlobCreated":
-		return "created"
+		return v1.BucketNotificationType_Created, nil
 	case "Microsoft.Storage.BlobDeleted":
-		return "deleted"
+		return v1.BucketNotificationType_Deleted, nil
+	default:
+		return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", *eventType)
 	}
-	return ""
 }
 
 func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
@@ -195,35 +196,38 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 		}
 
 		for _, event := range eventgridEvents {
-			eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
-			if eventType == "SubscriptionValidation" {
+			azureEventType := string(ctx.Request.Header.Peek("aeg-event-type"))
+			if azureEventType == "SubscriptionValidation" {
 				a.handleSubscriptionValidation(ctx, eventgridEvents)
 				return
 			}
 
 			bucketName := ctx.UserValue("name").(string)
 
-			evtType := notificationEventToEventType(event.EventType)
-			if evtType == "" {
-				ctx.Error(fmt.Sprintf("unable to handle event type: %s", *event.EventType), 400)
+			eventType, err := notificationEventToEventType(event.EventType)
+			if err != nil {
+				ctx.Error(err.Error(), 400)
 				return
 			}
 
 			// Subject is in the form: "/blobServices/default/containers/test-container/blobs/new-file.txt"
-			evtKey := strings.SplitN(*event.Subject, "/", 7)
-			if len(evtKey) < 7 {
+			eventKeySeparated := strings.SplitN(*event.Subject, "/", 7)
+			if len(eventKeySeparated) < 7 {
 				ctx.Error("object key cannot be empty", 400)
 				return
 			}
 
+			eventKey := eventKeySeparated[6]
+
 			evt := &v1.TriggerRequest{
 				Context: &v1.TriggerRequest_Notification{
 					Notification: &v1.NotificationTriggerContext{
-						Type:     v1.NotificationType_Bucket,
-						Resource: bucketName,
-						Attributes: map[string]string{
-							"key":  evtKey[6],
-							"type": evtType,
+						Source: bucketName,
+						Notification: &v1.NotificationTriggerContext_Bucket{
+							Bucket: &v1.BucketNotification{
+								Key:  eventKey,
+								Type: eventType,
+							},
 						},
 					},
 				},

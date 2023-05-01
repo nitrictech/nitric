@@ -140,14 +140,15 @@ func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.Request
 }
 
 // Converts the GCP event type to our abstract event type
-func notificationEventToEventType(eventType string) string {
+func notificationEventToEventType(eventType string) (v1.BucketNotificationType, error) {
 	switch eventType {
 	case "OBJECT_FINALIZE":
-		return "created"
+		return v1.BucketNotificationType_Created, nil
 	case "OBJECT_DELETE":
-		return "deleted"
+		return v1.BucketNotificationType_Deleted, nil
+	default:
+		return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", eventType)
 	}
-	return ""
 }
 
 func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
@@ -162,16 +163,21 @@ func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fastht
 			bucketName := ctx.UserValue("name").(string)
 
 			key := pubsubEvent.Message.Attributes["objectId"]
-			eventType := notificationEventToEventType(pubsubEvent.Message.Attributes["eventType"])
+			eventType, err := notificationEventToEventType(pubsubEvent.Message.Attributes["eventType"])
+			if err != nil {
+				ctx.Error(err.Error(), 400)
+				return
+			}
 
 			evt := &v1.TriggerRequest{
 				Context: &v1.TriggerRequest_Notification{
 					Notification: &v1.NotificationTriggerContext{
-						Type:     v1.NotificationType_Bucket,
-						Resource: bucketName,
-						Attributes: map[string]string{
-							"key":  key,
-							"type": eventType,
+						Source: bucketName,
+						Notification: &v1.NotificationTriggerContext_Bucket{
+							Bucket: &v1.BucketNotification{
+								Key:  key,
+								Type: eventType,
+							},
 						},
 					},
 				},

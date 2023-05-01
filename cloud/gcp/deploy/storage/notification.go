@@ -94,7 +94,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, errors.WithMessage(err, "iam member "+name)
 	}
 
-	_, err = pubsub.NewSubscription(ctx, name+"-notify", &pubsub.SubscriptionArgs{
+	_, err = pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
 		Topic:              topic.Name,
 		AckDeadlineSeconds: pulumi.Int(300),
 		RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
@@ -112,7 +112,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		},
 	}, append(opts, pulumi.Parent(args.Function))...)
 	if err != nil {
-		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
+		return nil, errors.WithMessage(err, "subscription "+name)
 	}
 
 	// Give the cloud storage service account publishing permissions

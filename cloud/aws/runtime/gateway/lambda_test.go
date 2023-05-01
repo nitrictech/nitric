@@ -258,11 +258,12 @@ var _ = Describe("Lambda", func() {
 				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
 					Context: &v1.TriggerRequest_Notification{
 						Notification: &v1.NotificationTriggerContext{
-							Type:     v1.NotificationType_Bucket,
-							Resource: "images",
-							Attributes: map[string]string{
-								"key":  "cat.png",
-								"type": "created",
+							Source: "images",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "cat.png",
+									Type: v1.BucketNotificationType_Created,
+								},
 							},
 						},
 					},
