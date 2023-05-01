@@ -261,9 +261,9 @@ func (s *LambdaGateway) handleHealthCheck(ctx context.Context, evt healthCheckEv
 // Converts the GCP event type to our abstract event type
 func notificationEventToEventType(eventType string) (v1.BucketNotificationType, error) {
 	if ok := strings.Contains(eventType, "ObjectCreated:"); ok {
-		return v1.BucketNotificationType_Deleted, nil
-	} else if ok := strings.Contains(eventType, "ObjectRemoved:"); ok {
 		return v1.BucketNotificationType_Created, nil
+	} else if ok := strings.Contains(eventType, "ObjectRemoved:"); ok {
+		return v1.BucketNotificationType_Deleted, nil
 	}
 	return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", eventType)
 }
