@@ -34,24 +34,24 @@ type BucketNotificationWorker struct {
 var _ Worker = &BucketNotificationWorker{}
 
 func (s *BucketNotificationWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
-	if notification := trigger.GetNotification(); notification != nil {
-		if s.notification.Bucket == notification.Source {
-			eventFilter := s.NotificationPrefixFilter()
-			if eventFilter == "*" {
-				eventFilter = ""
-			}
-
-			eventFilterRegex := fmt.Sprintf("^(%s)", strings.ReplaceAll(eventFilter, "/", "\\/"))
-
-			match, _ := regexp.MatchString(eventFilterRegex, notification.GetBucket().Key)
-
-			if match && s.notification.Config.NotificationType == notification.GetBucket().Type {
-				return true
-			}
-		}
+	notification := trigger.GetNotification()
+	if notification == nil {
+		return false
 	}
 
-	return false
+	if s.notification.Bucket != notification.Source {
+		return false
+	}
+
+	if !s.matchesPrefixFilter(notification.GetBucket().Key) {
+		return false
+	}
+
+	if s.notification.Config.NotificationType != notification.GetBucket().Type {
+		return false
+	}
+
+	return true
 }
 
 func (s *BucketNotificationWorker) Bucket() string {
@@ -64,6 +64,18 @@ func (s *BucketNotificationWorker) NotificationType() v1.BucketNotificationType 
 
 func (s *BucketNotificationWorker) NotificationPrefixFilter() string {
 	return s.notification.Config.NotificationPrefixFilter
+}
+
+func (s *BucketNotificationWorker) matchesPrefixFilter(objectKey string) bool {
+	eventFilter := s.NotificationPrefixFilter()
+	if eventFilter == "*" {
+		eventFilter = ""
+	}
+
+	eventFilterRegex := fmt.Sprintf("^(%s)", strings.ReplaceAll(eventFilter, "/", "\\/"))
+	match, _ := regexp.MatchString(eventFilterRegex, objectKey)
+
+	return match
 }
 
 func (s *BucketNotificationWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
