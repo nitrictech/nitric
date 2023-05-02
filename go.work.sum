@@ -966,6 +966,8 @@ github.com/pulumi/pulumi-azure-native-sdk/storage v1.87.0 h1:f34u321w+0Tqfa1W1UC
 github.com/pulumi/pulumi-azuread/sdk/v5 v5.31.0 h1:sYcGQCN1RxGOa54muZUfWcKW/uAUXLJDEyt9cx5qcb0=
 github.com/pulumi/pulumi-gcp/sdk/v6 v6.43.0 h1:U6M+S7e1SS86nyadOZ55LOYxo4+piuYxPLq3c3R8JqU=
 github.com/pulumi/pulumi-gcp/sdk/v6 v6.47.0/go.mod h1:XQSKusUJfmROSdz4sAdDOGGjgFw3jiwtLlMFnQkvDk0=
+github.com/pulumi/pulumi-gcp/sdk/v6 v6.55.0 h1:SWkCTU/0ZSdtJFIsqBdRjqr8DYk2ruAaOsD45p9Fo9Y=
+github.com/pulumi/pulumi-gcp/sdk/v6 v6.55.0/go.mod h1:hcVycxkARvh/sylq8s8OMBJHJjFsOq5r+NcQekIa+fQ=
 github.com/quasilyte/go-ruleguard v0.3.1-0.20210203134552-1b5a410e1cc8/go.mod h1:KsAh3x0e7Fkpgs+Q9pNLS5XpFSvYCEVl5gP9Pp1xp30=
 github.com/quasilyte/go-ruleguard v0.3.15/go.mod h1:NhuWhnlVEM1gT1A4VJHYfy9MuYSxxwHgxWoPsn9llB4=
 github.com/quasilyte/go-ruleguard v0.3.18/go.mod h1:lOIzcYlgxrQ2sGJ735EHXmf/e9MJ516j16K/Ifcttvs=
