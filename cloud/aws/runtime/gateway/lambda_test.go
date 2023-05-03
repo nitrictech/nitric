@@ -166,7 +166,7 @@ var _ = Describe("Lambda", func() {
 							EventSource:          "aws:sns",
 							EventSubscriptionArn: "some:arbitrary:subscription:arn:MySubscription",
 							SNS: events.SNSEntity{
-								TopicArn: fmt.Sprintf("some:arbitrary:topic:arn:%s", topicName),
+								TopicArn: fmt.Sprintf("arn:aws:sns:us-east-1:12345678910:arn:%s", topicName),
 								Message:  string(messageBytes),
 							},
 						},
@@ -180,7 +180,7 @@ var _ = Describe("Lambda", func() {
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("having the topic available")
 				mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(map[string]string{
-					"MyTopic": "some:arbitrary:topic:arn:MyTopic",
+					"MyTopic": "arn:aws:sns:us-east-1:12345678910:arn:MyTopic",
 				}, nil)
 
 				By("Returning the worker")
@@ -201,6 +201,153 @@ var _ = Describe("Lambda", func() {
 				// This function will block which means we don't need to wait on processing,
 				// the function will unblock once processing has finished, this is due to our mock
 				// handler only looping once over each request
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Context("S3 Events", func() {
+		When("The Lambda Gateway receives S3 Put events", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+
+			pool := mock_pool.NewMockWorkerPool(ctrl)
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+
+			runtime := MockLambdaRuntime{
+				// Setup mock events for our runtime to process...
+				eventQueue: []interface{}{&events.S3Event{
+					Records: []events.S3EventRecord{
+						{
+							EventVersion: "",
+							EventSource:  "aws:s3",
+							EventName:    "ObjectCreated:Put",
+							S3: events.S3Entity{
+								Bucket: events.S3Bucket{
+									Name: "images",
+									Arn:  "arn:aws:sns:us-east-1:12345678910:arn:images",
+								},
+								Object: events.S3Object{
+									Key: "cat.png",
+								},
+							},
+							ResponseElements: map[string]string{},
+						},
+					},
+				}},
+			}
+
+			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			Expect(err).To(BeNil())
+
+			// This function will block which means we don't need to wait on processing,
+			// the function will unblock once processing has finished, this is due to our mock
+			// handler only looping once over each request
+			It("The gateway should translate into a standard NitricRequest", func() {
+				By("Returning the worker")
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+					"images": "arn:aws:sns:us-east-1:12345678910:arn:images",
+				}, nil)
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				By("Handling all request types")
+				mockHandler.EXPECT().HandlesTrigger(gomock.Any()).Return(true)
+
+				By("Handling a single Notification request")
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "images",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "cat.png",
+									Type: v1.BucketNotificationType_Created,
+								},
+							},
+						},
+					},
+				}).Return(&v1.TriggerResponse{
+					Data: []byte("success"),
+					Context: &v1.TriggerResponse_Notification{
+						Notification: &v1.NotificationResponseContext{
+							Success: true,
+						},
+					},
+				}, nil)
+
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
+			})
+		})
+		When("The Lambda Gateway receives S3 Delete events", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+
+			pool := mock_pool.NewMockWorkerPool(ctrl)
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+
+			runtime := MockLambdaRuntime{
+				// Setup mock events for our runtime to process...
+				eventQueue: []interface{}{&events.S3Event{
+					Records: []events.S3EventRecord{
+						{
+							EventVersion: "",
+							EventSource:  "aws:s3",
+							EventName:    "ObjectRemoved:Delete",
+							S3: events.S3Entity{
+								Bucket: events.S3Bucket{
+									Name: "images",
+									Arn:  "arn:aws:sns:us-east-1:12345678910:arn:images",
+								},
+								Object: events.S3Object{
+									Key: "cat.png",
+								},
+							},
+							ResponseElements: map[string]string{},
+						},
+					},
+				}},
+			}
+
+			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			Expect(err).To(BeNil())
+
+			// This function will block which means we don't need to wait on processing,
+			// the function will unblock once processing has finished, this is due to our mock
+			// handler only looping once over each request
+			It("The gateway should translate into a standard NitricRequest", func() {
+				By("Returning the worker")
+				mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+					"images": "arn:aws:sns:us-east-1:12345678910:arn:images",
+				}, nil)
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				By("Handling all request types")
+				mockHandler.EXPECT().HandlesTrigger(gomock.Any()).Return(true)
+
+				By("Handling a single Notification request")
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Context: &v1.TriggerRequest_Notification{
+						Notification: &v1.NotificationTriggerContext{
+							Source: "images",
+							Notification: &v1.NotificationTriggerContext_Bucket{
+								Bucket: &v1.BucketNotification{
+									Key:  "cat.png",
+									Type: v1.BucketNotificationType_Deleted,
+								},
+							},
+						},
+					},
+				}).Return(&v1.TriggerResponse{
+					Data: []byte("success"),
+					Context: &v1.TriggerResponse_Notification{
+						Notification: &v1.NotificationResponseContext{
+							Success: true,
+						},
+					},
+				}, nil)
+
 				err := client.Start(pool)
 				Expect(err).To(BeNil())
 			})

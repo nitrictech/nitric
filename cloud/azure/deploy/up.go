@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
@@ -181,18 +182,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			contEnvArgs.StorageAccountQueueEndpoint = storageAccount.PrimaryEndpoints.Queue()
 		}
 
-		// For each bucket create a new bucket
-		for _, b := range buckets {
-			_, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
-				StackID:       stackID,
-				Account:       storageAccount,
-				ResourceGroup: rg,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
 		var mongoCollections *collection.MongoCollections
 		if len(collections) > 0 {
 			mongoCollections, err = collection.NewMongoCollections(ctx, "", &collection.MongoCollectionsArgs{
@@ -280,6 +269,36 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					}
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
+				}
+			}
+		}
+
+		// For each bucket create a new bucket
+		for _, b := range buckets {
+			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
+				StackID:       stackID,
+				Account:       storageAccount,
+				ResourceGroup: rg,
+			})
+			if err != nil {
+				return err
+			}
+
+			for _, notification := range b.GetBucket().Notifications {
+				unit, ok := apps[notification.GetExecutionUnit()]
+				if !ok {
+					return fmt.Errorf("invalid execution unit %s given for bucket subscription", notification.GetExecutionUnit())
+				}
+
+				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Name, strings.ToLower(notification.Config.NotificationType.String()), notification.GetExecutionUnit())
+				_, err := bucket.NewAzureBucketNotification(ctx, notificationName, &bucket.AzureBucketNotificationArgs{
+					Bucket:         azBucket,
+					StorageAccount: storageAccount,
+					Config:         notification.Config,
+					Target:         unit,
+				})
+				if err != nil {
+					return err
 				}
 			}
 		}

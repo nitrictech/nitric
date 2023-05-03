@@ -45,17 +45,12 @@ func NewS3Bucket(ctx *pulumi.Context, name string, args *S3BucketArgs, opts ...p
 		return nil, err
 	}
 
-	s3Bucket, err := s3.NewBucket(ctx, name, &s3.BucketArgs{
+	res.S3, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
 		Tags: common.Tags(ctx, args.StackID, name),
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "s3 bucket "+name)
 	}
 
-	res.S3 = s3Bucket
-
-	return &S3Bucket{
-		Name: name,
-		S3:   s3Bucket,
-	}, nil
+	return res, nil
 }

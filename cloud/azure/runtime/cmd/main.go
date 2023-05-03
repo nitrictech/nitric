@@ -54,14 +54,28 @@ func main() {
 	if err != nil {
 		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
-	membraneOpts.GatewayPlugin, _ = http_service.New(provider)
+
+	membraneOpts.GatewayPlugin, err = http_service.New(provider)
+	if err != nil {
+		log.Default().Println("Failed to load gateway plugin:", err.Error())
+	}
+
 	membraneOpts.QueuePlugin, _ = azqueue_service.New()
-	membraneOpts.StoragePlugin, _ = azblob_service.New()
+	if err != nil {
+		log.Default().Println("Failed to load queue plugin:", err.Error())
+	}
+
+	membraneOpts.StoragePlugin, err = azblob_service.New()
+	if err != nil {
+		log.Default().Println("Failed to load storage plugin:", err.Error())
+	}
+
 	membraneOpts.SecretPlugin, err = key_vault.New()
-	membraneOpts.ResourcesPlugin = provider
 	if err != nil {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
+
+	membraneOpts.ResourcesPlugin = provider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
