@@ -44,6 +44,7 @@ type CloudSchedulerArgs struct {
 
 	Exec     *exec.CloudRunner
 	Schedule *deploy.Schedule
+	Tz       string
 }
 
 type ScheduleEvent struct {
@@ -91,7 +92,7 @@ func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudScheduler
 	payload := base64.StdEncoding.EncodeToString(eventJSON)
 
 	res.Job, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
-		TimeZone: pulumi.String("UTC"),
+		TimeZone: pulumi.String(args.Tz),
 		HttpTarget: &cloudscheduler.JobHttpTargetArgs{
 			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s", args.Exec.Url, name),
 			OidcToken: &cloudscheduler.JobHttpTargetOidcTokenArgs{

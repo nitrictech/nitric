@@ -41,4 +41,4 @@ jobs:
           prerelease: true
           tag_name: ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
           release_name: Release ${{ steps.tag_version.outputs.new_tag }}-rc.${{ steps.vars.outputs.rc_num }}
-          body: ${{ steps.tag_version.outputs.changelog }}-rc.${{ steps.vars.outputs.rc_num }}
+          body: ${{ steps.tag_version.outputs.changelog }}

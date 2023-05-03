@@ -17,8 +17,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v5.5
         with:
-          # Use GITHUB_TOKEN here to prevent further workflows
-          # generated on 'tag' action
+          dry_run: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Create a GitHub release
         id: create_release

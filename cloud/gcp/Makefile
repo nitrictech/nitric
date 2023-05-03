@@ -35,8 +35,8 @@ fmt:
 	@rm deploy/runtime-gcp
 
 lint:
-	@touch deploy/runtime-gcp
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch deploy/runtime-gcp
 	$(GOLANGCI_LINT) run
 	@rm deploy/runtime-gcp
 

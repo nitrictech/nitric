@@ -40,6 +40,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
@@ -188,7 +189,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return fmt.Errorf("aws provider can only deploy execution with an image source")
 				}
 
-				fmt.Println(eu.ExecutionUnit.GetImage().GetUri())
+				if eu.ExecutionUnit.Type == "" {
+					eu.ExecutionUnit.Type = "default"
+				}
+
+				typeConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
+				if !hasConfig {
+					return fmt.Errorf("could not find config for type %s in %+v", eu.ExecutionUnit.Type, config.Config)
+				}
 
 				image, err := image.NewImage(ctx, res.Name, &image.ImageArgs{
 					SourceImage:   eu.ExecutionUnit.GetImage().GetUri(),
@@ -197,17 +205,15 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Username:      pulumi.String(authToken.UserName),
 					Password:      pulumi.String(authToken.Password),
 					Runtime:       runtime,
+					Telemetry: &telemetry.TelemetryConfigArgs{
+						TraceSampling: typeConfig.Telemetry,
+						TraceName:     "awsxray",
+						MetricName:    "awsemf",
+						Extensions:    []string{},
+					},
 				}, pulumi.DependsOn([]pulumi.Resource{repo}))
 				if err != nil {
 					return err
-				}
-
-				if eu.ExecutionUnit.Type == "" {
-					eu.ExecutionUnit.Type = "default"
-				}
-				typeConfig, hasConfig := config.Config[eu.ExecutionUnit.Type]
-				if !hasConfig {
-					return fmt.Errorf("could not find config for type %s in %+v", eu.ExecutionUnit.Type, config.Config)
 				}
 
 				if typeConfig.Lambda != nil {
@@ -260,7 +266,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		// Deploy all schedules
-		schedules := map[string]*schedule.AwsCloudwatchSchedule{}
+		schedules := map[string]*schedule.AwsEventbridgeSchedule{}
 		for _, res := range request.Spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Schedule:
@@ -273,10 +279,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				// Create schedule targeting a given lambda
-				schedules[res.Name], err = schedule.NewAwsCloudwatchSchedule(ctx, res.Name, &schedule.AwsCloudwatchScheduleArgs{
+				schedules[res.Name], err = schedule.NewAwsEventbridgeSchedule(ctx, res.Name, &schedule.AwsEventbridgeScheduleArgs{
 					StackID: stackID,
 					Exec:    execUnit,
 					Cron:    t.Schedule.Cron,
+					Tz:      config.ScheduleTimezone,
 				})
 				if err != nil {
 					return err

@@ -25,25 +25,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type DownStreamMessageWriter struct {
-	stream deploy.DeployService_DownServer
-}
-
-func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployDownEvent{
-		Content: &deploy.DeployDownEvent_Message{
-			Message: &deploy.DeployEventMessage{
-				Message: string(bytes),
-			},
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return len(bytes), nil
-}
-
 func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
 	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {

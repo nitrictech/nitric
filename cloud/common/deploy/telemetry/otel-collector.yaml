@@ -1,0 +1,25 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+processors:
+
+extensions:{{range $val := .Extensions}}
+  {{$val}}:{{end}}
+
+service:
+  extensions:{{range $val := .Extensions}}
+  - {{$val}}:{{end}}
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [{{.TraceName}}]
+    metrics:
+      receivers: [otlp]
+      exporters: [{{.MetricName}}]
+
+exporters:
+  {{ .TraceName }}: {{ .TraceExporterConfig }}
+  {{ if ne .MetricName .TraceName }}{{ .MetricName }}: {{ .MetricExporterConfig }}{{ end }}
