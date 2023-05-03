@@ -23,11 +23,14 @@ import (
 	"runtime/debug"
 	"strings"
 
+	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
+	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
@@ -49,6 +52,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iamcredentials/v1"
@@ -106,6 +110,35 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+
+		collections := lo.Filter[*deploy.Resource](request.Spec.Resources, func(res *deploy.Resource, _ int) bool {
+			return res.Type == v1.ResourceType_Collection
+		})
+
+		// If collections are required we need to instansiate a default database if one doesn't exist
+		if len(collections) > 0 {
+			fsAdminClient, err := apiv1.NewFirestoreAdminClient(context.TODO())
+			if err != nil {
+				return err
+			}
+
+			defaultDb, _ := fsAdminClient.GetDatabase(context.TODO(), &adminpb.GetDatabaseRequest{
+				Name: fmt.Sprintf("projects/%s/databases/(default)", *project.ProjectId),
+			})
+
+			defaultDbExists := defaultDb != nil
+
+			// create a firestore database for the stack or adopt the default database
+			// TODO: Determine if we can create multiple databases
+			_, err = collection.NewFirestoreCollectionDatabase(ctx, fmt.Sprintf("nitric-%s", ctx.Stack()), &collection.FirestoreCollectionDatabaseArgs{
+				Location:      details.Region,
+				DefaultExists: defaultDbExists,
+			})
+			if err != nil {
+				fmt.Println("got a database err")
+				return err
+			}
+		}
 
 		// Deploy all queues
 		queues := map[string]*queue.PubSubTopic{}
