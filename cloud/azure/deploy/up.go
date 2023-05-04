@@ -269,6 +269,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						RegistryPass:                  contEnv.RegistryPass,
 						ManagedEnv:                    contEnv.ManagedEnv,
 						ImageUri:                      image.URI(),
+						Env:                           contEnv.Env,
 						ExecutionUnit:                 eu.GetExecutionUnit(),
 						ManagedIdentityID:             contEnv.ManagedUser.ClientId,
 						MongoDatabaseName:             mongodbName,

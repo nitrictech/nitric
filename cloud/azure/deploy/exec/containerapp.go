@@ -43,6 +43,7 @@ type ContainerAppArgs struct {
 	RegistryUser                  pulumi.StringPtrInput
 	RegistryPass                  pulumi.StringPtrInput
 	ManagedEnv                    *app.ManagedEnvironment
+	Env                           app.EnvironmentVarArray
 	ImageUri                      pulumi.StringInput
 	ExecutionUnit                 *deploy.ExecutionUnit
 	ManagedIdentityID             pulumi.StringOutput
@@ -213,6 +214,10 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			Name:  pulumi.String(k),
 			Value: pulumi.String(v),
 		})
+	}
+
+	if len(args.Env) > 0 {
+		env = append(env, args.Env...)
 	}
 
 	appName := utils.ResourceName(ctx, name, utils.ContainerAppRT)
