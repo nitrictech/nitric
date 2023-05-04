@@ -68,32 +68,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}()
 
-		// Calculate unique stackID
-		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
-			Special: pulumi.Bool(false),
-			Length:  pulumi.Int(8),
-			Keepers: pulumi.ToMap(map[string]interface{}{
-				"stack-name": ctx.Stack(),
-			}),
-		})
-		if err != nil {
-			return err
-		}
-		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
-
-		clientConfig, err := authorization.GetClientConfig(ctx)
-		if err != nil {
-			return err
-		}
-
-		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
-			Location: pulumi.String(details.Region),
-			Tags:     common.Tags(ctx, stackID, ctx.Stack()),
-		})
-		if err != nil {
-			return errors.WithMessage(err, "resource group create")
-		}
-
 		// Get Execution units
 		executionUnits := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetExecutionUnit() != nil
@@ -124,9 +98,42 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return item.GetSchedule() != nil
 		})
 
+		if len(schedules) > 0 {
+			// TODO: Add schedule support
+			// NOTE: Currently CRONTAB support is required, we either need to revisit the design of
+			// our scheduled expressions or implement a workaround or request a feature.
+			return fmt.Errorf("schedules are not currently supported for Azure deployments")
+		}
+
 		apis := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetApi() != nil
 		})
+
+		// Calculate unique stackID
+		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
+			Special: pulumi.Bool(false),
+			Length:  pulumi.Int(8),
+			Keepers: pulumi.ToMap(map[string]interface{}{
+				"stack-name": ctx.Stack(),
+			}),
+		})
+		if err != nil {
+			return err
+		}
+		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+
+		clientConfig, err := authorization.GetClientConfig(ctx)
+		if err != nil {
+			return err
+		}
+
+		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
+			Location: pulumi.String(details.Region),
+			Tags:     common.Tags(ctx, stackID, ctx.Stack()),
+		})
+		if err != nil {
+			return errors.WithMessage(err, "resource group create")
+		}
 
 		envMap := map[string]string{}
 		contEnvArgs := &exec.ContainerEnvArgs{
@@ -269,6 +276,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						RegistryPass:                  contEnv.RegistryPass,
 						ManagedEnv:                    contEnv.ManagedEnv,
 						ImageUri:                      image.URI(),
+						Env:                           contEnv.Env,
 						ExecutionUnit:                 eu.GetExecutionUnit(),
 						ManagedIdentityID:             contEnv.ManagedUser.ClientId,
 						MongoDatabaseName:             mongodbName,
@@ -302,13 +310,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 			}
-		}
-
-		if len(schedules) > 0 {
-			// TODO: Add schedule support
-			// NOTE: Currently CRONTAB support is required, we either need to revisit the design of
-			// our scheduled expressions or implement a workaround or request a feature.
-			_ = ctx.Log.Warn("Schedules are not currently supported for Azure deployments", &pulumi.LogArgs{})
 		}
 
 		for _, a := range apis {
