@@ -38,8 +38,11 @@ func WithResourcePlugin(plugin common.ResourceService) ResourceServiceOption {
 }
 
 func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
-	// Currently a no-op at runtime
-	// TODO: Implement a strategy pattern for resolving resources, by their declared resource name in nitric
+	err := rs.plugin.Declare(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
 	return &v1.ResourceDeclareResponse{}, nil
 }
 
