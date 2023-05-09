@@ -97,6 +97,10 @@ func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*commo
 	return nil, fmt.Errorf("api resource %s not found", name)
 }
 
+func (p *azProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+	return nil
+}
+
 func (p *azProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	switch typ {
 	case common.ResourceType_Api:

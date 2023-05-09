@@ -17,9 +17,13 @@ package common
 import (
 	"context"
 	"fmt"
+
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type ResourceType = string
+
+type ResourceDeclareRequest = *v1.ResourceDeclareRequest
 
 const (
 	ResourceType_Api = "api"
@@ -40,6 +44,8 @@ type ApiDetails struct {
 type ResourceService interface {
 	// Details - The details endpoint
 	Details(ctx context.Context, ResourceType, name string) (*DetailsResponse[any], error)
+	// Declare - The declare endpoint
+	Declare(ctx context.Context, req ResourceDeclareRequest) error
 }
 
 type UnimplementResourceService struct{}
@@ -48,4 +54,8 @@ var _ ResourceService = &UnimplementResourceService{}
 
 func (*UnimplementResourceService) Details(ctx context.Context, typ ResourceType, name string) (*DetailsResponse[any], error) {
 	return nil, fmt.Errorf("Unimplemented")
+}
+
+func (*UnimplementResourceService) Declare(ctx context.Context, req ResourceDeclareRequest) error {
+	return fmt.Errorf("Unimplemented")
 }

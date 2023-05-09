@@ -66,6 +66,10 @@ type awsProviderImpl struct {
 
 var _ AwsProvider = &awsProviderImpl{}
 
+func (a *awsProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+	return nil
+}
+
 func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	rt, ok := resourceTypeMap[typ]
 	if !ok {
