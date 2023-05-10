@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	common "github.com/nitrictech/nitric/core/pkg/providers/common"
 )
 
@@ -33,6 +34,20 @@ func NewMockAwsProvider(ctrl *gomock.Controller) *MockAwsProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAwsProvider) EXPECT() *MockAwsProviderMockRecorder {
 	return m.recorder
+}
+
+// Declare mocks base method.
+func (m *MockAwsProvider) Declare(arg0 context.Context, arg1 *v1.ResourceDeclareRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Declare", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Declare indicates an expected call of Declare.
+func (mr *MockAwsProviderMockRecorder) Declare(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Declare", reflect.TypeOf((*MockAwsProvider)(nil).Declare), arg0, arg1)
 }
 
 // Details mocks base method.

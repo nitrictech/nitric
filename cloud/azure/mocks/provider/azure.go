@@ -11,6 +11,7 @@ import (
 	adal "github.com/Azure/go-autorest/autorest/adal"
 	gomock "github.com/golang/mock/gomock"
 	core "github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	common "github.com/nitrictech/nitric/core/pkg/providers/common"
 )
 
@@ -35,6 +36,20 @@ func NewMockAzProvider(ctrl *gomock.Controller) *MockAzProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAzProvider) EXPECT() *MockAzProviderMockRecorder {
 	return m.recorder
+}
+
+// Declare mocks base method.
+func (m *MockAzProvider) Declare(arg0 context.Context, arg1 *v1.ResourceDeclareRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Declare", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Declare indicates an expected call of Declare.
+func (mr *MockAzProviderMockRecorder) Declare(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Declare", reflect.TypeOf((*MockAzProvider)(nil).Declare), arg0, arg1)
 }
 
 // Details mocks base method.

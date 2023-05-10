@@ -38,7 +38,7 @@ endif
 TOOLS_DIR := ./tools
 TOOLS_BIN := $(TOOLS_DIR)/bin
 
-PROTOC_VERSION := 3.19.1
+PROTOC_VERSION := 21.4
 PROTOC_RELEASES_PATH := https://github.com/protocolbuffers/protobuf/releases/download
 PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_PLATFORM).zip
 PROTOC_DOWNLOAD := $(PROTOC_RELEASES_PATH)/v$(PROTOC_VERSION)/$(PROTOC_ZIP)

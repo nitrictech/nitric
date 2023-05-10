@@ -12,6 +12,7 @@ option csharp_namespace = "Nitric.Proto.Deploy.v1";
 
 import "google/protobuf/struct.proto";
 import "proto/resource/v1/resource.proto";
+import "proto/faas/v1/faas.proto";
 
 // The Nitric Deloyment Service contract
 service DeployService {
@@ -120,8 +121,17 @@ message ExecutionUnit {
 }
 
 message Bucket {
-    // TODO: Include bucket specifications here
+    repeated BucketNotificationTarget notifications = 1;
 }
+
+message BucketNotificationTarget {
+    nitric.faas.v1.BucketNotificationConfig config = 1;
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 2;
+    }
+}
+
 
 message Topic {
     // TODO: Include topic specifications here

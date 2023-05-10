@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -169,9 +170,94 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 	}
 }
 
+// Converts the GCP event type to our abstract event type
+func notificationEventToEventType(eventType *string) (v1.BucketNotificationType, error) {
+	switch *eventType {
+	case "Microsoft.Storage.BlobCreated":
+		return v1.BucketNotificationType_Created, nil
+	case "Microsoft.Storage.BlobDeleted":
+		return v1.BucketNotificationType_Deleted, nil
+	default:
+		return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", *eventType)
+	}
+}
+
+func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
+			ctx.SuccessString("text/plain", "success")
+			return
+		}
+
+		eventgridEvents, err := extractEvents(ctx)
+		if err != nil {
+			ctx.Error(fmt.Sprintf("error occurred extracting events: %s", err.Error()), 400)
+			return
+		}
+
+		for _, event := range eventgridEvents {
+			azureEventType := string(ctx.Request.Header.Peek("aeg-event-type"))
+			if azureEventType == "SubscriptionValidation" {
+				a.handleSubscriptionValidation(ctx, eventgridEvents)
+				return
+			}
+
+			bucketName := ctx.UserValue("name").(string)
+
+			eventType, err := notificationEventToEventType(event.EventType)
+			if err != nil {
+				ctx.Error(err.Error(), 400)
+				return
+			}
+
+			// Subject is in the form: "/blobServices/default/containers/test-container/blobs/new-file.txt"
+			eventKeySeparated := strings.SplitN(*event.Subject, "/", 7)
+			if len(eventKeySeparated) < 7 {
+				ctx.Error("object key cannot be empty", 400)
+				return
+			}
+
+			eventKey := eventKeySeparated[6]
+
+			evt := &v1.TriggerRequest{
+				Context: &v1.TriggerRequest_Notification{
+					Notification: &v1.NotificationTriggerContext{
+						Source: bucketName,
+						Notification: &v1.NotificationTriggerContext_Bucket{
+							Bucket: &v1.BucketNotification{
+								Key:  eventKey,
+								Type: eventType,
+							},
+						},
+					},
+				},
+			}
+
+			wrkr, err := process.GetWorker(&pool.GetWorkerOptions{
+				Trigger: evt,
+				Filter: func(w worker.Worker) bool {
+					_, isNotification := w.(*worker.BucketNotificationWorker)
+					return isNotification
+				},
+			})
+			if err != nil {
+				log.Default().Println("could not get worker for bucket notification: ", bucketName)
+			}
+
+			_, err = wrkr.HandleTrigger(context.TODO(), evt)
+			if err != nil {
+				log.Default().Println("could not handle event: ", evt)
+			}
+
+			ctx.SuccessString("text/plain", "success")
+		}
+	}
+}
+
 func (a *azMiddleware) router(r *router.Router, pool pool.WorkerPool) {
 	r.ANY(base_http.DefaultTopicRoute, a.handleSubscription(pool))
 	r.ANY(base_http.DefaultScheduleRoute, a.handleSchedule(pool))
+	r.ANY(base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(pool))
 }
 
 // Create a new HTTP Gateway plugin

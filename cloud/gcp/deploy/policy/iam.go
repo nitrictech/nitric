@@ -19,17 +19,17 @@ package policy
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
+	gcpstorage "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -44,7 +44,7 @@ type Policy struct {
 type StackResources struct {
 	Topics  map[string]*events.PubSubTopic
 	Queues  map[string]*queue.PubSubTopic
-	Buckets map[string]*bucket.CloudStorageBucket
+	Buckets map[string]*storage.CloudStorageBucket
 	Secrets map[string]*secret.SecretManagerSecret
 }
 
@@ -219,7 +219,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 			case v1.ResourceType_Bucket:
 				b := args.Resources.Buckets[resource.Name]
 
-				_, err = storage.NewBucketIAMMember(ctx, memberName, &storage.BucketIAMMemberArgs{
+				_, err = gcpstorage.NewBucketIAMMember(ctx, memberName, &gcpstorage.BucketIAMMemberArgs{
 					Bucket: b.CloudStorage.Name,
 					Member: memberId,
 					Role:   rolePolicy.Name,

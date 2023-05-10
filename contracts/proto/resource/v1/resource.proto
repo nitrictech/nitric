@@ -38,6 +38,7 @@ enum ResourceType {
   Collection = 7;
   Policy = 8;
   Secret = 9;
+  Notification = 10;
 }
 
 message Resource {

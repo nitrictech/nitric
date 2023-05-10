@@ -99,6 +99,10 @@ func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string)
 	}
 }
 
+func (g *gcpProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+	return nil
+}
+
 func (g *gcpProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
 	switch typ {
 	case common.ResourceType_Api:

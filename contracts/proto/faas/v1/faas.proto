@@ -89,6 +89,25 @@ message ScheduleCron {
   string cron = 1;
 }
 
+// Notification Workers
+enum BucketNotificationType {
+  All = 0;
+  Created = 1;
+  Deleted = 2;
+}
+
+message BucketNotificationWorker {
+  string bucket = 1;
+	BucketNotificationConfig config = 2;
+}
+
+message BucketNotificationConfig {
+	BucketNotificationType notification_type = 1;
+  // A notification filter is a prefix for a bucket object in which creations or deletions should trigger a notification:
+  // e.g. Notification filter: /images/cat and Event Type: created, would trigger on creating /images/cat.png and /images/cat.jpg but not creating /cat.png
+	string notification_prefix_filter = 2;
+}
+
 // Generic catch all worker (XXX: Do we need this for backwards compatibility?)
 //message FunctionWorker {
 
@@ -103,6 +122,7 @@ message InitRequest {
     ApiWorker api = 10;
     SubscriptionWorker subscription = 11;
     ScheduleWorker schedule = 12;
+    BucketNotificationWorker bucket_notification = 13;
   }
 }
 
@@ -132,6 +152,7 @@ message TriggerRequest {
   oneof context {
     HttpTriggerContext http = 3;
     TopicTriggerContext topic = 4;
+    NotificationTriggerContext notification = 5;
   }
 }
 
@@ -176,6 +197,20 @@ message TopicTriggerContext {
   // TODO: Add the event ID to the trigger context here got transactional outbox?
 }
 
+message BucketNotification {
+  string key = 1;
+  BucketNotificationType type = 2;
+}
+
+message NotificationTriggerContext {
+  string source = 1;
+  
+  // Now we don't need to specify a type enum, the specific contents/type comes in a single field of the context.
+  oneof notification {
+     BucketNotification bucket = 10;
+  }
+}
+
 // The worker has successfully processed a trigger
 message TriggerResponse {
   // The data returned in the response
@@ -189,6 +224,8 @@ message TriggerResponse {
     HttpResponseContext http = 10;
     // response to a topic trigger
     TopicResponseContext topic = 11;
+    // response to a notification trigger
+    NotificationResponseContext notification = 12;
   }
 }
 
@@ -214,4 +251,8 @@ message HttpResponseContext {
 message TopicResponseContext {
   // Success status of the handled event
   bool success = 1;
+}
+
+message NotificationResponseContext {
+	bool success = 1;
 }

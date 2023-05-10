@@ -357,9 +357,18 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 	}
 
-	switch m.Config.(type) {
-
+	switch v := m.Config.(type) {
 	case *ResourceDeclareRequest_Policy:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetPolicy()).(type) {
@@ -391,6 +400,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Bucket:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetBucket()).(type) {
@@ -422,6 +441,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Queue:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetQueue()).(type) {
@@ -453,6 +482,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Topic:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetTopic()).(type) {
@@ -484,6 +523,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Collection:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetCollection()).(type) {
@@ -515,6 +564,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Secret:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetSecret()).(type) {
@@ -546,6 +605,16 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 		}
 
 	case *ResourceDeclareRequest_Api:
+		if v == nil {
+			err := ResourceDeclareRequestValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetApi()).(type) {
@@ -576,6 +645,8 @@ func (m *ResourceDeclareRequest) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -1286,9 +1357,18 @@ func (m *ApiSecurityDefinition) validate(all bool) error {
 
 	var errors []error
 
-	switch m.Definition.(type) {
-
+	switch v := m.Definition.(type) {
 	case *ApiSecurityDefinition_Jwt:
+		if v == nil {
+			err := ApiSecurityDefinitionValidationError{
+				field:  "Definition",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetJwt()).(type) {
@@ -1319,6 +1399,8 @@ func (m *ApiSecurityDefinition) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -2056,9 +2138,18 @@ func (m *ResourceDetailsResponse) validate(all bool) error {
 
 	// no validation rules for Service
 
-	switch m.Details.(type) {
-
+	switch v := m.Details.(type) {
 	case *ResourceDetailsResponse_Api:
+		if v == nil {
+			err := ResourceDetailsResponseValidationError{
+				field:  "Details",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
 		if all {
 			switch v := interface{}(m.GetApi()).(type) {
@@ -2089,6 +2180,8 @@ func (m *ResourceDetailsResponse) validate(all bool) error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
