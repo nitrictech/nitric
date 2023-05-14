@@ -107,6 +107,8 @@ message StorageListFilesRequest {
     pattern:   "^\\w+([.\\-]\\w+)*$",
     max_bytes: 256,
   }];
+
+  string prefix = 2;
 }
 
 message File {
