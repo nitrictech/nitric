@@ -130,7 +130,9 @@ func (s *StorageServiceServer) ListFiles(ctx context.Context, req *pb.StorageLis
 		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.ListFiles", err)
 	}
 
-	if files, err := s.storagePlugin.ListFiles(ctx, req.BucketName); err == nil {
+	if files, err := s.storagePlugin.ListFiles(ctx, req.BucketName, &storage.ListFileOptions{
+		Prefix: req.Prefix,
+	}); err == nil {
 		pbFiles := make([]*pb.File, 0, len(files))
 
 		for _, file := range files {

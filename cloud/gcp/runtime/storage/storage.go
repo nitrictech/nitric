@@ -228,7 +228,7 @@ func (s *StorageStorageService) PreSignUrl(ctx context.Context, bucket string, k
 	return signedUrl, nil
 }
 
-func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string) ([]*plugin.FileInfo, error) {
+func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string, options *plugin.ListFileOptions) ([]*plugin.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"StorageStorageService.ListFiles",
 		map[string]interface{}{
@@ -245,8 +245,14 @@ func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string) ([
 		)
 	}
 
+	prefix := ""
+	if options != nil {
+		prefix = options.Prefix
+	}
+
 	iter := bucketHandle.Objects(ctx, &storage.Query{
 		Projection: storage.ProjectionNoACL,
+		Prefix:     prefix,
 	})
 
 	fis := make([]*plugin.FileInfo, 0)

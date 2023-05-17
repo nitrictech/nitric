@@ -454,12 +454,14 @@ var _ = Describe("Storage", func() {
 				mockBucket.EXPECT().Objects(gomock.Any(), gomock.Any()).Return(mockObjectIterator)
 				gomock.InOrder(
 					mockObjectIterator.EXPECT().Next().Return(&storage.ObjectAttrs{
-						Name: "test-file",
+						Name: "test/test-file",
 					}, nil),
 					mockObjectIterator.EXPECT().Next().Return(nil, iterator.Done),
 				)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", &plugin.ListFileOptions{
+					Prefix: "test/",
+				})
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -468,7 +470,7 @@ var _ = Describe("Storage", func() {
 				Expect(files).To(HaveLen(1))
 
 				By("The file having the returned name")
-				Expect(files[0].Key).To(Equal("test-file"))
+				Expect(files[0].Key).To(Equal("test/test-file"))
 			})
 		})
 
@@ -483,7 +485,7 @@ var _ = Describe("Storage", func() {
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", nil)
 
 				By("returning nil files")
 				Expect(files).To(BeNil())

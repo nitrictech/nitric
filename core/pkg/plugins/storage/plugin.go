@@ -35,11 +35,15 @@ type FileInfo struct {
 	Key string
 }
 
+type ListFileOptions struct {
+	Prefix string
+}
+
 type StorageService interface {
 	Read(ctx context.Context, bucket string, key string) ([]byte, error)
 	Write(ctx context.Context, bucket string, key string, object []byte) error
 	Delete(ctx context.Context, bucket string, key string) error
-	ListFiles(ctx context.Context, bucket string) ([]*FileInfo, error)
+	ListFiles(ctx context.Context, bucket string, options *ListFileOptions) ([]*FileInfo, error)
 	PreSignUrl(ctx context.Context, bucket string, key string, operation Operation, expiry uint32) (string, error)
 }
 
@@ -59,7 +63,7 @@ func (*UnimplementedStoragePlugin) Delete(ctx context.Context, bucket string, ke
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedStoragePlugin) ListFiles(ctx context.Context, bucket string) ([]*FileInfo, error) {
+func (*UnimplementedStoragePlugin) ListFiles(ctx context.Context, bucket string, options *ListFileOptions) ([]*FileInfo, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
 

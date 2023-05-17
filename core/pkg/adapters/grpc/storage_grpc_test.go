@@ -226,10 +226,13 @@ var _ = Describe("GRPC Storage", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_storage.NewMockStorageService(g)
 
-			mockSS.EXPECT().ListFiles(gomock.Any(), "bucky").Return([]*storage.FileInfo{}, nil)
+			mockSS.EXPECT().ListFiles(gomock.Any(), "bucky", &storage.ListFileOptions{
+				Prefix: "test/",
+			}).Return([]*storage.FileInfo{}, nil)
 
 			_, err := grpc.NewStorageServiceServer(mockSS).ListFiles(context.Background(), &v1.StorageListFilesRequest{
 				BucketName: "bucky",
+				Prefix:     "test/",
 			})
 
 			It("Should succeed", func() {
