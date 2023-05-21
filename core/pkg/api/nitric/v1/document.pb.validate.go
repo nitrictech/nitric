@@ -57,27 +57,7 @@ func (m *Collection) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetName()) > 256 {
-		err := CollectionValidationError{
-			field:  "Name",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_Collection_Name_Pattern.MatchString(m.GetName()) {
-		err := CollectionValidationError{
-			field:  "Name",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Name
 
 	if all {
 		switch v := interface{}(m.GetParent()).(type) {
@@ -184,8 +164,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CollectionValidationError{}
-
-var _Collection_Name_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on Key with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error

@@ -57,27 +57,7 @@ func (m *EventPublishRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetTopic()) > 256 {
-		err := EventPublishRequestValidationError{
-			field:  "Topic",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_EventPublishRequest_Topic_Pattern.MatchString(m.GetTopic()) {
-		err := EventPublishRequestValidationError{
-			field:  "Topic",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Topic
 
 	if m.GetEvent() == nil {
 		err := EventPublishRequestValidationError{
@@ -213,8 +193,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = EventPublishRequestValidationError{}
-
-var _EventPublishRequest_Topic_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on EventPublishResponse with the rules
 // defined in the proto definition for this message. If any rules are

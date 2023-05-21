@@ -57,27 +57,7 @@ func (m *StorageWriteRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetBucketName()) > 256 {
-		err := StorageWriteRequestValidationError{
-			field:  "BucketName",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_StorageWriteRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
-		err := StorageWriteRequestValidationError{
-			field:  "BucketName",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for BucketName
 
 	if utf8.RuneCountInString(m.GetKey()) < 1 {
 		err := StorageWriteRequestValidationError{
@@ -171,8 +151,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageWriteRequestValidationError{}
-
-var _StorageWriteRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on StorageWriteResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -298,27 +276,7 @@ func (m *StorageReadRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetBucketName()) > 256 {
-		err := StorageReadRequestValidationError{
-			field:  "BucketName",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_StorageReadRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
-		err := StorageReadRequestValidationError{
-			field:  "BucketName",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for BucketName
 
 	if utf8.RuneCountInString(m.GetKey()) < 1 {
 		err := StorageReadRequestValidationError{
@@ -410,8 +368,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageReadRequestValidationError{}
-
-var _StorageReadRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on StorageReadResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -539,27 +495,7 @@ func (m *StorageDeleteRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetBucketName()) > 256 {
-		err := StorageDeleteRequestValidationError{
-			field:  "BucketName",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_StorageDeleteRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
-		err := StorageDeleteRequestValidationError{
-			field:  "BucketName",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for BucketName
 
 	if utf8.RuneCountInString(m.GetKey()) < 1 {
 		err := StorageDeleteRequestValidationError{
@@ -651,8 +587,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageDeleteRequestValidationError{}
-
-var _StorageDeleteRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on StorageDeleteResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -778,27 +712,7 @@ func (m *StoragePreSignUrlRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetBucketName()) > 256 {
-		err := StoragePreSignUrlRequestValidationError{
-			field:  "BucketName",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_StoragePreSignUrlRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
-		err := StoragePreSignUrlRequestValidationError{
-			field:  "BucketName",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for BucketName
 
 	if utf8.RuneCountInString(m.GetKey()) < 1 {
 		err := StoragePreSignUrlRequestValidationError{
@@ -894,8 +808,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StoragePreSignUrlRequestValidationError{}
-
-var _StoragePreSignUrlRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on StoragePreSignUrlResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -1023,27 +935,7 @@ func (m *StorageListFilesRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetBucketName()) > 256 {
-		err := StorageListFilesRequestValidationError{
-			field:  "BucketName",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_StorageListFilesRequest_BucketName_Pattern.MatchString(m.GetBucketName()) {
-		err := StorageListFilesRequestValidationError{
-			field:  "BucketName",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for BucketName
 
 	// no validation rules for Prefix
 
@@ -1126,8 +1018,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageListFilesRequestValidationError{}
-
-var _StorageListFilesRequest_BucketName_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on File with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error

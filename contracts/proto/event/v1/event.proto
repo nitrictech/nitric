@@ -21,10 +21,7 @@ service EventService {
 // Request to publish an event to a topic
 message EventPublishRequest {
   // The name of the topic to publish the event to
-  string topic = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string topic = 1;
 
   // The event to be published
   NitricEvent event = 2 [(validate.rules).message.required = true];

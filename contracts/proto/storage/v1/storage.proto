@@ -29,10 +29,7 @@ service StorageService {
 message StorageWriteRequest {
   // Nitric name of the bucket to store in
   //  this will be automatically resolved to the provider specific bucket identifier.
-  string bucket_name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string bucket_name = 1;
   // Key to store the item under
   string key = 2 [(validate.rules).string = {min_len: 1}];
   // bytes array to store
@@ -46,10 +43,7 @@ message StorageWriteResponse {}
 message StorageReadRequest {
   // Nitric name of the bucket to retrieve from
   //  this will be automatically resolved to the provider specific bucket identifier.
-  string bucket_name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string bucket_name = 1;
   // Key of item to retrieve
   string key = 2 [(validate.rules).string = {min_len: 1}];
 }
@@ -63,10 +57,7 @@ message StorageReadResponse {
 // Request to delete a storage item
 message StorageDeleteRequest {
   // Name of the bucket to delete from
-  string bucket_name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string bucket_name = 1;
   // Key of item to delete
   string key = 2 [(validate.rules).string = {min_len: 1}];
 }
@@ -78,10 +69,7 @@ message StorageDeleteResponse {}
 message StoragePreSignUrlRequest {
   // Nitric name of the bucket to retrieve from
   //  this will be automatically resolved to the provider specific bucket identifier.
-  string bucket_name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string bucket_name = 1;
   // Key of item to generate the signed URL for.
   // The URL and the token it contains will only be valid for operations on this resource specifically.
   string key = 2 [(validate.rules).string = {min_len: 1}];
@@ -103,10 +91,7 @@ message StoragePreSignUrlResponse {
 }
 
 message StorageListFilesRequest {
-  string bucket_name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string bucket_name = 1;
 
   string prefix = 2;
 }
