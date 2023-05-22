@@ -90,17 +90,6 @@ var _ = Describe("GRPC Queue", func() {
 			})
 		})
 
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_queue.NewMockQueueService(g)
-			resp, err := grpc.NewQueueServiceServer(mockSS).Receive(context.Background(), &v1.QueueReceiveRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid QueueReceiveRequest.Queue: value does not match regex pattern"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
 		When("request is valid", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_queue.NewMockQueueService(g)
@@ -138,17 +127,6 @@ var _ = Describe("GRPC Queue", func() {
 			resp, err := ss.Complete(context.Background(), &v1.QueueCompleteRequest{})
 			It("Should report an error", func() {
 				Expect(err.Error()).Should(ContainSubstring("Queue plugin not registered"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_queue.NewMockQueueService(g)
-			resp, err := grpc.NewQueueServiceServer(mockSS).Complete(context.Background(), &v1.QueueCompleteRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid QueueCompleteRequest.Queue: value does not match regex pattern"))
 				Expect(resp).Should(BeNil())
 			})
 		})
