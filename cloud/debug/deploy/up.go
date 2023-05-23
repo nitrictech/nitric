@@ -38,5 +38,22 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	fmt.Println(string(reqJson))
 
+	err = stream.Send(&deploy.DeployUpEvent{
+		Content: &deploy.DeployUpEvent_Result{
+			Result: &deploy.DeployUpEventResult{
+				Success: true,
+				Result: &deploy.UpResult{
+					Content: &deploy.UpResult_StringResult{
+						StringResult: string(reqJson),
+					},
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
