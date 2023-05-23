@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
