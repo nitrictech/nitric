@@ -129,9 +129,10 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	}).(pulumi.StringOutput)
 
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
-		Body:         doc,
-		ProtocolType: pulumi.String("HTTP"),
-		Tags:         common.Tags(ctx, args.StackID, name),
+		Body:           doc,
+		ProtocolType:   pulumi.String("HTTP"),
+		Tags:           common.Tags(ctx, args.StackID, name),
+		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
 		return nil, err
