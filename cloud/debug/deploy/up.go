@@ -17,6 +17,8 @@ package deploy
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"runtime/debug"
 
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -36,7 +38,22 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	fmt.Println(string(reqJson))
+	out, ok := request.Attributes.AsMap()["output"]
+
+	if ok {
+		if outFile, isString := out.(string); isString {
+			path := path.Dir(outFile)
+			err := os.MkdirAll(path, os.ModePerm)
+			if err != nil {
+				return err
+			}
+
+			err = os.WriteFile(outFile, reqJson, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	err = stream.Send(&deploy.DeployUpEvent{
 		Content: &deploy.DeployUpEvent_Result{
