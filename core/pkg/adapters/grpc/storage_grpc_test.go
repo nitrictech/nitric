@@ -38,17 +38,6 @@ var _ = Describe("GRPC Storage", func() {
 			})
 		})
 
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_storage.NewMockStorageService(g)
-			resp, err := grpc.NewStorageServiceServer(mockSS).Write(context.Background(), &v1.StorageWriteRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid StorageWriteRequest.BucketName"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
 		When("request is valid", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_storage.NewMockStorageService(g)
@@ -75,17 +64,6 @@ var _ = Describe("GRPC Storage", func() {
 			resp, err := ss.Read(context.Background(), &v1.StorageReadRequest{})
 			It("Should report an error", func() {
 				Expect(err.Error()).Should(ContainSubstring("Storage plugin not registered"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_storage.NewMockStorageService(g)
-			resp, err := grpc.NewStorageServiceServer(mockSS).Read(context.Background(), &v1.StorageReadRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid StorageReadRequest.BucketName"))
 				Expect(resp).Should(BeNil())
 			})
 		})
@@ -119,17 +97,6 @@ var _ = Describe("GRPC Storage", func() {
 			})
 		})
 
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_storage.NewMockStorageService(g)
-			resp, err := grpc.NewStorageServiceServer(mockSS).Delete(context.Background(), &v1.StorageDeleteRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid StorageDeleteRequest.BucketName"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
 		When("request is valid", func() {
 			g := gomock.NewController(GinkgoT())
 			mockSS := mock_storage.NewMockStorageService(g)
@@ -153,17 +120,6 @@ var _ = Describe("GRPC Storage", func() {
 			resp, err := ss.PreSignUrl(context.Background(), &v1.StoragePreSignUrlRequest{})
 			It("Should report an error", func() {
 				Expect(err.Error()).Should(ContainSubstring("Storage plugin not registered"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
-		When("request not valid - bucket", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_storage.NewMockStorageService(g)
-			resp, err := grpc.NewStorageServiceServer(mockSS).PreSignUrl(context.Background(), &v1.StoragePreSignUrlRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid StoragePreSignUrlRequest.BucketName"))
 				Expect(resp).Should(BeNil())
 			})
 		})
@@ -207,17 +163,6 @@ var _ = Describe("GRPC Storage", func() {
 			resp, err := ss.ListFiles(context.Background(), &v1.StorageListFilesRequest{})
 			It("Should report an error", func() {
 				Expect(err.Error()).Should(ContainSubstring("Storage plugin not registered"))
-				Expect(resp).Should(BeNil())
-			})
-		})
-
-		When("request not valid", func() {
-			g := gomock.NewController(GinkgoT())
-			mockSS := mock_storage.NewMockStorageService(g)
-			resp, err := grpc.NewStorageServiceServer(mockSS).ListFiles(context.Background(), &v1.StorageListFilesRequest{})
-
-			It("Should report an error", func() {
-				Expect(err.Error()).Should(ContainSubstring("invalid StorageListFilesRequest.BucketName"))
 				Expect(resp).Should(BeNil())
 			})
 		})

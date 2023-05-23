@@ -323,27 +323,7 @@ func (m *QueueSendBatchRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetQueue()) > 256 {
-		err := QueueSendBatchRequestValidationError{
-			field:  "Queue",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_QueueSendBatchRequest_Queue_Pattern.MatchString(m.GetQueue()) {
-		err := QueueSendBatchRequestValidationError{
-			field:  "Queue",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Queue
 
 	if len(m.GetTasks()) < 1 {
 		err := QueueSendBatchRequestValidationError{
@@ -469,8 +449,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = QueueSendBatchRequestValidationError{}
-
-var _QueueSendBatchRequest_Queue_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on QueueSendBatchResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -630,27 +608,7 @@ func (m *QueueReceiveRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetQueue()) > 256 {
-		err := QueueReceiveRequestValidationError{
-			field:  "Queue",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_QueueReceiveRequest_Queue_Pattern.MatchString(m.GetQueue()) {
-		err := QueueReceiveRequestValidationError{
-			field:  "Queue",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Queue
 
 	// no validation rules for Depth
 
@@ -733,8 +691,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = QueueReceiveRequestValidationError{}
-
-var _QueueReceiveRequest_Queue_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on QueueReceiveResponse with the rules
 // defined in the proto definition for this message. If any rules are
@@ -894,27 +850,7 @@ func (m *QueueCompleteRequest) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetQueue()) > 256 {
-		err := QueueCompleteRequestValidationError{
-			field:  "Queue",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_QueueCompleteRequest_Queue_Pattern.MatchString(m.GetQueue()) {
-		err := QueueCompleteRequestValidationError{
-			field:  "Queue",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Queue
 
 	if utf8.RuneCountInString(m.GetLeaseId()) < 1 {
 		err := QueueCompleteRequestValidationError{
@@ -1006,8 +942,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = QueueCompleteRequestValidationError{}
-
-var _QueueCompleteRequest_Queue_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on QueueCompleteResponse with the rules
 // defined in the proto definition for this message. If any rules are
