@@ -73,7 +73,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Notification: notification,
 		})
 	} else {
-		return fmt.Errorf("unable to register worker due to incompatible worker type... you may need to upgrade your CLI version")
+		return fmt.Errorf("unable to register incompatible worker. This can be caused by out of date Nitric CLI versions, an upgrade may resolve this issue")
 	}
 
 	// Add it to our new pool
