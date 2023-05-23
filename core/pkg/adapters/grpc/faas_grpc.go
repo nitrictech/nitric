@@ -15,6 +15,7 @@
 package grpc
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/pkg/errors"
@@ -72,8 +73,7 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Notification: notification,
 		})
 	} else {
-		// XXX: Catch all worker type
-		wrkr = worker.NewFaasWorker(adapter)
+		return fmt.Errorf("unable to register worker due to incompatible worker type... you may need to upgrade your CLI version")
 	}
 
 	// Add it to our new pool
