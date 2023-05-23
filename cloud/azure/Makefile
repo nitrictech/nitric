@@ -21,7 +21,9 @@ deploybin: predeploybin
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-azure
 
-installdeploy: deploybin
+.PHONY: install
+install: deploybin
+	@echo installing azure deployment server to ${HOME}/.nitric/providers/nitric/azure-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
 	@cp bin/deploy-azure ${HOME}/.nitric/providers/nitric/azure-0.0.1
 
