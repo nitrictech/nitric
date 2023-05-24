@@ -29,7 +29,7 @@ type AwsImports struct {
 
 type AwsConfig struct {
 	ScheduleTimezone string `mapstructure:"schedule-timezone,omitempty"`
-	Imports          AwsImports
+	Import           AwsImports
 	config.AbstractConfig[*AwsConfigItem]
 }
 

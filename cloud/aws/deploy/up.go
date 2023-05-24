@@ -109,8 +109,8 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			case *deploy.Resource_Secret:
 				importArn := ""
 
-				if config.Imports.Secrets != nil {
-					importArn = config.Imports.Secrets[res.Name]
+				if config.Import.Secrets != nil {
+					importArn = config.Import.Secrets[res.Name]
 				}
 
 				secrets[res.Name], err = secret.NewSecretsManagerSecret(ctx, res.Name, &secret.SecretsManagerSecretArgs{
