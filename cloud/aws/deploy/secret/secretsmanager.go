@@ -70,7 +70,6 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 					"x-nitric-stack":      stackId,
 				}),
 			})
-
 			if err != nil {
 				return false, err
 			}
