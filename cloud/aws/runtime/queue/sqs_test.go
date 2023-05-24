@@ -277,7 +277,7 @@ var _ = Describe("Sqs", func() {
 						"test-queue": "arn:aws:sqs:us-east-2:444455556666:test-queue",
 					}, nil)
 
-					By("Calling ListQueueTags to get the x-nitric-name")
+					By("Calling ListQueueTags to get the nitric name")
 					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
 						QueueUrl: queueUrl,
 					}, nil)

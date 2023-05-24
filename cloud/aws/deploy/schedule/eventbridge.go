@@ -33,10 +33,9 @@ type AwsEventbridgeSchedule struct {
 }
 
 type AwsEventbridgeScheduleArgs struct {
-	StackID pulumi.StringInput
-	Exec    *exec.LambdaExecUnit
-	Cron    string
-	Tz      string
+	Exec *exec.LambdaExecUnit
+	Cron string
+	Tz   string
 }
 
 //go:embed scheduler-execution-permissions.json

@@ -119,16 +119,12 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ resource.ResourceType
 func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
 	if a.cache[typ] == nil {
 		resources := make(map[string]string)
-		tagFilters := []types.TagFilter{{
-			Key: aws.String("x-nitric-name"),
-		}}
 
-		if a.stack != "" {
-			tagFilters = append(tagFilters, types.TagFilter{
-				Key:    aws.String("x-nitric-stack"),
-				Values: []string{a.stack},
-			})
-		}
+		stackKey := fmt.Sprintf("x-nitric-stack-%s", a.stack)
+
+		tagFilters := []types.TagFilter{{
+			Key: aws.String(stackKey),
+		}}
 
 		out, err := a.client.GetResources(ctx, &resourcegroupstaggingapi.GetResourcesInput{
 			ResourceTypeFilters: []string{typ},
@@ -140,7 +136,7 @@ func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (ma
 
 		for _, tm := range out.ResourceTagMappingList {
 			for _, t := range tm.Tags {
-				if *t.Key == "x-nitric-name" {
+				if *t.Key == stackKey {
 					resources[*t.Value] = *tm.ResourceARN
 					break
 				}
