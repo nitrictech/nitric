@@ -117,6 +117,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					StackID: stackID,
 					Secret:  c.Secret,
 					Import:  importArn,
+					Client:  resourceTaggingClient,
 				})
 				if err != nil {
 					return err

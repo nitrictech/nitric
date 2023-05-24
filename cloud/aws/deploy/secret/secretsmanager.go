@@ -17,10 +17,8 @@
 package secret
 
 import (
-	"context"
-
-	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
@@ -38,7 +36,7 @@ type SecretsManagerSecretArgs struct {
 	// Import an existing secret
 	Import string
 	Secret *v1.Secret
-	Client *resourcegroupstaggingapi.Client
+	Client *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
 }
 
 // Create a new SecretsManager secret
@@ -63,14 +61,14 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 		// apply nitric tags
 		// This will apply nitric tags for resource resolution
 		_ = args.StackID.ToStringOutput().ApplyT(func(stackId string) (bool, error) {
-			_, err := args.Client.TagResources(context.TODO(), &resourcegroupstaggingapi.TagResourcesInput{
-				ResourceARNList: []string{secretLookup.Arn},
-				Tags: map[string]string{
+			_, err := args.Client.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+				ResourceARNList: aws.StringSlice([]string{secretLookup.Arn}),
+				Tags: aws.StringMap(map[string]string{
 					"x-nitric-project":    ctx.Project(),
 					"x-nitric-name":       name,
 					"x-nitric-stack-name": ctx.Stack(),
 					"x-nitric-stack":      stackId,
-				},
+				}),
 			})
 
 			if err != nil {
