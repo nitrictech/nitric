@@ -52,7 +52,7 @@ type CloudRunnerArgs struct {
 	ServiceAccount  *serviceaccount.Account
 	Config          config.GcpCloudRunConfig
 
-	StackID pulumi.StringInput
+	StackID string
 }
 
 func GetPerms(telemetry int) []string {
@@ -233,7 +233,7 @@ func getCloudRunnerEnvs(args *CloudRunnerArgs) cloudrun.ServiceTemplateSpecConta
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_STACK"),
-			Value: args.StackID,
+			Value: pulumi.String(args.StackID),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),

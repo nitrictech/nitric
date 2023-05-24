@@ -27,6 +27,7 @@ import (
 	"google.golang.org/api/option"
 
 	ifaces_gcloud_storage "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_storage"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
 	plugin "github.com/nitrictech/nitric/core/pkg/plugins/storage"
@@ -52,7 +53,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			if name, ok := b.Labels["x-nitric-name"]; ok {
+			if name, ok := b.Labels[env.GetNitricStackTag()]; ok && name == bucket {
 				s.cache[name] = s.client.Bucket(b.Name)
 			}
 		}

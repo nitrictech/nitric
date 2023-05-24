@@ -32,7 +32,7 @@ type CloudStorageBucket struct {
 
 type CloudStorageBucketArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 
 	Bucket *v1.Bucket
 }
@@ -49,7 +49,7 @@ func NewCloudStorageBucket(ctx *pulumi.Context, name string, args *CloudStorageB
 
 	res.CloudStorage, err = storage.NewBucket(ctx, name, &storage.BucketArgs{
 		Location: pulumi.String(args.Location),
-		Labels:   common.Tags(ctx, args.StackID, name),
+		Labels:   pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

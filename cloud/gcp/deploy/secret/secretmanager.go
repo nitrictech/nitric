@@ -32,7 +32,7 @@ type SecretManagerSecret struct {
 
 type SecretManagerSecretArgs struct {
 	Location  string
-	StackID   pulumi.StringInput
+	StackID   string
 	StackName string
 
 	Secret *v1.Secret
@@ -55,7 +55,7 @@ func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManage
 			Automatic: pulumi.Bool(true),
 		},
 		SecretId: secId,
-		Labels:   common.Tags(ctx, args.StackID, name),
+		Labels:   pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

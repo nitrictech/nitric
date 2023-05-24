@@ -59,7 +59,7 @@ type PolicyArgs struct {
 
 	ProjectID pulumi.StringInput
 
-	StackID pulumi.StringInput
+	StackID string
 }
 
 var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{

@@ -29,6 +29,7 @@ import (
 	"google.golang.org/api/option"
 
 	ifaces_pubsub "github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
@@ -63,7 +64,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding queue labels: %s; %w", queue, err)
 			}
 
-			if name, ok := labels["x-nitric-name"]; ok {
+			resType, hasType := labels["x-nitric-type"]
+
+			if name, ok := labels[env.GetNitricStack()]; ok && name == queue && hasType && resType == "queue" {
 				s.cache[name] = t
 			}
 		}
@@ -105,8 +108,9 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue str
 			return nil, fmt.Errorf("failed to retrieve pull subscription labels for topic: %s\n%w", topic.ID(), err)
 		}
 
-		// The subscription's 'x-nitric-name' is its topic name
-		if name, ok := labels["x-nitric-name"]; ok {
+		resType, hasType := labels["x-nitric-type"]
+		// The subscription's 'nitric name' is its topic name
+		if name, ok := labels[env.GetNitricStack()]; hasType && ok && name == queue && resType == "queue-subscription" {
 			if name == queue {
 				return sub, nil
 			}

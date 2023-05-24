@@ -35,7 +35,7 @@ type CloudStorageNotification struct {
 
 type CloudStorageNotificationArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 
 	Bucket   *CloudStorageBucket
 	Config   *v1.BucketNotificationConfig
@@ -66,7 +66,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 	}
 
 	topic, err := pubsub.NewTopic(ctx, name+"-topic", &pubsub.TopicArgs{
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

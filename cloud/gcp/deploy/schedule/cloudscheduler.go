@@ -36,7 +36,7 @@ type CloudScheduler struct {
 
 type CloudSchedulerArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 
 	Exec     *exec.CloudRunner
 	Schedule *deploy.Schedule

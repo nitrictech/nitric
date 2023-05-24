@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	ifaces_gcloud_secret "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_secret"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
@@ -85,7 +86,7 @@ func (s *secretManagerSecretService) buildSecretVersionName(ctx context.Context,
 func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.Secret) (*secretmanagerpb.Secret, error) {
 	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
-		Filter: "labels.x-nitric-name=" + sec.Name + " AND labels.x-nitric-stack=" + s.stackName,
+		Filter: fmt.Sprintf("labels.%s=%s", env.GetNitricStackTag(), sec.Name),
 	})
 
 	result, err := iter.Next()

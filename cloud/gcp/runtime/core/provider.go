@@ -23,6 +23,7 @@ import (
 	apigateway "cloud.google.com/go/apigateway/apiv1"
 	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 )
@@ -70,7 +71,7 @@ type GenericIterator[T any] interface {
 }
 
 func filter(stack string, name string) string {
-	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
+	return fmt.Sprintf("labels.%s:%s", env.GetNitricStackTag(), name)
 }
 
 func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*resource.DetailsResponse[any], error) {

@@ -35,7 +35,7 @@ type PubSubTopic struct {
 
 type PubSubTopicArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 	Queue    *v1.Queue
 }
 
@@ -49,16 +49,22 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
+	topicTags := common.Tags(ctx, args.StackID, name)
+	topicTags["x-nitric-type"] = "queue"
+
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(topicTags),
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	subscriptionTags := common.Tags(ctx, args.StackID, name)
+	subscriptionTags["x-nitric-type"] = "queue-subscription"
+
 	res.Subscription, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
 		Topic:  res.PubSub.Name,
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(subscriptionTags),
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),
 		},
