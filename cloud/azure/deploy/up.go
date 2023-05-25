@@ -121,7 +121,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		if err != nil {
 			return err
 		}
-		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		stackID := <-stackIdChan
 
 		clientConfig, err := authorization.GetClientConfig(ctx)
 		if err != nil {
@@ -130,7 +137,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
 			Location: pulumi.String(details.Region),
-			Tags:     common.Tags(ctx, stackID, ctx.Stack()),
+			Tags:     pulumi.ToStringMap(common.Tags(ctx, stackID, ctx.Stack())),
 		})
 		if err != nil {
 			return errors.WithMessage(err, "resource group create")
@@ -160,7 +167,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				},
 				TenantId: pulumi.String(clientConfig.TenantId),
 			},
-			Tags: common.Tags(ctx, stackID, kvName),
+			Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, kvName)),
 		})
 		if err != nil {
 			return err
@@ -179,7 +186,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				Sku: azureStorage.SkuArgs{
 					Name: pulumi.String(storage.SkuName_Standard_LRS),
 				},
-				Tags: common.Tags(ctx, stackID, accName),
+				Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, accName)),
 			})
 			if err != nil {
 				return err
@@ -191,7 +198,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		var mongoCollections *collection.MongoCollections
 		if len(collections) > 0 {
-			mongoCollections, err = collection.NewMongoCollections(ctx, "", &collection.MongoCollectionsArgs{
+			mongoCollections, err = collection.NewMongoCollections(ctx, "mongodb", &collection.MongoCollectionsArgs{
 				ResourceGroup: rg,
 				Collections:   collections,
 			})
