@@ -153,6 +153,12 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 		)
 	}
 
+	returnValue := result.SecretBinary
+
+	if returnValue == nil && result.SecretString != nil {
+		returnValue = []byte(*result.SecretString)
+	}
+
 	return &secret.SecretAccessResponse{
 		SecretVersion: &secret.SecretVersion{
 			Secret: &secret.Secret{
@@ -160,7 +166,7 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 			},
 			Version: *result.VersionId,
 		},
-		Value: result.SecretBinary,
+		Value: returnValue,
 	}, nil
 }
 

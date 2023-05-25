@@ -22,8 +22,14 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
+type AwsImports struct {
+	// A map of nitric names to ARNs
+	Secrets map[string]string
+}
+
 type AwsConfig struct {
 	ScheduleTimezone string `mapstructure:"schedule-timezone,omitempty"`
+	Import           AwsImports
 	config.AbstractConfig[*AwsConfigItem]
 }
 
