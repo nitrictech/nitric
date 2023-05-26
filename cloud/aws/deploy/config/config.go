@@ -40,9 +40,9 @@ type AwsConfigItem struct {
 }
 
 type AwsLambdaVpcConfig struct {
-	VpcId            string
-	SubnetIds        []string
-	SecurityGroupIds []string
+	VpcId            string   `mapstructure:"id"`
+	SubnetIds        []string `mapstructure:"subnet-ids"`
+	SecurityGroupIds []string `mapstructure:"security-group-ids"`
 }
 
 type AwsLambdaConfig struct {
