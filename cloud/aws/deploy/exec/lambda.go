@@ -159,6 +159,15 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 			SubnetIds:        pulumi.ToStringArray(args.Config.Vpc.SubnetIds),
 			SecurityGroupIds: pulumi.ToStringArray(args.Config.Vpc.SecurityGroupIds),
 		}
+
+		// Create a policy attachment for VPC access
+		_, err = iam.NewRolePolicyAttachment(ctx, name+"VPCAccessExecutionRole", &iam.RolePolicyAttachmentArgs{
+			PolicyArn: iam.ManagedPolicyAWSLambdaVPCAccessExecutionRole,
+			Role:      res.Role.ID(),
+		}, opts...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	res.Function, err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
