@@ -39,10 +39,17 @@ type AwsConfigItem struct {
 	Telemetry int
 }
 
+type AwsLambdaVpcConfig struct {
+	VpcId            string
+	SubnetIds        []string
+	SecurityGroupIds []string
+}
+
 type AwsLambdaConfig struct {
 	Memory                int
 	Timeout               int
-	ProvisionedConcurreny int `mapstructure:"provisioned-concurrency"`
+	ProvisionedConcurreny int                 `mapstructure:"provisioned-concurrency"`
+	Vpc                   *AwsLambdaVpcConfig `mapstructure:"vpc,omitempty"`
 }
 
 var defaultLambdaConfig = &AwsLambdaConfig{
