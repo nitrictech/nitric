@@ -34,10 +34,10 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/plugins/events"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
+	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
 	"github.com/nitrictech/nitric/core/pkg/pm"
-	"github.com/nitrictech/nitric/core/pkg/providers/common"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
@@ -61,7 +61,7 @@ type MembraneOptions struct {
 	QueuePlugin     queue.QueueService
 	GatewayPlugin   gateway.GatewayService
 	SecretPlugin    secret.SecretService
-	ResourcesPlugin common.ResourceService
+	ResourcesPlugin resource.ResourceService
 
 	CreateTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
@@ -100,7 +100,7 @@ type Membrane struct {
 	gatewayPlugin  gateway.GatewayService
 	queuePlugin    queue.QueueService
 	secretPlugin   secret.SecretService
-	resourcePlugin common.ResourceService
+	resourcePlugin resource.ResourceService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
