@@ -5,13 +5,14 @@ GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
 GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
-binaries: deploybin
-
-deploybin:
-	@echo Building Debug Deployment Server
+.PHONY: build
+build:
+	@echo building debug deployment server
 	@CGO_ENABLED=0 go build -o bin/deploy-debug -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 
-installdeploy: deploybin
+.PHONY: install
+install: build
+	@echo installing debug deployment server to ${HOME}/.nitric/providers/debug/spec-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/debug/
 	@cp bin/deploy-debug ${HOME}/.nitric/providers/debug/spec-0.0.1
 
