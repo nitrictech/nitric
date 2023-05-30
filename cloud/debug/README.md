@@ -6,7 +6,7 @@ specific project.
 
 ## Usage
 
-The debug provider isn't distributed as an official Nitric provide, so it must be built and installed from source.
+The debug provider isn't distributed as an official Nitric provider, so it must be built and installed from source.
 
 ```bash
 # build and install the debug provider binary
