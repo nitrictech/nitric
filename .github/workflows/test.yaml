@@ -62,13 +62,32 @@ jobs:
         run: make test-coverage
       - name: Check Dependency Licenses
         run: make license-check
-      # Upload coverage report if main is set
+      # Upload coverage report if for core
       - name: Upload Coverage Report
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./core/all.coverprofile,./provider/aws/all.coverprofile,./provider/gcp/all.coverprofile,./provider/azure/all.coverprofile # optional
-          flags: unittests # optional
+          files: ./core/all.coverprofile
+          flags: core # optional
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./provider/aws/all.coverprofile
+          flags: aws # optional
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./provider/gcp/all.coverprofile
+          flags: gcp # optional
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./provider/azure/all.coverprofile
+          flags: azure # optional
+
 
   # Run integration tests
   test-integration:
