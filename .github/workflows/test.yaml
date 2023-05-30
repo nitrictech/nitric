@@ -63,29 +63,29 @@ jobs:
       - name: Check Dependency Licenses
         run: make license-check
       # Upload coverage report if for core
-      - name: Upload Coverage Report
+      - name: Upload Coverage Report Core
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: ./core/all.coverprofile
           flags: core # optional
-      - name: Upload Coverage Report
+      - name: Upload Coverage Report AWS
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./provider/aws/all.coverprofile
+          files: ./cloud/aws/all.coverprofile
           flags: aws # optional
-      - name: Upload Coverage Report
+      - name: Upload Coverage Report GCP
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./provider/gcp/all.coverprofile
+          files: ./cloud/gcp/all.coverprofile
           flags: gcp # optional
-      - name: Upload Coverage Report
+      - name: Upload Coverage Report Azure
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./provider/azure/all.coverprofile
+          files: ./cloud/azure/all.coverprofile
           flags: azure # optional
 
 
