@@ -37,7 +37,19 @@ func WithResourcePlugin(plugin resource.ResourceService) ResourceServiceOption {
 	}
 }
 
+func (rs *ResourcesServiceServer) checkPluginRegistered() error {
+	if rs.plugin == nil {
+		return NewPluginNotRegisteredError("Resource")
+	}
+
+	return nil
+}
+
 func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
+	if err := rs.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	err := rs.plugin.Declare(ctx, req)
 	if err != nil {
 		return nil, err
@@ -69,6 +81,10 @@ var resourceTypeMap = map[v1.ResourceType]resource.ResourceType{
 }
 
 func (rs *ResourcesServiceServer) Details(ctx context.Context, req *v1.ResourceDetailsRequest) (*v1.ResourceDetailsResponse, error) {
+	if err := rs.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
 	cType, ok := resourceTypeMap[req.Resource.Type]
 	if !ok {
 		return nil, fmt.Errorf("unsupported resource type: %s", req.Resource.Type)
