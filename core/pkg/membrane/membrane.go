@@ -68,17 +68,11 @@ type MembraneOptions struct {
 	SuppressLogs            bool
 	TolerateMissingServices bool
 
-	// The operating mode of the membrane
-	Mode *Mode
-
 	// Supply your own worker pool
 	Pool pool.WorkerPool
 }
 
 type Membrane struct {
-	// Address & port to bind the membrane i/o proxy to
-	// This will still be bound even in pass through mode
-	// proxyAddress string
 	// Address & port to bind the membrane service interfaces to
 	serviceAddress string
 	// The address the child will be listening on
@@ -108,9 +102,6 @@ type Membrane struct {
 
 	// Suppress println statements in the membrane server
 	suppressLogs bool
-
-	// Handler operating mode, e.g. FaaS or HTTP Proxy. Governs how incoming triggers are translated.
-	mode Mode
 
 	grpcServer *grpc.Server
 
@@ -209,10 +200,9 @@ func (s *Membrane) Start() error {
 	v1.RegisterResourceServiceServer(s.grpcServer, resourceServer)
 
 	// FaaS server MUST start before the child process
-	if s.mode == Mode_Faas {
-		faasServer := grpc2.NewFaasServer(s.pool)
-		v1.RegisterFaasServiceServer(s.grpcServer, faasServer)
-	}
+	faasServer := grpc2.NewFaasServer(s.pool)
+	v1.RegisterFaasServiceServer(s.grpcServer, faasServer)
+
 	lis, err := net.Listen("tcp", s.serviceAddress)
 	if err != nil {
 		return fmt.Errorf("could not listen on configured service address: %w", err)
@@ -233,24 +223,6 @@ func (s *Membrane) Start() error {
 	// This will block until our child process is ready to accept incoming connections
 	if err := s.processManager.StartUserProcess(); err != nil {
 		return err
-	}
-
-	// If we aren't in FaaS mode
-	// We need to manually register our worker for now
-	if s.mode != Mode_Faas {
-		var wrkr worker.Worker
-		var workerErr error
-		if s.mode == Mode_HttpProxy {
-			wrkr, workerErr = worker.NewHttpWorker(s.childAddress)
-		}
-
-		if workerErr == nil {
-			if err := s.pool.AddWorker(wrkr); err != nil {
-				return err
-			}
-		} else {
-			return workerErr
-		}
 	}
 
 	// Wait for the minimum number of active workers to be available before beginning the gateway
@@ -329,14 +301,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		options.TolerateMissingServices = tolerateMissing
 	}
 
-	if options.Mode == nil {
-		mode, err := ModeFromString(utils.GetEnv("MEMBRANE_MODE", "FAAS"))
-		if err != nil {
-			return nil, err
-		}
-		options.Mode = &mode
-	}
-
 	if options.ChildTimeoutSeconds < 1 {
 		options.ChildTimeoutSeconds = 10
 	}
@@ -413,7 +377,6 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		resourcePlugin:          options.ResourcesPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
-		mode:                    *options.Mode,
 		pool:                    options.Pool,
 	}, nil
 }
