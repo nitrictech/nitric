@@ -24,14 +24,14 @@ type EventService interface {
 	ListTopics(ctx context.Context) ([]string, error)
 }
 
-type UnimplementedeventsPlugin struct {
+type UnimplementedEventsPlugin struct {
 	EventService
 }
 
-func (*UnimplementedeventsPlugin) Publish(ctx context.Context, topic string, delay int, event *NitricEvent) error {
+func (*UnimplementedEventsPlugin) Publish(ctx context.Context, topic string, delay int, event *NitricEvent) error {
 	return fmt.Errorf("UNIMPLEMENTED")
 }
 
-func (*UnimplementedeventsPlugin) ListTopics(ctx context.Context) ([]string, error) {
+func (*UnimplementedEventsPlugin) ListTopics(ctx context.Context) ([]string, error) {
 	return nil, fmt.Errorf("UNIMPLEMENTED")
 }
