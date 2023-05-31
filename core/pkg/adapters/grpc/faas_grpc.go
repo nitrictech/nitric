@@ -71,6 +71,11 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 		wrkr = worker.NewBucketNotificationWorker(adapter, &worker.BucketNotificationWorkerOptions{
 			Notification: notification,
 		})
+	} else if websocket := ir.GetWebsocket(); websocket != nil {
+		wrkr = worker.NewWebsocketWorker(adapter, &worker.WebsocketWorkerOptions{
+			Socket: websocket.Socket,
+			Event:  websocket.Event,
+		})
 	} else {
 		// XXX: Catch all worker type
 		wrkr = worker.NewFaasWorker(adapter)

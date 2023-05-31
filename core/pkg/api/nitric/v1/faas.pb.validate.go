@@ -1527,6 +1527,110 @@ var _ interface {
 	ErrorName() string
 } = BucketNotificationConfigValidationError{}
 
+// Validate checks the field values on WebsocketWorker with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *WebsocketWorker) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on WebsocketWorker with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// WebsocketWorkerMultiError, or nil if none found.
+func (m *WebsocketWorker) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *WebsocketWorker) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Socket
+
+	// no validation rules for Event
+
+	if len(errors) > 0 {
+		return WebsocketWorkerMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketWorkerMultiError is an error wrapping multiple validation errors
+// returned by WebsocketWorker.ValidateAll() if the designated constraints
+// aren't met.
+type WebsocketWorkerMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketWorkerMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketWorkerMultiError) AllErrors() []error { return m }
+
+// WebsocketWorkerValidationError is the validation error returned by
+// WebsocketWorker.Validate if the designated constraints aren't met.
+type WebsocketWorkerValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketWorkerValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketWorkerValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketWorkerValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketWorkerValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketWorkerValidationError) ErrorName() string { return "WebsocketWorkerValidationError" }
+
+// Error satisfies the builtin error interface
+func (e WebsocketWorkerValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocketWorker.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketWorkerValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketWorkerValidationError{}
+
 // Validate checks the field values on InitRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1708,6 +1812,47 @@ func (m *InitRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return InitRequestValidationError{
 					field:  "BucketNotification",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *InitRequest_Websocket:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWebsocket()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWebsocket()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return InitRequestValidationError{
+					field:  "Websocket",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2168,6 +2313,47 @@ func (m *TriggerRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return TriggerRequestValidationError{
 					field:  "Notification",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TriggerRequest_Websocket:
+		if v == nil {
+			err := TriggerRequestValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWebsocket()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerRequestValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWebsocket()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerRequestValidationError{
+					field:  "Websocket",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3018,6 +3204,114 @@ var _ interface {
 	ErrorName() string
 } = NotificationTriggerContextValidationError{}
 
+// Validate checks the field values on WebsocketTriggerContext with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *WebsocketTriggerContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on WebsocketTriggerContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// WebsocketTriggerContextMultiError, or nil if none found.
+func (m *WebsocketTriggerContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *WebsocketTriggerContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Socket
+
+	// no validation rules for Event
+
+	// no validation rules for ConnectionId
+
+	if len(errors) > 0 {
+		return WebsocketTriggerContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketTriggerContextMultiError is an error wrapping multiple validation
+// errors returned by WebsocketTriggerContext.ValidateAll() if the designated
+// constraints aren't met.
+type WebsocketTriggerContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketTriggerContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketTriggerContextMultiError) AllErrors() []error { return m }
+
+// WebsocketTriggerContextValidationError is the validation error returned by
+// WebsocketTriggerContext.Validate if the designated constraints aren't met.
+type WebsocketTriggerContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketTriggerContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketTriggerContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketTriggerContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketTriggerContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketTriggerContextValidationError) ErrorName() string {
+	return "WebsocketTriggerContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e WebsocketTriggerContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocketTriggerContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketTriggerContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketTriggerContextValidationError{}
+
 // Validate checks the field values on TriggerResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -3160,6 +3454,47 @@ func (m *TriggerResponse) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return TriggerResponseValidationError{
 					field:  "Notification",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TriggerResponse_Websocket:
+		if v == nil {
+			err := TriggerResponseValidationError{
+				field:  "Context",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWebsocket()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TriggerResponseValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWebsocket()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TriggerResponseValidationError{
+					field:  "Websocket",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3608,3 +3943,107 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = NotificationResponseContextValidationError{}
+
+// Validate checks the field values on WebsocketResponseContext with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *WebsocketResponseContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on WebsocketResponseContext with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// WebsocketResponseContextMultiError, or nil if none found.
+func (m *WebsocketResponseContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *WebsocketResponseContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return WebsocketResponseContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketResponseContextMultiError is an error wrapping multiple validation
+// errors returned by WebsocketResponseContext.ValidateAll() if the designated
+// constraints aren't met.
+type WebsocketResponseContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketResponseContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketResponseContextMultiError) AllErrors() []error { return m }
+
+// WebsocketResponseContextValidationError is the validation error returned by
+// WebsocketResponseContext.Validate if the designated constraints aren't met.
+type WebsocketResponseContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketResponseContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketResponseContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketResponseContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketResponseContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketResponseContextValidationError) ErrorName() string {
+	return "WebsocketResponseContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e WebsocketResponseContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocketResponseContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketResponseContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketResponseContextValidationError{}

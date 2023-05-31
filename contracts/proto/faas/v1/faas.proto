@@ -108,6 +108,23 @@ message BucketNotificationConfig {
 	string notification_prefix_filter = 2;
 }
 
+enum WebsocketEvent {
+  // Specialised Event for handling new client connections
+  Connect = 0;
+  // Specialised Event for handling existing client connections
+  Disconnect = 1;
+  // Catch-all for all other types of events
+  // TODO: Determine what level of configuration level routing we want to implement
+  Message = 2;
+}
+
+message WebsocketWorker {
+  // The nitric name of the socket that this worker listens on
+  string socket = 1;
+  // The type of event that this worker handles
+  WebsocketEvent event = 2;
+}
+
 // Generic catch all worker (XXX: Do we need this for backwards compatibility?)
 //message FunctionWorker {
 
@@ -123,6 +140,7 @@ message InitRequest {
     SubscriptionWorker subscription = 11;
     ScheduleWorker schedule = 12;
     BucketNotificationWorker bucket_notification = 13;
+    WebsocketWorker websocket = 14;
   }
 }
 
@@ -153,6 +171,7 @@ message TriggerRequest {
     HttpTriggerContext http = 3;
     TopicTriggerContext topic = 4;
     NotificationTriggerContext notification = 5;
+    WebsocketTriggerContext websocket = 6;
   }
 }
 
@@ -211,6 +230,17 @@ message NotificationTriggerContext {
   }
 }
 
+message WebsocketTriggerContext {
+  // The nitric name of the socket that this worker listens on
+  string socket = 1;
+
+  // The type of websocket event
+  WebsocketEvent event = 2;
+
+  // The connection this trigger came from
+  string connectionId = 3;
+}
+
 // The worker has successfully processed a trigger
 message TriggerResponse {
   // The data returned in the response
@@ -226,6 +256,8 @@ message TriggerResponse {
     TopicResponseContext topic = 11;
     // response to a notification trigger
     NotificationResponseContext notification = 12;
+
+    WebsocketResponseContext websocket = 13;
   }
 }
 
@@ -255,4 +287,10 @@ message TopicResponseContext {
 
 message NotificationResponseContext {
 	bool success = 1;
+}
+
+message WebsocketResponseContext {
+  // There aren't really responses here, instead we need to provide a runtime
+  // API for responding back and emitting/broadcasting on the websocket from the server
+  bool success = 1;
 }

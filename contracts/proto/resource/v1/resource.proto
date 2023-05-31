@@ -39,6 +39,7 @@ enum ResourceType {
   Policy = 8;
   Secret = 9;
   Notification = 10;
+  Websocket = 11;
 }
 
 message Resource {
@@ -118,6 +119,9 @@ enum Action {
   // Secret Permissions: 5XX
   SecretPut = 500;
   SecretAccess = 501;
+
+  // Websocket Permissions: 6XX
+  WebsocketManage = 600;
 }
 
 message ResourceDeclareResponse {}
