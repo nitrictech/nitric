@@ -23,7 +23,7 @@ import (
 	apigateway "cloud.google.com/go/apigateway/apiv1"
 	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 
-	"github.com/nitrictech/nitric/core/pkg/providers/common"
+	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
@@ -31,7 +31,7 @@ type GcpProvider interface {
 	// GetServiceAccountEmail for google cloud projects
 	GetServiceAccountEmail() (string, error)
 	GetProjectID() (string, error)
-	common.ResourceService
+	resource.ResourceService
 }
 
 type gcpProviderImpl struct {
@@ -42,7 +42,7 @@ type gcpProviderImpl struct {
 	region              string
 }
 
-var _ common.ResourceService = &gcpProviderImpl{}
+var _ resource.ResourceService = &gcpProviderImpl{}
 
 const (
 	metadataFlavorKey      = "Metadata-Flavor"
@@ -73,7 +73,7 @@ func filter(stack string, name string) string {
 	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
 }
 
-func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*common.DetailsResponse[any], error) {
+func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*resource.DetailsResponse[any], error) {
 	projectName, err := g.GetProjectID()
 	if err != nil {
 		return nil, err
@@ -86,11 +86,11 @@ func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string)
 
 	// there should only be a single entry in this array, we'll grab the first and then break
 	if gw, err := gws.Next(); gw != nil && err == nil {
-		return &common.DetailsResponse[any]{
+		return &resource.DetailsResponse[any]{
 			Id:       gw.Name,
 			Provider: "gcp",
 			Service:  "ApiGateway",
-			Detail: common.ApiDetails{
+			Detail: resource.ApiDetails{
 				URL: fmt.Sprintf("https://%s", gw.DefaultHostname),
 			},
 		}, nil
@@ -99,13 +99,13 @@ func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string)
 	}
 }
 
-func (g *gcpProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+func (g *gcpProviderImpl) Declare(ctx context.Context, req resource.ResourceDeclareRequest) error {
 	return nil
 }
 
-func (g *gcpProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (g *gcpProviderImpl) Details(ctx context.Context, typ resource.ResourceType, name string) (*resource.DetailsResponse[any], error) {
 	switch typ {
-	case common.ResourceType_Api:
+	case resource.ResourceType_Api:
 		return g.getApiGatewayDetails(ctx, name)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", typ)

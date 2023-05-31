@@ -36,10 +36,7 @@ service DocumentService {
 // Provides a Collection type for storing documents
 message Collection {
   // The collection name
-  string name = 1 [(validate.rules).string = {
-    pattern:   "^\\w+([.\\-]\\w+)*$",
-    max_bytes: 256,
-  }];
+  string name = 1;
 
   // Optional parent key, required when the collection is a sub-collection of another document
   Key parent = 2;

@@ -12,7 +12,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	core "github.com/nitrictech/nitric/cloud/azure/runtime/core"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	common "github.com/nitrictech/nitric/core/pkg/providers/common"
+	resource "github.com/nitrictech/nitric/core/pkg/plugins/resource"
 )
 
 // MockAzProvider is a mock of AzProvider interface.
@@ -53,10 +53,10 @@ func (mr *MockAzProviderMockRecorder) Declare(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // Details mocks base method.
-func (m *MockAzProvider) Details(arg0 context.Context, arg1, arg2 string) (*common.DetailsResponse[interface{}], error) {
+func (m *MockAzProvider) Details(arg0 context.Context, arg1, arg2 string) (*resource.DetailsResponse[interface{}], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Details", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*common.DetailsResponse[interface{}])
+	ret0, _ := ret[0].(*resource.DetailsResponse[interface{}])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

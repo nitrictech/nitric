@@ -31,7 +31,7 @@ import (
 )
 
 type EventGridEventService struct {
-	events.UnimplementedeventsPlugin
+	events.UnimplementedEventsPlugin
 	client   eventgridapi.BaseClientAPI
 	provider core.AzProvider
 }

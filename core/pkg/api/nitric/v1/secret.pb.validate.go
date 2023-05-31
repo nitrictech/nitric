@@ -624,27 +624,7 @@ func (m *Secret) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetName()) > 256 {
-		err := SecretValidationError{
-			field:  "Name",
-			reason: "value length must be at most 256 bytes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_Secret_Name_Pattern.MatchString(m.GetName()) {
-		err := SecretValidationError{
-			field:  "Name",
-			reason: "value does not match regex pattern \"^\\\\w+([.\\\\-]\\\\w+)*$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Name
 
 	if len(errors) > 0 {
 		return SecretMultiError(errors)
@@ -722,8 +702,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SecretValidationError{}
-
-var _Secret_Name_Pattern = regexp.MustCompile("^\\w+([.\\-]\\w+)*$")
 
 // Validate checks the field values on SecretVersion with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

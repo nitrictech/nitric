@@ -230,7 +230,7 @@ func (s *S3StorageService) PreSignUrl(ctx context.Context, bucket string, key st
 	}
 }
 
-func (s *S3StorageService) ListFiles(ctx context.Context, bucket string) ([]*storage.FileInfo, error) {
+func (s *S3StorageService) ListFiles(ctx context.Context, bucket string, options *storage.ListFileOptions) ([]*storage.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"S3StorageService.ListFiles",
 		map[string]interface{}{
@@ -238,9 +238,18 @@ func (s *S3StorageService) ListFiles(ctx context.Context, bucket string) ([]*sto
 		},
 	)
 
+	var prefix *string = nil
+	if options != nil {
+		// Only apply if prefix isn't default
+		if options.Prefix != "" {
+			prefix = aws.String(options.Prefix)
+		}
+	}
+
 	if b, err := s.getBucketName(ctx, bucket); err == nil {
 		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: b,
+			Prefix: prefix,
 		})
 		if err != nil {
 			return nil, newErr(

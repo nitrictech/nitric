@@ -38,7 +38,7 @@ type MockDocumentServer struct {
 }
 
 type MockeventsServer struct {
-	events.UnimplementedeventsPlugin
+	events.UnimplementedEventsPlugin
 }
 
 type MockStorageServiceServer struct {

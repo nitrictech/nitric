@@ -243,9 +243,13 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, records []Record) (
 
 		var mc propagation.MapCarrier = attrs
 
-		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
+		trigResp, err := wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
 		if err != nil {
 			return nil, err
+		}
+
+		if trigResp.GetTopic() == nil || !trigResp.GetTopic().Success {
+			return nil, fmt.Errorf("event handler return non success")
 		}
 	}
 

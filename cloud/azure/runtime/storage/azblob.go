@@ -188,7 +188,7 @@ func (s *AzblobStorageService) PreSignUrl(ctx context.Context, bucket string, ke
 	return url.String(), nil
 }
 
-func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string) ([]*storage.FileInfo, error) {
+func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string, options *storage.ListFileOptions) ([]*storage.FileInfo, error) {
 	newErr := errors.ErrorsWithScope(
 		"AzblobStorageService.ListFiles",
 		map[string]interface{}{
@@ -196,13 +196,20 @@ func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string) ([]
 		},
 	)
 
+	prefix := ""
+	if options != nil {
+		prefix = options.Prefix
+	}
+
 	cUrl := s.getContainerUrl(bucket)
 	files := make([]*storage.FileInfo, 0)
 
 	// List the blob(s) in our container; since a container may hold millions of blobs, this is done 1 segment at a time.
 	for marker := (azblob.Marker{}); marker.NotDone(); { // The parens around Marker{} are required to avoid compiler error.
 		// Get a result segment starting with the blob indicated by the current Marker.
-		listBlob, err := cUrl.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{})
+		listBlob, err := cUrl.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{
+			Prefix: prefix,
+		})
 		if err != nil {
 			return nil, newErr(codes.Internal, "error listing files", err)
 		}

@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/bucket"
@@ -76,6 +77,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 	lambdaClient := lambda.New(sess, &aws.Config{Region: aws.String(details.Region)})
+	resourceTaggingClient := resourcegroupstaggingapi.New(sess)
 
 	pulumiStack, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, func(ctx *pulumi.Context) error {
 		principals := map[v1.ResourceType]map[string]*iam.Role{}
@@ -105,9 +107,17 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		for _, res := range request.Spec.Resources {
 			switch c := res.Config.(type) {
 			case *deploy.Resource_Secret:
+				importArn := ""
+
+				if config.Import.Secrets != nil {
+					importArn = config.Import.Secrets[res.Name]
+				}
+
 				secrets[res.Name], err = secret.NewSecretsManagerSecret(ctx, res.Name, &secret.SecretsManagerSecretArgs{
 					StackID: stackID,
 					Secret:  c.Secret,
+					Import:  importArn,
+					Client:  resourceTaggingClient,
 				})
 				if err != nil {
 					return err

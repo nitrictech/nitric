@@ -69,7 +69,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: ./core/all.coverprofile,./provider/aws/all.coverprofile,./provider/gcp/all.coverprofile,./provider/azure/all.coverprofile # optional
           flags: unittests # optional
-          fail_ci_if_error: true # optional (default = false)
 
   # Run integration tests
   test-integration:

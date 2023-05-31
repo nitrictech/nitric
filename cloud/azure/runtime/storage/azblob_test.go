@@ -293,7 +293,9 @@ var _ = Describe("Azblob", func() {
 					},
 				}, nil)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket", &storage.ListFileOptions{
+					Prefix: "/test/",
+				})
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
@@ -324,7 +326,7 @@ var _ = Describe("Azblob", func() {
 				By("Azure returning an error")
 				mockContainer.EXPECT().ListBlobsFlatSegment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket")
+				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket", nil)
 
 				By("returning nil results")
 				Expect(files).To(BeNil())

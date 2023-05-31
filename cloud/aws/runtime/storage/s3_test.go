@@ -31,6 +31,7 @@ import (
 	mock_s3iface "github.com/nitrictech/nitric/cloud/aws/mocks/s3"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
+	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
 )
 
 var _ = Describe("S3", func() {
@@ -198,13 +199,16 @@ var _ = Describe("S3", func() {
 					By("s3 returning files")
 					mockStorageClient.EXPECT().ListObjectsV2(gomock.Any(), &s3.ListObjectsV2Input{
 						Bucket: aws.String("test-bucket-aaa111"),
+						Prefix: aws.String("test/"),
 					}).Return(&s3.ListObjectsV2Output{
 						Contents: []types.Object{{
-							Key: aws.String("test"),
+							Key: aws.String("test/test"),
 						}},
 					}, nil)
 
-					files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket")
+					files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", &storage.ListFileOptions{
+						Prefix: "test/",
+					})
 
 					By("not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -213,7 +217,7 @@ var _ = Describe("S3", func() {
 					Expect(files).To(HaveLen(1))
 
 					By("having the returned keys")
-					Expect(files[0].Key).To(Equal("test"))
+					Expect(files[0].Key).To(Equal("test/test"))
 				})
 			})
 		})
