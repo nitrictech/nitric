@@ -20,13 +20,10 @@ import (
 	"fmt"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -92,23 +89,6 @@ func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSub
 		return nil, err
 	}
 
-	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"-subacct", &serviceaccount.AccountArgs{
-		AccountId: pulumi.String(utils.StringTrunc(name, 30-8) + "subacct"),
-	})
-	if err != nil {
-		return nil, errors.WithMessage(err, "invokerAccount "+name)
-	}
-
-	_, err = cloudrun.NewIamMember(ctx, name+"-subrole", &cloudrun.IamMemberArgs{
-		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
-		Role:     pulumi.String("roles/run.invoker"),
-		Service:  args.Function.Service.Name,
-		Location: args.Function.Service.Location,
-	}, append(opts, pulumi.Parent(res))...)
-	if err != nil {
-		return nil, errors.WithMessage(err, "iam member "+name)
-	}
-
 	s, err := pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
 		Topic:              args.Topic.PubSub.Name, // The GCP topic name
 		AckDeadlineSeconds: pulumi.Int(300),
@@ -118,7 +98,7 @@ func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSub
 		},
 		PushConfig: pubsub.SubscriptionPushConfigArgs{
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: invokerAccount.Email,
+				ServiceAccountEmail: args.Function.Invoker.Email,
 			},
 			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic.Name),
 		},
