@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
