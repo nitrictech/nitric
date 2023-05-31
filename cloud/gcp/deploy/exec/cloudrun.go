@@ -19,6 +19,7 @@ package exec
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -36,6 +37,7 @@ type CloudRunner struct {
 	Name    string
 	Service *cloudrun.Service
 	Url     pulumi.StringInput
+	Invoker *serviceaccount.Account
 }
 
 type CloudRunnerArgs struct {
@@ -167,6 +169,24 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 				},
 			},
 		},
+	}, append(opts, pulumi.Parent(res))...)
+	if err != nil {
+		return nil, errors.WithMessage(err, "cloud run "+name)
+	}
+
+	// Create a role that can be used by other services to invoke this runner
+	res.Invoker, err = serviceaccount.NewAccount(ctx, name+"-invoker", &serviceaccount.AccountArgs{
+		AccountId: pulumi.String(utils.StringTrunc(name, 30)),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "invokerAccount "+name)
+	}
+
+	_, err = cloudrun.NewIamMember(ctx, name+"-invoker", &cloudrun.IamMemberArgs{
+		Member:   pulumi.Sprintf("serviceAccount:%s", res.Invoker.Email),
+		Role:     pulumi.String("roles/run.invoker"),
+		Service:  res.Service.Name,
+		Location: res.Service.Location,
 	}, append(opts, pulumi.Parent(res))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "iam member "+name)

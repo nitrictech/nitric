@@ -22,9 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -75,25 +73,6 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, err
 	}
 
-	invokerAccount, err := serviceaccount.NewAccount(ctx, name+"acct", &serviceaccount.AccountArgs{
-		// accountId accepts a max of 30 chars, limit our generated name to this length
-		AccountId: pulumi.String(utils.StringTrunc(name, 25) + "acct"),
-	}, append(opts, pulumi.Parent(res))...)
-	if err != nil {
-		return nil, errors.WithMessage(err, "invokerAccount "+name)
-	}
-
-	// Apply permissions for the above account to the newly deployed cloud run service
-	_, err = cloudrun.NewIamMember(ctx, name+"-notifyrole", &cloudrun.IamMemberArgs{
-		Member:   pulumi.Sprintf("serviceAccount:%s", invokerAccount.Email),
-		Role:     pulumi.String("roles/run.invoker"),
-		Service:  args.Function.Service.Name,
-		Location: args.Function.Service.Location,
-	}, append(opts, pulumi.Parent(res))...)
-	if err != nil {
-		return nil, errors.WithMessage(err, "iam member "+name)
-	}
-
 	_, err = pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
 		Topic:              topic.Name,
 		AckDeadlineSeconds: pulumi.Int(300),
@@ -103,7 +82,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		},
 		PushConfig: pubsub.SubscriptionPushConfigArgs{
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: invokerAccount.Email,
+				ServiceAccountEmail: args.Function.Invoker.Email,
 			},
 			PushEndpoint: pulumi.Sprintf("%s/x-nitric-notification/bucket/%s", args.Function.Url, args.Bucket.Name),
 		},
