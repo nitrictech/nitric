@@ -39,7 +39,7 @@ import (
 )
 
 type PubsubEventService struct {
-	events.UnimplementedeventsPlugin
+	events.UnimplementedEventsPlugin
 	core.GcpProvider
 	client      ifaces_pubsub.PubsubClient
 	tasksClient ifaces_cloudtasks.CloudtasksClient

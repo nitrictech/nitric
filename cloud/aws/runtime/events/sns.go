@@ -38,7 +38,7 @@ import (
 )
 
 type SnsEventService struct {
-	events.UnimplementedeventsPlugin
+	events.UnimplementedEventsPlugin
 	client    snsiface.SNSAPI
 	sfnClient sfniface.SFNAPI
 	provider  core.AwsProvider

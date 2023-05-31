@@ -28,7 +28,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/apigatewayv2iface"
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/resourcegroupstaggingapiiface"
-	"github.com/nitrictech/nitric/core/pkg/providers/common"
+	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
@@ -45,12 +45,12 @@ const (
 	AwsResource_EventRule    AwsResource = "events:rule"
 )
 
-var resourceTypeMap = map[common.ResourceType]AwsResource{
-	common.ResourceType_Api: AwsResource_Api,
+var resourceTypeMap = map[resource.ResourceType]AwsResource{
+	resource.ResourceType_Api: AwsResource_Api,
 }
 
 type AwsProvider interface {
-	common.ResourceService
+	resource.ResourceService
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
 	GetResources(context.Context, AwsResource) (map[string]string, error)
@@ -66,11 +66,11 @@ type awsProviderImpl struct {
 
 var _ AwsProvider = &awsProviderImpl{}
 
-func (a *awsProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+func (a *awsProviderImpl) Declare(ctx context.Context, req resource.ResourceDeclareRequest) error {
 	return nil
 }
 
-func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (a *awsProviderImpl) Details(ctx context.Context, typ resource.ResourceType, name string) (*resource.DetailsResponse[any], error) {
 	rt, ok := resourceTypeMap[typ]
 	if !ok {
 		return nil, fmt.Errorf("unhandled resource type: %s", typ)
@@ -87,7 +87,7 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, 
 		return nil, fmt.Errorf("unable to find resource %s for name: %s", typ, name)
 	}
 
-	details := &common.DetailsResponse[any]{
+	details := &resource.DetailsResponse[any]{
 		Id:       arn,
 		Provider: "aws",
 	}
@@ -106,7 +106,7 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ common.ResourceType, 
 		}
 
 		details.Service = "ApiGateway"
-		details.Detail = common.ApiDetails{
+		details.Detail = resource.ApiDetails{
 			URL: *api.ApiEndpoint,
 		}
 

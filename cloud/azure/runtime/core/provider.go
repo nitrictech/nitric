@@ -25,7 +25,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
-	"github.com/nitrictech/nitric/core/pkg/providers/common"
+	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 )
 
 type AzProvider interface {
@@ -33,7 +33,7 @@ type AzProvider interface {
 	SubscriptionId() string
 	ResourceGroupName() string
 	ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error)
-	common.ResourceService
+	resource.ResourceService
 }
 
 type AzResource = string
@@ -68,7 +68,7 @@ type azProviderImpl struct {
 
 var _ AzProvider = &azProviderImpl{}
 
-func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*common.DetailsResponse[any], error) {
+func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*resource.DetailsResponse[any], error) {
 	res, err := p.srvClient.ListByResourceGroupComplete(ctx, p.rgName)
 	if err != nil {
 		return nil, err
@@ -78,11 +78,11 @@ func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*commo
 		service := res.Value()
 
 		if t, ok := service.Tags["x-nitric-name"]; ok && t != nil && *t == name {
-			return &common.DetailsResponse[any]{
+			return &resource.DetailsResponse[any]{
 				Id:       *service.ID,
 				Provider: "azure",
 				Service:  "ApiManagement",
-				Detail: common.ApiDetails{
+				Detail: resource.ApiDetails{
 					URL: *service.GatewayURL,
 				},
 			}, nil
@@ -97,13 +97,13 @@ func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*commo
 	return nil, fmt.Errorf("api resource %s not found", name)
 }
 
-func (p *azProviderImpl) Declare(ctx context.Context, req common.ResourceDeclareRequest) error {
+func (p *azProviderImpl) Declare(ctx context.Context, req resource.ResourceDeclareRequest) error {
 	return nil
 }
 
-func (p *azProviderImpl) Details(ctx context.Context, typ common.ResourceType, name string) (*common.DetailsResponse[any], error) {
+func (p *azProviderImpl) Details(ctx context.Context, typ resource.ResourceType, name string) (*resource.DetailsResponse[any], error) {
 	switch typ {
-	case common.ResourceType_Api:
+	case resource.ResourceType_Api:
 		return p.getApiDetails(ctx, name)
 	default:
 		return nil, fmt.Errorf("unsupported resource type %s", typ)
