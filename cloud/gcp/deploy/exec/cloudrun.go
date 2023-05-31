@@ -190,7 +190,7 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 
 	// Create a role that can be used by other services to invoke this runner
 	res.Invoker, err = serviceaccount.NewAccount(ctx, name+"-invoker", &serviceaccount.AccountArgs{
-		AccountId: pulumi.Sprintf("%s-%s", utils.StringTrunc(name, 30-8), acctRandId),
+		AccountId: pulumi.Sprintf("%s-%s", utils.StringTrunc(name, 30-8), acctRandId.Result),
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "invokerAccount "+name)
