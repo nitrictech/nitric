@@ -87,11 +87,11 @@ message FailedTask {
 // A task to be sent or received from a queue.
 message NitricTask {
   // A unique id for the task
-  string id = 1;
+  string id = 1 [deprecated=true];
   // The lease id unique to the pop request, this must be used to complete, extend the lease or release the task.
   string lease_id = 2;
   // A content hint for the tasks payload
-  string payload_type = 3;
+  string payload_type = 3 [deprecated=true];
   // The payload of the task
   google.protobuf.Struct payload = 4;
 }

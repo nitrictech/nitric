@@ -48,13 +48,16 @@ func (s *EventServiceServer) Publish(ctx context.Context, req *pb.EventPublishRe
 	}
 
 	// auto generate an ID if we did not receive one
+
+	//nolint:all
 	ID := req.GetEvent().GetId()
 	if ID == "" {
 		ID = uuid.New().String()
 	}
 
 	event := &events.NitricEvent{
-		ID:          ID,
+		ID: ID,
+		//nolint:all
 		PayloadType: req.GetEvent().GetPayloadType(),
 		Payload:     req.GetEvent().GetPayload().AsMap(),
 	}

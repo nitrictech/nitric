@@ -115,7 +115,9 @@ var _ = Describe("GRPC Queue", func() {
 
 			It("Should succeed", func() {
 				Expect(err).Should(BeNil())
+				//nolint:all
 				Expect(resp.Tasks[0].Id).To(Equal("tsk"))
+				//nolint:all
 				Expect(resp.Tasks[0].PayloadType).To(Equal("food"))
 			})
 		})

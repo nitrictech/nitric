@@ -51,13 +51,15 @@ func (s *QueueServiceServer) Send(ctx context.Context, req *pb.QueueSendRequest)
 	task := req.GetTask()
 
 	// auto generate an ID if we did not receive one
+	//nolint:all
 	ID := task.GetId()
 	if ID == "" {
 		ID = uuid.New().String()
 	}
 
 	nitricTask := queue.NitricTask{
-		ID:          ID,
+		ID: ID,
+		//nolint:all
 		PayloadType: task.GetPayloadType(),
 		Payload:     task.GetPayload().AsMap(),
 	}
@@ -83,13 +85,15 @@ func (s *QueueServiceServer) SendBatch(ctx context.Context, req *pb.QueueSendBat
 	tasks := make([]queue.NitricTask, len(req.GetTasks()))
 	for i, task := range req.GetTasks() {
 		// auto generate an ID if we did not receive one
+		//nolint:all
 		ID := task.GetId()
 		if ID == "" {
 			ID = uuid.New().String()
 		}
 
 		tasks[i] = queue.NitricTask{
-			ID:          ID,
+			ID: ID,
+			//nolint:all
 			PayloadType: task.GetPayloadType(),
 			Payload:     task.GetPayload().AsMap(),
 		}
