@@ -182,8 +182,6 @@ message Websocket {
     // Target for handling client disconnections
     WebsocketTarget disconnect_target = 2;
     // Target for handling all other message types
-    // TODO: This may become a default handler in future and we can capture and filter
-    // by action types at the gateway where available
     WebsocketTarget message_target = 3;
 }
 

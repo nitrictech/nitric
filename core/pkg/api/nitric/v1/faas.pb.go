@@ -77,8 +77,7 @@ const (
 	WebsocketEvent_Connect WebsocketEvent = 0
 	// Specialised Event for handling existing client connections
 	WebsocketEvent_Disconnect WebsocketEvent = 1
-	// Catch-all for all other types of events
-	// TODO: Determine what level of configuration level routing we want to implement
+	// All other types of events are messages
 	WebsocketEvent_Message WebsocketEvent = 2
 )
 

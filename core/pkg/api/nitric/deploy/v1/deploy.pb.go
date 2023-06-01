@@ -1164,8 +1164,6 @@ type Websocket struct {
 	// Target for handling client disconnections
 	DisconnectTarget *WebsocketTarget `protobuf:"bytes,2,opt,name=disconnect_target,json=disconnectTarget,proto3" json:"disconnect_target,omitempty"`
 	// Target for handling all other message types
-	// TODO: This may become a default handler in future and we can capture and filter
-	// by action types at the gateway where available
 	MessageTarget *WebsocketTarget `protobuf:"bytes,3,opt,name=message_target,json=messageTarget,proto3" json:"message_target,omitempty"`
 }
 
