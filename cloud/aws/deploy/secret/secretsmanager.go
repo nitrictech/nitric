@@ -50,7 +50,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 		return nil, err
 	}
 
-	tags := common.Tags(ctx, args.StackID, name)
+	tags := common.Tags(args.StackID, name)
 
 	if args.Import != "" {
 		secretLookup, err := secretsmanager.LookupSecret(ctx, &secretsmanager.LookupSecretArgs{
@@ -83,7 +83,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 	} else {
 		// create a new secret
 		res.SecretsManager, err = secretsmanager.NewSecret(ctx, name, &secretsmanager.SecretArgs{
-			Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+			Tags: pulumi.ToStringMap(common.Tags(args.StackID, name)),
 		})
 		if err != nil {
 			return nil, err

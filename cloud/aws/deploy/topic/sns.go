@@ -54,7 +54,7 @@ func NewSNSTopic(ctx *pulumi.Context, name string, args *SNSTopicArgs, opts ...p
 
 	// create the SNS topic
 	res.Sns, err = sns.NewTopic(ctx, name, &sns.TopicArgs{
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func NewSNSTopic(ctx *pulumi.Context, name string, args *SNSTopicArgs, opts ...p
 	res.Sfn, err = sfn.NewStateMachine(ctx, name, &sfn.StateMachineArgs{
 		RoleArn: sfnRole.Arn,
 		// Apply the same name as the topic to the state machine
-		Tags:       pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name)),
 		Definition: sfnDef,
 	}, pulumi.Parent(res))
 	if err != nil {

@@ -176,7 +176,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			case *deploy.Resource_ExecutionUnit:
 				repo, err := ecr.NewRepository(ctx, res.Name, &ecr.RepositoryArgs{
 					ForceDelete: pulumi.BoolPtr(true),
-					Tags:        pulumi.ToStringMap(common.Tags(ctx, stackID, res.Name)),
+					Tags:        pulumi.ToStringMap(common.Tags(stackID, res.Name)),
 				})
 				if err != nil {
 					return err

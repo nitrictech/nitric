@@ -61,7 +61,7 @@ var _ = Describe("Secret Manager", func() {
 						gomock.Any(),
 						&secretmanagerpb.ListSecretsRequest{
 							Parent: "projects/my-project",
-							Filter: "labels.x-nitric-name=Test AND labels.x-nitric-stack=",
+							Filter: "labels.x-nitric-stack-=Test",
 						},
 					).Return(si).Times(1)
 

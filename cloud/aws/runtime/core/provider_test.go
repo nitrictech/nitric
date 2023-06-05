@@ -86,11 +86,8 @@ var _ = Describe("AwsProvider", func() {
 					ResourceTagMappingList: []types.ResourceTagMapping{{
 						ResourceARN: aws.String("arn:aws:::sns:test"),
 						Tags: []types.Tag{{
-							Key:   aws.String("x-nitric-name"),
+							Key:   aws.String("x-nitric-stack-test-stack"),
 							Value: aws.String("test"),
-						}, {
-							Key:   aws.String("x-nitric-stack"),
-							Value: aws.String("test-stack"),
 						}},
 					}},
 				}, nil)

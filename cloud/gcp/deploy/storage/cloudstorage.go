@@ -49,7 +49,7 @@ func NewCloudStorageBucket(ctx *pulumi.Context, name string, args *CloudStorageB
 
 	res.CloudStorage, err = storage.NewBucket(ctx, name, &storage.BucketArgs{
 		Location: pulumi.String(args.Location),
-		Labels:   pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels:   pulumi.ToStringMap(common.Tags(args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

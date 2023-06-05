@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tags
+package tags_test
 
 import (
-	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func Tags(stackID string, name string) map[string]string {
-	return map[string]string{
-		// Locate the unique stack by the presence of the key and the resource by its name
-		fmt.Sprintf("x-nitric-stack-%s", stackID): name,
-	}
-}
+var _ = Describe("Tags", func() {
+	Context("Tags", func() {
+		When("Calling Tags", func() {
+			nameTags := tags.Tags("testing", "my-resource")
+
+			It("tags should contain key x-nitric-stack-testing", func() {
+				Expect(nameTags["x-nitric-stack-testing"]).To(Equal("my-resource"))
+			})
+		})
+	})
+})

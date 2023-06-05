@@ -49,7 +49,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
-	topicTags := common.Tags(ctx, args.StackID, name)
+	topicTags := common.Tags(args.StackID, name)
 	topicTags["x-nitric-type"] = "queue"
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
@@ -59,7 +59,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
-	subscriptionTags := common.Tags(ctx, args.StackID, name)
+	subscriptionTags := common.Tags(args.StackID, name)
 	subscriptionTags["x-nitric-type"] = "queue-subscription"
 
 	res.Subscription, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{

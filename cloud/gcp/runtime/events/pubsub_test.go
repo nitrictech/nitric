@@ -16,6 +16,7 @@ package events_test
 
 import (
 	"context"
+	"os"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -30,6 +31,8 @@ import (
 )
 
 var _ = Describe("Pubsub Plugin", func() {
+	_ = os.Setenv("NITRIC_STACK", "test-nitric-stack")
+
 	When("Listing Available Topics", func() {
 		When("There are no topics available", func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -100,7 +103,10 @@ var _ = Describe("Pubsub Plugin", func() {
 				)
 				mockTopic.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(mockPublishResult)
 
-				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{"x-nitric-name": "Test"}, nil)
+				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{
+					"x-nitric-stack-test-nitric-stack": "Test",
+					"x-nitric-type":                    "topic",
+				}, nil)
 
 				err := pubsubPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -140,7 +146,10 @@ var _ = Describe("Pubsub Plugin", func() {
 					mockIterator.EXPECT().Next().Return(mockTopic, nil),
 					mockIterator.EXPECT().Next().Return(nil, iterator.Done),
 				)
-				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{"x-nitric-name": "Test"}, nil)
+				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{
+					"x-nitric-stack-test-nitric-stack": "Test",
+					"x-nitric-type":                    "topic",
+				}, nil)
 				mockTopic.EXPECT().String().Return("test")
 
 				By("the publish being successful")

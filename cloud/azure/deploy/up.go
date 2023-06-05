@@ -137,7 +137,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
 			Location: pulumi.String(details.Region),
-			Tags:     pulumi.ToStringMap(common.Tags(ctx, stackID, ctx.Stack())),
+			Tags:     pulumi.ToStringMap(common.Tags(stackID, ctx.Stack())),
 		})
 		if err != nil {
 			return errors.WithMessage(err, "resource group create")
@@ -167,7 +167,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				},
 				TenantId: pulumi.String(clientConfig.TenantId),
 			},
-			Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, kvName)),
+			Tags: pulumi.ToStringMap(common.Tags(stackID, kvName)),
 		})
 		if err != nil {
 			return err
@@ -186,7 +186,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				Sku: azureStorage.SkuArgs{
 					Name: pulumi.String(storage.SkuName_Standard_LRS),
 				},
-				Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, accName)),
+				Tags: pulumi.ToStringMap(common.Tags(stackID, accName)),
 			})
 			if err != nil {
 				return err

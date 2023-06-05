@@ -57,7 +57,7 @@ func NewDynamodbCollection(ctx *pulumi.Context, name string, args *DynamodbColle
 		HashKey:     pulumi.String("_pk"),
 		RangeKey:    pulumi.String("_sk"),
 		BillingMode: pulumi.String("PAY_PER_REQUEST"),
-		Tags:        pulumi.ToStringMap(tags.Tags(ctx, args.StackID, name)),
+		Tags:        pulumi.ToStringMap(tags.Tags(args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

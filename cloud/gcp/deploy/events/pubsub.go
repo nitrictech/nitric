@@ -52,7 +52,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
-	baseTags := common.Tags(ctx, args.StackID, name)
+	baseTags := common.Tags(args.StackID, name)
 	baseTags["x-nitric-type"] = "topic"
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{

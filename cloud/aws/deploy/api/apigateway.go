@@ -131,7 +131,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:           pulumi.ToStringMap(common.Tags(args.StackID, name)),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
@@ -142,7 +142,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
-		Tags:       pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"DefaultStage")),
+		Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name+"DefaultStage")),
 	}, opts...)
 	if err != nil {
 		return nil, err

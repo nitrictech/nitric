@@ -43,7 +43,7 @@ func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...p
 	}
 
 	queue, err := sqs.NewQueue(ctx, name, &sqs.QueueArgs{
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

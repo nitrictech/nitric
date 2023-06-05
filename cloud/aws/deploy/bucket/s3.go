@@ -46,7 +46,7 @@ func NewS3Bucket(ctx *pulumi.Context, name string, args *S3BucketArgs, opts ...p
 	}
 
 	res.S3, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name)),
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "s3 bucket "+name)

@@ -81,7 +81,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 	res.Role, err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(tmpJSON),
-		Tags:             pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"LambdaRole")),
+		Tags:             pulumi.ToStringMap(common.Tags(args.StackID, name+"LambdaRole")),
 	}, opts...)
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		PackageType: pulumi.String("Image"),
 
 		Role:        res.Role.Arn,
-		Tags:        pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:        pulumi.ToStringMap(common.Tags(args.StackID, name)),
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)
 	if err != nil {

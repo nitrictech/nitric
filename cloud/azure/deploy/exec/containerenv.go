@@ -142,7 +142,7 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, ctx.Stack()+"Kube")),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, ctx.Stack()+"Kube")),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err

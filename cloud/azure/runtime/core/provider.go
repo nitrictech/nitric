@@ -79,7 +79,7 @@ func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*resou
 		service := res.Value()
 
 		if t, ok := service.Tags[fmt.Sprintf("x-nitric-stack-%s", p.stack)]; ok && t != nil && *t == name {
-			return &common.DetailsResponse[any]{
+			return &resource.DetailsResponse[any]{
 				Id:       *service.ID,
 				Provider: "azure",
 				Service:  "ApiManagement",
