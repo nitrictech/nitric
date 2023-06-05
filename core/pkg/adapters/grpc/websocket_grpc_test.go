@@ -59,7 +59,7 @@ var _ = Describe("GRPC Websockets", func() {
 
 				ws := grpc.NewWebsocketServiceServer(mockWs)
 
-				It("Should succeed", func() {
+				It("Should fail", func() {
 					By("calling the provided plugin")
 					mockWs.EXPECT().Send(gomock.Any(), "test", "test-connection-id", data).Return(fmt.Errorf("mock-error"))
 

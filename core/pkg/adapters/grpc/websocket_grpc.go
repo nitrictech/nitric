@@ -23,7 +23,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/plugins/websocket"
 )
 
-// GRPC Interface for registered Nitric Storage Plugins
+// GRPC Interface for registered Nitric Websocket Plugins
 type WebsocketServiceServer struct {
 	pb.UnimplementedWebsocketServiceServer
 	websocketPlugin websocket.WebsocketService
