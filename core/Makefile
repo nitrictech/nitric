@@ -72,6 +72,7 @@ generate-mocks:
 	@mkdir -p mocks/plugins/events
 	@mkdir -p mocks/gateway
 	@mkdir -p mocks/resource
+	@mkdir -p mocks/websocket
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/api/nitric/v1 FaasService_TriggerStreamServer > mocks/nitric/mock.go
 	@go run github.com/golang/mock/mockgen sync Locker > mocks/sync/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/document DocumentService > mocks/document/mock.go
@@ -80,6 +81,7 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/queue QueueService > mocks/queue/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/gateway GatewayService > mocks/gateway/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/resource ResourceService > mocks/resource/mock.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/plugins/websocket WebsocketService > mocks/websocket/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker Worker > mocks/worker/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker/pool WorkerPool > mocks/pool/mock.go
 	@go run github.com/golang/mock/mockgen -package worker github.com/nitrictech/nitric/core/pkg/worker/adapter Adapter > mocks/adapter/mock.go

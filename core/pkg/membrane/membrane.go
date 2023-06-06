@@ -30,6 +30,7 @@ import (
 
 	grpc2 "github.com/nitrictech/nitric/core/pkg/adapters/grpc"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	websocketPb "github.com/nitrictech/nitric/core/pkg/api/nitric/websocket/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/document"
 	"github.com/nitrictech/nitric/core/pkg/plugins/events"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
@@ -37,6 +38,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
 	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
+	"github.com/nitrictech/nitric/core/pkg/plugins/websocket"
 	"github.com/nitrictech/nitric/core/pkg/pm"
 	"github.com/nitrictech/nitric/core/pkg/utils"
 	"github.com/nitrictech/nitric/core/pkg/worker"
@@ -61,6 +63,7 @@ type MembraneOptions struct {
 	QueuePlugin     queue.QueueService
 	GatewayPlugin   gateway.GatewayService
 	SecretPlugin    secret.SecretService
+	WebsocketPlugin websocket.WebsocketService
 	ResourcesPlugin resource.ResourceService
 
 	CreateTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
@@ -88,13 +91,14 @@ type Membrane struct {
 	childTimeoutSeconds int
 
 	// Configured plugins
-	documentPlugin document.DocumentService
-	eventsPlugin   events.EventService
-	storagePlugin  storage.StorageService
-	gatewayPlugin  gateway.GatewayService
-	queuePlugin    queue.QueueService
-	secretPlugin   secret.SecretService
-	resourcePlugin resource.ResourceService
+	documentPlugin  document.DocumentService
+	eventsPlugin    events.EventService
+	storagePlugin   storage.StorageService
+	gatewayPlugin   gateway.GatewayService
+	queuePlugin     queue.QueueService
+	secretPlugin    secret.SecretService
+	resourcePlugin  resource.ResourceService
+	websocketPlugin websocket.WebsocketService
 
 	// Tolerate if provider specific plugins aren't available for some services.
 	// Not this does not include the gateway service
@@ -141,6 +145,10 @@ func (s *Membrane) createStorageServer() v1.StorageServiceServer {
 
 func (s *Membrane) createQueueServer() v1.QueueServiceServer {
 	return grpc2.NewQueueServiceServer(s.queuePlugin)
+}
+
+func (s *Membrane) createWebsocketServer() websocketPb.WebsocketServiceServer {
+	return grpc2.NewWebsocketServiceServer(s.websocketPlugin)
 }
 
 // Start the membrane
@@ -198,6 +206,9 @@ func (s *Membrane) Start() error {
 
 	resourceServer := grpc2.NewResourcesServiceServer(grpc2.WithResourcePlugin(s.resourcePlugin))
 	v1.RegisterResourceServiceServer(s.grpcServer, resourceServer)
+
+	websocketServer := s.createWebsocketServer()
+	websocketPb.RegisterWebsocketServiceServer(s.grpcServer, websocketServer)
 
 	// FaaS server MUST start before the child process
 	faasServer := grpc2.NewFaasServer(s.pool)
@@ -374,6 +385,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		queuePlugin:             options.QueuePlugin,
 		gatewayPlugin:           options.GatewayPlugin,
 		secretPlugin:            options.SecretPlugin,
+		websocketPlugin:         options.WebsocketPlugin,
 		resourcePlugin:          options.ResourcesPlugin,
 		suppressLogs:            options.SuppressLogs,
 		tolerateMissingServices: options.TolerateMissingServices,
