@@ -48,6 +48,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/optrefresh"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"google.golang.org/grpc/codes"
@@ -379,6 +380,21 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{
 		Stream: stream,
+	}
+
+	if config.Refresh {
+		_ = stream.Send(&deploy.DeployUpEvent{
+			Content: &deploy.DeployUpEvent_Message{
+				Message: &deploy.DeployEventMessage{
+					Message: "refreshing pulumi stack",
+				},
+			},
+		})
+		// refresh the stack first
+		_, err := pulumiStack.Refresh(context.TODO(), optrefresh.ProgressStreams(messageWriter))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Run the program
