@@ -28,10 +28,10 @@ type AwsImports struct {
 }
 
 type AwsConfig struct {
-	ScheduleTimezone string `mapstructure:"schedule-timezone,omitempty"`
-	Import           AwsImports
-	Refresh          bool
-	config.AbstractConfig[*AwsConfigItem]
+	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
+	Import                                AwsImports
+	Refresh                               bool
+	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
 type AwsConfigItem struct {
