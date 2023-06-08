@@ -152,14 +152,31 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		envVars[k] = pulumi.String(v)
 	}
 
+	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
+	if args.Config.Vpc != nil {
+		vpcConfig = &awslambda.FunctionVpcConfigArgs{
+			SubnetIds:        pulumi.ToStringArray(args.Config.Vpc.SubnetIds),
+			SecurityGroupIds: pulumi.ToStringArray(args.Config.Vpc.SecurityGroupIds),
+		}
+
+		// Create a policy attachment for VPC access
+		_, err = iam.NewRolePolicyAttachment(ctx, name+"VPCAccessExecutionRole", &iam.RolePolicyAttachmentArgs{
+			PolicyArn: iam.ManagedPolicyAWSLambdaVPCAccessExecutionRole,
+			Role:      res.Role.ID(),
+		}, opts...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	res.Function, err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		ImageUri:    args.DockerImage.URI(),
 		MemorySize:  pulumi.IntPtr(args.Config.Memory),
 		Timeout:     pulumi.IntPtr(args.Config.Timeout),
 		PackageType: pulumi.String("Image"),
-
 		Role:        res.Role.Arn,
 		Tags:        common.Tags(ctx, args.StackID, name),
+		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)
 	if err != nil {

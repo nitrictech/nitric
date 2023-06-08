@@ -36,9 +36,9 @@ type GcpCloudRunConfig struct {
 }
 
 type GcpConfig struct {
-	config.AbstractConfig[*GcpConfigItem]
-	ScheduleTimezone string `mapstructure:"schedule-timezone"`
-	Refresh          bool
+	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
+	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
+	Refresh                               bool
 }
 
 var defaultCloudRunConfig = &GcpCloudRunConfig{
