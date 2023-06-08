@@ -155,7 +155,6 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
 	if args.Config.Vpc != nil {
 		vpcConfig = &awslambda.FunctionVpcConfigArgs{
-			VpcId:            pulumi.String(args.Config.Vpc.VpcId),
 			SubnetIds:        pulumi.ToStringArray(args.Config.Vpc.SubnetIds),
 			SecurityGroupIds: pulumi.ToStringArray(args.Config.Vpc.SecurityGroupIds),
 		}
