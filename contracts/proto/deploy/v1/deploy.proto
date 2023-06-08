@@ -175,6 +175,26 @@ message Api {
     }
 }
 
+// Declare a new websocket
+message Websocket {
+    // Target for handling new client connections
+    WebsocketTarget connect_target = 1;
+    // Target for handling client disconnections
+    WebsocketTarget disconnect_target = 2;
+    // Target for handling all other message types
+    WebsocketTarget message_target = 3;
+}
+
+message WebsocketTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+    }
+}
+
 message ScheduleTarget {
     oneof target {
         // The name of an execution unit to target
@@ -205,6 +225,7 @@ message Resource {
         Schedule schedule = 16;
         Collection collection = 17;
         Secret secret = 18;
+        Websocket websocket = 19;
     }
 }
 

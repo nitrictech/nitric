@@ -46,6 +46,7 @@ jobs:
         with:
           path: |
             ~/.cache/go-build
+            ~/.cache/golangci-lint
             ~/go/pkg/mod
           key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
           restore-keys: |
@@ -62,13 +63,32 @@ jobs:
         run: make test-coverage
       - name: Check Dependency Licenses
         run: make license-check
-      # Upload coverage report if main is set
-      - name: Upload Coverage Report
+      # Upload coverage report if for core
+      - name: Upload Coverage Report Core
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./core/all.coverprofile,./provider/aws/all.coverprofile,./provider/gcp/all.coverprofile,./provider/azure/all.coverprofile # optional
-          flags: unittests # optional
+          files: ./core/all.coverprofile
+          flags: core # optional
+      - name: Upload Coverage Report AWS
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./cloud/aws/all.coverprofile
+          flags: aws # optional
+      - name: Upload Coverage Report GCP
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./cloud/gcp/all.coverprofile
+          flags: gcp # optional
+      - name: Upload Coverage Report Azure
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./cloud/azure/all.coverprofile
+          flags: azure # optional
+
 
   # Run integration tests
   test-integration:

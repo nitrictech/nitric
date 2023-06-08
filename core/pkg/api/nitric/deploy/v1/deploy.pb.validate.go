@@ -2482,6 +2482,309 @@ var _ interface {
 	ErrorName() string
 } = ApiValidationError{}
 
+// Validate checks the field values on Websocket with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Websocket) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Websocket with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in WebsocketMultiError, or nil
+// if none found.
+func (m *Websocket) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Websocket) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetConnectTarget()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "ConnectTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "ConnectTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetConnectTarget()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return WebsocketValidationError{
+				field:  "ConnectTarget",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetDisconnectTarget()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "DisconnectTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "DisconnectTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDisconnectTarget()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return WebsocketValidationError{
+				field:  "DisconnectTarget",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetMessageTarget()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "MessageTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, WebsocketValidationError{
+					field:  "MessageTarget",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMessageTarget()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return WebsocketValidationError{
+				field:  "MessageTarget",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return WebsocketMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketMultiError is an error wrapping multiple validation errors returned
+// by Websocket.ValidateAll() if the designated constraints aren't met.
+type WebsocketMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketMultiError) AllErrors() []error { return m }
+
+// WebsocketValidationError is the validation error returned by
+// Websocket.Validate if the designated constraints aren't met.
+type WebsocketValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketValidationError) ErrorName() string { return "WebsocketValidationError" }
+
+// Error satisfies the builtin error interface
+func (e WebsocketValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocket.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketValidationError{}
+
+// Validate checks the field values on WebsocketTarget with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *WebsocketTarget) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on WebsocketTarget with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// WebsocketTargetMultiError, or nil if none found.
+func (m *WebsocketTarget) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *WebsocketTarget) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Target.(type) {
+	case *WebsocketTarget_ExecutionUnit:
+		if v == nil {
+			err := WebsocketTargetValidationError{
+				field:  "Target",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for ExecutionUnit
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return WebsocketTargetMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketTargetMultiError is an error wrapping multiple validation errors
+// returned by WebsocketTarget.ValidateAll() if the designated constraints
+// aren't met.
+type WebsocketTargetMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketTargetMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketTargetMultiError) AllErrors() []error { return m }
+
+// WebsocketTargetValidationError is the validation error returned by
+// WebsocketTarget.Validate if the designated constraints aren't met.
+type WebsocketTargetValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketTargetValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketTargetValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketTargetValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketTargetValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketTargetValidationError) ErrorName() string { return "WebsocketTargetValidationError" }
+
+// Error satisfies the builtin error interface
+func (e WebsocketTargetValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocketTarget.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketTargetValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketTargetValidationError{}
+
 // Validate checks the field values on ScheduleTarget with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -3119,6 +3422,47 @@ func (m *Resource) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ResourceValidationError{
 					field:  "Secret",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Resource_Websocket:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWebsocket()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWebsocket()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceValidationError{
+					field:  "Websocket",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

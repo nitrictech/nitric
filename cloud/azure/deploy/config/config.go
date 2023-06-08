@@ -34,7 +34,10 @@ type AzureContainerAppsConfig struct {
 	MaxReplicas int `mapstructure:"max-replicas"`
 }
 
-type AzureConfig = config.AbstractConfig[*AzureConfigItem]
+type AzureConfig struct {
+	Refresh                                 bool
+	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
+}
 
 var defaultContainerAppsConfig = &AzureContainerAppsConfig{
 	Cpu:         0.25,
