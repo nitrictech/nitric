@@ -35,8 +35,8 @@ type AzureContainerAppsConfig struct {
 }
 
 type AzureConfig struct {
-	Refresh bool
-	config.AbstractConfig[*AzureConfigItem]
+	Refresh                                 bool
+	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 
 var defaultContainerAppsConfig = &AzureContainerAppsConfig{

@@ -28,10 +28,10 @@ type AwsImports struct {
 }
 
 type AwsConfig struct {
-	ScheduleTimezone string `mapstructure:"schedule-timezone,omitempty"`
-	Import           AwsImports
-	Refresh          bool
-	config.AbstractConfig[*AwsConfigItem]
+	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
+	Import                                AwsImports
+	Refresh                               bool
+	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
 type AwsConfigItem struct {
@@ -39,10 +39,16 @@ type AwsConfigItem struct {
 	Telemetry int
 }
 
+type AwsLambdaVpcConfig struct {
+	SubnetIds        []string `mapstructure:"subnet-ids"`
+	SecurityGroupIds []string `mapstructure:"security-group-ids"`
+}
+
 type AwsLambdaConfig struct {
 	Memory                int
 	Timeout               int
-	ProvisionedConcurreny int `mapstructure:"provisioned-concurrency"`
+	ProvisionedConcurreny int                 `mapstructure:"provisioned-concurrency"`
+	Vpc                   *AwsLambdaVpcConfig `mapstructure:"vpc,omitempty"`
 }
 
 var defaultLambdaConfig = &AwsLambdaConfig{
