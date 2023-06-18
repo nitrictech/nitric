@@ -2367,6 +2367,249 @@ var _ interface {
 	ErrorName() string
 } = TopicSubscriptionValidationError{}
 
+// Validate checks the field values on HttpTarget with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *HttpTarget) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HttpTarget with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in HttpTargetMultiError, or
+// nil if none found.
+func (m *HttpTarget) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HttpTarget) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Target.(type) {
+	case *HttpTarget_ExecutionUnit:
+		if v == nil {
+			err := HttpTargetValidationError{
+				field:  "Target",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for ExecutionUnit
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return HttpTargetMultiError(errors)
+	}
+
+	return nil
+}
+
+// HttpTargetMultiError is an error wrapping multiple validation errors
+// returned by HttpTarget.ValidateAll() if the designated constraints aren't met.
+type HttpTargetMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m HttpTargetMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m HttpTargetMultiError) AllErrors() []error { return m }
+
+// HttpTargetValidationError is the validation error returned by
+// HttpTarget.Validate if the designated constraints aren't met.
+type HttpTargetValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e HttpTargetValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e HttpTargetValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e HttpTargetValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e HttpTargetValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e HttpTargetValidationError) ErrorName() string { return "HttpTargetValidationError" }
+
+// Error satisfies the builtin error interface
+func (e HttpTargetValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sHttpTarget.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = HttpTargetValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = HttpTargetValidationError{}
+
+// Validate checks the field values on Http with the rules defined in the proto
+// definition for this message. If any rules are violated, the first error
+// encountered is returned, or nil if there are no violations.
+func (m *Http) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Http with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in HttpMultiError, or nil if none found.
+func (m *Http) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Http) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetTarget()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, HttpValidationError{
+					field:  "Target",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, HttpValidationError{
+					field:  "Target",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTarget()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return HttpValidationError{
+				field:  "Target",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return HttpMultiError(errors)
+	}
+
+	return nil
+}
+
+// HttpMultiError is an error wrapping multiple validation errors returned by
+// Http.ValidateAll() if the designated constraints aren't met.
+type HttpMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m HttpMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m HttpMultiError) AllErrors() []error { return m }
+
+// HttpValidationError is the validation error returned by Http.Validate if the
+// designated constraints aren't met.
+type HttpValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e HttpValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e HttpValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e HttpValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e HttpValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e HttpValidationError) ErrorName() string { return "HttpValidationError" }
+
+// Error satisfies the builtin error interface
+func (e HttpValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sHttp.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = HttpValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = HttpValidationError{}
+
 // Validate checks the field values on Api with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error
 // encountered is returned, or nil if there are no violations.
@@ -3463,6 +3706,47 @@ func (m *Resource) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ResourceValidationError{
 					field:  "Websocket",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Resource_Http:
+		if v == nil {
+			err := ResourceValidationError{
+				field:  "Config",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetHttp()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Http",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceValidationError{
+						field:  "Http",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetHttp()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceValidationError{
+					field:  "Http",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
