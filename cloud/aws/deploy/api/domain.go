@@ -55,7 +55,6 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 		// The name is the base name for the domain
 		Name: &args.domainName,
 	})
-
 	if err != nil {
 		// try by parent domain instead
 		parentDomain := strings.Join(domainParts[1:], ".")
