@@ -48,23 +48,26 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 		return nil, err
 	}
 
-	// Will use for creating dns records (apply @ for dns instead of name)
-	isTld := len(domainParts) < 3
-
-	parentDomain := strings.Join(domainParts[1:], ".")
-	baseName := domainParts[0]
-	if isTld {
-		parentDomain = strings.Join(domainParts, ".")
-		baseName = "@"
-	}
-
-	// Get a zone if it already exists
+	// Treat this domain as root by default
+	baseName := ""
+	// attempt to find hosted zone as the root domain name
 	hostedZone, err := route53.LookupZone(ctx, &route53.LookupZoneArgs{
 		// The name is the base name for the domain
-		Name: &parentDomain,
+		Name: &args.domainName,
 	})
+
 	if err != nil {
-		return nil, fmt.Errorf("unable to find Route53 hosted zone to create records in: %w", err)
+		// try by parent domain instead
+		parentDomain := strings.Join(domainParts[1:], ".")
+		hostedZone, err = route53.LookupZone(ctx, &route53.LookupZoneArgs{
+			// The name is the base name for the domain
+			Name: &parentDomain,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to find Route53 hosted zone to create records in: %w", err)
+		}
+
+		baseName = domainParts[0]
 	}
 
 	cert, err := acm.NewCertificate(ctx, fmt.Sprintf("%s-%s-cert", name, args.domainName), &acm.CertificateArgs{
