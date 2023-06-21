@@ -278,10 +278,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
 				}
 
+				config, _ := config.Apis[res.Name]
+
 				_, err = api.NewAwsApiGateway(ctx, res.Name, &api.AwsApiGatewayArgs{
 					LambdaFunctions: execs,
 					StackID:         stackID,
 					OpenAPISpec:     doc,
+					Config:          config,
 				})
 				if err != nil {
 					return err

@@ -31,6 +31,7 @@ type AwsConfig struct {
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
 	Import                                AwsImports
 	Refresh                               bool
+	Apis                                  map[string]*ApiConfig
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -79,6 +80,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	if awsConfig.ScheduleTimezone == "" {
 		// default to UTC
 		awsConfig.ScheduleTimezone = "UTC"
+	}
+
+	if awsConfig.Apis == nil {
+		awsConfig.Apis = map[string]*ApiConfig{}
 	}
 
 	if awsConfig.Config == nil {
