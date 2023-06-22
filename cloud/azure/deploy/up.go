@@ -357,11 +357,33 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
+		// Add all HTTP proxies
+		httpProxies := map[string]*api.AzureHttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				app := apps[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = api.NewAzureHttpProxy(ctx, res.Name, &api.AzureHttpProxyArgs{
+					ResourceGroupName: rg.Name,
+					OrgName:           pulumi.String(details.Org),
+					AdminEmail:        pulumi.String(details.AdminEmail),
+					App:               app,
+					ManagedIdentity:   contEnv.ManagedUser,
+					StackID:           stackID,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
 		return err
 	}
+
 
 	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
 	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})

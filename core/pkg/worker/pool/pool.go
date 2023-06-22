@@ -73,6 +73,8 @@ func (p *ProcessPool) getHttpWorkers() []worker.Worker {
 		case *worker.RouteWorker:
 			// Prioritise Route Workers
 			hws = prepend(hws, w)
+		case *worker.HttpWorker:
+			hws = prepend(hws, w)	
 		default:
 			hws = append(hws, w)
 		}
@@ -273,7 +275,6 @@ func (p *ProcessPool) AddWorker(wrkr worker.Worker) error {
 	}
 
 	// If the worker is a bucket notification validate it against the others
-
 	switch wrkr.(type) {
 	case *worker.BucketNotificationWorker:
 		notificationWorkers := p.getNotificationWorkers()

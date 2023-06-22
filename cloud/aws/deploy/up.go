@@ -292,6 +292,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
+		// Add all HTTP proxies
+		httpProxies := map[string]*api.AwsHttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				fun := execs[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = api.NewAwsHttpProxy(ctx, res.Name, &api.AwsHttpProxyArgs{
+					StackID: stackID,
+					LambdaFunction: fun,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		// Deploy all schedules
 		schedules := map[string]*schedule.AwsEventbridgeSchedule{}
 		for _, res := range request.Spec.Resources {

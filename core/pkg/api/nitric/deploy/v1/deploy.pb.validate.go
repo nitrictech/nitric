@@ -2533,6 +2533,8 @@ func (m *Http) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Port
+
 	if len(errors) > 0 {
 		return HttpMultiError(errors)
 	}

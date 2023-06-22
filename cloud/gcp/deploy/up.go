@@ -193,7 +193,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		var baseComputeRole *projects.IAMCustomRole
 
 		for _, res := range request.Spec.Resources {
-			switch eu := res.Config.(type) {
+			switch eu := res.Config.(type) {			
 			case *deploy.Resource_ExecutionUnit:
 				if eu.ExecutionUnit.GetImage() == nil {
 					return fmt.Errorf("gcp provider can only deploy execution with an image source")
@@ -340,6 +340,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Functions:   execs,
 					OpenAPISpec: doc,
 				}, defaultResourceOptions)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		httpProxies := map[string]*gateway.HttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				fun := execs[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = gateway.NewHttpProxy(ctx, res.Name, &gateway.HttpProxyArgs{
+					StackID: stackID,
+					ProjectId: details.ProjectId,
+					Function: fun,
+				})
 				if err != nil {
 					return err
 				}

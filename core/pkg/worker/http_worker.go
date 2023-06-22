@@ -9,11 +9,14 @@ import (
 	"net/url"
 
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	"github.com/nitrictech/nitric/core/pkg/worker/adapter"
 )
 
 // Represents a locally running http server
 type HttpWorker struct {
 	port int
+
+	adapter.Adapter
 }
 
 var _ Worker = &HttpWorker{}
@@ -36,6 +39,9 @@ func (h *HttpWorker) HandleTrigger(ctx context.Context, req *v1.TriggerRequest) 
 
 	for k, v := range req.GetHttp().Headers {
 		for _, val := range v.Value {
+			if k == "X-Forwarded-Authorization" && newHeader["Authorization"] == nil {
+				k = "Authorization"
+			}
 			newHeader.Add(k, val)
 		}
 	}
@@ -76,8 +82,13 @@ func (h *HttpWorker) HandleTrigger(ctx context.Context, req *v1.TriggerRequest) 
 	}, nil
 }
 
-func NewHttpWorker(port int) *HttpWorker {
+func (h *HttpWorker) GetPort() int {
+	return h.port
+}
+
+func NewHttpWorker(adapter adapter.Adapter, port int) *HttpWorker {
 	return &HttpWorker{
+		Adapter: adapter, 
 		port: port,
 	}
 }
