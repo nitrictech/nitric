@@ -33,8 +33,8 @@ type AzureHttpProxyArgs struct {
 	StackID           pulumi.StringInput
 	ResourceGroupName pulumi.StringInput
 	OrgName           pulumi.StringInput
-	AdminEmail        pulumi.StringInput	
-	App             *exec.ContainerApp
+	AdminEmail        pulumi.StringInput
+	App               *exec.ContainerApp
 	ManagedIdentity   *managedidentity.UserAssignedIdentity
 }
 
@@ -65,8 +65,6 @@ const proxyTemplate = `<policies>
 		<base />
 	</on-error>
 </policies>`
-
-
 func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArgs, opts ...pulumi.ResourceOption) (*AzureHttpProxy, error) {
 	res := &AzureHttpProxy{Name: name}
 
@@ -115,7 +113,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		ResourceGroupName:    args.ResourceGroupName,
 		SubscriptionRequired: pulumi.Bool(false),
 		ServiceName:          res.Service.Name,
-		Value: pulumi.String(string(b)),
+		Value:                pulumi.String(string(b)),
 	})
 	if err != nil {
 		return nil, err
@@ -127,8 +125,6 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 	apiId := res.Api.ID().ToStringOutput().ApplyT(func(id string) string {
 		return name
 	}).(pulumi.StringOutput)
-
-
 	for _, p := range spec.Paths {
 		for _, op := range p.Operations() {
 			_, err = apimanagement.NewApiOperationPolicy(ctx, utils.ResourceName(ctx, name+"-"+op.OperationID, utils.ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
@@ -167,11 +163,11 @@ func newApiSpec(name string) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/*": &openapi3.PathItem{
-				Get: getOperation(),
-				Post: getOperation(),
-				Patch: getOperation(),
-				Put: getOperation(),
-				Delete: getOperation(),
+				Get:     getOperation(),
+				Post:    getOperation(),
+				Patch:   getOperation(),
+				Put:     getOperation(),
+				Delete:  getOperation(),
 				Options: getOperation(),
 			},
 		},
@@ -180,15 +176,15 @@ func newApiSpec(name string) *openapi3.T {
 	return doc
 }
 
-func getOperation() (*openapi3.Operation) {
+func getOperation() *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{
-		OperationID: uuid.NewString(),		
+		OperationID: uuid.NewString(),
 		Responses: openapi3.Responses{
 			"default": &openapi3.ResponseRef{
 				Value: &openapi3.Response{
-					Description: &defaultDescription,					
+					Description: &defaultDescription,
 				},
 			},
 		},

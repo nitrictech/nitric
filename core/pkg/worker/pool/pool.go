@@ -74,7 +74,7 @@ func (p *ProcessPool) getHttpWorkers() []worker.Worker {
 			// Prioritise Route Workers
 			hws = prepend(hws, w)
 		case *worker.HttpWorker:
-			hws = prepend(hws, w)	
+			hws = prepend(hws, w)
 		default:
 			hws = append(hws, w)
 		}

@@ -29,7 +29,7 @@ import (
 
 type AwsHttpProxyArgs struct {
 	LambdaFunction *exec.LambdaExecUnit
-	StackID         pulumi.StringInput
+	StackID        pulumi.StringInput
 }
 
 type AwsHttpProxy struct {
@@ -113,11 +113,11 @@ func newApiSpec(name, invokeArn string) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/{proxy+}": &openapi3.PathItem{
-				Get: getOperation(invokeArn),
-				Post: getOperation(invokeArn),
-				Patch: getOperation(invokeArn),
-				Put: getOperation(invokeArn),
-				Delete: getOperation(invokeArn),
+				Get:     getOperation(invokeArn),
+				Post:    getOperation(invokeArn),
+				Patch:   getOperation(invokeArn),
+				Put:     getOperation(invokeArn),
+				Delete:  getOperation(invokeArn),
 				Options: getOperation(invokeArn),
 			},
 		},
@@ -126,15 +126,15 @@ func newApiSpec(name, invokeArn string) *openapi3.T {
 	return doc
 }
 
-func getOperation(invokeArn string) (*openapi3.Operation) {
+func getOperation(invokeArn string) *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{
-		OperationID: uuid.NewString(),		
+		OperationID: uuid.NewString(),
 		Responses: openapi3.Responses{
 			"default": &openapi3.ResponseRef{
 				Value: &openapi3.Response{
-					Description: &defaultDescription,					
+					Description: &defaultDescription,
 				},
 			},
 		},
@@ -149,8 +149,8 @@ func getOperation(invokeArn string) (*openapi3.Operation) {
 		Parameters: openapi3.Parameters{
 			&openapi3.ParameterRef{
 				Value: &openapi3.Parameter{
-					In: "path",
-					Name: "proxy+",
+					In:              "path",
+					Name:            "proxy+",
 					AllowEmptyValue: true,
 				},
 			},

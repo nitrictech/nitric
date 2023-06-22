@@ -35,9 +35,9 @@ import (
 )
 
 type HttpProxyArgs struct {
-	ProjectId       string
-	StackID         pulumi.StringInput
-	Function       *exec.CloudRunner
+	ProjectId string
+	StackID   pulumi.StringInput
+	Function  *exec.CloudRunner
 }
 
 type HttpProxy struct {
@@ -74,7 +74,7 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 	}
 
 	// Bind that IAM account as a member of the function
-	
+
 	iamName := fmt.Sprintf("%s-%s-binding", name, args.Function.Name)
 
 	_, err = cloudrun.NewIamMember(ctx, iamName, &cloudrun.IamMemberArgs{
@@ -115,7 +115,7 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 					Contents: doc,
 				},
 			},
-		},		
+		},
 		Labels: common.Tags(ctx, args.StackID, name),
 	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
 	if err != nil {
@@ -139,7 +139,7 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 	return res, nil
 }
 
-func newApiSpec(name, functionUrl string, ) *openapi3.T {
+func newApiSpec(name, functionUrl string) *openapi3.T {
 	doc := &openapi3.T{
 		Info: &openapi3.Info{
 			Title:   name,
@@ -151,11 +151,11 @@ func newApiSpec(name, functionUrl string, ) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/**": &openapi3.PathItem{
-				Get: getOperation(functionUrl),
-				Post: getOperation(functionUrl),
-				Patch: getOperation(functionUrl),
-				Put: getOperation(functionUrl),
-				Delete: getOperation(functionUrl),
+				Get:     getOperation(functionUrl),
+				Post:    getOperation(functionUrl),
+				Patch:   getOperation(functionUrl),
+				Put:     getOperation(functionUrl),
+				Delete:  getOperation(functionUrl),
 				Options: getOperation(functionUrl),
 			},
 		},
@@ -164,7 +164,7 @@ func newApiSpec(name, functionUrl string, ) *openapi3.T {
 	return doc
 }
 
-func getOperation(functionUrl string) (*openapi3.Operation) {
+func getOperation(functionUrl string) *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{

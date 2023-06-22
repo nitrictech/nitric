@@ -300,7 +300,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				fun := execs[t.Http.Target.GetExecutionUnit()]
 
 				httpProxies[res.Name], err = api.NewAwsHttpProxy(ctx, res.Name, &api.AwsHttpProxyArgs{
-					StackID: stackID,
+					StackID:        stackID,
 					LambdaFunction: fun,
 				})
 				if err != nil {

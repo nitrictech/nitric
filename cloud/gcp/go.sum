@@ -600,6 +600,8 @@ github.com/nishanths/exhaustive v0.9.5 h1:TzssWan6orBiLYVqewCG8faud9qlFntJE30ACp
 github.com/nishanths/exhaustive v0.9.5/go.mod h1:IbwrGdVMizvDcIxPYGVdQn5BqWJaOwpCvg4RGb8r/TA=
 github.com/nishanths/predeclared v0.2.2 h1:V2EPdZPliZymNAn79T8RkNApBjMmVKh5XRpLm/w98Vk=
 github.com/nishanths/predeclared v0.2.2/go.mod h1:RROzoN6TnGQupbC+lqggsOlcgysk3LMK/HI84Mp280c=
+github.com/nitrictech/nitric/cloud/azure v0.0.0-20230616021604-4036d005db63 h1:apFr7vdAIsRw4FPA1Y27iK5n43OHfeKnEwKE6P+l7O0=
+github.com/nitrictech/nitric/cloud/azure v0.0.0-20230616021604-4036d005db63/go.mod h1:OwvC3IpDImpbaiVAqIin5VGfH3s9UAkTmIxaWhoblXU=
 github.com/nitrictech/nitric/cloud/common v0.0.0-20230430232207-a0e427e2d646 h1:7Rd27As1cpE5ARyTQGYFBmMZFFOYXA3r820pq8e/jZw=
 github.com/nitrictech/nitric/cloud/common v0.0.0-20230430232207-a0e427e2d646/go.mod h1:+LnApmrNFZsVGB+1d9mKYmPxH3Yu/vnQRlyfd04TYZI=
 github.com/nitrictech/nitric/core v0.0.0-20230616021604-4036d005db63 h1:W8dtDQVg57v9FFeW+NuojL7OfOc8JF05upe9ZkGffNw=
