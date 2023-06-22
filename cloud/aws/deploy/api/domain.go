@@ -43,10 +43,12 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 
 	res := &domainName{Name: name}
 
-	err := ctx.RegisterComponentResource("nitric:api:DomainName", name, res)
+	err := ctx.RegisterComponentResource("nitric:api:DomainName", fmt.Sprintf("%s-%s", name, args.domainName), res)
 	if err != nil {
 		return nil, err
 	}
+
+	defaultOptions := []pulumi.ResourceOption{pulumi.Parent(res)}
 
 	// Treat this domain as root by default
 	baseName := ""
@@ -72,7 +74,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 	cert, err := acm.NewCertificate(ctx, fmt.Sprintf("%s-%s-cert", name, args.domainName), &acm.CertificateArgs{
 		DomainName:       pulumi.String(args.domainName),
 		ValidationMethod: pulumi.String("DNS"),
-	})
+	}, defaultOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +97,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 		},
 		Ttl:    pulumi.Int(10 * 60),
 		ZoneId: pulumi.String(hostedZone.ZoneId),
-	})
+	}, defaultOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +107,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 		ValidationRecordFqdns: pulumi.StringArray{
 			certValidationDns.Fqdn,
 		},
-	})
+	}, defaultOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +120,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 			SecurityPolicy: pulumi.String("TLS_1_2"),
 			CertificateArn: certValidation.CertificateArn,
 		},
-	})
+	}, defaultOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +130,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 		ApiId:      args.api.ID(),
 		DomainName: apiDomainName.DomainName,
 		Stage:      args.stage.Name,
-	}, pulumi.DependsOn([]pulumi.Resource{args.stage}))
+	}, append(defaultOptions, pulumi.DependsOn([]pulumi.Resource{args.stage}))...)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +149,7 @@ func newDomainName(ctx *pulumi.Context, name string, args domainNameArgs) (*doma
 				EvaluateTargetHealth: pulumi.Bool(false),
 			},
 		},
-	})
+	}, defaultOptions...)
 	if err != nil {
 		return nil, err
 	}
