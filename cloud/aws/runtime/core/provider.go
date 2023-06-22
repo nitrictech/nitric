@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -51,6 +52,7 @@ var resourceTypeMap = map[resource.ResourceType]AwsResource{
 
 type AwsProvider interface {
 	resource.ResourceService
+
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
 	GetResources(context.Context, AwsResource) (map[string]string, error)
@@ -59,6 +61,7 @@ type AwsProvider interface {
 // Aws core utility provider
 type awsProviderImpl struct {
 	stack     string
+	cacheLock sync.Mutex
 	client    resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
 	apiClient apigatewayv2iface.ApiGatewayV2API
 	cache     map[AwsResource]map[string]string
@@ -117,6 +120,9 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ resource.ResourceType
 }
 
 func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
+	a.cacheLock.Lock()
+	defer a.cacheLock.Unlock()
+
 	if a.cache[typ] == nil {
 		resources := make(map[string]string)
 		tagFilters := []types.TagFilter{{
@@ -170,6 +176,7 @@ func New() (AwsProvider, error) {
 	return &awsProviderImpl{
 		stack:     stack,
 		client:    client,
+		cacheLock: sync.Mutex{},
 		apiClient: apiClient,
 		cache:     make(map[AwsResource]map[string]string),
 	}, nil
