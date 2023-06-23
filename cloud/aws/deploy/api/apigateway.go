@@ -170,7 +170,6 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	if args.Config != nil {
 		// For each specified domain name
 		for _, domainName := range args.Config.Domains {
-			fmt.Println("creating new domain name")
 			_, err := newDomainName(ctx, name, domainNameArgs{
 				domainName: domainName,
 				api:        res.Api,
