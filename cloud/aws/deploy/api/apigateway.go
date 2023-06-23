@@ -26,6 +26,7 @@ import (
 
 	"github.com/segmentio/encoding/json"
 
+	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
@@ -34,6 +35,7 @@ type AwsApiGatewayArgs struct {
 	OpenAPISpec     *openapi3.T
 	LambdaFunctions map[string]*exec.LambdaExecUnit
 	StackID         pulumi.StringInput
+	Config          *config.ApiConfig
 }
 
 type AwsApiGateway struct {
@@ -138,7 +140,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		return nil, err
 	}
 
-	_, err = apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
+	apiStage, err := apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
@@ -164,6 +166,20 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	endPoint := res.Api.ApiEndpoint.ApplyT(func(ep string) string {
 		return ep
 	}).(pulumi.StringInput)
+
+	if args.Config != nil {
+		// For each specified domain name
+		for _, domainName := range args.Config.Domains {
+			_, err := newDomainName(ctx, name, domainNameArgs{
+				domainName: domainName,
+				api:        res.Api,
+				stage:      apiStage,
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	ctx.Export("api:"+name, endPoint)
 

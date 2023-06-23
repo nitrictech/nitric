@@ -17,7 +17,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.7.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20230430232207-a0e427e2d646
-	github.com/nitrictech/nitric/core v0.0.0-20230430232207-a0e427e2d646
+	github.com/nitrictech/nitric/core v0.0.0-20230616021604-4036d005db63
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.26.0
 	github.com/pkg/errors v0.9.1
