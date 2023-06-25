@@ -65,6 +65,7 @@ const proxyTemplate = `<policies>
 		<base />
 	</on-error>
 </policies>`
+
 func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArgs, opts ...pulumi.ResourceOption) (*AzureHttpProxy, error) {
 	res := &AzureHttpProxy{Name: name}
 

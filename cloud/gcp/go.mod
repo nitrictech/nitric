@@ -17,7 +17,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.7.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/azure v0.0.0-20230616021604-4036d005db63
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20230430232207-a0e427e2d646
 	github.com/nitrictech/nitric/core v0.0.0-20230616021604-4036d005db63
 	github.com/onsi/ginkgo v1.16.5
