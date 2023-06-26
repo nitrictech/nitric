@@ -182,7 +182,6 @@ func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 				AwsResource_Secret,
 				AwsResource_EventRule,
 			},
-			// TODO: Paginate results
 			ResourcesPerPage: aws.Int32(100),
 		})
 
