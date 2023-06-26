@@ -83,7 +83,7 @@ func (p *ProcessPool) getHttpWorkers() []worker.Worker {
 	return hws
 }
 
-// return route workers
+// return event workers
 func (p *ProcessPool) getEventWorkers() []worker.Worker {
 	hws := make([]worker.Worker, 0)
 
@@ -110,13 +110,10 @@ func (p *ProcessPool) getNotificationWorkers() []worker.Worker {
 
 	for _, w := range p.workers {
 		switch w.(type) {
-		case *worker.RouteWorker:
-			// Ignore route workers
-			break
 		case *worker.BucketNotificationWorker:
 			hws = prepend(hws, w)
 		default:
-			hws = append(hws, w)
+			break
 		}
 	}
 

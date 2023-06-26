@@ -44,6 +44,10 @@ func (*HttpWorker) HandlesTrigger(req *v1.TriggerRequest) bool {
 // This will allow this worker to be added to a pool and used generically
 // however we will want to make sure we don't miss anything in context
 func (h *HttpWorker) HandleTrigger(ctx context.Context, req *v1.TriggerRequest) (*v1.TriggerResponse, error) {
+	if req.GetHttp() == nil {
+		return nil, fmt.Errorf("http worker cannot handle Event requests")
+	}
+
 	targetHost, err := url.Parse(fmt.Sprintf("http://localhost:%d", h.port))
 	if err != nil {
 		return nil, err
@@ -53,6 +57,7 @@ func (h *HttpWorker) HandleTrigger(ctx context.Context, req *v1.TriggerRequest) 
 
 	for k, v := range req.GetHttp().Headers {
 		for _, val := range v.Value {
+			// Replace forwarded authorization with base authorization so the user gets the expected headers
 			if k == "X-Forwarded-Authorization" && newHeader["Authorization"] == nil {
 				k = "Authorization"
 			}

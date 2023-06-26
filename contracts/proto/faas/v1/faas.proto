@@ -98,7 +98,7 @@ enum BucketNotificationType {
 
 message HttpWorker {
   // The local port the server can be accessed on
-  int32 port = 2;
+  int32 port = 1;
 }
 
 message BucketNotificationWorker {
