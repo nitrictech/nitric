@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awsArn "github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
@@ -119,12 +120,45 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ resource.ResourceType
 	}
 }
 
-func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
+func resourceTypeFromArn(arn string) (resource.ResourceType, error) {
+	if !awsArn.IsARN(arn) {
+		return "", fmt.Errorf("invalid ARN provided")
+	}
+
+	parsedArn, err := awsArn.Parse(arn)
+	if err != nil {
+		return "", err
+	}
+
+	switch parsedArn.Service {
+	case "s3":
+		return AwsResource_Bucket, nil
+	case "sns":
+		return AwsResource_Topic, nil
+	case "sqs":
+		return AwsResource_Queue, nil
+	case "apigateway":
+		return AwsResource_Api, nil
+	case "states":
+		return AwsResource_StateMachine, nil
+	case "secretmanager":
+		return AwsResource_Secret, nil
+	case "events":
+		return AwsResource_EventRule, nil
+	case "dynamodb":
+		return AwsResource_Collection, nil
+	default:
+		return "", fmt.Errorf("invalid resource type")
+	}
+}
+
+// populate the resource cache
+func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 	a.cacheLock.Lock()
 	defer a.cacheLock.Unlock()
+	if a.cache == nil {
+		a.cache = make(map[string]map[string]string)
 
-	if a.cache[typ] == nil {
-		resources := make(map[string]string)
 		tagFilters := []types.TagFilter{{
 			Key: aws.String("x-nitric-name"),
 		}}
@@ -136,24 +170,58 @@ func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (ma
 			})
 		}
 
-		out, err := a.client.GetResources(ctx, &resourcegroupstaggingapi.GetResourcesInput{
-			ResourceTypeFilters: []string{typ},
-			TagFilters:          tagFilters,
+		paginator := resourcegroupstaggingapi.NewGetResourcesPaginator(a.client, &resourcegroupstaggingapi.GetResourcesInput{
+			TagFilters: tagFilters,
+			ResourceTypeFilters: []string{
+				AwsResource_Api,
+				AwsResource_StateMachine,
+				AwsResource_Topic,
+				AwsResource_Collection,
+				AwsResource_Queue,
+				AwsResource_Bucket,
+				AwsResource_Secret,
+				AwsResource_EventRule,
+			},
+			// TODO: Paginate results
+			ResourcesPerPage: aws.Int32(100),
 		})
-		if err != nil {
-			return nil, err
-		}
 
-		for _, tm := range out.ResourceTagMappingList {
-			for _, t := range tm.Tags {
-				if *t.Key == "x-nitric-name" {
-					resources[*t.Value] = *tm.ResourceARN
-					break
+		for paginator.HasMorePages() {
+			out, err := paginator.NextPage(ctx)
+			if err != nil {
+				fmt.Println("failed to retrieve resources:", err)
+				return err
+			}
+
+			for _, tm := range out.ResourceTagMappingList {
+				for _, t := range tm.Tags {
+					if *t.Key == "x-nitric-name" {
+						// Get the resource type from the ARN
+						typ, err := resourceTypeFromArn(*tm.ResourceARN)
+						if err != nil {
+							fmt.Printf("unable to identify resource: %s\n", *tm.ResourceARN)
+							break
+						}
+
+						if a.cache[typ] == nil {
+							a.cache[typ] = map[string]string{}
+						}
+
+						a.cache[typ][*t.Value] = *tm.ResourceARN
+
+						break
+					}
 				}
 			}
 		}
+	}
 
-		a.cache[typ] = resources
+	return nil
+}
+
+func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (map[string]string, error) {
+	if err := a.populateCache(ctx); err != nil {
+		return nil, fmt.Errorf("error populating resource cache")
 	}
 
 	return a.cache[typ], nil
@@ -163,7 +231,12 @@ func New() (AwsProvider, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
 	stack := utils.GetEnv("NITRIC_STACK", "")
 
-	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	cfg, sessionError := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithRegion(awsRegion),
+		config.WithRetryMode(aws.RetryModeAdaptive),
+		config.WithRetryMaxAttempts(10),
+	)
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
@@ -178,6 +251,5 @@ func New() (AwsProvider, error) {
 		client:    client,
 		cacheLock: sync.Mutex{},
 		apiClient: apiClient,
-		cache:     make(map[AwsResource]map[string]string),
 	}, nil
 }
