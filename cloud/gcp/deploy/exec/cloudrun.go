@@ -19,16 +19,15 @@ package exec
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
-	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -175,26 +174,14 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 		return nil, errors.WithMessage(err, "cloud run "+name)
 	}
 
-	acctRandId, err := random.NewRandomString(ctx, name+"-id", &random.RandomStringArgs{
-		Length:  pulumi.Int(7),
-		Upper:   pulumi.Bool(false),
-		Number:  pulumi.Bool(false),
-		Special: pulumi.Bool(false),
-		Keepers: pulumi.ToMap(map[string]interface{}{
-			"name": name,
-		}),
-	})
-	if err != nil {
-		return nil, errors.WithMessage(err, "invokerAccountRandId "+name)
-	}
-
-	// Create a role that can be used by other services to invoke this runner
-	res.Invoker, err = serviceaccount.NewAccount(ctx, name+"-invoker", &serviceaccount.AccountArgs{
-		AccountId: pulumi.Sprintf("%s-%s", utils.StringTrunc(name, 30-8), acctRandId.Result),
+	svcAcct, err := iam.NewServiceAccount(ctx, name+"-cloudrun-invoker", &iam.GcpIamServiceAccountArgs{
+		AccountId: name,
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "invokerAccount "+name)
 	}
+
+	res.Invoker = svcAcct.ServiceAccount
 
 	_, err = cloudrun.NewIamMember(ctx, name+"-invoker", &cloudrun.IamMemberArgs{
 		Member:   pulumi.Sprintf("serviceAccount:%s", res.Invoker.Email),
