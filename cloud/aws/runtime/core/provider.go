@@ -141,7 +141,7 @@ func resourceTypeFromArn(arn string) (resource.ResourceType, error) {
 		return AwsResource_Api, nil
 	case "states":
 		return AwsResource_StateMachine, nil
-	case "secretmanager":
+	case "secretsmanager":
 		return AwsResource_Secret, nil
 	case "events":
 		return AwsResource_EventRule, nil
