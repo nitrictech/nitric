@@ -48,58 +48,6 @@ var _ = Describe("BucketNotificationWorker", func() {
 		})
 	})
 
-	Context("Event", func() {
-		When("calling HandlesEvent with the wrong topic", func() {
-			subWrkr := &SubscriptionWorker{
-				topic: "bad",
-			}
-
-			It("should return false", func() {
-				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Topic{Topic: &v1.TopicTriggerContext{Topic: "test"}},
-				})).To(BeFalse())
-			})
-		})
-
-		When("calling HandlesEvent with the correct topic", func() {
-			subWrkr := &SubscriptionWorker{
-				topic: "test",
-			}
-
-			It("should return true", func() {
-				Expect(subWrkr.HandlesTrigger(&v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Topic{Topic: &v1.TopicTriggerContext{Topic: "test"}},
-				})).To(BeTrue())
-			})
-		})
-
-		When("calling HandleEvent", func() {
-			It("should call the base grpc workers HandleEvent", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				hndlr := mock.NewMockAdapter(ctrl)
-
-				By("calling the base grpc handler HandleEvent method")
-				hndlr.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1)
-
-				subWrkr := &SubscriptionWorker{
-					topic:   "test",
-					Adapter: hndlr,
-				}
-
-				_, err := subWrkr.HandleTrigger(context.TODO(), &v1.TriggerRequest{
-					Context: &v1.TriggerRequest_Topic{
-						Topic: &v1.TopicTriggerContext{
-							Topic: "test",
-						},
-					},
-				})
-
-				Expect(err).ShouldNot(HaveOccurred())
-				ctrl.Finish()
-			})
-		})
-	})
-
 	Context("BucketNotification", func() {
 		When("calling HandlesNotification with the wrong bucket", func() {
 			subWrkr := &BucketNotificationWorker{

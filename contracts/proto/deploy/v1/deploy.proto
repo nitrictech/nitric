@@ -166,6 +166,18 @@ message TopicSubscription {
     SubscriptionTarget target = 1;
 }
 
+message HttpTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+    }
+}
+
+// A http resource
+message Http {
+    HttpTarget target = 1;
+}
+
 message Api {
     // TODO: Include API specifications here
     oneof document {
@@ -226,6 +238,7 @@ message Resource {
         Collection collection = 17;
         Secret secret = 18;
         Websocket websocket = 19;
+        Http http = 20;
     }
 }
 

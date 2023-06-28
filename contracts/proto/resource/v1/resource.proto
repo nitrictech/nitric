@@ -40,6 +40,7 @@ enum ResourceType {
   Secret = 9;
   Notification = 10;
   Websocket = 11;
+  Http = 12;
 }
 
 message Resource {

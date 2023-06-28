@@ -29,6 +29,39 @@ import (
 )
 
 var _ = Describe("ProcessPool", func() {
+	Context("NewProcessPool", func() {
+		When("calling NewProcessPool", func() {
+			pp := NewProcessPool(&ProcessPoolOptions{
+				MinWorkers: 1,
+				MaxWorkers: 3,
+			})
+
+			It("should have the correct options set", func() {
+				Expect(pp.GetMinWorkers()).To(Equal(1))
+				Expect(pp.GetMaxWorkers()).To(Equal(3))
+				Expect(pp.GetWorkerCount()).To(Equal(0))
+			})
+
+			It("should not return an error", func() {
+				Expect(pp).To(Not(BeNil()))
+			})
+		})
+
+		When("calling NewProcessPool with max workers less than 1", func() {
+			pp := NewProcessPool(&ProcessPoolOptions{
+				MinWorkers: 0,
+				MaxWorkers: 0,
+			})
+
+			It("should have 1 max worker", func() {
+				Expect(pp.GetMaxWorkers()).To(Equal(1))
+			})
+
+			It("should not return an error", func() {
+				Expect(pp).To(Not(BeNil()))
+			})
+		})
+	})
 	Context("GetWorkerCount", func() {
 		When("calling GetWorkerCount", func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -58,26 +91,28 @@ var _ = Describe("ProcessPool", func() {
 			When("pool contains mix of event & http handlers", func() {
 				hw := &worker.RouteWorker{}
 				ew := &worker.SubscriptionWorker{}
+				pw := &worker.HttpWorker{}
 				fw := &worker.FaasWorker{}
 
 				pp := &ProcessPool{
 					maxWorkers: 3,
 					workerLock: &sync.Mutex{},
-					workers:    []worker.Worker{hw, ew, fw},
+					workers:    []worker.Worker{pw, hw, ew, fw},
 				}
 
 				wrkrs := pp.getHttpWorkers()
 
 				It("should return all http capable workers", func() {
-					Expect(wrkrs).To(HaveLen(2))
+					Expect(wrkrs).To(HaveLen(3))
 				})
 
-				It("should prioritise route workers", func() {
+				It("should prioritise route workers and http workers", func() {
 					Expect(wrkrs[0]).To(Equal(hw))
+					Expect(wrkrs[1]).To(Equal(pw))
 				})
 
 				It("should return other http capable workers", func() {
-					Expect(wrkrs[1]).To(Equal(fw))
+					Expect(wrkrs[2]).To(Equal(fw))
 				})
 			})
 		})
@@ -86,27 +121,102 @@ var _ = Describe("ProcessPool", func() {
 			When("pool contains mix of event & http handlers", func() {
 				hw := &worker.RouteWorker{}
 				ew := &worker.SubscriptionWorker{}
+				sw := &worker.ScheduleWorker{}
 				fw := &worker.FaasWorker{}
 
 				pp := &ProcessPool{
-					maxWorkers: 3,
+					maxWorkers: 4,
 					workerLock: &sync.Mutex{},
-					workers:    []worker.Worker{hw, ew, fw},
+					workers:    []worker.Worker{hw, sw, ew, fw},
 				}
 
 				wrkrs := pp.getEventWorkers()
 
 				It("should return all event capable workers", func() {
-					Expect(wrkrs).To(HaveLen(2))
+					Expect(wrkrs).To(HaveLen(3))
 				})
 
 				It("should prioritise specialized workers", func() {
 					Expect(wrkrs[0]).To(Equal(ew))
+					Expect(wrkrs[1]).To(Equal(sw))
 				})
 
 				It("should return other event capable workers", func() {
-					Expect(wrkrs[1]).To(Equal(fw))
+					Expect(wrkrs[2]).To(Equal(fw))
 				})
+			})
+		})
+
+		Context("getNotificationWorkers", func() {
+			When("pool contains mix of ", func() {
+				nw := &worker.BucketNotificationWorker{}
+				sw := &worker.ScheduleWorker{}
+				fw := &worker.FaasWorker{}
+
+				pp := &ProcessPool{
+					maxWorkers: 3,
+					workerLock: &sync.Mutex{},
+					workers:    []worker.Worker{fw, nw, sw},
+				}
+
+				wrkrs := pp.getNotificationWorkers()
+
+				It("should return all notification capable workers", func() {
+					Expect(wrkrs).To(HaveLen(1))
+				})
+
+				It("should prioritise specialized workers", func() {
+					Expect(wrkrs[0]).To(Equal(nw))
+				})
+			})
+		})
+	})
+
+	Context("GetWorkers", func() {
+		When("calling without filters", func() {
+			nw := &worker.BucketNotificationWorker{}
+			sw := &worker.ScheduleWorker{}
+			fw := &worker.FaasWorker{}
+
+			pp := &ProcessPool{
+				maxWorkers: 3,
+				workerLock: &sync.Mutex{},
+				workers:    []worker.Worker{fw, nw, sw},
+			}
+
+			wrkrs := pp.GetWorkers(nil)
+
+			It("should return all workers", func() {
+				Expect(wrkrs).To(HaveLen(3))
+			})
+		})
+
+		When("calling with filters", func() {
+			rw := &worker.RouteWorker{}
+			nw := &worker.BucketNotificationWorker{}
+			tw := &worker.SubscriptionWorker{}
+			sw := &worker.ScheduleWorker{}
+			fw := &worker.FaasWorker{}
+
+			pp := &ProcessPool{
+				maxWorkers: 5,
+				workerLock: &sync.Mutex{},
+				workers:    []worker.Worker{rw, tw, fw, nw, sw},
+			}
+
+			wrkrs := pp.GetWorkers(&GetWorkerOptions{
+				Filter: func(w worker.Worker) bool {
+					_, ok := w.(*worker.RouteWorker)
+					return ok
+				},
+			})
+
+			It("should return only route workers", func() {
+				Expect(wrkrs).To(HaveLen(1))
+			})
+
+			It("should return", func() {
+				Expect(wrkrs[0]).To(Equal(rw))
 			})
 		})
 
@@ -272,6 +382,47 @@ var _ = Describe("ProcessPool", func() {
 					})
 				})
 			})
+
+			Context("Getting a worker for a Bucket notification trigger", func() {
+				When("no compatible event workers are available", func() {
+					When("no compatible workers are available", func() {
+						ctrl := gomock.NewController(GinkgoT())
+						badWrkr := mock_worker.NewMockWorker(ctrl)
+						pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{badWrkr}, workerLock: &sync.Mutex{}}
+
+						It("should return an error", func() {
+							By("testing the worker with the trigger")
+							badWrkr.EXPECT().HandlesTrigger(gomock.Any()).Return(false).Times(1)
+
+							By("returning a nil worker")
+							wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: &v1.TriggerRequest{}})
+							Expect(wrkr).To(BeNil())
+
+							By("return an error")
+							Expect(err).Should(HaveOccurred())
+						})
+					})
+
+					When("compatible workers are available", func() {
+						ctrl := gomock.NewController(GinkgoT())
+						hw := mock_worker.NewMockWorker(ctrl)
+						pp := &ProcessPool{minWorkers: 0, workers: []worker.Worker{hw}, workerLock: &sync.Mutex{}}
+						tr := &v1.TriggerRequest{}
+
+						It("should return a compatible worker", func() {
+							By("Querying testing the worker with the trigger")
+							hw.EXPECT().HandlesTrigger(tr).Return(true).Times(1)
+
+							By("returning a nil worker")
+							wrkr, err := pp.GetWorker(&GetWorkerOptions{Trigger: tr})
+							Expect(wrkr).To(Equal(hw))
+
+							By("not returning an error")
+							Expect(err).ShouldNot(HaveOccurred())
+						})
+					})
+				})
+			})
 		})
 
 		Context("RemoveWorker", func() {
@@ -387,6 +538,106 @@ var _ = Describe("ProcessPool", func() {
 					Expect(err).Should(HaveOccurred())
 
 					ctrl.Finish()
+				})
+			})
+
+			Context("adding bucket notification workers", func() {
+				When("there are no conflicting bucket notifications", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					lck := mock_sync.NewMockLocker(ctrl)
+
+					nw1 := worker.NewBucketNotificationWorker(nil, &worker.BucketNotificationWorkerOptions{
+						Notification: &v1.BucketNotificationWorker{
+							Bucket: "test",
+							Config: &v1.BucketNotificationConfig{
+								NotificationType:         v1.BucketNotificationType_Created,
+								NotificationPrefixFilter: "test",
+							},
+						},
+					})
+
+					nw2 := worker.NewBucketNotificationWorker(nil, &worker.BucketNotificationWorkerOptions{
+						Notification: &v1.BucketNotificationWorker{
+							Bucket: "test",
+							Config: &v1.BucketNotificationConfig{
+								NotificationType:         v1.BucketNotificationType_Created,
+								NotificationPrefixFilter: "other",
+							},
+						},
+					})
+
+					pp := &ProcessPool{
+						workerLock: lck,
+						workers:    []worker.Worker{nw1},
+						minWorkers: 0,
+						maxWorkers: 1,
+					}
+
+					It("should thread safely add the worker", func() {
+						By("locking the worker lock")
+						lck.EXPECT().Lock().Times(1)
+
+						By("unlocking the worker lock")
+						lck.EXPECT().Unlock().Times(1)
+
+						By("adding the worker to the pool")
+						err := pp.AddWorker(nw2)
+						Expect(pp.workers).To(HaveLen(2))
+
+						By("not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						ctrl.Finish()
+					})
+				})
+
+				When("there are conflicting bucket notifications", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					lck := mock_sync.NewMockLocker(ctrl)
+
+					nw1 := worker.NewBucketNotificationWorker(nil, &worker.BucketNotificationWorkerOptions{
+						Notification: &v1.BucketNotificationWorker{
+							Bucket: "test",
+							Config: &v1.BucketNotificationConfig{
+								NotificationType:         v1.BucketNotificationType_Created,
+								NotificationPrefixFilter: "test",
+							},
+						},
+					})
+
+					nw2 := worker.NewBucketNotificationWorker(nil, &worker.BucketNotificationWorkerOptions{
+						Notification: &v1.BucketNotificationWorker{
+							Bucket: "test",
+							Config: &v1.BucketNotificationConfig{
+								NotificationType:         v1.BucketNotificationType_Created,
+								NotificationPrefixFilter: "test/dog.png",
+							},
+						},
+					})
+
+					pp := &ProcessPool{
+						workerLock: lck,
+						workers:    []worker.Worker{nw1},
+						minWorkers: 0,
+						maxWorkers: 1,
+					}
+
+					It("should thread safely add the worker", func() {
+						By("locking the worker lock")
+						lck.EXPECT().Lock().Times(1)
+
+						By("unlocking the worker lock")
+						lck.EXPECT().Unlock().Times(1)
+
+						By("adding the worker to the pool")
+						err := pp.AddWorker(nw2)
+						Expect(pp.workers).To(HaveLen(1))
+
+						By("returning an error")
+						Expect(err).Should(HaveOccurred())
+
+						ctrl.Finish()
+					})
 				})
 			})
 		})
