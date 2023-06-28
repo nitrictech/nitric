@@ -28,12 +28,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 )
 
 type ApiGatewayArgs struct {
@@ -187,8 +187,8 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		return nil, errors.WithMessage(err, "api "+name)
 	}
 
-	invoker, err := serviceaccount.NewAccount(ctx, name+"-acct", &serviceaccount.AccountArgs{
-		AccountId: pulumi.String(utils.StringTrunc(name, 30-5) + "-acct"),
+	svcAcct, err := iam.NewServiceAccount(ctx, name+"-api-invoker", &iam.GcpIamServiceAccountArgs{
+		AccountId: name + "-api",
 	}, opts...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api serviceaccount "+name)
@@ -201,7 +201,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		_, err = cloudrun.NewIamMember(ctx, iamName, &cloudrun.IamMemberArgs{
 			Service:  fun.Service.Name,
 			Location: fun.Service.Location,
-			Member:   pulumi.Sprintf("serviceAccount:%s", invoker.Email),
+			Member:   pulumi.Sprintf("serviceAccount:%s", svcAcct.ServiceAccount.Email),
 			Role:     pulumi.String("roles/run.invoker"),
 		}, opts...)
 		if err != nil {
@@ -225,7 +225,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		GatewayConfig: apigateway.ApiConfigGatewayConfigArgs{
 			BackendConfig: apigateway.ApiConfigGatewayConfigBackendConfigArgs{
 				// Add the service account for the invoker here...
-				GoogleServiceAccount: invoker.Email,
+				GoogleServiceAccount: svcAcct.ServiceAccount.Email,
 			},
 		},
 		Labels: common.Tags(ctx, args.StackID, name),
