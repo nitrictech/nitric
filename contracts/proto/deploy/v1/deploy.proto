@@ -176,7 +176,6 @@ message HttpTarget {
 // A http resource
 message Http {
     HttpTarget target = 1;
-    int32 port = 2;
 }
 
 message Api {
