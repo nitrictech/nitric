@@ -83,7 +83,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
 				ServiceAccountEmail: args.Function.Invoker.Email,
 			},
-			PushEndpoint: pulumi.Sprintf("%s/x-nitric-notification/bucket/%s", args.Function.Url, args.Bucket.Name),
+			PushEndpoint: pulumi.Sprintf("%s/x-nitric-notification/bucket/%s?token=%s", args.Function.Url, args.Bucket.Name, args.Function.EventToken),
 		},
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),

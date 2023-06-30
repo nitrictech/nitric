@@ -70,7 +70,7 @@ func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudScheduler
 	res.Job, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
 		TimeZone: pulumi.String(args.Tz),
 		HttpTarget: &cloudscheduler.JobHttpTargetArgs{
-			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s", args.Exec.Url, name),
+			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s?token=%s", args.Exec.Url, name, args.Exec.EventToken),
 			OidcToken: &cloudscheduler.JobHttpTargetOidcTokenArgs{
 				ServiceAccountEmail: args.Exec.Invoker.Email,
 			},

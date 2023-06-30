@@ -123,11 +123,6 @@ func (s *PubsubEventService) publishDelayed(ctx context.Context, topic string, d
 		return err
 	}
 
-	projectId, err := s.GetProjectID()
-	if err != nil {
-		return err
-	}
-
 	body := httpPubsubMessages{
 		Messages: []httpPubsubMessage{{
 			Attributes: pubsubMsg.Attributes,
@@ -157,7 +152,7 @@ func (s *PubsubEventService) publishDelayed(ctx context.Context, topic string, d
 						},
 					},
 					HttpMethod: tasks.HttpMethod_POST,
-					Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics/%s:publish", projectId, pubsubTopic.String()),
+					Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/%s:publish", pubsubTopic.String()),
 					Body:       jsonBody,
 				},
 			},
