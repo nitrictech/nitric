@@ -83,7 +83,12 @@ var (
 	ApiRT = ResouceType{Abbreviation: "api", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true}
 
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
+	ApiHttpProxyRT = ResouceType{Abbreviation: "httpproxy", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
+
+	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiManagementRT = ResouceType{Abbreviation: "api-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true}
+
+	ApiManagementProxyRT = ResouceType{Abbreviation: "httpproxy-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
 
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiOperationPolicyRT = ResouceType{Abbreviation: "api-op-pol", MaxLen: 80, AllowUpperCase: true, AllowHyphen: true, UseName: true}

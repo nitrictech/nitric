@@ -80,7 +80,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, args.App.Name+"-"+name, utils.ApiManagementRT), &apimanagement.ApiManagementServiceArgs{
+	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementProxyRT), &apimanagement.ApiManagementServiceArgs{
 		ResourceGroupName: args.ResourceGroupName,
 		PublisherEmail:    args.AdminEmail,
 		PublisherName:     args.OrgName,
@@ -105,7 +105,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		return nil, err
 	}
 
-	res.Api, err = apimanagement.NewApi(ctx, utils.ResourceName(ctx, name, utils.ApiRT), &apimanagement.ApiArgs{
+	res.Api, err = apimanagement.NewApi(ctx, utils.ResourceName(ctx, name, utils.ApiHttpProxyRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.Sprintf("%s-api", name),
 		Protocols:            apimanagement.ProtocolArray{"https"},
 		ApiId:                pulumi.String(name),
