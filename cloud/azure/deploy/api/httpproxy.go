@@ -80,7 +80,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementRT), &apimanagement.ApiManagementServiceArgs{
+	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, args.App.Name+"-"+name, utils.ApiManagementRT), &apimanagement.ApiManagementServiceArgs{
 		ResourceGroupName: args.ResourceGroupName,
 		PublisherEmail:    args.AdminEmail,
 		PublisherName:     args.OrgName,

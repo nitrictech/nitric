@@ -230,5 +230,9 @@ func getCloudRunnerEnvs(args *CloudRunnerArgs) cloudrun.ServiceTemplateSpecConta
 			Name:  pulumi.String("GCP_REGION"),
 			Value: args.Location,
 		},
+		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+			Name:  pulumi.String("NITRIC_HTTP_PROXY_PORT"),
+			Value: pulumi.String(fmt.Sprint(3000)),
+		},
 	}
 }

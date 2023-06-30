@@ -144,9 +144,10 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 	// allow lambda to execute step function
 
 	envVars := pulumi.StringMap{
-		"NITRIC_ENVIRONMENT": pulumi.String("cloud"),
-		"NITRIC_STACK":       args.StackID,
-		"MIN_WORKERS":        pulumi.String(fmt.Sprint(args.Compute.Workers)),
+		"NITRIC_ENVIRONMENT":     pulumi.String("cloud"),
+		"NITRIC_STACK":           args.StackID,
+		"MIN_WORKERS":            pulumi.String(fmt.Sprint(args.Compute.Workers)),
+		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
 	for k, v := range args.EnvMap {
 		envVars[k] = pulumi.String(v)
