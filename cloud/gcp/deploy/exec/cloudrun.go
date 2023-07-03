@@ -28,16 +28,18 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
+	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 type CloudRunner struct {
 	pulumi.ResourceState
 
-	Name    string
-	Service *cloudrun.Service
-	Url     pulumi.StringInput
-	Invoker *serviceaccount.Account
+	Name       string
+	Service    *cloudrun.Service
+	Url        pulumi.StringInput
+	Invoker    *serviceaccount.Account
+	EventToken pulumi.StringOutput
 }
 
 type CloudRunnerArgs struct {
@@ -100,6 +102,21 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 		return nil, err
 	}
 
+	// generate a token for internal application events to authenticate themeselves
+	// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
+	token, err := random.NewRandomPassword(ctx, res.Name+"-event-token", &random.RandomPasswordArgs{
+		Special: pulumi.Bool(false),
+		Length:  pulumi.Int(32),
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"name": name,
+		}),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "service event token")
+	}
+
+	res.EventToken = token.Result
+
 	// apply basic project level permissions for nitric resource discovery
 	_, err = projects.NewIAMMember(ctx, res.Name+"-project-member", &projects.IAMMemberArgs{
 		Project: pulumi.String(args.ProjectId),
@@ -121,6 +138,11 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 	}
 
 	env := getCloudRunnerEnvs(args)
+
+	env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		Name:  pulumi.String("EVENT_TOKEN"),
+		Value: res.EventToken,
+	})
 
 	if args.DelayQueue != nil {
 		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
