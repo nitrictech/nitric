@@ -94,6 +94,11 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 		})
 	}
 
+	env = append(env, app.EnvironmentVarArgs{
+		Name:  pulumi.String("NITRIC_HTTP_PROXY_PORT"),
+		Value: pulumi.String(fmt.Sprint(3000)),
+	})
+
 	for k, v := range args.EnvMap {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
