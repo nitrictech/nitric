@@ -96,6 +96,7 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 
 		if !eventAuthorised(ctx) {
 			ctx.Error("Unauthorized", 401)
+			return
 		}
 
 		eventgridEvents, err := extractEvents(ctx)
@@ -152,6 +153,7 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 	return func(ctx *fasthttp.RequestCtx) {
 		if !eventAuthorised(ctx) {
 			ctx.Error("Unauthorized", 401)
+			return
 		}
 
 		scheduleName := ctx.UserValue("name").(string)
@@ -202,6 +204,7 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 	return func(ctx *fasthttp.RequestCtx) {
 		if !eventAuthorised(ctx) {
 			ctx.Error("Unauthorized", 401)
+			return
 		}
 
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
