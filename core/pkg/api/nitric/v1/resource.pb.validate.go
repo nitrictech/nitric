@@ -1979,6 +1979,110 @@ var _ interface {
 	ErrorName() string
 } = ApiResourceDetailsValidationError{}
 
+// Validate checks the field values on WebsocketResourceDetails with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *WebsocketResourceDetails) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on WebsocketResourceDetails with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// WebsocketResourceDetailsMultiError, or nil if none found.
+func (m *WebsocketResourceDetails) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *WebsocketResourceDetails) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Url
+
+	if len(errors) > 0 {
+		return WebsocketResourceDetailsMultiError(errors)
+	}
+
+	return nil
+}
+
+// WebsocketResourceDetailsMultiError is an error wrapping multiple validation
+// errors returned by WebsocketResourceDetails.ValidateAll() if the designated
+// constraints aren't met.
+type WebsocketResourceDetailsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m WebsocketResourceDetailsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m WebsocketResourceDetailsMultiError) AllErrors() []error { return m }
+
+// WebsocketResourceDetailsValidationError is the validation error returned by
+// WebsocketResourceDetails.Validate if the designated constraints aren't met.
+type WebsocketResourceDetailsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e WebsocketResourceDetailsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e WebsocketResourceDetailsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e WebsocketResourceDetailsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e WebsocketResourceDetailsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e WebsocketResourceDetailsValidationError) ErrorName() string {
+	return "WebsocketResourceDetailsValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e WebsocketResourceDetailsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sWebsocketResourceDetails.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = WebsocketResourceDetailsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = WebsocketResourceDetailsValidationError{}
+
 // Validate checks the field values on ResourceDetailsRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -2174,6 +2278,47 @@ func (m *ResourceDetailsResponse) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ResourceDetailsResponseValidationError{
 					field:  "Api",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ResourceDetailsResponse_Websocket:
+		if v == nil {
+			err := ResourceDetailsResponseValidationError{
+				field:  "Details",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWebsocket()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ResourceDetailsResponseValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ResourceDetailsResponseValidationError{
+						field:  "Websocket",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWebsocket()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ResourceDetailsResponseValidationError{
+					field:  "Websocket",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

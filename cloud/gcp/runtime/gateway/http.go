@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"github.com/fasthttp/router"
@@ -47,10 +48,23 @@ type PubSubMessage struct {
 	Subscription string `json:"subscription"`
 }
 
+func eventAuthorised(ctx *fasthttp.RequestCtx) bool {
+	token := ctx.QueryArgs().Peek("token")
+	evtToken := os.Getenv("EVENT_TOKEN")
+
+	fmt.Println("checking:", string(token), evtToken)
+
+	return string(token) == evtToken
+}
+
 func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		bodyBytes := ctx.Request.Body()
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
+			return
+		}
 
+		bodyBytes := ctx.Request.Body()
 		// Check if the payload contains a pubsub event
 		// TODO: We probably want to use a simpler method than this
 		// like reading off the request origin to ensure it is from pubsub
@@ -101,6 +115,11 @@ func (g *gcpMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Req
 
 func (g *gcpMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
+			return
+		}
+
 		scheduleName := ctx.UserValue("name").(string)
 		if scheduleName == "" {
 			ctx.Error("Can not handle event for empty schedule", 400)
@@ -153,6 +172,11 @@ func notificationEventToEventType(eventType string) (v1.BucketNotificationType, 
 
 func (g *gcpMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
+			return
+		}
+
 		bodyBytes := ctx.Request.Body()
 
 		// Check if the payload contains a pubsub event

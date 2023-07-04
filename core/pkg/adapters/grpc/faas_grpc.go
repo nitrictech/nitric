@@ -76,6 +76,8 @@ func (s *FaasServer) TriggerStream(stream pb.FaasService_TriggerStreamServer) er
 			Socket: websocket.Socket,
 			Event:  websocket.Event,
 		})
+	} else if http := ir.GetHttpWorker(); http != nil {
+		wrkr = worker.NewHttpWorker(adapter, int(http.Port))
 	} else {
 		// XXX: Catch all worker type
 		wrkr = worker.NewFaasWorker(adapter)

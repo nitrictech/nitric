@@ -40,6 +40,7 @@ enum ResourceType {
   Secret = 9;
   Notification = 10;
   Websocket = 11;
+  Http = 12;
 }
 
 message Resource {
@@ -130,6 +131,10 @@ message ApiResourceDetails {
   string url = 1;
 }
 
+message WebsocketResourceDetails {
+  string url = 1;
+}
+
 message ResourceDetailsRequest {
   Resource resource = 1;
 }
@@ -147,5 +152,6 @@ message ResourceDetailsResponse {
   // Details about the resource
   oneof details {
     ApiResourceDetails api = 10;
+    WebsocketResourceDetails websocket = 11;
   }
 }

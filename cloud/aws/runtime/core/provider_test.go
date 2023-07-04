@@ -51,7 +51,6 @@ var _ = Describe("AwsProvider", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
 			provider := &awsProviderImpl{
-				cache:  make(map[string]map[string]string),
 				client: mockClient,
 			}
 
@@ -75,7 +74,6 @@ var _ = Describe("AwsProvider", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
 			provider := &awsProviderImpl{
-				cache:  make(map[string]map[string]string),
 				client: mockClient,
 				stack:  "test-stack",
 			}
@@ -84,7 +82,7 @@ var _ = Describe("AwsProvider", func() {
 				By("failing to call GetResources")
 				mockClient.EXPECT().GetResources(gomock.Any(), gomock.Any()).Return(&resourcegroupstaggingapi.GetResourcesOutput{
 					ResourceTagMappingList: []types.ResourceTagMapping{{
-						ResourceARN: aws.String("arn:aws:::sns:test"),
+						ResourceARN: aws.String("arn:aws:sns:::test"),
 						Tags: []types.Tag{{
 							Key:   aws.String("x-nitric-name"),
 							Value: aws.String("test"),

@@ -100,7 +100,8 @@ func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSub
 			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
 				ServiceAccountEmail: args.Function.Invoker.Email,
 			},
-			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s", args.Function.Url, args.Topic.Name),
+			// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
+			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", args.Function.Url, args.Topic.Name, args.Function.EventToken),
 		},
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),

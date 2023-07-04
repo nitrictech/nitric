@@ -1288,6 +1288,107 @@ var _ interface {
 	ErrorName() string
 } = ScheduleCronValidationError{}
 
+// Validate checks the field values on HttpWorker with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *HttpWorker) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HttpWorker with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in HttpWorkerMultiError, or
+// nil if none found.
+func (m *HttpWorker) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HttpWorker) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Port
+
+	if len(errors) > 0 {
+		return HttpWorkerMultiError(errors)
+	}
+
+	return nil
+}
+
+// HttpWorkerMultiError is an error wrapping multiple validation errors
+// returned by HttpWorker.ValidateAll() if the designated constraints aren't met.
+type HttpWorkerMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m HttpWorkerMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m HttpWorkerMultiError) AllErrors() []error { return m }
+
+// HttpWorkerValidationError is the validation error returned by
+// HttpWorker.Validate if the designated constraints aren't met.
+type HttpWorkerValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e HttpWorkerValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e HttpWorkerValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e HttpWorkerValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e HttpWorkerValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e HttpWorkerValidationError) ErrorName() string { return "HttpWorkerValidationError" }
+
+// Error satisfies the builtin error interface
+func (e HttpWorkerValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sHttpWorker.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = HttpWorkerValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = HttpWorkerValidationError{}
+
 // Validate checks the field values on BucketNotificationWorker with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -1853,6 +1954,47 @@ func (m *InitRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return InitRequestValidationError{
 					field:  "Websocket",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *InitRequest_HttpWorker:
+		if v == nil {
+			err := InitRequestValidationError{
+				field:  "Worker",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetHttpWorker()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "HttpWorker",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, InitRequestValidationError{
+						field:  "HttpWorker",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetHttpWorker()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return InitRequestValidationError{
+					field:  "HttpWorker",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

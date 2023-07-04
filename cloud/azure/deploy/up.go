@@ -313,7 +313,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		for _, t := range topics {
-			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, utils.ResourceName(ctx, t.Name, utils.EventGridRT), &topic.AzureEventGridTopicArgs{
+			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, t.Name, &topic.AzureEventGridTopicArgs{
 				ResourceGroup: rg,
 				StackID:       stackID,
 			})
@@ -354,6 +354,27 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			})
 			if err != nil {
 				return err
+			}
+		}
+
+		// Add all HTTP proxies
+		httpProxies := map[string]*api.AzureHttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				app := apps[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = api.NewAzureHttpProxy(ctx, res.Name, &api.AzureHttpProxyArgs{
+					ResourceGroupName: rg.Name,
+					OrgName:           pulumi.String(details.Org),
+					AdminEmail:        pulumi.String(details.AdminEmail),
+					App:               app,
+					ManagedIdentity:   contEnv.ManagedUser,
+					StackID:           stackID,
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 

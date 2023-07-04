@@ -278,10 +278,30 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
 				}
 
+				config, _ := config.Apis[res.Name]
+
 				_, err = api.NewAwsApiGateway(ctx, res.Name, &api.AwsApiGatewayArgs{
 					LambdaFunctions: execs,
 					StackID:         stackID,
 					OpenAPISpec:     doc,
+					Config:          config,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// Add all HTTP proxies
+		httpProxies := map[string]*api.AwsHttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				fun := execs[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = api.NewAwsHttpProxy(ctx, res.Name, &api.AwsHttpProxyArgs{
+					StackID:        stackID,
+					LambdaFunction: fun,
 				})
 				if err != nil {
 					return err

@@ -96,6 +96,11 @@ enum BucketNotificationType {
   Deleted = 2;
 }
 
+message HttpWorker {
+  // The local port the server can be accessed on
+  int32 port = 1;
+}
+
 message BucketNotificationWorker {
   string bucket = 1;
 	BucketNotificationConfig config = 2;
@@ -140,6 +145,7 @@ message InitRequest {
     ScheduleWorker schedule = 12;
     BucketNotificationWorker bucket_notification = 13;
     WebsocketWorker websocket = 14;
+    HttpWorker http_worker = 15;
   }
 }
 

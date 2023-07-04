@@ -29,12 +29,12 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
-	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/schedule"
@@ -248,9 +248,8 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return err
 				}
 
-				// Create a service account for this cloud run instance
-				sa, err := serviceaccount.NewAccount(ctx, res.Name+"-acct", &serviceaccount.AccountArgs{
-					AccountId: pulumi.String(utils.StringTrunc(res.Name, 30-5) + "-acct"),
+				sa, err := iam.NewServiceAccount(ctx, res.Name+"-cloudrun-exec-acct", &iam.GcpIamServiceAccountArgs{
+					AccountId: res.Name + "-exec",
 				}, defaultResourceOptions)
 				if err != nil {
 					return err
@@ -268,7 +267,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Image:           image,
 						EnvMap:          eu.ExecutionUnit.Env,
 						DelayQueue:      topicDelayQueue,
-						ServiceAccount:  sa,
+						ServiceAccount:  sa.ServiceAccount,
 						BaseComputeRole: baseComputeRole,
 						StackID:         stackID,
 						Config:          *unitConfig.CloudRun,
@@ -280,7 +279,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %+v", unitConfig)
 				}
 
-				principalMap[v1.ResourceType_Function][res.Name] = sa
+				principalMap[v1.ResourceType_Function][res.Name] = sa.ServiceAccount
 			}
 		}
 
@@ -340,6 +339,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					Functions:   execs,
 					OpenAPISpec: doc,
 				}, defaultResourceOptions)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		httpProxies := map[string]*gateway.HttpProxy{}
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Http:
+				fun := execs[t.Http.Target.GetExecutionUnit()]
+
+				httpProxies[res.Name], err = gateway.NewHttpProxy(ctx, res.Name, &gateway.HttpProxyArgs{
+					StackID:   stackID,
+					ProjectId: details.ProjectId,
+					Function:  fun,
+				})
 				if err != nil {
 					return err
 				}

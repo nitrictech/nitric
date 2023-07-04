@@ -22,9 +22,11 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
+	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
+	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
@@ -55,10 +57,11 @@ type ContainerAppArgs struct {
 type ContainerApp struct {
 	pulumi.ResourceState
 
-	Name    string
-	hostUrl *pulumi.StringOutput
-	Sp      *policy.ServicePrincipal
-	App     *app.ContainerApp
+	Name       string
+	hostUrl    *pulumi.StringOutput
+	Sp         *policy.ServicePrincipal
+	App        *app.ContainerApp
+	EventToken pulumi.StringOutput
 }
 
 // HostUrl - Returns the HostURL of the application
@@ -144,6 +147,19 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		return nil, err
 	}
 
+	token, err := random.NewRandomPassword(ctx, res.Name+"-event-token", &random.RandomPasswordArgs{
+		Special: pulumi.Bool(false),
+		Length:  pulumi.Int(32),
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"name": name,
+		}),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "service event token")
+	}
+
+	res.EventToken = token.Result
+
 	res.Sp, err = policy.NewServicePrincipal(ctx, name, &policy.ServicePrincipalArgs{}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
@@ -167,6 +183,10 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 	}
 
 	env := app.EnvironmentVarArray{
+		app.EnvironmentVarArgs{
+			Name:  pulumi.String("EVENT_TOKEN"),
+			Value: res.EventToken,
+		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("NITRIC_ENVIRONMENT"),
 			Value: pulumi.String("cloud"),

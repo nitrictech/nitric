@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -63,6 +64,13 @@ func extractPayload(event eventgrid.Event) []byte {
 	return payloadBytes
 }
 
+func eventAuthorised(ctx *fasthttp.RequestCtx) bool {
+	token := ctx.QueryArgs().Peek("token")
+	evtToken := os.Getenv("EVENT_TOKEN")
+
+	return string(token) == evtToken
+}
+
 func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
 	var validateData eventgrid.SubscriptionValidationEventData
@@ -83,6 +91,11 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 	return func(ctx *fasthttp.RequestCtx) {
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
+			return
+		}
+
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
 			return
 		}
 
@@ -138,6 +151,11 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 
 func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
+			return
+		}
+
 		scheduleName := ctx.UserValue("name").(string)
 
 		evt := &v1.TriggerRequest{
@@ -184,6 +202,11 @@ func notificationEventToEventType(eventType *string) (v1.BucketNotificationType,
 
 func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		if !eventAuthorised(ctx) {
+			ctx.Error("Unauthorized", 401)
+			return
+		}
+
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
 			return
