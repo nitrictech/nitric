@@ -104,10 +104,12 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		return nil, err
 	}
 
+	apiId := pulumi.String(name)
+
 	res.Api, err = apimanagement.NewApi(ctx, utils.ResourceName(ctx, name, utils.ApiHttpProxyRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.Sprintf("%s-api", name),
 		Protocols:            apimanagement.ProtocolArray{"https"},
-		ApiId:                pulumi.String(name),
+		ApiId:                apiId,
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),
 		ResourceGroupName:    args.ResourceGroupName,
@@ -119,12 +121,6 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 		return nil, err
 	}
 
-	// this.api.id returns a URL path, which is the incorrect value here.
-	//   We instead need the value passed to apiId in the api creation above.
-	// However, we want to maintain the pulumi dependency, so we need to keep the 'apply' call.
-	apiId := res.Api.ID().ToStringOutput().ApplyT(func(id string) string {
-		return name
-	}).(pulumi.StringOutput)
 	for _, p := range spec.Paths {
 		for _, op := range p.Operations() {
 			_, err = apimanagement.NewApiOperationPolicy(ctx, utils.ResourceName(ctx, name+"-"+op.OperationID, utils.ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
@@ -135,7 +131,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 				PolicyId:          pulumi.String("policy"),
 				Format:            pulumi.String("xml"),
 				Value:             pulumi.Sprintf(proxyTemplate, args.App.App.LatestRevisionFqdn, args.ManagedIdentity.ClientId, args.ManagedIdentity.ClientId),
-			}, pulumi.Parent(res.Api))
+			}, pulumi.Parent(res.Api), pulumi.DependsOn([]pulumi.Resource{res.Api}))
 			if err != nil {
 				return nil, errors.WithMessage(err, "NewApiOperationPolicy proxy")
 			}
