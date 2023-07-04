@@ -22,7 +22,6 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
@@ -151,12 +150,12 @@ func newApiSpec(name, functionUrl string) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/**": &openapi3.PathItem{
-				Get:     getOperation(functionUrl),
-				Post:    getOperation(functionUrl),
-				Patch:   getOperation(functionUrl),
-				Put:     getOperation(functionUrl),
-				Delete:  getOperation(functionUrl),
-				Options: getOperation(functionUrl),
+				Get:     getOperation(functionUrl, "get"),
+				Post:    getOperation(functionUrl, "post"),
+				Patch:   getOperation(functionUrl, "patch"),
+				Put:     getOperation(functionUrl, "put"),
+				Delete:  getOperation(functionUrl, "delete"),
+				Options: getOperation(functionUrl, "options"),
 			},
 		},
 	}
@@ -164,11 +163,11 @@ func newApiSpec(name, functionUrl string) *openapi3.T {
 	return doc
 }
 
-func getOperation(functionUrl string) *openapi3.Operation {
+func getOperation(functionUrl string, operationId string) *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{
-		OperationID: uuid.NewString(),
+		OperationID: operationId,
 		Responses: openapi3.Responses{
 			"default": &openapi3.ResponseRef{
 				Value: &openapi3.Response{

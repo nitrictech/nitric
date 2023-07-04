@@ -18,7 +18,6 @@ package api
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
@@ -164,12 +163,12 @@ func newApiSpec(name string) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/*": &openapi3.PathItem{
-				Get:     getOperation(),
-				Post:    getOperation(),
-				Patch:   getOperation(),
-				Put:     getOperation(),
-				Delete:  getOperation(),
-				Options: getOperation(),
+				Get:     getOperation("get"),
+				Post:    getOperation("post"),
+				Patch:   getOperation("patch"),
+				Put:     getOperation("put"),
+				Delete:  getOperation("delete"),
+				Options: getOperation("options"),
 			},
 		},
 	}
@@ -177,11 +176,11 @@ func newApiSpec(name string) *openapi3.T {
 	return doc
 }
 
-func getOperation() *openapi3.Operation {
+func getOperation(operationId string) *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{
-		OperationID: uuid.NewString(),
+		OperationID: operationId,
 		Responses: openapi3.Responses{
 			"default": &openapi3.ResponseRef{
 				Value: &openapi3.Response{
