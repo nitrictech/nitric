@@ -18,7 +18,6 @@ package api
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/google/uuid"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -113,12 +112,12 @@ func newApiSpec(name, invokeArn string) *openapi3.T {
 		},
 		Paths: openapi3.Paths{
 			"/{proxy+}": &openapi3.PathItem{
-				Get:     getOperation(invokeArn),
-				Post:    getOperation(invokeArn),
-				Patch:   getOperation(invokeArn),
-				Put:     getOperation(invokeArn),
-				Delete:  getOperation(invokeArn),
-				Options: getOperation(invokeArn),
+				Get:     getOperation(invokeArn, "get"),
+				Post:    getOperation(invokeArn, "post"),
+				Patch:   getOperation(invokeArn, "patch"),
+				Put:     getOperation(invokeArn, "put"),
+				Delete:  getOperation(invokeArn, "delete"),
+				Options: getOperation(invokeArn, "options"),
 			},
 		},
 	}
@@ -126,11 +125,11 @@ func newApiSpec(name, invokeArn string) *openapi3.T {
 	return doc
 }
 
-func getOperation(invokeArn string) *openapi3.Operation {
+func getOperation(invokeArn string, operationId string) *openapi3.Operation {
 	defaultDescription := "default description"
 
 	return &openapi3.Operation{
-		OperationID: uuid.NewString(),
+		OperationID: operationId,
 		Responses: openapi3.Responses{
 			"default": &openapi3.ResponseRef{
 				Value: &openapi3.Response{
