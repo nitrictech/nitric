@@ -313,7 +313,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		}
 
 		for _, t := range topics {
-			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, utils.ResourceName(ctx, t.Name, utils.EventGridRT), &topic.AzureEventGridTopicArgs{
+			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, t.Name, &topic.AzureEventGridTopicArgs{
 				ResourceGroup: rg,
 				StackID:       stackID,
 			})

@@ -89,7 +89,7 @@ func NewAzureEventGridTopicSubscription(ctx *pulumi.Context, name string, args *
 	res.Subscription, err = pulumiEventgrid.NewEventSubscription(ctx, utils.ResourceName(ctx, name, utils.EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
 		Scope: args.Topic.Topic.ID(),
 		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
-			Url: pulumi.Sprintf("%s/x-nitric-topic/%s", hostUrl, args.Topic.Name),
+			Url: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", hostUrl, args.Topic.Name, args.Target.EventToken),
 			// TODO: Reduce event chattiness here and handle internally in the Azure AppService HTTP Gateway?
 			MaxEventsPerBatch:         pulumi.Int(1),
 			ActiveDirectoryAppIdOrUri: args.Target.Sp.ClientID,
