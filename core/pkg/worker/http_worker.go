@@ -55,24 +55,25 @@ func (h *HttpWorker) HandleTrigger(ctx context.Context, req *v1.TriggerRequest) 
 
 	newHeader := http.Header{}
 
+	targetPath := targetHost.JoinPath(req.GetHttp().Path)
+	httpReq, err := http.NewRequest(req.GetHttp().GetMethod(), targetPath.String(), io.NopCloser(bytes.NewReader(req.Data)))
+	if err != nil {
+		return nil, err
+	}
+
 	for k, v := range req.GetHttp().Headers {
 		for _, val := range v.Value {
 			// Replace forwarded authorization with base authorization so the user gets the expected headers
 			if k == "X-Forwarded-Authorization" && newHeader["Authorization"] == nil {
 				k = "Authorization"
 			}
-			newHeader.Add(k, val)
+
+			httpReq.Header.Add(k, val)
 		}
 	}
 
-	targetPath := targetHost.JoinPath(req.GetHttp().Path)
 	// forward the request to the server
-	res, err := http.DefaultClient.Do(&http.Request{
-		Header: newHeader,
-		Method: req.GetHttp().GetMethod(),
-		URL:    targetPath,
-		Body:   io.NopCloser(bytes.NewReader(req.Data)),
-	})
+	res, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
 		return nil, err
 	}
