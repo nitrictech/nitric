@@ -17,7 +17,8 @@
 package api
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
+	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -48,24 +49,39 @@ func NewAwsHttpProxy(ctx *pulumi.Context, name string, args *AwsHttpProxyArgs, o
 
 	opts = append(opts, pulumi.Parent(res))
 
-	doc := args.LambdaFunction.Function.InvokeArn.ApplyT(func(invokeArn string) (string, error) {
-		spec := newApiSpec(name, invokeArn)
-
-		// augment the api specs with security definitions where available
-		b, err := spec.MarshalJSON()
-		if err != nil {
-			return "", err
-		}
-
-		return string(b), nil
-	}).(pulumi.StringOutput)
-
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
-		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
 		Tags:           common.Tags(ctx, args.StackID, name),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	integrationDefault, err := apigatewayv2.NewIntegration(ctx, fmt.Sprintf("%s-default-integration", name), &apigatewayv2.IntegrationArgs{
+		ApiId:           res.Api.ID(),
+		IntegrationType: pulumi.String("AWS_PROXY"),
+		IntegrationUri:  args.LambdaFunction.Function.Arn,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = awslambda.NewPermission(ctx, fmt.Sprintf("%s-default-permission", name), &awslambda.PermissionArgs{
+		Function:  args.LambdaFunction.Function.Name,
+		Action:    pulumi.String("lambda:InvokeFunction"),
+		Principal: pulumi.String("apigateway.amazonaws.com"),
+		SourceArn: pulumi.Sprintf("%s/*/*", res.Api.ExecutionArn),
+	}, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = apigatewayv2.NewRoute(ctx, name+"DefaultRoute", &apigatewayv2.RouteArgs{
+		ApiId:    res.Api.ID(),
+		RouteKey: pulumi.String("$default"),
+		Target:   pulumi.Sprintf("integrations/%s", integrationDefault.ID()),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -80,17 +96,6 @@ func NewAwsHttpProxy(ctx *pulumi.Context, name string, args *AwsHttpProxyArgs, o
 		return nil, err
 	}
 
-	// Generate lambda permissions enabling the API Gateway to invoke the functions it targets
-	_, err = awslambda.NewPermission(ctx, name+args.LambdaFunction.Name, &awslambda.PermissionArgs{
-		Function:  args.LambdaFunction.Function.Name,
-		Action:    pulumi.String("lambda:InvokeFunction"),
-		Principal: pulumi.String("apigateway.amazonaws.com"),
-		SourceArn: pulumi.Sprintf("%s/*/*/*", res.Api.ExecutionArn),
-	}, opts...)
-	if err != nil {
-		return nil, err
-	}
-
 	endPoint := res.Api.ApiEndpoint.ApplyT(func(ep string) string {
 		return ep
 	}).(pulumi.StringInput)
@@ -98,61 +103,4 @@ func NewAwsHttpProxy(ctx *pulumi.Context, name string, args *AwsHttpProxyArgs, o
 	ctx.Export("api:"+name, endPoint)
 
 	return res, nil
-}
-
-func newApiSpec(name, invokeArn string) *openapi3.T {
-	doc := &openapi3.T{
-		Info: &openapi3.Info{
-			Title:   name,
-			Version: "v1",
-		},
-		OpenAPI: "3.0.1",
-		Components: &openapi3.Components{
-			SecuritySchemes: make(openapi3.SecuritySchemes),
-		},
-		Paths: openapi3.Paths{
-			"/{proxy+}": &openapi3.PathItem{
-				Get:     getOperation(invokeArn, "get"),
-				Post:    getOperation(invokeArn, "post"),
-				Patch:   getOperation(invokeArn, "patch"),
-				Put:     getOperation(invokeArn, "put"),
-				Delete:  getOperation(invokeArn, "delete"),
-				Options: getOperation(invokeArn, "options"),
-			},
-		},
-	}
-
-	return doc
-}
-
-func getOperation(invokeArn string, operationId string) *openapi3.Operation {
-	defaultDescription := "default description"
-
-	return &openapi3.Operation{
-		OperationID: operationId,
-		Responses: openapi3.Responses{
-			"default": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: &defaultDescription,
-				},
-			},
-		},
-		Extensions: map[string]interface{}{
-			"x-amazon-apigateway-integration": map[string]string{
-				"type":                 "aws_proxy",
-				"httpMethod":           "POST",
-				"payloadFormatVersion": "2.0",
-				"uri":                  invokeArn,
-			},
-		},
-		Parameters: openapi3.Parameters{
-			&openapi3.ParameterRef{
-				Value: &openapi3.Parameter{
-					In:              "path",
-					Name:            "proxy+",
-					AllowEmptyValue: true,
-				},
-			},
-		},
-	}
 }
