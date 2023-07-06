@@ -30,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/websocket"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
@@ -54,6 +55,7 @@ type StackResources struct {
 	Buckets     map[string]*bucket.S3Bucket
 	Collections map[string]*collection.DynamodbCollection
 	Secrets     map[string]*secret.SecretsManagerSecret
+	Websockets  map[string]*websocket.AwsWebsocketApiGateway
 }
 
 type PrincipalMap = map[v1.ResourceType]map[string]*iam.Role
@@ -132,6 +134,9 @@ var awsActionsMap map[v1.Action][]string = map[v1.Action][]string{
 	v1.Action_SecretPut: {
 		"secretsmanager:PutSecretValue",
 	},
+	v1.Action_WebsocketManage: {
+		"execute-api:ManageConnections",
+	},
 }
 
 func actionsToAwsActions(actions []v1.Action) []string {
@@ -166,6 +171,10 @@ func arnForResource(resource *deploy.Resource, resources *StackResources) ([]int
 	case v1.ResourceType_Secret:
 		if s, ok := resources.Secrets[resource.Name]; ok {
 			return []interface{}{s.SecretsManager.Arn}, nil
+		}
+	case v1.ResourceType_Websocket:
+		if w, ok := resources.Websockets[resource.Name]; ok {
+			return []interface{}{pulumi.Sprintf("%s/*", w.Api.ExecutionArn)}, nil
 		}
 	default:
 		return nil, fmt.Errorf(

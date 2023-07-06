@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	apigatewayv2 "github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	resource "github.com/nitrictech/nitric/core/pkg/plugins/resource"
@@ -63,6 +64,21 @@ func (m *MockAwsProvider) Details(arg0 context.Context, arg1, arg2 string) (*res
 func (mr *MockAwsProviderMockRecorder) Details(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockAwsProvider)(nil).Details), arg0, arg1, arg2)
+}
+
+// GetApiGatewayById mocks base method.
+func (m *MockAwsProvider) GetApiGatewayById(arg0 context.Context, arg1 string) (*apigatewayv2.GetApiOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApiGatewayById", arg0, arg1)
+	ret0, _ := ret[0].(*apigatewayv2.GetApiOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetApiGatewayById indicates an expected call of GetApiGatewayById.
+func (mr *MockAwsProviderMockRecorder) GetApiGatewayById(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApiGatewayById", reflect.TypeOf((*MockAwsProvider)(nil).GetApiGatewayById), arg0, arg1)
 }
 
 // GetResources mocks base method.

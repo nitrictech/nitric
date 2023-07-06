@@ -48,7 +48,8 @@ const (
 )
 
 var resourceTypeMap = map[resource.ResourceType]AwsResource{
-	resource.ResourceType_Api: AwsResource_Api,
+	resource.ResourceType_Api:       AwsResource_Api,
+	resource.ResourceType_Websocket: AwsResource_Api,
 }
 
 type AwsProvider interface {
@@ -57,6 +58,7 @@ type AwsProvider interface {
 	// GetResources API operation for AWS Provider.
 	// Returns requested aws resources for the given resource type
 	GetResources(context.Context, AwsResource) (map[string]string, error)
+	GetApiGatewayById(context.Context, string) (*apigatewayv2.GetApiOutput, error)
 }
 
 // Aws core utility provider
@@ -102,22 +104,32 @@ func (a *awsProviderImpl) Details(ctx context.Context, typ resource.ResourceType
 		arnParts := strings.Split(arn, "/")
 		apiId := arnParts[len(arnParts)-1]
 		// Get api detail
-		api, err := a.apiClient.GetApi(context.TODO(), &apigatewayv2.GetApiInput{
-			ApiId: aws.String(apiId),
-		})
+		api, err := a.GetApiGatewayById(ctx, apiId)
 		if err != nil {
 			return nil, err
 		}
 
 		details.Service = "ApiGateway"
-		details.Detail = resource.ApiDetails{
-			URL: *api.ApiEndpoint,
+		if typ == resource.ResourceType_Api {
+			details.Detail = resource.ApiDetails{
+				URL: *api.ApiEndpoint,
+			}
+		} else {
+			details.Detail = resource.WebsocketDetails{
+				URL: fmt.Sprintf("%s/$default", *api.ApiEndpoint),
+			}
 		}
 
 		return details, nil
 	default:
 		return nil, fmt.Errorf("unimplemented resource type")
 	}
+}
+
+func (a *awsProviderImpl) GetApiGatewayById(ctx context.Context, apiId string) (*apigatewayv2.GetApiOutput, error) {
+	return a.apiClient.GetApi(context.TODO(), &apigatewayv2.GetApiInput{
+		ApiId: aws.String(apiId),
+	})
 }
 
 func resourceTypeFromArn(arn string) (resource.ResourceType, error) {
