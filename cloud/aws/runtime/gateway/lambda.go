@@ -80,7 +80,7 @@ type LambdaGateway struct {
 func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.APIGatewayWebsocketProxyRequest) (interface{}, error) {
 	// Use the routekey to get the event type
 
-	var wsEvent = v1.WebsocketEvent_Message
+	wsEvent := v1.WebsocketEvent_Message
 	switch evt.RequestContext.RouteKey {
 	case "$connect":
 		wsEvent = v1.WebsocketEvent_Connect
@@ -95,7 +95,7 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.API
 
 	nitricName, ok := api.Tags["x-nitric-name"]
 	if !ok {
-		return nil, fmt.Errorf("recieved websocket trigger from non-nitric API gateway")
+		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
 	}
 
 	req := &v1.TriggerRequest{
