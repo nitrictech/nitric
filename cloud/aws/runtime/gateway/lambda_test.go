@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -133,6 +134,76 @@ var _ = Describe("Lambda", func() {
 					Data: []byte("success"),
 					Context: &v1.TriggerResponse_Http{
 						Http: &v1.HttpResponseContext{},
+					},
+				}, nil)
+
+				err := client.Start(pool)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Context("Websocket Events", func() {
+		When("Sending a compliant Websocket Event", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			pool := mock_pool.NewMockWorkerPool(ctrl)
+
+			mockHandler := mock_worker.NewMockWorker(ctrl)
+			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+
+			runtime := MockLambdaRuntime{
+				// Setup mock events for our runtime to process...
+				eventQueue: []interface{}{&events.APIGatewayWebsocketProxyRequest{
+					Headers: map[string]string{
+						"User-Agent":   "Test",
+						"Content-Type": "text/plain",
+					},
+					Body: "Test Payload",
+					RequestContext: events.APIGatewayWebsocketProxyRequestContext{
+						APIID: "test-api",
+						// as a connection request
+						RouteKey:     "$connect",
+						ConnectionID: "testing",
+					},
+				}},
+			}
+
+			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			Expect(err).To(BeNil())
+
+			// This function will block which means we don't need to wait on processing,
+			// the function will unblock once processing has finished, this is due to our mock
+			// handler only looping once over each request
+			It("The gateway should translate into a standard NitricRequest", func() {
+				By("Returning the worker")
+				pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
+
+				By("Handling all request types")
+				mockHandler.EXPECT().HandlesTrigger(gomock.Any()).Return(true)
+
+				By("The websocket gateway existing")
+				mockProvider.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
+					Tags: map[string]string{
+						"x-nitric-name": "test-api",
+					},
+				}, nil)
+
+				By("Handling a single HTTP request")
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), &v1.TriggerRequest{
+					Data: []byte("Test Payload"),
+					Context: &v1.TriggerRequest_Websocket{
+						Websocket: &v1.WebsocketTriggerContext{
+							Socket:       "test-api",
+							Event:        v1.WebsocketEvent_Connect,
+							ConnectionId: "testing",
+						},
+					},
+				}).Return(&v1.TriggerResponse{
+					Data: []byte("success"),
+					Context: &v1.TriggerResponse_Websocket{
+						Websocket: &v1.WebsocketResponseContext{
+							Success: true,
+						},
 					},
 				}, nil)
 

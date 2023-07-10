@@ -28,6 +28,7 @@ const (
 	sns
 	s3
 	httpEvent
+	websocketEvent
 	healthcheck
 	// cloudwatch
 	schedule
@@ -55,6 +56,7 @@ type nitricScheduleEvent struct {
 // An event struct that embeds the AWS event types that we handle
 type Event struct {
 	events.APIGatewayV2HTTPRequest
+	events.APIGatewayWebsocketProxyRequest
 	healthCheckEvent
 	Records []Record
 	nitricScheduleEvent
@@ -62,7 +64,9 @@ type Event struct {
 
 func (e *Event) Type() eventType {
 	// check if this event type contains valid data
-	if e.APIGatewayV2HTTPRequest.RouteKey != "" {
+	if e.APIGatewayWebsocketProxyRequest.RequestContext.ConnectionID != "" {
+		return websocketEvent
+	} else if e.APIGatewayV2HTTPRequest.RouteKey != "" {
 		return httpEvent
 	} else if e.Check {
 		return healthcheck
@@ -132,6 +136,15 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 		}
 
 		e.APIGatewayV2HTTPRequest = apiEvent
+	case websocketEvent:
+		websocketEvent := events.APIGatewayWebsocketProxyRequest{}
+		err = json.Unmarshal(data, &websocketEvent)
+
+		if err != nil {
+			return err
+		}
+
+		e.APIGatewayWebsocketProxyRequest = websocketEvent
 	case schedule:
 		nitricSchedule := nitricScheduleEvent{}
 		err = json.Unmarshal(data, &nitricSchedule)
@@ -164,8 +177,13 @@ func (e *Event) getEventType(data []byte) eventType {
 		return unknown
 	}
 
+	requestContext, isRequest := temp["requestContext"].(map[string]interface{})
+
 	// Handle non-record events
-	if _, ok := temp["routeKey"]; ok {
+	if isRequest {
+		if _, ok := requestContext["connectionId"]; ok {
+			return websocketEvent
+		}
 		return httpEvent
 	} else if _, ok := temp["x-nitric-healthcheck"]; ok {
 		return healthcheck

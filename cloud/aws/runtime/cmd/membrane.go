@@ -27,6 +27,7 @@ import (
 	sqs_service "github.com/nitrictech/nitric/cloud/aws/runtime/queue"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 	"github.com/nitrictech/nitric/core/pkg/utils"
@@ -62,6 +63,7 @@ func main() {
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 	membraneOpts.ResourcesPlugin = provider
 	membraneOpts.CreateTracerProvider = newTracerProvider
+	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

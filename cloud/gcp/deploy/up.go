@@ -81,6 +81,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}()
 
+		// Get Websockets
+		websockets := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetWebsocket() != nil
+		})
+		if len(websockets) > 0 {
+			return fmt.Errorf("websockets currently in preview not supported in the GCP provider.")
+		}
+
 		project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
 			ProjectId: &details.ProjectId,
 		}, nil)
