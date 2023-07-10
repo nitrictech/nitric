@@ -37,6 +37,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/websocket"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
@@ -309,6 +310,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 
+		// deploy websockets
+		websockets := map[string]*websocket.AwsWebsocketApiGateway{}
+		for _, res := range request.Spec.Resources {
+			switch ws := res.Config.(type) {
+			case *deploy.Resource_Websocket:
+				websockets[res.Name], err = websocket.NewAwsWebsocketApiGateway(ctx, res.Name, &websocket.AwsWebsocketApiGatewayArgs{
+					DefaultTarget:    execs[ws.Websocket.MessageTarget.GetExecutionUnit()],
+					ConnectTarget:    execs[ws.Websocket.ConnectTarget.GetExecutionUnit()],
+					DisconnectTarget: execs[ws.Websocket.DisconnectTarget.GetExecutionUnit()],
+					StackID:          stackID,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		// Deploy all schedules
 		schedules := map[string]*schedule.AwsEventbridgeSchedule{}
 		for _, res := range request.Spec.Resources {
@@ -381,6 +399,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						Queues:      queues,
 						Collections: collections,
 						Secrets:     secrets,
+						Websockets:  websockets,
 					},
 					Principals: principals,
 				})

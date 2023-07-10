@@ -58,26 +58,30 @@ func (rs *ResourcesServiceServer) Declare(ctx context.Context, req *v1.ResourceD
 	return &v1.ResourceDeclareResponse{}, nil
 }
 
-type resourceDetailsType interface {
-	// Add union type here to exhaust possible ResourceDetailTypes
-	*v1.ResourceDetailsResponse_Api
-}
-
-func convertDetails[T resourceDetailsType](details *resource.DetailsResponse[any]) (T, error) {
+func populateDetails(details *resource.DetailsResponse[any], response *v1.ResourceDetailsResponse) error {
 	switch det := details.Detail.(type) {
 	case resource.ApiDetails:
-		return &v1.ResourceDetailsResponse_Api{
+		response.Details = &v1.ResourceDetailsResponse_Api{
 			Api: &v1.ApiResourceDetails{
 				Url: det.URL,
 			},
-		}, nil
+		}
+		return nil
+	case resource.WebsocketDetails:
+		response.Details = &v1.ResourceDetailsResponse_Websocket{
+			Websocket: &v1.WebsocketResourceDetails{
+				Url: det.URL,
+			},
+		}
+		return nil
 	default:
-		return nil, fmt.Errorf("unsupported details type")
+		return fmt.Errorf("unsupported details type")
 	}
 }
 
 var resourceTypeMap = map[v1.ResourceType]resource.ResourceType{
-	v1.ResourceType_Api: resource.ResourceType_Api,
+	v1.ResourceType_Api:       resource.ResourceType_Api,
+	v1.ResourceType_Websocket: resource.ResourceType_Websocket,
 }
 
 func (rs *ResourcesServiceServer) Details(ctx context.Context, req *v1.ResourceDetailsRequest) (*v1.ResourceDetailsResponse, error) {
@@ -95,17 +99,18 @@ func (rs *ResourcesServiceServer) Details(ctx context.Context, req *v1.ResourceD
 		return nil, err
 	}
 
-	details, err := convertDetails(d)
+	resp := &v1.ResourceDetailsResponse{
+		Id:       d.Id,
+		Provider: d.Provider,
+		Service:  d.Service,
+	}
+
+	err = populateDetails(d, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.ResourceDetailsResponse{
-		Id:       d.Id,
-		Provider: d.Provider,
-		Service:  d.Service,
-		Details:  details,
-	}, nil
+	return resp, nil
 }
 
 func NewResourcesServiceServer(opts ...ResourceServiceOption) v1.ResourceServiceServer {

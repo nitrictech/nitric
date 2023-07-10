@@ -26,7 +26,8 @@ type ResourceType = string
 type ResourceDeclareRequest = *v1.ResourceDeclareRequest
 
 const (
-	ResourceType_Api = "api"
+	ResourceType_Api       = "api"
+	ResourceType_Websocket = "websocket"
 )
 
 type DetailsResponse[T any] struct {
@@ -37,6 +38,10 @@ type DetailsResponse[T any] struct {
 }
 
 type ApiDetails struct {
+	URL string
+}
+
+type WebsocketDetails struct {
 	URL string
 }
 

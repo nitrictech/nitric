@@ -76,6 +76,68 @@ type LambdaGateway struct {
 	finished chan int
 }
 
+// Handle websocket events
+func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.APIGatewayWebsocketProxyRequest) (interface{}, error) {
+	// Use the routekey to get the event type
+
+	wsEvent := v1.WebsocketEvent_Message
+	switch evt.RequestContext.RouteKey {
+	case "$connect":
+		wsEvent = v1.WebsocketEvent_Connect
+	case "$disconnect":
+		wsEvent = v1.WebsocketEvent_Disconnect
+	}
+
+	api, err := s.provider.GetApiGatewayById(ctx, evt.RequestContext.APIID)
+	if err != nil {
+		return nil, err
+	}
+
+	nitricName, ok := api.Tags["x-nitric-name"]
+	if !ok {
+		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
+	}
+
+	req := &v1.TriggerRequest{
+		Data: []byte(evt.Body),
+		Context: &v1.TriggerRequest_Websocket{
+			Websocket: &v1.WebsocketTriggerContext{
+				ConnectionId: evt.RequestContext.ConnectionID,
+				Event:        wsEvent,
+				// Get the API gateways nitric name
+				Socket: nitricName,
+			},
+		},
+	}
+
+	wrk, err := s.pool.GetWorker(&pool.GetWorkerOptions{
+		Trigger: req,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = wrk.HandleTrigger(ctx, req)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       "Error processing lambda request",
+			// TODO: Need to determine best case when to use this...
+			IsBase64Encoded: false,
+		}, nil
+	}
+
+	// if response.GetWebsocket() == nil || !response.GetWebsocket().Success {
+	// 	return events.APIGatewayProxyResponse{
+	// 		StatusCode: 500,
+	// 	}, nil
+	// }
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+	}, nil
+}
+
 // Handle API events
 func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
 	// Copy the headers and re-write for the proxy
@@ -324,6 +386,8 @@ func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (in
 
 func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{}, error) {
 	switch evt.Type() {
+	case websocketEvent:
+		return s.handleWebsocketEvent(ctx, evt.APIGatewayWebsocketProxyRequest)
 	case httpEvent:
 		return s.handleApiEvent(ctx, evt.APIGatewayV2HTTPRequest)
 	case healthcheck:
