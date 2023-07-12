@@ -244,6 +244,9 @@ message WebsocketTriggerContext {
 
   // The connection this trigger came from
   string connectionId = 3;
+
+  // The query params available in the connection request
+  map<string, QueryValue> query_params = 6;
 }
 
 // The worker has successfully processed a trigger

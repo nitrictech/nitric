@@ -3374,6 +3374,52 @@ func (m *WebsocketTriggerContext) validate(all bool) error {
 
 	// no validation rules for ConnectionId
 
+	{
+		sorted_keys := make([]string, len(m.GetQueryParams()))
+		i := 0
+		for key := range m.GetQueryParams() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetQueryParams()[key]
+			_ = val
+
+			// no validation rules for QueryParams[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, WebsocketTriggerContextValidationError{
+							field:  fmt.Sprintf("QueryParams[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, WebsocketTriggerContextValidationError{
+							field:  fmt.Sprintf("QueryParams[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return WebsocketTriggerContextValidationError{
+						field:  fmt.Sprintf("QueryParams[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
 	if len(errors) > 0 {
 		return WebsocketTriggerContextMultiError(errors)
 	}
