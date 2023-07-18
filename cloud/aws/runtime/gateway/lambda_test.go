@@ -196,6 +196,7 @@ var _ = Describe("Lambda", func() {
 							Socket:       "test-api",
 							Event:        v1.WebsocketEvent_Connect,
 							ConnectionId: "testing",
+							QueryParams:  map[string]*v1.QueryValue{},
 						},
 					},
 				}).Return(&v1.TriggerResponse{

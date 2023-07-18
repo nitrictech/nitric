@@ -98,6 +98,13 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.API
 		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
 	}
 
+	queryParams := map[string]*v1.QueryValue{}
+	for k, v := range evt.QueryStringParameters {
+		queryParams[k] = &v1.QueryValue{
+			Value: []string{v},
+		}
+	}
+
 	req := &v1.TriggerRequest{
 		Data: []byte(evt.Body),
 		Context: &v1.TriggerRequest_Websocket{
@@ -105,7 +112,8 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.API
 				ConnectionId: evt.RequestContext.ConnectionID,
 				Event:        wsEvent,
 				// Get the API gateways nitric name
-				Socket: nitricName,
+				Socket:      nitricName,
+				QueryParams: queryParams,
 			},
 		},
 	}
