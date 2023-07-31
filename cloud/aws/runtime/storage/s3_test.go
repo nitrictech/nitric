@@ -17,6 +17,7 @@ package storage_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -219,6 +220,65 @@ var _ = Describe("S3", func() {
 					By("having the returned keys")
 					Expect(files[0].Key).To(Equal("test/test"))
 				})
+			})
+		})
+	})
+
+	When("Exists", func() {
+		When("The bucket exists", func() {
+			When("The s3 backend is available", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
+				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
+				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
+
+				When("the file exists", func() {
+					It("should return true", func() {
+						By("the bucket existing")
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+							"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+						}, nil)
+
+						By("the file existing")
+						mockStorageClient.EXPECT().HeadObject(gomock.Any(), &s3.HeadObjectInput{
+							Bucket: aws.String("test-bucket-aaa111"),
+							Key:    aws.String("test-file"),
+						}).Return(&s3.HeadObjectOutput{}, nil)
+
+						exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-file")
+
+						By("not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("returning false")
+						Expect(exists).To(Equal(true))
+					})
+				})
+
+				When("the file does not exist", func() {
+					It("should return false", func() {
+						By("the bucket existing")
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+							"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+						}, nil)
+
+						By("the file not existing")
+						mockStorageClient.EXPECT().HeadObject(gomock.Any(), &s3.HeadObjectInput{
+							Bucket: aws.String("test-bucket-aaa111"),
+							Key:    aws.String("test-file"),
+						}).Return(nil, fmt.Errorf("mock-error"))
+
+						exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-file")
+
+						By("not returning an error")
+						Expect(err).ShouldNot(HaveOccurred())
+
+						By("returning false")
+						Expect(exists).To(Equal(false))
+					})
+				})
+
 			})
 		})
 	})
