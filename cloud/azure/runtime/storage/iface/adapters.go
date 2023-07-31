@@ -73,3 +73,7 @@ func (c blobUrl) Upload(ctx context.Context, r io.ReadSeeker, h azblob.BlobHTTPH
 func (c blobUrl) Delete(ctx context.Context, dot azblob.DeleteSnapshotsOptionType, bac azblob.BlobAccessConditions) (*azblob.BlobDeleteResponse, error) {
 	return c.c.Delete(ctx, dot, bac)
 }
+
+func (c blobUrl) GetProperties(ctx context.Context, bac azblob.BlobAccessConditions, cpk azblob.ClientProvidedKeyOptions) (*azblob.BlobGetPropertiesResponse, error) {
+	return c.c.GetProperties(ctx, bac, cpk)
+}
