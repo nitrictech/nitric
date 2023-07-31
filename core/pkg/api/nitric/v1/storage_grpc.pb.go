@@ -32,6 +32,8 @@ type StorageServiceClient interface {
 	PreSignUrl(ctx context.Context, in *StoragePreSignUrlRequest, opts ...grpc.CallOption) (*StoragePreSignUrlResponse, error)
 	// List files currently in the bucket
 	ListFiles(ctx context.Context, in *StorageListFilesRequest, opts ...grpc.CallOption) (*StorageListFilesResponse, error)
+	// Determine is an object exists in a bucket
+	Exists(ctx context.Context, in *StorageExistsRequest, opts ...grpc.CallOption) (*StorageExistsResponse, error)
 }
 
 type storageServiceClient struct {
@@ -87,6 +89,15 @@ func (c *storageServiceClient) ListFiles(ctx context.Context, in *StorageListFil
 	return out, nil
 }
 
+func (c *storageServiceClient) Exists(ctx context.Context, in *StorageExistsRequest, opts ...grpc.CallOption) (*StorageExistsResponse, error) {
+	out := new(StorageExistsResponse)
+	err := c.cc.Invoke(ctx, "/nitric.storage.v1.StorageService/Exists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageServiceServer is the server API for StorageService service.
 // All implementations must embed UnimplementedStorageServiceServer
 // for forward compatibility
@@ -101,6 +112,8 @@ type StorageServiceServer interface {
 	PreSignUrl(context.Context, *StoragePreSignUrlRequest) (*StoragePreSignUrlResponse, error)
 	// List files currently in the bucket
 	ListFiles(context.Context, *StorageListFilesRequest) (*StorageListFilesResponse, error)
+	// Determine is an object exists in a bucket
+	Exists(context.Context, *StorageExistsRequest) (*StorageExistsResponse, error)
 	mustEmbedUnimplementedStorageServiceServer()
 }
 
@@ -122,6 +135,9 @@ func (UnimplementedStorageServiceServer) PreSignUrl(context.Context, *StoragePre
 }
 func (UnimplementedStorageServiceServer) ListFiles(context.Context, *StorageListFilesRequest) (*StorageListFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
+}
+func (UnimplementedStorageServiceServer) Exists(context.Context, *StorageExistsRequest) (*StorageExistsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Exists not implemented")
 }
 func (UnimplementedStorageServiceServer) mustEmbedUnimplementedStorageServiceServer() {}
 
@@ -226,6 +242,24 @@ func _StorageService_ListFiles_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageService_Exists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StorageExistsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).Exists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.storage.v1.StorageService/Exists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).Exists(ctx, req.(*StorageExistsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StorageService_ServiceDesc is the grpc.ServiceDesc for StorageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +286,10 @@ var StorageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFiles",
 			Handler:    _StorageService_ListFiles_Handler,
+		},
+		{
+			MethodName: "Exists",
+			Handler:    _StorageService_Exists_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
