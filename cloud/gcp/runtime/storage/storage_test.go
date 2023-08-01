@@ -16,6 +16,7 @@ package storage_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -492,6 +493,130 @@ var _ = Describe("Storage", func() {
 
 				By("returning an error")
 				Expect(err).Should(HaveOccurred())
+			})
+		})
+	})
+
+	Context("Exists", func() {
+		When("The bucket exists", func() {
+			When("The item exists", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+				mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+				mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+				mockObject := storage_mock.NewMockObjectHandle(ctrl)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("should return true", func() {
+					By("the bucket existing")
+					gomock.InOrder(
+						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+							Labels: map[string]string{
+								"x-nitric-name": "test-bucket",
+							},
+							Name: "my-bucket-1234",
+						}, nil),
+						mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+					)
+					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+					mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+					By("the object reference being valid")
+					mockBucket.EXPECT().Object("test-key").Return(mockObject)
+
+					By("returning object atributes")
+					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(&storage.ObjectAttrs{}, nil)
+
+					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+
+					By("Not returning an error")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					By("The url being returned")
+					Expect(exists).To(BeTrue())
+
+					ctrl.Finish()
+				})
+			})
+
+			When("The item doesn't exist", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+				mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+				mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+				mockObject := storage_mock.NewMockObjectHandle(ctrl)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("should return true", func() {
+					By("the bucket existing")
+					gomock.InOrder(
+						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+							Labels: map[string]string{
+								"x-nitric-name": "test-bucket",
+							},
+							Name: "my-bucket-1234",
+						}, nil),
+						mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+					)
+					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+					mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+					By("the object reference being valid")
+					mockBucket.EXPECT().Object("test-key").Return(mockObject)
+
+					By("returning object atributes")
+					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, storage.ErrObjectNotExist)
+
+					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+
+					By("Not returning an error")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					By("The url being returned")
+					Expect(exists).To(BeFalse())
+
+					ctrl.Finish()
+				})
+			})
+
+			When("google cloud returns an unknown error", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+				mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+				mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+				mockObject := storage_mock.NewMockObjectHandle(ctrl)
+				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+				It("should return true", func() {
+					By("the bucket existing")
+					gomock.InOrder(
+						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+							Labels: map[string]string{
+								"x-nitric-name": "test-bucket",
+							},
+							Name: "my-bucket-1234",
+						}, nil),
+						mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+					)
+					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+					mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+					By("the object reference being valid")
+					mockBucket.EXPECT().Object("test-key").Return(mockObject)
+
+					By("returning object atributes")
+					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, errors.New("unknown error"))
+
+					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+
+					By("Not returning an error")
+					Expect(err).Should(HaveOccurred())
+
+					By("The url being returned")
+					Expect(exists).To(BeFalse())
+
+					ctrl.Finish()
+				})
 			})
 		})
 	})
