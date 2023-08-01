@@ -76,3 +76,7 @@ func (o objectHandle) NewReader(ctx context.Context) (Reader, error) {
 func (o objectHandle) Delete(ctx context.Context) error {
 	return o.ObjectHandle.Delete(ctx)
 }
+
+func (o objectHandle) Attrs(ctx context.Context) (*storage.ObjectAttrs, error) {
+	return o.ObjectHandle.Attrs(ctx)
+}

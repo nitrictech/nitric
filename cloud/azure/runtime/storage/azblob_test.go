@@ -416,4 +416,115 @@ var _ = Describe("Azblob", func() {
 			})
 		})
 	})
+
+	Context("Exists", func() {
+		When("Azure returns a successful response", func() {
+			Context("and the file exists", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(ctrl)
+				mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(ctrl)
+				mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(ctrl)
+
+				storagePlugin := &AzblobStorageService{
+					client: mockAzblob,
+				}
+
+				It("should should return true", func() {
+					By("Retrieving the Container URL for the requested bucket")
+					mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+					By("Retrieving the Blob URL for the requested file")
+					mockContainer.EXPECT().NewBlockBlobURL("test-file").Times(1).Return(mockBlob)
+
+					By("Calling GetProperties on the file")
+					mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&azblob.BlobGetPropertiesResponse{}, nil)
+
+					By("The file returning that it exists")
+					exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+
+					By("Not returning an error")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					By("Returning true")
+					Expect(exists).To(BeTrue())
+
+					ctrl.Finish()
+				})
+			})
+
+			Context("and the file does not exist", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(ctrl)
+				mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(ctrl)
+				mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(ctrl)
+				mockError := mock_azblob.NewMockStorageError(ctrl)
+
+				storagePlugin := &AzblobStorageService{
+					client: mockAzblob,
+				}
+
+				It("should should return false", func() {
+					By("Retrieving the Container URL for the requested bucket")
+					mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+					By("Retrieving the Blob URL for the requested file")
+					mockContainer.EXPECT().NewBlockBlobURL("test-file").Times(1).Return(mockBlob)
+
+					By("Producing a service code of azblob.ServiceCodeBlobNotFound")
+					mockError.EXPECT().ServiceCode().Times(1).Return(azblob.ServiceCodeBlobNotFound)
+
+					By("Calling GetProperties on the file")
+					mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, mockError)
+
+					By("The file returning that it exists")
+					exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+
+					By("Not returning an error")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					By("Returning false")
+					Expect(exists).To(BeFalse())
+
+					ctrl.Finish()
+				})
+			})
+		})
+
+		When("Azure returns an error", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockAzblob := mock_azblob.NewMockAzblobServiceUrlIface(ctrl)
+			mockContainer := mock_azblob.NewMockAzblobContainerUrlIface(ctrl)
+			mockBlob := mock_azblob.NewMockAzblobBlockBlobUrlIface(ctrl)
+			mockError := mock_azblob.NewMockStorageError(ctrl)
+
+			storagePlugin := &AzblobStorageService{
+				client: mockAzblob,
+			}
+
+			It("should should return an error", func() {
+				By("Retrieving the Container URL for the requested bucket")
+				mockAzblob.EXPECT().NewContainerURL("my-bucket").Times(1).Return(mockContainer)
+
+				By("Retrieving the Blob URL for the requested file")
+				mockContainer.EXPECT().NewBlockBlobURL("test-file").Times(1).Return(mockBlob)
+
+				By("Producing a service code of azblob.ServiceCodeInternalError")
+				mockError.EXPECT().ServiceCode().Times(1).Return(azblob.ServiceCodeInternalError)
+
+				By("Calling GetProperties on the file")
+				mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, mockError)
+
+				By("The file returning that it exists")
+				exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+
+				By("Not returning an error")
+				Expect(err).Should(HaveOccurred())
+
+				By("Returning false")
+				Expect(exists).To(BeFalse())
+
+				ctrl.Finish()
+			})
+		})
+	})
 })

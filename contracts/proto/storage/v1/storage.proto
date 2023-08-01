@@ -23,6 +23,8 @@ service StorageService {
   rpc PreSignUrl (StoragePreSignUrlRequest) returns (StoragePreSignUrlResponse);
   // List files currently in the bucket
   rpc ListFiles (StorageListFilesRequest) returns (StorageListFilesResponse);
+  // Determine is an object exists in a bucket
+  rpc Exists (StorageExistsRequest) returns (StorageExistsResponse);
 }
 
 // Request to put (create/update) a storage item
@@ -103,4 +105,14 @@ message File {
 message StorageListFilesResponse {
   // keys of the files in the bucket
   repeated File files = 1;
+}
+
+message StorageExistsRequest {
+  string bucket = 1;
+  // Key of item to retrieve
+  string key = 2 [(validate.rules).string = {min_len: 1}];
+}
+
+message StorageExistsResponse {
+  bool exists = 1;
 }

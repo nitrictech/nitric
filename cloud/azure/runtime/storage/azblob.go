@@ -228,6 +228,34 @@ func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string, opt
 	return files, nil
 }
 
+func (s *AzblobStorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
+	newErr := errors.ErrorsWithScope(
+		"AzblobStorageService.Exists",
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
+	)
+
+	bUrl := s.getBlobUrl(bucket, key)
+
+	// Call get properties and use error to determine existence
+	_, err := bUrl.GetProperties(context.TODO(), azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
+
+	//nolint:all
+	if storageErr, ok := err.(azblob.StorageError); ok {
+		if storageErr.ServiceCode() == azblob.ServiceCodeBlobNotFound {
+			return false, nil
+		}
+	}
+
+	if err != nil {
+		return false, newErr(codes.Internal, "error getting blob properties", err)
+	}
+
+	return true, nil
+}
+
 const expiryBuffer = 2 * time.Minute
 
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {

@@ -274,6 +274,35 @@ func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string, op
 	return fis, nil
 }
 
+func (s *StorageStorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
+	newErr := errors.ErrorsWithScope(
+		"StorageStorageService.Exists",
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
+	)
+
+	bucketHandle, err := s.getBucketByName(bucket)
+	if err != nil {
+		return false, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
+	}
+
+	_, err = bucketHandle.Object(key).Attrs(ctx)
+	if errors.Is(err, storage.ErrObjectNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, newErr(codes.Internal, "error calling object.Attrs", err)
+	}
+
+	return true, nil
+}
+
 /**
  * Creates a new Storage Plugin for use in GCP
  */

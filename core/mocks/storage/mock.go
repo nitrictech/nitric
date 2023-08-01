@@ -49,6 +49,21 @@ func (mr *MockStorageServiceMockRecorder) Delete(arg0, arg1, arg2 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStorageService)(nil).Delete), arg0, arg1, arg2)
 }
 
+// Exists mocks base method.
+func (m *MockStorageService) Exists(arg0 context.Context, arg1, arg2 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockStorageServiceMockRecorder) Exists(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStorageService)(nil).Exists), arg0, arg1, arg2)
+}
+
 // ListFiles mocks base method.
 func (m *MockStorageService) ListFiles(arg0 context.Context, arg1 string, arg2 *storage.ListFileOptions) ([]*storage.FileInfo, error) {
 	m.ctrl.T.Helper()
