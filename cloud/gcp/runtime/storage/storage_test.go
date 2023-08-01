@@ -524,7 +524,7 @@ var _ = Describe("Storage", func() {
 					By("the object reference being valid")
 					mockBucket.EXPECT().Object("test-key").Return(mockObject)
 
-					By("returning object atributes")
+					By("returning object attributes")
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(&storage.ObjectAttrs{}, nil)
 
 					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
@@ -564,7 +564,7 @@ var _ = Describe("Storage", func() {
 					By("the object reference being valid")
 					mockBucket.EXPECT().Object("test-key").Return(mockObject)
 
-					By("returning object atributes")
+					By("returning object attributes")
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, storage.ErrObjectNotExist)
 
 					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
@@ -604,7 +604,7 @@ var _ = Describe("Storage", func() {
 					By("the object reference being valid")
 					mockBucket.EXPECT().Object("test-key").Return(mockObject)
 
-					By("returning object atributes")
+					By("returning object attributes")
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, errors.New("unknown error"))
 
 					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")

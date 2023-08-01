@@ -278,7 +278,6 @@ var _ = Describe("S3", func() {
 						Expect(exists).To(Equal(false))
 					})
 				})
-
 			})
 		})
 	})

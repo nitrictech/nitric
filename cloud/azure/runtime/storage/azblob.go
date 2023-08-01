@@ -239,11 +239,12 @@ func (s *AzblobStorageService) Exists(ctx context.Context, bucket string, key st
 
 	bUrl := s.getBlobUrl(bucket, key)
 
-	// Call get properties and use error to determine existance
+	// Call get properties and use error to determine existence
 	_, err := bUrl.GetProperties(context.TODO(), azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
 
-	if storageErr, ok := err.(azblob.StorageError); ok {
-		if storageErr.ServiceCode() == azblob.ServiceCodeBlobNotFound {
+	var storageError azblob.StorageError
+	if errors.As(err, storageError) {
+		if storageError.ServiceCode() == azblob.ServiceCodeBlobNotFound {
 			return false, nil
 		}
 	}

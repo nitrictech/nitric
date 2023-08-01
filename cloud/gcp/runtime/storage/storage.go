@@ -293,7 +293,7 @@ func (s *StorageStorageService) Exists(ctx context.Context, bucket string, key s
 	}
 
 	_, err = bucketHandle.Object(key).Attrs(ctx)
-	if err == storage.ErrObjectNotExist {
+	if errors.Is(err, storage.ErrObjectNotExist) {
 		return false, nil
 	}
 	if err != nil {
@@ -323,8 +323,6 @@ func New() (plugin.StorageService, error) {
 	if err != nil {
 		return nil, fmt.Errorf("storage client error: %w", err)
 	}
-
-	client.Bucket("test").Object("test").Attrs(ctx)
 
 	return &StorageStorageService{
 		client:    ifaces_gcloud_storage.AdaptStorageClient(client),
