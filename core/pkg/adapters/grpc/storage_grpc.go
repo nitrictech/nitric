@@ -149,6 +149,25 @@ func (s *StorageServiceServer) ListFiles(ctx context.Context, req *pb.StorageLis
 	}
 }
 
+func (s *StorageServiceServer) Exists(ctx context.Context, req *pb.StorageExistsRequest) (*pb.StorageExistsResponse, error) {
+	if err := s.checkPluginRegistered(); err != nil {
+		return nil, err
+	}
+
+	if err := req.ValidateAll(); err != nil {
+		return nil, newGrpcErrorWithCode(codes.InvalidArgument, "StorageService.Exists", err)
+	}
+
+	exists, err := s.storagePlugin.Exists(ctx, req.Bucket, req.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.StorageExistsResponse{
+		Exists: exists,
+	}, nil
+}
+
 func NewStorageServiceServer(storagePlugin storage.StorageService) pb.StorageServiceServer {
 	return &StorageServiceServer{
 		storagePlugin: storagePlugin,

@@ -43,6 +43,7 @@ type AzblobBlockBlobUrlIface interface {
 	Download(context.Context, int64, int64, azblob.BlobAccessConditions, bool, azblob.ClientProvidedKeyOptions) (AzblobDownloadResponse, error)
 	Upload(context.Context, io.ReadSeeker, azblob.BlobHTTPHeaders, azblob.Metadata, azblob.BlobAccessConditions, azblob.AccessTierType, azblob.BlobTagsMap, azblob.ClientProvidedKeyOptions) (*azblob.BlockBlobUploadResponse, error)
 	Delete(context.Context, azblob.DeleteSnapshotsOptionType, azblob.BlobAccessConditions) (*azblob.BlobDeleteResponse, error)
+	GetProperties(context.Context, azblob.BlobAccessConditions, azblob.ClientProvidedKeyOptions) (*azblob.BlobGetPropertiesResponse, error)
 }
 
 // AzblobDownloadResponse - Mockable client interface

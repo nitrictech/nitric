@@ -140,6 +140,21 @@ func (m *MockObjectHandle) EXPECT() *MockObjectHandleMockRecorder {
 	return m.recorder
 }
 
+// Attrs mocks base method.
+func (m *MockObjectHandle) Attrs(arg0 context.Context) (*storage.ObjectAttrs, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Attrs", arg0)
+	ret0, _ := ret[0].(*storage.ObjectAttrs)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Attrs indicates an expected call of Attrs.
+func (mr *MockObjectHandleMockRecorder) Attrs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Attrs", reflect.TypeOf((*MockObjectHandle)(nil).Attrs), arg0)
+}
+
 // Delete mocks base method.
 func (m *MockObjectHandle) Delete(arg0 context.Context) error {
 	m.ctrl.T.Helper()

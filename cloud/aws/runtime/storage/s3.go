@@ -276,6 +276,33 @@ func (s *S3StorageService) ListFiles(ctx context.Context, bucket string, options
 	}
 }
 
+func (s *S3StorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
+	newErr := errors.ErrorsWithScope(
+		"S3StorageService.Exists",
+		map[string]interface{}{
+			"bucket": bucket,
+			"key":    key,
+		},
+	)
+
+	b, err := s.getBucketName(ctx, bucket)
+	if err != nil {
+		return false, newErr(codes.Internal, "unable to locate bucket", err)
+	}
+
+	_, err = s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: b,
+		Key:    aws.String(key),
+	})
+
+	// TODO: Handle specific error types
+	if err != nil {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // New creates a new default S3 storage plugin
 func New(provider core.AwsProvider) (storage.StorageService, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")

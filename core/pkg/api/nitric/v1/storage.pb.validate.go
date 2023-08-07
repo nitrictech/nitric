@@ -1254,3 +1254,222 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageListFilesResponseValidationError{}
+
+// Validate checks the field values on StorageExistsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StorageExistsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageExistsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StorageExistsRequestMultiError, or nil if none found.
+func (m *StorageExistsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageExistsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Bucket
+
+	if utf8.RuneCountInString(m.GetKey()) < 1 {
+		err := StorageExistsRequestValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return StorageExistsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageExistsRequestMultiError is an error wrapping multiple validation
+// errors returned by StorageExistsRequest.ValidateAll() if the designated
+// constraints aren't met.
+type StorageExistsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageExistsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageExistsRequestMultiError) AllErrors() []error { return m }
+
+// StorageExistsRequestValidationError is the validation error returned by
+// StorageExistsRequest.Validate if the designated constraints aren't met.
+type StorageExistsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageExistsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageExistsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageExistsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageExistsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageExistsRequestValidationError) ErrorName() string {
+	return "StorageExistsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StorageExistsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageExistsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageExistsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageExistsRequestValidationError{}
+
+// Validate checks the field values on StorageExistsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StorageExistsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageExistsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StorageExistsResponseMultiError, or nil if none found.
+func (m *StorageExistsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageExistsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Exists
+
+	if len(errors) > 0 {
+		return StorageExistsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageExistsResponseMultiError is an error wrapping multiple validation
+// errors returned by StorageExistsResponse.ValidateAll() if the designated
+// constraints aren't met.
+type StorageExistsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageExistsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageExistsResponseMultiError) AllErrors() []error { return m }
+
+// StorageExistsResponseValidationError is the validation error returned by
+// StorageExistsResponse.Validate if the designated constraints aren't met.
+type StorageExistsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageExistsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageExistsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageExistsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageExistsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageExistsResponseValidationError) ErrorName() string {
+	return "StorageExistsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StorageExistsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageExistsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageExistsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageExistsResponseValidationError{}

@@ -45,6 +45,7 @@ type StorageService interface {
 	Delete(ctx context.Context, bucket string, key string) error
 	ListFiles(ctx context.Context, bucket string, options *ListFileOptions) ([]*FileInfo, error)
 	PreSignUrl(ctx context.Context, bucket string, key string, operation Operation, expiry uint32) (string, error)
+	Exists(ctx context.Context, bucket string, key string) (bool, error)
 }
 
 type UnimplementedStoragePlugin struct{}
@@ -69,4 +70,8 @@ func (*UnimplementedStoragePlugin) ListFiles(ctx context.Context, bucket string,
 
 func (*UnimplementedStoragePlugin) PreSignUrl(ctx context.Context, bucket string, key string, operation Operation, expiry uint32) (string, error) {
 	return "", fmt.Errorf("UNIMPLEMENTED")
+}
+
+func (*UnimplementedStoragePlugin) Exists(ctx context.Context, bucket string, key string) (bool, error) {
+	return false, fmt.Errorf("UNIMPLEMENTED")
 }
