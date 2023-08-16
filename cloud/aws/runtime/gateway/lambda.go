@@ -181,8 +181,21 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 		}
 	}
 
+	data := []byte(evt.Body)
+	if evt.IsBase64Encoded {
+		data, err = base64.StdEncoding.DecodeString(evt.Body)
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: 400,
+				Body:       "Error processing lambda request",
+				// TODO: Need to determine best case when to use this...
+				IsBase64Encoded: false,
+			}, nil
+		}
+	}
+
 	req := &v1.TriggerRequest{
-		Data: []byte(evt.Body),
+		Data: data,
 		Context: &v1.TriggerRequest_Http{
 			Http: &v1.HttpTriggerContext{
 				Method:      evt.RequestContext.HTTP.Method,
