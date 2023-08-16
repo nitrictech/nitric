@@ -186,9 +186,8 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 		data, err = base64.StdEncoding.DecodeString(evt.Body)
 		if err != nil {
 			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       "Error processing lambda request",
-				// TODO: Need to determine best case when to use this...
+				StatusCode:      400,
+				Body:            "Error processing lambda request",
 				IsBase64Encoded: false,
 			}, nil
 		}
@@ -233,10 +232,9 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 	responseString := base64.StdEncoding.EncodeToString(response.Data)
 
 	return events.APIGatewayProxyResponse{
-		StatusCode: int(response.GetHttp().Status),
-		Headers:    lambdaHTTPHeaders,
-		Body:       responseString,
-		// TODO: Need to determine best case when to use this...
+		StatusCode:      int(response.GetHttp().Status),
+		Headers:         lambdaHTTPHeaders,
+		Body:            responseString,
 		IsBase64Encoded: true,
 	}, nil
 }
