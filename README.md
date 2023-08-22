@@ -4,7 +4,6 @@
   </a>
 </p>
 
-
 <h3 align="center">The cloud aware application framework</h3>
 
 <p align="center">
@@ -40,7 +39,6 @@ If you would like to know more about our future plans or what we are currently w
   <a href="https://github.com/nitrictech/jvm-sdk"><img src="https://skillicons.dev/icons?i=java"/></a>
 </p>
 
-
 ## Supported Clouds
 
 <p>
@@ -49,7 +47,7 @@ If you would like to know more about our future plans or what we are currently w
   <a href="./cloud/azure"><img src="https://skillicons.dev/icons?i=azure"/></a>
 </p>
 
-> These are supported out of the box, but you can also build custom providers as well
+> These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
 
 ## Documentation
 
