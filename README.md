@@ -31,23 +31,25 @@ If you would like to know more about our future plans or what we are currently w
 
 ## Supported Languages
 
-<p style="display:flex;gap:2em;justify-content:center;">
-  <a href="https://github.com/nitrictech/node-sdk"><img width="80" src="https://skillicons.dev/icons?i=js"/></a>
-  <a href="https://github.com/nitrictech/node-sdk"><img width="80" src="https://skillicons.dev/icons?i=ts"/></a>
-  <a href="https://github.com/nitrictech/python-sdk"><img width="80" src="https://skillicons.dev/icons?i=py"/></a>
-  <a href="https://github.com/nitrictech/go-sdk"><img width="80" src="https://skillicons.dev/icons?i=cs"/></a>
-  <a href="https://github.com/nitrictech/go-sdk"><img width="80" src="https://skillicons.dev/icons?i=go"/></a>
-  <a href="https://github.com/nitrictech/jvm-sdk"><img width="80" src="https://skillicons.dev/icons?i=java"/></a>
+<p>
+  <a href="https://github.com/nitrictech/node-sdk"><img src="https://skillicons.dev/icons?i=js"/></a>
+  <a href="https://github.com/nitrictech/node-sdk"><img src="https://skillicons.dev/icons?i=ts"/></a>
+  <a href="https://github.com/nitrictech/python-sdk"><img src="https://skillicons.dev/icons?i=py"/></a>
+  <a href="https://github.com/nitrictech/go-sdk"><img src="https://skillicons.dev/icons?i=cs"/></a>
+  <a href="https://github.com/nitrictech/go-sdk"><img src="https://skillicons.dev/icons?i=go"/></a>
+  <a href="https://github.com/nitrictech/jvm-sdk"><img src="https://skillicons.dev/icons?i=java"/></a>
 </p>
 
 
 ## Supported Clouds
 
-<p style="display:flex;gap:2em;justify-content:center;">
-  <a href="./cloud/aws"><img width="80" src="https://skillicons.dev/icons?i=aws"/></a>
-  <a href="./cloud/gcp"><img width="80" src="https://skillicons.dev/icons?i=gcp"/></a>
-  <a href="./cloud/azure"><img width="80" src="https://skillicons.dev/icons?i=azure"/></a>
+<p>
+  <a href="./cloud/aws"><img src="https://skillicons.dev/icons?i=aws"/></a>
+  <a href="./cloud/gcp"><img src="https://skillicons.dev/icons?i=gcp"/></a>
+  <a href="./cloud/azure"><img src="https://skillicons.dev/icons?i=azure"/></a>
 </p>
+
+> These are supported out of the box, but you can also build custom providers as well
 
 ## Documentation
 
