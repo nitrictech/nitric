@@ -4,8 +4,7 @@
   </a>
 </p>
 
-
-<h3 align="center">A cloud framework with infrastructure in code</h3>
+<h3 align="center">The cloud aware application framework</h3>
 
 <p align="center">
   <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?style=for-the-badge">
@@ -16,8 +15,6 @@
 </p>
 
 ## About Nitric
-
-
 
 [Nitric](https://nitric.io) is a framework for rapid development of cloud-native and serverless applications. Define your apps in terms of the resources they need, then write the code for serverless function based APIs, event subscribers and scheduled jobs.
 
@@ -31,15 +28,32 @@ Nitric makes it easy to architect cloud applications directly in application cod
 
 If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric Roadmap](https://github.com/orgs/nitrictech/projects/4).
 
+## Supported Languages
+
+<p>
+  <a href="https://github.com/nitrictech/node-sdk"><img src="https://skillicons.dev/icons?i=js"/></a>
+  <a href="https://github.com/nitrictech/node-sdk"><img src="https://skillicons.dev/icons?i=ts"/></a>
+  <a href="https://github.com/nitrictech/python-sdk"><img src="https://skillicons.dev/icons?i=py"/></a>
+  <a href="https://github.com/nitrictech/go-sdk"><img src="https://skillicons.dev/icons?i=go"/></a>
+  <a href="https://github.com/nitrictech/dotnet-sdk"><img src="https://skillicons.dev/icons?i=cs"/></a>
+  <a href="https://github.com/nitrictech/jvm-sdk"><img src="https://skillicons.dev/icons?i=java"/></a>
+</p>
+
+## Supported Clouds
+
+<p>
+  <a href="./cloud/aws"><img src="https://skillicons.dev/icons?i=aws"/></a>
+  <a href="./cloud/gcp"><img src="https://skillicons.dev/icons?i=gcp"/></a>
+  <a href="./cloud/azure"><img src="https://skillicons.dev/icons?i=azure"/></a>
+</p>
+
+> These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
+
 ## Documentation
 
 The full documentation is available at [nitric.io/docs](https://nitric.io/docs).
 
 The Nitric Framework is open source and encourages [code contributions](https://nitric.io/docs/contributions).
-
-## Status
-
-Nitric is currently in Public Preview. Anyone can use or deploy applications, but work remains and changes are likely. We’d love your feedback as we build additional functionality!
 
 ## Get in touch
 
