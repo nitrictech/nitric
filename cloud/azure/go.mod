@@ -34,6 +34,7 @@ require (
 	github.com/pulumi/pulumi-azure-native-sdk/operationalinsights v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
+	github.com/pulumi/pulumi-azure-native/sdk v1.93.0
 	github.com/pulumi/pulumi-azure/sdk/v4 v4.42.0
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.33.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2

@@ -42,6 +42,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
@@ -108,12 +109,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return item.GetSchedule() != nil
 		})
 
-		if len(schedules) > 0 {
-			// TODO: Add schedule support
-			// NOTE: Currently CRONTAB support is required, we either need to revisit the design of
-			// our scheduled expressions or implement a workaround or request a feature.
-			return fmt.Errorf("schedules are not currently supported for Azure deployments")
-		}
 
 		apis := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetApi() != nil
@@ -265,6 +260,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				if euConfig.ContainerApps != nil {
+					schedules := lo.Filter(schedules, func(item *deploy.Resource, idx int) bool {
+						return item.GetSchedule().Target.GetExecutionUnit() == eu.Name
+					})
+
 					apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
 						ResourceGroupName:             rg.Name,
 						Location:                      pulumi.String(details.Region),
@@ -280,6 +279,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						MongoDatabaseName:             mongodbName,
 						MongoDatabaseConnectionString: mongoConnectionString,
 						Config:                        *euConfig.ContainerApps,
+						Schedules:                     schedules,
 					}, pulumi.Parent(contEnv))
 					if err != nil {
 						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", eu.Name)
@@ -287,6 +287,23 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
 				}
+			}
+		}
+
+		for _, s := range schedules {
+			cAppTarget, ok := apps[s.GetSchedule().Target.GetExecutionUnit()]
+			if !ok {
+				return fmt.Errorf("could not find target %s for schedule %s", s.GetSchedule().Target, s.Name)
+			}
+
+			_, err := schedule.NewDaprCronBindingSchedule(ctx, s.Name, &schedule.ScheduleArgs{
+				ResourceGroupName: rg.Name,
+				Target:            cAppTarget,
+				Environment:       contEnv.ManagedEnv,
+				Cron:              s.GetSchedule().Cron,
+			})
+			if err != nil {
+				return err
 			}
 		}
 
