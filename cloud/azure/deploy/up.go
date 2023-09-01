@@ -108,8 +108,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		schedules := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetSchedule() != nil
 		})
-
-
 		apis := lo.Filter[*deploy.Resource](request.Spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetApi() != nil
 		})
