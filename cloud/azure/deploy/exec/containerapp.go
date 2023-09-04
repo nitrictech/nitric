@@ -28,6 +28,7 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
@@ -52,6 +53,7 @@ type ContainerAppArgs struct {
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
 	Config                        config.AzureContainerAppsConfig
+	Schedules                     []*deploy.Resource
 }
 
 type ContainerApp struct {
@@ -182,6 +184,11 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		}
 	}
 
+	// if this instance contains a schedule set the minimum instances to 1
+	if len(args.Schedules) > 0 {
+		args.Config.MinReplicas = lo.Max([]int{args.Config.MinReplicas, 1})
+	}
+
 	env := app.EnvironmentVarArray{
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("EVENT_TOKEN"),
@@ -247,6 +254,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		Location:             args.Location,
 		ManagedEnvironmentId: args.ManagedEnv.ID(),
 		Configuration: app.ConfigurationArgs{
+			ActiveRevisionsMode: pulumi.String("Single"),
 			Ingress: app.IngressArgs{
 				External:   pulumi.BoolPtr(true),
 				TargetPort: pulumi.Int(9001),
@@ -257,6 +265,12 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 					Username:          args.RegistryUser,
 					PasswordSecretRef: pulumi.String("pwd"),
 				},
+			},
+			Dapr: &app.DaprArgs{
+				AppId:       pulumi.String(appName),
+				AppPort:     pulumi.Int(9001),
+				AppProtocol: pulumi.String("http"),
+				Enabled:     pulumi.Bool(true),
 			},
 			Secrets: app.SecretArray{
 				app.SecretArgs{
