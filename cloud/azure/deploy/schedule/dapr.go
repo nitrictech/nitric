@@ -61,7 +61,7 @@ func NewDaprCronBindingSchedule(ctx *pulumi.Context, name string, args *Schedule
 			},
 			app.DaprMetadataArgs{
 				Name:  pulumi.String("route"),
-				Value: pulumi.Sprintf("/x-nitric-schedule/%s", normalizedName),
+				Value: pulumi.Sprintf("/x-nitric-schedule/%s?token=%s", normalizedName, args.Target.EventToken),
 			},
 		},
 		Scopes: pulumi.StringArray{
