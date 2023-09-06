@@ -151,6 +151,11 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 
 func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
+			ctx.SuccessString("text/plain", "success")
+			return
+		}
+
 		if !eventAuthorised(ctx) {
 			ctx.Error("Unauthorized", 401)
 			return
