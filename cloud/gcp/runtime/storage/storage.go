@@ -17,6 +17,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"io"
 	"time"
 
@@ -52,7 +54,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			if name, ok := b.Labels["x-nitric-name"]; ok {
+			if name, ok := b.Labels[tags.GetResourceNameKey(env.GetNitricStackName())]; ok && name == bucket {
 				s.cache[name] = s.client.Bucket(b.Name)
 			}
 		}

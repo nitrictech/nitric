@@ -22,8 +22,6 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsArn "github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -175,7 +173,7 @@ func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 	if a.cache == nil {
 		a.cache = make(map[string]map[string]string)
 
-		resourceNameKey := tags.GetResourceNameTagKey(a.stack)
+		resourceNameKey := tags.GetResourceNameKey(a.stack)
 
 		tagFilters := []types.TagFilter{{
 			Key: aws.String(resourceNameKey),

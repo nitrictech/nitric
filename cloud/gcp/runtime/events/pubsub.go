@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"time"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
@@ -32,6 +33,7 @@ import (
 	ifaces_cloudtasks "github.com/nitrictech/nitric/cloud/gcp/ifaces/cloudtasks"
 	ifaces_pubsub "github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/core"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
 	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
 	"github.com/nitrictech/nitric/core/pkg/plugins/events"
@@ -64,7 +66,9 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding topic labels: %s; %w", topic, err)
 			}
 
-			if name, ok := labels["x-nitric-name"]; ok {
+			resType, hasType := labels["x-nitric-type"]
+
+			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackName())]; ok && hasType && name == topic && resType == "topic" {
 				s.cache[name] = t
 			}
 		}
