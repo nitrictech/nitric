@@ -25,3 +25,6 @@ const AZURE_RESOURCE_GROUP = "AZURE_RESOURCE_GROUP"
 
 // AZURE_SUBSCRIPTION_ID - The subscription this azure resource belongs to
 const AZURE_SUBSCRIPTION_ID = "AZURE_SUBSCRIPTION_ID"
+
+// NITRIC_STACK - The stack the resource belongs to
+const NITRIC_STACK = "NITRIC_STACK"

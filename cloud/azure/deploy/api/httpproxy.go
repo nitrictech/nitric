@@ -29,7 +29,7 @@ import (
 )
 
 type AzureHttpProxyArgs struct {
-	StackID           pulumi.StringInput
+	StackID           string
 	ResourceGroupName pulumi.StringInput
 	OrgName           pulumi.StringInput
 	AdminEmail        pulumi.StringInput
@@ -91,7 +91,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err
