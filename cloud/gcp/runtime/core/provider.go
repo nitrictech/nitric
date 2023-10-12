@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"io"
 	"net/http"
 
@@ -69,8 +70,8 @@ type GenericIterator[T any] interface {
 	Next() (T, error)
 }
 
-func filter(stack string, name string) string {
-	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
+func filter(stackName string, name string) string {
+	return fmt.Sprintf("labels.%s:%s", tags.GetResourceNameKey(stackName), name)
 }
 
 func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*resource.DetailsResponse[any], error) {

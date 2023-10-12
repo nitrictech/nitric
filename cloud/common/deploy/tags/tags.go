@@ -14,11 +14,11 @@ func Tags(ctx *pulumi.Context, stackID string, name string) map[string]string {
 		"x-nitric-name":       name,
 		// New tag for resource identification
 		// Locate the unique stack by the presence of the key and the resource by its name
-		GetResourceNameTagKey(stackID): name,
+		GetResourceNameKey(stackID): name,
 	}
 }
 
-// GetResourceNameTagKey returns the key used to retrieve a resource's stack specific name from its tags.
-func GetResourceNameTagKey(stackID string) string {
+// GetResourceNameKey returns the key used to retrieve a resource's stack specific name from its tags.
+func GetResourceNameKey(stackID string) string {
 	return fmt.Sprintf("x-nitric-stack-%s", stackID)
 }

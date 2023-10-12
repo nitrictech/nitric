@@ -36,7 +36,7 @@ type PubSubTopic struct {
 
 type PubSubTopicArgs struct {
 	Location  string
-	StackID   pulumi.StringInput
+	StackID   string
 	ProjectId string
 
 	Topic *v1.Topic
@@ -52,8 +52,11 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
+	baseTags := common.Tags(ctx, args.StackID, name)
+	baseTags["x-nitric-type"] = "topic"
+
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(baseTags),
 	})
 	if err != nil {
 		return nil, err
