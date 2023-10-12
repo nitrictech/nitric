@@ -88,6 +88,9 @@ var (
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiManagementRT = ResouceType{Abbreviation: "api-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true}
 
+	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
+	ApiManagementServiceRT = ResouceType{Abbreviation: "api-mgmt", MaxLen: 50, AllowHyphen: true, AllowUpperCase: true}
+
 	ApiManagementProxyRT = ResouceType{Abbreviation: "httpproxy-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
 
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.

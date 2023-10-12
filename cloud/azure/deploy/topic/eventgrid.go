@@ -34,7 +34,7 @@ type AzureEventGridTopic struct {
 }
 
 type AzureEventGridTopicArgs struct {
-	StackID       pulumi.StringInput
+	StackID       string
 	ResourceGroup *resources.ResourceGroup
 }
 
@@ -49,7 +49,7 @@ func NewAzureEventGridTopic(ctx *pulumi.Context, name string, args *AzureEventGr
 	res.Topic, err = eventgrid.NewTopic(ctx, utils.ResourceName(ctx, res.Name, utils.EventGridRT), &eventgrid.TopicArgs{
 		ResourceGroupName: args.ResourceGroup.Name,
 		Location:          args.ResourceGroup.Location,
-		Tags:              common.Tags(ctx, args.StackID, res.Name),
+		Tags:              pulumi.ToStringMap(common.Tags(ctx, args.StackID, res.Name)),
 	})
 	if err != nil {
 		return nil, err

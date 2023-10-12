@@ -33,7 +33,7 @@ import (
 )
 
 type AzureApiManagementArgs struct {
-	StackID           pulumi.StringInput
+	StackID           string
 	ResourceGroupName pulumi.StringInput
 	OrgName           pulumi.StringInput
 	AdminEmail        pulumi.StringInput
@@ -106,7 +106,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementRT), &apimanagement.ApiManagementServiceArgs{
+	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementServiceRT), &apimanagement.ApiManagementServiceArgs{
 		ResourceGroupName: args.ResourceGroupName,
 		PublisherEmail:    args.AdminEmail,
 		PublisherName:     args.OrgName,
@@ -118,7 +118,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err
