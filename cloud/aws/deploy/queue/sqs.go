@@ -31,7 +31,7 @@ type SQSQueue struct {
 
 type SQSQueueArgs struct {
 	Queue   *v1.Queue
-	StackID pulumi.StringInput
+	StackID string
 }
 
 func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...pulumi.ResourceOption) (*SQSQueue, error) {
@@ -43,7 +43,7 @@ func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...p
 	}
 
 	queue, err := sqs.NewQueue(ctx, name, &sqs.QueueArgs{
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, err

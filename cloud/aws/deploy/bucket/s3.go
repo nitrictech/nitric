@@ -31,11 +31,11 @@ type S3Bucket struct {
 }
 
 type S3BucketArgs struct {
-	StackID pulumi.StringInput
+	StackID string
 	Bucket  *v1.Bucket
 }
 
-// Create a new S3 Bucket
+// NewS3Bucket creates new S3 Buckets
 func NewS3Bucket(ctx *pulumi.Context, name string, args *S3BucketArgs, opts ...pulumi.ResourceOption) (*S3Bucket, error) {
 	res := &S3Bucket{
 		Name: name,
@@ -46,7 +46,7 @@ func NewS3Bucket(ctx *pulumi.Context, name string, args *S3BucketArgs, opts ...p
 	}
 
 	res.S3, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 	})
 	if err != nil {
 		return nil, errors.WithMessage(err, "s3 bucket "+name)

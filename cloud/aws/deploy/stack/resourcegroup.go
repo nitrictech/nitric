@@ -30,7 +30,7 @@ type AwsResourceGroup struct {
 }
 
 type AwsResourceGroupArgs struct {
-	StackID pulumi.StringInput
+	StackID string
 }
 
 func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGroupArgs, opts ...pulumi.ResourceOption) (*AwsResourceGroup, error) {
@@ -41,7 +41,7 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 		return nil, err
 	}
 
-	rgQueryJSON := args.StackID.ToStringOutput().ApplyT(func(sid string) (string, error) {
+	rgQueryJSON := pulumi.String(args.StackID).ToStringOutput().ApplyT(func(sid string) (string, error) {
 		b, err := json.Marshal(map[string]interface{}{
 			"ResourceTypeFilters": []string{"AWS::AllSupported"},
 			"TagFilters": []interface{}{

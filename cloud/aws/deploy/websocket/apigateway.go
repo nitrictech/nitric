@@ -32,7 +32,7 @@ type AwsWebsocketApiGatewayArgs struct {
 	ConnectTarget    *exec.LambdaExecUnit
 	DisconnectTarget *exec.LambdaExecUnit
 
-	StackID pulumi.StringInput
+	StackID string
 }
 
 type AwsWebsocketApiGateway struct {
@@ -54,7 +54,7 @@ func NewAwsWebsocketApiGateway(ctx *pulumi.Context, name string, args *AwsWebsoc
 
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		ProtocolType: pulumi.String("WEBSOCKET"),
-		Tags:         common.Tags(ctx, args.StackID, name),
+		Tags:         pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 		// TODO: We won't actually be using this, but it is required.
 		// Instead we'll be using the $default route
 		RouteSelectionExpression: pulumi.String("$request.body.action"),
@@ -164,7 +164,7 @@ func NewAwsWebsocketApiGateway(ctx *pulumi.Context, name string, args *AwsWebsoc
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
-		Tags:       common.Tags(ctx, args.StackID, name+"DefaultStage"),
+		Tags:       pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"DefaultStage")),
 	}, opts...)
 	if err != nil {
 		return nil, err
