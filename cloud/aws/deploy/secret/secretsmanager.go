@@ -32,7 +32,7 @@ type SecretsManagerSecret struct {
 }
 
 type SecretsManagerSecretArgs struct {
-	StackID pulumi.StringInput
+	StackID string
 	// Import an existing secret
 	Import string
 	Secret *v1.Secret
@@ -50,6 +50,8 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 		return nil, err
 	}
 
+	tags := common.Tags(ctx, args.StackID, name)
+
 	if args.Import != "" {
 		secretLookup, err := secretsmanager.LookupSecret(ctx, &secretsmanager.LookupSecretArgs{
 			Arn: aws.String(args.Import),
@@ -58,24 +60,14 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 			return nil, err
 		}
 
-		// apply nitric tags
-		// This will apply nitric tags for resource resolution
-		_ = args.StackID.ToStringOutput().ApplyT(func(stackId string) (bool, error) {
-			_, err := args.Client.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
-				ResourceARNList: aws.StringSlice([]string{secretLookup.Arn}),
-				Tags: aws.StringMap(map[string]string{
-					"x-nitric-project":    ctx.Project(),
-					"x-nitric-name":       name,
-					"x-nitric-stack-name": ctx.Stack(),
-					"x-nitric-stack":      stackId,
-				}),
-			})
-			if err != nil {
-				return false, err
-			}
-
-			return true, nil
+		_, err = args.Client.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+			ResourceARNList: aws.StringSlice([]string{secretLookup.Arn}),
+			Tags:            aws.StringMap(tags),
 		})
+
+		if err != nil {
+			return nil, err
+		}
 
 		// import an existing secret
 		res.SecretsManager, err = secretsmanager.GetSecret(
@@ -92,7 +84,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 	} else {
 		// create a new secret
 		res.SecretsManager, err = secretsmanager.NewSecret(ctx, name, &secretsmanager.SecretArgs{
-			Tags: common.Tags(ctx, args.StackID, name),
+			Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
 		})
 		if err != nil {
 			return nil, err

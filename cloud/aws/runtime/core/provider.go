@@ -20,6 +20,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsArn "github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -171,16 +175,11 @@ func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 	if a.cache == nil {
 		a.cache = make(map[string]map[string]string)
 
-		tagFilters := []types.TagFilter{{
-			Key: aws.String("x-nitric-name"),
-		}}
+		resourceNameKey := tags.GetResourceNameTagKey(a.stack)
 
-		if a.stack != "" {
-			tagFilters = append(tagFilters, types.TagFilter{
-				Key:    aws.String("x-nitric-stack"),
-				Values: []string{a.stack},
-			})
-		}
+		tagFilters := []types.TagFilter{{
+			Key: aws.String(resourceNameKey),
+		}}
 
 		paginator := resourcegroupstaggingapi.NewGetResourcesPaginator(a.client, &resourcegroupstaggingapi.GetResourcesInput{
 			TagFilters: tagFilters,
@@ -206,7 +205,7 @@ func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 
 			for _, tm := range out.ResourceTagMappingList {
 				for _, t := range tm.Tags {
-					if *t.Key == "x-nitric-name" {
+					if *t.Key == resourceNameKey {
 						// Get the resource type from the ARN
 						typ, err := resourceTypeFromArn(*tm.ResourceARN)
 						if err != nil {
