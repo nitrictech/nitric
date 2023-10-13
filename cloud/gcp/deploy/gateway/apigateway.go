@@ -24,8 +24,6 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
-	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
-
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
