@@ -18,6 +18,7 @@ package stack
 
 import (
 	"encoding/json"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -46,8 +47,10 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 			"ResourceTypeFilters": []string{"AWS::AllSupported"},
 			"TagFilters": []interface{}{
 				map[string]interface{}{
-					"Key":    "x-nitric-stack",
-					"Values": []string{sid},
+					//"Key":    "x-nitric-stack",
+					//"Values": []string{sid},
+					// TODO: validate this key only filter works
+					"Key": tags.GetResourceNameKey(sid),
 				},
 			},
 		})

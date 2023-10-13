@@ -65,7 +65,7 @@ type AwsProvider interface {
 
 // Aws core utility provider
 type awsProviderImpl struct {
-	stack     string
+	stackID   string
 	cacheLock sync.Mutex
 	client    resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
 	apiClient apigatewayv2iface.ApiGatewayV2API
@@ -173,7 +173,7 @@ func (a *awsProviderImpl) populateCache(ctx context.Context) error {
 	if a.cache == nil {
 		a.cache = make(map[string]map[string]string)
 
-		resourceNameKey := tags.GetResourceNameKey(a.stack)
+		resourceNameKey := tags.GetResourceNameKey(a.stackID)
 
 		tagFilters := []types.TagFilter{{
 			Key: aws.String(resourceNameKey),
@@ -237,7 +237,7 @@ func (a *awsProviderImpl) GetResources(ctx context.Context, typ AwsResource) (ma
 
 func New() (AwsProvider, error) {
 	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
-	stack := utils.GetEnv("NITRIC_STACK", "")
+	stackID := utils.GetEnv("NITRIC_STACK_ID", "")
 
 	cfg, sessionError := config.LoadDefaultConfig(
 		context.TODO(),
@@ -255,7 +255,7 @@ func New() (AwsProvider, error) {
 	client := resourcegroupstaggingapi.NewFromConfig(cfg)
 
 	return &awsProviderImpl{
-		stack:     stack,
+		stackID:   stackID,
 		client:    client,
 		cacheLock: sync.Mutex{},
 		apiClient: apiClient,

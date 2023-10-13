@@ -19,6 +19,7 @@ package exec
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/avast/retry-go"
 	"github.com/aws/aws-sdk-go/aws"
@@ -81,7 +82,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 	res.Role, err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(tmpJSON),
-		Tags:             pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"LambdaRole")),
+		Tags:             pulumi.ToStringMap(common.Tags(args.StackID, name+"LambdaRole", resources.ExecutionUnit)),
 	}, opts...)
 	if err != nil {
 		return nil, err
@@ -145,7 +146,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 	envVars := pulumi.StringMap{
 		"NITRIC_ENVIRONMENT":     pulumi.String("cloud"),
-		"NITRIC_STACK":           pulumi.String(args.StackID),
+		"NITRIC_STACK_ID":        pulumi.String(args.StackID),
 		"MIN_WORKERS":            pulumi.String(fmt.Sprint(args.Compute.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
@@ -176,7 +177,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		Timeout:     pulumi.IntPtr(args.Config.Timeout),
 		PackageType: pulumi.String("Image"),
 		Role:        res.Role.Arn,
-		Tags:        pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:        pulumi.ToStringMap(common.Tags(args.StackID, name, resources.ExecutionUnit)),
 		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)

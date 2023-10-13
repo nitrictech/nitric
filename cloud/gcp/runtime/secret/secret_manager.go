@@ -87,7 +87,7 @@ func (s *secretManagerSecretService) buildSecretVersionName(ctx context.Context,
 func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.Secret) (*secretmanagerpb.Secret, error) {
 	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
-		Filter: fmt.Sprintf("labels.%s=%s", tags.GetResourceNameKey(env.GetNitricStackName()), sec.Name),
+		Filter: fmt.Sprintf("labels.%s=%s", tags.GetResourceNameKey(env.GetNitricStackID()), sec.Name),
 	})
 
 	result, err := iter.Next()
@@ -213,7 +213,7 @@ func New() (secret.SecretService, error) {
 	return &secretManagerSecretService{
 		client:    client,
 		projectId: credentials.ProjectID,
-		stackName: utils.GetEnv("NITRIC_STACK", ""),
+		stackName: utils.GetEnv("NITRIC_STACK_ID", ""),
 		cache:     make(map[string]string),
 	}, nil
 }

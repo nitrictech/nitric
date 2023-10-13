@@ -30,7 +30,6 @@ type AzureStorageBucket struct {
 }
 
 type AzureStorageBucketArgs struct {
-	StackID       string
 	Account       *storage.StorageAccount
 	ResourceGroup *resources.ResourceGroup
 }

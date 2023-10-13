@@ -18,6 +18,7 @@ package api
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -63,7 +64,7 @@ func NewAwsHttpProxy(ctx *pulumi.Context, name string, args *AwsHttpProxyArgs, o
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:           pulumi.ToStringMap(common.Tags(args.StackID, name, resources.HttpProxy)),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
@@ -74,7 +75,7 @@ func NewAwsHttpProxy(ctx *pulumi.Context, name string, args *AwsHttpProxyArgs, o
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
-		Tags:       pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"DefaultStage")),
+		Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name+"DefaultStage", resources.HttpProxy)),
 	}, opts...)
 	if err != nil {
 		return nil, err

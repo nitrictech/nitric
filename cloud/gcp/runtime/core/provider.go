@@ -170,7 +170,7 @@ func (g *gcpProviderImpl) GetServiceAccountEmail() (string, error) {
 }
 
 func New() (GcpProvider, error) {
-	stack := utils.GetEnv("NITRIC_STACK", "")
+	stack := utils.GetEnv("NITRIC_STACK_ID", "")
 	region := utils.GetEnv("GCP_REGION", "")
 
 	apiClient, err := apigateway.NewClient(context.TODO())

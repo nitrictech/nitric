@@ -66,9 +66,9 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding topic labels: %s; %w", topic, err)
 			}
 
-			resType, hasType := labels["x-nitric-type"]
+			resType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
 
-			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackName())]; ok && hasType && name == topic && resType == "topic" {
+			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && hasType && name == topic && resType == "topic" {
 				s.cache[name] = t
 			}
 		}
