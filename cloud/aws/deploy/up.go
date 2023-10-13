@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"runtime/debug"
 
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/aws/aws-sdk-go/aws"

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi3"
