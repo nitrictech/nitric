@@ -18,6 +18,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -118,7 +119,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
 	})
 	if err != nil {
 		return nil, err

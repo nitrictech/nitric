@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"runtime/debug"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -178,7 +179,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			case *deploy.Resource_ExecutionUnit:
 				repo, err := ecr.NewRepository(ctx, res.Name, &ecr.RepositoryArgs{
 					ForceDelete: pulumi.BoolPtr(true),
-					Tags:        pulumi.ToStringMap(common.Tags(ctx, stackID, res.Name)),
+					Tags:        pulumi.ToStringMap(common.Tags(stackID, res.Name, resources.ExecutionUnit)),
 				})
 				if err != nil {
 					return err

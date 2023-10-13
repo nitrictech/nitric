@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 
@@ -51,6 +52,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
+		stackID := env.GetNitricStackID()
 		for {
 			t, err := topics.Next()
 			if errors.Is(err, iterator.Done) {
@@ -65,9 +67,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding queue labels: %s; %w", queue, err)
 			}
 
-			resType, hasType := labels["x-nitric-type"]
+			resType, hasType := labels[tags.GetResourceTypeKey(stackID)]
 
-			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackName())]; ok && name == queue && hasType && resType == "queue" {
+			if name, ok := labels[tags.GetResourceNameKey(stackID)]; ok && name == queue && hasType && resType == "queue" {
 				s.cache[name] = t
 			}
 		}
@@ -86,9 +88,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 // we use this behavior to emulate a queue.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue string) (ifaces_pubsub.Subscription, error) {
+func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName string) (ifaces_pubsub.Subscription, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic, err := s.getPubsubTopicFromName(queue)
+	topic, err := s.getPubsubTopicFromName(queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +111,9 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue str
 			return nil, fmt.Errorf("failed to retrieve pull subscription labels for topic: %s\n%w", topic.ID(), err)
 		}
 
-		resType, hasType := labels["x-nitric-type"]
-		// The subscription's 'nitric name' is its topic name
-		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackName())]; hasType && ok && name == queue && resType == "queue-subscription" {
-			if name == queue {
+		resourceType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
+		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; hasType && ok && resourceType == resources.Queue {
+			if name == queueName {
 				return sub, nil
 			}
 		}

@@ -16,6 +16,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
@@ -66,7 +67,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 	}
 
 	topic, err := pubsub.NewTopic(ctx, name+"-topic", &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Bucket)),
 	})
 	if err != nil {
 		return nil, err

@@ -19,6 +19,7 @@ package secret
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
@@ -50,7 +51,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 		return nil, err
 	}
 
-	tags := common.Tags(ctx, args.StackID, name)
+	tags := common.Tags(args.StackID, name, resources.Secret)
 
 	if args.Import != "" {
 		secretLookup, err := secretsmanager.LookupSecret(ctx, &secretsmanager.LookupSecretArgs{
@@ -84,7 +85,7 @@ func NewSecretsManagerSecret(ctx *pulumi.Context, name string, args *SecretsMana
 	} else {
 		// create a new secret
 		res.SecretsManager, err = secretsmanager.NewSecret(ctx, name, &secretsmanager.SecretArgs{
-			Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+			Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Secret)),
 		})
 		if err != nil {
 			return nil, err

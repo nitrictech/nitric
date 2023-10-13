@@ -74,8 +74,8 @@ var _ = Describe("AwsProvider", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
 			provider := &awsProviderImpl{
-				client: mockClient,
-				stack:  "test-stack",
+				client:  mockClient,
+				stackID: "test-stackID",
 			}
 
 			It("should return available resources", func() {
@@ -87,8 +87,8 @@ var _ = Describe("AwsProvider", func() {
 							Key:   aws.String("x-nitric-name"),
 							Value: aws.String("test"),
 						}, {
-							Key:   aws.String("x-nitric-stack"),
-							Value: aws.String("test-stack"),
+							Key:   aws.String("x-nitric-stackID"),
+							Value: aws.String("test-stackID"),
 						}},
 					}},
 				}, nil)

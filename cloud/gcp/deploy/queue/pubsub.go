@@ -18,6 +18,7 @@ package queue
 
 import (
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -49,22 +50,18 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 		return nil, err
 	}
 
-	topicTags := common.Tags(ctx, args.StackID, name)
-	topicTags["x-nitric-type"] = "queue"
+	resourceLabels := common.Tags(args.StackID, name, resources.Queue)
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(topicTags),
+		Labels: pulumi.ToStringMap(resourceLabels),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	subscriptionTags := common.Tags(ctx, args.StackID, name)
-	subscriptionTags["x-nitric-type"] = "queue-subscription"
-
 	res.Subscription, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
 		Topic:  res.PubSub.Name,
-		Labels: pulumi.ToStringMap(subscriptionTags),
+		Labels: pulumi.ToStringMap(resourceLabels),
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),
 		},

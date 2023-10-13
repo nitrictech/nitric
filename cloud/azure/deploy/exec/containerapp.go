@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"net/http"
 	"time"
 
@@ -199,7 +201,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			Value: pulumi.String("cloud"),
 		},
 		app.EnvironmentVarArgs{
-			Name:  pulumi.String("NITRIC_STACK"),
+			Name:  pulumi.String(core.NITRIC_STACK_ID),
 			Value: pulumi.String(args.StackID),
 		},
 		app.EnvironmentVarArgs{
@@ -295,7 +297,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.ExecutionUnit)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
 				MaxReplicas: pulumi.Int(args.Config.MaxReplicas),

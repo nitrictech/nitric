@@ -17,6 +17,7 @@
 package secret
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
@@ -34,8 +35,7 @@ type SecretManagerSecretArgs struct {
 	Location  string
 	StackID   string
 	StackName string
-
-	Secret *v1.Secret
+	Secret    *v1.Secret
 }
 
 func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManagerSecretArgs, opts ...pulumi.ResourceOption) (*SecretManagerSecret, error) {
@@ -55,7 +55,7 @@ func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManage
 			Automatic: pulumi.Bool(true),
 		},
 		SecretId: secId,
-		Labels:   pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels:   pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Secret)),
 	})
 	if err != nil {
 		return nil, err

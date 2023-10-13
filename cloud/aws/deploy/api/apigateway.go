@@ -18,6 +18,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
@@ -133,7 +134,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Tags:           pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
@@ -144,7 +145,7 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
-		Tags:       pulumi.ToStringMap(common.Tags(ctx, args.StackID, name+"DefaultStage")),
+		Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name+"DefaultStage", resources.API)),
 	}, opts...)
 	if err != nil {
 		return nil, err

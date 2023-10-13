@@ -19,6 +19,7 @@ package gateway
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -57,9 +58,11 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 
 	opts = append(opts, pulumi.Parent(res))
 
+	resourceLabels := common.Tags(args.StackID, name, resources.HttpProxy)
+
 	res.Api, err = apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),
-		Labels: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels: pulumi.ToStringMap(resourceLabels),
 	}, opts...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api "+name)
@@ -115,7 +118,7 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 				},
 			},
 		},
-		Labels: pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels: pulumi.ToStringMap(resourceLabels),
 	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api config")
@@ -126,7 +129,7 @@ func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ..
 		DisplayName: pulumi.String(name + "-gateway"),
 		GatewayId:   pulumi.String(name + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", args.ProjectId, res.Api.ApiId, config.ApiConfigId),
-		Labels:      pulumi.ToStringMap(common.Tags(ctx, args.StackID, name)),
+		Labels:      pulumi.ToStringMap(resourceLabels),
 	}, opts...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api gateway")

@@ -18,9 +18,8 @@ import (
 	"os"
 )
 
-// TODO: Move the behavior to common?
-const NITRIC_STACK = "NITRIC_STACK"
+const NITRIC_STACK_ID = "NITRIC_STACK_ID"
 
-func GetNitricStackName() string {
-	return os.Getenv(NITRIC_STACK)
+func GetNitricStackID() string {
+	return os.Getenv(NITRIC_STACK_ID)
 }

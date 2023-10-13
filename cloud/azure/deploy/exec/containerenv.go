@@ -18,6 +18,7 @@ package exec
 
 import (
 	"fmt"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	app "github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
@@ -147,7 +148,7 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(ctx, args.StackID, ctx.Stack()+"Kube")),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, ctx.Stack()+"Kube", resources.ExecutionUnit)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err

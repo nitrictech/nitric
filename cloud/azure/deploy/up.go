@@ -17,6 +17,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"runtime/debug"
 	"strings"
 
@@ -139,7 +140,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
 			Location: pulumi.String(details.Region),
-			Tags:     pulumi.ToStringMap(common.Tags(ctx, stackID, ctx.Stack())),
+			Tags:     pulumi.ToStringMap(common.Tags(stackID, ctx.Stack(), nitricresources.Stack)),
 		})
 		if err != nil {
 			return errors.WithMessage(err, "resource group create")
@@ -169,7 +170,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				},
 				TenantId: pulumi.String(clientConfig.TenantId),
 			},
-			Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, kvName)),
+			Tags: pulumi.ToStringMap(common.Tags(stackID, kvName, nitricresources.Stack)),
 		})
 		if err != nil {
 			return err
@@ -188,7 +189,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				Sku: azureStorage.SkuArgs{
 					Name: pulumi.String(storage.SkuName_Standard_LRS),
 				},
-				Tags: pulumi.ToStringMap(common.Tags(ctx, stackID, accName)),
+				Tags: pulumi.ToStringMap(common.Tags(stackID, accName, nitricresources.Stack)),
 			})
 			if err != nil {
 				return err
@@ -212,7 +213,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// For each queue create a new queue
 		for _, q := range queues {
 			_, err := queue.NewAzureStorageQueue(ctx, q.Name, &queue.AzureStorageQueueArgs{
-				StackID:       stackID,
 				Account:       storageAccount,
 				ResourceGroup: rg,
 			})
@@ -315,7 +315,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// For each bucket create a new bucket
 		for _, b := range buckets {
 			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
-				StackID:       stackID,
 				Account:       storageAccount,
 				ResourceGroup: rg,
 			})
