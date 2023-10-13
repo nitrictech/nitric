@@ -25,11 +25,13 @@ import (
 	"github.com/samber/lo"
 )
 
-type RawConfig = AbstractConfig[*RawConfigItem]
-type RawConfigItem struct {
-	Extras    map[string]any `mapstructure:",remain"`
-	Telemetry int
-}
+type (
+	RawConfig     = AbstractConfig[*RawConfigItem]
+	RawConfigItem struct {
+		Extras    map[string]any `mapstructure:",remain"`
+		Telemetry int
+	}
+)
 
 type AbstractItem = any
 

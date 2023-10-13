@@ -7,9 +7,6 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
-sec:
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest ./...
-
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run --fix
@@ -18,11 +15,13 @@ lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
 
-test:
-	@echo nothing to do
-
-test-coverage: $(all)
-	@echo nothing to do
-
 generate-sources:
-	@echo nothing to do
+	@echo No sources to generate
+
+test:
+	@echo Running unit tests
+	@go run github.com/onsi/ginkgo/ginkgo ./runtime/... ./deploy/...
+
+test-coverage:
+	@echo Running unit tests
+	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/... ./deploy/...

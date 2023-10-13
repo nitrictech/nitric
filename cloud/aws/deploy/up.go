@@ -19,8 +19,10 @@ package deploy
 import (
 	"context"
 	"fmt"
-	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"runtime/debug"
+
+
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"

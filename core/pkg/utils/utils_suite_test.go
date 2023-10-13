@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package utils_test
 
 import (
-	"strconv"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// PercentFromIntString returns a float between 0.0 to 1 representing a percentage.
-// this is converted from a string int in the range "0" to "100".
-func PercentFromIntString(in string) (float64, error) {
-	intVar, err := strconv.Atoi(in)
-	if err != nil {
-		return 0, err
-	}
-
-	if intVar >= 100 {
-		return 1, nil
-	} else if intVar <= 0 {
-		return 0, nil
-	}
-
-	return float64(intVar) / float64(100), nil
+func TestUtils(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Utils Suite")
 }

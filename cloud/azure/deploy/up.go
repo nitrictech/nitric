@@ -17,9 +17,12 @@ package deploy
 import (
 	"context"
 	"fmt"
-	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"runtime/debug"
 	"strings"
+
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"

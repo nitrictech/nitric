@@ -12,25 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package tools
 
 import (
-	"strconv"
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/google/addlicense"
+	_ "github.com/onsi/ginkgo/ginkgo"
+	_ "github.com/uw-labs/lichen"
 )
-
-// PercentFromIntString returns a float between 0.0 to 1 representing a percentage.
-// this is converted from a string int in the range "0" to "100".
-func PercentFromIntString(in string) (float64, error) {
-	intVar, err := strconv.Atoi(in)
-	if err != nil {
-		return 0, err
-	}
-
-	if intVar >= 100 {
-		return 1, nil
-	} else if intVar <= 0 {
-		return 0, nil
-	}
-
-	return float64(intVar) / float64(100), nil
-}

@@ -21,5 +21,11 @@ import (
 const NITRIC_STACK_ID = "NITRIC_STACK_ID"
 
 func GetNitricStackID() string {
-	return os.Getenv(NITRIC_STACK_ID)
+	stackID := os.Getenv(NITRIC_STACK_ID)
+
+	if stackID == "" {
+		panic("NITRIC_STACK_ID env var not set, resource mapping isn't possible")
+	}
+
+	return stackID
 }

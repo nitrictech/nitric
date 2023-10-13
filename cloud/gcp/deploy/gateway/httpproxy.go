@@ -19,6 +19,7 @@ package gateway
 import (
 	"encoding/base64"
 	"fmt"
+
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi2conv"

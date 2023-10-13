@@ -36,6 +36,7 @@ var _ = Describe("AwsProvider", func() {
 					"test": "arn:aws:::test",
 				},
 			},
+			stackID: "test-stack",
 		}
 
 		It("should return the map of available resources", func() {
@@ -51,7 +52,8 @@ var _ = Describe("AwsProvider", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
 			provider := &awsProviderImpl{
-				client: mockClient,
+				client:  mockClient,
+				stackID: "test-stack",
 			}
 
 			It("should return an error", func() {
@@ -84,11 +86,8 @@ var _ = Describe("AwsProvider", func() {
 					ResourceTagMappingList: []types.ResourceTagMapping{{
 						ResourceARN: aws.String("arn:aws:sns:::test"),
 						Tags: []types.Tag{{
-							Key:   aws.String("x-nitric-name"),
+							Key:   aws.String("x-nitric-test-stackID-name"),
 							Value: aws.String("test"),
-						}, {
-							Key:   aws.String("x-nitric-stackID"),
-							Value: aws.String("test-stackID"),
 						}},
 					}},
 				}, nil)
