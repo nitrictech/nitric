@@ -22,8 +22,6 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-
 	apigateway "cloud.google.com/go/apigateway/apiv1"
 	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 

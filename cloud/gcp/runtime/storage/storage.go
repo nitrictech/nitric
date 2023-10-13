@@ -20,7 +20,6 @@ import (
 	"io"
 	"time"
 
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 
