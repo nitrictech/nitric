@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
@@ -32,6 +33,8 @@ import (
 )
 
 var _ = Describe("Storage", func() {
+	os.Setenv("NITRIC_STACK_ID", "test-stack")
+
 	Context("Write", func() {
 		When("GCloud Storage Backend is available", func() {
 			When("Writing to a bucket that exists", func() {
@@ -49,7 +52,8 @@ var _ = Describe("Storage", func() {
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 							Labels: map[string]string{
-								"x-nitric-name": "my-bucket",
+								"x-nitric-test-stack-name": "my-bucket",
+								"x-nitric-test-stack-type": "bucket",
 							},
 							Name: "my-bucket-1234",
 						}, nil),
@@ -117,7 +121,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -157,7 +162,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -220,7 +226,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -255,7 +262,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -311,7 +319,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -347,7 +356,8 @@ var _ = Describe("Storage", func() {
 						gomock.InOrder(
 							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 								Labels: map[string]string{
-									"x-nitric-name": "test-bucket",
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
 								},
 								Name: "my-bucket-1234",
 							}, nil),
@@ -384,7 +394,8 @@ var _ = Describe("Storage", func() {
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 							Labels: map[string]string{
-								"x-nitric-name": "test-bucket",
+								"x-nitric-test-stack-name": "test-bucket",
+								"x-nitric-test-stack-type": "bucket",
 							},
 							Name: "my-bucket-1234",
 						}, nil),
@@ -442,7 +453,8 @@ var _ = Describe("Storage", func() {
 				gomock.InOrder(
 					mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 						Labels: map[string]string{
-							"x-nitric-name": "test-bucket",
+							"x-nitric-test-stack-name": "test-bucket",
+							"x-nitric-test-stack-type": "bucket",
 						},
 						Name: "my-bucket-1234",
 					}, nil),
@@ -512,7 +524,8 @@ var _ = Describe("Storage", func() {
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 							Labels: map[string]string{
-								"x-nitric-name": "test-bucket",
+								"x-nitric-test-stack-name": "test-bucket",
+								"x-nitric-test-stack-type": "bucket",
 							},
 							Name: "my-bucket-1234",
 						}, nil),
@@ -552,7 +565,8 @@ var _ = Describe("Storage", func() {
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 							Labels: map[string]string{
-								"x-nitric-name": "test-bucket",
+								"x-nitric-test-stack-name": "test-bucket",
+								"x-nitric-test-stack-type": "bucket",
 							},
 							Name: "my-bucket-1234",
 						}, nil),
@@ -592,7 +606,8 @@ var _ = Describe("Storage", func() {
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
 							Labels: map[string]string{
-								"x-nitric-name": "test-bucket",
+								"x-nitric-test-stack-name": "test-bucket",
+								"x-nitric-test-stack-type": "bucket",
 							},
 							Name: "my-bucket-1234",
 						}, nil),

@@ -18,10 +18,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
-	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"net/http"
 	"time"
+
+
+	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/pkg/errors"

@@ -39,8 +39,8 @@ type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.Trigge
 type RouteRegister func(*router.Router, pool.WorkerPool)
 
 const (
-	DefaultTopicRoute    = "/x-nitric-topic/{name}"
-	DefaultScheduleRoute = "/x-nitric-schedule/{name}"
+	DefaultTopicRoute              = "/x-nitric-topic/{name}"
+	DefaultScheduleRoute           = "/x-nitric-schedule/{name}"
 	DefaultBucketNotificationRoute = "/x-nitric-notification/bucket/{name}"
 )
 
@@ -60,7 +60,7 @@ type BaseHttpGateway struct {
 	// Middleware for handling events
 	// return bool will indicate whether to continue
 	// to the next (default) behaviour or not...
-	mw HttpMiddleware
+	mw       HttpMiddleware
 	routeReg RouteRegister
 }
 

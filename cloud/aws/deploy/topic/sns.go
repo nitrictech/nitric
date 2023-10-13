@@ -19,6 +19,7 @@ package topic
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/pkg/errors"

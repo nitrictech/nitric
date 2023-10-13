@@ -17,10 +17,12 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"io"
 	"time"
+
+
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
