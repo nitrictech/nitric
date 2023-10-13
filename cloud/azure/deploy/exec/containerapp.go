@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"time"
 
-
 	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 

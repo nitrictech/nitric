@@ -32,8 +32,10 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
-type HttpMiddleware func(*fasthttp.RequestCtx, pool.WorkerPool) bool
-type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+type (
+	HttpMiddleware   func(*fasthttp.RequestCtx, pool.WorkerPool) bool
+	EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+)
 
 type RouteRegister func(*router.Router, pool.WorkerPool)
 
@@ -152,7 +154,6 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 		}
 
 		rc.Error("received invalid response type from worker", 500)
-
 	}
 }
 

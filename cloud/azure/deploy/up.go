@@ -20,10 +20,9 @@ import (
 	"runtime/debug"
 	"strings"
 
-	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
-
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"time"
 
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
