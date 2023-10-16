@@ -25,6 +25,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
 )
 
@@ -125,7 +126,8 @@ func (p *azProviderImpl) GetResources(ctx context.Context, r AzResource) (map[st
 		for results.NotDone() {
 			resource := results.Value()
 
-			if tagV, ok := resource.Tags["x-nitric-name"]; ok && tagV != nil {
+			resourceNameKey := tags.GetResourceNameKey(p.stack)
+			if tagV, ok := resource.Tags[resourceNameKey]; ok && tagV != nil {
 				// Add it to the cache
 				p.cache[r][*tagV] = AzGenericResource{
 					Name:       *resource.Name,
