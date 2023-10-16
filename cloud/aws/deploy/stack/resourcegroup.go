@@ -18,8 +18,8 @@ package stack
 
 import (
 	"encoding/json"
-	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
