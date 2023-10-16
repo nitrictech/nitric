@@ -21,8 +21,8 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
-var _ = Describe("Parse", func() {
-	Context("PercentFromIntString", func() {
+var _ = Describe("Paths", func() {
+	Context("SplitPath", func() {
 		When("Calling SplitPath with a path", func() {
 			strs := utils.SplitPath("test/testOne")
 
