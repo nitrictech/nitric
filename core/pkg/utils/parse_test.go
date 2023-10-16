@@ -21,7 +21,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
-var _ = Describe("Paths", func() {
+var _ = Describe("Parse", func() {
 	Context("PercentFromIntString", func() {
 		When("Calling PercentFromIntString more a non-number", func() {
 			_, err := utils.PercentFromIntString("testing")
