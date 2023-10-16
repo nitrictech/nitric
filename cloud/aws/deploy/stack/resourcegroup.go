@@ -18,6 +18,7 @@ package stack
 
 import (
 	"encoding/json"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
@@ -63,7 +64,8 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 	}).(pulumi.StringOutput)
 
 	res.ResourceGroup, err = resourcegroups.NewGroup(ctx, "rg-"+ctx.Stack(), &resourcegroups.GroupArgs{
-		Description: pulumi.Sprintf("Nitric RG for stack %s", res.Name),
+		Description: pulumi.Sprintf("Nitric stack %s resources", res.Name),
+		Tags:        pulumi.ToStringMap(tags.Tags(args.StackID, name, resources.Stack)),
 		ResourceQuery: &resourcegroups.GroupResourceQueryArgs{
 			Query: rgQueryJSON,
 		},
