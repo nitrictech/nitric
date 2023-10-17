@@ -276,6 +276,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				if unitConfig.CloudRun != nil {
 					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
+						StackID:         stackID,
 						Location:        pulumi.String(details.Region),
 						ProjectID:       details.ProjectId,
 						Compute:         res.GetExecutionUnit(),
