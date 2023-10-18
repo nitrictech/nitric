@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	osRuntime "runtime"
 	"runtime/debug"
 	"strings"
 
@@ -483,13 +482,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	err = pulumiStack.SetConfig(context.TODO(), "gcp:project", auto.ConfigValue{Value: details.ProjectId})
 	if err != nil {
 		return err
-	}
-
-	if osRuntime.GOOS == "windows" {
-		err = pulumiStack.SetConfig(context.TODO(), "docker:host", auto.ConfigValue{Value: "npipe:////.//pipe//docker_engine"})
-		if err != nil {
-			return err
-		}
 	}
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{

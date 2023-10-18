@@ -17,7 +17,6 @@ package deploy
 import (
 	"context"
 	"fmt"
-	osRuntime "runtime"
 	"runtime/debug"
 	"strings"
 
@@ -410,13 +409,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
 	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})
-
-	if osRuntime.GOOS == "windows" {
-		err = pulumiStack.SetConfig(context.TODO(), "docker:host", auto.ConfigValue{Value: "npipe:////.//pipe//docker_engine"})
-		if err != nil {
-			return err
-		}
-	}
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{
 		Stream: stream,
