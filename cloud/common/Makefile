@@ -21,5 +21,8 @@ lint:
 test:
 	@echo nothing to do
 
+test-coverage: $(all)
+	@echo nothing to do
+
 generate-sources:
 	@echo nothing to do
