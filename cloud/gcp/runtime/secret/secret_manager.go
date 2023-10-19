@@ -26,7 +26,7 @@ import (
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
-	grpcCodes "google.golang.org/grpc/codes"
+	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	ifaces_gcloud_secret "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_secret"
@@ -93,7 +93,7 @@ func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.
 
 	result, err := iter.Next()
 	if errors.Is(err, iterator.Done) {
-		return nil, status.Error(grpcCodes.NotFound, "secret not found")
+		return nil, status.Error(grpccodes.NotFound, "secret not found")
 	}
 
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *secretManagerSecretService) Put(ctx context.Context, sec *secret.Secret
 	parentSec, err := s.getSecret(ctx, sec)
 	if err != nil {
 		return nil, newErr(
-			codes.Internal,
+			codes.NotFound,
 			"error ensuring secret container exists",
 			err,
 		)
@@ -139,6 +139,13 @@ func (s *secretManagerSecretService) Put(ctx context.Context, sec *secret.Secret
 		},
 	})
 	if err != nil {
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this secret?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to add new secret version",
@@ -183,6 +190,14 @@ func (s *secretManagerSecretService) Access(ctx context.Context, sv *secret.Secr
 
 	result, err := s.client.AccessSecretVersion(ctx, req)
 	if err != nil {
+		errStatus, _ := status.FromError(err)
+
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this secret?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to access secret version",
