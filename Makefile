@@ -1,4 +1,4 @@
-all := core cloud/aws cloud/gcp cloud/azure
+all := core cloud/aws cloud/gcp cloud/azure cloud/common
 providers := cloud/aws cloud/gcp cloud/azure
 
 install-tools:
@@ -7,6 +7,11 @@ install-tools:
 binaries: $(providers)
 	for dir in $(providers); do \
 		$(MAKE) -C $$dir || exit 1; \
+	done
+
+sec:
+	for dir in $(all); do \
+		$(MAKE) sec -C $$dir || exit 1; \
 	done
 
 check: lint test

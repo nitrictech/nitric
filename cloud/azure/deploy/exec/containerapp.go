@@ -113,7 +113,7 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 
 				resp, err := client.Do(req)
 				if err == nil {
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					break
 				}
 			}

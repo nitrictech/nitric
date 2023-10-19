@@ -128,7 +128,8 @@ func (s *DocumentServiceServer) Query(ctx context.Context, req *pb.DocumentQuery
 
 	pbDocuments := make([]*pb.Document, 0, len(qr.Documents))
 	for _, doc := range qr.Documents {
-		pbDoc, err := documentToWire(&doc)
+		d := doc
+		pbDoc, err := documentToWire(&d)
 		if err != nil {
 			return nil, NewGrpcError("DocumentService.Query", err)
 		}

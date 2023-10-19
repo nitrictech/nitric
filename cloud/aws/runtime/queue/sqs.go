@@ -107,10 +107,11 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
 		for _, task := range tasks {
-			if bytes, err := json.Marshal(task); err == nil {
+			t := task
+			if bytes, err := json.Marshal(t); err == nil {
 				entries = append(entries, types.SendMessageBatchRequestEntry{
 					// Share the request ID here...
-					Id:          &task.ID,
+					Id:          &t.ID,
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
@@ -131,9 +132,10 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 			failedTasks := make([]*queue.FailedTask, 0)
 			for _, failed := range out.Failed {
 				for _, e := range tasks {
-					if e.ID == *failed.Id {
+					task := e
+					if task.ID == *failed.Id {
 						failedTasks = append(failedTasks, &queue.FailedTask{
-							Task:    &e,
+							Task:    &task,
 							Message: *failed.Message,
 						})
 						// continue processing failed messages

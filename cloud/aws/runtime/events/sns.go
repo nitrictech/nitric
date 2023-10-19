@@ -69,7 +69,7 @@ func (s *SnsEventService) publish(ctx context.Context, topic string, message str
 
 	attrs := map[string]types.MessageAttributeValue{}
 	for k, v := range mc {
-		attrs[k] = types.MessageAttributeValue{DataType: aws.String("String"), StringValue: &v}
+		attrs[k] = types.MessageAttributeValue{DataType: aws.String("String"), StringValue: aws.String(v)}
 	}
 
 	publishInput := &sns.PublishInput{

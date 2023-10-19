@@ -59,6 +59,8 @@ jobs:
         run: |
           git add .
           git diff --cached --quiet
+      - name: Run Gosec Security Scanner
+        run: make sec
       - name: Run Tests
         run: make test-coverage
       - name: Check Dependency Licenses

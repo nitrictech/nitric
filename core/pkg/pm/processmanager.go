@@ -105,7 +105,7 @@ func (p *process) start() error {
 		return nil
 	}
 
-	p.cmd = exec.Command(p.Command[0], p.Command[1:]...)
+	p.cmd = exec.Command(p.Command[0], p.Command[1:]...) //#nosec G204 -- This is by design inputs are determined at compile time
 	p.cmd.Stdout = os.Stdout
 	p.cmd.Stderr = os.Stderr
 

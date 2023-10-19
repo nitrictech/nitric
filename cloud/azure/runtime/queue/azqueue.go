@@ -90,11 +90,12 @@ func (s *AzqueueQueueService) SendBatch(ctx context.Context, queueName string, t
 	failedTasks := make([]*queue.FailedTask, 0)
 
 	for _, task := range tasks {
+		t := task
 		// Azure Storage Queues don't support batches, so each task must be sent individually.
-		err := s.Send(ctx, queueName, task)
+		err := s.Send(ctx, queueName, t)
 		if err != nil {
 			failedTasks = append(failedTasks, &queue.FailedTask{
-				Task:    &task,
+				Task:    &t,
 				Message: err.Error(),
 			})
 		}

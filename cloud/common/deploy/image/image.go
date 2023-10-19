@@ -1,13 +1,13 @@
 // Copyright Nitric Pty Ltd.
-//
+
 // SPDX-License-Identifier: Apache-2.0
-//
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
+
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -41,7 +42,7 @@ type ImageArgs struct {
 	Server        pulumi.StringInput
 	Username      pulumi.StringInput
 	Password      pulumi.StringInput
-	Telemetry *telemetry.TelemetryConfigArgs
+	Telemetry     *telemetry.TelemetryConfigArgs
 }
 
 type Image struct {
@@ -82,37 +83,61 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	}
 
 	buildContext := fmt.Sprintf("%s/build-%s", os.TempDir(), name)
-	os.MkdirAll(buildContext, os.ModePerm)
-
-	dockerfile, err := os.Create(path.Join(buildContext, "Dockerfile"))
+	err = os.MkdirAll(buildContext, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	dockerfile.Write([]byte(dockerfileContent))
-	dockerfile.Close()
-
-	runtimefile, err := os.Create(path.Join(buildContext, "runtime"))
+	// Address: https://securego.io/docs/rules/g304.html
+	dockerfilePath := filepath.Clean(path.Join(buildContext, "Dockerfile"))
+	if !strings.HasPrefix(dockerfilePath, os.TempDir()) {
+		return nil, fmt.Errorf("unsafe dockerfile location")
+	}
+	dockerfile, err := os.Create(dockerfilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	runtimefile.Write(args.Runtime)
-	runtimefile.Close()			
-	
+	_, err = dockerfile.Write([]byte(dockerfileContent))
+	if err != nil {
+		return nil, err
+	}
+	err = dockerfile.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	runtimefilePath := filepath.Clean(path.Join(buildContext, "runtime"))
+	if !strings.HasPrefix(dockerfilePath, os.TempDir()) {
+		return nil, fmt.Errorf("unsafe runtime location")
+	}
+	runtimefile, err := os.Create(runtimefilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = runtimefile.Write(args.Runtime)
+	if err != nil {
+		return nil, err
+	}
+	err = runtimefile.Close()
+	if err != nil {
+		return nil, err
+	}
+
 	buildArgs := combineBuildArgs(map[string]string{
-		"BASE_IMAGE": args.SourceImage,
-		"RUNTIME_FILE": "runtime",
+		"BASE_IMAGE":    args.SourceImage,
+		"RUNTIME_FILE":  "runtime",
 		"BASE_IMAGE_ID": sourceImageID,
 	}, imageWrapper.Args)
 
 	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
-		ImageName:       args.RepositoryUrl,
+		ImageName: args.RepositoryUrl,
 		Build: docker.DockerBuildArgs{
-			Context: pulumi.String(buildContext),
+			Context:    pulumi.String(buildContext),
 			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
-			Args: buildArgs,
-			Platform: pulumi.String("linux/amd64"),
+			Args:       buildArgs,
+			Platform:   pulumi.String("linux/amd64"),
 		},
 		Registry: docker.RegistryArgs{
 			Server:   args.Server,
@@ -155,16 +180,15 @@ func getWrapperDockerfile(configArgs *telemetry.TelemetryConfigArgs) (*WrappedBu
 
 	return &WrappedBuildInput{
 		Dockerfile: imageWrapper,
-		Args: map[string]string{},
+		Args:       map[string]string{},
 	}, nil
 }
 
-func combineBuildArgs(baseArgs, wrapperArgs map[string]string) (pulumi.StringMap) {
+func combineBuildArgs(baseArgs, wrapperArgs map[string]string) pulumi.StringMap {
 	maps.Copy(wrapperArgs, baseArgs)
 
 	return pulumi.ToStringMap(wrapperArgs)
 }
-
 
 // Wraps the source image with the wrapper image, acknowledging the command from the source image
 func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {

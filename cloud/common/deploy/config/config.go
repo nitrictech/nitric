@@ -85,7 +85,7 @@ func ConfigFromAttributes[T AbstractItem](attributes map[string]interface{}, def
 
 		defaultVal := defaultConfig
 
-		if err := mergo.Merge(&defaultVal, &val, mergo.WithOverride); err != nil {
+		if err := mergo.Merge(&defaultVal, val, mergo.WithOverride); err != nil {
 			return config, err
 		}
 
