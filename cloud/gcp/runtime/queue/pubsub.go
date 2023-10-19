@@ -18,10 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+	grpccodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
@@ -263,8 +264,8 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	}
 
 	// Using base client, so that asynchronous message acknowledgement can take place without needing to keep messages
-	// in a stateful service. Standard PubSub go library do not provide access to the acknowledge ID of the messages or
-	// an independent acknowledge function. It's only provided as a method on message objects.
+	// in a stateful service. Standard PubSub go library doesn't provide access to the 'acknowledge' ID of the messages
+	// or an independent acknowledge function. It's only provided as a method on message objects.
 	client, err := s.newSubscriberClient(ctx)
 	if err != nil {
 		return nil, newErr(
@@ -282,7 +283,13 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	}
 	res, err := client.Pull(ctx, &req)
 	if err != nil {
-		// TODO: catch standard grpc errors, like NotFound.
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this queue?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to pull messages",
@@ -350,14 +357,21 @@ func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId
 	}
 	defer client.Close()
 
-	// Acknowledge the queue item so it's removed from the queue
+	// Acknowledge the queue item, so it's removed from the queue
 	req := pubsubpb.AcknowledgeRequest{
 		Subscription: queueSubscription.String(),
 		AckIds:       []string{leaseId},
 	}
 	err = client.Acknowledge(ctx, &req)
 	if err != nil {
-		// TODO: catch standard grpc errors, like NotFound.
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to the queue?",
+				err)
+		}
+
 		return newErr(
 			codes.Internal,
 			"failed to de-queue task",
