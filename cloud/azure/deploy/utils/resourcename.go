@@ -167,5 +167,10 @@ func ResourceName(ctx *pulumi.Context, name string, rt ResouceType) string {
 		s = strings.ToLower(s)
 	}
 
-	return StringTrunc(s, maxLen)
+	rname := StringTrunc(s, maxLen)
+	if strings.Trim(rname, "") == "" {
+		panic("generated blank resource name")
+	}
+
+	return rname
 }

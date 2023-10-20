@@ -64,7 +64,7 @@ type azProviderImpl struct {
 	srvClient apimanagement.ServiceClient
 	subId     string
 	rgName    string
-	stack     string
+	stackId   string
 	cache     azResourceCache
 }
 
@@ -79,7 +79,7 @@ func (p *azProviderImpl) getApiDetails(ctx context.Context, name string) (*resou
 	for res.NotDone() {
 		service := res.Value()
 
-		if t, ok := service.Tags[fmt.Sprintf("x-nitric-stack-%s", p.stack)]; ok && t != nil && *t == name {
+		if t, ok := service.Tags[fmt.Sprintf("x-nitric-stackId-%s", p.stackId)]; ok && t != nil && *t == name {
 			return &resource.DetailsResponse[any]{
 				Id:       *service.ID,
 				Provider: "azure",
@@ -126,7 +126,7 @@ func (p *azProviderImpl) GetResources(ctx context.Context, r AzResource) (map[st
 		for results.NotDone() {
 			resource := results.Value()
 
-			resourceNameKey := tags.GetResourceNameKey(p.stack)
+			resourceNameKey := tags.GetResourceNameKey(p.stackId)
 			if tagV, ok := resource.Tags[resourceNameKey]; ok && tagV != nil {
 				// Add it to the cache
 				p.cache[r][*tagV] = AzGenericResource{
@@ -190,16 +190,22 @@ func New() (*azProviderImpl, error) {
 		return nil, fmt.Errorf("envvar %s is not set", AZURE_SUBSCRIPTION_ID)
 	}
 
+	stackId := os.Getenv(NITRIC_STACK_ID)
+	if stackId == "" {
+		return nil, fmt.Errorf("envvar %s is not set", NITRIC_STACK_ID)
+	}
+
 	config, err := auth.GetSettingsFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
 
 	prov := &azProviderImpl{
-		rgName: rgName,
-		subId:  subId,
-		env:    config,
-		cache:  make(map[string]map[string]AzGenericResource),
+		rgName:  rgName,
+		subId:   subId,
+		env:     config,
+		cache:   make(map[string]map[string]AzGenericResource),
+		stackId: stackId,
 	}
 
 	spt, err := prov.ServicePrincipalToken("https://management.azure.com")
