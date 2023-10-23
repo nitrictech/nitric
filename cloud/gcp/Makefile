@@ -15,6 +15,11 @@ runtimebin:
 predeploybin: runtimebin
 	@cp bin/runtime-gcp deploy/runtime-gcp
 
+sec:
+	@touch deploy/runtime-gcp
+	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@rm deploy/runtime-gcp
+
 # FIXME: proto server registration error
 # There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin

@@ -395,7 +395,13 @@ func (s *MongoDocService) QueryStream(ctx context.Context, collection *document.
 		} else {
 			// there was an error
 			// Close the cursor
-			cursor.Close(ctx)
+			if err := cursor.Close(ctx); err != nil {
+				return nil, newErr(
+					codes.Internal,
+					"mongo cursor close error",
+					cursor.Err(),
+				)
+			}
 
 			if cursor.Err() != nil {
 				return nil, newErr(

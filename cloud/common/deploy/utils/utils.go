@@ -1,3 +1,17 @@
+// Copyright 2021 Nitric Pty Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
 import (
@@ -24,18 +38,6 @@ func StringTrunc(s string, max int) string {
 	}
 
 	return s[:max]
-}
-
-type NamedResource struct {
-	Name string
-}
-
-func MapNamedResource(resource []*NamedResource) map[string]*NamedResource {
-	var resources map[string]*NamedResource
-	for _, r := range resource {
-		resources[r.Name] = r
-	}
-	return resources
 }
 
 type OpenIdConfig struct {
@@ -76,7 +78,7 @@ func GetOpenIdConnectConfig(openIdConnectUrl string) (*OpenIdConfig, error) {
 	return oidConf, nil
 }
 
-func GetAudiencesFromExtension(extensions map[string]interface{}) ([]string, error){
+func GetAudiencesFromExtension(extensions map[string]interface{}) ([]string, error) {
 	audExt, ok := extensions["x-nitric-audiences"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unable to get audiences from api spec")

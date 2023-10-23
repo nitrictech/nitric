@@ -195,17 +195,18 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
 
 	for _, task := range tasks {
-		if taskBytes, err := json.Marshal(task); err == nil {
+		t := task
+		if taskBytes, err := json.Marshal(t); err == nil {
 			msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
 				Data:       taskBytes,
 				Attributes: attributes,
 			})
 
 			results = append(results, topic.Publish(ctx, msg))
-			publishedTasks = append(publishedTasks, task)
+			publishedTasks = append(publishedTasks, t)
 		} else {
 			failedTasks = append(failedTasks, &queue.FailedTask{
-				Task:    &task,
+				Task:    &t,
 				Message: "Error unmarshalling message for queue",
 			})
 		}
