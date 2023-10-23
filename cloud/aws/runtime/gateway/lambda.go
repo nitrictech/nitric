@@ -30,8 +30,10 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/core/pkg/utils"
 	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
@@ -93,7 +95,8 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.API
 		return nil, err
 	}
 
-	nitricName, ok := api.Tags["x-nitric-name"]
+	stackID := utils.GetEnv("NITRIC_STACK_ID", "")
+	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
 	if !ok {
 		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
 	}

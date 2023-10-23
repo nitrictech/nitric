@@ -18,6 +18,7 @@ package api
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
@@ -29,7 +30,7 @@ import (
 )
 
 type AzureHttpProxyArgs struct {
-	StackID           pulumi.StringInput
+	StackID           string
 	ResourceGroupName pulumi.StringInput
 	OrgName           pulumi.StringInput
 	AdminEmail        pulumi.StringInput
@@ -91,7 +92,7 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.HttpProxy)),
 	})
 	if err != nil {
 		return nil, err

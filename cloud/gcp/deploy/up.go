@@ -106,6 +106,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		defaultResourceOptions := pulumi.DependsOn([]pulumi.Resource{nitricProj})
 
+		// Calculate unique stackID
 		stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 			Special: pulumi.Bool(false),
 			Length:  pulumi.Int(8),
@@ -113,12 +114,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			Keepers: pulumi.ToMap(map[string]interface{}{
 				"stack-name": ctx.Stack(),
 			}),
-		}, defaultResourceOptions)
+		})
 		if err != nil {
 			return err
 		}
 
-		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		stackID := <-stackIdChan
 
 		collections := lo.Filter[*deploy.Resource](request.Spec.Resources, func(res *deploy.Resource, _ int) bool {
 			return res.Type == v1.ResourceType_Collection
@@ -269,15 +276,15 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				if unitConfig.CloudRun != nil {
 					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
+						StackID:         stackID,
 						Location:        pulumi.String(details.Region),
-						ProjectId:       details.ProjectId,
+						ProjectID:       details.ProjectId,
 						Compute:         res.GetExecutionUnit(),
 						Image:           image,
 						EnvMap:          eu.ExecutionUnit.Env,
 						DelayQueue:      topicDelayQueue,
 						ServiceAccount:  sa.ServiceAccount,
 						BaseComputeRole: baseComputeRole,
-						StackID:         stackID,
 						Config:          *unitConfig.CloudRun,
 					}, defaultResourceOptions)
 					if err != nil {
@@ -433,7 +440,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				// Create schedule targeting a given lambda
 				job, err := schedule.NewCloudSchedulerJob(ctx, res.Name, &schedule.CloudSchedulerArgs{
-					StackID:  stackID,
 					Exec:     execUnit,
 					Schedule: t.Schedule,
 					Tz:       config.ScheduleTimezone,
@@ -460,7 +466,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					},
 					Principals: principalMap,
 					ProjectID:  pulumi.String(details.ProjectId),
-					StackID:    stackID,
 				})
 				if err != nil {
 					return err

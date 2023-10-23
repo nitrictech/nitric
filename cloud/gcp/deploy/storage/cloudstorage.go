@@ -17,6 +17,7 @@
 package storage
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
@@ -32,7 +33,7 @@ type CloudStorageBucket struct {
 
 type CloudStorageBucketArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 
 	Bucket *v1.Bucket
 }
@@ -49,7 +50,7 @@ func NewCloudStorageBucket(ctx *pulumi.Context, name string, args *CloudStorageB
 
 	res.CloudStorage, err = storage.NewBucket(ctx, name, &storage.BucketArgs{
 		Location: pulumi.String(args.Location),
-		Labels:   common.Tags(ctx, args.StackID, name),
+		Labels:   pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Bucket)),
 	})
 	if err != nil {
 		return nil, err

@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"golang.org/x/oauth2/google"
@@ -85,7 +88,7 @@ func (s *secretManagerSecretService) buildSecretVersionName(ctx context.Context,
 func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.Secret) (*secretmanagerpb.Secret, error) {
 	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
-		Filter: "labels.x-nitric-name=" + sec.Name + " AND labels.x-nitric-stack=" + s.stackName,
+		Filter: fmt.Sprintf("labels.%s=%s", tags.GetResourceNameKey(env.GetNitricStackID()), sec.Name),
 	})
 
 	result, err := iter.Next()
@@ -211,7 +214,7 @@ func New() (secret.SecretService, error) {
 	return &secretManagerSecretService{
 		client:    client,
 		projectId: credentials.ProjectID,
-		stackName: utils.GetEnv("NITRIC_STACK", ""),
+		stackName: utils.GetEnv("NITRIC_STACK_ID", ""),
 		cache:     make(map[string]string),
 	}, nil
 }

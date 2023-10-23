@@ -19,6 +19,8 @@ package events
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -36,7 +38,7 @@ type PubSubTopic struct {
 
 type PubSubTopicArgs struct {
 	Location  string
-	StackID   pulumi.StringInput
+	StackID   string
 	ProjectId string
 
 	Topic *v1.Topic
@@ -53,7 +55,7 @@ func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opt
 	}
 
 	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Topic)),
 	})
 	if err != nil {
 		return nil, err

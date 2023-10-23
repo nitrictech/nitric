@@ -26,8 +26,7 @@ import (
 type GcpIamServiceAccount struct {
 	pulumi.ResourceState
 
-	Name string
-
+	Name           string
 	ServiceAccount *serviceaccount.Account
 }
 

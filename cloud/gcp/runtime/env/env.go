@@ -1,10 +1,10 @@
-// Copyright 2021 Nitric Pty Ltd.
+// Copyright 2021 Nitric Technologies Pty Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package env
 
 import (
-	"strconv"
+	"os"
 )
 
-// PercentFromIntString returns a float between 0.0 to 1 representing a percentage.
-// this is converted from a string int in the range "0" to "100".
-func PercentFromIntString(in string) (float64, error) {
-	intVar, err := strconv.Atoi(in)
-	if err != nil {
-		return 0, err
+const NITRIC_STACK_ID = "NITRIC_STACK_ID"
+
+func GetNitricStackID() string {
+	stackID := os.Getenv(NITRIC_STACK_ID)
+
+	if stackID == "" {
+		panic("NITRIC_STACK_ID env var not set, resource mapping isn't possible")
 	}
 
-	if intVar >= 100 {
-		return 1, nil
-	} else if intVar <= 0 {
-		return 0, nil
-	}
-
-	return float64(intVar) / float64(100), nil
+	return stackID
 }

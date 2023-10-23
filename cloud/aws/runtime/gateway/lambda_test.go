@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
@@ -145,6 +146,7 @@ var _ = Describe("Lambda", func() {
 
 	Context("Websocket Events", func() {
 		When("Sending a compliant Websocket Event", func() {
+			_ = os.Setenv("NITRIC_STACK_ID", "test-stack")
 			ctrl := gomock.NewController(GinkgoT())
 			pool := mock_pool.NewMockWorkerPool(ctrl)
 
@@ -184,7 +186,7 @@ var _ = Describe("Lambda", func() {
 				By("The websocket gateway existing")
 				mockProvider.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
 					Tags: map[string]string{
-						"x-nitric-name": "test-api",
+						"x-nitric-test-stack-name": "test-api",
 					},
 				}, nil)
 

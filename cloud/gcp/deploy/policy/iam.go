@@ -58,8 +58,6 @@ type PolicyArgs struct {
 	Principals PrincipalMap
 
 	ProjectID pulumi.StringInput
-
-	StackID pulumi.StringInput
 }
 
 var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{

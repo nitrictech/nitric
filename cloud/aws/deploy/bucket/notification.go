@@ -48,7 +48,7 @@ type S3Notification struct {
 
 type S3NotificationArgs struct {
 	Location string
-	StackID  pulumi.StringInput
+	StackID  string
 
 	Bucket       *S3Bucket
 	Notification []*deploy.BucketNotificationTarget

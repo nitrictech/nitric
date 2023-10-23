@@ -19,6 +19,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
 	pubsubpb "cloud.google.com/go/pubsub/apiv1/pubsubpb"
@@ -49,6 +53,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
+		stackID := env.GetNitricStackID()
 		for {
 			t, err := topics.Next()
 			if errors.Is(err, iterator.Done) {
@@ -63,7 +68,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding queue labels: %s; %w", queue, err)
 			}
 
-			if name, ok := labels["x-nitric-name"]; ok {
+			resType, hasType := labels[tags.GetResourceTypeKey(stackID)]
+
+			if name, ok := labels[tags.GetResourceNameKey(stackID)]; ok && name == queue && hasType && resType == "queue" {
 				s.cache[name] = t
 			}
 		}
@@ -82,9 +89,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 // we use this behavior to emulate a queue.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue string) (ifaces_pubsub.Subscription, error) {
+func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName string) (ifaces_pubsub.Subscription, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic, err := s.getPubsubTopicFromName(queue)
+	topic, err := s.getPubsubTopicFromName(queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +112,9 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue str
 			return nil, fmt.Errorf("failed to retrieve pull subscription labels for topic: %s\n%w", topic.ID(), err)
 		}
 
-		// The subscription's 'x-nitric-name' is its topic name
-		if name, ok := labels["x-nitric-name"]; ok {
-			if name == queue {
+		resourceType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
+		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; hasType && ok && resourceType == string(resources.Queue) {
+			if name == queueName {
 				return sub, nil
 			}
 		}

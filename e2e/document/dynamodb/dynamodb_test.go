@@ -43,6 +43,7 @@ const (
 var _ = Describe("DynamoDb", func() {
 	defer GinkgoRecover()
 
+	os.Setenv("NITRIC_STACK_ID", "test-stack")
 	os.Setenv("AWS_ACCESS_KEY_ID", "fakeMyKeyId")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "fakeSecretAccessKey")
 	os.Setenv("AWS_REGION", "X")
@@ -66,10 +67,10 @@ var _ = Describe("DynamoDb", func() {
 
 	BeforeEach(func() {
 		// Table names suffixed with 7 alphanumeric chars to match pulumi deployment.
-		createTable(db, "customers-1111111")
-		createTable(db, "users-1111111")
-		createTable(db, "items-1111111")
-		createTable(db, "parentItems-1111111")
+		createTable(db, "customers-1111111", "test-stack")
+		createTable(db, "users-1111111", "test-stack")
+		createTable(db, "items-1111111", "test-stack")
+		createTable(db, "parentItems-1111111", "test-stack")
 	})
 
 	AfterEach(func() {
@@ -139,7 +140,7 @@ func testConnection(db *dynamodb.Client) {
 	}
 }
 
-func createTable(db *dynamodb.Client, tableName string) {
+func createTable(db *dynamodb.Client, tableName string, stackID string) {
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []types.AttributeDefinition{
 			{
@@ -168,7 +169,11 @@ func createTable(db *dynamodb.Client, tableName string) {
 		TableName: aws.String(tableName),
 		Tags: []types.Tag{
 			{
-				Key:   aws.String("x-nitric-name"),
+				Key:   aws.String(fmt.Sprintf("x-nitric-%s-name", stackID)),
+				Value: aws.String(tableName),
+			},
+			{
+				Key:   aws.String(fmt.Sprintf("x-nitric-%s-type", "collection")),
 				Value: aws.String(tableName),
 			},
 		},

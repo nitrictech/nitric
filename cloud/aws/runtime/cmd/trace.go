@@ -48,7 +48,7 @@ func newTracerProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 			semconv.CloudProviderAWS,
 			semconv.CloudPlatformAWSLambda,
 			semconv.ServiceNameKey.String(span.FunctionName),
-			semconv.ServiceNamespaceKey.String(utils.GetEnv("NITRIC_STACK", "")),
+			semconv.ServiceNamespaceKey.String(utils.GetEnv("NITRIC_STACK_ID", "")),
 		),
 	)
 	if err != nil {

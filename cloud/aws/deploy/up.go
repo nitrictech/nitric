@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -95,7 +97,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		if err != nil {
 			return err
 		}
-		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		stackID := <-stackIdChan
 
 		_, err = stack.NewAwsResourceGroup(ctx, details.FullStackName, &stack.AwsResourceGroupArgs{
 			StackID: stackID,
@@ -171,7 +180,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			case *deploy.Resource_ExecutionUnit:
 				repo, err := ecr.NewRepository(ctx, res.Name, &ecr.RepositoryArgs{
 					ForceDelete: pulumi.BoolPtr(true),
-					Tags:        common.Tags(ctx, stackID, res.Name),
+					Tags:        pulumi.ToStringMap(common.Tags(stackID, res.Name, resources.ExecutionUnit)),
 				})
 				if err != nil {
 					return err
@@ -342,10 +351,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 				// Create schedule targeting a given lambda
 				schedules[res.Name], err = schedule.NewAwsEventbridgeSchedule(ctx, res.Name, &schedule.AwsEventbridgeScheduleArgs{
-					StackID: stackID,
-					Exec:    execUnit,
-					Cron:    t.Schedule.Cron,
-					Tz:      config.ScheduleTimezone,
+					Exec: execUnit,
+					Cron: t.Schedule.Cron,
+					Tz:   config.ScheduleTimezone,
 				})
 				if err != nil {
 					return err

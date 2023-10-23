@@ -17,6 +17,7 @@ package secret
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/golang/mock/gomock"
@@ -28,6 +29,8 @@ import (
 )
 
 var _ = Describe("Secret Manager", func() {
+	os.Setenv("NITRIC_STACK_ID", "test-stack")
+
 	mockSecret := &secretmanagerpb.Secret{
 		Name:   "projects/my-project/secrets/Test",
 		Labels: make(map[string]string),
@@ -61,7 +64,7 @@ var _ = Describe("Secret Manager", func() {
 						gomock.Any(),
 						&secretmanagerpb.ListSecretsRequest{
 							Parent: "projects/my-project",
-							Filter: "labels.x-nitric-name=Test AND labels.x-nitric-stack=",
+							Filter: "labels.x-nitric-test-stack-name=Test",
 						},
 					).Return(si).Times(1)
 
