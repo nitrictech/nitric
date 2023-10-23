@@ -113,7 +113,7 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName
 		}
 
 		resourceType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
-		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; hasType && ok && resourceType == resources.Queue {
+		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; hasType && ok && resourceType == string(resources.Queue) {
 			if name == queueName {
 				return sub, nil
 			}
