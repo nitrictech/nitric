@@ -18,6 +18,10 @@ lint:
 generate-sources:
 	@echo No sources to generate
 
+sec:
+	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+
+
 test:
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo ./runtime/... ./deploy/...
