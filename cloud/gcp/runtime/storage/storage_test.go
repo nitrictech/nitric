@@ -25,6 +25,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 
 	storage_mock "github.com/nitrictech/nitric/cloud/gcp/mocks/gcp_storage"
@@ -98,6 +99,47 @@ var _ = Describe("Storage", func() {
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
+					ctrl.Finish()
+				})
+			})
+
+			When("There are insufficient permissions", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+				mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+				mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+				mockObject := storage_mock.NewMockObjectHandle(ctrl)
+				mockWriter := storage_mock.NewMockWriter(ctrl)
+				mockStorageServer, _ := storage_service.NewWithClient(mockStorageClient)
+
+				testPayload := []byte("Test")
+
+				It("Should fail to store the item", func() {
+					By("The bucket existing")
+					gomock.InOrder(
+						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+							Labels: map[string]string{
+								"x-nitric-test-stack-name": "my-bucket",
+								"x-nitric-test-stack-type": "bucket",
+							},
+							Name: "my-bucket-1234",
+						}, nil),
+						mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+					)
+					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+					mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+					By("The object reference being correct")
+					mockBucket.EXPECT().Object("test-file").Return(mockObject)
+
+					mockObject.EXPECT().NewWriter(gomock.Any()).Return(mockWriter)
+					mockWriter.EXPECT().Write(gomock.Any()).Return(0, &googleapi.Error{Code: 403, Message: "insufficient permissions"})
+
+					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
+
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).Should(Equal("unable to write to file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
 					ctrl.Finish()
 				})
 			})
@@ -182,6 +224,42 @@ var _ = Describe("Storage", func() {
 						Expect(err).Should(HaveOccurred())
 
 						By("Not returning the item")
+						Expect(item).To(BeNil())
+					})
+				})
+
+				When("There are insufficient permissions", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+					mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+					mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+					mockObject := storage_mock.NewMockObjectHandle(ctrl)
+					storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+					It("Should return an error", func() {
+						By("the bucket existing")
+						gomock.InOrder(
+							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+								Labels: map[string]string{
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
+								},
+								Name: "my-bucket-1234",
+							}, nil),
+							mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+						)
+						mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+						mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+						mockBucket.EXPECT().Object("test-key").Return(mockObject)
+
+						By("Returning a permission denied error")
+						mockObject.EXPECT().NewReader(gomock.Any()).Return(nil, &googleapi.Error{Code: 403, Message: "insufficient permissions"})
+
+						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).To(Equal("unable to read file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
 						Expect(item).To(BeNil())
 					})
 				})
@@ -280,6 +358,42 @@ var _ = Describe("Storage", func() {
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
+					})
+				})
+
+				When("There are insufficient permissions", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					mockStorageClient := storage_mock.NewMockStorageClient(ctrl)
+					mockBucketIterator := storage_mock.NewMockBucketIterator(ctrl)
+					mockBucket := storage_mock.NewMockBucketHandle(ctrl)
+					mockObject := storage_mock.NewMockObjectHandle(ctrl)
+					storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
+
+					It("Should return an error", func() {
+						By("the bucket existing")
+						gomock.InOrder(
+							mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
+								Labels: map[string]string{
+									"x-nitric-test-stack-name": "test-bucket",
+									"x-nitric-test-stack-type": "bucket",
+								},
+								Name: "my-bucket-1234",
+							}, nil),
+							mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done),
+						)
+						mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
+						mockStorageClient.EXPECT().Bucket("my-bucket-1234").Return(mockBucket)
+
+						mockBucket.EXPECT().Object("test-key").Return(mockObject)
+
+						By("Returning a permission denied error")
+						mockObject.EXPECT().Delete(gomock.Any()).Return(&googleapi.Error{Code: 403, Message: "insufficient permissions"})
+
+						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+
+						By("Returning an error")
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).Should(Equal("unable to delete to file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
 					})
 				})
 			})
