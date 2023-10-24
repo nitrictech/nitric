@@ -25,6 +25,7 @@ import (
 type AwsImports struct {
 	// A map of nitric names to ARNs
 	Secrets map[string]string
+	Buckets map[string]string
 }
 
 type AwsConfig struct {

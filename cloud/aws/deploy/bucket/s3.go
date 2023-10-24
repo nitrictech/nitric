@@ -17,6 +17,8 @@
 package bucket
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -34,6 +36,9 @@ type S3Bucket struct {
 type S3BucketArgs struct {
 	StackID string
 	Bucket  *v1.Bucket
+	// Import an existing bucket
+	Import string
+	Client *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
 }
 
 // NewS3Bucket creates new S3 Buckets
@@ -46,11 +51,44 @@ func NewS3Bucket(ctx *pulumi.Context, name string, args *S3BucketArgs, opts ...p
 		return nil, err
 	}
 
-	res.S3, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Bucket)),
-	})
-	if err != nil {
-		return nil, errors.WithMessage(err, "s3 bucket "+name)
+	tags := common.Tags(args.StackID, name, resources.Bucket)
+
+	if args.Import != "" {
+		bucketLookup, err := s3.LookupBucket(ctx, &s3.LookupBucketArgs{
+			Bucket: args.Import,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply the stack tags to the bucket resource
+		_, err = args.Client.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+			ResourceARNList: aws.StringSlice([]string{bucketLookup.Arn}),
+			Tags:            aws.StringMap(tags),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// import an existing secret
+		res.S3, err = s3.GetBucket(
+			ctx,
+			name,
+			pulumi.ID(bucketLookup.Id),
+			nil,
+			// not our resource so we'll keep it around
+			pulumi.RetainOnDelete(true),
+		)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		res.S3, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
+			Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Bucket)),
+		})
+		if err != nil {
+			return nil, errors.WithMessage(err, "s3 bucket "+name)
+		}
 	}
 
 	return res, nil
