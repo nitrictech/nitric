@@ -185,6 +185,8 @@ message Api {
         // This document will contain extensions that hint of execution units that should be targeted as part of the deployment
         string openapi = 1;
     }
+    // cors config
+    nitric.resource.v1.ApiCorsDefinition cors = 2;
 }
 
 // Declare a new websocket

@@ -30,7 +30,9 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
+	"github.com/nitrictech/nitric/cloud/common/deploy/cors"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type AwsApiGatewayArgs struct {
@@ -38,6 +40,7 @@ type AwsApiGatewayArgs struct {
 	LambdaFunctions map[string]*exec.LambdaExecUnit
 	StackID         string
 	Config          *config.ApiConfig
+	Cors            *v1.ApiCorsDefinition
 }
 
 type AwsApiGateway struct {
@@ -132,11 +135,29 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		return string(b), nil
 	}).(pulumi.StringOutput)
 
+	var awsCorsConfig *apigatewayv2.ApiCorsConfigurationArgs
+
+	if args.Cors != nil {
+		corsConfig, err := cors.GetCorsConfig(args.Cors)
+		if err != nil {
+			return nil, err
+		}
+
+		awsCorsConfig = &apigatewayv2.ApiCorsConfigurationArgs{}
+		awsCorsConfig.AllowCredentials = pulumi.Bool(corsConfig.GetAllowCredentials())
+		awsCorsConfig.AllowOrigins = pulumi.ToStringArray(corsConfig.GetAllowOrigins())
+		awsCorsConfig.AllowHeaders = pulumi.ToStringArray(corsConfig.GetAllowHeaders())
+		awsCorsConfig.AllowMethods = pulumi.ToStringArray(corsConfig.GetAllowMethods())
+		awsCorsConfig.ExposeHeaders = pulumi.ToStringArray(corsConfig.GetExposeHeaders())
+		awsCorsConfig.MaxAge = pulumi.Int(corsConfig.GetMaxAge())
+	}
+
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
-		Body:           doc,
-		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
-		FailOnWarnings: pulumi.Bool(true),
+		Body:              doc,
+		ProtocolType:      pulumi.String("HTTP"),
+		Tags:              pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
+		FailOnWarnings:    pulumi.Bool(true),
+		CorsConfiguration: awsCorsConfig,
 	}, opts...)
 	if err != nil {
 		return nil, err

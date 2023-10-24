@@ -288,6 +288,8 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
 				}
 
+				cors := t.Api.GetCors()
+
 				config, _ := config.Apis[res.Name]
 
 				_, err = api.NewAwsApiGateway(ctx, res.Name, &api.AwsApiGatewayArgs{
@@ -295,6 +297,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					StackID:         stackID,
 					OpenAPISpec:     doc,
 					Config:          config,
+					Cors:            cors,
 				})
 				if err != nil {
 					return err
