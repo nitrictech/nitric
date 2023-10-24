@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/smithy-go"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -74,6 +75,14 @@ func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) 
 	return out.QueueUrl, nil
 }
 
+func isSQSAccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "SQS" && strings.Contains(opErr.Unwrap().Error(), "AccessDenied")
+	}
+	return false
+}
+
 func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Send",
@@ -85,6 +94,14 @@ func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue
 
 	tasks := []queue.NitricTask{task}
 	if _, err := s.SendBatch(ctx, queueName, tasks); err != nil {
+		if isSQSAccessDeniedErr(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to send task to queue, have you requested access to this queue?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"failed to send task",
@@ -115,10 +132,9 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
-				// TODO: Do we want to just mark this one as having errored?
 				return nil, newErr(
 					codes.Internal,
-					"error marshalling task",
+					"error marshalling task to JSON",
 					err,
 				)
 			}
@@ -148,6 +164,14 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 				FailedTasks: failedTasks,
 			}, nil
 		} else {
+			if isSQSAccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to send tasks to queue, have you requested access to this queue?",
+					err,
+				)
+			}
+
 			return nil, newErr(
 				codes.Internal,
 				"error sending tasks",
@@ -193,6 +217,14 @@ func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOpti
 
 		res, err := s.client.ReceiveMessage(ctx, &req)
 		if err != nil {
+			if isSQSAccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to receive task(s) from queue, have you requested access to this queue?",
+					err,
+				)
+			}
+
 			return nil, newErr(
 				codes.Internal,
 				"failed to retrieve message",

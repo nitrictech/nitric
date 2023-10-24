@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/aws/smithy-go"
 	"io"
 	"net/http"
 	"strings"
@@ -73,6 +74,14 @@ func (s *S3StorageService) getBucketName(ctx context.Context, bucket string) (*s
 	return nil, fmt.Errorf("bucket %s does not exist", bucket)
 }
 
+func isS3AccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "S3" && strings.Contains(opErr.Unwrap().Error(), "AccessDenied")
+	}
+	return false
+}
+
 // Read - Retrieves an item from a bucket
 func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
 	newErr := errors.ErrorsWithScope(
@@ -89,6 +98,15 @@ func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) 
 			Key:    aws.String(key),
 		})
 		if err != nil {
+
+			if isS3AccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to read file, have you requested access to this bucket?",
+					err,
+				)
+			}
+
 			return nil, newErr(
 				codes.NotFound,
 				"error retrieving key",
@@ -128,9 +146,17 @@ func (s *S3StorageService) Write(ctx context.Context, bucket string, key string,
 			ContentType: &contentType,
 			Key:         aws.String(key),
 		}); err != nil {
+			if isS3AccessDeniedErr(err) {
+				return newErr(
+					codes.PermissionDenied,
+					"unable to write file, have you requested access to this bucket?",
+					err,
+				)
+			}
+
 			return newErr(
 				codes.Internal,
-				"unable to put object",
+				"unable to put object"+fmt.Sprintf("Error: %v, Type: %T\n", err, err),
 				err,
 			)
 		}
@@ -161,6 +187,14 @@ func (s *S3StorageService) Delete(ctx context.Context, bucket string, key string
 			Bucket: b,
 			Key:    aws.String(key),
 		}); err != nil {
+			if isS3AccessDeniedErr(err) {
+				return newErr(
+					codes.PermissionDenied,
+					"unable to delete file, have you requested access to this bucket?",
+					err,
+				)
+			}
+
 			return newErr(
 				codes.Internal,
 				"unable to delete object",
