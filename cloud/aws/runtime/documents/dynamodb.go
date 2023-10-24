@@ -17,7 +17,6 @@ package documents
 import (
 	"context"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"io"
 	"sort"
 	"strings"
@@ -27,6 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/dynamodbiface"

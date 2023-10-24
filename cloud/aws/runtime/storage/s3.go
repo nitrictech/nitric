@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"io"
 	"net/http"
 	"strings"
@@ -27,6 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface"
@@ -98,7 +98,6 @@ func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) 
 			Key:    aws.String(key),
 		})
 		if err != nil {
-
 			if isS3AccessDeniedErr(err) {
 				return nil, newErr(
 					codes.PermissionDenied,
