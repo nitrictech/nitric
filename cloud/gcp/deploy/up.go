@@ -26,6 +26,7 @@ import (
 	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"github.com/getkin/kin-openapi/openapi3"
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
@@ -479,12 +480,12 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	err = pulumiStack.SetConfig(context.TODO(), "gcp:region", auto.ConfigValue{Value: details.Region})
-	if err != nil {
-		return err
-	}
-
-	err = pulumiStack.SetConfig(context.TODO(), "gcp:project", auto.ConfigValue{Value: details.ProjectId})
+	err = pulumiStack.SetAllConfig(context.TODO(), auto.ConfigMap{
+		"gcp:region":     auto.ConfigValue{Value: details.Region},
+		"gcp:project":    auto.ConfigValue{Value: details.ProjectId},
+		"gcp:version":    auto.ConfigValue{Value: pulumiGcpVersion},
+		"docker:version": auto.ConfigValue{Value: commonDeploy.PulumiDockerVersion},
+	})
 	if err != nil {
 		return err
 	}
