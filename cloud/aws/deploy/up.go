@@ -423,7 +423,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	_ = pulumiStack.SetConfig(context.TODO(), "aws:region", auto.ConfigValue{Value: details.Region})
+	err = pulumiStack.SetAllConfig(context.TODO(), auto.ConfigMap{
+		"aws:region":     auto.ConfigValue{Value: details.Region},
+		"aws:version":    auto.ConfigValue{Value: pulumiAwsVersion},
+		"docker:version": auto.ConfigValue{Value: commonDeploy.PulumiDockerVersion},
+	})
+	if err != nil {
+		return err
+	}
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{
 		Stream: stream,

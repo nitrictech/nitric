@@ -46,6 +46,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -413,8 +414,16 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
-	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})
+	err = pulumiStack.SetAllConfig(context.TODO(), auto.ConfigMap{
+		"azure-native:location": auto.ConfigValue{Value: details.Region},
+		"azure:location":        auto.ConfigValue{Value: details.Region},
+		"azure-native:version":  auto.ConfigValue{Value: pulumiAzureNativeVersion},
+		"azure:version":         auto.ConfigValue{Value: pulumiAzureVersion},
+		"docker:version":        auto.ConfigValue{Value: commonDeploy.PulumiDockerVersion},
+	})
+	if err != nil {
+		return err
+	}
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{
 		Stream: stream,
