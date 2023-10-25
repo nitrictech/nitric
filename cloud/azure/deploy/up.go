@@ -289,7 +289,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						StackID:                       stackID,
 					}, pulumi.Parent(contEnv))
 					if err != nil {
-						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", eu.Name)
+						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", err.Error())
 					}
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
