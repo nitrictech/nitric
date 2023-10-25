@@ -42,7 +42,7 @@ type LambdaExecUnitArgs struct {
 	// Image needs to be built and uploaded first
 	DockerImage *image.Image
 	Compute     *v1.ExecutionUnit
-	EnvMap      map[string]string
+	EnvMap      pulumi.StringMap
 	Config      config.AwsLambdaConfig
 }
 
@@ -152,7 +152,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
 	for k, v := range args.EnvMap {
-		envVars[k] = pulumi.String(v)
+		envVars[k] = v
 	}
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
