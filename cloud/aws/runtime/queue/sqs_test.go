@@ -16,11 +16,13 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/aws/smithy-go"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -117,6 +119,58 @@ var _ = Describe("Sqs", func() {
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
+				ctrl.Finish()
+			})
+		})
+
+		When("Permission to access the queue is missing", func() {
+			It("Should return an error", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
+				providerMock := mock_provider.NewMockAwsProvider(ctrl)
+				plugin := NewWithClient(providerMock, sqsMock)
+
+				queueUrl := aws.String("https://example.com/test-queue")
+
+				By("The queue being available")
+				providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
+					"test-queue": "arn:aws:sqs:us-east-2:444455556666:test-queue",
+				}, nil)
+
+				By("Calling GetQueueUrl to get the queue name")
+				sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+					QueueUrl: queueUrl,
+				}, nil)
+
+				opErr := &smithy.OperationError{
+					ServiceID: "SQS",
+					Err:       errors.New("AccessDenied"),
+				}
+
+				By("Calling SendMessageBatch with the expected batch entries")
+				sqsMock.EXPECT().SendMessageBatch(gomock.Any(), &sqs.SendMessageBatchInput{
+					QueueUrl: queueUrl,
+					Entries: []types.SendMessageBatchRequestEntry{
+						{
+							Id:          aws.String("1234"),
+							MessageBody: aws.String(`{"id":"1234","payloadType":"test-payload","payload":{"Test":"Test"}}`),
+						},
+					},
+				}).Return(nil, opErr)
+
+				_, err := plugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
+					{
+						ID:          "1234",
+						PayloadType: "test-payload",
+						Payload: map[string]interface{}{
+							"Test": "Test",
+						},
+					},
+				})
+
+				By("Returning an error")
+				Expect(err).Should(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unable to send task"))
 				ctrl.Finish()
 			})
 		})
@@ -254,6 +308,54 @@ var _ = Describe("Sqs", func() {
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
+
+					ctrl.Finish()
+				})
+			})
+
+			When("Permission to access the queue is missing", func() {
+				It("Should return an error", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
+					providerMock := mock_provider.NewMockAwsProvider(ctrl)
+					plugin := NewWithClient(providerMock, sqsMock)
+
+					queueUrl := aws.String("https://example.com/test-queue")
+
+					By("Calling GetResources to get the queue arn")
+					providerMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Queue).Return(map[string]string{
+						"mock-queue": "arn:aws:sqs:us-east-2:444455556666:mock-queue",
+					}, nil)
+
+					opErr := &smithy.OperationError{
+						ServiceID: "SQS",
+						Err:       errors.New("AccessDenied"),
+					}
+
+					By("Calling GetQueueUrl to get the queue url")
+					sqsMock.EXPECT().GetQueueUrl(gomock.Any(), gomock.Any()).Times(1).Return(&sqs.GetQueueUrlOutput{
+						QueueUrl: queueUrl,
+					}, nil)
+
+					By("Calling ReceiveMessage with the expected inputs")
+					sqsMock.EXPECT().ReceiveMessage(gomock.Any(), &sqs.ReceiveMessageInput{
+						MaxNumberOfMessages: int32(10),
+						MessageAttributeNames: []string{
+							string(types.QueueAttributeNameAll),
+						},
+						QueueUrl: queueUrl,
+					}).Times(1).Return(nil, opErr)
+
+					depth := uint32(10)
+
+					_, err := plugin.Receive(context.TODO(), queue.ReceiveOptions{
+						QueueName: "mock-queue",
+						Depth:     &depth,
+					})
+
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("unable to receive task"))
 
 					ctrl.Finish()
 				})

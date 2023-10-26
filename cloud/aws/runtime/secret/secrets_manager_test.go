@@ -19,7 +19,8 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/smithy-go"
 	"github.com/golang/mock/gomock"
 
 	. "github.com/onsi/ginkgo"
@@ -154,6 +155,41 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("aws error"))
+					By("returning a nil response")
+					Expect(response).Should(BeNil())
+				})
+			})
+
+			When("Putting a secret without permissions", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
+				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				secretPlugin := &secretsManagerSecretService{
+					client:   mockSecretClient,
+					provider: mockProvider,
+				}
+				It("Should pass through the error", func() {
+					defer ctrl.Finish()
+
+					By("The secret existing")
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
+						"Test": testARN,
+					}, nil)
+
+					opErr := &smithy.OperationError{
+						ServiceID: "Secrets Manager",
+						Err:       errors.New("AccessDenied"),
+					}
+
+					mockSecretClient.EXPECT().PutSecretValue(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil, opErr).Times(1)
+
+					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					By("returning an error")
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("unable to put secret value"))
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})
@@ -303,6 +339,47 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					Expect(err).Should(HaveOccurred())
 
 					By("Returning a response with the secret")
+					Expect(response).Should(BeNil())
+				})
+			})
+			When("Accessing a secret without permission", func() {
+				ctrl := gomock.NewController(GinkgoT())
+				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
+				secretPlugin := &secretsManagerSecretService{
+					client:   mockSecretClient,
+					provider: mockProvider,
+				}
+				It("Should not return the secret", func() {
+					defer ctrl.Finish()
+
+					By("the secret existing")
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
+						"Test": testARN,
+					}, nil)
+
+					opErr := &smithy.OperationError{
+						ServiceID: "Secrets Manager",
+						Err:       errors.New("AccessDenied"),
+					}
+
+					mockSecretClient.EXPECT().GetSecretValue(gomock.Any(),
+						&secretsmanager.GetSecretValueInput{
+							SecretId:  aws.String(testARN),
+							VersionId: aws.String("Version-Id"),
+						},
+					).Return(nil, opErr).Times(1)
+
+					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
+						Secret: &secret.Secret{
+							Name: "Test",
+						},
+						Version: "Version-Id",
+					})
+					By("returning an error")
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("unable to access secret value"))
+					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})
 			})

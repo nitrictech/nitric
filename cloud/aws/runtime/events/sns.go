@@ -18,12 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"go.opentelemetry.io/contrib/propagators/aws/xray"
 	"go.opentelemetry.io/otel/propagation"
@@ -42,6 +44,14 @@ type SnsEventService struct {
 	client    snsiface.SNSAPI
 	sfnClient sfniface.SFNAPI
 	provider  core.AwsProvider
+}
+
+func isSNSAccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "SNS" && strings.Contains(opErr.Unwrap().Error(), "AuthorizationError")
+	}
+	return false
 }
 
 func (s *SnsEventService) getTopics(ctx context.Context) (map[string]string, error) {
@@ -83,11 +93,7 @@ func (s *SnsEventService) publish(ctx context.Context, topic string, message str
 
 	_, err = s.client.Publish(ctx, publishInput)
 
-	if err != nil {
-		return fmt.Errorf("unable to publish message: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (s *SnsEventService) publishDelayed(ctx context.Context, topic string, delay int, message string) error {
@@ -112,11 +118,8 @@ func (s *SnsEventService) publishDelayed(ctx context.Context, topic string, dela
 			"message": %s
 		}`, delay, message)),
 	})
-	if err != nil {
-		return fmt.Errorf("error starting state machine execution: %w", err)
-	}
 
-	return nil
+	return err
 }
 
 // Publish to a given topic
@@ -147,6 +150,14 @@ func (s *SnsEventService) Publish(ctx context.Context, topic string, delay int, 
 	}
 
 	if err != nil {
+		if isSNSAccessDeniedErr(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to publish to topic, have you requested access to this topic?",
+				err,
+			)
+		}
+
 		return newErr(codes.Internal, "error publishing message", err)
 	}
 

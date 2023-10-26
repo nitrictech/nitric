@@ -26,6 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/dynamodbiface"
@@ -48,6 +49,14 @@ type DynamoDocService struct {
 	document.UnimplementedDocumentPlugin
 	client   dynamodbiface.DynamoDBAPI
 	provider core.AwsProvider
+}
+
+func isDynamoAccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "DynamoDB" && strings.Contains(opErr.Unwrap().Error(), "AccessDenied")
+	}
+	return false
 }
 
 func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
@@ -89,6 +98,14 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 
 	result, err := s.client.GetItem(ctx, input)
 	if err != nil {
+		if isDynamoAccessDeniedErr(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to get document value, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			fmt.Sprintf("error retrieving key %v", key),
@@ -170,6 +187,14 @@ func (s *DynamoDocService) Set(ctx context.Context, key *document.Key, value map
 
 	_, err = s.client.PutItem(ctx, input)
 	if err != nil {
+		if isDynamoAccessDeniedErr(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to set document value, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"error putting item",
@@ -222,6 +247,14 @@ func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error 
 
 	_, err = s.client.DeleteItem(ctx, deleteInput)
 	if err != nil {
+		if isDynamoAccessDeniedErr(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to delete document, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			fmt.Sprintf("error deleting %v item %v : %v", key.Collection, key.Id, err),
@@ -309,6 +342,14 @@ func (s *DynamoDocService) Query(ctx context.Context, collection *document.Colle
 
 	queryResult, err := s.query(ctx, collection, expressions, limit, pagingToken)
 	if err != nil {
+		if isDynamoAccessDeniedErr(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to query document values, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"query error",
@@ -370,6 +411,14 @@ func (s *DynamoDocService) QueryStream(ctx context.Context, collection *document
 	if fetchErr != nil {
 		// Return an error only iterator if the initial fetch failed
 		return func() (*document.Document, error) {
+			if isDynamoAccessDeniedErr(fetchErr) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to query document values, have you requested access to this collection?",
+					fetchErr,
+				)
+			}
+
 			return nil, newErr(
 				codes.Internal,
 				"query error",
