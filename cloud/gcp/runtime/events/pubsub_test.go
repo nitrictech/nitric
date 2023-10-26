@@ -22,6 +22,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mock_cloudtasks "github.com/nitrictech/nitric/cloud/gcp/mocks/cloudtasks"
 	mock_core "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
@@ -110,6 +112,38 @@ var _ = Describe("Pubsub Plugin", func() {
 
 				err := pubsubPlugin.Publish(context.TODO(), "Test", 0, event)
 				Expect(err).ShouldNot(HaveOccurred())
+			})
+		})
+
+		When("There are insufficient permissions", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			pubsubClient := mock_pubsub.NewMockPubsubClient(ctrl)
+			mockTopic := mock_pubsub.NewMockTopic(ctrl)
+			mockIterator := mock_pubsub.NewMockTopicIterator(ctrl)
+			mockPublishResult := mock_pubsub.NewMockPublishResult(ctrl)
+			pubsubPlugin, _ := pubsub_service.NewWithClient(nil, pubsubClient, nil)
+
+			It("should return an error", func() {
+				By("the topic existing")
+				pubsubClient.EXPECT().Topics(gomock.Any()).Return(mockIterator)
+				gomock.InOrder(
+					mockIterator.EXPECT().Next().Return(mockTopic, nil),
+					mockIterator.EXPECT().Next().Return(nil, iterator.Done),
+				)
+
+				mockPublishResult.EXPECT().Get(gomock.Any()).Return("", status.Error(codes.PermissionDenied, "insufficient permissions")).Times(1)
+				mockTopic.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(mockPublishResult).Times(1)
+
+				mockTopic.EXPECT().Labels(gomock.Any()).Return(map[string]string{
+					"x-nitric-test-stack-name": "Test",
+					"x-nitric-test-stack-type": "topic",
+				}, nil)
+
+				By("an insufficient permissions error is returned")
+				err := pubsubPlugin.Publish(context.TODO(), "Test", 0, event)
+
+				Expect(err).Should(HaveOccurred())
+				Expect(err.Error()).Should(Equal("permission denied, have you requested access to this topic?: \n rpc error: code = PermissionDenied desc = insufficient permissions"))
 			})
 		})
 	})

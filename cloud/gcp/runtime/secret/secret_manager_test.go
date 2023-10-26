@@ -23,6 +23,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mocks "github.com/nitrictech/nitric/cloud/gcp/mocks/gcp_secret"
 	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
@@ -87,6 +89,46 @@ var _ = Describe("Secret Manager", func() {
 
 					By("Returning the service provided version id")
 					Expect(response.SecretVersion.Version).To(Equal("1"))
+				})
+			})
+
+			When("Putting a Secret with insufficient permissions", func() {
+				crtl := gomock.NewController(GinkgoT())
+				mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
+				secretPlugin := &secretManagerSecretService{
+					client:    mockSecretClient,
+					projectId: "my-project",
+					cache:     make(map[string]string),
+				}
+
+				It("Should unsuccessfully store a secret", func() {
+					// Assert all methods are called at least their number of times
+					defer crtl.Finish()
+					// Mocking expects
+					By("calling SecretManagerService.ListSecrets with the expected request")
+
+					si := mocks.NewMockSecretIterator(crtl)
+					si.EXPECT().Next().Return(mockSecret, nil)
+
+					mockSecretClient.EXPECT().ListSecrets(
+						gomock.Any(),
+						&secretmanagerpb.ListSecretsRequest{
+							Parent: "projects/my-project",
+							Filter: "labels.x-nitric-test-stack-name=Test",
+						},
+					).Return(si).Times(1)
+
+					By("Calling SecretManagerService AddSecretVersion with the expected payload")
+					mockSecretClient.EXPECT().AddSecretVersion(
+						gomock.Any(),
+						gomock.Any(),
+					).Return(nil, status.Error(codes.PermissionDenied, "insufficient permissions")).Times(1)
+
+					_, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					By("Returning a permission denied error")
+					Expect(err).Should(HaveOccurred())
+					fmt.Println(err.Error())
+					Expect(err.Error()).Should(Equal("permission denied, have you requested access to this secret?: \n rpc error: code = PermissionDenied desc = insufficient permissions"))
 				})
 			})
 
@@ -176,6 +218,39 @@ var _ = Describe("Secret Manager", func() {
 						Expect(response.Value).To(Equal([]byte("Super Secret Message")))
 					})
 				})
+
+				When("There are insufficient permissions", func() {
+					crtl := gomock.NewController(GinkgoT())
+					mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
+					secretPlugin := &secretManagerSecretService{
+						client:    mockSecretClient,
+						projectId: "my-project",
+						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
+					}
+					It("Should return a permission denied error", func() {
+						defer crtl.Finish()
+						// Mocking expects
+						By("calling SecretManagerService.AccessSecretVersion with the expected payload")
+						mockSecretClient.EXPECT().AccessSecretVersion(
+							gomock.Any(),
+							&secretmanagerpb.AccessSecretVersionRequest{
+								Name: "projects/my-project/secrets/test-id/versions/test-version-id",
+							},
+						).Return(nil, status.Error(codes.PermissionDenied, "insufficient permissions")).Times(1)
+
+						_, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
+							Secret: &secret.Secret{
+								Name: "test-id",
+							},
+							Version: "test-version-id",
+						})
+
+						By("Returning a permission denied error")
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).Should(Equal("permission denied, have you requested access to this secret?: \n rpc error: code = PermissionDenied desc = insufficient permissions"))
+					})
+				})
+
 				When("The secret doesn't exist", func() {
 					crtl := gomock.NewController(GinkgoT())
 					mockSecretClient := mocks.NewMockSecretManagerClient(crtl)

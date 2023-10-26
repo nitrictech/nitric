@@ -60,13 +60,16 @@ func (s *FirestoreDocService) Get(ctx context.Context, key *document.Key) (*docu
 
 	value, err := doc.Get(ctx)
 	if err != nil {
-		code := codes.Internal
-		if status.Code(err) == grpcCodes.NotFound {
-			code = codes.NotFound
+		if status.Code(err) == grpcCodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this collection?",
+				err,
+			)
 		}
 
 		return nil, newErr(
-			code,
+			codes.Internal,
 			"unable to retrieve value",
 			err,
 		)
@@ -105,6 +108,14 @@ func (s *FirestoreDocService) Set(ctx context.Context, key *document.Key, value 
 	doc := s.getDocRef(key)
 
 	if _, err := doc.Set(ctx, value); err != nil {
+		if status.Code(err) == grpcCodes.PermissionDenied {
+			return newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"error updating value",
@@ -175,6 +186,14 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 
 	// Delete document
 	if _, err := doc.Delete(ctx); err != nil {
+		if status.Code(err) == grpcCodes.PermissionDenied {
+			return newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this collection?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"error deleting value",

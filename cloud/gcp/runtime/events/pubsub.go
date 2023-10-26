@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	grpccodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
@@ -119,6 +122,7 @@ func (s *PubsubEventService) publish(ctx context.Context, topic string, pubsubMs
 	}
 
 	_, err = pubsubTopic.Publish(ctx, msg).Get(ctx)
+
 	return err
 }
 
@@ -205,6 +209,13 @@ func (s *PubsubEventService) Publish(ctx context.Context, topic string, delay in
 	}
 
 	if err != nil {
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this topic?", err)
+		}
+
 		return newErr(
 			codes.Internal,
 			fmt.Sprintf("error publishing message: %s", err.Error()),
