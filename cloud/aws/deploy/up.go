@@ -226,7 +226,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						DockerImage: image,
 						StackID:     stackID,
 						Compute:     eu.ExecutionUnit,
-						EnvMap:      eu.ExecutionUnit.Env,
+						EnvMap:      pulumi.ToStringMap(eu.ExecutionUnit.Env),
 						Client:      lambdaClient,
 						Config:      *typeConfig.Lambda,
 					})
