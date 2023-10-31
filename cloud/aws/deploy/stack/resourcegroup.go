@@ -19,6 +19,9 @@ package stack
 import (
 	"encoding/json"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -30,7 +33,7 @@ type AwsResourceGroup struct {
 }
 
 type AwsResourceGroupArgs struct {
-	StackID pulumi.StringInput
+	StackID string
 }
 
 func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGroupArgs, opts ...pulumi.ResourceOption) (*AwsResourceGroup, error) {
@@ -41,13 +44,15 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 		return nil, err
 	}
 
-	rgQueryJSON := args.StackID.ToStringOutput().ApplyT(func(sid string) (string, error) {
+	rgQueryJSON := pulumi.String(args.StackID).ToStringOutput().ApplyT(func(sid string) (string, error) {
 		b, err := json.Marshal(map[string]interface{}{
 			"ResourceTypeFilters": []string{"AWS::AllSupported"},
 			"TagFilters": []interface{}{
 				map[string]interface{}{
-					"Key":    "x-nitric-stack",
-					"Values": []string{sid},
+					//"Key":    "x-nitric-stack",
+					//"Values": []string{sid},
+					// TODO: validate this key only filter works
+					"Key": tags.GetResourceNameKey(sid),
 				},
 			},
 		})
@@ -59,7 +64,8 @@ func NewAwsResourceGroup(ctx *pulumi.Context, name string, args *AwsResourceGrou
 	}).(pulumi.StringOutput)
 
 	res.ResourceGroup, err = resourcegroups.NewGroup(ctx, "rg-"+ctx.Stack(), &resourcegroups.GroupArgs{
-		Description: pulumi.Sprintf("Nitric RG for stack %s", res.Name),
+		Description: pulumi.Sprintf("Nitric stack %s resources", res.Name),
+		Tags:        pulumi.ToStringMap(tags.Tags(args.StackID, name, resources.Stack)),
 		ResourceQuery: &resourcegroups.GroupResourceQueryArgs{
 			Query: rgQueryJSON,
 		},

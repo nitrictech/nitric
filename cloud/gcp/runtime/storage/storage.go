@@ -18,10 +18,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"time"
+
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -52,7 +57,7 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			if name, ok := b.Labels["x-nitric-name"]; ok {
+			if name, ok := b.Labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && name == bucket {
 				s.cache[name] = s.client.Bucket(b.Name)
 			}
 		}
@@ -63,6 +68,15 @@ func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_st
 	}
 
 	return nil, fmt.Errorf("bucket not found")
+}
+
+// isPermissionDenied returns true if the given error is a Google API error with a StatusForbidden code
+func isPermissionDenied(err error) bool {
+	var ee *googleapi.Error
+	if errors.As(err, &ee) {
+		return ee.Code == http.StatusForbidden
+	}
+	return false
 }
 
 /**
@@ -88,6 +102,14 @@ func (s *StorageStorageService) Read(ctx context.Context, bucket string, key str
 
 	reader, err := bucketHandle.Object(key).NewReader(ctx)
 	if err != nil {
+		if isPermissionDenied(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to read file, have you requested access to this bucket?",
+				err,
+			)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"unable to ger reader for object",
@@ -98,6 +120,14 @@ func (s *StorageStorageService) Read(ctx context.Context, bucket string, key str
 
 	bytes, err := io.ReadAll(reader)
 	if err != nil {
+		if isPermissionDenied(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to read file, have you requested access to this bucket?",
+				err,
+			)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"error reading object stream",
@@ -133,6 +163,14 @@ func (s *StorageStorageService) Write(ctx context.Context, bucket string, key st
 	writer := bucketHandle.Object(key).NewWriter(ctx)
 
 	if _, err := writer.Write(object); err != nil {
+		if isPermissionDenied(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to write to file, have you requested access to this bucket?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"unable to write object",
@@ -141,6 +179,14 @@ func (s *StorageStorageService) Write(ctx context.Context, bucket string, key st
 	}
 
 	if err := writer.Close(); err != nil {
+		if isPermissionDenied(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to write to file, have you requested access to this bucket?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"error closing object write",
@@ -173,6 +219,14 @@ func (s *StorageStorageService) Delete(ctx context.Context, bucket string, key s
 	}
 
 	if err := bucketHandle.Object(key).Delete(ctx); err != nil {
+		if isPermissionDenied(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to delete to file, have you requested access to this bucket?",
+				err,
+			)
+		}
+
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
 		if !errors.Is(err, storage.ErrObjectNotExist) {

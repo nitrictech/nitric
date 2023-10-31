@@ -21,6 +21,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
@@ -40,7 +43,7 @@ import (
 type ContainerAppArgs struct {
 	ResourceGroupName             pulumi.StringInput
 	Location                      pulumi.StringInput
-	StackID                       pulumi.StringInput
+	StackID                       string
 	SubscriptionID                pulumi.StringInput
 	Registry                      *containerregistry.Registry
 	RegistryUser                  pulumi.StringPtrInput
@@ -113,7 +116,7 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 
 				resp, err := client.Do(req)
 				if err == nil {
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					break
 				}
 			}
@@ -197,6 +200,10 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("NITRIC_ENVIRONMENT"),
 			Value: pulumi.String("cloud"),
+		},
+		app.EnvironmentVarArgs{
+			Name:  pulumi.String(core.NITRIC_STACK_ID),
+			Value: pulumi.String(args.StackID),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
@@ -291,7 +298,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 				},
 			},
 		},
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.ExecutionUnit)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
 				MaxReplicas: pulumi.Int(args.Config.MaxReplicas),

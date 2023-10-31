@@ -24,9 +24,11 @@ import (
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 
 	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	mock_s3iface "github.com/nitrictech/nitric/cloud/aws/mocks/s3"
@@ -77,6 +79,36 @@ var _ = Describe("S3", func() {
 					Expect(err).Should(HaveOccurred())
 				})
 			})
+
+			When("Creating in a bucket without permissions", func() {
+				testPayload := []byte("Test")
+				ctrl := gomock.NewController(GinkgoT())
+
+				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
+				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
+				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
+
+				It("Should fail to store the object", func() {
+					By("the bucket existing")
+					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+						"my-bucket": "arn:aws:s3:::my-bucket",
+					}, nil)
+
+					opErr := &smithy.OperationError{
+						ServiceID: "S3",
+						Err:       errors.New("AccessDenied"),
+					}
+
+					By("failing to write the item")
+					mockStorageClient.EXPECT().PutObject(gomock.Any(), gomock.Any()).Return(nil, opErr)
+
+					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", testPayload)
+					By("Returning an error")
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("unable to write file"))
+				})
+			})
 		})
 	})
 	When("Read", func() {
@@ -113,6 +145,39 @@ var _ = Describe("S3", func() {
 				})
 				When("The item doesn't exist", func() {
 				})
+
+				When("Accessing a file without permissions", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
+					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
+					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
+
+					It("Should fail to retrieve the object", func() {
+						By("the bucket existing")
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+							"test-bucket": "arn:aws:s3:::test-bucket",
+						}, nil)
+
+						opErr := &smithy.OperationError{
+							ServiceID: "S3",
+							Err:       errors.New("AccessDenied"),
+						}
+
+						By("the object existing")
+						mockStorageClient.EXPECT().GetObject(gomock.Any(), &s3.GetObjectInput{
+							Bucket: aws.String("test-bucket"),
+							Key:    aws.String("test-key"),
+						}).Return(nil, opErr)
+
+						object, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						By("Returning an error")
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("unable to read file"))
+						By("returning a nil response")
+						Expect(object).Should(BeNil())
+					})
+				})
 			})
 			When("The bucket doesn't exist", func() {
 			})
@@ -134,6 +199,36 @@ var _ = Describe("S3", func() {
 							"test-bucket": "arn:aws:s3:::test-bucket",
 						}, nil)
 
+						opErr := &smithy.OperationError{
+							ServiceID: "S3",
+							Err:       errors.New("AccessDenied"),
+						}
+
+						By("not deleting the object")
+						mockStorageClient.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(nil, opErr)
+
+						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						By("Returning an error")
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("unable to delete file"))
+					})
+				})
+				When("The item doesn't exist", func() {
+				})
+
+				When("Accessing without permissions", func() {
+					ctrl := gomock.NewController(GinkgoT())
+					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
+					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
+					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
+
+					It("Should fail to delete the object", func() {
+						By("the bucket existing")
+						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
+							"test-bucket": "arn:aws:s3:::test-bucket",
+						}, nil)
+
 						By("successfully deleting the object")
 						mockStorageClient.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(&s3.DeleteObjectOutput{}, nil)
 
@@ -141,8 +236,6 @@ var _ = Describe("S3", func() {
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 					})
-				})
-				When("The item doesn't exist", func() {
 				})
 			})
 			When("The bucket doesn't exist", func() {

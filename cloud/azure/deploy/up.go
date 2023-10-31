@@ -22,6 +22,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -45,6 +46,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
@@ -123,7 +125,14 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		if err != nil {
 			return err
 		}
-		stackID := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.ID())
+
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		stackID := <-stackIdChan
 
 		clientConfig, err := authorization.GetClientConfig(ctx)
 		if err != nil {
@@ -132,7 +141,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		rg, err := resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
 			Location: pulumi.String(details.Region),
-			Tags:     common.Tags(ctx, stackID, ctx.Stack()),
+			Tags:     pulumi.ToStringMap(common.Tags(stackID, ctx.Stack(), nitricresources.Stack)),
 		})
 		if err != nil {
 			return errors.WithMessage(err, "resource group create")
@@ -162,7 +171,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				},
 				TenantId: pulumi.String(clientConfig.TenantId),
 			},
-			Tags: common.Tags(ctx, stackID, kvName),
+			Tags: pulumi.ToStringMap(common.Tags(stackID, kvName, nitricresources.Stack)),
 		})
 		if err != nil {
 			return err
@@ -181,7 +190,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				Sku: azureStorage.SkuArgs{
 					Name: pulumi.String(storage.SkuName_Standard_LRS),
 				},
-				Tags: common.Tags(ctx, stackID, accName),
+				Tags: pulumi.ToStringMap(common.Tags(stackID, accName, nitricresources.Stack)),
 			})
 			if err != nil {
 				return err
@@ -193,7 +202,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 		var mongoCollections *collection.MongoCollections
 		if len(collections) > 0 {
-			mongoCollections, err = collection.NewMongoCollections(ctx, "", &collection.MongoCollectionsArgs{
+			mongoCollections, err = collection.NewMongoCollections(ctx, "mongodb", &collection.MongoCollectionsArgs{
 				ResourceGroup: rg,
 				Collections:   collections,
 			})
@@ -205,7 +214,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// For each queue create a new queue
 		for _, q := range queues {
 			_, err := queue.NewAzureStorageQueue(ctx, q.Name, &queue.AzureStorageQueueArgs{
-				StackID:       stackID,
 				Account:       storageAccount,
 				ResourceGroup: rg,
 			})
@@ -278,9 +286,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 						MongoDatabaseConnectionString: mongoConnectionString,
 						Config:                        *euConfig.ContainerApps,
 						Schedules:                     schedules,
+						StackID:                       stackID,
 					}, pulumi.Parent(contEnv))
 					if err != nil {
-						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", eu.Name)
+						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", err.Error())
 					}
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
@@ -308,7 +317,6 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		// For each bucket create a new bucket
 		for _, b := range buckets {
 			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
-				StackID:       stackID,
 				Account:       storageAccount,
 				ResourceGroup: rg,
 			})
@@ -407,8 +415,16 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		return err
 	}
 
-	_ = pulumiStack.SetConfig(context.TODO(), "azure-native:location", auto.ConfigValue{Value: details.Region})
-	_ = pulumiStack.SetConfig(context.TODO(), "azure:location", auto.ConfigValue{Value: details.Region})
+	err = pulumiStack.SetAllConfig(context.TODO(), auto.ConfigMap{
+		"azure-native:location": auto.ConfigValue{Value: details.Region},
+		"azure:location":        auto.ConfigValue{Value: details.Region},
+		"azure-native:version":  auto.ConfigValue{Value: pulumiAzureNativeVersion},
+		"azure:version":         auto.ConfigValue{Value: pulumiAzureVersion},
+		"docker:version":        auto.ConfigValue{Value: commonDeploy.PulumiDockerVersion},
+	})
+	if err != nil {
+		return err
+	}
 
 	messageWriter := &pulumiutils.UpStreamMessageWriter{
 		Stream: stream,

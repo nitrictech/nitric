@@ -17,6 +17,7 @@ package topic
 import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
@@ -34,7 +35,7 @@ type AzureEventGridTopic struct {
 }
 
 type AzureEventGridTopicArgs struct {
-	StackID       pulumi.StringInput
+	StackID       string
 	ResourceGroup *resources.ResourceGroup
 }
 
@@ -49,7 +50,7 @@ func NewAzureEventGridTopic(ctx *pulumi.Context, name string, args *AzureEventGr
 	res.Topic, err = eventgrid.NewTopic(ctx, utils.ResourceName(ctx, res.Name, utils.EventGridRT), &eventgrid.TopicArgs{
 		ResourceGroupName: args.ResourceGroup.Name,
 		Location:          args.ResourceGroup.Location,
-		Tags:              common.Tags(ctx, args.StackID, res.Name),
+		Tags:              pulumi.ToStringMap(common.Tags(args.StackID, res.Name, nitricresources.Topic)),
 	})
 	if err != nil {
 		return nil, err

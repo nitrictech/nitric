@@ -20,6 +20,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+
 	apigateway "cloud.google.com/go/apigateway/apiv1"
 	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 
@@ -69,8 +71,8 @@ type GenericIterator[T any] interface {
 	Next() (T, error)
 }
 
-func filter(stack string, name string) string {
-	return fmt.Sprintf("labels.x-nitric-stack:%s AND labels.x-nitric-name:%s", stack, name)
+func filter(stackName string, name string) string {
+	return fmt.Sprintf("labels.%s:%s", tags.GetResourceNameKey(stackName), name)
 }
 
 func (g *gcpProviderImpl) getApiGatewayDetails(ctx context.Context, name string) (*resource.DetailsResponse[any], error) {
@@ -169,7 +171,7 @@ func (g *gcpProviderImpl) GetServiceAccountEmail() (string, error) {
 }
 
 func New() (GcpProvider, error) {
-	stack := utils.GetEnv("NITRIC_STACK", "")
+	stack := utils.GetEnv("NITRIC_STACK_ID", "")
 	region := utils.GetEnv("GCP_REGION", "")
 
 	apiClient, err := apigateway.NewClient(context.TODO())

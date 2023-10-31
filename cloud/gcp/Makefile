@@ -10,16 +10,21 @@ binaries: deploybin
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 runtimebin:
 	@echo Building GCP Runtime Server
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-s -w -extldflags=-static" ./runtime/cmd
 
 predeploybin: runtimebin
 	@cp bin/runtime-gcp deploy/runtime-gcp
+
+sec:
+	@touch deploy/runtime-gcp
+	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@rm deploy/runtime-gcp
 
 # FIXME: proto server registration error
 # There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin
 	@echo Building GCP Deployment Server
-	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
 	@rm deploy/runtime-gcp
 
 .PHONY: install

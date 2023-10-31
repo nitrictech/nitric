@@ -17,7 +17,7 @@
 package policy
 
 import (
-	"crypto/md5"
+	"crypto/md5" //#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -36,7 +36,7 @@ import (
 )
 
 func md5Hash(b []byte) string {
-	hasher := md5.New()
+	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 	hasher.Write(b)
 
 	return hex.EncodeToString(hasher.Sum(nil))

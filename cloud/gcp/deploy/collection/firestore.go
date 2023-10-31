@@ -31,7 +31,6 @@ type FirestoreCollectionDatabase struct {
 type FirestoreCollectionDatabaseArgs struct {
 	Location      string
 	DefaultExists bool
-	StackID       pulumi.StringInput
 }
 
 func NewFirestoreCollectionDatabase(ctx *pulumi.Context, name string, args *FirestoreCollectionDatabaseArgs, opts ...pulumi.ResourceOption) (*FirestoreCollectionDatabase, error) {

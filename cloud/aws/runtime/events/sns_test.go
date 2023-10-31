@@ -23,10 +23,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"github.com/aws/smithy-go"
 	"github.com/golang/mock/gomock"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 
 	provider_mocks "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	sfn_mock "github.com/nitrictech/nitric/cloud/aws/mocks/sfn"
@@ -117,6 +118,34 @@ var _ = Describe("Sns", func() {
 				})
 
 				Expect(err.Error()).To(ContainSubstring("could not find topic"))
+			})
+		})
+
+		When("Publishing with access to the topic", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			awsMock := provider_mocks.NewMockAwsProvider(ctrl)
+			snsMock := sns_mock.NewMockSNSAPI(ctrl)
+
+			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
+
+			payload := map[string]interface{}{"Test": "test"}
+
+			It("Should return an error", func() {
+				By("Returning no topics")
+				opErr := &smithy.OperationError{
+					ServiceID: "SNS",
+					Err:       errors.New("AuthorizationError"),
+				}
+
+				awsMock.EXPECT().GetResources(gomock.Any(), core.AwsResource_Topic).Return(nil, opErr)
+
+				err := eventsClient.Publish(context.TODO(), "test", 0, &events.NitricEvent{
+					ID:          "testing",
+					PayloadType: "Test Payload",
+					Payload:     payload,
+				})
+
+				Expect(err.Error()).To(ContainSubstring("unable to publish to topic"))
 			})
 		})
 	})

@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -38,7 +40,7 @@ import (
 
 type ApiGatewayArgs struct {
 	ProjectId       string
-	StackID         pulumi.StringInput
+	StackID         string
 	OpenAPISpec     *openapi3.T
 	Functions       map[string]*exec.CloudRunner
 	SecuritySchemes openapi3.SecuritySchemes
@@ -179,9 +181,11 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		return base64.StdEncoding.EncodeToString(b), nil
 	}).(pulumi.StringOutput)
 
+	resourceLabels := common.Tags(args.StackID, name, resources.API)
+
 	res.Api, err = apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(resourceLabels),
 	}, opts...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api "+name)
@@ -228,7 +232,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 				GoogleServiceAccount: svcAcct.ServiceAccount.Email,
 			},
 		},
-		Labels: common.Tags(ctx, args.StackID, name),
+		Labels: pulumi.ToStringMap(resourceLabels),
 	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api config")
@@ -239,7 +243,7 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		DisplayName: pulumi.String(name + "-gateway"),
 		GatewayId:   pulumi.String(name + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", args.ProjectId, res.Api.ApiId, config.ApiConfigId),
-		Labels:      common.Tags(ctx, args.StackID, name),
+		Labels:      pulumi.ToStringMap(resourceLabels),
 	}, opts...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "api gateway")

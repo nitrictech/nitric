@@ -19,6 +19,8 @@ package websocket
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -32,7 +34,7 @@ type AwsWebsocketApiGatewayArgs struct {
 	ConnectTarget    *exec.LambdaExecUnit
 	DisconnectTarget *exec.LambdaExecUnit
 
-	StackID pulumi.StringInput
+	StackID string
 }
 
 type AwsWebsocketApiGateway struct {
@@ -54,7 +56,7 @@ func NewAwsWebsocketApiGateway(ctx *pulumi.Context, name string, args *AwsWebsoc
 
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		ProtocolType: pulumi.String("WEBSOCKET"),
-		Tags:         common.Tags(ctx, args.StackID, name),
+		Tags:         pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Websocket)),
 		// TODO: We won't actually be using this, but it is required.
 		// Instead we'll be using the $default route
 		RouteSelectionExpression: pulumi.String("$request.body.action"),
@@ -164,7 +166,7 @@ func NewAwsWebsocketApiGateway(ctx *pulumi.Context, name string, args *AwsWebsoc
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      res.Api.ID(),
-		Tags:       common.Tags(ctx, args.StackID, name+"DefaultStage"),
+		Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name+"DefaultStage", resources.Websocket)),
 	}, opts...)
 	if err != nil {
 		return nil, err

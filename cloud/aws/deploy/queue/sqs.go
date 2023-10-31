@@ -17,6 +17,7 @@
 package queue
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
@@ -31,7 +32,7 @@ type SQSQueue struct {
 
 type SQSQueueArgs struct {
 	Queue   *v1.Queue
-	StackID pulumi.StringInput
+	StackID string
 }
 
 func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...pulumi.ResourceOption) (*SQSQueue, error) {
@@ -43,7 +44,7 @@ func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...p
 	}
 
 	queue, err := sqs.NewQueue(ctx, name, &sqs.QueueArgs{
-		Tags: common.Tags(ctx, args.StackID, name),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Queue)),
 	})
 	if err != nil {
 		return nil, err

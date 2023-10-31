@@ -30,7 +30,6 @@ type AzureStorageQueue struct {
 }
 
 type AzureStorageQueueArgs struct {
-	StackID       pulumi.StringInput
 	Account       *storage.StorageAccount
 	ResourceGroup *resources.ResourceGroup
 }

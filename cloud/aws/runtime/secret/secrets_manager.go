@@ -21,7 +21,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	secretsmanager "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/secretsmanageriface"
@@ -65,6 +66,14 @@ func (s *secretsManagerSecretService) getSecretId(ctx context.Context, sec strin
 	return "", fmt.Errorf("secret %s does not exist", sec)
 }
 
+func isSecretsManagerAccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "Secrets Manager" && strings.Contains(opErr.Unwrap().Error(), "AccessDenied")
+	}
+	return false
+}
+
 func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
 	newErr := errors.ErrorsWithScope(
 		"SecretManagerSecretService.Put",
@@ -91,6 +100,14 @@ func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secre
 		SecretBinary: val,
 	})
 	if err != nil {
+		if isSecretsManagerAccessDeniedErr(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to put secret value, have you requested access to this secret?",
+				err,
+			)
+		}
+
 		return nil, newErr(codes.Internal, "unable to put secret", err)
 	}
 
@@ -146,6 +163,14 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 
 	result, err := s.client.GetSecretValue(ctx, input)
 	if err != nil {
+		if isSecretsManagerAccessDeniedErr(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to access secret value, have you requested access to this secret?",
+				err,
+			)
+		}
+
 		return nil, newErr(
 			codes.NotFound,
 			"failed to retrieve secret version",

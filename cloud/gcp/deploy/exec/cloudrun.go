@@ -44,7 +44,8 @@ type CloudRunner struct {
 
 type CloudRunnerArgs struct {
 	Location        pulumi.StringInput
-	ProjectId       string
+	ProjectID       string
+	StackID         string
 	Compute         *v1.ExecutionUnit
 	Image           *image.Image
 	EnvMap          map[string]string
@@ -52,8 +53,6 @@ type CloudRunnerArgs struct {
 	BaseComputeRole *projects.IAMCustomRole
 	ServiceAccount  *serviceaccount.Account
 	Config          config.GcpCloudRunConfig
-
-	StackID pulumi.StringInput
 }
 
 func GetPerms(telemetry int) []string {
@@ -119,7 +118,7 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 
 	// apply basic project level permissions for nitric resource discovery
 	_, err = projects.NewIAMMember(ctx, res.Name+"-project-member", &projects.IAMMemberArgs{
-		Project: pulumi.String(args.ProjectId),
+		Project: pulumi.String(args.ProjectID),
 		Member:  pulumi.Sprintf("serviceAccount:%s", args.ServiceAccount.Email),
 		Role:    args.BaseComputeRole.Name,
 	})
@@ -161,7 +160,7 @@ func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opt
 	res.Service, err = cloudrun.NewService(ctx, name, &cloudrun.ServiceArgs{
 		AutogenerateRevisionName: pulumi.BoolPtr(true),
 		Location:                 args.Location,
-		Project:                  pulumi.String(args.ProjectId),
+		Project:                  pulumi.String(args.ProjectID),
 		Template: cloudrun.ServiceTemplateArgs{
 			Metadata: cloudrun.ServiceTemplateMetadataArgs{
 				Annotations: pulumi.StringMap{
@@ -241,8 +240,8 @@ func getCloudRunnerEnvs(args *CloudRunnerArgs) cloudrun.ServiceTemplateSpecConta
 			Value: pulumi.String(fmt.Sprintf("%d", args.Compute.Workers)),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
-			Name:  pulumi.String("NITRIC_STACK"),
-			Value: args.StackID,
+			Name:  pulumi.String("NITRIC_STACK_ID"),
+			Value: pulumi.String(args.StackID),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),

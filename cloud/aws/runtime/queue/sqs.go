@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface"
@@ -74,6 +75,14 @@ func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) 
 	return out.QueueUrl, nil
 }
 
+func isSQSAccessDeniedErr(err error) bool {
+	var opErr *smithy.OperationError
+	if errors.As(err, &opErr) {
+		return opErr.Service() == "SQS" && strings.Contains(opErr.Unwrap().Error(), "AccessDenied")
+	}
+	return false
+}
+
 func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue.NitricTask) error {
 	newErr := errors.ErrorsWithScope(
 		"SQSQueueService.Send",
@@ -85,6 +94,14 @@ func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue
 
 	tasks := []queue.NitricTask{task}
 	if _, err := s.SendBatch(ctx, queueName, tasks); err != nil {
+		if isSQSAccessDeniedErr(err) {
+			return newErr(
+				codes.PermissionDenied,
+				"unable to send task to queue, have you requested access to this queue?",
+				err,
+			)
+		}
+
 		return newErr(
 			codes.Internal,
 			"failed to send task",
@@ -107,17 +124,17 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
 		for _, task := range tasks {
-			if bytes, err := json.Marshal(task); err == nil {
+			t := task
+			if bytes, err := json.Marshal(t); err == nil {
 				entries = append(entries, types.SendMessageBatchRequestEntry{
 					// Share the request ID here...
-					Id:          &task.ID,
+					Id:          &t.ID,
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
-				// TODO: Do we want to just mark this one as having errored?
 				return nil, newErr(
 					codes.Internal,
-					"error marshalling task",
+					"error marshalling task to JSON",
 					err,
 				)
 			}
@@ -131,9 +148,10 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 			failedTasks := make([]*queue.FailedTask, 0)
 			for _, failed := range out.Failed {
 				for _, e := range tasks {
-					if e.ID == *failed.Id {
+					task := e
+					if task.ID == *failed.Id {
 						failedTasks = append(failedTasks, &queue.FailedTask{
-							Task:    &e,
+							Task:    &task,
 							Message: *failed.Message,
 						})
 						// continue processing failed messages
@@ -146,6 +164,14 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 				FailedTasks: failedTasks,
 			}, nil
 		} else {
+			if isSQSAccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to send tasks to queue, have you requested access to this queue?",
+					err,
+				)
+			}
+
 			return nil, newErr(
 				codes.Internal,
 				"error sending tasks",
@@ -191,6 +217,14 @@ func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOpti
 
 		res, err := s.client.ReceiveMessage(ctx, &req)
 		if err != nil {
+			if isSQSAccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to receive task(s) from queue, have you requested access to this queue?",
+					err,
+				)
+			}
+
 			return nil, newErr(
 				codes.Internal,
 				"failed to retrieve message",

@@ -19,6 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+	grpccodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
 	pubsubpb "cloud.google.com/go/pubsub/apiv1/pubsubpb"
@@ -49,6 +55,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
+		stackID := env.GetNitricStackID()
 		for {
 			t, err := topics.Next()
 			if errors.Is(err, iterator.Done) {
@@ -63,7 +70,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 				return nil, fmt.Errorf("an error occurred finding queue labels: %s; %w", queue, err)
 			}
 
-			if name, ok := labels["x-nitric-name"]; ok {
+			resType, hasType := labels[tags.GetResourceTypeKey(stackID)]
+
+			if name, ok := labels[tags.GetResourceNameKey(stackID)]; ok && name == queue && hasType && resType == "queue" {
 				s.cache[name] = t
 			}
 		}
@@ -82,9 +91,9 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 // we use this behavior to emulate a queue.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
-func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue string) (ifaces_pubsub.Subscription, error) {
+func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName string) (ifaces_pubsub.Subscription, error) {
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic, err := s.getPubsubTopicFromName(queue)
+	topic, err := s.getPubsubTopicFromName(queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +114,9 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queue str
 			return nil, fmt.Errorf("failed to retrieve pull subscription labels for topic: %s\n%w", topic.ID(), err)
 		}
 
-		// The subscription's 'x-nitric-name' is its topic name
-		if name, ok := labels["x-nitric-name"]; ok {
-			if name == queue {
+		resourceType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
+		if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; hasType && ok && resourceType == string(resources.Queue) {
+			if name == queueName {
 				return sub, nil
 			}
 		}
@@ -195,17 +204,18 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
 
 	for _, task := range tasks {
-		if taskBytes, err := json.Marshal(task); err == nil {
+		t := task
+		if taskBytes, err := json.Marshal(t); err == nil {
 			msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
 				Data:       taskBytes,
 				Attributes: attributes,
 			})
 
 			results = append(results, topic.Publish(ctx, msg))
-			publishedTasks = append(publishedTasks, task)
+			publishedTasks = append(publishedTasks, t)
 		} else {
 			failedTasks = append(failedTasks, &queue.FailedTask{
-				Task:    &task,
+				Task:    &t,
 				Message: "Error unmarshalling message for queue",
 			})
 		}
@@ -255,8 +265,8 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	}
 
 	// Using base client, so that asynchronous message acknowledgement can take place without needing to keep messages
-	// in a stateful service. Standard PubSub go library do not provide access to the acknowledge ID of the messages or
-	// an independent acknowledge function. It's only provided as a method on message objects.
+	// in a stateful service. Standard PubSub go library doesn't provide access to the 'acknowledge' ID of the messages
+	// or an independent acknowledge function. It's only provided as a method on message objects.
 	client, err := s.newSubscriberClient(ctx)
 	if err != nil {
 		return nil, newErr(
@@ -274,7 +284,13 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	}
 	res, err := client.Pull(ctx, &req)
 	if err != nil {
-		// TODO: catch standard grpc errors, like NotFound.
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this queue?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to pull messages",
@@ -342,14 +358,21 @@ func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId
 	}
 	defer client.Close()
 
-	// Acknowledge the queue item so it's removed from the queue
+	// Acknowledge the queue item, so it's removed from the queue
 	req := pubsubpb.AcknowledgeRequest{
 		Subscription: queueSubscription.String(),
 		AckIds:       []string{leaseId},
 	}
 	err = client.Acknowledge(ctx, &req)
 	if err != nil {
-		// TODO: catch standard grpc errors, like NotFound.
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to the queue?",
+				err)
+		}
+
 		return newErr(
 			codes.Internal,
 			"failed to de-queue task",

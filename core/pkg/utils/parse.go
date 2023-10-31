@@ -32,5 +32,5 @@ func PercentFromIntString(in string) (float64, error) {
 		return 0, nil
 	}
 
-	return float64(intVar / 100), nil
+	return float64(intVar) / float64(100), nil
 }

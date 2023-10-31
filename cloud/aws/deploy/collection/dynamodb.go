@@ -17,6 +17,7 @@
 package collection
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
@@ -31,7 +32,7 @@ type DynamodbCollection struct {
 }
 
 type DynamodbCollectionArgs struct {
-	StackID    pulumi.StringInput
+	StackID    string
 	Collection *v1.Collection
 }
 
@@ -57,7 +58,7 @@ func NewDynamodbCollection(ctx *pulumi.Context, name string, args *DynamodbColle
 		HashKey:     pulumi.String("_pk"),
 		RangeKey:    pulumi.String("_sk"),
 		BillingMode: pulumi.String("PAY_PER_REQUEST"),
-		Tags:        tags.Tags(ctx, args.StackID, name),
+		Tags:        pulumi.ToStringMap(tags.Tags(args.StackID, name, resources.Collection)),
 	})
 	if err != nil {
 		return nil, err

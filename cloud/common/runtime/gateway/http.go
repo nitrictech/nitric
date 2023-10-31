@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The Digital Ocean App Platform HTTP gateway plugin
 package base_http
 
 import (
@@ -33,14 +32,16 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
-type HttpMiddleware func(*fasthttp.RequestCtx, pool.WorkerPool) bool
-type EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+type (
+	HttpMiddleware   func(*fasthttp.RequestCtx, pool.WorkerPool) bool
+	EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+)
 
 type RouteRegister func(*router.Router, pool.WorkerPool)
 
 const (
-	DefaultTopicRoute    = "/x-nitric-topic/{name}"
-	DefaultScheduleRoute = "/x-nitric-schedule/{name}"
+	DefaultTopicRoute              = "/x-nitric-topic/{name}"
+	DefaultScheduleRoute           = "/x-nitric-schedule/{name}"
 	DefaultBucketNotificationRoute = "/x-nitric-notification/bucket/{name}"
 )
 
@@ -60,7 +61,7 @@ type BaseHttpGateway struct {
 	// Middleware for handling events
 	// return bool will indicate whether to continue
 	// to the next (default) behaviour or not...
-	mw HttpMiddleware
+	mw       HttpMiddleware
 	routeReg RouteRegister
 }
 
@@ -153,7 +154,6 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 		}
 
 		rc.Error("received invalid response type from worker", 500)
-
 	}
 }
 

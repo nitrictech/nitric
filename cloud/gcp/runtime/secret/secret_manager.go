@@ -19,11 +19,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
-	grpcCodes "google.golang.org/grpc/codes"
+	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	ifaces_gcloud_secret "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_secret"
@@ -85,12 +88,12 @@ func (s *secretManagerSecretService) buildSecretVersionName(ctx context.Context,
 func (s *secretManagerSecretService) getSecret(ctx context.Context, sec *secret.Secret) (*secretmanagerpb.Secret, error) {
 	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
-		Filter: "labels.x-nitric-name=" + sec.Name + " AND labels.x-nitric-stack=" + s.stackName,
+		Filter: fmt.Sprintf("labels.%s=%s", tags.GetResourceNameKey(env.GetNitricStackID()), sec.Name),
 	})
 
 	result, err := iter.Next()
 	if errors.Is(err, iterator.Done) {
-		return nil, status.Error(grpcCodes.NotFound, "secret not found")
+		return nil, status.Error(grpccodes.NotFound, "secret not found")
 	}
 
 	if err != nil {
@@ -123,7 +126,7 @@ func (s *secretManagerSecretService) Put(ctx context.Context, sec *secret.Secret
 	parentSec, err := s.getSecret(ctx, sec)
 	if err != nil {
 		return nil, newErr(
-			codes.Internal,
+			codes.NotFound,
 			"error ensuring secret container exists",
 			err,
 		)
@@ -136,6 +139,13 @@ func (s *secretManagerSecretService) Put(ctx context.Context, sec *secret.Secret
 		},
 	})
 	if err != nil {
+		errStatus, _ := status.FromError(err)
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this secret?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to add new secret version",
@@ -180,6 +190,14 @@ func (s *secretManagerSecretService) Access(ctx context.Context, sv *secret.Secr
 
 	result, err := s.client.AccessSecretVersion(ctx, req)
 	if err != nil {
+		errStatus, _ := status.FromError(err)
+
+		if errStatus.Code() == grpccodes.PermissionDenied {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"permission denied, have you requested access to this secret?", err)
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to access secret version",
@@ -211,7 +229,7 @@ func New() (secret.SecretService, error) {
 	return &secretManagerSecretService{
 		client:    client,
 		projectId: credentials.ProjectID,
-		stackName: utils.GetEnv("NITRIC_STACK", ""),
+		stackName: utils.GetEnv("NITRIC_STACK_ID", ""),
 		cache:     make(map[string]string),
 	}, nil
 }

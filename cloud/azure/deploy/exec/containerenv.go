@@ -19,6 +19,8 @@ package exec
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	app "github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
@@ -33,7 +35,7 @@ type ContainerEnvArgs struct {
 	ResourceGroupName pulumi.StringInput
 	Location          pulumi.StringInput
 	EnvMap            map[string]string
-	StackID           pulumi.StringInput
+	StackID           string
 
 	KVaultName                  pulumi.StringInput
 	StorageAccountBlobEndpoint  pulumi.StringInput
@@ -147,7 +149,7 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: common.Tags(ctx, args.StackID, ctx.Stack()+"Kube"),
+		Tags: pulumi.ToStringMap(common.Tags(args.StackID, ctx.Stack()+"Kube", resources.ExecutionUnit)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err

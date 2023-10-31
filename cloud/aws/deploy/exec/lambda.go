@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+
 	"github.com/avast/retry-go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -36,11 +38,11 @@ import (
 
 type LambdaExecUnitArgs struct {
 	Client  lambdaiface.LambdaAPI
-	StackID pulumi.StringInput
+	StackID string
 	// Image needs to be built and uploaded first
 	DockerImage *image.Image
 	Compute     *v1.ExecutionUnit
-	EnvMap      map[string]string
+	EnvMap      pulumi.StringMap
 	Config      config.AwsLambdaConfig
 }
 
@@ -81,7 +83,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 	res.Role, err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(tmpJSON),
-		Tags:             common.Tags(ctx, args.StackID, name+"LambdaRole"),
+		Tags:             pulumi.ToStringMap(common.Tags(args.StackID, name+"LambdaRole", resources.ExecutionUnit)),
 	}, opts...)
 	if err != nil {
 		return nil, err
@@ -145,12 +147,12 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 
 	envVars := pulumi.StringMap{
 		"NITRIC_ENVIRONMENT":     pulumi.String("cloud"),
-		"NITRIC_STACK":           args.StackID,
+		"NITRIC_STACK_ID":        pulumi.String(args.StackID),
 		"MIN_WORKERS":            pulumi.String(fmt.Sprint(args.Compute.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
 	for k, v := range args.EnvMap {
-		envVars[k] = pulumi.String(v)
+		envVars[k] = v
 	}
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
@@ -176,7 +178,7 @@ func NewLambdaExecutionUnit(ctx *pulumi.Context, name string, args *LambdaExecUn
 		Timeout:     pulumi.IntPtr(args.Config.Timeout),
 		PackageType: pulumi.String("Image"),
 		Role:        res.Role.Arn,
-		Tags:        common.Tags(ctx, args.StackID, name),
+		Tags:        pulumi.ToStringMap(common.Tags(args.StackID, name, resources.ExecutionUnit)),
 		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)
