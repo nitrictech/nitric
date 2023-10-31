@@ -17,9 +17,12 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/cors"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -32,6 +35,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type AzureApiManagementArgs struct {
@@ -42,6 +46,7 @@ type AzureApiManagementArgs struct {
 	OpenAPISpec       *openapi3.T
 	Apps              map[string]*exec.ContainerApp
 	ManagedIdentity   *managedidentity.UserAssignedIdentity
+	Cors              *v1.ApiCorsDefinition
 }
 
 type AzureApiManagement struct {
@@ -53,6 +58,33 @@ type AzureApiManagement struct {
 }
 
 const policyTemplate = `<policies><inbound><base /><set-backend-service base-url="https://%s" />%s<authentication-managed-identity resource="%s" client-id="%s" /><set-header name="X-Forwarded-Authorization" exists-action="override"><value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>`
+
+const corsTemplate = `
+<policies><inbound><base />
+<cors allow-credentials="{{.AllowCredentials}}">
+    {{if .AllowOrigins}}
+    <allowed-origins>
+        {{range .AllowOrigins}}<origin>{{.}}</origin>{{end}}
+    </allowed-origins>
+    {{end}}
+    {{if .AllowMethods}}
+    <allowed-methods preflight-result-max-age="{{.MaxAge}}">
+        {{range .AllowMethods}}<method>{{.}}</method>{{end}}
+    </allowed-methods>
+    {{end}}
+    {{if .AllowHeaders}}
+    <allowed-headers>
+        {{range .AllowHeaders}}<header>{{.}}</header>{{end}}
+    </allowed-headers>
+    {{end}}
+    {{if .ExposeHeaders}}
+    <expose-headers>
+        {{range .ExposeHeaders}}<header>{{.}}</header>{{end}}
+    </expose-headers>
+    {{end}}
+</cors>
+</inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>
+`
 
 const jwtTemplate = `<validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized. Access token is missing or invalid." require-expiration-time="false">  
 <openid-config url="%s.well-known/openid-configuration" />  
@@ -181,6 +213,13 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 		}
 	}
 
+	// this.api.id returns a URL path, which is the incorrect value here.
+	// We instead need the value passed to apiId in the api creation above.
+	// However, we want to maintain the pulumi dependency, so we need to keep the 'apply' call.
+	apiId := res.Api.ID().ToStringOutput().ApplyT(func(id string) string {
+		return name
+	}).(pulumi.StringOutput)
+
 	for _, pathItem := range args.OpenAPISpec.Paths {
 		for _, op := range pathItem.Operations() {
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
@@ -214,13 +253,6 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 					continue
 				}
 
-				// this.api.id returns a URL path, which is the incorrect value here.
-				//   We instead need the value passed to apiId in the api creation above.
-				// However, we want to maintain the pulumi dependency, so we need to keep the 'apply' call.
-				apiId := res.Api.ID().ToStringOutput().ApplyT(func(id string) string {
-					return name
-				}).(pulumi.StringOutput)
-
 				_ = ctx.Log.Info("op policy "+op.OperationID+" , name "+name, &pulumi.LogArgs{Ephemeral: true})
 
 				_, err = apimanagement.NewApiOperationPolicy(ctx, utils.ResourceName(ctx, name+"-"+op.OperationID, utils.ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
@@ -236,6 +268,35 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 					return nil, errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
 				}
 			}
+		}
+	}
+
+	if args.Cors != nil {
+		corsConfig, err := cors.GetCorsConfig(args.Cors)
+		if err != nil {
+			return nil, err
+		}
+
+		var resultBuffer bytes.Buffer
+		t := template.Must(template.New("corsTemplate").Parse(corsTemplate))
+
+		err = t.Execute(&resultBuffer, corsConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		corsTemplateResult := resultBuffer.String()
+
+		_, err = apimanagement.NewApiPolicy(ctx, utils.ResourceName(ctx, name+"-cors", utils.ApiOperationPolicyRT), &apimanagement.ApiPolicyArgs{
+			ResourceGroupName: args.ResourceGroupName,
+			ApiId:             apiId,
+			ServiceName:       res.Service.Name,
+			PolicyId:          pulumi.String("policy"),
+			Format:            pulumi.String("xml"),
+			Value:             pulumi.String(corsTemplateResult),
+		})
+		if err != nil {
+			return nil, errors.WithMessage(err, "NewApiPolicy "+name+"-cors")
 		}
 	}
 

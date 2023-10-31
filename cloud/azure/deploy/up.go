@@ -382,6 +382,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				Apps:              apps,
 				ManagedIdentity:   contEnv.ManagedUser,
 				StackID:           stackID,
+				Cors:              a.GetApi().GetCors(),
 			})
 			if err != nil {
 				return err
