@@ -30,7 +30,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/common/deploy/cors"
+	"github.com/nitrictech/nitric/cloud/common/cors"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )

@@ -27,7 +27,9 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/propagation"
 
+	"github.com/nitrictech/nitric/cloud/common/cors"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/core"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
@@ -251,7 +253,10 @@ func New(provider core.GcpProvider) (gateway.GatewayService, error) {
 		provider: provider,
 	}
 
+	corsCache := map[string]map[string]string{}
+
 	return base_http.New(&base_http.BaseHttpGatewayOptions{
-		Router: mw.router,
+		Router:     mw.router,
+		Middleware: cors.CreateCorsMiddleware(corsCache),
 	})
 }

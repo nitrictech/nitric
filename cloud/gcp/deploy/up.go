@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -26,10 +27,12 @@ import (
 	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/nitrictech/nitric/cloud/common/cors"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
+
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
@@ -205,6 +208,28 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		principalMap := make(policy.PrincipalMap)
 		principalMap[v1.ResourceType_Function] = make(map[string]*serviceaccount.Account)
 
+		// gather api cors info to inject into cloud run env map
+		corsEnvMap := map[string]string{}
+
+		for _, res := range request.Spec.Resources {
+			switch t := res.Config.(type) {
+			case *deploy.Resource_Api:
+				if t.Api.GetCors() != nil {
+					headers, err := cors.GetCorsHeaders(t.Api.GetCors())
+					if err != nil {
+						return err
+					}
+
+					jsonString, err := json.Marshal(headers)
+					if err != nil {
+						return err
+					}
+
+					corsEnvMap[cors.GetEnvKey(res.Name)] = string(jsonString)
+				}
+			}
+		}
+
 		// setup a basic IAM role for general access and resource discovery
 		var baseComputeRole *projects.IAMCustomRole
 
@@ -276,13 +301,27 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				}
 
 				if unitConfig.CloudRun != nil {
+					envMap := eu.ExecutionUnit.Env
+
+					for k, v := range corsEnvMap {
+						if envMap == nil {
+							envMap = map[string]string{}
+						}
+
+						if _, ok := envMap[k]; ok {
+							return fmt.Errorf("%s is a reserved env var for gcp", k)
+						}
+
+						envMap[k] = v
+					}
+
 					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
 						StackID:         stackID,
 						Location:        pulumi.String(details.Region),
 						ProjectID:       details.ProjectId,
 						Compute:         res.GetExecutionUnit(),
 						Image:           image,
-						EnvMap:          eu.ExecutionUnit.Env,
+						EnvMap:          envMap,
 						DelayQueue:      topicDelayQueue,
 						ServiceAccount:  sa.ServiceAccount,
 						BaseComputeRole: baseComputeRole,
@@ -354,6 +393,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 					ProjectId:   details.ProjectId,
 					Functions:   execs,
 					OpenAPISpec: doc,
+					Cors:        t.Api.GetCors(),
 				}, defaultResourceOptions)
 				if err != nil {
 					return err

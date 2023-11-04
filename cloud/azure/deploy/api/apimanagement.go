@@ -22,7 +22,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/nitrictech/nitric/cloud/common/deploy/cors"
+	"github.com/nitrictech/nitric/cloud/common/cors"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/getkin/kin-openapi/openapi3"
