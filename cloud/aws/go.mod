@@ -18,14 +18,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sfn v1.14.3
 	github.com/aws/aws-sdk-go-v2/service/sns v1.18.3
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.12
+	github.com/aws/smithy-go v1.13.5
 	github.com/getkin/kin-openapi v0.113.0
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/addlicense v1.1.1
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-20230616021604-4036d005db63
-	github.com/nitrictech/nitric/core v0.0.0-20230616021604-4036d005db63
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20231105231620-0968ce7a6ee6
+	github.com/nitrictech/nitric/core v0.0.0-20231105231620-0968ce7a6ee6
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.26.0
 	github.com/pkg/errors v0.9.1
@@ -83,7 +84,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.11.26 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.6 // indirect
-	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bkielbasa/cyclop v1.2.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -286,7 +286,7 @@ require (
 	github.com/urfave/cli/v2 v2.4.0 // indirect
 	github.com/uudashr/gocognit v1.0.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.45.0 // indirect
+	github.com/valyala/fasthttp v1.50.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	github.com/yagipy/maintidx v1.0.0 // indirect

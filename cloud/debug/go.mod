@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/addlicense v1.1.1
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20231029220741-d5f40152fd54
 	github.com/nitrictech/nitric/core v0.0.0-20230330235434-5ee3fca1e826
 	github.com/onsi/ginkgo v1.16.5
 	github.com/uw-labs/lichen v0.1.7
@@ -135,7 +136,6 @@ require (
 	github.com/quasilyte/regex/syntax v0.0.0-20210819130434-b3f0c404a727 // indirect
 	github.com/quasilyte/stdinfo v0.0.0-20220114132959-f7386bf02567 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryancurrah/gomodguard v1.3.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.4.0 // indirect

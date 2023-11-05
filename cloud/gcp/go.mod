@@ -14,18 +14,18 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/addlicense v1.1.1
-	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.7.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-20230430232207-a0e427e2d646
-	github.com/nitrictech/nitric/core v0.0.0-20230616021604-4036d005db63
+	github.com/nitrictech/nitric/cloud/azure v0.0.0-20231029220741-d5f40152fd54
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20231105231620-0968ce7a6ee6
+	github.com/nitrictech/nitric/core v0.0.0-20231105231620-0968ce7a6ee6
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.26.0
 	github.com/pkg/errors v0.9.1
 	github.com/pulumi/pulumi/sdk/v3 v3.65.1
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
-	github.com/valyala/fasthttp v1.45.0
+	github.com/valyala/fasthttp v1.50.0
 	go.opentelemetry.io/contrib/detectors/gcp v1.11.0
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.2
@@ -97,7 +97,6 @@ require (
 	github.com/Abirdcfly/dupword v0.0.11 // indirect
 	github.com/Antonboom/errname v0.1.9 // indirect
 	github.com/Antonboom/nilnil v0.1.3 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Djarvur/go-err113 v0.1.0 // indirect
 	github.com/GaijinEntertainment/go-exhaustruct/v2 v2.3.0 // indirect
@@ -167,6 +166,7 @@ require (
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/licenseclassifier v0.0.0-20201113175434-78a70215ca36 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28 // indirect

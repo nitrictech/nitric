@@ -15,11 +15,10 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/addlicense v1.1.1
-	github.com/google/uuid v1.3.0
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-00010101000000-000000000000
-	github.com/nitrictech/nitric/core v0.0.0-20230323041755-3456c50c02fe
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20231105231620-0968ce7a6ee6
+	github.com/nitrictech/nitric/core v0.0.0-20231105231620-0968ce7a6ee6
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.26.0
 	github.com/pkg/errors v0.9.1
@@ -34,14 +33,13 @@ require (
 	github.com/pulumi/pulumi-azure-native-sdk/operationalinsights v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
-	github.com/pulumi/pulumi-azure-native/sdk v1.93.0
 	github.com/pulumi/pulumi-azure/sdk/v4 v4.42.0
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.33.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
 	github.com/pulumi/pulumi/sdk/v3 v3.65.1
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
-	github.com/valyala/fasthttp v1.45.0
+	github.com/valyala/fasthttp v1.50.0
 	go.mongodb.org/mongo-driver v1.11.1
 	google.golang.org/grpc v1.54.0
 )
@@ -151,6 +149,7 @@ require (
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/licenseclassifier v0.0.0-20201113175434-78a70215ca36 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
