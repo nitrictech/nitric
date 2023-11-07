@@ -29,6 +29,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
 	"github.com/nitrictech/nitric/core/pkg/span"
 	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/core/pkg/worker"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
@@ -84,17 +85,8 @@ func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 
 func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
-		if s.mw != nil {
-			if !s.mw(rc, workerPool) {
-				// middleware has indicated that is has processed the request
-				// so we can exit here
-				return
-			}
-		}
-
 		headerMap := HttpHeadersToMap(&rc.Request.Header)
 
-		// httpTrigger := triggers.FromHttpRequest(rc)
 		headers := map[string]*v1.HeaderValue{}
 		for k, v := range headerMap {
 			headers[k] = &v1.HeaderValue{Value: v}
@@ -127,8 +119,49 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 			Trigger: httpTrigger,
 		})
 		if err != nil {
+			// if no worker and middleware is enabled, allow options requests to hit the middleware
+			if s.mw != nil && string(rc.Request.Header.Method()) == "OPTIONS" {
+				// find worker based on path
+				wrkrs := workerPool.GetWorkers(&pool.GetWorkerOptions{
+					Filter: func(w worker.Worker) bool {
+						if api, ok := w.(*worker.RouteWorker); ok {
+							_, err := api.ExtractPathParams(string(rc.URI().PathOriginal()))
+
+							return err == nil
+						}
+
+						return false
+					},
+				})
+
+				if len(wrkrs) > 0 {
+					rw, ok := wrkrs[0].(*worker.RouteWorker)
+					if ok {
+						s.addApiHeader(rc, rw)
+					}
+
+					if s.mw != nil {
+						s.mw(rc, workerPool)
+						return
+					}
+				}
+			}
+
 			rc.Error("Unable to get worker to handle request", 500)
 			return
+		}
+
+		rw, ok := wrkr.(*worker.RouteWorker)
+		if ok {
+			s.addApiHeader(rc, rw)
+		}
+
+		if s.mw != nil {
+			if !s.mw(rc, workerPool) {
+				// middleware has indicated that is has processed the request
+				// so we can exit here
+				return
+			}
 		}
 
 		response, err := wrkr.HandleTrigger(span.FromHeaders(context.TODO(), headerMap), httpTrigger)
@@ -155,6 +188,11 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 
 		rc.Error("received invalid response type from worker", 500)
 	}
+}
+
+func (s *BaseHttpGateway) addApiHeader(rc *fasthttp.RequestCtx, worker *worker.RouteWorker) {
+	// this header can be used by runtime plugins to determine the api
+	rc.Request.Header.Add("X-Nitric-Api", worker.Api())
 }
 
 func (s *BaseHttpGateway) Start(pool pool.WorkerPool) error {
