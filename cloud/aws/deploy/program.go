@@ -270,6 +270,7 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 					StackID:         stackID,
 					OpenAPISpec:     doc,
 					Config:          config,
+					Cors:            t.Api.GetCors(),
 				})
 				if err != nil {
 					return err
