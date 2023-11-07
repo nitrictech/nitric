@@ -17,9 +17,13 @@ package deploy
 import (
 	"context"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nitrictech/nitric/cloud/common/deploy/output/interactive"
+	"github.com/nitrictech/nitric/cloud/common/deploy/output/noninteractive"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,9 +35,28 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// TODO: Tear down the requested stack
-	dsMessageWriter := &pulumiutils.DownStreamMessageWriter{
+	// If we're interactive then we want to provide
+	outputStream := &pulumiutils.DownStreamMessageWriter{
 		Stream: stream,
+	}
+
+	pulumiDestroyOpts := []optdestroy.Option{
+		optdestroy.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
+	}
+
+	if request.Interactive {
+		pulumiEventChan := make(chan events.EngineEvent)
+		deployModel := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
+		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(outputStream))
+		pulumiDestroyOpts = []optdestroy.Option{
+			optdestroy.ProgressStreams(deployModel),
+			optdestroy.EventStreams(pulumiEventChan),
+		}
+
+		//nolint:errcheck
+		go teaProgram.Run()
+		// Close the program when we're done
+		defer teaProgram.Quit()
 	}
 
 	s, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, nil)
@@ -42,7 +65,7 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 	}
 
 	// destroy the stack
-	_, err = s.Destroy(context.TODO(), optdestroy.ProgressStreams(dsMessageWriter))
+	_, err = s.Destroy(context.TODO(), pulumiDestroyOpts...)
 	if err != nil {
 		return err
 	}
