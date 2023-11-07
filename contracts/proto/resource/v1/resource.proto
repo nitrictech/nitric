@@ -84,12 +84,23 @@ message ApiScopes {
   repeated string scopes = 1;
 }
 
+message ApiCorsDefinition { 
+  bool allow_credentials = 1; 
+  repeated string allow_headers = 2;
+  repeated string allow_methods = 3;
+  repeated string allow_origins = 4;
+  repeated string expose_headers = 5;
+  int32 max_age = 6;
+}
+
 message ApiResource {
   // Security definitions for the api
   // These may be used by registered routes and operations on the API
   map<string, ApiSecurityDefinition> security_definitions = 1;
   // root level security for this api
   map<string, ApiScopes>  security = 2;
+  // cors configuration for this api
+  ApiCorsDefinition cors = 3;
 }
 
 enum Action {

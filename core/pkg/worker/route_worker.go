@@ -41,7 +41,7 @@ func (s *RouteWorker) Api() string {
 	return s.api
 }
 
-func (s *RouteWorker) extractPathParams(path string) (map[string]string, error) {
+func (s *RouteWorker) ExtractPathParams(path string) (map[string]string, error) {
 	requestPathSegments := utils.SplitPath(path)
 	pathSegments := utils.SplitPath(s.path)
 	params := make(map[string]string)
@@ -78,7 +78,7 @@ func (s *RouteWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 			return false
 		}
 
-		_, err := s.extractPathParams(http.Path)
+		_, err := s.ExtractPathParams(http.Path)
 
 		return err == nil
 	}
@@ -88,7 +88,7 @@ func (s *RouteWorker) HandlesTrigger(trigger *v1.TriggerRequest) bool {
 
 func (s *RouteWorker) HandleTrigger(ctx context.Context, trigger *v1.TriggerRequest) (*v1.TriggerResponse, error) {
 	if http := trigger.GetHttp(); http != nil {
-		params, err := s.extractPathParams(http.Path)
+		params, err := s.ExtractPathParams(http.Path)
 		if err != nil {
 			return nil, err
 		}
