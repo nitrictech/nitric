@@ -115,6 +115,8 @@ func (m *DeployUpRequest) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Interactive
+
 	if len(errors) > 0 {
 		return DeployUpRequestMultiError(errors)
 	}
@@ -783,6 +785,8 @@ func (m *DeployDownRequest) validate(all bool) error {
 			}
 		}
 	}
+
+	// no validation rules for Interactive
 
 	if len(errors) > 0 {
 		return DeployDownRequestMultiError(errors)

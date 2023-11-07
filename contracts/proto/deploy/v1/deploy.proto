@@ -33,6 +33,10 @@ message DeployUpRequest {
     // A map of attributes related to the deploy request
     // this allows for adding project identifiers etc.
     google.protobuf.Struct attributes = 2;
+
+    // A hint to the provider of the kind of output that the client can accept
+    // This will allow provider developers to provider richer output back to clients.
+    bool interactive = 3;
 }
 
 message DeployUpEvent {
@@ -72,6 +76,10 @@ message DeployDownRequest {
     // A map of attributes related to the deploy request
     // this allows for adding project identifiers etc.
     google.protobuf.Struct attributes = 1;
+
+    // A hint to the provider of the kind of output that the client can accept
+    // This will allow provider developers to provider richer output back to clients.
+    bool interactive = 2;
 }
 
 message DeployDownEvent {
