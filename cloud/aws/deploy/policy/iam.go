@@ -17,8 +17,8 @@
 package policy
 
 import (
-	"crypto/md5" //#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
-	"encoding/hex"
+	//#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
+
 	"encoding/json"
 	"fmt"
 
@@ -34,13 +34,6 @@ import (
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
-
-func md5Hash(b []byte) string {
-	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
-	hasher.Write(b)
-
-	return hex.EncodeToString(hasher.Sum(nil))
-}
 
 type Policy struct {
 	pulumi.ResourceState
@@ -230,11 +223,6 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 		}
 	}
 
-	serialPolicy, err := json.Marshal(args.Policy)
-	if err != nil {
-		return nil, err
-	}
-
 	policyJson := pulumi.All(targetArns...).ApplyT(func(args []interface{}) (string, error) {
 		arns := make([]string, 0, len(args))
 
@@ -268,7 +256,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 	for k, r := range principalRoles {
 		// Role policies require a unique name
 		// Use a hash of the policy document to help create a unique name
-		policyName := fmt.Sprintf("%s-%s", k, md5Hash(serialPolicy))
+		policyName := fmt.Sprintf("%s-%s", name, k)
 
 		rolePol, err := iam.NewRolePolicy(ctx, policyName, &iam.RolePolicyArgs{
 			Role:   r.ID(),
