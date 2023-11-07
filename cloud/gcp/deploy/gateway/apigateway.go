@@ -36,6 +36,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 )
 
 type ApiGatewayArgs struct {
@@ -44,6 +45,7 @@ type ApiGatewayArgs struct {
 	OpenAPISpec     *openapi3.T
 	Functions       map[string]*exec.CloudRunner
 	SecuritySchemes openapi3.SecuritySchemes
+	Cors            *v1.ApiCorsDefinition
 }
 
 type ApiGateway struct {
@@ -170,6 +172,12 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 			p.Put = gcpOperation(p.Put, naps)
 			p.Delete = gcpOperation(p.Delete, naps)
 			p.Options = gcpOperation(p.Options, naps)
+
+			// if cors and no options defined, set it
+			if args.Cors != nil && p.Options == nil {
+				p.Options = createCorsOp(p, naps)
+			}
+
 			v2doc.Paths[k] = p
 		}
 
@@ -314,4 +322,39 @@ func gcpOperation(op *openapi2.Operation, urls map[string]string) *openapi2.Oper
 	}
 
 	return op
+}
+
+func createCorsOp(p *openapi2.PathItem, naps map[string]string) *openapi2.Operation {
+	var extensions map[string]interface{}
+	var name string
+	var responses map[string]*openapi2.Response
+
+	// get extensions
+	if p.Get != nil {
+		extensions = p.Get.Extensions
+		responses = p.Get.Responses
+		name = strings.TrimSuffix(p.Get.OperationID, "get")
+	} else if p.Post != nil {
+		extensions = p.Post.Extensions
+		responses = p.Post.Responses
+		name = strings.TrimSuffix(p.Get.OperationID, "post")
+	} else if p.Patch != nil {
+		extensions = p.Patch.Extensions
+		responses = p.Patch.Responses
+		name = strings.TrimSuffix(p.Get.OperationID, "patch")
+	} else if p.Put != nil {
+		extensions = p.Get.Extensions
+		responses = p.Get.Responses
+		name = strings.TrimSuffix(p.Get.OperationID, "put")
+	} else if p.Delete != nil {
+		extensions = p.Delete.Extensions
+		responses = p.Delete.Responses
+		name = strings.TrimSuffix(p.Get.OperationID, "delete")
+	}
+
+	return gcpOperation(&openapi2.Operation{
+		OperationID: fmt.Sprintf("%soptions", name),
+		Extensions:  extensions,
+		Responses:   responses,
+	}, naps)
 }
