@@ -56,7 +56,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 
 	if request.Interactive {
 		pulumiEventChan := make(chan events.EngineEvent)
-		deployModel := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
+		deployModel, err := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
+		if err != nil {
+			return err
+		}
+
 		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(&pulumiutils.UpStreamMessageWriter{
 			Stream: stream,
 		}))

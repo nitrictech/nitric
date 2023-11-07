@@ -205,11 +205,14 @@ func (m DeployModel) View() string {
 	return fmt.Sprintf("\n%s\n", t.View())
 }
 
-func NewOutputModel(sub chan tea.Msg, pulumiSub chan events.EngineEvent) DeployModel {
+func NewOutputModel(sub chan tea.Msg, pulumiSub chan events.EngineEvent) (*DeployModel, error) {
 	// FIXME: Set this according to the connected output preferences
-	os.Setenv("CLICOLOR_FORCE", "1")
+	err := os.Setenv("CLICOLOR_FORCE", "1")
+	if err != nil {
+		return nil, err
+	}
 
-	return DeployModel{
+	return &DeployModel{
 		pulumiSub: pulumiSub,
 		sub:       sub,
 		logs:      make([]string, 0),
@@ -225,5 +228,5 @@ func NewOutputModel(sub chan tea.Msg, pulumiSub chan events.EngineEvent) DeployM
 				Children: []*Node[PulumiData]{},
 			},
 		},
-	}
+	}, nil
 }

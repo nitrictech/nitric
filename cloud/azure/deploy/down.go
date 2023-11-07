@@ -46,7 +46,11 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 
 	if request.Interactive {
 		pulumiEventChan := make(chan events.EngineEvent)
-		deployModel := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
+		deployModel, err := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
+		if err != nil {
+			return err
+		}
+
 		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(outputStream))
 		pulumiDestroyOpts = []optdestroy.Option{
 			optdestroy.ProgressStreams(deployModel),
