@@ -368,6 +368,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 				Apps:              apps,
 				ManagedIdentity:   contEnv.ManagedUser,
 				StackID:           stackID,
+				Cors:              a.GetApi().GetCors(),
 			})
 			if err != nil {
 				return err
