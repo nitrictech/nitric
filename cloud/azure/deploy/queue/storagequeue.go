@@ -25,8 +25,10 @@ import (
 type AzureStorageQueue struct {
 	pulumi.ResourceState
 
-	Name  string
-	Queue *storage.Queue
+	Name          string
+	Account       *storage.StorageAccount
+	ResourceGroup *resources.ResourceGroup
+	Queue         *storage.Queue
 }
 
 type AzureStorageQueueArgs struct {
@@ -35,7 +37,11 @@ type AzureStorageQueueArgs struct {
 }
 
 func NewAzureStorageQueue(ctx *pulumi.Context, name string, args *AzureStorageQueueArgs, opts ...pulumi.ResourceOption) (*AzureStorageQueue, error) {
-	res := &AzureStorageQueue{Name: name}
+	res := &AzureStorageQueue{
+		Name:          name,
+		Account:       args.Account,
+		ResourceGroup: args.ResourceGroup,
+	}
 
 	err := ctx.RegisterComponentResource("nitric:queue:AzureStorageQueue", name, res, opts...)
 	if err != nil {

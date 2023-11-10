@@ -25,8 +25,10 @@ import (
 type AzureStorageBucket struct {
 	pulumi.ResourceState
 
-	Name      string
-	Container *storage.BlobContainer
+	Name          string
+	ResourceGroup *resources.ResourceGroup
+	Account       *storage.StorageAccount
+	Container     *storage.BlobContainer
 }
 
 type AzureStorageBucketArgs struct {
@@ -35,7 +37,11 @@ type AzureStorageBucketArgs struct {
 }
 
 func NewAzureStorageBucket(ctx *pulumi.Context, name string, args *AzureStorageBucketArgs, opts ...pulumi.ResourceOption) (*AzureStorageBucket, error) {
-	res := &AzureStorageBucket{Name: name}
+	res := &AzureStorageBucket{
+		Name:          name,
+		Account:       args.Account,
+		ResourceGroup: args.ResourceGroup,
+	}
 
 	err := ctx.RegisterComponentResource("nitric:bucket:AzureStorageBucket", name, res, opts...)
 	if err != nil {
