@@ -28,13 +28,16 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -90,8 +93,15 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		schedules := lo.Filter[*deploy.Resource](spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetSchedule() != nil
 		})
+
+		// Get APIs
 		apis := lo.Filter[*deploy.Resource](spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetApi() != nil
+		})
+
+		// Get Policies
+		policies := lo.Filter[*deploy.Resource](spec.Resources, func(item *deploy.Resource, index int) bool {
+			return item.GetPolicy() != nil
 		})
 
 		// Calculate unique stackID
@@ -151,7 +161,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 				},
 				TenantId: pulumi.String(clientConfig.TenantId),
 			},
-			Tags: pulumi.ToStringMap(common.Tags(stackID, ctx.Stack(), nitricresources.Stack)),
+			Tags: pulumi.ToStringMap(common.Tags(stackID, kvName, nitricresources.Stack)),
 		})
 		if err != nil {
 			return err
@@ -170,7 +180,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 				Sku: azureStorage.SkuArgs{
 					Name: pulumi.String(storage.SkuName_Standard_LRS),
 				},
-				Tags: pulumi.ToStringMap(common.Tags(stackID, kvName, nitricresources.Stack)),
+				Tags: pulumi.ToStringMap(common.Tags(stackID, accName, nitricresources.Stack)),
 			})
 			if err != nil {
 				return err
@@ -196,6 +206,9 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		var contEnv *exec.ContainerEnv
 
 		apps := map[string]*exec.ContainerApp{}
+		principals := map[v1.ResourceType]map[string]*exec.ServicePrincipal{}
+
+		principals[v1.ResourceType_Function] = map[string]*exec.ServicePrincipal{}
 
 		if len(executionUnits) > 0 {
 			contEnv, err = exec.NewContainerEnv(ctx, "containerEnv", contEnvArgs)
@@ -260,6 +273,8 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 					if err != nil {
 						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", err.Error())
 					}
+					principals[v1.ResourceType_Function][eu.Name] = apps[eu.Name].Sp
+
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Id.Name)
 				}
@@ -284,6 +299,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		}
 
 		// For each bucket create a new bucket
+		deployedBuckets := map[string]*bucket.AzureStorageBucket{}
 		for _, b := range buckets {
 			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Id.Name, &bucket.AzureStorageBucketArgs{
 				Account:       storageAccount,
@@ -292,6 +308,8 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			if err != nil {
 				return err
 			}
+
+			deployedBuckets[b.Name] = azBucket
 
 			for _, notification := range b.GetBucket().Notifications {
 				unit, ok := apps[notification.GetExecutionUnit()]
@@ -374,6 +392,35 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 				if err != nil {
 					return err
 				}
+			}
+		}
+
+		// Deploy application policies
+		roles, err := policy.CreateRoles(ctx, stackID, clientConfig.SubscriptionId, rg.Name)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range policies {
+			_, err := policy.NewAzureADPolicy(ctx, p.Name, &policy.PolicyArgs{
+				ResourceGroupName: rg.Name,
+				Roles:             roles,
+				Policy:            p.GetPolicy(),
+				Principals:        principals,
+				Resources: &policy.StackResources{
+					SubscriptionId: pulumi.String(clientConfig.SubscriptionId),
+					Topics:         deployedTopics,
+					Queues:         deployedQueues,
+					Buckets:        deployedBuckets,
+					KeyVault:       kv,
+
+					// Collections:    mongoCollections.Collections,
+					// Secrets:        nil,
+				},
+			}, pulumi.DependsOn([]pulumi.Resource{roles}))
+
+			if err != nil {
+				return err
 			}
 		}
 

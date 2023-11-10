@@ -34,7 +34,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -64,7 +63,7 @@ type ContainerApp struct {
 
 	Name       string
 	hostUrl    *pulumi.StringOutput
-	Sp         *policy.ServicePrincipal
+	Sp         *ServicePrincipal
 	App        *app.ContainerApp
 	EventToken pulumi.StringOutput
 }
@@ -134,11 +133,12 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 // See below URL for mapping
 // https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
 var RoleDefinitions = map[string]string{
-	"KVSecretsOfficer":    "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
-	"BlobDataContrib":     "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
-	"QueueDataContrib":    "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
-	"EventGridDataSender": "d5a91429-5739-47e2-a06b-3470a27159e7",
+	// "KVSecretsOfficer": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
+	// "BlobDataContrib":     "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+	// "QueueDataContrib":    "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
+	// "EventGridDataSender": "d5a91429-5739-47e2-a06b-3470a27159e7",
 	// Access for locating resources
+	// FIXME: Lock down permissions for this: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#tag-contributor
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
@@ -165,15 +165,14 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 
 	res.EventToken = token.Result
 
-	// the service principal's named doesn't need to be unique from the container app, so we reuse it.
-	res.Sp, err = policy.NewServicePrincipal(ctx, name, &policy.ServicePrincipalArgs{}, pulumi.Parent(res))
+	res.Sp, err = NewServicePrincipal(ctx, name, &ServicePrincipalArgs{}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}
 
 	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", args.SubscriptionID, args.ResourceGroupName)
 
-	// Assign roles to the new SP
+	// Assign roles to the new service principal
 	for defName, id := range RoleDefinitions {
 		_ = ctx.Log.Info("Assignment "+utils.ResourceName(ctx, name+defName, utils.AssignmentRT)+" roleDef "+id, &pulumi.LogArgs{Ephemeral: true})
 

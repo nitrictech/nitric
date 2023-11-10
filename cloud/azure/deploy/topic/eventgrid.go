@@ -27,9 +27,9 @@ import (
 type AzureEventGridTopic struct {
 	pulumi.ResourceState
 
-	Name  string
-	SourceResourceName string
-	Topic *eventgrid.Topic
+	Name          string
+	Topic         *eventgrid.Topic
+	ResourceGroup *resources.ResourceGroup
 }
 
 type AzureEventGridTopicArgs struct {
@@ -39,7 +39,8 @@ type AzureEventGridTopicArgs struct {
 
 func NewAzureEventGridTopic(ctx *pulumi.Context, name string, args *AzureEventGridTopicArgs, opts ...pulumi.ResourceOption) (*AzureEventGridTopic, error) {
 	res := &AzureEventGridTopic{
-		Name: name,
+		Name:          name,
+		ResourceGroup: args.ResourceGroup,
 	}
 
 	err := ctx.RegisterComponentResource("nitric:topic:AzureEventGridTopic", name, res, opts...)
