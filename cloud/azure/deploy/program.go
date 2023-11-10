@@ -291,7 +291,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", err.Error())
 					}
 					principals[v1.ResourceType_Function][eu.Name] = apps[eu.Name].Sp
-
 				} else {
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
 				}
@@ -436,7 +435,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 					// Secrets:        nil,
 				},
 			}, pulumi.DependsOn([]pulumi.Resource{roles}))
-
 			if err != nil {
 				return err
 			}
