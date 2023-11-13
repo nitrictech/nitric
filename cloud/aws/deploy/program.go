@@ -222,10 +222,18 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 		for _, res := range spec.Resources {
 			switch b := res.Config.(type) {
 			case *deploy.Resource_Bucket:
+				importName := ""
+
+				if config.Import.Buckets != nil {
+					importName = config.Import.Buckets[res.Name]
+				}
+
 				buckets[res.Name], err = bucket.NewS3Bucket(ctx, res.Name, &bucket.S3BucketArgs{
 					// TODO: Calculate stack ID
 					StackID: stackID,
 					Bucket:  b.Bucket,
+					Import:  importName,
+					Client:  resourceTaggingClient,
 				})
 				if err != nil {
 					return err
