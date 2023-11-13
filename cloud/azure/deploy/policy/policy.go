@@ -175,27 +175,27 @@ func NewAzureADPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts .
 		return nil, err
 	}
 
-	for _, principal := range args.Policy.Principals {
-		// The roles we need to assign
-		roles := actionsToAzureRoleDefinitions(args.Roles.RoleDefinitions, args.Policy.Actions)
-		if len(roles) == 0 {
-			return nil, fmt.Errorf("policy contained not assignable actions %+v, %+v", args.Policy, args.Roles.RoleDefinitions)
+	for _, resource := range args.Policy.Resources {
+		if resource.Type == v1.ResourceType_Collection {
+			continue
 		}
 
-		sp, ok := args.Principals[principal.Type][principal.Name]
-		if !ok {
-			return nil, fmt.Errorf("principal %s of type %s not found", principal.Name, principal.Type)
-		}
+		for _, principal := range args.Policy.Principals {
+			// The roles we need to assign
+			roles := actionsToAzureRoleDefinitions(args.Roles.RoleDefinitions, args.Policy.Actions)
+			if len(roles) == 0 {
+				return nil, fmt.Errorf("policy contained not assignable actions %+v, %+v", args.Policy, args.Roles.RoleDefinitions)
+			}
 
-		// We have the principal and the roles we need to assign
-		// just need to scope the resource type to the RoleAssignments
-		for roleName, role := range roles {
-			for _, resource := range args.Policy.Resources {
+			sp, ok := args.Principals[principal.Type][principal.Name]
+			if !ok {
+				return nil, fmt.Errorf("principal %s of type %s not found", principal.Name, principal.Type)
+			}
+
+			// We have the principal and the roles we need to assign
+			// just need to scope the resource type to the RoleAssignments
+			for roleName, role := range roles {
 				// FIXME: Implement collection and secret least priveledge
-				if resource.Type == v1.ResourceType_Collection {
-					continue
-				}
-
 				scope, err := scopeFromResource(resource, args.Resources, args.ResourceGroupName)
 				if err != nil {
 					return nil, err
