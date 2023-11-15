@@ -1,0 +1,34 @@
+syntax = "proto3";
+package nitric.event.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/api/nitric/event/v1";
+option java_package = "io.nitric.proto.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Events";
+option csharp_namespace = "Nitric.Proto.Event.v1";
+
+// Service for publishing asynchronous event
+service EventService {
+  // Publishes an message to a given topic
+  rpc Publish (EventPublishRequest) returns (EventPublishResponse);
+}
+
+// Request to publish an event to a topic
+message EventPublishRequest {
+  // The name of the topic to publish the event to
+  string topic = 1;
+
+  // The event to be published
+  google.protobuf.Struct payload = 2;
+
+  // An optional delay specified in seconds (minimum 10 seconds)
+  uint32 delay = 3;
+}
+
+// Result of publishing an event
+message EventPublishResponse {
+  // Empty message will be returned on success
+}
