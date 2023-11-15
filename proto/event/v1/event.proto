@@ -12,11 +12,11 @@ option csharp_namespace = "Nitric.Proto.Event.v1";
 
 // Service for publishing asynchronous event
 service EventService {
-  // Publishes an message to a given topic
+  // Publishes a message to a topic
   rpc Publish (EventPublishRequest) returns (EventPublishResponse);
 }
 
-// Request to publish an event to a topic
+// Request to publish an event
 message EventPublishRequest {
   // The name of the topic to publish the event to
   string topic = 1;
