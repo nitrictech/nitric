@@ -1,5 +1,5 @@
 syntax = "proto3";
-package nitric.event.v1;
+package nitric.proto.event.v1;
 
 import "google/protobuf/struct.proto";
 
