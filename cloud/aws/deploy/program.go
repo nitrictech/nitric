@@ -73,13 +73,18 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 			return err
 		}
 
-		stackIdChan := make(chan string)
-		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-			stackIdChan <- id
-			return id
-		})
+		stackID := "stack-id"
 
-		stackID := <-stackIdChan
+		if !ctx.DryRun() {
+			stackIdChan := make(chan string)
+			pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+				stackIdChan <- id
+				return id
+			})
+
+			stackID = <-stackIdChan
+		}
+
 		_, err = stack.NewAwsResourceGroup(ctx, details.FullStackName, &stack.AwsResourceGroupArgs{
 			StackID: stackID,
 		})

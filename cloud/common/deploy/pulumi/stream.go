@@ -15,6 +15,8 @@
 package pulumi
 
 import (
+	"strings"
+
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 )
 
@@ -25,7 +27,7 @@ type UpStreamMessageWriter struct {
 func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
 
-	if str == "." {
+	if strings.TrimSpace(str) == "." {
 		// skip progress dots
 		return len(bytes), nil
 	}
@@ -51,13 +53,39 @@ type DownStreamMessageWriter struct {
 func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
 
-	if str == "." {
+	if strings.TrimSpace(str) == "." {
 		// skip progress dots
 		return len(bytes), nil
 	}
 
 	err := s.Stream.Send(&deploy.DeployDownEvent{
 		Content: &deploy.DeployDownEvent_Message{
+			Message: &deploy.DeployEventMessage{
+				Message: str,
+			},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return len(bytes), nil
+}
+
+type PreviewStreamMessageWriter struct {
+	Stream deploy.DeployService_PreviewServer
+}
+
+func (s *PreviewStreamMessageWriter) Write(bytes []byte) (int, error) {
+	str := string(bytes)
+
+	if strings.TrimSpace(str) == "." {
+		// skip progress dots
+		return len(bytes), nil
+	}
+
+	err := s.Stream.Send(&deploy.DeployPreviewEvent{
+		Content: &deploy.DeployPreviewEvent_Message{
 			Message: &deploy.DeployEventMessage{
 				Message: str,
 			},

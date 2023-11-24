@@ -30,6 +30,10 @@ type DeployServiceClient interface {
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
 	Down(ctx context.Context, in *DeployDownRequest, opts ...grpc.CallOption) (DeployService_DownClient, error)
+	// Begins a new dry run deployment
+	// Server will stream updates back to the connected client
+	// on that status of the dry run deployment
+	Preview(ctx context.Context, in *DeployPreviewRequest, opts ...grpc.CallOption) (DeployService_PreviewClient, error)
 }
 
 type deployServiceClient struct {
@@ -104,6 +108,38 @@ func (x *deployServiceDownClient) Recv() (*DeployDownEvent, error) {
 	return m, nil
 }
 
+func (c *deployServiceClient) Preview(ctx context.Context, in *DeployPreviewRequest, opts ...grpc.CallOption) (DeployService_PreviewClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DeployService_ServiceDesc.Streams[2], "/nitric.deploy.v1.DeployService/Preview", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &deployServicePreviewClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type DeployService_PreviewClient interface {
+	Recv() (*DeployPreviewEvent, error)
+	grpc.ClientStream
+}
+
+type deployServicePreviewClient struct {
+	grpc.ClientStream
+}
+
+func (x *deployServicePreviewClient) Recv() (*DeployPreviewEvent, error) {
+	m := new(DeployPreviewEvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DeployServiceServer is the server API for DeployService service.
 // All implementations must embed UnimplementedDeployServiceServer
 // for forward compatibility
@@ -116,6 +152,10 @@ type DeployServiceServer interface {
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
 	Down(*DeployDownRequest, DeployService_DownServer) error
+	// Begins a new dry run deployment
+	// Server will stream updates back to the connected client
+	// on that status of the dry run deployment
+	Preview(*DeployPreviewRequest, DeployService_PreviewServer) error
 	mustEmbedUnimplementedDeployServiceServer()
 }
 
@@ -128,6 +168,9 @@ func (UnimplementedDeployServiceServer) Up(*DeployUpRequest, DeployService_UpSer
 }
 func (UnimplementedDeployServiceServer) Down(*DeployDownRequest, DeployService_DownServer) error {
 	return status.Errorf(codes.Unimplemented, "method Down not implemented")
+}
+func (UnimplementedDeployServiceServer) Preview(*DeployPreviewRequest, DeployService_PreviewServer) error {
+	return status.Errorf(codes.Unimplemented, "method Preview not implemented")
 }
 func (UnimplementedDeployServiceServer) mustEmbedUnimplementedDeployServiceServer() {}
 
@@ -184,6 +227,27 @@ func (x *deployServiceDownServer) Send(m *DeployDownEvent) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _DeployService_Preview_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DeployPreviewRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DeployServiceServer).Preview(m, &deployServicePreviewServer{stream})
+}
+
+type DeployService_PreviewServer interface {
+	Send(*DeployPreviewEvent) error
+	grpc.ServerStream
+}
+
+type deployServicePreviewServer struct {
+	grpc.ServerStream
+}
+
+func (x *deployServicePreviewServer) Send(m *DeployPreviewEvent) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // DeployService_ServiceDesc is the grpc.ServiceDesc for DeployService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +264,11 @@ var DeployService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Down",
 			Handler:       _DeployService_Down_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Preview",
+			Handler:       _DeployService_Preview_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -47,6 +47,7 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 		optdestroy.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
 	}
 
+	var interactiveProgram *interactive.Program
 	if request.Interactive {
 		pulumiEventChan := make(chan events.EngineEvent)
 		deployModel, err := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
@@ -54,16 +55,18 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 			return err
 		}
 
-		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(outputStream))
 		pulumiDestroyOpts = []optdestroy.Option{
 			optdestroy.ProgressStreams(deployModel),
 			optdestroy.EventStreams(pulumiEventChan),
 		}
 
-		//nolint:errcheck
-		go teaProgram.Run()
-		// Close the program when we're done
-		defer teaProgram.Quit()
+		interactiveProgram = interactive.NewProgram(deployModel, &interactive.ProgramArgs{
+			Writer: outputStream,
+		})
+
+		go interactiveProgram.Run()
+
+		defer interactiveProgram.Stop()
 	}
 
 	s, err := auto.UpsertStackInlineSource(context.TODO(), details.FullStackName, details.Project, nil)
@@ -73,9 +76,6 @@ func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Dep
 
 	// destroy the stack
 	_, err = s.Destroy(context.TODO(), pulumiDestroyOpts...)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }

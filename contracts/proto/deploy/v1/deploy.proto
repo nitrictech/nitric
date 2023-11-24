@@ -24,6 +24,10 @@ service DeployService {
     // Server will stream updates back to the connected client
     // on the status of the teardown
     rpc Down (DeployDownRequest) returns (stream DeployDownEvent);
+    // Begins a new dry run deployment
+    // Server will stream updates back to the connected client
+    // on that status of the dry run deployment
+    rpc Preview (DeployPreviewRequest) returns (stream DeployPreviewEvent);
 }
 
 message DeployUpRequest {
@@ -51,6 +55,19 @@ message DeployEventMessage {
     string message = 1;
 }
 
+message DeployPreviewRequest {
+    // The spec to deploy
+    Spec spec = 1;
+
+    // A map of attributes related to the deploy request
+    // this allows for adding project identifiers etc.
+    google.protobuf.Struct attributes = 2;
+
+    // A hint to the provider of the kind of output that the client can accept
+    // This will allow provider developers to provider richer output back to clients.
+    bool interactive = 3;
+}
+
 message UpResult {
     oneof content {
         // Simple formatted string output as result
@@ -71,6 +88,31 @@ message DeployUpEventResult {
     // or pretty printed for CLI output
     UpResult result = 2;
 }
+
+message DeployPreviewEvent {
+    oneof content {
+        DeployEventMessage message = 1;
+        DeployPreviewEventResult result = 2;
+    }
+}
+
+message PreviewResult {
+    oneof content {
+        // Simple formatted string output as result
+        string string_result = 1;
+    }
+}
+
+message DeployPreviewEventResult {
+    // Indicate the success status
+    bool success = 1;
+
+    // Output state as a struct, this can be provided as an output file
+    // or pretty printed for CLI output
+    PreviewResult result = 2;
+}
+
+
 
 message DeployDownRequest {
     // A map of attributes related to the deploy request

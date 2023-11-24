@@ -486,6 +486,168 @@ var _ interface {
 	ErrorName() string
 } = DeployEventMessageValidationError{}
 
+// Validate checks the field values on DeployPreviewRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeployPreviewRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeployPreviewRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeployPreviewRequestMultiError, or nil if none found.
+func (m *DeployPreviewRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeployPreviewRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetSpec()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeployPreviewRequestValidationError{
+					field:  "Spec",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeployPreviewRequestValidationError{
+					field:  "Spec",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetSpec()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeployPreviewRequestValidationError{
+				field:  "Spec",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetAttributes()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeployPreviewRequestValidationError{
+					field:  "Attributes",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeployPreviewRequestValidationError{
+					field:  "Attributes",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAttributes()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeployPreviewRequestValidationError{
+				field:  "Attributes",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Interactive
+
+	if len(errors) > 0 {
+		return DeployPreviewRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeployPreviewRequestMultiError is an error wrapping multiple validation
+// errors returned by DeployPreviewRequest.ValidateAll() if the designated
+// constraints aren't met.
+type DeployPreviewRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeployPreviewRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeployPreviewRequestMultiError) AllErrors() []error { return m }
+
+// DeployPreviewRequestValidationError is the validation error returned by
+// DeployPreviewRequest.Validate if the designated constraints aren't met.
+type DeployPreviewRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeployPreviewRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeployPreviewRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeployPreviewRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeployPreviewRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeployPreviewRequestValidationError) ErrorName() string {
+	return "DeployPreviewRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeployPreviewRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeployPreviewRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeployPreviewRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeployPreviewRequestValidationError{}
+
 // Validate checks the field values on UpResult with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -734,6 +896,445 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DeployUpEventResultValidationError{}
+
+// Validate checks the field values on DeployPreviewEvent with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeployPreviewEvent) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeployPreviewEvent with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeployPreviewEventMultiError, or nil if none found.
+func (m *DeployPreviewEvent) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeployPreviewEvent) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Content.(type) {
+	case *DeployPreviewEvent_Message:
+		if v == nil {
+			err := DeployPreviewEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetMessage()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, DeployPreviewEventValidationError{
+						field:  "Message",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, DeployPreviewEventValidationError{
+						field:  "Message",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetMessage()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return DeployPreviewEventValidationError{
+					field:  "Message",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *DeployPreviewEvent_Result:
+		if v == nil {
+			err := DeployPreviewEventValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetResult()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, DeployPreviewEventValidationError{
+						field:  "Result",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, DeployPreviewEventValidationError{
+						field:  "Result",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetResult()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return DeployPreviewEventValidationError{
+					field:  "Result",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return DeployPreviewEventMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeployPreviewEventMultiError is an error wrapping multiple validation errors
+// returned by DeployPreviewEvent.ValidateAll() if the designated constraints
+// aren't met.
+type DeployPreviewEventMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeployPreviewEventMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeployPreviewEventMultiError) AllErrors() []error { return m }
+
+// DeployPreviewEventValidationError is the validation error returned by
+// DeployPreviewEvent.Validate if the designated constraints aren't met.
+type DeployPreviewEventValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeployPreviewEventValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeployPreviewEventValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeployPreviewEventValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeployPreviewEventValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeployPreviewEventValidationError) ErrorName() string {
+	return "DeployPreviewEventValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeployPreviewEventValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeployPreviewEvent.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeployPreviewEventValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeployPreviewEventValidationError{}
+
+// Validate checks the field values on PreviewResult with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *PreviewResult) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PreviewResult with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in PreviewResultMultiError, or
+// nil if none found.
+func (m *PreviewResult) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PreviewResult) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Content.(type) {
+	case *PreviewResult_StringResult:
+		if v == nil {
+			err := PreviewResultValidationError{
+				field:  "Content",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for StringResult
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return PreviewResultMultiError(errors)
+	}
+
+	return nil
+}
+
+// PreviewResultMultiError is an error wrapping multiple validation errors
+// returned by PreviewResult.ValidateAll() if the designated constraints
+// aren't met.
+type PreviewResultMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PreviewResultMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PreviewResultMultiError) AllErrors() []error { return m }
+
+// PreviewResultValidationError is the validation error returned by
+// PreviewResult.Validate if the designated constraints aren't met.
+type PreviewResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PreviewResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PreviewResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PreviewResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PreviewResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PreviewResultValidationError) ErrorName() string { return "PreviewResultValidationError" }
+
+// Error satisfies the builtin error interface
+func (e PreviewResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPreviewResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PreviewResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PreviewResultValidationError{}
+
+// Validate checks the field values on DeployPreviewEventResult with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeployPreviewEventResult) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeployPreviewEventResult with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeployPreviewEventResultMultiError, or nil if none found.
+func (m *DeployPreviewEventResult) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeployPreviewEventResult) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if all {
+		switch v := interface{}(m.GetResult()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeployPreviewEventResultValidationError{
+					field:  "Result",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeployPreviewEventResultValidationError{
+					field:  "Result",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResult()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeployPreviewEventResultValidationError{
+				field:  "Result",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DeployPreviewEventResultMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeployPreviewEventResultMultiError is an error wrapping multiple validation
+// errors returned by DeployPreviewEventResult.ValidateAll() if the designated
+// constraints aren't met.
+type DeployPreviewEventResultMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeployPreviewEventResultMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeployPreviewEventResultMultiError) AllErrors() []error { return m }
+
+// DeployPreviewEventResultValidationError is the validation error returned by
+// DeployPreviewEventResult.Validate if the designated constraints aren't met.
+type DeployPreviewEventResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeployPreviewEventResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeployPreviewEventResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeployPreviewEventResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeployPreviewEventResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeployPreviewEventResultValidationError) ErrorName() string {
+	return "DeployPreviewEventResultValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeployPreviewEventResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeployPreviewEventResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeployPreviewEventResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeployPreviewEventResultValidationError{}
 
 // Validate checks the field values on DeployDownRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

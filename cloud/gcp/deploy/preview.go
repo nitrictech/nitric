@@ -18,50 +18,41 @@ package deploy
 
 import (
 	"context"
-	"fmt"
-	"runtime/debug"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/interactive"
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/noninteractive"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
-	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			stack := string(debug.Stack())
-			err = fmt.Errorf("recovered panic: %+v\n Stack: %s", r, stack)
-		}
-	}()
-
-	details, err := commonDeploy.CommonStackDetailsFromAttributes(request.Attributes.AsMap())
+func (d *DeployServer) Preview(request *deploy.DeployPreviewRequest, stream deploy.DeployService_PreviewServer) error {
+	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	config, err := config.ConfigFromAttributes(request.Attributes.AsMap())
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
+		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// If we're interactive then we want to provide
-	outputStream := &pulumiutils.UpStreamMessageWriter{
+	outputStream := &pulumiutils.PreviewStreamMessageWriter{
 		Stream: stream,
 	}
 
 	// Default to the non-interactive writer
-	pulumiUpOpts := []optup.Option{
-		optup.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
+	pulumiPreviewOpts := []optpreview.Option{
+		optpreview.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
 	}
 
 	var interactiveProgram *interactive.Program
@@ -72,9 +63,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		pulumiUpOpts = []optup.Option{
-			optup.ProgressStreams(deployModel),
-			optup.EventStreams(pulumiEventChan),
+		pulumiPreviewOpts = []optpreview.Option{
+			optpreview.ProgressStreams(deployModel),
+			optpreview.EventStreams(pulumiEventChan),
 		}
 
 		interactiveProgram = interactive.NewProgram(deployModel, &interactive.ProgramArgs{
@@ -92,16 +83,22 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	err = pulumiStack.SetAllConfig(context.TODO(), auto.ConfigMap{
-		"aws:region":     auto.ConfigValue{Value: details.Region},
-		"aws:version":    auto.ConfigValue{Value: pulumiAwsVersion},
+		"gcp:region":     auto.ConfigValue{Value: details.Region},
+		"gcp:project":    auto.ConfigValue{Value: details.ProjectId},
+		"gcp:version":    auto.ConfigValue{Value: pulumiGcpVersion},
 		"docker:version": auto.ConfigValue{Value: commonDeploy.PulumiDockerVersion},
 	})
 	if err != nil {
 		return err
 	}
 
+	err = pulumiStack.SetConfig(context.TODO(), "gcp:project", auto.ConfigValue{Value: details.ProjectId})
+	if err != nil {
+		return err
+	}
+
 	if config.Refresh {
-		// TODO: Handle refresh logging
+		// refresh the stack first
 		_, err := pulumiStack.Refresh(context.TODO())
 		if err != nil {
 			return err
@@ -109,7 +106,10 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	// Run the program
-	_, err = pulumiStack.Up(context.TODO(), pulumiUpOpts...)
+	_, err = pulumiStack.Preview(context.TODO(), pulumiPreviewOpts...)
+	if err != nil {
+		return err
+	}
 
 	return err
 }

@@ -3,7 +3,7 @@ module github.com/nitrictech/nitric/cloud/debug
 go 1.19
 
 require (
-	github.com/golangci/golangci-lint v1.52.2
+	github.com/golangci/golangci-lint v1.55.2
 	github.com/google/addlicense v1.1.1
 	github.com/nitrictech/nitric/core v0.0.0-20230330235434-5ee3fca1e826
 	github.com/onsi/ginkgo v1.16.5

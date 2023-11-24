@@ -54,6 +54,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		optup.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
 	}
 
+	var interactiveProgram *interactive.Program
 	if request.Interactive {
 		pulumiEventChan := make(chan events.EngineEvent)
 		deployModel, err := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
@@ -61,19 +62,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(&pulumiutils.UpStreamMessageWriter{
-			Stream: stream,
-		}))
-
 		pulumiUpOpts = []optup.Option{
 			optup.ProgressStreams(deployModel),
 			optup.EventStreams(pulumiEventChan),
 		}
 
-		//nolint:errcheck
-		go teaProgram.Run()
-		// Close the program when we're done
-		defer teaProgram.Quit()
+		interactiveProgram = interactive.NewProgram(deployModel, &interactive.ProgramArgs{
+			Writer: outputStream,
+		})
+
+		go interactiveProgram.Run()
+
+		defer interactiveProgram.Stop()
 	}
 
 	pulumiStack, err := NewUpProgram(context.TODO(), details, config, request.Spec)

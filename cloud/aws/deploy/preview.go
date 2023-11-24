@@ -30,13 +30,13 @@ import (
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
-	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+// Preview - Dry run deployment for requested infrastructure for a stack
+func (d *DeployServer) Preview(request *deploy.DeployPreviewRequest, stream deploy.DeployService_PreviewServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
@@ -55,13 +55,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	// If we're interactive then we want to provide
-	outputStream := &pulumiutils.UpStreamMessageWriter{
+	outputStream := &pulumiutils.PreviewStreamMessageWriter{
 		Stream: stream,
 	}
 
 	// Default to the non-interactive writer
-	pulumiUpOpts := []optup.Option{
-		optup.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
+	pulumiPreviewOpts := []optpreview.Option{
+		optpreview.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
 	}
 
 	var interactiveProgram *interactive.Program
@@ -72,9 +72,9 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		pulumiUpOpts = []optup.Option{
-			optup.ProgressStreams(deployModel),
-			optup.EventStreams(pulumiEventChan),
+		pulumiPreviewOpts = []optpreview.Option{
+			optpreview.ProgressStreams(deployModel),
+			optpreview.EventStreams(pulumiEventChan),
 		}
 
 		interactiveProgram = interactive.NewProgram(deployModel, &interactive.ProgramArgs{
@@ -109,7 +109,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	}
 
 	// Run the program
-	_, err = pulumiStack.Up(context.TODO(), pulumiUpOpts...)
+	_, err = pulumiStack.Preview(context.TODO(), pulumiPreviewOpts...)
 
 	return err
 }

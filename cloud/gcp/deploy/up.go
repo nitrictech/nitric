@@ -18,8 +18,6 @@ package deploy
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
@@ -28,14 +26,9 @@ import (
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -62,6 +55,7 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 		optup.ProgressStreams(noninteractive.NewNonInterativeOutput(outputStream)),
 	}
 
+	var interactiveProgram *interactive.Program
 	if request.Interactive {
 		pulumiEventChan := make(chan events.EngineEvent)
 		deployModel, err := interactive.NewOutputModel(make(chan tea.Msg), pulumiEventChan)
@@ -69,19 +63,18 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			return err
 		}
 
-		teaProgram := tea.NewProgram(deployModel, tea.WithOutput(&pulumiutils.UpStreamMessageWriter{
-			Stream: stream,
-		}))
-
 		pulumiUpOpts = []optup.Option{
 			optup.ProgressStreams(deployModel),
 			optup.EventStreams(pulumiEventChan),
 		}
 
-		//nolint:errcheck
-		go teaProgram.Run()
-		// Close the program when we're done
-		defer teaProgram.Quit()
+		interactiveProgram = interactive.NewProgram(deployModel, &interactive.ProgramArgs{
+			Writer: outputStream,
+		})
+
+		go interactiveProgram.Run()
+
+		defer interactiveProgram.Stop()
 	}
 
 	pulumiStack, err := NewUpProgram(context.TODO(), details, config, request.Spec)
@@ -122,54 +115,4 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 	err = stream.Send(pulumiutils.PulumiOutputsToResult(res.Outputs))
 
 	return err
-}
-
-func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
-	// If the user is attempting to impersonate a gcp service account using pulumi using the GOOGLE_IMPERSONATE_SERVICE_ACCOUNT env var
-	// Read more: (https://www.pulumi.com/registry/packages/gcp/installation-configuration/#configuration-reference)
-	targetSA := os.Getenv("GOOGLE_IMPERSONATE_SERVICE_ACCOUNT")
-
-	var token *oauth2.Token
-
-	if targetSA != "" {
-		service, err := iamcredentials.NewService(ctx.Context())
-		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("Unable to impersonate service account: %s", targetSA))
-		}
-
-		accessToken, err := service.Projects.ServiceAccounts.GenerateAccessToken(fmt.Sprintf("projects/-/serviceAccounts/%s", targetSA), &iamcredentials.GenerateAccessTokenRequest{
-			Scope: []string{
-				"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/trace.append",
-			},
-		}).Do()
-		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("Unable to impersonate service account: %s", targetSA))
-		}
-
-		if accessToken == nil {
-			return nil, fmt.Errorf("unable to impersonate service account")
-		}
-
-		token = &oauth2.Token{AccessToken: accessToken.AccessToken}
-	}
-
-	if token == nil {
-		creds, err := google.FindDefaultCredentialsWithParams(ctx.Context(), google.CredentialsParams{
-			Scopes: []string{
-				"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/trace.append",
-			},
-		})
-		if err != nil {
-			return nil, errors.WithMessage(err, "Unable to find credentials, try 'gcloud auth application-default login'")
-		}
-
-		token, err = creds.TokenSource.Token()
-		if err != nil {
-			return nil, errors.WithMessage(err, "Unable to acquire token source")
-		}
-	}
-
-	return token, nil
 }

@@ -112,13 +112,17 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			return err
 		}
 
-		stackIdChan := make(chan string)
-		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-			stackIdChan <- id
-			return id
-		})
+		stackID := "stack-id"
 
-		stackID := <-stackIdChan
+		if !ctx.DryRun() {
+			stackIdChan := make(chan string)
+			pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+				stackIdChan <- id
+				return id
+			})
+
+			stackID = <-stackIdChan
+		}
 
 		clientConfig, err := authorization.GetClientConfig(ctx)
 		if err != nil {

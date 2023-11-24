@@ -45,6 +45,7 @@ func (t *Tree[T]) findNode(node *Node[T], id string) *Node[T] {
 
 type Node[T any] struct {
 	Id       string
+	Sequence int
 	Data     *T
 	Children []*Node[T]
 }
@@ -55,4 +56,19 @@ func (n *Node[T]) AddChild(node *Node[T]) {
 	}
 
 	n.Children = append(n.Children, node)
+}
+
+// Enables sorting lists of nodes by their sequence numbers
+type nodeList []*Node[PulumiData]
+
+func (n nodeList) Len() int {
+	return len(n)
+}
+
+func (n nodeList) Less(i, j int) bool {
+	return n[i].Sequence > n[j].Sequence
+}
+
+func (n nodeList) Swap(i, j int) {
+	n[i], n[j] = n[j], n[i]
 }

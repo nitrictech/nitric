@@ -19,6 +19,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime/debug"
 	"strings"
 
@@ -50,6 +51,9 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -101,13 +105,17 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 			return err
 		}
 
-		stackIdChan := make(chan string)
-		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-			stackIdChan <- id
-			return id
-		})
+		stackID := "stack-id"
 
-		stackID := <-stackIdChan
+		if !ctx.DryRun() {
+			stackIdChan := make(chan string)
+			pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+				stackIdChan <- id
+				return id
+			})
+
+			stackID = <-stackIdChan
+		}
 
 		collections := lo.Filter[*deploy.Resource](spec.Resources, func(res *deploy.Resource, _ int) bool {
 			return res.Type == v1.ResourceType_Collection
@@ -457,4 +465,54 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 
 		return nil
 	})
+}
+
+func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
+	// If the user is attempting to impersonate a gcp service account using pulumi using the GOOGLE_IMPERSONATE_SERVICE_ACCOUNT env var
+	// Read more: (https://www.pulumi.com/registry/packages/gcp/installation-configuration/#configuration-reference)
+	targetSA := os.Getenv("GOOGLE_IMPERSONATE_SERVICE_ACCOUNT")
+
+	var token *oauth2.Token
+
+	if targetSA != "" {
+		service, err := iamcredentials.NewService(ctx.Context())
+		if err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("Unable to impersonate service account: %s", targetSA))
+		}
+
+		accessToken, err := service.Projects.ServiceAccounts.GenerateAccessToken(fmt.Sprintf("projects/-/serviceAccounts/%s", targetSA), &iamcredentials.GenerateAccessTokenRequest{
+			Scope: []string{
+				"https://www.googleapis.com/auth/cloud-platform",
+				"https://www.googleapis.com/auth/trace.append",
+			},
+		}).Do()
+		if err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("Unable to impersonate service account: %s", targetSA))
+		}
+
+		if accessToken == nil {
+			return nil, fmt.Errorf("unable to impersonate service account")
+		}
+
+		token = &oauth2.Token{AccessToken: accessToken.AccessToken}
+	}
+
+	if token == nil {
+		creds, err := google.FindDefaultCredentialsWithParams(ctx.Context(), google.CredentialsParams{
+			Scopes: []string{
+				"https://www.googleapis.com/auth/cloud-platform",
+				"https://www.googleapis.com/auth/trace.append",
+			},
+		})
+		if err != nil {
+			return nil, errors.WithMessage(err, "Unable to find credentials, try 'gcloud auth application-default login'")
+		}
+
+		token, err = creds.TokenSource.Token()
+		if err != nil {
+			return nil, errors.WithMessage(err, "Unable to acquire token source")
+		}
+	}
+
+	return token, nil
 }
