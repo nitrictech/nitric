@@ -17,10 +17,10 @@ package interactive
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -31,22 +31,20 @@ import (
 type DeployModel struct {
 	pulumiSub chan events.EngineEvent
 	sub       chan tea.Msg
-	spinner   spinner.Model
 	logs      []string
 	tree      *Tree[PulumiData]
 }
 
-func (m DeployModel) Init() tea.Cmd {
-	return tea.Batch(
-		m.spinner.Tick,
+func (m *DeployModel) Init() []Cmd {
+	return []Cmd{
 		subscribeToChan(m.sub),
 		subscribeToChan(m.pulumiSub),
-	)
+	}
 }
 
 // subscribeToChannel - A tea Command that will wait on messages sent to the given channel
-func subscribeToChan[T any](sub chan T) tea.Cmd {
-	return func() tea.Msg {
+func subscribeToChan[T any](sub chan T) Cmd {
+	return func() Msg {
 		return <-sub
 	}
 }
@@ -54,7 +52,7 @@ func subscribeToChan[T any](sub chan T) tea.Cmd {
 const MAX_LOG_LENGTH = 5
 
 // Implement io.Writer for simplicity
-func (m DeployModel) Write(bytes []byte) (int, error) {
+func (m *DeployModel) Write(bytes []byte) (int, error) {
 	msg := string(bytes)
 	cutMsg := strings.TrimSuffix(msg, "\n")
 
@@ -87,7 +85,8 @@ func (m *DeployModel) handlePulumiEngineEvent(evt events.EngineEvent) {
 		}
 
 		parentNode.AddChild(&Node[PulumiData]{
-			Id: evt.ResourcePreEvent.Metadata.URN,
+			Id:       evt.ResourcePreEvent.Metadata.URN,
+			Sequence: evt.Sequence,
 			Data: &PulumiData{
 				StartTime: time.Now(),
 				Urn:       evt.ResourcePreEvent.Metadata.URN,
@@ -112,7 +111,7 @@ func (m *DeployModel) handlePulumiEngineEvent(evt events.EngineEvent) {
 	}
 }
 
-func (m DeployModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *DeployModel) Update(msg Msg) (*DeployModel, Cmd) {
 	switch t := msg.(type) {
 	case events.EngineEvent:
 		m.handlePulumiEngineEvent(t)
@@ -120,16 +119,12 @@ func (m DeployModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case LogMessage:
 		m.logs = append(m.logs, t.Message)
 		return m, subscribeToChan(m.sub)
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
 	default:
 		return m, nil
 	}
 }
 
-func (m DeployModel) renderNodeRow(node *Node[PulumiData], depth int, isLast bool, parentLast bool) table.Row {
+func (m *DeployModel) renderNodeRow(node *Node[PulumiData], depth int, isLast bool, parentLast bool) table.Row {
 	linkChar := lo.Ternary(!isLast, "├─", "└─")
 	prefixString := lo.Ternary(!parentLast, fmt.Sprintf("│  %s", linkChar), linkChar)
 	marginLeft := lo.Ternary(!parentLast, 3*(depth-1), 3*depth)
@@ -142,7 +137,7 @@ func (m DeployModel) renderNodeRow(node *Node[PulumiData], depth int, isLast boo
 	status := statusStyle.Render(MessageResourceStates[node.Data.Status])
 	if isPending {
 		runningTime := time.Since(node.Data.StartTime).Round(time.Second)
-		status = statusStyle.Render(MessageResourceStates[node.Data.Status] + fmt.Sprintf(" (%s)", runningTime) + m.spinner.View())
+		status = statusStyle.Render(MessageResourceStates[node.Data.Status] + fmt.Sprintf(" (%s)", runningTime))
 	} else if isComplete || isFailed {
 		completeTime := node.Data.EndTime.Sub(node.Data.StartTime).Round(time.Second)
 		status = statusStyle.Render(MessageResourceStates[node.Data.Status] + fmt.Sprintf(" (%s)", completeTime))
@@ -161,16 +156,39 @@ func (m DeployModel) renderNodeRow(node *Node[PulumiData], depth int, isLast boo
 }
 
 // Render the tree rows
-func (m DeployModel) renderNodeRows(depth int, parentLast bool, nodes ...*Node[PulumiData]) []table.Row {
+func (m *DeployModel) renderNodeRows(depth int, parentLast bool, nodes ...*Node[PulumiData]) []table.Row {
 	// render this nods info
 	rows := []table.Row{}
 
-	for idx, n := range nodes {
+	for idx, node := range nodes {
 		isLast := idx == len(nodes)-1
-		rows = append(rows, m.renderNodeRow(n, depth, isLast, parentLast))
+		rows = append(rows, m.renderNodeRow(node, depth, isLast, parentLast))
 
-		if len(n.Children) > 0 {
-			rows = append(rows, m.renderNodeRows(depth+1, isLast, n.Children...)...)
+		sortNodes(node.Children)
+		if len(node.Children) > 0 {
+			rows = append(rows, m.renderNodeRows(depth+1, isLast, node.Children...)...)
+		}
+	}
+
+	return rows
+}
+
+func sortNodes(nodes nodeList) {
+	sort.Sort(nodes)
+}
+
+func (m *DeployModel) renderFailedNodeMessages(nodes ...*Node[PulumiData]) []string {
+	rows := []string{}
+
+	for _, node := range nodes {
+		isFailed := lo.Contains(lo.Values(FailedResourceStates), node.Data.Status)
+
+		if isFailed {
+			rows = append(rows, fmt.Sprintf("Resource: %s failed to deploy:\n%s\n\n", node.Data.Name(), node.Data.LastMessage))
+		}
+
+		if len(node.Children) > 0 {
+			rows = append(rows, m.renderFailedNodeMessages(node.Children...)...)
 		}
 	}
 
@@ -202,11 +220,17 @@ func (m DeployModel) View() string {
 
 	t.SetStyles(s)
 
-	return fmt.Sprintf("\n%s\n", t.View())
+	failureMessage := m.renderFailedNodeMessages(m.tree.Root)
+
+	return fmt.Sprintf("\n%s\n%s", t.View(), ErrorStyle.Render(failureMessage...))
+}
+
+type OutputModelArgs struct {
+	Sub       chan tea.Msg
+	PulumiSub chan events.EngineEvent
 }
 
 func NewOutputModel(sub chan tea.Msg, pulumiSub chan events.EngineEvent) (*DeployModel, error) {
-	// FIXME: Set this according to the connected output preferences
 	err := os.Setenv("CLICOLOR_FORCE", "1")
 	if err != nil {
 		return nil, err
@@ -216,7 +240,6 @@ func NewOutputModel(sub chan tea.Msg, pulumiSub chan events.EngineEvent) (*Deplo
 		pulumiSub: pulumiSub,
 		sub:       sub,
 		logs:      make([]string, 0),
-		spinner:   spinner.New(spinner.WithSpinner(spinner.Ellipsis)),
 		tree: &Tree[PulumiData]{
 			Root: &Node[PulumiData]{
 				Id: "root",

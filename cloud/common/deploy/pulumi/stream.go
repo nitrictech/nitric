@@ -15,6 +15,8 @@
 package pulumi
 
 import (
+	"strings"
+
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
 )
 
@@ -25,7 +27,7 @@ type UpStreamMessageWriter struct {
 func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
 
-	if str == "." {
+	if strings.TrimSpace(str) == "." {
 		// skip progress dots
 		return len(bytes), nil
 	}
@@ -51,7 +53,7 @@ type DownStreamMessageWriter struct {
 func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 	str := string(bytes)
 
-	if str == "." {
+	if strings.TrimSpace(str) == "." {
 		// skip progress dots
 		return len(bytes), nil
 	}

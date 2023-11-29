@@ -21,6 +21,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var ErrorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
+
 type PulumiData struct {
 	Urn string
 	// Name   string
@@ -101,7 +103,7 @@ var StatusStyles = map[ResourceStatus]lipgloss.Style{
 	ResourceStatus_Deleted: lipgloss.NewStyle().Foreground(lipgloss.Color("#c0392b")),
 
 	// Failed states
-	ResourceStatus_Failed_Create: lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")),
-	ResourceStatus_Failed_Delete: lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")),
-	ResourceStatus_Failed_Update: lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")),
+	ResourceStatus_Failed_Create: ErrorStyle,
+	ResourceStatus_Failed_Delete: ErrorStyle,
+	ResourceStatus_Failed_Update: ErrorStyle,
 }
