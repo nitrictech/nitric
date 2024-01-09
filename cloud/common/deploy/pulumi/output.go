@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pterm/pterm"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 )

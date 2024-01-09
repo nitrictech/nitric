@@ -19,7 +19,7 @@ package secret
 import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )

@@ -22,11 +22,11 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+func (d *DeployServer) Up(request *deploymentspb.DeployUpRequest, stream deploymentspb.Deploy_UpServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
@@ -60,12 +60,12 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				return err
 			}
 
-			err = stream.Send(&deploy.DeployUpEvent{
-				Content: &deploy.DeployUpEvent_Result{
-					Result: &deploy.DeployUpEventResult{
+			err = stream.Send(&deploymentspb.DeployUpEvent{
+				Content: &deploymentspb.DeployUpEvent_Result{
+					Result: &deploymentspb.DeployUpEventResult{
 						Success: true,
-						Result: &deploy.UpResult{
-							Content: &deploy.UpResult_StringResult{
+						Result: &deploymentspb.UpResult{
+							Content: &deploymentspb.UpResult_StringResult{
 								StringResult: fmt.Sprintf("spec written to: %s", absPath),
 							},
 						},
@@ -77,12 +77,12 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 	} else {
-		err = stream.Send(&deploy.DeployUpEvent{
-			Content: &deploy.DeployUpEvent_Result{
-				Result: &deploy.DeployUpEventResult{
+		err = stream.Send(&deploymentspb.DeployUpEvent{
+			Content: &deploymentspb.DeployUpEvent_Result{
+				Result: &deploymentspb.DeployUpEventResult{
 					Success: true,
-					Result: &deploy.UpResult{
-						Content: &deploy.UpResult_StringResult{
+					Result: &deploymentspb.UpResult{
+						Content: &deploymentspb.UpResult_StringResult{
 							StringResult: string(reqJson),
 						},
 					},

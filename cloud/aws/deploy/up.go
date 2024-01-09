@@ -27,7 +27,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/interactive"
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/noninteractive"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
@@ -36,7 +36,7 @@ import (
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.Deploy_UpServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())

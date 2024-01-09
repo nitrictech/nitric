@@ -21,14 +21,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
-	azqueue_service "github.com/nitrictech/nitric/cloud/azure/runtime/queue"
+	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 
 	mongodb_service "github.com/nitrictech/nitric/cloud/azure/runtime/document"
-	event_grid "github.com/nitrictech/nitric/cloud/azure/runtime/events"
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
 	key_vault "github.com/nitrictech/nitric/cloud/azure/runtime/secret"
 	azblob_service "github.com/nitrictech/nitric/cloud/azure/runtime/storage"
+	event_grid "github.com/nitrictech/nitric/cloud/azure/runtime/topic"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 )
 
@@ -38,7 +37,7 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	provider, err := core.New()
+	provider, err := resource.New()
 	if err != nil {
 		log.Fatalf("could not create core azure provider: %v", err)
 	}
@@ -50,7 +49,7 @@ func main() {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
 
-	membraneOpts.EventsPlugin, err = event_grid.New(provider)
+	membraneOpts.TopicsPlugin, err = event_grid.New(provider)
 	if err != nil {
 		log.Default().Println("Failed to load event plugin:", err.Error())
 	}
@@ -60,17 +59,12 @@ func main() {
 		log.Default().Println("Failed to load gateway plugin:", err.Error())
 	}
 
-	membraneOpts.QueuePlugin, _ = azqueue_service.New()
-	if err != nil {
-		log.Default().Println("Failed to load queue plugin:", err.Error())
-	}
-
 	membraneOpts.StoragePlugin, err = azblob_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load storage plugin:", err.Error())
 	}
 
-	membraneOpts.SecretPlugin, err = key_vault.New()
+	membraneOpts.SecretManagerPlugin, err = key_vault.New()
 	if err != nil {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}

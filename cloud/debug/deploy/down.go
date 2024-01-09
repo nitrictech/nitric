@@ -21,17 +21,17 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 type DownStreamMessageWriter struct {
-	stream deploy.DeployService_DownServer
+	stream deploymentspb.Deploy_DownServer
 }
 
 func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
-	err := s.stream.Send(&deploy.DeployDownEvent{
-		Content: &deploy.DeployDownEvent_Message{
-			Message: &deploy.DeployEventMessage{
+	err := s.stream.Send(&deploymentspb.DeployDownEvent{
+		Content: &deploymentspb.DeployDownEvent_Message{
+			Message: &deploymentspb.DeployEventMessage{
 				Message: string(bytes),
 			},
 		},
@@ -43,7 +43,7 @@ func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {
 	return len(bytes), nil
 }
 
-func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
+func (d *DeployServer) Down(request *deploymentspb.DeployDownRequest, stream deploymentspb.Deploy_DownServer) error {
 	var err error
 	defer func() {
 		if r := recover(); r != nil {

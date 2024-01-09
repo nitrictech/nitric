@@ -22,11 +22,11 @@ import (
 	_ "embed"
 
 	commonDeploy "github.com/nitrictech/nitric/cloud/common/deploy"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 type DeployServer struct {
-	deploy.UnimplementedDeployServiceServer
+	deploy.UnimplementedDeployServer
 }
 
 // Embeds the runtime directly into the deploytime binary

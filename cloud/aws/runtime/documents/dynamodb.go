@@ -16,8 +16,8 @@ package documents
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -28,13 +28,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/dynamodbiface"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	document "github.com/nitrictech/nitric/core/pkg/decorators/documents"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	documentpb "github.com/nitrictech/nitric/core/pkg/proto/documents/v1"
 )
 
 const (
@@ -44,12 +46,13 @@ const (
 	maxBatchWrite    = 25
 )
 
-// DynamoDocService - AWS DynamoDB AWS Nitric Document service
+// DynamoDocService - an AWS DynamoDB implementation of the Nitric Document Service
 type DynamoDocService struct {
-	document.UnimplementedDocumentPlugin
 	client   dynamodbiface.DynamoDBAPI
-	provider core.AwsProvider
+	provider resource.AwsResourceProvider
 }
+
+var _ documentpb.DocumentsServer = &DynamoDocService{}
 
 func isDynamoAccessDeniedErr(err error) bool {
 	var opErr *smithy.OperationError
@@ -59,15 +62,11 @@ func isDynamoAccessDeniedErr(err error) bool {
 	return false
 }
 
-func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
-	newErr := errors.ErrorsWithScope(
-		"DynamoDocService.Get",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+// Get a document from the DynamoDB table
+func (s *DynamoDocService) Get(ctx context.Context, req *documentpb.DocumentGetRequest) (*documentpb.DocumentGetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
 
-	err := document.ValidateKey(key)
+	err := document.ValidateKey(req.Key)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -76,7 +75,7 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 		)
 	}
 
-	keyMap := createKeyMap(key)
+	keyMap := createKeyMap(req.Key)
 	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
 		return nil, newErr(
@@ -86,7 +85,7 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 		)
 	}
 
-	tableName, err := s.getTableName(ctx, *key.Collection)
+	tableName, err := s.getTableName(ctx, req.Key.Collection)
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +100,14 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 		if isDynamoAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to get document value, have you requested access to this collection?",
+				"unable to get document value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
 
 		return nil, newErr(
 			codes.Internal,
-			fmt.Sprintf("error retrieving key %v", key),
+			fmt.Sprintf("error retrieving key %v", req.Key),
 			err,
 		)
 	}
@@ -116,7 +115,7 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 	if result.Item == nil {
 		return nil, newErr(
 			codes.NotFound,
-			fmt.Sprintf("%v not found", key),
+			fmt.Sprintf("%v not found", req.Key),
 			err,
 		)
 	}
@@ -134,46 +133,58 @@ func (s *DynamoDocService) Get(ctx context.Context, key *document.Key) (*documen
 	delete(itemMap, AttribPk)
 	delete(itemMap, AttribSk)
 
-	return &document.Document{
-		Key:     key,
-		Content: itemMap,
+	documentContent, err := structpb.NewStruct(itemMap)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"error converting returned document to struct",
+			err,
+		)
+	}
+
+	return &documentpb.DocumentGetResponse{
+		Document: &documentpb.Document{
+			Key:     req.Key,
+			Content: documentContent,
+		},
 	}, nil
+
 }
 
-func (s *DynamoDocService) Set(ctx context.Context, key *document.Key, value map[string]interface{}) error {
-	newErr := errors.ErrorsWithScope(
-		"DynamoDocService.Set",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+// Set a document in the DynamoDB table
+func (s *DynamoDocService) Set(ctx context.Context, req *documentpb.DocumentSetRequest) (*documentpb.DocumentSetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Set")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	if value == nil {
-		return newErr(
+	if req.Content == nil {
+		return nil, newErr(
 			codes.InvalidArgument,
-			"provide non-nil value",
+			"document content must not be nil",
 			nil,
 		)
 	}
 
 	// Construct DynamoDB attribute value object
-	itemMap := createItemMap(value, key)
+	itemMap := createItemMap(req.Content.AsMap(), req.Key)
 	itemAttributeMap, err := attributevalue.MarshalMap(itemMap)
 	if err != nil {
-		return fmt.Errorf("failed to marshal value")
+		return nil, newErr(
+			codes.NotFound,
+			"failed to marshal content",
+			err,
+		)
 	}
 
-	tableName, err := s.getTableName(ctx, *key.Collection)
+	tableName, err := s.getTableName(ctx, req.Key.Collection)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to find table",
 			err,
@@ -188,52 +199,48 @@ func (s *DynamoDocService) Set(ctx context.Context, key *document.Key, value map
 	_, err = s.client.PutItem(ctx, input)
 	if err != nil {
 		if isDynamoAccessDeniedErr(err) {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to set document value, have you requested access to this collection?",
+				"unable to set document value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
 
-		return newErr(
-			codes.Internal,
-			"error putting item",
+		return nil, newErr(
+			codes.Unknown,
+			"unable to set document value",
 			err,
 		)
 	}
 
-	return nil
+	return &documentpb.DocumentSetResponse{}, nil
 }
 
-func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error {
-	newErr := errors.ErrorsWithScope(
-		"DynamoDocService.Delete",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+// Delete a document from the DynamoDB table
+func (s *DynamoDocService) Delete(ctx context.Context, req *documentpb.DocumentDeleteRequest) (*documentpb.DocumentDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Delete")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	keyMap := createKeyMap(key)
+	keyMap := createKeyMap(req.Key)
 	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.InvalidArgument,
-			fmt.Sprintf("failed to marshal keys: %v", key),
+			fmt.Sprintf("failed to marshal keys: %v", req.Key),
 			err,
 		)
 	}
 
-	tableName, err := s.getTableName(ctx, *key.Collection)
+	tableName, err := s.getTableName(ctx, req.Key.Collection)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to find table",
 			err,
@@ -248,28 +255,28 @@ func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error 
 	_, err = s.client.DeleteItem(ctx, deleteInput)
 	if err != nil {
 		if isDynamoAccessDeniedErr(err) {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to delete document, have you requested access to this collection?",
+				"unable to delete document, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
-			fmt.Sprintf("error deleting %v item %v : %v", key.Collection, key.Id, err),
+			fmt.Sprintf("error deleting %v item %v : %v", req.Key.Collection, req.Key.Id, err),
 			err,
 		)
 	}
 
 	// Delete sub collection items
-	if key.Collection.Parent == nil {
+	if req.Key.Collection.Parent == nil {
 		var lastEvaluatedKey map[string]types.AttributeValue
 		for {
-			queryInput := createDeleteQuery(tableName, key, lastEvaluatedKey)
+			queryInput := createDeleteQuery(tableName, req.Key, lastEvaluatedKey)
 			resp, err := s.client.Query(ctx, queryInput)
 			if err != nil {
-				return newErr(
+				return nil, newErr(
 					codes.Internal,
 					"error performing delete in table",
 					err,
@@ -280,7 +287,7 @@ func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error 
 
 			err = s.processDeleteQuery(ctx, *tableName, resp)
 			if err != nil {
-				return newErr(
+				return nil, newErr(
 					codes.Internal,
 					"error performing delete",
 					err,
@@ -293,12 +300,12 @@ func (s *DynamoDocService) Delete(ctx context.Context, key *document.Key) error 
 		}
 	}
 
-	return nil
+	return &documentpb.DocumentDeleteResponse{}, nil
 }
 
-func (s *DynamoDocService) query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	queryResult := &document.QueryResult{
-		Documents: make([]document.Document, 0),
+func (s *DynamoDocService) query(ctx context.Context, collection *documentpb.Collection, expressions []*documentpb.Expression, limit int32, pagingToken map[string]string) (*documentpb.DocumentQueryResponse, error) {
+	queryResult := &documentpb.DocumentQueryResponse{
+		Documents: make([]*documentpb.Document, 0),
 	}
 
 	var resFunc resultRetriever = s.performQuery
@@ -316,15 +323,11 @@ func (s *DynamoDocService) query(ctx context.Context, collection *document.Colle
 	return queryResult, nil
 }
 
-func (s *DynamoDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"DynamoDocService.Query",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+// Query documents from the DynamoDB table with pagination
+func (s *DynamoDocService) Query(ctx context.Context, req *documentpb.DocumentQueryRequest) (*documentpb.DocumentQueryResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Query")
 
-	if err := document.ValidateQueryCollection(collection); err != nil {
+	if err := document.ValidateQueryCollection(req.Collection); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid collection",
@@ -332,7 +335,7 @@ func (s *DynamoDocService) Query(ctx context.Context, collection *document.Colle
 		)
 	}
 
-	if err := document.ValidateExpressions(expressions); err != nil {
+	if err := document.ValidateExpressions(req.Expressions); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid expressions",
@@ -340,12 +343,12 @@ func (s *DynamoDocService) Query(ctx context.Context, collection *document.Colle
 		)
 	}
 
-	queryResult, err := s.query(ctx, collection, expressions, limit, pagingToken)
+	queryResult, err := s.query(ctx, req.Collection, req.Expressions, req.Limit, req.PagingToken)
 	if err != nil {
 		if isDynamoAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to query document values, have you requested access to this collection?",
+				"unable to query document values, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
@@ -357,12 +360,12 @@ func (s *DynamoDocService) Query(ctx context.Context, collection *document.Colle
 		)
 	}
 
-	remainingLimit := limit - len(queryResult.Documents)
+	remainingLimit := req.Limit - int32(len(queryResult.Documents))
 
 	// If more results available, perform additional queries
 	for remainingLimit > 0 &&
 		(queryResult.PagingToken != nil && len(queryResult.PagingToken) > 0) {
-		if res, err := s.query(ctx, collection, expressions, remainingLimit, queryResult.PagingToken); err != nil {
+		if res, err := s.query(ctx, req.Collection, req.Expressions, remainingLimit, queryResult.PagingToken); err != nil {
 			return nil, newErr(
 				codes.Internal,
 				"query error",
@@ -373,103 +376,78 @@ func (s *DynamoDocService) Query(ctx context.Context, collection *document.Colle
 			queryResult.PagingToken = res.PagingToken
 		}
 
-		remainingLimit = limit - len(queryResult.Documents)
+		remainingLimit = req.Limit - int32(len(queryResult.Documents))
 	}
 
 	return queryResult, nil
 }
 
-func (s *DynamoDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
-	newErr := errors.ErrorsWithScope(
-		"DynamoDocService.QueryStream",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+// QuerySteam queries documents from the DynamoDB table as a stream
+func (s *DynamoDocService) QueryStream(req *documentpb.DocumentQueryStreamRequest, srv documentpb.Documents_QueryStreamServer) error {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.QueryStream")
 
-	colErr := document.ValidateQueryCollection(collection)
-	expErr := document.ValidateExpressions(expressions)
-
-	if colErr != nil || expErr != nil {
-		// Return an error only iterator
-		return func() (*document.Document, error) {
-			return nil, newErr(
-				codes.InvalidArgument,
-				"invalid arguments",
-				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
-			)
-		}
+	colErr := document.ValidateQueryCollection(req.Collection)
+	if colErr != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("collection error: %w", colErr),
+		)
 	}
 
-	tmpLimit := limit
-	var documents []document.Document
+	expErr := document.ValidateExpressions(req.Expressions)
+	if expErr != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("expression error: %w", expErr),
+		)
+	}
+
 	var pagingToken map[string]string
+	numReturned := int32(0)
 
-	// Initial fetch
-	res, fetchErr := s.query(ctx, collection, expressions, tmpLimit, nil)
+	for numReturned < req.Limit {
+		res, fetchErr := s.query(srv.Context(), req.Collection, req.Expressions, req.Limit-numReturned, pagingToken)
+		pagingToken = res.PagingToken
 
-	if fetchErr != nil {
-		// Return an error only iterator if the initial fetch failed
-		return func() (*document.Document, error) {
-			if isDynamoAccessDeniedErr(fetchErr) {
-				return nil, newErr(
-					codes.PermissionDenied,
-					"unable to query document values, have you requested access to this collection?",
-					fetchErr,
+		if fetchErr != nil {
+			return newErr(
+				codes.Internal,
+				"query error",
+				fetchErr,
+			)
+		}
+
+		// no more results to return
+		if len(res.Documents) == 0 {
+			return nil
+		}
+
+		for _, doc := range res.Documents {
+			if err := srv.Send(&documentpb.DocumentQueryStreamResponse{
+				Document: doc,
+			}); err != nil {
+				return newErr(
+					codes.Internal,
+					"error returning document",
+					err,
 				)
 			}
 
-			return nil, newErr(
-				codes.Internal,
-				"query error",
-				fetchErr,
-			)
+			numReturned++
+			if numReturned >= req.Limit {
+				break
+			}
 		}
 	}
 
-	documents = res.Documents
-	pagingToken = res.PagingToken
-
-	return func() (*document.Document, error) {
-		// check the iteration state
-		if tmpLimit <= 0 && limit > 0 {
-			// we've reached the limit of reading
-			return nil, io.EOF
-		} else if pagingToken != nil && len(documents) == 0 {
-			// we've run out of documents and have more pages to read
-			res, fetchErr = s.query(ctx, collection, expressions, tmpLimit, pagingToken)
-			documents = res.Documents
-			pagingToken = res.PagingToken
-		} else if pagingToken == nil && len(documents) == 0 {
-			// we're all out of documents and pages before hitting the limit
-			return nil, io.EOF
-		}
-
-		// We received an error fetching the docs
-		if fetchErr != nil {
-			return nil, newErr(
-				codes.Internal,
-				"query error",
-				fetchErr,
-			)
-		}
-
-		if len(documents) == 0 {
-			return nil, io.EOF
-		}
-
-		// pop the first element
-		var doc document.Document
-		doc, documents = documents[0], documents[1:]
-		tmpLimit = tmpLimit - 1
-
-		return &doc, nil
-	}
+	return nil
 }
 
-// New - Create a new DynamoDB key value plugin implementation
-func New(provider core.AwsProvider) (document.DocumentService, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+// New creates a new AWS DynamoDB implementation of a DocumentServiceServer
+func New(provider resource.AwsResourceProvider) (*DynamoDocService, error) {
+	awsRegion := env.AWS_REGION.String()
 
 	// Create a new AWS session
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -487,17 +465,17 @@ func New(provider core.AwsProvider) (document.DocumentService, error) {
 	}, nil
 }
 
-// NewWithClient - Mainly used for testing
-func NewWithClient(provider core.AwsProvider, client *dynamodb.Client) (document.DocumentService, error) {
+// NewWithClient creates a DocumentServiceServer with an given DynamoDB client instance.
+//
+//	Primarily used for testing
+func NewWithClient(provider resource.AwsResourceProvider, client *dynamodb.Client) (*DynamoDocService, error) {
 	return &DynamoDocService{
 		provider: provider,
 		client:   client,
 	}, nil
 }
 
-// Private Functions ----------------------------------------------------------
-
-func createKeyMap(key *document.Key) map[string]string {
+func createKeyMap(key *documentpb.Key) map[string]string {
 	keyMap := make(map[string]string)
 
 	parentKey := key.Collection.Parent
@@ -513,7 +491,7 @@ func createKeyMap(key *document.Key) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key *document.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, key *documentpb.Key) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
@@ -531,28 +509,28 @@ func createItemMap(source map[string]interface{}, key *document.Key) map[string]
 
 type resultRetriever = func(
 	ctx context.Context,
-	collection *document.Collection,
-	expressions []document.QueryExpression,
-	limit int,
+	collection *documentpb.Collection,
+	expressions []*documentpb.Expression,
+	limit int32,
 	pagingToken map[string]string,
-) (*document.QueryResult, error)
+) (*documentpb.DocumentQueryResponse, error)
 
 func (s *DynamoDocService) performQuery(
 	ctx context.Context,
-	collection *document.Collection,
-	expressions []document.QueryExpression,
-	limit int,
+	collection *documentpb.Collection,
+	expressions []*documentpb.Expression,
+	limit int32,
 	pagingToken map[string]string,
-) (*document.QueryResult, error) {
+) (*documentpb.DocumentQueryResponse, error) {
 	if collection.Parent == nil {
 		// Should never occur
-		return nil, fmt.Errorf("cannot perform query without partion key defined")
+		return nil, fmt.Errorf("cannot perform query without partition key defined")
 	}
 
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
-	tableName, err := s.getTableName(ctx, *collection)
+	tableName, err := s.getTableName(ctx, collection)
 	if err != nil {
 		return nil, err
 	}
@@ -621,15 +599,15 @@ func (s *DynamoDocService) performQuery(
 
 func (s *DynamoDocService) performScan(
 	ctx context.Context,
-	collection *document.Collection,
-	expressions []document.QueryExpression,
-	limit int,
+	collection *documentpb.Collection,
+	expressions []*documentpb.Expression,
+	limit int32,
 	pagingToken map[string]string,
-) (*document.QueryResult, error) {
+) (*documentpb.DocumentQueryResponse, error) {
 	// Sort expressions to help map where "A >= %1 AND A <= %2" to DynamoDB expression "A BETWEEN %1 AND %2"
 	sort.Sort(document.ExpsSort(expressions))
 
-	tableName, err := s.getTableName(ctx, *collection)
+	tableName, err := s.getTableName(ctx, collection)
 	if err != nil {
 		return nil, err
 	}
@@ -697,7 +675,7 @@ func (s *DynamoDocService) performScan(
 	return marshalQueryResult(collection, resp.Items, resp.LastEvaluatedKey)
 }
 
-func marshalQueryResult(collection *document.Collection, items []map[string]types.AttributeValue, lastEvaluatedKey map[string]types.AttributeValue) (*document.QueryResult, error) {
+func marshalQueryResult(collection *documentpb.Collection, items []map[string]types.AttributeValue, lastEvaluatedKey map[string]types.AttributeValue) (*documentpb.DocumentQueryResponse, error) {
 	// Unmarshal Dynamo response items
 	var pTkn map[string]string = nil
 	var valueMaps []map[string]interface{}
@@ -705,13 +683,13 @@ func marshalQueryResult(collection *document.Collection, items []map[string]type
 		return nil, fmt.Errorf("error unmarshalling query response: %w", err)
 	}
 
-	docs := make([]document.Document, 0, len(valueMaps))
+	docs := make([]*documentpb.Document, 0, len(valueMaps))
 
 	// Strip keys & append results
 	for _, m := range valueMaps {
 		// Retrieve the original ID on the result
 		var id string
-		var c *document.Collection
+		var c *documentpb.Collection
 		if collection.Parent == nil {
 			// We know this is a root document so its key will be located in PK
 			pk, _ := m[AttribPk].(string)
@@ -723,10 +701,10 @@ func marshalQueryResult(collection *document.Collection, items []map[string]type
 			sk, _ := m[AttribSk].(string)
 			idStr := strings.Split(sk, "#")
 			id = idStr[len(idStr)-1]
-			c = &document.Collection{
+			c = &documentpb.Collection{
 				Name: collection.Name,
-				Parent: &document.Key{
-					Collection: &document.Collection{
+				Parent: &documentpb.Key{
+					Collection: &documentpb.Collection{
 						Name: collection.Parent.Collection.Name,
 					},
 					Id: pk,
@@ -738,12 +716,17 @@ func marshalQueryResult(collection *document.Collection, items []map[string]type
 		delete(m, AttribPk)
 		delete(m, AttribSk)
 
-		sdkDoc := document.Document{
-			Key: &document.Key{
+		structContent, err := structpb.NewStruct(m)
+		if err != nil {
+			return nil, err
+		}
+
+		sdkDoc := &documentpb.Document{
+			Key: &documentpb.Key{
 				Collection: c,
 				Id:         id,
 			},
-			Content: m,
+			Content: structContent,
 		}
 		docs = append(docs, sdkDoc)
 	}
@@ -757,13 +740,13 @@ func marshalQueryResult(collection *document.Collection, items []map[string]type
 		pTkn = resultPagingToken
 	}
 
-	return &document.QueryResult{
+	return &documentpb.DocumentQueryResponse{
 		Documents:   docs,
 		PagingToken: pTkn,
 	}, nil
 }
 
-func createFilterExpression(expressions []document.QueryExpression) string {
+func createFilterExpression(expressions []*documentpb.Expression) string {
 	keyExp := ""
 	for i, exp := range expressions {
 		if keyExp != "" {
@@ -791,7 +774,7 @@ func createFilterExpression(expressions []document.QueryExpression) string {
 	return keyExp
 }
 
-func isBetweenStart(index int, exps []document.QueryExpression) bool {
+func isBetweenStart(index int, exps []*documentpb.Expression) bool {
 	if index < (len(exps) - 1) {
 		if exps[index].Operand == exps[index+1].Operand &&
 			exps[index].Operator == ">=" &&
@@ -802,7 +785,7 @@ func isBetweenStart(index int, exps []document.QueryExpression) bool {
 	return false
 }
 
-func isBetweenEnd(index int, exps []document.QueryExpression) bool {
+func isBetweenEnd(index int, exps []*documentpb.Expression) bool {
 	if index > 0 && index < len(exps) {
 		if exps[index-1].Operand == exps[index].Operand &&
 			exps[index-1].Operator == ">=" &&
@@ -813,19 +796,19 @@ func isBetweenEnd(index int, exps []document.QueryExpression) bool {
 	return false
 }
 
-func (s *DynamoDocService) getTableName(ctx context.Context, collection document.Collection) (*string, error) {
-	tables, err := s.provider.GetResources(ctx, core.AwsResource_Collection)
+func (s *DynamoDocService) getTableName(ctx context.Context, collection *documentpb.Collection) (*string, error) {
+	tables, err := s.provider.GetResources(ctx, resource.AwsResource_Collection)
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the table list: %w", err)
 	}
 
 	coll := collection
 	for coll.Parent != nil {
-		coll = *coll.Parent.Collection
+		coll = coll.Parent.Collection
 	}
 
 	if table, ok := tables[coll.Name]; ok {
-		tableName := strings.Split(table, "/")[1]
+		tableName := strings.Split(table.ARN, "/")[1]
 
 		// split the table arn to get the name
 		return aws.String(tableName), nil
@@ -834,7 +817,7 @@ func (s *DynamoDocService) getTableName(ctx context.Context, collection document
 	return nil, fmt.Errorf("collection %s does not exist", coll.Name)
 }
 
-func createDeleteQuery(table *string, key *document.Key, startKey map[string]types.AttributeValue) *dynamodb.QueryInput {
+func createDeleteQuery(table *string, key *documentpb.Key, startKey map[string]types.AttributeValue) *dynamodb.QueryInput {
 	limit := deleteQueryLimit
 
 	return &dynamodb.QueryInput{

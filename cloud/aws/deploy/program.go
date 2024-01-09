@@ -31,7 +31,6 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/policy"
-	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/stack"
@@ -42,8 +41,8 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -119,22 +118,6 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 				collections[res.Name], err = collection.NewDynamodbCollection(ctx, res.Name, &collection.DynamodbCollectionArgs{
 					StackID:    stackID,
 					Collection: c.Collection,
-				})
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		// Deploy all queues
-		queues := map[string]*queue.SQSQueue{}
-		for _, res := range spec.Resources {
-			switch q := res.Config.(type) {
-			case *deploy.Resource_Queue:
-				queues[res.Name], err = queue.NewSQSQueue(ctx, res.Name, &queue.SQSQueueArgs{
-					// TODO: Calculate stack ID
-					StackID: stackID,
-					Queue:   q.Queue,
 				})
 				if err != nil {
 					return err
@@ -379,7 +362,6 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 					Resources: &policy.StackResources{
 						Buckets:     buckets,
 						Topics:      topics,
-						Queues:      queues,
 						Collections: collections,
 						Secrets:     secrets,
 						Websockets:  websockets,

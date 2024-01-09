@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/pkg/errors"
@@ -28,13 +29,31 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
-	"github.com/nitrictech/nitric/core/pkg/span"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/core/pkg/telemetry"
+
+	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 )
 
+// PercentFromIntString returns a float between 0.0 to 1 representing a percentage.
+// this is converted from a string int in the range "0" to "100".
+func decimalFromPercentIntString(in string) (float64, error) {
+	intVar, err := strconv.Atoi(in)
+	if err != nil {
+		return 0, err
+	}
+
+	if intVar >= 100 {
+		return 1, nil
+	} else if intVar <= 0 {
+		return 0, nil
+	}
+
+	return float64(intVar) / float64(100), nil
+}
+
 func newTracerProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
-	span.FunctionName = lambdacontext.FunctionName
-	span.UseFuncNameAsSpanName = true
+	telemetry.FunctionName = lambdacontext.FunctionName
+	telemetry.UseFuncNameAsSpanName = true
 
 	exp, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure())
 	if err != nil {
@@ -47,8 +66,8 @@ func newTracerProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 		resource.WithAttributes(
 			semconv.CloudProviderAWS,
 			semconv.CloudPlatformAWSLambda,
-			semconv.ServiceNameKey.String(span.FunctionName),
-			semconv.ServiceNamespaceKey.String(utils.GetEnv("NITRIC_STACK_ID", "")),
+			semconv.ServiceNameKey.String(telemetry.FunctionName),
+			semconv.ServiceNamespaceKey.String(commonenv.NITRIC_STACK_ID.String()),
 		),
 	)
 	if err != nil {
@@ -61,7 +80,7 @@ func newTracerProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
 			propagation.TraceContext{},
 		))
 
-	rate, err := utils.PercentFromIntString(utils.GetEnv("NITRIC_TRACE_SAMPLE_PERCENT", "10"))
+	rate, err := decimalFromPercentIntString(commonenv.NITRIC_TRACE_SAMPLE_PERCENT.String())
 	if err != nil {
 		return nil, errors.WithMessagef(err, "NITRIC_TRACE_SAMPLE_PERCENT should be an int")
 	}

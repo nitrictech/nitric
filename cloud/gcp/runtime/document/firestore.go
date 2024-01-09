@@ -17,14 +17,17 @@ package document
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 
-	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
+	"errors"
 
+	document "github.com/nitrictech/nitric/core/pkg/decorators/documents"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/documents/v1"
+
+	"google.golang.org/grpc/codes"
 	grpcCodes "google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
@@ -37,18 +40,14 @@ const pagingTokens = "pagingTokens"
 
 type FirestoreDocService struct {
 	client *firestore.Client
-	document.UnimplementedDocumentPlugin
 }
 
-func (s *FirestoreDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
-	newErr := errors.ErrorsWithScope(
-		"FirestoreDocService.Get",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+var _ v1.DocumentsServer = &FirestoreDocService{}
 
-	if err := document.ValidateKey(key); err != nil {
+func (s *FirestoreDocService) Get(ctx context.Context, req *v1.DocumentGetRequest) (*v1.DocumentGetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Get")
+
+	if err := document.ValidateKey(req.Key); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -56,7 +55,7 @@ func (s *FirestoreDocService) Get(ctx context.Context, key *document.Key) (*docu
 		)
 	}
 
-	doc := s.getDocRef(key)
+	doc := s.getDocRef(req.Key)
 
 	value, err := doc.Get(ctx)
 	if err != nil {
@@ -75,80 +74,81 @@ func (s *FirestoreDocService) Get(ctx context.Context, key *document.Key) (*docu
 		)
 	}
 
-	return &document.Document{
-		Key:     key,
-		Content: value.Data(),
+	documentContent, err := structpb.NewStruct(value.Data())
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"error converting returned document to struct",
+			err,
+		)
+	}
+
+	return &v1.DocumentGetResponse{
+		Document: &v1.Document{
+			Key:     req.Key,
+			Content: documentContent,
+		},
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(ctx context.Context, key *document.Key, value map[string]interface{}) error {
-	newErr := errors.ErrorsWithScope(
-		"FirestoreDocService.Set",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+func (s *FirestoreDocService) Set(ctx context.Context, req *v1.DocumentSetRequest) (*v1.DocumentSetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Set")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	if value == nil {
-		return newErr(
+	if req.Content == nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"provide non-nil value",
 			nil,
 		)
 	}
 
-	doc := s.getDocRef(key)
+	doc := s.getDocRef(req.Key)
 
-	if _, err := doc.Set(ctx, value); err != nil {
+	if _, err := doc.Set(ctx, req.Content.AsMap()); err != nil {
 		if status.Code(err) == grpcCodes.PermissionDenied {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"permission denied, have you requested access to this collection?",
 				err,
 			)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"error updating value",
 			err,
 		)
 	}
 
-	return nil
+	return &v1.DocumentSetResponse{}, nil
 }
 
-func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) error {
-	newErr := errors.ErrorsWithScope(
-		"FirestoreDocService.Delete",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.DocumentDeleteRequest) (*v1.DocumentDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Delete")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	doc := s.getDocRef(key)
+	doc := s.getDocRef(req.Key)
 
 	// Delete any sub collection documents
 	collsIter := doc.Collections(ctx)
 	for subCol, err := collsIter.Next(); !errors.Is(err, iterator.Done); subCol, err = collsIter.Next() {
 		if err != nil {
-			return newErr(
+			return nil, newErr(
 				codes.Internal,
 				"error deleting value",
 				err,
@@ -165,7 +165,7 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 			batch := s.client.Batch()
 			for subDoc, err := docsIter.Next(); !errors.Is(err, iterator.Done); subDoc, err = docsIter.Next() {
 				if err != nil {
-					return newErr(codes.Internal, "error deleting records", err)
+					return nil, newErr(codes.Internal, "error deleting records", err)
 				}
 
 				batch.Delete(subDoc.Ref)
@@ -179,7 +179,7 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 
 			_, err := batch.Commit(ctx)
 			if err != nil {
-				return newErr(codes.Internal, "error deleting records", err)
+				return nil, newErr(codes.Internal, "error deleting records", err)
 			}
 		}
 	}
@@ -187,24 +187,24 @@ func (s *FirestoreDocService) Delete(ctx context.Context, key *document.Key) err
 	// Delete document
 	if _, err := doc.Delete(ctx); err != nil {
 		if status.Code(err) == grpcCodes.PermissionDenied {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"permission denied, have you requested access to this collection?",
 				err,
 			)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"error deleting value",
 			err,
 		)
 	}
 
-	return nil
+	return &v1.DocumentDeleteResponse{}, nil
 }
 
-func (s *FirestoreDocService) buildQuery(collection *document.Collection, expressions []document.QueryExpression, limit int) (query firestore.Query, orderBy string) {
+func (s *FirestoreDocService) buildQuery(collection *v1.Collection, expressions []*v1.Expression, limit int32) (query firestore.Query, orderBy string) {
 	// Select correct root collection to perform query on
 	query = s.getQueryRoot(collection)
 
@@ -225,21 +225,16 @@ func (s *FirestoreDocService) buildQuery(collection *document.Collection, expres
 	}
 
 	if limit > 0 {
-		query = query.Limit(limit)
+		query = query.Limit(int(limit))
 	}
 
 	return
 }
 
-func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"FirestoreDocService.Query",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+func (s *FirestoreDocService) Query(ctx context.Context, req *v1.DocumentQueryRequest) (*v1.DocumentQueryResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Query")
 
-	if err := document.ValidateQueryCollection(collection); err != nil {
+	if err := document.ValidateQueryCollection(req.Collection); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -247,7 +242,7 @@ func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Co
 		)
 	}
 
-	if err := document.ValidateExpressions(expressions); err != nil {
+	if err := document.ValidateExpressions(req.Expressions); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid expressions",
@@ -255,17 +250,17 @@ func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Co
 		)
 	}
 
-	queryResult := &document.QueryResult{
-		Documents: make([]document.Document, 0),
+	queryResult := &v1.DocumentQueryResponse{
+		Documents: make([]*v1.Document, 0),
 	}
 
 	// Select correct root collection to perform query on
-	query, orderBy := s.buildQuery(collection, expressions, limit)
+	query, orderBy := s.buildQuery(req.Collection, req.Expressions, req.Limit)
 
-	if len(pagingToken) > 0 {
+	if len(req.PagingToken) > 0 {
 		query = query.OrderBy(firestore.DocumentID, firestore.Asc)
 
-		if tokens, ok := pagingToken[pagingTokens]; ok {
+		if tokens, ok := req.PagingToken[pagingTokens]; ok {
 			var vals []interface{}
 			for _, v := range strings.Split(tokens, "|") {
 				vals = append(vals, v)
@@ -284,11 +279,15 @@ func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Co
 			)
 		}
 
-		sdkDoc := docSnpToDocument(collection, docSnp)
+		sdkDoc, err := firestoreSnapshotToDocument(req.Collection, docSnp)
+		if err != nil {
+			return nil, err
+		}
+
 		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
-		if limit > 0 && len(queryResult.Documents) == limit {
+		if req.Limit > 0 && int32(len(queryResult.Documents)) == req.Limit {
 			tokens := ""
 			if orderBy != "" {
 				tokens = fmt.Sprintf("%v", docSnp.Data()[orderBy]) + "|"
@@ -304,75 +303,89 @@ func (s *FirestoreDocService) Query(ctx context.Context, collection *document.Co
 	return queryResult, nil
 }
 
-func (s *FirestoreDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
-	newErr := errors.ErrorsWithScope(
-		"FirestoreDocService.QueryStream",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+func (s *FirestoreDocService) QueryStream(req *v1.DocumentQueryStreamRequest, srv v1.Documents_QueryStreamServer) error {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.QueryStream")
 
-	colErr := document.ValidateQueryCollection(collection)
-	expErr := document.ValidateExpressions(expressions)
-
-	if colErr != nil || expErr != nil {
-		// Return an error only iterator
-		return func() (*document.Document, error) {
-			return nil, newErr(
-				codes.InvalidArgument,
-				"invalid arguments",
-				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
-			)
-		}
+	colErr := document.ValidateQueryCollection(req.Collection)
+	if colErr != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("collection error: %w", colErr),
+		)
 	}
 
-	query, _ := s.buildQuery(collection, expressions, limit)
+	expErr := document.ValidateExpressions(req.Expressions)
+	if expErr != nil {
+		return newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("expression error: %w", expErr),
+		)
+	}
 
-	iter := query.Documents(ctx)
+	query, _ := s.buildQuery(req.Collection, req.Expressions, req.Limit)
+	iter := query.Documents(srv.Context())
 
-	return func() (*document.Document, error) {
+	for {
 		docSnp, err := iter.Next()
 		if err != nil {
 			if errors.Is(err, iterator.Done) {
-				return nil, io.EOF
+				return nil
 			}
 
-			return nil, newErr(
+			return newErr(
 				codes.Internal,
 				"error querying value",
 				err,
 			)
 		}
 
-		sdkDoc := docSnpToDocument(collection, docSnp)
+		sdkDoc, err := firestoreSnapshotToDocument(req.Collection, docSnp)
+		if err != nil {
+			return newErr(codes.Internal, "error serializing firestore document", err)
+		}
 
-		return &sdkDoc, nil
+		if err := srv.Send(&v1.DocumentQueryStreamResponse{
+			Document: sdkDoc,
+		}); err != nil {
+			return newErr(
+				codes.Internal,
+				"error sending document",
+				err,
+			)
+		}
 	}
 }
 
-func docSnpToDocument(col *document.Collection, snp *firestore.DocumentSnapshot) document.Document {
-	sdkDoc := document.Document{
-		Content: snp.Data(),
-		Key: &document.Key{
+func firestoreSnapshotToDocument(col *v1.Collection, snapshot *firestore.DocumentSnapshot) (*v1.Document, error) {
+	documentContent, err := structpb.NewStruct(snapshot.Data())
+	if err != nil {
+		return nil, err
+	}
+
+	doc := &v1.Document{
+		Content: documentContent,
+		Key: &v1.Key{
 			Collection: col,
-			Id:         snp.Ref.ID,
+			Id:         snapshot.Ref.ID,
 		},
 	}
 
-	if p := snp.Ref.Parent.Parent; p != nil {
-		sdkDoc.Key.Collection = &document.Collection{
+	if p := snapshot.Ref.Parent.Parent; p != nil {
+		doc.Key.Collection = &v1.Collection{
 			Name: col.Name,
-			Parent: &document.Key{
+			Parent: &v1.Key{
 				Collection: col.Parent.Collection,
 				Id:         p.ID,
 			},
 		}
 	}
 
-	return sdkDoc
+	return doc, nil
 }
 
-func New() (document.DocumentService, error) {
+func New() (v1.DocumentsServer, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -390,13 +403,13 @@ func New() (document.DocumentService, error) {
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client) (document.DocumentService, error) {
+func NewWithClient(client *firestore.Client) (v1.DocumentsServer, error) {
 	return &FirestoreDocService{
 		client: client,
 	}, nil
 }
 
-func (s *FirestoreDocService) getDocRef(key *document.Key) *firestore.DocumentRef {
+func (s *FirestoreDocService) getDocRef(key *v1.Key) *firestore.DocumentRef {
 	parentKey := key.Collection.Parent
 
 	if parentKey == nil {
@@ -409,7 +422,7 @@ func (s *FirestoreDocService) getDocRef(key *document.Key) *firestore.DocumentRe
 	}
 }
 
-func (s *FirestoreDocService) getQueryRoot(collection *document.Collection) firestore.Query {
+func (s *FirestoreDocService) getQueryRoot(collection *v1.Collection) firestore.Query {
 	parentKey := collection.Parent
 
 	if parentKey == nil {

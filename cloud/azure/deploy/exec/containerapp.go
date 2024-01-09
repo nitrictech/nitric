@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -37,7 +37,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 type ContainerAppArgs struct {
@@ -165,6 +165,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 
 	res.EventToken = token.Result
 
+	// the service principal's named doesn't need to be unique from the container app, so we reuse it.
 	res.Sp, err = policy.NewServicePrincipal(ctx, name, &policy.ServicePrincipalArgs{}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
@@ -202,7 +203,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			Value: pulumi.String("cloud"),
 		},
 		app.EnvironmentVarArgs{
-			Name:  pulumi.String(core.NITRIC_STACK_ID),
+			Name:  pulumi.String(resource.NITRIC_STACK_ID),
 			Value: pulumi.String(args.StackID),
 		},
 		app.EnvironmentVarArgs{

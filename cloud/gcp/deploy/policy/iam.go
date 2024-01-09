@@ -19,12 +19,11 @@ package policy
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	events "github.com/nitrictech/nitric/cloud/gcp/deploy/topic"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
@@ -43,7 +42,6 @@ type Policy struct {
 
 type StackResources struct {
 	Topics  map[string]*events.PubSubTopic
-	Queues  map[string]*queue.PubSubTopic
 	Buckets map[string]*storage.CloudStorageBucket
 	Secrets map[string]*secret.SecretManagerSecret
 }
@@ -84,20 +82,6 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"pubsub.topics.publish",
 	},
 	v1.Action_TopicList: {}, // see above in gcpListActions
-	v1.Action_QueueSend: {
-		"pubsub.topics.get",
-		"pubsub.topics.publish",
-	},
-	v1.Action_QueueReceive: {
-		"pubsub.topics.get",
-		"pubsub.topics.attachSubscription",
-		"pubsub.snapshots.seek",
-		"pubsub.subscriptions.consume",
-	},
-	v1.Action_QueueDetail: {
-		"pubsub.topics.get",
-	},
-	v1.Action_QueueList: {}, // see above in gcpListActions
 	v1.Action_CollectionDocumentDelete: {
 		"appengine.applications.get",
 		"datastore.databases.get",
@@ -242,44 +226,6 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 				if err != nil {
 					return nil, err
 				}
-
-			case v1.ResourceType_Queue:
-				q := args.Resources.Queues[resource.Name]
-
-				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
-					Topic:  q.PubSub.Name,
-					Member: memberId,
-					Role:   rolePolicy.Name,
-				}, pulumi.Parent(res))
-				if err != nil {
-					return nil, err
-				}
-
-				needSubConsume := false
-
-				for _, act := range args.Policy.Actions {
-					if act == v1.Action_QueueReceive {
-						needSubConsume = true
-						break
-					}
-				}
-
-				if needSubConsume {
-					subRolePolicy, err := NewCustomRole(ctx, name+"subscription", []string{"pubsub.subscriptions.consume"}, pulumi.Parent(res))
-					if err != nil {
-						return nil, err
-					}
-
-					_, err = pubsub.NewSubscriptionIAMMember(ctx, memberName, &pubsub.SubscriptionIAMMemberArgs{
-						Subscription: q.Subscription.Name,
-						Member:       memberId,
-						Role:         subRolePolicy.Name,
-					}, pulumi.Parent(res))
-					if err != nil {
-						return nil, err
-					}
-				}
-
 			case v1.ResourceType_Topic:
 				t := args.Resources.Topics[resource.Name]
 

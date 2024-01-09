@@ -15,7 +15,6 @@
 package http_service
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,17 +26,19 @@ import (
 	"github.com/fasthttp/router"
 	"github.com/mitchellh/mapstructure"
 	"github.com/valyala/fasthttp"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/nitrictech/nitric/cloud/azure/runtime/core"
+	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/worker"
-	"github.com/nitrictech/nitric/core/pkg/worker/pool"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 )
 
 type azMiddleware struct {
-	provider core.AzProvider
+	provider resource.AzProvider
 }
 
 func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
@@ -51,17 +52,23 @@ func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
 	return eventgridEvents, nil
 }
 
-func extractPayload(event eventgrid.Event) []byte {
+func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
 	var payloadBytes []byte
 	if stringData, ok := event.Data.(string); ok {
 		payloadBytes = []byte(stringData)
 	} else if byteData, ok := event.Data.([]byte); ok {
 		payloadBytes = byteData
 	} else {
-		// Assume a json serializable struct for now...
-		payloadBytes, _ = json.Marshal(event.Data)
+		return nil, fmt.Errorf("invalid event data type: %T", event.Data)
 	}
-	return payloadBytes
+
+	var message topicpb.Message
+
+	if err := proto.Unmarshal(payloadBytes, &message); err != nil {
+		return nil, err
+	}
+
+	return &message, nil
 }
 
 func eventAuthorised(ctx *fasthttp.RequestCtx) bool {
@@ -87,7 +94,7 @@ func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, ev
 	ctx.Success("application/json", responseBody)
 }
 
-func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.RequestHandler {
+func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
@@ -112,35 +119,34 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 				return
 			}
 
-			payloadBytes := extractPayload(event)
+			message, err := extractMessage(event)
+			if err != nil {
+				ctx.Error(err.Error(), 500)
+				return
+			}
 
 			topicName := ctx.UserValue("name").(string)
 
-			evt := &v1.TriggerRequest{
-				Data: payloadBytes,
-				Context: &v1.TriggerRequest_Topic{
-					Topic: &v1.TopicTriggerContext{
-						Topic: topicName,
+			evt := &topicspb.ServerMessage{
+				Content: &topicspb.ServerMessage_MessageRequest{
+					MessageRequest: &topicspb.MessageRequest{
+						TopicName: topicName,
+						Message:   message,
 					},
 				},
 			}
 
-			wrkr, err := process.GetWorker(&pool.GetWorkerOptions{
-				Trigger: evt,
-				Filter: func(w worker.Worker) bool {
-					_, isSubscription := w.(*worker.SubscriptionWorker)
-					return isSubscription
-				},
-			})
+			resp, err := opts.TopicsListenerPlugin.HandleRequest(evt)
 			if err != nil {
 				log.Default().Println("could not get worker for topic: ", topicName)
 				// TODO: Handle error
 				continue
 			}
 
-			_, err = wrkr.HandleTrigger(context.TODO(), evt)
-			if err != nil {
-				log.Default().Println("could not handle event: ", evt)
+			if !resp.GetMessageResponse().Success {
+				// FIXME: Handle error return
+				log.Default().Println("event handling failed", topicName)
+				continue
 			}
 
 			// TODO: event handling failure???
@@ -149,7 +155,7 @@ func (a *azMiddleware) handleSubscription(process pool.WorkerPool) fasthttp.Requ
 	}
 }
 
-func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestHandler {
+func (a *azMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
@@ -163,30 +169,17 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 
 		scheduleName := ctx.UserValue("name").(string)
 
-		evt := &v1.TriggerRequest{
-			// Send empty data for now (no reason to send data for schedules at the moment)
-			Data: nil,
-			Context: &v1.TriggerRequest_Topic{
-				Topic: &v1.TopicTriggerContext{
-					Topic: scheduleName,
+		evt := &schedulespb.ServerMessage{
+			Content: &schedulespb.ServerMessage_IntervalRequest{
+				IntervalRequest: &schedulespb.IntervalRequest{
+					ScheduleName: scheduleName,
 				},
 			},
 		}
 
-		wrkr, err := process.GetWorker(&pool.GetWorkerOptions{
-			Trigger: evt,
-			Filter: func(w worker.Worker) bool {
-				_, isSchedule := w.(*worker.ScheduleWorker)
-				return isSchedule
-			},
-		})
+		_, err := opts.SchedulesPlugin.HandleRequest(evt)
 		if err != nil {
-			log.Default().Println("could not get worker for schedule: ", scheduleName)
-		}
-
-		_, err = wrkr.HandleTrigger(context.TODO(), evt)
-		if err != nil {
-			log.Default().Println("could not handle event: ", evt)
+			ctx.Error(fmt.Sprintf("failed handling schedule %s", scheduleName), 500)
 		}
 
 		ctx.SuccessString("text/plain", "success")
@@ -194,18 +187,18 @@ func (a *azMiddleware) handleSchedule(process pool.WorkerPool) fasthttp.RequestH
 }
 
 // Converts the GCP event type to our abstract event type
-func notificationEventToEventType(eventType *string) (v1.BucketNotificationType, error) {
+func notificationEventToEventType(eventType *string) (*storagepb.BlobEventType, error) {
 	switch *eventType {
 	case "Microsoft.Storage.BlobCreated":
-		return v1.BucketNotificationType_Created, nil
+		return storagepb.BlobEventType_Created.Enum(), nil
 	case "Microsoft.Storage.BlobDeleted":
-		return v1.BucketNotificationType_Deleted, nil
+		return storagepb.BlobEventType_Deleted.Enum(), nil
 	default:
-		return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", *eventType)
+		return nil, fmt.Errorf("unsupported bucket notification event type %s", *eventType)
 	}
 }
 
-func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthttp.RequestHandler {
+func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		if !eventAuthorised(ctx) {
 			ctx.Error("Unauthorized", 401)
@@ -247,34 +240,31 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 
 			eventKey := eventKeySeparated[6]
 
-			evt := &v1.TriggerRequest{
-				Context: &v1.TriggerRequest_Notification{
-					Notification: &v1.NotificationTriggerContext{
-						Source: bucketName,
-						Notification: &v1.NotificationTriggerContext_Bucket{
-							Bucket: &v1.BucketNotification{
+			evt := &storagepb.ServerMessage{
+				Content: &storagepb.ServerMessage_BlobEventRequest{
+					BlobEventRequest: &storagepb.BlobEventRequest{
+						BucketName: bucketName,
+						Event: &storagepb.BlobEventRequest_BlobEvent{
+							BlobEvent: &storagepb.BlobEvent{
 								Key:  eventKey,
-								Type: eventType,
+								Type: *eventType,
 							},
 						},
 					},
 				},
 			}
 
-			wrkr, err := process.GetWorker(&pool.GetWorkerOptions{
-				Trigger: evt,
-				Filter: func(w worker.Worker) bool {
-					_, isNotification := w.(*worker.BucketNotificationWorker)
-					return isNotification
-				},
-			})
+			resp, err := opts.StorageListenerPlugin.HandleRequest(evt)
 			if err != nil {
-				log.Default().Println("could not get worker for bucket notification: ", bucketName)
+				log.Default().Println("could not handle event: ", err)
+				ctx.Error("failed handling event", 500)
+				return
 			}
 
-			_, err = wrkr.HandleTrigger(context.TODO(), evt)
-			if err != nil {
-				log.Default().Println("could not handle event: ", evt)
+			if !resp.GetBlobEventResponse().Success {
+				log.Default().Println("failed handling event: ", evt)
+				ctx.Error("failed handling event", 500)
+				return
 			}
 
 			ctx.SuccessString("text/plain", "success")
@@ -282,19 +272,19 @@ func (a *azMiddleware) handleBucketNotification(process pool.WorkerPool) fasthtt
 	}
 }
 
-func (a *azMiddleware) router(r *router.Router, pool pool.WorkerPool) {
-	r.ANY(base_http.DefaultTopicRoute, a.handleSubscription(pool))
-	r.ANY(base_http.DefaultScheduleRoute, a.handleSchedule(pool))
-	r.ANY(base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(pool))
+func (a *azMiddleware) router(r *router.Router, opts *gateway.GatewayStartOpts) {
+	r.ANY(base_http.DefaultTopicRoute, a.handleSubscription(opts))
+	r.ANY(base_http.DefaultScheduleRoute, a.handleSchedule(opts))
+	r.ANY(base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(opts))
 }
 
 // Create a new HTTP Gateway plugin
-func New(provider core.AzProvider) (gateway.GatewayService, error) {
+func New(provider resource.AzProvider) (gateway.GatewayService, error) {
 	mw := &azMiddleware{
 		provider: provider,
 	}
 
-	return base_http.New(&base_http.BaseHttpGatewayOptions{
-		Router: mw.router,
+	return base_http.NewHttpGateway(&base_http.HttpGatewayOptions{
+		RouteRegistrationHook: mw.router,
 	})
 }

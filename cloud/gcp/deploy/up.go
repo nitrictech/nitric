@@ -27,7 +27,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/noninteractive"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
@@ -41,7 +41,7 @@ import (
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) error {
+func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.Deploy_UpServer) error {
 	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())

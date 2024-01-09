@@ -28,14 +28,14 @@ import (
 
 	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	mocks "github.com/nitrictech/nitric/cloud/aws/mocks/secrets_manager"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 )
 
 var _ = Describe("Secrets Manager Plugin", func() {
 	testARN := "arn:partition:service:region:account-id:resource-id"
 	testVersionID := "yVBWEvgpNjpcCxddXyj9kTefaUpVD999"
-	testSecret := secret.Secret{
+	testSecret := &secretpb.Secret{
 		Name: "Test",
 	}
 
@@ -46,8 +46,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Putting a Secret to an existing secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					provider: mockProvider,
 					client:   mockSecretClient,
 				}
@@ -55,9 +55,9 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret container existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(
-						map[string]string{
-							"Test": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(
+						map[string]resource.ResolvedResource{
+							"Test": {ARN: testARN},
 						}, nil,
 					)
 
@@ -70,7 +70,12 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						VersionId: aws.String(testVersionID),
 					}, nil).Times(1)
 
-					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: &secretpb.Secret{
+							Name: "Test",
+						},
+						Value: []byte("not empty"),
+					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 					By("Returning a response with a version id")
@@ -79,27 +84,33 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("Putting a secret to a non-existent secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					provider: mockProvider,
 				}
 				It("Should return error", func() {
 					defer ctrl.Finish()
 
 					By("the secret not existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{}, nil)
 
-					_, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  testSecretVal,
+					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
 			})
 			When("Putting an empty secret", func() {
-				secretPlugin := &secretsManagerSecretService{}
+				secretPlugin := &SecretsManagerSecretService{}
 
 				It("Should return an error", func() {
-					emptySecret := &secret.Secret{}
-					response, err := secretPlugin.Put(context.TODO(), emptySecret, testSecretVal)
+					emptySecret := &secretpb.Secret{}
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: emptySecret,
+						Value:  testSecretVal,
+					})
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("Returning a nil response")
@@ -107,10 +118,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				})
 			})
 			When("Putting a nil secret", func() {
-				secretPlugin := &secretsManagerSecretService{}
+				secretPlugin := &SecretsManagerSecretService{}
 
 				It("Should return an error", func() {
-					response, err := secretPlugin.Put(context.TODO(), nil, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: nil,
+						Value:  testSecretVal,
+					})
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("Returning a nil response")
@@ -119,10 +133,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 
 			When("Putting a secret with a nil value", func() {
-				secretPlugin := &secretsManagerSecretService{}
+				secretPlugin := &SecretsManagerSecretService{}
 
 				It("Should return an error", func() {
-					response, err := secretPlugin.Put(context.TODO(), &testSecret, nil)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  nil,
+					})
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 					By("Returning a nil response")
@@ -133,8 +150,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("AWS SecretsManager.PutSecretValue returns an AWS error", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					provider: mockProvider,
 				}
@@ -142,8 +159,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
-						"Test": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{
+						"Test": {ARN: testARN},
 					}, nil)
 
 					mockSecretClient.EXPECT().PutSecretValue(
@@ -151,7 +168,10 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						gomock.Any(),
 					).Return(nil, errors.New("aws error")).Times(1)
 
-					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  testSecretVal,
+					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("aws error"))
@@ -163,8 +183,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Putting a secret without permissions", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					provider: mockProvider,
 				}
@@ -172,8 +192,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
-						"Test": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{
+						"Test": {ARN: testARN},
 					}, nil)
 
 					opErr := &smithy.OperationError{
@@ -186,7 +206,10 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						gomock.Any(),
 					).Return(nil, opErr).Times(1)
 
-					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  testSecretVal,
+					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("unable to put secret value"))
@@ -200,9 +223,9 @@ var _ = Describe("Secrets Manager Plugin", func() {
 		When("Given the Secrets Manager backend is available", func() {
 			When("The secret exists", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					provider: mockProvider,
 				}
@@ -210,8 +233,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("the secret existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
-						"Test": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{
+						"Test": {ARN: testARN},
 					}, nil)
 
 					mockSecretClient.EXPECT().GetSecretValue(gomock.Any(),
@@ -226,11 +249,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						SecretBinary: testSecretVal,
 					}, nil).Times(1)
 
-					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: "Test",
+					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+						SecretVersion: &secretpb.SecretVersion{
+							Secret: &secretpb.Secret{
+								Name: "Test",
+							},
+							Version: "Version-Id",
 						},
-						Version: "Version-Id",
 					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -244,21 +269,23 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("The secret doesn't exist", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					provider: mockProvider,
 				}
 				It("Should return a nil secret", func() {
 					defer ctrl.Finish()
 
 					By("The secret not existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{}, nil)
 
-					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: "test-id",
+					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+						SecretVersion: &secretpb.SecretVersion{
+							Secret: &secretpb.Secret{
+								Name: "test-id",
+							},
+							Version: "test-version-id",
 						},
-						Version: "test-version-id",
 					})
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -270,8 +297,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Getting the latest secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					provider: mockProvider,
 				}
@@ -279,8 +306,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("The secret already existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
-						"test-id": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{
+						"test-id": {ARN: testARN},
 					}, nil)
 
 					mockSecretClient.EXPECT().GetSecretValue(gomock.Any(),
@@ -294,11 +321,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						SecretBinary: testSecretVal,
 					}, nil).Times(1)
 
-					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: "test-id",
+					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+						SecretVersion: &secretpb.SecretVersion{
+							Secret: &secretpb.Secret{
+								Name: "test-id",
+							},
+							Version: "latest",
 						},
-						Version: "latest",
 					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -311,11 +340,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				})
 			})
 			When("An empty id is provided", func() {
-				secretPlugin := &secretsManagerSecretService{}
+				secretPlugin := &SecretsManagerSecretService{}
 
-				response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-					Secret:  &secret.Secret{},
-					Version: "test-version-id",
+				response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+					SecretVersion: &secretpb.SecretVersion{
+						Secret:  &secretpb.Secret{},
+						Version: "test-version-id",
+					},
 				})
 				It("Should not return a secret", func() {
 					By("Not returning an error")
@@ -326,14 +357,16 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				})
 			})
 			When("An empty versionId is provided", func() {
-				secretPlugin := &secretsManagerSecretService{}
+				secretPlugin := &SecretsManagerSecretService{}
 
 				It("Should not return a secret", func() {
-					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: "test-id",
+					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+						SecretVersion: &secretpb.SecretVersion{
+							Secret: &secretpb.Secret{
+								Name: "test-id",
+							},
+							Version: "",
 						},
-						Version: "",
 					})
 					By("Not returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -344,9 +377,9 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("Accessing a secret without permission", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				secretPlugin := &secretsManagerSecretService{
+				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					provider: mockProvider,
 				}
@@ -354,8 +387,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					defer ctrl.Finish()
 
 					By("the secret existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Secret).Return(map[string]string{
-						"Test": testARN,
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Secret).Return(map[string]resource.ResolvedResource{
+						"Test": {ARN: testARN},
 					}, nil)
 
 					opErr := &smithy.OperationError{
@@ -370,12 +403,13 @@ var _ = Describe("Secrets Manager Plugin", func() {
 						},
 					).Return(nil, opErr).Times(1)
 
-					response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-						Secret: &secret.Secret{
-							Name: "Test",
-						},
-						Version: "Version-Id",
-					})
+					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+						SecretVersion: &secretpb.SecretVersion{
+							Secret: &secretpb.Secret{
+								Name: "Test",
+							},
+							Version: "Version-Id",
+						}})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("unable to access secret value"))

@@ -20,17 +20,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
 	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/documents"
-	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/events"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
-	sqs_service "github.com/nitrictech/nitric/cloud/aws/runtime/queue"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
+	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
-	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
 func main() {
@@ -38,11 +37,11 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
-	gatewayEnv := utils.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
+	gatewayEnv := env.GATEWAY_ENVIRONMENT.String()
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 
-	provider, err := core.New()
+	provider, err := resource.New()
 	if err != nil {
 		log.Fatalf("could not create aws provider: %v", err)
 		return
@@ -53,13 +52,12 @@ func main() {
 	case "lambda":
 		membraneOpts.GatewayPlugin, _ = lambda_service.New(provider)
 	default:
-		membraneOpts.GatewayPlugin, _ = base_http.New(nil)
+		membraneOpts.GatewayPlugin, _ = base_http.NewHttpGateway(nil)
 	}
 
-	membraneOpts.SecretPlugin, _ = secrets_manager_secret_service.New(provider)
+	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(provider)
 	membraneOpts.DocumentPlugin, _ = dynamodb_service.New(provider)
-	membraneOpts.EventsPlugin, _ = sns_service.New(provider)
-	membraneOpts.QueuePlugin, _ = sqs_service.New(provider)
+	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 	membraneOpts.ResourcesPlugin = provider
 	membraneOpts.CreateTracerProvider = newTracerProvider

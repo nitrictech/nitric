@@ -29,17 +29,16 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/events"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/policy"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	events "github.com/nitrictech/nitric/cloud/gcp/deploy/topic"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudscheduler"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
@@ -135,22 +134,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 			if err != nil {
 				fmt.Println("got a database err")
 				return err
-			}
-		}
-
-		// Deploy all queues
-		queues := map[string]*queue.PubSubTopic{}
-		for _, res := range spec.Resources {
-			switch q := res.Config.(type) {
-			case *deploy.Resource_Queue:
-				queues[res.Name], err = queue.NewPubSubTopic(ctx, res.Name, &queue.PubSubTopicArgs{
-					StackID:  stackID,
-					Queue:    q.Queue,
-					Location: details.Region,
-				}, defaultResourceOptions)
-				if err != nil {
-					return err
-				}
 			}
 		}
 
@@ -301,7 +284,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 						return fmt.Errorf("invalid execution unit %s given for topic subscription", notification.GetExecutionUnit())
 					}
 
-					notificationName := fmt.Sprintf("%s-%s-%s-notify", res.Name, strings.ToLower(notification.Config.NotificationType.String()), notification.GetExecutionUnit())
+					notificationName := fmt.Sprintf("%s-%s-%s-notify", res.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
 					_, err = storage.NewCloudStorageNotification(ctx, notificationName, &storage.CloudStorageNotificationArgs{
 						StackID:  stackID,
 						Location: details.Region,
@@ -443,7 +426,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 					Resources: &policy.StackResources{
 						Buckets: buckets,
 						Topics:  topics,
-						Queues:  queues,
 						Secrets: secrets,
 					},
 					Principals: principalMap,

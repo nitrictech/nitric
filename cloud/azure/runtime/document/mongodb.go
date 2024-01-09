@@ -16,8 +16,8 @@ package document
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -25,11 +25,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
+	document "github.com/nitrictech/nitric/core/pkg/decorators/documents"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	documentpb "github.com/nitrictech/nitric/core/pkg/proto/documents/v1"
 )
 
 const (
@@ -56,18 +58,15 @@ var mongoOperatorMap = map[string]string{
 type MongoDocService struct {
 	client *mongo.Client
 	db     *mongo.Database
-	document.UnimplementedDocumentPlugin
 }
 
-func (s *MongoDocService) Get(ctx context.Context, key *document.Key) (*document.Document, error) {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.Get",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+var _ documentpb.DocumentsServer = &MongoDocService{}
 
-	if err := document.ValidateKey(key); err != nil {
+// Get a document from the mongo collection
+func (s *MongoDocService) Get(ctx context.Context, req *documentpb.DocumentGetRequest) (*documentpb.DocumentGetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("MongoDocService.Get")
+
+	if err := document.ValidateKey(req.Key); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -75,19 +74,18 @@ func (s *MongoDocService) Get(ctx context.Context, key *document.Key) (*document
 		)
 	}
 
-	col := s.getCollection(key)
-	docRef := bson.M{primaryKeyAttr: key.Id}
+	col := s.getCollection(req.Key)
+	docRef := bson.M{primaryKeyAttr: req.Key.Id}
 
 	var value map[string]interface{}
 
 	opts := options.FindOne()
 
-	// Remove meta data ids and child colls
+	// Remove meta data IDs and child collections
 	opts.SetProjection(bson.M{primaryKeyAttr: 0, parentKeyAttr: 0, childrenAttr: 0})
 
 	err := col.FindOne(ctx, docRef, opts).Decode(&value)
 	if err != nil {
-		code := codes.Internal
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, newErr(
 				codes.NotFound,
@@ -97,55 +95,64 @@ func (s *MongoDocService) Get(ctx context.Context, key *document.Key) (*document
 		}
 
 		return nil, newErr(
-			code,
-			"unable to retrieve value",
+			codes.Unknown,
+			"error getting document",
 			err,
 		)
 	}
 
-	return &document.Document{
-		Key:     key,
-		Content: value,
+	content, err := structpb.NewStruct(value)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"error creating struct from document content",
+			err,
+		)
+	}
+
+	return &documentpb.DocumentGetResponse{
+		Document: &documentpb.Document{
+			Key:     req.Key,
+			Content: content,
+		},
 	}, nil
 }
 
-func (s *MongoDocService) Set(ctx context.Context, key *document.Key, value map[string]interface{}) error {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.Set",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+// Set a document in the mongo collection
+func (s *MongoDocService) Set(ctx context.Context, req *documentpb.DocumentSetRequest) (*documentpb.DocumentSetResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("MongoDocService.Set")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	if value == nil {
-		return newErr(
+	if req.Content == nil {
+		return nil, newErr(
 			codes.InvalidArgument,
-			"provide non-nil value",
+			"document value cannot be empty",
 			nil,
 		)
 	}
 
-	coll := s.getCollection(key)
+	coll := s.getCollection(req.Key)
 
-	value = mapKeys(key, value)
+	mapContent := req.Content.AsMap()
+
+	value := mapKeys(req.Key, mapContent)
 
 	opts := options.Update().SetUpsert(true)
 
-	filter := bson.M{primaryKeyAttr: key.Id}
+	filter := bson.M{primaryKeyAttr: req.Key.Id}
 
 	update := bson.D{{Key: "$set", Value: value}}
 
 	_, err := coll.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"error updating value",
 			err,
@@ -153,10 +160,10 @@ func (s *MongoDocService) Set(ctx context.Context, key *document.Key, value map[
 	}
 
 	// add references
-	if key.Collection.Parent != nil {
-		err := s.updateChildReferences(ctx, key, coll.Name(), "$addToSet")
+	if req.Key.Collection.Parent != nil {
+		err := s.updateChildReferences(ctx, req.Key, coll.Name(), "$addToSet")
 		if err != nil {
-			return newErr(
+			return nil, newErr(
 				codes.Internal,
 				"error updating child references",
 				err,
@@ -164,28 +171,24 @@ func (s *MongoDocService) Set(ctx context.Context, key *document.Key, value map[
 		}
 	}
 
-	return nil
+	return &documentpb.DocumentSetResponse{}, nil
 }
 
-func (s *MongoDocService) Delete(ctx context.Context, key *document.Key) error {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.Delete",
-		map[string]interface{}{
-			"key": key,
-		},
-	)
+// Delete a document from the mongo collection
+func (s *MongoDocService) Delete(ctx context.Context, req *documentpb.DocumentDeleteRequest) (*documentpb.DocumentDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("MongoDocService.Delete")
 
-	if err := document.ValidateKey(key); err != nil {
-		return newErr(
+	if err := document.ValidateKey(req.Key); err != nil {
+		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
 			err,
 		)
 	}
 
-	coll := s.getCollection(key)
+	coll := s.getCollection(req.Key)
 
-	filter := bson.M{primaryKeyAttr: key.Id}
+	filter := bson.M{primaryKeyAttr: req.Key.Id}
 
 	opts := options.FindOneAndDelete().SetProjection(bson.M{childrenAttr: 1, primaryKeyAttr: 0})
 
@@ -193,9 +196,9 @@ func (s *MongoDocService) Delete(ctx context.Context, key *document.Key) error {
 
 	// Delete document
 	if err := coll.FindOneAndDelete(ctx, filter, opts).Decode(&deletedDocument); err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
-			"error deleting value",
+			"error deleting document",
 			err,
 		)
 	}
@@ -207,11 +210,11 @@ func (s *MongoDocService) Delete(ctx context.Context, key *document.Key) error {
 		for _, v := range children {
 			colName := v.(string)
 			childCol := s.db.Collection(colName)
-			_, err := childCol.DeleteMany(ctx, bson.D{{Key: parentKeyAttr, Value: key.Id}})
+			_, err := childCol.DeleteMany(ctx, bson.D{{Key: parentKeyAttr, Value: req.Key.Id}})
 			if err != nil {
-				return newErr(
+				return nil, newErr(
 					codes.Internal,
-					"error deleting child collection value",
+					"error deleting child collection document(s)",
 					err,
 				)
 			}
@@ -219,10 +222,10 @@ func (s *MongoDocService) Delete(ctx context.Context, key *document.Key) error {
 	}
 
 	// clean references if none left
-	if key.Collection.Parent != nil {
-		err := s.updateChildReferences(ctx, key, coll.Name(), "$pull")
+	if req.Key.Collection.Parent != nil {
+		err := s.updateChildReferences(ctx, req.Key, coll.Name(), "$pull")
 		if err != nil {
-			return newErr(
+			return nil, newErr(
 				codes.Internal,
 				"error removing child references",
 				err,
@@ -230,11 +233,11 @@ func (s *MongoDocService) Delete(ctx context.Context, key *document.Key) error {
 		}
 	}
 
-	return nil
+	return &documentpb.DocumentDeleteResponse{}, nil
 }
 
-func (s *MongoDocService) getCursor(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (cursor *mongo.Cursor, orderBy string, err error) {
-	coll := s.getCollection(&document.Key{Collection: collection})
+func (s *MongoDocService) getCursor(ctx context.Context, collection *documentpb.Collection, expressions []*documentpb.Expression, limit int32, pagingToken map[string]string) (cursor *mongo.Cursor, orderBy string, err error) {
+	coll := s.getCollection(&documentpb.Key{Collection: collection})
 
 	query := bson.M{}
 
@@ -292,15 +295,11 @@ func (s *MongoDocService) getCursor(ctx context.Context, collection *document.Co
 	return
 }
 
-func (s *MongoDocService) Query(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int, pagingToken map[string]string) (*document.QueryResult, error) {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.Query",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+// Query documents from the mongo collection with pagination
+func (s *MongoDocService) Query(ctx context.Context, req *documentpb.DocumentQueryRequest) (*documentpb.DocumentQueryResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("MongoDocService.Query")
 
-	if colErr, expErr := document.ValidateQueryCollection(collection), document.ValidateExpressions(expressions); colErr != nil || expErr != nil {
+	if colErr, expErr := document.ValidateQueryCollection(req.Collection), document.ValidateExpressions(req.Expressions); colErr != nil || expErr != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid arguments",
@@ -308,11 +307,11 @@ func (s *MongoDocService) Query(ctx context.Context, collection *document.Collec
 		)
 	}
 
-	queryResult := &document.QueryResult{
-		Documents: make([]document.Document, 0),
+	queryResult := &documentpb.DocumentQueryResponse{
+		Documents: make([]*documentpb.Document, 0),
 	}
 
-	cursor, orderBy, err := s.getCursor(ctx, collection, expressions, limit, pagingToken)
+	cursor, orderBy, err := s.getCursor(ctx, req.Collection, req.Expressions, req.Limit, req.PagingToken)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -323,7 +322,7 @@ func (s *MongoDocService) Query(ctx context.Context, collection *document.Collec
 
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		sdkDoc, err := mongoDocToDocument(collection, cursor)
+		sdkDoc, err := mongoDocToDocument(req.Collection, cursor)
 		if err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -332,13 +331,13 @@ func (s *MongoDocService) Query(ctx context.Context, collection *document.Collec
 			)
 		}
 
-		queryResult.Documents = append(queryResult.Documents, *sdkDoc)
+		queryResult.Documents = append(queryResult.Documents, sdkDoc)
 
 		// If query limit configured determine continue tokens
-		if limit > 0 && len(queryResult.Documents) == limit {
+		if req.Limit > 0 && len(queryResult.Documents) == int(req.Limit) {
 			tokens := ""
 			if orderBy != "" {
-				tokens = fmt.Sprintf("%v", sdkDoc.Content[orderBy]) + "|"
+				tokens = fmt.Sprintf("%v", sdkDoc.Content.AsMap()[orderBy]) + "|"
 			}
 			tokens += sdkDoc.Key.Id
 
@@ -351,72 +350,67 @@ func (s *MongoDocService) Query(ctx context.Context, collection *document.Collec
 	return queryResult, nil
 }
 
-func (s *MongoDocService) QueryStream(ctx context.Context, collection *document.Collection, expressions []document.QueryExpression, limit int) document.DocumentIterator {
-	newErr := errors.ErrorsWithScope(
-		"MongoDocService.QueryStream",
-		map[string]interface{}{
-			"collection": collection,
-		},
-	)
+// QueryStream queries documents from the mongo collection as a stream
+func (s *MongoDocService) QueryStream(req *documentpb.DocumentQueryStreamRequest, stream documentpb.Documents_QueryStreamServer) error {
+	newErr := grpc_errors.ErrorsWithScope("MongoDocService.QueryStream")
 
-	colErr := document.ValidateQueryCollection(collection)
-	expErr := document.ValidateExpressions(expressions)
+	colErr := document.ValidateQueryCollection(req.Collection)
+	expErr := document.ValidateExpressions(req.Expressions)
 
 	if colErr != nil || expErr != nil {
-		// Return an error only iterator
-		return func() (*document.Document, error) {
-			return nil, newErr(
-				codes.InvalidArgument,
-				"invalid arguments",
-				fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
+		return newErr(
+			codes.InvalidArgument,
+			"invalid arguments",
+			fmt.Errorf("collection error: %w, expression error: %w", colErr, expErr),
+		)
+	}
+
+	cursor, _, cursorErr := s.getCursor(stream.Context(), req.Collection, req.Expressions, req.Limit, nil)
+
+	if cursorErr != nil {
+		return cursorErr
+	}
+
+	for cursor.Next(stream.Context()) {
+		// return the next document
+		doc, err := mongoDocToDocument(req.Collection, cursor)
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"error decoding mongo document",
+				err,
 			)
+		}
+
+		err = stream.Send(&documentpb.DocumentQueryStreamResponse{
+			Document: doc,
+		})
+
+		if err != nil {
+			return err
 		}
 	}
 
-	cursor, _, cursorErr := s.getCursor(ctx, collection, expressions, limit, nil)
+	if err := cursor.Close(stream.Context()); err != nil {
+		return newErr(
+			codes.Internal,
+			"mongo cursor close error",
+			cursor.Err(),
+		)
+	}
 
-	return func() (*document.Document, error) {
-		if cursorErr != nil {
-			return nil, cursorErr
-		}
-
-		if cursor.Next(ctx) {
-			// return the next document
-			doc, err := mongoDocToDocument(collection, cursor)
-			if err != nil {
-				return nil, newErr(
-					codes.Internal,
-					"error decoding mongo document",
-					err,
-				)
-			}
-
-			return doc, nil
-		} else {
-			// there was an error
-			// Close the cursor
-			if err := cursor.Close(ctx); err != nil {
-				return nil, newErr(
-					codes.Internal,
-					"mongo cursor close error",
-					cursor.Err(),
-				)
-			}
-
-			if cursor.Err() != nil {
-				return nil, newErr(
-					codes.Internal,
-					"mongo cursor error",
-					cursor.Err(),
-				)
-			} else {
-				return nil, io.EOF
-			}
-		}
+	if cursor.Err() != nil {
+		return newErr(
+			codes.Internal,
+			"mongo cursor error",
+			cursor.Err(),
+		)
+	} else {
+		return nil
 	}
 }
 
-func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*document.Document, error) {
+func mongoDocToDocument(coll *documentpb.Collection, cursor *mongo.Cursor) (*documentpb.Document, error) {
 	var docSnap map[string]interface{}
 
 	if err := cursor.Decode(&docSnap); err != nil {
@@ -428,9 +422,14 @@ func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*docum
 	// remove id from content
 	delete(docSnap, primaryKeyAttr)
 
-	sdkDoc := document.Document{
-		Content: docSnap,
-		Key: &document.Key{
+	contentStruct, err := structpb.NewStruct(docSnap)
+	if err != nil {
+		return nil, err
+	}
+
+	sdkDoc := &documentpb.Document{
+		Content: contentStruct,
+		Key: &documentpb.Key{
 			Collection: coll,
 			Id:         id,
 		},
@@ -439,9 +438,9 @@ func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*docum
 	if docSnap[parentKeyAttr] != nil {
 		parentId := docSnap[parentKeyAttr].(string)
 
-		sdkDoc.Key.Collection = &document.Collection{
+		sdkDoc.Key.Collection = &documentpb.Collection{
 			Name: coll.Name,
-			Parent: &document.Key{
+			Parent: &documentpb.Key{
 				Collection: coll.Parent.Collection,
 				Id:         parentId,
 			},
@@ -450,18 +449,16 @@ func mongoDocToDocument(coll *document.Collection, cursor *mongo.Cursor) (*docum
 		delete(docSnap, parentKeyAttr)
 	}
 
-	return &sdkDoc, nil
+	return sdkDoc, nil
 }
 
-func New() (document.DocumentService, error) {
-	mongoDBConnectionString := utils.GetEnv(mongoDBConnectionStringEnvVarName, "")
-
+func New() (*MongoDocService, error) {
+	mongoDBConnectionString := env.MONGODB_CONNECTION_STRING.String()
 	if mongoDBConnectionString == "" {
 		return nil, fmt.Errorf("MongoDB missing environment variable: %v", mongoDBConnectionStringEnvVarName)
 	}
 
-	database := utils.GetEnv(mongoDBDatabaseEnvVarName, "")
-
+	database := env.MONGODB_DATABASE.String()
 	if database == "" {
 		return nil, fmt.Errorf("MongoDB missing environment variable: %v", mongoDBDatabaseEnvVarName)
 	}
@@ -469,9 +466,12 @@ func New() (document.DocumentService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	mongoDBSetDirect := utils.GetEnv(mongoDBSetDirectEnvVarName, "true")
+	mongoDBSetDirect, err := env.MONGODB_DIRECT.Bool()
+	if err != nil {
+		return nil, err
+	}
 
-	clientOptions := options.Client().ApplyURI(mongoDBConnectionString).SetDirect(mongoDBSetDirect == "true")
+	clientOptions := options.Client().ApplyURI(mongoDBConnectionString).SetDirect(mongoDBSetDirect)
 
 	client, clientError := mongo.NewClient(clientOptions)
 
@@ -493,7 +493,7 @@ func New() (document.DocumentService, error) {
 	}, nil
 }
 
-func NewWithClient(client *mongo.Client, database string) document.DocumentService {
+func NewWithClient(client *mongo.Client, database string) *MongoDocService {
 	db := client.Database(database)
 
 	return &MongoDocService{
@@ -502,7 +502,7 @@ func NewWithClient(client *mongo.Client, database string) document.DocumentServi
 	}
 }
 
-func mapKeys(key *document.Key, source map[string]interface{}) map[string]interface{} {
+func mapKeys(key *documentpb.Key, source map[string]interface{}) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 
@@ -521,7 +521,7 @@ func mapKeys(key *document.Key, source map[string]interface{}) map[string]interf
 	return newMap
 }
 
-func (s *MongoDocService) updateChildReferences(ctx context.Context, key *document.Key, subCollectionName string, action string) error {
+func (s *MongoDocService) updateChildReferences(ctx context.Context, key *documentpb.Key, subCollectionName string, action string) error {
 	parentColl := s.getCollection(key.Collection.Parent)
 	filter := bson.M{primaryKeyAttr: key.Collection.Parent.Id}
 	referenceMeta := bson.M{childrenAttr: subCollectionName}
@@ -536,7 +536,7 @@ func (s *MongoDocService) updateChildReferences(ctx context.Context, key *docume
 	return nil
 }
 
-func (s *MongoDocService) getCollection(key *document.Key) *mongo.Collection {
+func (s *MongoDocService) getCollection(key *documentpb.Key) *mongo.Collection {
 	collectionNames := []string{}
 	parentKey := key.Collection.Parent
 

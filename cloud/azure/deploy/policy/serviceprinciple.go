@@ -26,7 +26,6 @@ type ServicePrincipalArgs struct{}
 
 type ServicePrincipal struct {
 	pulumi.ResourceState
-
 	Name               string
 	ClientID           pulumi.StringOutput
 	TenantID           pulumi.StringOutput

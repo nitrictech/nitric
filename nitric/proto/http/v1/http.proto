@@ -1,0 +1,23 @@
+syntax = "proto3";
+package nitric.proto.http.v1;
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/http/v1;httppb";
+option java_package = "io.nitric.proto.http.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Https";
+option php_namespace = "Nitric\\Proto\\Http\\V1";
+option csharp_namespace = "Nitric.Proto.Http.v1";
+
+// Service for publishing asynchronous messages
+service Http {
+  // Serve a route on an API Gateway
+  rpc Proxy(HttpProxyRequest) returns (HttpProxyResponse);
+}
+
+message HttpProxyRequest {
+    // The local port the server can be accessed on
+    string host = 1;
+}
+
+message HttpProxyResponse {}

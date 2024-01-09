@@ -18,21 +18,19 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	deploypb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 )
 
-func eventTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
+func eventTypeToStorageEventType(eventType *storagepb.BlobEventType) []string {
 	switch *eventType {
-	case v1.BucketNotificationType_All:
-		return []string{"s3:ObjectCreated:*", "s3:ObjectRemoved:*"}
-	case v1.BucketNotificationType_Created:
+	case storagepb.BlobEventType_Created:
 		return []string{"s3:ObjectCreated:*"}
-	case v1.BucketNotificationType_Deleted:
+	case storagepb.BlobEventType_Deleted:
 		return []string{"s3:ObjectRemoved:*"}
 	default:
 		return []string{}
@@ -51,7 +49,7 @@ type S3NotificationArgs struct {
 	StackID  string
 
 	Bucket       *S3Bucket
-	Notification []*deploy.BucketNotificationTarget
+	Notification []*deploypb.BucketNotificationTarget
 	Functions    map[string]*exec.LambdaExecUnit
 }
 
@@ -90,17 +88,17 @@ func NewS3Notification(ctx *pulumi.Context, name string, args *S3NotificationArg
 			invokePerms[funcName] = perm
 		}
 
-		if notification.Config.NotificationPrefixFilter == "*" {
-			notification.Config.NotificationPrefixFilter = ""
+		if notification.Config.KeyPrefixFilter == "*" {
+			notification.Config.KeyPrefixFilter = ""
 		}
 
 		// Append notification
 		bucketNotifications = append(bucketNotifications, s3.BucketNotificationLambdaFunctionArgs{
 			LambdaFunctionArn: unit.Function.Arn,
 			Events: pulumi.ToStringArray(
-				eventTypeToStorageEventType(&notification.Config.NotificationType),
+				eventTypeToStorageEventType(&notification.Config.BlobEventType),
 			),
-			FilterPrefix: pulumi.String(notification.Config.NotificationPrefixFilter),
+			FilterPrefix: pulumi.String(notification.Config.KeyPrefixFilter),
 		}.ToBucketNotificationLambdaFunctionOutput())
 	}
 

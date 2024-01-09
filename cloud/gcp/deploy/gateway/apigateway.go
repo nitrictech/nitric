@@ -164,12 +164,12 @@ func NewApiGateway(ctx *pulumi.Context, name string, args *ApiGatewayArgs, opts 
 		}
 
 		for k, p := range v2doc.Paths {
-			p.Get = gcpOperation(p.Get, naps)
-			p.Post = gcpOperation(p.Post, naps)
-			p.Patch = gcpOperation(p.Patch, naps)
-			p.Put = gcpOperation(p.Put, naps)
-			p.Delete = gcpOperation(p.Delete, naps)
-			p.Options = gcpOperation(p.Options, naps)
+			p.Get = gcpOperation(name, p.Get, naps)
+			p.Post = gcpOperation(name, p.Post, naps)
+			p.Patch = gcpOperation(name, p.Patch, naps)
+			p.Put = gcpOperation(name, p.Put, naps)
+			p.Delete = gcpOperation(name, p.Delete, naps)
+			p.Options = gcpOperation(name, p.Options, naps)
 			v2doc.Paths[k] = p
 		}
 
@@ -276,7 +276,7 @@ func keepOperation(opExt map[string]interface{}) (string, bool) {
 	return name, true
 }
 
-func gcpOperation(op *openapi2.Operation, urls map[string]string) *openapi2.Operation {
+func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]string) *openapi2.Operation {
 	if op == nil {
 		return nil
 	}
@@ -309,7 +309,8 @@ func gcpOperation(op *openapi2.Operation, urls map[string]string) *openapi2.Oper
 	}
 
 	op.Extensions["x-google-backend"] = map[string]string{
-		"address":          urls[name],
+		// Append the name of the target origin api gateway to the target address
+		"address":          fmt.Sprintf("%s/x-nitric-api/%s", urls[name], apiName),
 		"path_translation": "APPEND_PATH_TO_ADDRESS",
 	}
 

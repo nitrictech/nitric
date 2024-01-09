@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/utils"
 )
 
 // Simple 'users' collection test data
@@ -298,34 +297,40 @@ var ChildItemsCollection = document.Collection{
 	},
 }
 
+func MustHaveOccurred(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 // Test Data Loading Functions ------------------------------------------------
 
 func LoadUsersData(docPlugin document.DocumentService) {
-	utils.Must(docPlugin.Set(context.TODO(), &UserKey1, UserItem1))
-	utils.Must(docPlugin.Set(context.TODO(), &UserKey2, UserItem2))
-	utils.Must(docPlugin.Set(context.TODO(), &UserKey3, UserItem3))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &UserKey1, UserItem1))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &UserKey2, UserItem2))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &UserKey3, UserItem3))
 }
 
 func LoadCustomersData(docPlugin document.DocumentService) {
-	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Key, Customer1.Content))
-	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[0].Key, Customer1.Orders[0].Content))
-	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[1].Key, Customer1.Orders[1].Content))
-	utils.Must(docPlugin.Set(context.TODO(), &Customer1.Orders[2].Key, Customer1.Orders[2].Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer1.Key, Customer1.Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer1.Orders[0].Key, Customer1.Orders[0].Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer1.Orders[1].Key, Customer1.Orders[1].Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer1.Orders[2].Key, Customer1.Orders[2].Content))
 
-	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Key, Customer2.Content))
-	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Orders[0].Key, Customer2.Orders[0].Content))
-	utils.Must(docPlugin.Set(context.TODO(), &Customer2.Orders[1].Key, Customer2.Orders[1].Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer2.Key, Customer2.Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer2.Orders[0].Key, Customer2.Orders[0].Content))
+	MustHaveOccurred(docPlugin.Set(context.TODO(), &Customer2.Orders[1].Key, Customer2.Orders[1].Content))
 }
 
 func LoadItemsData(docPlugin document.DocumentService) {
 	for _, item := range Items {
-		utils.Must(docPlugin.Set(context.TODO(), &item.Key, item.Content))
+		MustHaveOccurred(docPlugin.Set(context.TODO(), &item.Key, item.Content))
 
 		key := document.Key{
 			Collection: &ChildItemsCollection,
 			Id:         item.Key.Id,
 		}
-		utils.Must(docPlugin.Set(context.TODO(), &key, item.Content))
+		MustHaveOccurred(docPlugin.Set(context.TODO(), &key, item.Content))
 	}
 }
 

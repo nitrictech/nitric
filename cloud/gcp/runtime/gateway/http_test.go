@@ -27,13 +27,15 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	mock_provider "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
-	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
+	cloudrun_service "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/events"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	faaspb "github.com/nitrictech/nitric/core/pkg/proto/faas/v1"
+	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topic/v1"
 	"github.com/nitrictech/nitric/core/pkg/worker/pool"
 )
 
@@ -56,9 +58,9 @@ var _ = Describe("Http", func() {
 	err := pool.AddWorker(mockHandler)
 	Expect(err).To(BeNil())
 
-	provider := mock_provider.NewMockGcpProvider(ctrl)
+	provider := mock_provider.NewMockGcpResourceProvider(ctrl)
 
-	httpPlugin, err := cloudrun_plugin.New(provider)
+	httpPlugin, err := cloudrun_service.New(provider)
 	Expect(err).To(BeNil())
 
 	// Run on a non-blocking thread
@@ -76,17 +78,17 @@ var _ = Describe("Http", func() {
 			It("Should be handled successfully", func() {
 				payload := []byte("Test")
 
-				var capturedRequest *v1.TriggerRequest
+				var capturedRequest *faaspb.TriggerRequest
 
 				By("Handling exactly 1 request")
-				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*v1.TriggerResponse, error) {
-					capturedRequest = arg1.(*v1.TriggerRequest)
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*faaspb.TriggerResponse, error) {
+					capturedRequest = arg1.(*faaspb.TriggerRequest)
 
-					return &v1.TriggerResponse{
-						Data: []byte("success"),
-						Context: &v1.TriggerResponse_Http{
-							Http: &v1.HttpResponseContext{
+					return &faaspb.TriggerResponse{
+						Context: &faaspb.TriggerResponse_Http{
+							Http: &faaspb.HttpResponseContext{
 								Status: 200,
+								Body:   []byte("success"),
 							},
 						},
 					}, nil
@@ -119,7 +121,7 @@ var _ = Describe("Http", func() {
 				Expect(capturedRequest.GetHttp().Path).To(Equal("/test"))
 
 				By("Preserving the original requests body")
-				Expect(capturedRequest.Data).To(BeEquivalentTo([]byte("Test")))
+				Expect(capturedRequest.GetHttp().Body).To(BeEquivalentTo([]byte("Test")))
 
 				By("Preserving the original requests headers")
 				Expect(capturedRequest.GetHttp().Headers["User-Agent"].Value[0]).To(Equal("Test"))
@@ -136,16 +138,20 @@ var _ = Describe("Http", func() {
 		})
 
 		When("From a subcription with a NitricEvent", func() {
-			eventPayload := map[string]interface{}{
+			content, _ := structpb.NewStruct(map[string]interface{}{
 				"Test": "Test",
-			}
-			eventBytes, _ := json.Marshal(&events.NitricEvent{
-				ID:          "1234",
-				PayloadType: "Test Payload",
-				Payload:     eventPayload,
 			})
 
-			b64Event := base64.StdEncoding.EncodeToString(eventBytes)
+			message := topicpb.Message{
+				Content: &topicpb.Message_StructPayload{
+					StructPayload: content,
+				},
+			}
+
+			messageBytes, err := proto.Marshal(&message)
+			Expect(err).To(BeNil())
+
+			b64Event := base64.StdEncoding.EncodeToString(messageBytes)
 			payloadBytes, _ := json.Marshal(&map[string]interface{}{
 				"subscription": "test",
 				"message": map[string]interface{}{
@@ -158,16 +164,15 @@ var _ = Describe("Http", func() {
 			})
 
 			It("Should handle the event successfully", func() {
-				var capturedRequest *v1.TriggerRequest
+				var capturedRequest *faaspb.TriggerRequest
 
 				By("Handling exactly 1 request")
-				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*v1.TriggerResponse, error) {
-					capturedRequest = arg1.(*v1.TriggerRequest)
+				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*faaspb.TriggerResponse, error) {
+					capturedRequest = arg1.(*faaspb.TriggerRequest)
 
-					return &v1.TriggerResponse{
-						Data: []byte("success"),
-						Context: &v1.TriggerResponse_Topic{
-							Topic: &v1.TopicResponseContext{
+					return &faaspb.TriggerResponse{
+						Context: &faaspb.TriggerResponse_Topic{
+							Topic: &faaspb.TopicResponseContext{
 								Success: true,
 							},
 						},
@@ -184,8 +189,11 @@ var _ = Describe("Http", func() {
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
+				capturedMessageBytes, err := proto.Marshal(capturedRequest.GetTopic().Message)
+				Expect(err).To(BeNil())
+
 				By("Passing through the published message data")
-				Expect(capturedRequest.Data).To(BeEquivalentTo(eventBytes))
+				Expect(capturedMessageBytes).To(Equal(messageBytes))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))

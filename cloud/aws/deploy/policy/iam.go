@@ -27,12 +27,11 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/collection"
-	"github.com/nitrictech/nitric/cloud/aws/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/aws/deploy/websocket"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 func md5Hash(b []byte) string {
@@ -51,7 +50,6 @@ type Policy struct {
 
 type StackResources struct {
 	Topics      map[string]*topic.SNSTopic
-	Queues      map[string]*queue.SQSQueue
 	Buckets     map[string]*bucket.S3Bucket
 	Collections map[string]*collection.DynamodbCollection
 	Secrets     map[string]*secret.SecretsManagerSecret
@@ -92,22 +90,6 @@ var awsActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"sns:Publish",
 		"states:StartExecution",
 		"states:StateSyncExecution",
-	},
-	v1.Action_QueueSend: {
-		"sqs:SendMessage",
-	},
-	v1.Action_QueueReceive: {
-		"sqs:ReceiveMessage",
-		"sqs:DeleteMessage",
-	},
-	// XXX: Cannot be applied to single resources
-	// v1.Action_QueueList: {
-	// 	"sqs:ListQueues",
-	// },
-	v1.Action_QueueDetail: {
-		"sqs:GetQueueAttributes",
-		"sqs:GetQueueUrl",
-		"sqs:ListQueueTags",
 	},
 	v1.Action_CollectionDocumentRead: {
 		"dynamodb:GetItem",
@@ -159,10 +141,6 @@ func arnForResource(resource *deploy.Resource, resources *StackResources) ([]int
 	case v1.ResourceType_Topic:
 		if t, ok := resources.Topics[resource.Name]; ok {
 			return []interface{}{t.Sns.Arn, t.Sfn.Arn}, nil
-		}
-	case v1.ResourceType_Queue:
-		if q, ok := resources.Queues[resource.Name]; ok {
-			return []interface{}{q.Sqs.Arn}, nil
 		}
 	case v1.ResourceType_Collection:
 		if c, ok := resources.Collections[resource.Name]; ok {

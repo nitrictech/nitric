@@ -21,7 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )

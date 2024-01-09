@@ -16,6 +16,7 @@ package secret
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,43 +25,45 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/secretsmanageriface"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 )
 
-type secretsManagerSecretService struct {
-	secret.UnimplementedSecretPlugin
+type SecretsManagerSecretService struct {
 	client   secretsmanageriface.SecretsManagerAPI
-	provider core.AwsProvider
+	provider resource.AwsResourceProvider
 }
 
-func (s *secretsManagerSecretService) validateNewSecret(sec *secret.Secret, val []byte) error {
+var _ secretpb.SecretManagerServer = &SecretsManagerSecretService{}
+
+func (s *SecretsManagerSecretService) validateNewSecret(sec *secretpb.Secret, val []byte) error {
 	if sec == nil {
-		return fmt.Errorf("provide non-empty secret")
+		return fmt.Errorf("secret cannot be empty")
 	}
 	if len(sec.Name) == 0 {
-		return fmt.Errorf("provide non-empty secret name")
+		return fmt.Errorf("secret name cannot be empty")
 	}
 	if len(val) == 0 {
-		return fmt.Errorf("provide non-empty secret value")
+		return fmt.Errorf("secret value cannot be empty")
 	}
 
 	return nil
 }
 
-func (s *secretsManagerSecretService) getSecretId(ctx context.Context, sec string) (string, error) {
-	secrets, err := s.provider.GetResources(ctx, core.AwsResource_Secret)
+// getSecretArn - Retrieve the ARN for a given secret name
+func (s *SecretsManagerSecretService) getSecretArn(ctx context.Context, sec string) (string, error) {
+	secrets, err := s.provider.GetResources(ctx, resource.AwsResource_Secret)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secrets list: %w", err)
 	}
 
 	if secret, ok := secrets[sec]; ok {
-		return secret, nil
+		return secret.ARN, nil
 	}
 
 	return "", fmt.Errorf("secret %s does not exist", sec)
@@ -74,15 +77,11 @@ func isSecretsManagerAccessDeniedErr(err error) bool {
 	return false
 }
 
-func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SecretManagerSecretService.Put",
-		map[string]interface{}{
-			"secret": sec,
-		},
-	)
+// Put - Store a new secret value
+func (s *SecretsManagerSecretService) Put(ctx context.Context, req *secretpb.SecretPutRequest) (*secretpb.SecretPutResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("SecretManagerSecretService.Put")
 
-	if err := s.validateNewSecret(sec, val); err != nil {
+	if err := s.validateNewSecret(req.Secret, req.Value); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid secret",
@@ -90,75 +89,71 @@ func (s *secretsManagerSecretService) Put(ctx context.Context, sec *secret.Secre
 		)
 	}
 
-	secretId, err := s.getSecretId(ctx, sec.Name)
+	secretId, err := s.getSecretArn(ctx, req.Secret.Name)
 	if err != nil {
-		return nil, newErr(codes.NotFound, "unable to find secret", err)
+		return nil, newErr(codes.NotFound, "secret not found", err)
 	}
 
 	result, err := s.client.PutSecretValue(ctx, &secretsmanager.PutSecretValueInput{
 		SecretId:     aws.String(secretId),
-		SecretBinary: val,
+		SecretBinary: req.Value,
 	})
 	if err != nil {
 		if isSecretsManagerAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to put secret value, have you requested access to this secret?",
+				"unable to put secret value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
 
-		return nil, newErr(codes.Internal, "unable to put secret", err)
+		return nil, newErr(codes.Unknown, "unable to put secret", err)
 	}
 
-	return &secret.SecretPutResponse{
-		SecretVersion: &secret.SecretVersion{
-			Secret: &secret.Secret{
-				Name: sec.Name,
+	return &secretpb.SecretPutResponse{
+		SecretVersion: &secretpb.SecretVersion{
+			Secret: &secretpb.Secret{
+				Name: req.Secret.Name,
 			},
 			Version: *result.VersionId,
 		},
 	}, nil
 }
 
-func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SecretManagerSecretService.Access",
-		map[string]interface{}{
-			"version": sv,
-		},
-	)
+// Access - Retrieve a secret value
+func (s *SecretsManagerSecretService) Access(ctx context.Context, req *secretpb.SecretAccessRequest) (*secretpb.SecretAccessResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("SecretManagerSecretService.Access")
 
-	if len(sv.Secret.Name) == 0 {
+	if len(req.SecretVersion.GetSecret().Name) == 0 {
 		return nil, newErr(
 			codes.InvalidArgument,
-			"provide non-empty secret name",
+			"secret name cannot be blank or empty",
 			nil,
 		)
 	}
 
-	if len(sv.Version) == 0 {
+	if len(req.SecretVersion.Version) == 0 {
 		return nil, newErr(
 			codes.InvalidArgument,
-			"provide non-empty version",
+			"secret version cannot be blank or empty",
 			nil,
 		)
 	}
 
-	secretId, err := s.getSecretId(ctx, sv.Secret.Name)
+	secretArn, err := s.getSecretArn(ctx, req.SecretVersion.GetSecret().Name)
 	if err != nil {
-		return nil, newErr(codes.NotFound, "could not find secret", err)
+		return nil, newErr(codes.NotFound, "secret not found", err)
 	}
 
 	// Build the request to get the secret
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(secretId),
+		SecretId: aws.String(secretArn),
 	}
 
 	// If the requested version is latest then we want
 	// to exclude the version from input
-	if strings.ToLower(sv.Version) != "latest" {
-		input.VersionId = aws.String(sv.Version)
+	if strings.ToLower(req.SecretVersion.Version) != "latest" {
+		input.VersionId = aws.String(req.SecretVersion.Version)
 	}
 
 	result, err := s.client.GetSecretValue(ctx, input)
@@ -166,14 +161,14 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 		if isSecretsManagerAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to access secret value, have you requested access to this secret?",
+				"unable to access secret value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
 
 		return nil, newErr(
-			codes.NotFound,
-			"failed to retrieve secret version",
+			codes.Unknown,
+			"failed to retrieve secret value",
 			err,
 		)
 	}
@@ -184,11 +179,9 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 		returnValue = []byte(*result.SecretString)
 	}
 
-	return &secret.SecretAccessResponse{
-		SecretVersion: &secret.SecretVersion{
-			Secret: &secret.Secret{
-				Name: sv.Secret.Name,
-			},
+	return &secretpb.SecretAccessResponse{
+		SecretVersion: &secretpb.SecretVersion{
+			Secret:  req.SecretVersion.Secret,
 			Version: *result.VersionId,
 		},
 		Value: returnValue,
@@ -196,8 +189,8 @@ func (s *secretsManagerSecretService) Access(ctx context.Context, sv *secret.Sec
 }
 
 // Gets a new Secrets Manager Client
-func New(provider core.AwsProvider) (secret.SecretService, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+func New(provider resource.AwsResourceProvider) (*SecretsManagerSecretService, error) {
+	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
@@ -208,7 +201,7 @@ func New(provider core.AwsProvider) (secret.SecretService, error) {
 
 	client := secretsmanager.NewFromConfig(cfg)
 
-	return &secretsManagerSecretService{
+	return &SecretsManagerSecretService{
 		client:   client,
 		provider: provider,
 	}, nil

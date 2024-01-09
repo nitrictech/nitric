@@ -22,7 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"

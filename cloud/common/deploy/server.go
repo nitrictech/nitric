@@ -19,13 +19,13 @@ import (
 	"log"
 	"net"
 
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/common/deploy/env"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"google.golang.org/grpc"
 )
 
-func StartServer(deploySrv v1.DeployServiceServer) {
-	port := utils.GetEnv("PORT", "50051")
+func StartServer(deploySrv v1.DeployServer) {
+	port := env.PORT.String()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
@@ -34,7 +34,7 @@ func StartServer(deploySrv v1.DeployServiceServer) {
 
 	srv := grpc.NewServer()
 
-	v1.RegisterDeployServiceServer(srv, deploySrv)
+	v1.RegisterDeployServer(srv, deploySrv)
 
 	fmt.Printf("Deployment server started on %s\n", lis.Addr().String())
 	err = srv.Serve(lis)

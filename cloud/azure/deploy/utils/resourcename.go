@@ -38,7 +38,7 @@ type ResouceType struct {
 // https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations
 // https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules
 var (
-	alphanumeric = regexp.MustCompile("[^a-zA-Z0-9-]+")
+	notAlphaNumericRegexp = regexp.MustCompile("[^a-zA-Z0-9-]+")
 
 	// Alphanumerics, underscores, parentheses, hyphens, periods, and unicode characters that match the regex documentation.
 	// Can't end with period. Regex pattern: ^[-\w\._\(\)]+$
@@ -97,8 +97,10 @@ var (
 	ApiOperationPolicyRT = ResouceType{Abbreviation: "api-op-pol", MaxLen: 80, AllowUpperCase: true, AllowHyphen: true, UseName: true}
 )
 
-func cleanPart(p string, rt ResouceType) string {
-	r := alphanumeric.ReplaceAllString(p, "")
+// cleanNameSegment removes all non-alphanumeric characters from a string.
+// also removes hyphens if they're not permitted by the particular resource type.
+func cleanNameSegment(p string, rt ResouceType) string {
+	r := notAlphaNumericRegexp.ReplaceAllString(p, "")
 	if !rt.AllowHyphen {
 		r = strings.ReplaceAll(r, "-", "")
 	}
@@ -106,7 +108,8 @@ func cleanPart(p string, rt ResouceType) string {
 	return r
 }
 
-func ignoreEmpty(strs []string) []string {
+// withoutBlanks returns a new copy of the string array with all blank strings removed.
+func withoutBlanks(strs []string) []string {
 	newStrs := []string{}
 
 	for _, s := range strs {
@@ -118,6 +121,8 @@ func ignoreEmpty(strs []string) []string {
 	return newStrs
 }
 
+// ResourceName generates a name for the deployed version of a resource in Azure.
+// follows restrictions like max length, hyphenation, etc.
 func ResourceName(ctx *pulumi.Context, name string, rt ResouceType) string {
 	var parts []string
 
@@ -130,20 +135,20 @@ func ResourceName(ctx *pulumi.Context, name string, rt ResouceType) string {
 
 	if rt.UseName {
 		parts = []string{
-			StringTrunc(cleanPart(name, rt), maxLen-abbrLen),
+			StringTrunc(cleanNameSegment(name, rt), maxLen-abbrLen),
 			rt.Abbreviation,
 		}
 	} else {
 		deployName := strings.TrimPrefix(ctx.Stack(), ctx.Project()+"-")
 		partLen := (maxLen - abbrLen) / 2
 		parts = []string{
-			StringTrunc(cleanPart(ctx.Project(), rt), partLen),
-			StringTrunc(cleanPart(deployName, rt), partLen),
+			StringTrunc(cleanNameSegment(ctx.Project(), rt), partLen),
+			StringTrunc(cleanNameSegment(deployName, rt), partLen),
 			rt.Abbreviation,
 		}
 	}
 
-	parts = ignoreEmpty(parts)
+	parts = withoutBlanks(parts)
 
 	// first char must be a letter
 	parts[0] = strings.TrimLeft(parts[0], "0123456789-")

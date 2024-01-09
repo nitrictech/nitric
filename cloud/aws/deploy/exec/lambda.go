@@ -33,7 +33,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy/config"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 type LambdaExecUnitArgs struct {

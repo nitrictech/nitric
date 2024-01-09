@@ -22,34 +22,38 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
-	"github.com/nitrictech/nitric/core/pkg/plugins/websocket"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	resourcepb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	websocketpb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
 type ApiGatewayWebsocketService struct {
-	websocket.UnimplementedWebsocketService
-	provider core.AwsProvider
+	provider *resource.AwsResourceService
 	clients  map[string]*apigatewaymanagementapi.Client
 }
 
-var _ websocket.WebsocketService = &ApiGatewayWebsocketService{}
+var _ websocketpb.WebsocketServer = &ApiGatewayWebsocketService{}
 
 func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigatewaymanagementapi.Client, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+	awsRegion := env.AWS_REGION.String()
 
 	if client, ok := a.clients[socket]; ok {
 		return client, nil
 	}
 
-	details, err := a.provider.Details(context.TODO(), resource.ResourceType_Api, socket)
+	details, err := a.provider.Details(context.TODO(), &resourcepb.ResourceDetailsRequest{
+		Resource: &resourcepb.Resource{
+			Name: socket,
+			Type: resourcepb.ResourceType_Websocket,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	apiDetails, ok := details.Detail.(resource.ApiDetails)
+	apiDetails, ok := details.Details.(*resourcepb.ResourceDetailsResponse_Websocket)
 	if !ok {
 		return nil, fmt.Errorf("an error occurred resolving API Gateway details")
 	}
@@ -59,7 +63,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	callbackUrl := strings.Replace(apiDetails.URL, "wss", "https", 1)
+	callbackUrl := strings.Replace(apiDetails.Websocket.Url, "wss", "https", 1)
 	callbackUrl = callbackUrl + "/$default"
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)
@@ -71,41 +75,41 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 	return a.clients[socket], nil
 }
 
-func (a *ApiGatewayWebsocketService) Send(ctx context.Context, socket string, connectionId string, message []byte) error {
-	client, err := a.getClientForSocket(socket)
+func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.WebsocketSendRequest) (*websocketpb.WebsocketSendResponse, error) {
+	client, err := a.getClientForSocket(req.SocketName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = client.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
-		ConnectionId: aws.String(connectionId),
-		Data:         message,
+		ConnectionId: aws.String(req.ConnectionId),
+		Data:         req.Data,
 	})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &websocketpb.WebsocketSendResponse{}, nil
 }
 
-func (a *ApiGatewayWebsocketService) Close(ctx context.Context, socket string, connectionId string) error {
-	client, err := a.getClientForSocket(socket)
+func (a *ApiGatewayWebsocketService) Close(ctx context.Context, req *websocketpb.WebsocketCloseRequest) (*websocketpb.WebsocketCloseResponse, error) {
+	client, err := a.getClientForSocket(req.SocketName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = client.DeleteConnection(ctx, &apigatewaymanagementapi.DeleteConnectionInput{
-		ConnectionId: aws.String(connectionId),
+		ConnectionId: aws.String(req.ConnectionId),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &websocketpb.WebsocketCloseResponse{}, nil
 }
 
-func NewAwsApiGatewayWebsocket(provider core.AwsProvider) (*ApiGatewayWebsocketService, error) {
+func NewAwsApiGatewayWebsocket(provider *resource.AwsResourceService) (*ApiGatewayWebsocketService, error) {
 	return &ApiGatewayWebsocketService{
 		provider: provider,
 		clients:  make(map[string]*apigatewaymanagementapi.Client),

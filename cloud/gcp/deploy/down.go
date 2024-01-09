@@ -23,7 +23,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/interactive"
 	"github.com/nitrictech/nitric/cloud/common/deploy/output/noninteractive"
 	pulumiutils "github.com/nitrictech/nitric/cloud/common/deploy/pulumi"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
@@ -32,7 +32,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.DeployService_DownServer) error {
+func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Deploy_DownServer) error {
 	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())

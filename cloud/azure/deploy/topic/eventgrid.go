@@ -15,15 +15,12 @@
 package topic
 
 import (
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-
-	pulumiEventgrid "github.com/pulumi/pulumi-azure/sdk/v4/go/azure/eventgrid"
 )
 
 // Topics
@@ -31,6 +28,7 @@ type AzureEventGridTopic struct {
 	pulumi.ResourceState
 
 	Name  string
+	SourceResourceName string
 	Topic *eventgrid.Topic
 }
 
@@ -40,7 +38,9 @@ type AzureEventGridTopicArgs struct {
 }
 
 func NewAzureEventGridTopic(ctx *pulumi.Context, name string, args *AzureEventGridTopicArgs, opts ...pulumi.ResourceOption) (*AzureEventGridTopic, error) {
-	res := &AzureEventGridTopic{Name: name}
+	res := &AzureEventGridTopic{
+		Name: name,
+	}
 
 	err := ctx.RegisterComponentResource("nitric:topic:AzureEventGridTopic", name, res, opts...)
 	if err != nil {
@@ -52,55 +52,6 @@ func NewAzureEventGridTopic(ctx *pulumi.Context, name string, args *AzureEventGr
 		Location:          args.ResourceGroup.Location,
 		Tags:              pulumi.ToStringMap(common.Tags(args.StackID, res.Name, nitricresources.Topic)),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
-// Subscriptions
-type AzureEventGridTopicSubscription struct {
-	pulumi.ResourceState
-
-	Name         string
-	Subscription *pulumiEventgrid.EventSubscription
-}
-
-type AzureEventGridTopicSubscriptionArgs struct {
-	// The topic we want to source events from
-	Topic *AzureEventGridTopic
-	// The target we want to send events to
-	Target *exec.ContainerApp
-}
-
-func NewAzureEventGridTopicSubscription(ctx *pulumi.Context, name string, args *AzureEventGridTopicSubscriptionArgs, opts ...pulumi.ResourceOption) (*AzureEventGridTopicSubscription, error) {
-	res := &AzureEventGridTopicSubscription{Name: name}
-
-	err := ctx.RegisterComponentResource("nitric:topic:AzureEventGridTopicSubscription", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	hostUrl, err := args.Target.HostUrl()
-	if err != nil {
-		return nil, err
-	}
-
-	res.Subscription, err = pulumiEventgrid.NewEventSubscription(ctx, utils.ResourceName(ctx, name, utils.EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
-		Scope: args.Topic.Topic.ID(),
-		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
-			Url: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", hostUrl, args.Topic.Name, args.Target.EventToken),
-			// TODO: Reduce event chattiness here and handle internally in the Azure AppService HTTP Gateway?
-			MaxEventsPerBatch:         pulumi.Int(1),
-			ActiveDirectoryAppIdOrUri: args.Target.Sp.ClientID,
-			ActiveDirectoryTenantId:   args.Target.Sp.TenantID,
-		},
-		RetryPolicy: pulumiEventgrid.EventSubscriptionRetryPolicyArgs{
-			MaxDeliveryAttempts: pulumi.Int(30),
-			EventTimeToLive:     pulumi.Int(5),
-		},
-	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}

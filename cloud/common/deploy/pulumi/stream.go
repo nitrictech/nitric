@@ -15,11 +15,11 @@
 package pulumi
 
 import (
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 type UpStreamMessageWriter struct {
-	Stream deploy.DeployService_UpServer
+	Stream deploy.Deploy_UpServer
 }
 
 func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
@@ -45,7 +45,7 @@ func (s *UpStreamMessageWriter) Write(bytes []byte) (int, error) {
 }
 
 type DownStreamMessageWriter struct {
-	Stream deploy.DeployService_DownServer
+	Stream deploy.Deploy_DownServer
 }
 
 func (s *DownStreamMessageWriter) Write(bytes []byte) (int, error) {

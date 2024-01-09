@@ -28,14 +28,13 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/collection"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/schedule"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -70,11 +69,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		// Get Execution units
 		executionUnits := lo.Filter[*deploy.Resource](spec.Resources, func(item *deploy.Resource, index int) bool {
 			return item.GetExecutionUnit() != nil
-		})
-
-		// Get Queues
-		queues := lo.Filter[*deploy.Resource](spec.Resources, func(item *deploy.Resource, index int) bool {
-			return item.GetQueue() != nil
 		})
 
 		// Get Collections
@@ -167,7 +161,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 
 		// Create a storage account if buckets or queues are required
 		var storageAccount *azureStorage.StorageAccount
-		if len(buckets) > 0 || len(queues) > 0 {
+		if len(buckets) > 0 {
 			accName := utils.ResourceName(ctx, details.FullStackName, utils.StorageAccountRT)
 			storageAccount, err = azureStorage.NewStorageAccount(ctx, accName, &storage.StorageAccountArgs{
 				AccessTier:        azureStorage.AccessTierHot,
@@ -191,17 +185,6 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			mongoCollections, err = collection.NewMongoCollections(ctx, "mongodb", &collection.MongoCollectionsArgs{
 				ResourceGroup: rg,
 				Collections:   collections,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		// For each queue create a new queue
-		for _, q := range queues {
-			_, err := queue.NewAzureStorageQueue(ctx, q.Name, &queue.AzureStorageQueueArgs{
-				Account:       storageAccount,
-				ResourceGroup: rg,
 			})
 			if err != nil {
 				return err
@@ -316,7 +299,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 					return fmt.Errorf("invalid execution unit %s given for bucket subscription", notification.GetExecutionUnit())
 				}
 
-				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Name, strings.ToLower(notification.Config.NotificationType.String()), notification.GetExecutionUnit())
+				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
 				_, err := bucket.NewAzureBucketNotification(ctx, notificationName, &bucket.AzureBucketNotificationArgs{
 					Bucket:         azBucket,
 					StorageAccount: storageAccount,
@@ -339,8 +322,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			}
 
 			for _, s := range t.GetTopic().Subscriptions {
-				_, err = topic.NewAzureEventGridTopicSubscription(ctx, utils.ResourceName(ctx, fmt.Sprintf("%s-%s", t.Name, s.GetExecutionUnit()), utils.EventSubscriptionRT), &topic.AzureEventGridTopicSubscriptionArgs{
-					Topic:  deployedTopics[t.Name],
+				err := deployedTopics[t.Name].AddSubscription(ctx, utils.ResourceName(ctx, fmt.Sprintf("%s-%s", t.Name, s.GetExecutionUnit()), utils.EventSubscriptionRT), &topic.AzureEventGridTopicSubscriptionArgs{
 					Target: apps[s.GetExecutionUnit()],
 				})
 				if err != nil {
@@ -375,13 +357,13 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		}
 
 		// Add all HTTP proxies
-		httpProxies := map[string]*api.AzureHttpProxy{}
+		// httpProxies := map[string]*api.AzureHttpProxy{}
 		for _, res := range spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Http:
 				app := apps[t.Http.Target.GetExecutionUnit()]
 
-				httpProxies[res.Name], err = api.NewAzureHttpProxy(ctx, res.Name, &api.AzureHttpProxyArgs{
+				_, err = api.NewAzureHttpProxy(ctx, res.Name, &api.AzureHttpProxyArgs{
 					ResourceGroupName: rg.Name,
 					OrgName:           pulumi.String(details.Org),
 					AdminEmail:        pulumi.String(details.AdminEmail),

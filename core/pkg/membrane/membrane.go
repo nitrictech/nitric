@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -28,27 +28,29 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
-	grpc2 "github.com/nitrictech/nitric/core/pkg/adapters/grpc"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	websocketPb "github.com/nitrictech/nitric/core/pkg/api/nitric/websocket/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/plugins/events"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/core/pkg/plugins/resource"
-	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
-	"github.com/nitrictech/nitric/core/pkg/plugins/websocket"
-	"github.com/nitrictech/nitric/core/pkg/pm"
-	"github.com/nitrictech/nitric/core/pkg/utils"
-	"github.com/nitrictech/nitric/core/pkg/worker"
-	"github.com/nitrictech/nitric/core/pkg/worker/pool"
+	"github.com/nitrictech/nitric/core/pkg/decorators"
+	"github.com/nitrictech/nitric/core/pkg/env"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	pm "github.com/nitrictech/nitric/core/pkg/process"
+	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
+	documentspb "github.com/nitrictech/nitric/core/pkg/proto/documents/v1"
+	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
+	secretspb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
+	"github.com/nitrictech/nitric/core/pkg/workers/apis"
+	"github.com/nitrictech/nitric/core/pkg/workers/http"
+	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
+	"github.com/nitrictech/nitric/core/pkg/workers/storage"
+	"github.com/nitrictech/nitric/core/pkg/workers/topics"
+	"github.com/nitrictech/nitric/core/pkg/workers/websockets"
 )
 
 type MembraneOptions struct {
 	ServiceAddress string
-	// The address the child will be listening on
-	ChildAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand []string
 	// Commands that will be started before all others
@@ -57,60 +59,55 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
-	DocumentPlugin  document.DocumentService
-	EventsPlugin    events.EventService
-	StoragePlugin   storage.StorageService
-	QueuePlugin     queue.QueueService
-	GatewayPlugin   gateway.GatewayService
-	SecretPlugin    secret.SecretService
-	WebsocketPlugin websocket.WebsocketService
-	ResourcesPlugin resource.ResourceService
+	// The provider adapter gateway
+	GatewayPlugin gateway.GatewayService
+
+	// The minimum number of workers that need to be available
+	MinWorkers *int
+
+	// Resource access plugins
+	DocumentPlugin      documentspb.DocumentsServer
+	TopicsPlugin        topicspb.TopicsServer
+	StoragePlugin       storagepb.StorageServer
+	SecretManagerPlugin secretspb.SecretManagerServer
+	WebsocketPlugin     websocketspb.WebsocketServer
+
+	// Worker plugins
+	ApiPlugin               apis.ApiRequestHandler
+	HttpPlugin              http.HttpRequestHandler
+	SchedulesPlugin         schedules.ScheduleRequestHandler
+	TopicsListenerPlugin    topics.SubscriptionRequestHandler
+	StorageListenerPlugin   storage.BucketRequestHandler
+	WebsocketListenerPlugin websockets.WebsocketRequestHandler
+
+	// Server listeners
+
+	ResourcesPlugin resourcespb.ResourcesServer
 
 	CreateTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
 	SuppressLogs            bool
 	TolerateMissingServices bool
-
-	// Supply your own worker pool
-	Pool pool.WorkerPool
 }
 
 type Membrane struct {
 	// Address & port to bind the membrane service interfaces to
-	serviceAddress string
-	// The address the child will be listening on
-	childAddress string
-
-	// The URL (including protocol, the child process can be reached on)
-	childUrl string
+	// serviceAddress string
 
 	processManager       pm.ProcessManager
 	tracerProvider       *sdktrace.TracerProvider
 	createTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
-	childTimeoutSeconds int
+	// childTimeoutSeconds int
 
-	// Configured plugins
-	documentPlugin  document.DocumentService
-	eventsPlugin    events.EventService
-	storagePlugin   storage.StorageService
-	gatewayPlugin   gateway.GatewayService
-	queuePlugin     queue.QueueService
-	secretPlugin    secret.SecretService
-	resourcePlugin  resource.ResourceService
-	websocketPlugin websocket.WebsocketService
-
-	// Tolerate if provider specific plugins aren't available for some services.
-	// Not this does not include the gateway service
-	tolerateMissingServices bool
+	options MembraneOptions
 
 	// Suppress println statements in the membrane server
 	suppressLogs bool
 
 	grpcServer *grpc.Server
 
-	// Worker pool
-	pool pool.WorkerPool
+	minWorkers int
 }
 
 func (s *Membrane) log(msg string) {
@@ -119,36 +116,36 @@ func (s *Membrane) log(msg string) {
 	}
 }
 
-func (s *Membrane) createSecretServer() v1.SecretServiceServer {
-	return grpc2.NewSecretServer(s.secretPlugin)
+func (s *Membrane) WorkerCount() int {
+	return s.options.ApiPlugin.WorkerCount() +
+		s.options.HttpPlugin.WorkerCount() +
+		s.options.SchedulesPlugin.WorkerCount() +
+		s.options.TopicsListenerPlugin.WorkerCount() +
+		s.options.StorageListenerPlugin.WorkerCount() +
+		s.options.WebsocketListenerPlugin.WorkerCount()
 }
 
-// Create a new Nitric Document Server
-func (s *Membrane) createDocumentServer() v1.DocumentServiceServer {
-	return grpc2.NewDocumentServer(s.documentPlugin)
-}
+func (s *Membrane) waitForMinimumWorkers(timeout int) error {
+	waitUntil := time.Now().Add(time.Duration(timeout) * time.Second)
+	ticker := time.NewTicker(time.Duration(5) * time.Millisecond)
 
-// Create a new Nitric events Server
-func (s *Membrane) createEventsServer() v1.EventServiceServer {
-	return grpc2.NewEventServiceServer(s.eventsPlugin)
-}
+	// stop the ticker on exit
+	defer ticker.Stop()
 
-// Create a new Nitric Topic Server
-func (s *Membrane) createTopicServer() v1.TopicServiceServer {
-	return grpc2.NewTopicServiceServer(s.eventsPlugin)
-}
+	for {
+		if s.WorkerCount() >= s.minWorkers {
+			break
+		}
 
-// Create a new Nitric Storage Server
-func (s *Membrane) createStorageServer() v1.StorageServiceServer {
-	return grpc2.NewStorageServiceServer(s.storagePlugin)
-}
+		// wait for the next tick
+		time := <-ticker.C
 
-func (s *Membrane) createQueueServer() v1.QueueServiceServer {
-	return grpc2.NewQueueServiceServer(s.queuePlugin)
-}
+		if time.After(waitUntil) {
+			return fmt.Errorf("available workers below required minimum of %d, %d available, timed out waiting for more workers", s.minWorkers, s.WorkerCount())
+		}
+	}
 
-func (s *Membrane) createWebsocketServer() websocketPb.WebsocketServiceServer {
-	return grpc2.NewWebsocketServiceServer(s.websocketPlugin)
+	return nil
 }
 
 // Start the membrane
@@ -157,8 +154,14 @@ func (s *Membrane) Start() error {
 		return err
 	}
 
+	maxWorkers, err := env.MAX_WORKERS.Int()
+	if err != nil {
+		return err
+	}
+
 	opts := []grpc.ServerOption{
-		grpc.MaxConcurrentStreams(uint32(s.pool.GetMaxWorkers())),
+		// FIXME: Find out what the max worker value
+		grpc.MaxConcurrentStreams(uint32(maxWorkers)),
 	}
 
 	if s.createTracerProvider != nil {
@@ -185,36 +188,48 @@ func (s *Membrane) Start() error {
 
 	s.grpcServer = grpc.NewServer(opts...)
 
-	// Load & Register the GRPC service plugins
-	documentServer := s.createDocumentServer()
-	v1.RegisterDocumentServiceServer(s.grpcServer, documentServer)
+	// Register the listener servers
+	if s.options.ApiPlugin == nil {
+		s.options.ApiPlugin = apis.New()
+	}
+	apispb.RegisterApiServer(s.grpcServer, s.options.ApiPlugin)
 
-	eventsServer := s.createEventsServer()
-	v1.RegisterEventServiceServer(s.grpcServer, eventsServer)
+	if s.options.TopicsListenerPlugin == nil {
+		s.options.TopicsListenerPlugin = topics.New()
+	}
+	topicspb.RegisterSubscriberServer(s.grpcServer, s.options.TopicsListenerPlugin)
 
-	topicServer := s.createTopicServer()
-	v1.RegisterTopicServiceServer(s.grpcServer, topicServer)
+	if s.options.StorageListenerPlugin == nil {
+		s.options.StorageListenerPlugin = storage.New()
+	}
+	storagepb.RegisterStorageListenerServer(s.grpcServer, s.options.StorageListenerPlugin)
 
-	storageServer := s.createStorageServer()
-	v1.RegisterStorageServiceServer(s.grpcServer, storageServer)
+	if s.options.SchedulesPlugin == nil {
+		s.options.SchedulesPlugin = schedules.New()
+	}
+	schedulespb.RegisterSchedulesServer(s.grpcServer, s.options.SchedulesPlugin)
 
-	queueServer := s.createQueueServer()
-	v1.RegisterQueueServiceServer(s.grpcServer, queueServer)
+	if s.options.WebsocketListenerPlugin == nil {
+		s.options.WebsocketListenerPlugin = websockets.NewWebsocketManager()
+	}
+	websocketspb.RegisterWebsocketHandlerServer(s.grpcServer, s.options.WebsocketListenerPlugin)
 
-	secretServer := s.createSecretServer()
-	v1.RegisterSecretServiceServer(s.grpcServer, secretServer)
+	if s.options.HttpPlugin == nil {
+		s.options.HttpPlugin = http.New()
+	}
+	httppb.RegisterHttpServer(s.grpcServer, s.options.HttpPlugin)
 
-	resourceServer := grpc2.NewResourcesServiceServer(grpc2.WithResourcePlugin(s.resourcePlugin))
-	v1.RegisterResourceServiceServer(s.grpcServer, resourceServer)
+	// Load & Register the service plugins
+	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.options.SecretManagerPlugin)
 
-	websocketServer := s.createWebsocketServer()
-	websocketPb.RegisterWebsocketServiceServer(s.grpcServer, websocketServer)
+	documentspb.RegisterDocumentsServer(s.grpcServer, s.options.DocumentPlugin)
+	topicspb.RegisterTopicsServer(s.grpcServer, s.options.TopicsPlugin)
+	storagepb.RegisterStorageServer(s.grpcServer, s.options.StoragePlugin)
+	secretspb.RegisterSecretManagerServer(s.grpcServer, secretsServerWithValidation)
+	resourcespb.RegisterResourcesServer(s.grpcServer, s.options.ResourcesPlugin)
+	websocketspb.RegisterWebsocketServer(s.grpcServer, s.options.WebsocketPlugin)
 
-	// FaaS server MUST start before the child process
-	faasServer := grpc2.NewFaasServer(s.pool)
-	v1.RegisterFaasServiceServer(s.grpcServer, faasServer)
-
-	lis, err := net.Listen("tcp", s.serviceAddress)
+	lis, err := net.Listen("tcp", s.options.ServiceAddress)
 	if err != nil {
 		return fmt.Errorf("could not listen on configured service address: %w", err)
 	}
@@ -223,7 +238,7 @@ func (s *Membrane) Start() error {
 
 	// Start the gRPC server
 	go (func() {
-		s.log(fmt.Sprintf("Services listening on: %s", s.serviceAddress))
+		s.log(fmt.Sprintf("Services listening on: %s", s.options.ServiceAddress))
 		err := s.grpcServer.Serve(lis)
 		if err != nil {
 			s.log(fmt.Sprintf("grpc serve %v", err))
@@ -239,25 +254,32 @@ func (s *Membrane) Start() error {
 	// Wait for the minimum number of active workers to be available before beginning the gateway
 	// This ensures workers have registered and can handle triggers as soon the gateway is ready, if a minimum > 1 has been set
 	s.log("Waiting for active workers")
-	err = s.pool.WaitForMinimumWorkers(s.childTimeoutSeconds)
+	err = s.waitForMinimumWorkers(s.options.ChildTimeoutSeconds)
 	if err != nil {
 		return err
 	}
 
 	gatewayErrchan := make(chan error)
-	poolErrchan := make(chan error)
+	// poolErrchan := make(chan error)
 
 	// Start the gateway
 	go func(errch chan error) {
-		s.log(fmt.Sprintf("Starting Gateway, %d workers currently available", s.pool.GetWorkerCount()))
-		errch <- s.gatewayPlugin.Start(s.pool)
+		s.log(fmt.Sprintf("Starting Gateway, %d workers currently available", s.WorkerCount()))
+		errch <- s.options.GatewayPlugin.Start(&gateway.GatewayStartOpts{
+			ApiPlugin:               s.options.ApiPlugin,
+			HttpPlugin:              s.options.HttpPlugin,
+			SchedulesPlugin:         s.options.SchedulesPlugin,
+			TopicsListenerPlugin:    s.options.TopicsListenerPlugin,
+			StorageListenerPlugin:   s.options.StorageListenerPlugin,
+			WebsocketListenerPlugin: s.options.WebsocketListenerPlugin,
+		})
 	}(gatewayErrchan)
 
 	// Start the worker pool monitor
-	go func(errch chan error) {
-		s.log("Starting Worker Supervisor")
-		errch <- s.pool.Monitor()
-	}(poolErrchan)
+	// go func(errch chan error) {
+	// 	s.log("Starting Worker Supervisor")
+	// 	errch <- s.pool.Monitor()
+	// }(poolErrchan)
 
 	processErrchan := make(chan error)
 	go func(errch chan error) {
@@ -275,8 +297,8 @@ func (s *Membrane) Start() error {
 			return nil
 		}
 		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
-	case poolErr := <-poolErrchan:
-		exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
+	// case poolErr := <-poolErrchan:
+	// 	exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
 	case processErr := <-processErrchan:
 		exitErr = fmt.Errorf(fmt.Sprintf("Process error: %v, exiting", processErr))
 	}
@@ -288,7 +310,7 @@ func (s *Membrane) Stop() {
 	if s.tracerProvider != nil {
 		_ = s.tracerProvider.Shutdown(context.Background())
 	}
-	_ = s.gatewayPlugin.Stop()
+	_ = s.options.GatewayPlugin.Stop()
 	s.grpcServer.Stop()
 	s.processManager.StopAll()
 }
@@ -297,19 +319,14 @@ func (s *Membrane) Stop() {
 func New(options *MembraneOptions) (*Membrane, error) {
 	// Get unset options from env or defaults
 	if options.ServiceAddress == "" {
-		options.ServiceAddress = utils.GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
+		options.ServiceAddress = env.SERVICE_ADDRESS.String()
 	}
 
-	if options.ChildAddress == "" {
-		options.ChildAddress = utils.GetEnv("CHILD_ADDRESS", "127.0.0.1:8080")
-	}
-
-	if !options.TolerateMissingServices {
-		tolerateMissing, err := strconv.ParseBool(utils.GetEnv("TOLERATE_MISSING_SERVICES", "false"))
-		if err != nil {
-			return nil, err
-		}
-		options.TolerateMissingServices = tolerateMissing
+	minWorkers, err := env.MIN_WORKERS.Int()
+	if options.MinWorkers != nil {
+		minWorkers = *options.MinWorkers
+	} else if err != nil {
+		return nil, err
 	}
 
 	if options.ChildTimeoutSeconds < 1 {
@@ -320,75 +337,29 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		return nil, errors.New("missing gateway plugin, Gateway plugin must not be nil")
 	}
 
-	if !options.TolerateMissingServices {
-		if options.EventsPlugin == nil || options.StoragePlugin == nil || options.DocumentPlugin == nil || options.QueuePlugin == nil {
-			return nil, errors.New("missing membrane plugins, if you meant to load with missing plugins set options.TolerateMissingServices to true")
-		}
-	}
-
-	if options.Pool == nil {
-		// Create new pool with defaults
-		minWorkersEnv := utils.GetEnv("MIN_WORKERS", "1")
-		minWorkers, err := strconv.Atoi(minWorkersEnv)
-		if err != nil || minWorkers < 0 {
-			return nil, fmt.Errorf("invalid MIN_WORKERS env var, expected non-negative integer value, got %v", minWorkersEnv)
-		}
-
-		maxWorkersEnv := utils.GetEnv("MAX_WORKERS", "300")
-		maxWorkers, err := strconv.Atoi(maxWorkersEnv)
-		if err != nil || minWorkers < 0 {
-			return nil, fmt.Errorf("invalid MAX_WORKERS env var, expected non-negative integer value, got %v", maxWorkersEnv)
-		}
-
-		if minWorkers > maxWorkers {
-			maxWorkers = minWorkers
-		}
-
-		options.Pool = pool.NewProcessPool(&pool.ProcessPoolOptions{
-			MinWorkers: minWorkers,
-			MaxWorkers: maxWorkers,
-		})
-	}
-
-	bin := utils.GetEnv("OTELCOL_BIN", "/usr/bin/otelcol-contrib")
-	config := utils.GetEnv("OTELCOL_CONFIG", "/etc/otelcol/config.yaml")
+	bin := env.OTELCOL_BIN
+	config := env.OTELCOL_CONFIG
 	createTracerProvider := options.CreateTracerProvider
 
-	if createTracerProvider != nil && fileExists(bin) && fileExists(config) {
+	if createTracerProvider != nil && fileExists(bin.String()) && fileExists(config.String()) {
 		log.Default().Println("Tracing is enabled")
 
 		options.PreCommands = [][]string{
 			{
-				bin, "--config", config,
+				bin.String(), "--config", config.String(),
 			},
 		}
-
-		options.Pool = &pool.InstrumentedWorkerPool{
-			WorkerPool: options.Pool,
-			Wrapper:    worker.InstrumentedWorkerFn,
-		}
 	} else {
-		log.Default().Printf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin), fileExists(config))
+		log.Default().Printf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin.String()), fileExists(config.String()))
 		createTracerProvider = nil
 	}
 
 	return &Membrane{
-		serviceAddress:          options.ServiceAddress,
-		childAddress:            options.ChildAddress,
-		childUrl:                fmt.Sprintf("http://%s", options.ChildAddress),
-		processManager:          pm.NewProcessManager(options.ChildCommand, options.PreCommands),
-		createTracerProvider:    createTracerProvider,
-		childTimeoutSeconds:     options.ChildTimeoutSeconds,
-		documentPlugin:          options.DocumentPlugin,
-		eventsPlugin:            options.EventsPlugin,
-		storagePlugin:           options.StoragePlugin,
-		queuePlugin:             options.QueuePlugin,
-		gatewayPlugin:           options.GatewayPlugin,
-		secretPlugin:            options.SecretPlugin,
-		websocketPlugin:         options.WebsocketPlugin,
-		resourcePlugin:          options.ResourcesPlugin,
-		suppressLogs:            options.SuppressLogs,
-		tolerateMissingServices: options.TolerateMissingServices,
-		pool:                    options.Pool,
+		// serviceAddress:       options.ServiceAddress,
+		processManager:       pm.NewProcessManager(options.ChildCommand, options.PreCommands),
+		createTracerProvider: createTracerProvider,
+		options:              *options,
+		minWorkers:           minWorkers,
+		suppressLogs:         options.SuppressLogs,
 	}, nil
 }

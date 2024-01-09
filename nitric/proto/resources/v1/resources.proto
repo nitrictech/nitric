@@ -1,0 +1,149 @@
+syntax = "proto3";
+package nitric.proto.resources.v1;
+
+//protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/resources/v1;resourcespb";
+option java_package = "io.nitric.proto.resources.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Resources";
+option php_namespace = "Nitric\\Proto\\Resources\\V1";
+option csharp_namespace = "Nitric.Proto.Resources.v1";
+
+// Nitric Resource Service
+// The service definition exists to allow a nitric application to declare peripheral dependencies
+service Resources {
+  // Declare a resource for the nitric application
+  // At Deploy time this will create resources as part of the nitric stacks dependency graph
+  // At runtime
+  rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
+
+  // Retrieve details about a resource at runtime
+  rpc Details (ResourceDetailsRequest) returns (ResourceDetailsResponse);
+}
+
+message PolicyResource {
+  repeated Resource principals = 1;
+  repeated Action actions = 2;
+  repeated Resource resources = 3;
+}
+
+enum ResourceType {
+  Api = 0;
+  Function = 1;
+  Bucket = 2;
+  Topic = 3;
+  Schedule = 4;
+  Subscription = 5;
+  Collection = 6;
+  Policy = 7;
+  Secret = 8;
+  Notification = 9;
+  Websocket = 10;
+  Http = 11;
+  ApiSecurityDefinition = 12;
+}
+
+message Resource {
+  ResourceType type = 1;
+  string name = 2;
+}
+
+message ResourceDeclareRequest {
+  Resource resource = 1;
+
+  oneof config {
+    PolicyResource policy = 10;
+    BucketResource bucket = 11;
+    TopicResource topic = 12;
+    CollectionResource collection = 13;
+    SecretResource secret = 14;
+    ApiResource api = 15;
+    ApiSecurityDefinitionResource api_security_definition = 16;
+  }
+}
+
+message BucketResource {}
+message TopicResource {}
+message CollectionResource {}
+message SecretResource {}
+
+message ApiOpenIdConnectionDefinition {
+  string issuer = 1;
+  repeated string audiences = 2;
+}
+
+message ApiSecurityDefinitionResource {
+  string api_name = 1;
+
+  oneof definition {
+    ApiOpenIdConnectionDefinition oidc = 2;
+  } 
+}
+
+message ApiScopes {
+  repeated string scopes = 1;
+}
+
+message ApiResource {
+  // root level security map for this api
+  // references ApiSecurityDefinitionResource(s)
+  map<string, ApiScopes> security = 1;
+}
+
+enum Action {
+  // Bucket Permissions: 0XX
+  BucketFileList = 0;
+  BucketFileGet = 1;
+  BucketFilePut = 2;
+  BucketFileDelete = 3;
+
+  // Topic Permissions: 2XX
+  TopicList = 200;
+  TopicDetail = 201;
+  TopicEventPublish = 202;
+
+  // Collection Permissions: 3XX
+  CollectionDocumentRead = 300;
+  CollectionDocumentWrite = 301;
+  CollectionDocumentDelete = 302;
+  CollectionQuery = 303;
+  CollectionList = 304;
+
+  // Secret Permissions: 5XX
+  SecretPut = 400;
+  SecretAccess = 401;
+
+  // Websocket Permissions: 6XX
+  WebsocketManage = 500;
+}
+
+message ResourceDeclareResponse {}
+
+message ApiResourceDetails {
+  string url = 1;
+}
+
+message WebsocketResourceDetails {
+  string url = 1;
+}
+
+message ResourceDetailsRequest {
+  Resource resource = 1;
+}
+
+message ResourceDetailsResponse {
+  // The identifier of the resource
+  string id = 1;
+
+  // The provider this resource is deployed with (e.g. aws)
+  string provider = 2;
+
+  // The service this resource is deployed on (e.g. ApiGateway)
+  string service = 3;
+
+  // Details about the resource
+  oneof details {
+    ApiResourceDetails api = 10;
+    WebsocketResourceDetails websocket = 11;
+  }
+}

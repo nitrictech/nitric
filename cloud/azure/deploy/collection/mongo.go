@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/documentdb"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"

@@ -61,7 +61,11 @@ test-coverage: generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
 
-generate-mocks:
+
+clean-mocks:
+	@rm -rf ./mocks
+
+generate-mocks: clean-mocks
 	@echo Generating Mock Clients
 	@mkdir -p mocks/secrets_manager
 	@mkdir -p mocks/s3
@@ -76,6 +80,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/core AwsProvider > mocks/provider/aws.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceProvider > mocks/provider/aws.go
 
 generate-sources: generate-mocks

@@ -17,20 +17,18 @@ package bucket
 import (
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 	pulumiEventgrid "github.com/pulumi/pulumi-azure/sdk/v4/go/azure/eventgrid"
 )
 
-func eventTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
+func eventTypeToStorageEventType(eventType *v1.BlobEventType) []string {
 	switch *eventType {
-	case v1.BucketNotificationType_All:
-		return []string{"Microsoft.Storage.BlobCreated", "Microsoft.Storage.BlobDeleted"}
-	case v1.BucketNotificationType_Created:
+	case v1.BlobEventType_Created:
 		return []string{"Microsoft.Storage.BlobCreated"}
-	case v1.BucketNotificationType_Deleted:
+	case v1.BlobEventType_Deleted:
 		return []string{"Microsoft.Storage.BlobDeleted"}
 	default:
 		return []string{}
@@ -48,7 +46,7 @@ type AzureBucketNotification struct {
 type AzureBucketNotificationArgs struct {
 	Bucket         *AzureStorageBucket
 	StorageAccount *storage.StorageAccount
-	Config         *v1.BucketNotificationConfig
+	Config         *v1.RegistrationRequest
 	Target         *exec.ContainerApp
 }
 
@@ -80,9 +78,9 @@ func NewAzureBucketNotification(ctx *pulumi.Context, name string, args *AzureBuc
 			MaxDeliveryAttempts: pulumi.Int(30),
 			EventTimeToLive:     pulumi.Int(5),
 		},
-		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.NotificationType)),
+		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&args.Config.BlobEventType)),
 		SubjectFilter: pulumiEventgrid.EventSubscriptionSubjectFilterArgs{
-			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", args.Bucket.Name, args.Config.NotificationPrefixFilter),
+			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", args.Bucket.Name, args.Config.KeyPrefixFilter),
 		},
 	}, pulumi.Parent(res), pulumi.DependsOn([]pulumi.Resource{args.Target.App, args.Bucket.Container}))
 	if err != nil {

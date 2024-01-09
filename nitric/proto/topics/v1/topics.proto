@@ -1,0 +1,90 @@
+syntax = "proto3";
+package nitric.proto.topics.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/duration.proto";
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/topics/v1;topicspb";
+option java_package = "io.nitric.proto.topics.v1";
+option java_multiple_files = true;
+option java_outer_classname = "TopicsService";
+option php_namespace = "Nitric\\Proto\\Topics\\V1";
+option csharp_namespace = "Nitric.Proto.Topics.v1";
+
+// Service for publishing asynchronous messages
+service Topics {
+  // Publishes a message to a given topic
+  rpc Publish (TopicPublishRequest) returns (TopicPublishResponse);
+}
+
+// Service for subscribing to asynchronous messages
+service Subscriber {
+  // Subscribe to a topic and handle incoming messages
+  rpc Subscribe (stream ClientMessage) returns (stream ServerMessage);
+}
+
+message ClientMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // Register a subscription to a topic
+    RegistrationRequest registration_request = 2;
+
+    // Handle a message received from a topic
+    MessageResponse message_response = 3;
+  }
+}
+
+message MessageRequest {
+  string topic_name = 1;
+
+  // Message Type
+  Message message = 2;
+}
+
+message MessageResponse {
+  bool success = 1;
+}
+
+message ServerMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // Response to a topic subscription request
+    RegistrationResponse registration_response = 2;
+
+    // Response to a topic message request
+    MessageRequest message_request = 3;
+  }
+}
+
+message RegistrationRequest {
+  string topic_name = 1;
+}
+
+message RegistrationResponse {}
+
+message Message {
+  // The topic message contents
+  oneof content {
+    google.protobuf.Struct struct_payload = 1;
+  }
+}
+
+// Request to publish a message to a topic
+message TopicPublishRequest {
+  // The name of the topic to publish the topic to
+  string topic_name = 1;
+
+  // The message to be published
+  Message message = 2;
+
+  // An optional delay specified in seconds (minimum 10 seconds)
+  google.protobuf.Duration delay = 3;
+}
+
+// Result of publishing an topic
+message TopicPublishResponse {}

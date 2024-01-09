@@ -33,7 +33,6 @@ type ScheduleArgs struct {
 
 type Schedule struct {
 	pulumi.ResourceState
-
 	Name      string
 	Component *app.DaprComponent
 }

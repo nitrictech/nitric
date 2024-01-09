@@ -1,0 +1,259 @@
+syntax = "proto3";
+package nitric.proto.deployments.v1;
+
+//protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1;deploymentspb";
+option java_package = "io.nitric.proto.deployments.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Deployments";
+option php_namespace = "Nitric\\Proto\\Deployments\\V1";
+option csharp_namespace = "Nitric.Proto.Deployments.v1";
+
+import "google/protobuf/struct.proto";
+import "nitric/proto/resources/v1/resources.proto";
+import "nitric/proto/storage/v1/storage.proto";
+
+// The Nitric Deloyment Service contract
+service Deploy {
+    // Begins a new deployment
+    // Server will stream updates back to the connected client
+    // on the status of the deployment
+    rpc Up (DeployUpRequest) returns (stream DeployUpEvent);
+    // Tears down an existing deployment
+    // Server will stream updates back to the connected client
+    // on the status of the teardown
+    rpc Down (DeployDownRequest) returns (stream DeployDownEvent);
+}
+
+message DeployUpRequest {
+    // The spec to deploy
+    Spec spec = 1;
+
+    // A map of attributes related to the deploy request
+    // this allows for adding project identifiers etc.
+    google.protobuf.Struct attributes = 2;
+
+    // A hint to the provider of the kind of output that the client can accept
+    // This will allow provider developers to provider richer output back to clients.
+    bool interactive = 3;
+}
+
+message DeployUpEvent {
+    oneof content {
+        DeployEventMessage message = 1;
+        DeployUpEventResult result = 2;
+    }
+}
+
+// Messages to provide status updates on the deployment
+message DeployEventMessage {
+    string message = 1;
+}
+
+message UpResult {
+    oneof content {
+        // Simple formatted string output as result
+        string string_result = 1;
+
+        // Additional result content types could be
+        // Struct (as a machine readable JSON value)
+        // Tabular? (display table output results)
+    }
+}
+
+// Terminal message indicating deployment success
+message DeployUpEventResult {
+    // Indicate the success status
+    bool success = 1;
+
+    // Output state as a struct, this can be provided as an output file
+    // or pretty printed for CLI output
+    UpResult result = 2;
+}
+
+message DeployDownRequest {
+    // A map of attributes related to the deploy request
+    // this allows for adding project identifiers etc.
+    google.protobuf.Struct attributes = 1;
+
+    // A hint to the provider of the kind of output that the client can accept
+    // This will allow provider developers to provider richer output back to clients.
+    bool interactive = 2;
+}
+
+message DeployDownEvent {
+    oneof content {
+        DeployEventMessage message = 1;
+        DeployDownEventResult result = 2;
+    }
+}
+
+// Terminal message indicating deployment success
+message DeployDownEventResult {}
+
+// An image source to be used for execution unit deployment
+message ImageSource {
+    // URI of the docker image
+    // TODO: May also need to provide auth information (although this should just be configured on the running client already)
+    string uri = 1;
+}
+
+// A unit of execution (i.e. function/container)
+message ExecutionUnit {
+    // Source of the exection unit
+    oneof source {
+        // Container image as a execution unit
+        ImageSource image = 1;
+        // Alternative sources could include 
+        // - zipped code sources
+        // - git/scm repository URIs
+        
+    }
+
+    // Expected worker count for this execution unit
+    int32 workers = 10;
+    // Configurable timeout for request handling
+    int32 timeout = 11 [deprecated = true];
+    // Configurable memory size for this instance
+    int32 memory = 12 [deprecated = true];
+
+    // A simple type property
+    // describes the requested type of execution unit that this should be
+    // for this project, a provider can implement how this request is satisfied
+    // in any way
+    string type = 13;
+
+    // Environment variables for this execution unit
+    map<string, string> env = 14; 
+}
+
+message Bucket {
+    repeated BucketNotificationTarget notifications = 1;
+}
+
+message BucketNotificationTarget {
+    nitric.proto.storage.v1.RegistrationRequest config = 1;
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 2;
+    }
+}
+
+
+message Topic {
+    repeated SubscriptionTarget subscriptions = 1;
+}
+
+message Collection {
+
+}
+
+message Secret {
+    
+}
+
+message SubscriptionTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+        // - Queues
+    }
+}
+
+message TopicSubscription {
+    SubscriptionTarget target = 1;
+}
+
+message HttpTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+    }
+}
+
+// A http resource
+message Http {
+    HttpTarget target = 1;
+}
+
+message Api {
+    oneof document {
+        // An OpenAPI document for deployment
+        // This document will contain extensions that hint of execution units that should be targeted as part of the deployment
+        string openapi = 1;
+    }
+}
+
+// Declare a new websocket
+message Websocket {
+    // Target for handling new client connections
+    WebsocketTarget connect_target = 1;
+    // Target for handling client disconnections
+    WebsocketTarget disconnect_target = 2;
+    // Target for handling all other message types
+    WebsocketTarget message_target = 3;
+}
+
+message WebsocketTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+    }
+}
+
+message ScheduleTarget {
+    oneof target {
+        // The name of an execution unit to target
+        string execution_unit = 1;
+
+        // Additional targets could potentially include
+        // - HTTP/API Endpoints
+    }
+}
+
+message Schedule {
+    string cron = 1;
+    ScheduleTarget target = 2;
+}
+
+message Resource {
+    string name = 1;
+
+    nitric.proto.resources.v1.ResourceType type = 2;
+
+    oneof config {
+        ExecutionUnit execution_unit = 10;
+        Bucket bucket = 11;
+        Topic topic = 12;
+        Api api = 13;
+        Policy policy = 14;
+        Schedule schedule = 15;
+        Collection collection = 16;
+        Secret secret = 17;
+        Websocket websocket = 18;
+        Http http = 19;
+    }
+}
+
+// This is already defined in the resource contracts...
+// Need to determine if it's worth re-using
+// unfortunately there are parts we don't want to duplicate, such as API config
+message Policy {
+    repeated Resource principals = 1;
+    // TODO: Split out discrete action definitions from resources
+    // Also need to allow custom action types as well
+    // Should incorporate action re-use here...
+    repeated nitric.proto.resources.v1.Action actions = 2;
+    repeated Resource resources = 3;
+}
+
+message Spec {
+    // list of resources to deploy
+    repeated Resource resources = 1;
+}

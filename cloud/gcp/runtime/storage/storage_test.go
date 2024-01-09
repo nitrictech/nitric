@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
@@ -27,10 +28,11 @@ import (
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	storage_mock "github.com/nitrictech/nitric/cloud/gcp/mocks/gcp_storage"
 	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
-	plugin "github.com/nitrictech/nitric/core/pkg/plugins/storage"
+	storagePb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 var _ = Describe("Storage", func() {
@@ -73,7 +75,11 @@ var _ = Describe("Storage", func() {
 					mockWriter.EXPECT().Write(testPayload).Times(1)
 					mockWriter.EXPECT().Close().Times(1)
 
-					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
+					_, err := mockStorageServer.Write(context.TODO(), &storagePb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-file",
+						Body:       testPayload,
+					})
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -95,7 +101,11 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
+					_, err := mockStorageServer.Write(context.TODO(), &storagePb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-file",
+						Body:       testPayload,
+					})
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -135,11 +145,15 @@ var _ = Describe("Storage", func() {
 					mockObject.EXPECT().NewWriter(gomock.Any()).Return(mockWriter)
 					mockWriter.EXPECT().Write(gomock.Any()).Return(0, &googleapi.Error{Code: 403, Message: "insufficient permissions"})
 
-					err := mockStorageServer.Write(context.TODO(), "my-bucket", "test-file", testPayload)
+					_, err := mockStorageServer.Write(context.TODO(), &storagePb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-file",
+						Body:       testPayload,
+					})
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(Equal("unable to write to file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
+					Expect(err.Error()).Should(ContainSubstring("googleapi: Error 403: insufficient permissions"))
 					ctrl.Finish()
 				})
 			})
@@ -181,13 +195,16 @@ var _ = Describe("Storage", func() {
 						mockReader.EXPECT().Read(gomock.Any()).Return(0, io.EOF)
 						mockReader.EXPECT().Close().Times(1)
 
-						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						resp, err := storagePlugin.Read(context.TODO(), &storagePb.StorageReadRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("Returning read content")
-						Expect(item).To(HaveLen(0))
+						Expect(resp.Body).To(HaveLen(0))
 					})
 				})
 
@@ -218,7 +235,10 @@ var _ = Describe("Storage", func() {
 						mockBucket.EXPECT().Object("test-key").Return(mockObject)
 						mockObject.EXPECT().NewReader(gomock.Any()).Return(nil, fmt.Errorf("mock-error"))
 
-						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						item, err := storagePlugin.Read(context.TODO(), &storagePb.StorageReadRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
@@ -256,10 +276,13 @@ var _ = Describe("Storage", func() {
 						By("Returning a permission denied error")
 						mockObject.EXPECT().NewReader(gomock.Any()).Return(nil, &googleapi.Error{Code: 403, Message: "insufficient permissions"})
 
-						item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						item, err := storagePlugin.Read(context.TODO(), &storagePb.StorageReadRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(Equal("unable to read file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
+						Expect(err.Error()).To(ContainSubstring("googleapi: Error 403: insufficient permissions"))
 						Expect(item).To(BeNil())
 					})
 				})
@@ -276,7 +299,10 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					item, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+					item, err := storagePlugin.Read(context.TODO(), &storagePb.StorageReadRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+					})
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -320,7 +346,10 @@ var _ = Describe("Storage", func() {
 						By("the object delete being called")
 						mockObject.EXPECT().Delete(gomock.Any()).Return(nil)
 
-						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						_, err := storagePlugin.Delete(context.TODO(), &storagePb.StorageDeleteRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -354,7 +383,10 @@ var _ = Describe("Storage", func() {
 						mockBucket.EXPECT().Object("test-key").Return(mockObject)
 						mockObject.EXPECT().Delete(gomock.Any()).Return(fmt.Errorf("mock-error"))
 
-						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						_, err := storagePlugin.Delete(context.TODO(), &storagePb.StorageDeleteRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
@@ -389,11 +421,14 @@ var _ = Describe("Storage", func() {
 						By("Returning a permission denied error")
 						mockObject.EXPECT().Delete(gomock.Any()).Return(&googleapi.Error{Code: 403, Message: "insufficient permissions"})
 
-						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						_, err := storagePlugin.Delete(context.TODO(), &storagePb.StorageDeleteRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(Equal("unable to delete to file, have you requested access to this bucket?: \n googleapi: Error 403: insufficient permissions"))
+						Expect(err.Error()).Should(ContainSubstring("googleapi: Error 403: insufficient permissions"))
 					})
 				})
 			})
@@ -409,7 +444,10 @@ var _ = Describe("Storage", func() {
 					mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 					mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-					err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+					_, err := storagePlugin.Delete(context.TODO(), &storagePb.StorageDeleteRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+					})
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
@@ -446,13 +484,18 @@ var _ = Describe("Storage", func() {
 						By("the object reference being valid")
 						mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("http://example.com", nil)
 
-						url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 6000)
+						resp, err := storagePlugin.PreSignUrl(context.TODO(), &storagePb.StoragePreSignUrlRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+							Expiry:     durationpb.New(time.Second * 60),
+							Operation:  storagePb.StoragePreSignUrlRequest_READ,
+						})
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("The url being returned")
-						Expect(url).To(Equal("http://example.com"))
+						Expect(resp.Url).To(Equal("http://example.com"))
 
 						ctrl.Finish()
 					})
@@ -483,13 +526,18 @@ var _ = Describe("Storage", func() {
 						By("the object reference being valid")
 						mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("http://example.com", nil)
 
-						url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.WRITE, 6000)
+						response, err := storagePlugin.PreSignUrl(context.TODO(), &storagePb.StoragePreSignUrlRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+							Operation:  storagePb.StoragePreSignUrlRequest_READ,
+							Expiry:     durationpb.New(time.Second * 60),
+						})
 
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("The url being returned")
-						Expect(url).To(Equal("http://example.com"))
+						Expect(response.Url).To(Equal("http://example.com"))
 
 						ctrl.Finish()
 					})
@@ -521,13 +569,18 @@ var _ = Describe("Storage", func() {
 					By("the object reference being invalid")
 					mockBucket.EXPECT().SignedURL("test-key", gomock.Any()).Return("", fmt.Errorf("mock-error"))
 
-					url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 6000)
+					response, err := storagePlugin.PreSignUrl(context.TODO(), &storagePb.StoragePreSignUrlRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+						Operation:  storagePb.StoragePreSignUrlRequest_READ,
+						Expiry:     durationpb.New(time.Second * 60),
+					})
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 
 					By("Returning a blank url")
-					Expect(url).To(HaveLen(0))
+					Expect(response).To(BeNil())
 				})
 			})
 		})
@@ -543,12 +596,17 @@ var _ = Describe("Storage", func() {
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 
-				url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", plugin.READ, 60)
+				response, err := storagePlugin.PreSignUrl(context.TODO(), &storagePb.StoragePreSignUrlRequest{
+					BucketName: "test-bucket",
+					Key:        "test-key",
+					Operation:  storagePb.StoragePreSignUrlRequest_READ,
+					Expiry:     durationpb.New(time.Second * 60),
+				})
 				By("Returning an error")
-				Expect(err).ShouldNot(BeNil())
+				Expect(err).Should(HaveOccurred())
 
-				By("Returning an empty url")
-				Expect(url).Should(BeEmpty())
+				By("Returning a nil response")
+				Expect(response).Should(BeNil())
 			})
 		})
 	})
@@ -586,18 +644,19 @@ var _ = Describe("Storage", func() {
 					mockObjectIterator.EXPECT().Next().Return(nil, iterator.Done),
 				)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", &plugin.ListFileOptions{
-					Prefix: "test/",
+				resp, err := storagePlugin.ListFiles(context.TODO(), &storagePb.StorageListFilesRequest{
+					BucketName: "test-bucket",
+					Prefix:     "test/",
 				})
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning a single file")
-				Expect(files).To(HaveLen(1))
+				Expect(resp.Files).To(HaveLen(1))
 
 				By("The file having the returned name")
-				Expect(files[0].Key).To(Equal("test/test-file"))
+				Expect(resp.Files[0].Key).To(Equal("test/test-file"))
 			})
 		})
 
@@ -612,10 +671,12 @@ var _ = Describe("Storage", func() {
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", nil)
+				resp, err := storagePlugin.ListFiles(context.TODO(), &storagePb.StorageListFilesRequest{
+					BucketName: "test-bucket",
+				})
 
-				By("returning nil files")
-				Expect(files).To(BeNil())
+				By("returning nil response")
+				Expect(resp).To(BeNil())
 
 				By("returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -654,13 +715,16 @@ var _ = Describe("Storage", func() {
 					By("returning object attributes")
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(&storage.ObjectAttrs{}, nil)
 
-					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+					response, err := storagePlugin.Exists(context.TODO(), &storagePb.StorageExistsRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+					})
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("The url being returned")
-					Expect(exists).To(BeTrue())
+					Expect(response.Exists).To(BeTrue())
 
 					ctrl.Finish()
 				})
@@ -695,13 +759,16 @@ var _ = Describe("Storage", func() {
 					By("returning object attributes")
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, storage.ErrObjectNotExist)
 
-					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+					response, err := storagePlugin.Exists(context.TODO(), &storagePb.StorageExistsRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+					})
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("The url being returned")
-					Expect(exists).To(BeFalse())
+					Expect(response.Exists).To(BeFalse())
 
 					ctrl.Finish()
 				})
@@ -715,7 +782,7 @@ var _ = Describe("Storage", func() {
 				mockObject := storage_mock.NewMockObjectHandle(ctrl)
 				storagePlugin, _ := storage_service.NewWithClient(mockStorageClient)
 
-				It("should return true", func() {
+				It("should return an error", func() {
 					By("the bucket existing")
 					gomock.InOrder(
 						mockBucketIterator.EXPECT().Next().Return(&storage.BucketAttrs{
@@ -733,16 +800,19 @@ var _ = Describe("Storage", func() {
 					By("the object reference being valid")
 					mockBucket.EXPECT().Object("test-key").Return(mockObject)
 
-					By("returning object attributes")
+					// Return the unknown error
 					mockObject.EXPECT().Attrs(context.TODO()).Times(1).Return(nil, errors.New("unknown error"))
 
-					exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-key")
+					response, err := storagePlugin.Exists(context.TODO(), &storagePb.StorageExistsRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+					})
 
-					By("Not returning an error")
+					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 
-					By("The url being returned")
-					Expect(exists).To(BeFalse())
+					By("The response being nil")
+					Expect(response).To(BeNil())
 
 					ctrl.Finish()
 				})

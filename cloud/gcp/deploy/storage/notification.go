@@ -21,7 +21,7 @@ import (
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
@@ -40,17 +40,15 @@ type CloudStorageNotificationArgs struct {
 	StackID  string
 
 	Bucket   *CloudStorageBucket
-	Config   *v1.BucketNotificationConfig
+	Config   *v1.RegistrationRequest
 	Function *exec.CloudRunner
 }
 
-func notificationTypeToStorageEventType(eventType *v1.BucketNotificationType) []string {
-	switch *eventType {
-	case v1.BucketNotificationType_All:
-		return []string{"OBJECT_FINALIZE", "OBJECT_DELETE"}
-	case v1.BucketNotificationType_Created:
+func notificationTypeToStorageEventType(eventType v1.BlobEventType) []string {
+	switch eventType {
+	case v1.BlobEventType_Created:
 		return []string{"OBJECT_FINALIZE"}
-	case v1.BucketNotificationType_Deleted:
+	case v1.BlobEventType_Deleted:
 		return []string{"OBJECT_DELETE"}
 	default:
 		return []string{}
@@ -116,7 +114,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		return nil, fmt.Errorf("invalid config provided for bucket notification")
 	}
 
-	prefix := args.Config.NotificationPrefixFilter
+	prefix := args.Config.KeyPrefixFilter
 	if prefix == "*" {
 		prefix = ""
 	}
@@ -125,7 +123,7 @@ func NewCloudStorageNotification(ctx *pulumi.Context, name string, args *CloudSt
 		Bucket:           args.Bucket.CloudStorage.Name,
 		PayloadFormat:    pulumi.String("JSON_API_V1"),
 		Topic:            topic.ID(),
-		EventTypes:       pulumi.ToStringArray(notificationTypeToStorageEventType(&args.Config.NotificationType)),
+		EventTypes:       pulumi.ToStringArray(notificationTypeToStorageEventType(args.Config.BlobEventType)),
 		ObjectNamePrefix: pulumi.String(prefix),
 	}, append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)
 	if err != nil {
