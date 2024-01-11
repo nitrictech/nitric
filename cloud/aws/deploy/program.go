@@ -309,9 +309,9 @@ func NewUpProgram(ctx context.Context, details *commonDeploy.CommonStackDetails,
 
 				// Create schedule targeting a given lambda
 				schedules[res.Name], err = schedule.NewAwsEventbridgeSchedule(ctx, res.Name, &schedule.AwsEventbridgeScheduleArgs{
-					Exec: execUnit,
-					Cron: t.Schedule.Cron,
-					Tz:   config.ScheduleTimezone,
+					Exec:     execUnit,
+					Schedule: t.Schedule,
+					Tz:       config.ScheduleTimezone,
 				})
 				if err != nil {
 					return err

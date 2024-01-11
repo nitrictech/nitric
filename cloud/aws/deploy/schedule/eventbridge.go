@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/exec"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/scheduler"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -33,9 +34,9 @@ type AwsEventbridgeSchedule struct {
 }
 
 type AwsEventbridgeScheduleArgs struct {
-	Exec *exec.LambdaExecUnit
-	Cron string
-	Tz   string
+	Exec     *exec.LambdaExecUnit
+	Schedule *deploymentspb.Schedule
+	Tz       string
 }
 
 //go:embed scheduler-execution-permissions.json
@@ -55,7 +56,18 @@ func NewAwsEventbridgeSchedule(ctx *pulumi.Context, name string, args *AwsEventb
 		return nil, err
 	}
 
-	awsCronValue, err := ConvertToAWS(args.Cron)
+	awsScheduleExpression := ""
+	switch args.Schedule.Cadence.(type) {
+	case *deploymentspb.Schedule_Cron:
+		// handle cron
+		awsScheduleExpression, err = ConvertToAWS(args.Schedule.GetCron().Expression)
+	case *deploymentspb.Schedule_Every:
+		// handle rate
+		awsScheduleExpression = fmt.Sprintf("rate(%s)", args.Schedule.GetEvery().Rate)
+	default:
+		return nil, fmt.Errorf("unknown schedule type, must be one of: cron, every")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +90,7 @@ func NewAwsEventbridgeSchedule(ctx *pulumi.Context, name string, args *AwsEventb
 
 	// Create a new eventbridge schedule
 	res.Schedule, err = scheduler.NewSchedule(ctx, name, &scheduler.ScheduleArgs{
-		ScheduleExpression:         pulumi.String(awsCronValue),
+		ScheduleExpression:         pulumi.String(awsScheduleExpression),
 		ScheduleExpressionTimezone: pulumi.String(args.Tz),
 		FlexibleTimeWindow: &scheduler.ScheduleFlexibleTimeWindowArgs{
 			Mode: pulumi.String("OFF"),

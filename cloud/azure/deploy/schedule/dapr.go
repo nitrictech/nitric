@@ -16,9 +16,11 @@ package schedule
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -28,7 +30,7 @@ type ScheduleArgs struct {
 	ResourceGroupName pulumi.StringInput
 	Target            *exec.ContainerApp
 	Environment       *app.ManagedEnvironment
-	Cron              string
+	Schedule          *deploymentspb.Schedule
 }
 
 type Schedule struct {
@@ -47,6 +49,33 @@ func NewDaprCronBindingSchedule(ctx *pulumi.Context, name string, args *Schedule
 		return nil, err
 	}
 
+	cronExpression := ""
+
+	switch t := args.Schedule.Cadence.(type) {
+	case *deploymentspb.Schedule_Cron:
+		cronExpression = t.Cron.Expression
+	case *deploymentspb.Schedule_Every:
+		parts := strings.Split(strings.TrimSpace(t.Every.Rate), " ")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid schedule rate: %s", t.Every.Rate)
+		}
+
+		initialRate, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid schedule rate, must start with an integer")
+		}
+
+		// Dapr cron bindings only support hours, minutes and seconds. Convert days to hours
+		if strings.HasPrefix(parts[1], "day") {
+			parts[0] = fmt.Sprintf("%d", initialRate*24)
+			parts[1] = "hours"
+		}
+
+		cronExpression = fmt.Sprintf("@every %s%c", parts[0], parts[1][0])
+	default:
+		return nil, fmt.Errorf("unknown schedule type, must be one of: cron, every")
+	}
+
 	res.Component, err = app.NewDaprComponent(ctx, normalizedName, &app.DaprComponentArgs{
 		ResourceGroupName: args.ResourceGroupName,
 		EnvironmentName:   args.Environment.Name,
@@ -56,7 +85,7 @@ func NewDaprCronBindingSchedule(ctx *pulumi.Context, name string, args *Schedule
 		Metadata: app.DaprMetadataArray{
 			app.DaprMetadataArgs{
 				Name:  pulumi.String("schedule"),
-				Value: pulumi.String(args.Cron),
+				Value: pulumi.String(cronExpression),
 			},
 			app.DaprMetadataArgs{
 				Name:  pulumi.String("route"),
