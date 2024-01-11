@@ -9,8 +9,6 @@ option java_outer_classname = "SchedulesService";
 option php_namespace = "Nitric\\Proto\\Schedules\\V1";
 option csharp_namespace = "Nitric.Proto.Schedules.v1";
 
-import "google/protobuf/duration.proto";
-
 // Service for publishing asynchronous messages
 service Schedules {
   rpc Schedule(stream ClientMessage) returns (stream ServerMessage);
@@ -53,14 +51,13 @@ message ServerMessage {
 message RegistrationRequest {
   string schedule_name = 1;
   oneof cadence {
-    ScheduleRate rate = 10;
+    ScheduleEvery every = 10;
     ScheduleCron cron = 11;
   }
 }
 
-message ScheduleRate {
-  google.protobuf.Duration interval = 1;
-  
+message ScheduleEvery {
+  string rate = 1;
 }
 
 message ScheduleCron {

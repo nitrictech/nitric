@@ -218,8 +218,22 @@ message ScheduleTarget {
 }
 
 message Schedule {
-    string cron = 1;
-    ScheduleTarget target = 2;
+ ScheduleTarget target = 1;
+
+  oneof cadence {
+    ScheduleEvery every = 10;
+    ScheduleCron cron = 11;
+  }
+}
+
+message ScheduleEvery {
+    // rate string e.g. '5 minutes'. Value frequencies are 'minutes', 'hours', 'days'.
+    string rate = 1;
+}
+
+message ScheduleCron {
+    // standard unix cron expression
+    string expression = 1;
 }
 
 message Resource {
