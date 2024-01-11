@@ -101,6 +101,8 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 		}))
 	}
 
+	apiGatewayTags := common.Tags(args.StackID, name, resources.API)
+
 	doc := pulumi.All(nameArnPairs...).ApplyT(func(pairs []interface{}) (string, error) {
 		naps := make(map[string]string)
 
@@ -123,6 +125,15 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 			args.OpenAPISpec.Paths[k] = p
 		}
 
+		// Important: AWS will use these on the first deployment, but not subsequent updates
+		// subsequent updates use the tags provided to Pulumi below.
+		for n, v := range apiGatewayTags {
+			args.OpenAPISpec.Tags = append(args.OpenAPISpec.Tags, &openapi3.Tag{
+				Name:       n,
+				Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": v},
+			})
+		}
+
 		// augment the api specs with security definitions where available
 		b, err := json.Marshal(args.OpenAPISpec)
 		if err != nil {
@@ -133,9 +144,11 @@ func NewAwsApiGateway(ctx *pulumi.Context, name string, args *AwsApiGatewayArgs,
 	}).(pulumi.StringOutput)
 
 	res.Api, err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
-		Body:           doc,
+		Body: doc,
+		// Name fixed to title in the spec, if these mismatch the name will change on the second deployment.
+		Name:           pulumi.String(args.OpenAPISpec.Info.Title),
 		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
+		Tags:           pulumi.ToStringMap(apiGatewayTags),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
