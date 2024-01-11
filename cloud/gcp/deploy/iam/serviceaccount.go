@@ -17,6 +17,8 @@
 package iam
 
 import (
+	"regexp"
+
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -44,6 +46,9 @@ func NewServiceAccount(ctx *pulumi.Context, name string, args *GcpIamServiceAcco
 	if err != nil {
 		return nil, err
 	}
+
+	invalidChars := regexp.MustCompile(`[^a-z0-9\-]`)
+	args.AccountId = invalidChars.ReplaceAllString(args.AccountId, "-")
 
 	// Create a random id
 	acctRandId, err := random.NewRandomString(ctx, name+"-id", &random.RandomStringArgs{

@@ -30,6 +30,7 @@ deploybin: predeploybin
 install: deploybin
 	@echo installing azure deployment server to ${HOME}/.nitric/providers/nitric/azure-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@rm -f ${HOME}/.nitric/providers/nitric/azure-0.0.1
 	@cp bin/deploy-azure ${HOME}/.nitric/providers/nitric/azure-0.0.1
 
 license-check: runtimebin

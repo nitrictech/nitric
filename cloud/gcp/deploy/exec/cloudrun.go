@@ -18,6 +18,7 @@ package exec
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/config"
@@ -92,6 +93,9 @@ func GetPerms(telemetry int) []string {
 }
 
 func NewCloudRunner(ctx *pulumi.Context, name string, args *CloudRunnerArgs, opts ...pulumi.ResourceOption) (*CloudRunner, error) {
+	invalidChars := regexp.MustCompile(`[^a-z0-9\-]`)
+	name = invalidChars.ReplaceAllString(name, "-")
+
 	res := &CloudRunner{
 		Name: name,
 	}
