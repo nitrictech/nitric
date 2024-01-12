@@ -276,7 +276,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 				ResourceGroupName: rg.Name,
 				Target:            cAppTarget,
 				Environment:       contEnv.ManagedEnv,
-				Cron:              s.GetSchedule().Cron,
+				Schedule:          s.GetSchedule(),
 			})
 			if err != nil {
 				return err

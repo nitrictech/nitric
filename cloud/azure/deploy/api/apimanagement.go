@@ -230,7 +230,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 					OperationId:       pulumi.String(op.OperationID),
 					PolicyId:          pulumi.String("policy"),
 					Format:            pulumi.String("xml"),
-					Value:             pulumi.Sprintf(policyTemplate, app.App.LatestRevisionFqdn, jwtTemplateString, args.ManagedIdentity.ClientId, args.ManagedIdentity.ClientId),
+					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, args.ManagedIdentity.ClientId, args.ManagedIdentity.ClientId),
 				}, pulumi.Parent(res.Api))
 				if err != nil {
 					return nil, errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
