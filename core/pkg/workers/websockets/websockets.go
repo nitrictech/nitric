@@ -67,6 +67,22 @@ func (wm *WebsocketManager) registerHandler(handler *WorkerConnection, registrat
 	return nil
 }
 
+func (wm *WebsocketManager) unregisterHandler(handler *WorkerConnection) {
+	wm.mutex.Lock()
+	defer wm.mutex.Unlock()
+
+	var resultKey string
+
+	for k, wrb := range wm.handlers {
+		if wrb == handler {
+			resultKey = k
+			break
+		}
+	}
+
+	delete(wm.handlers, resultKey)
+}
+
 // ManageEventHandlers handles the registration of new websocket event handlers
 func (wm *WebsocketManager) HandleEvents(stream websocketspb.WebsocketHandler_HandleEventsServer) error {
 	initialMessage, err := stream.Recv()
@@ -83,6 +99,8 @@ func (wm *WebsocketManager) HandleEvents(stream websocketspb.WebsocketHandler_Ha
 	if err := wm.registerHandler(handler, registration); err != nil {
 		return err
 	}
+
+	defer wm.unregisterHandler(handler)
 
 	err = stream.Send(&websocketspb.ServerMessage{
 		Content: &websocketspb.ServerMessage_RegistrationResponse{
