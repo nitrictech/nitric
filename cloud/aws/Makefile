@@ -33,6 +33,7 @@ deploybin: predeploybin
 install: deploybin
 	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@rm -f ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
 
 license-check: runtimebin

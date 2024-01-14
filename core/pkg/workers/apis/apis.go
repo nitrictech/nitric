@@ -198,7 +198,7 @@ func (s *RouteWorkerManager) HandleRequest(apiName string, request *apispb.Serve
 		return nil, fmt.Errorf("no worker registered for Api %s on route: %s - %s", apiName, request.GetHttpRequest().GetMethod(), request.GetHttpRequest().GetPath())
 	}
 
-	if request.GetHttpRequest().GetPathParams() != nil && len(request.GetHttpRequest().GetPathParams()) < 1 {
+	if request.GetHttpRequest().GetPathParams() == nil || len(request.GetHttpRequest().GetPathParams()) < 1 {
 		pathParams, err := extractPathParams(theOneTrueHandler.routeMatcher, request.GetHttpRequest().GetPath())
 		if err != nil {
 			return nil, err

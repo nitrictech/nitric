@@ -31,6 +31,7 @@ deploybin: predeploybin
 install: deploybin
 	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
