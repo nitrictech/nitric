@@ -17,6 +17,7 @@ package topics
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/nitrictech/nitric/core/pkg/help"
@@ -55,6 +56,18 @@ func (s *SubscriberManager) registerSubscriber(subscriber *WorkerConnection, reg
 	return nil
 }
 
+func (s *SubscriberManager) unregisterSubscriber(topicName string, subscriber *WorkerConnection) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.subscriberMap[topicName] = slices.DeleteFunc[[]*WorkerConnection](s.subscriberMap[topicName], func(wc *WorkerConnection) bool {
+		return wc == subscriber
+	})
+
+	if len(s.subscriberMap[topicName]) == 0 {
+		delete(s.subscriberMap, topicName)
+	}
+}
 func (s *SubscriberManager) WorkerCount() int {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -87,6 +100,8 @@ func (s *SubscriberManager) Subscribe(subscriberConnectionStream topicspb.Subscr
 	if err := s.registerSubscriber(subscriber, registrationRequest); err != nil {
 		return err
 	}
+
+	defer s.unregisterSubscriber(registrationRequest.GetTopicName(), subscriber)
 
 	// send acknowledgement of registration
 	err = subscriberConnectionStream.Send(&topicspb.ServerMessage{

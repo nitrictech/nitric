@@ -54,6 +54,22 @@ func (s *ScheduleWorkerManager) registerSchedule(scheduleWorker *WorkerConnectio
 	return nil
 }
 
+func (s *ScheduleWorkerManager) unregisterSchedule(scheduleWorker *WorkerConnection) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	var resultKey string
+
+	for k, wrb := range s.workerMap {
+		if wrb == scheduleWorker {
+			resultKey = k
+			break
+		}
+	}
+
+	delete(s.workerMap, resultKey)
+}
+
 func (s *ScheduleWorkerManager) Schedule(stream schedulespb.Schedules_ScheduleServer) error {
 	initRequest, err := stream.Recv()
 	if err != nil {
@@ -68,6 +84,8 @@ func (s *ScheduleWorkerManager) Schedule(stream schedulespb.Schedules_ScheduleSe
 	if err := s.registerSchedule(worker, initRequest.GetRegistrationRequest()); err != nil {
 		return err
 	}
+
+	defer s.unregisterSchedule(worker)
 
 	// send acknowledgement of registration
 	err = stream.Send(&schedulespb.ServerMessage{
