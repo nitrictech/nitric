@@ -84,8 +84,8 @@ func (a *AwsResourceService) Declare(ctx context.Context, req *resourcepb.Resour
 }
 
 func (a *AwsResourceService) Details(ctx context.Context, req *resourcepb.ResourceDetailsRequest) (*resourcepb.ResourceDetailsResponse, error) {
-	resourceName := req.Resource.Name
-	resourceType := req.Resource.Type
+	resourceName := req.Id.Name
+	resourceType := req.Id.Type
 
 	rt, ok := resourceDetailsTypeMap[resourceType]
 	if !ok {

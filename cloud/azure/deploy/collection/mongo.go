@@ -107,15 +107,15 @@ func NewMongoCollections(ctx *pulumi.Context, name string, args *MongoCollection
 	}
 
 	for _, col := range args.Collections {
-		res.Collections[col.Name], err = documentdb.NewMongoDBResourceMongoDBCollection(ctx, utils.ResourceName(ctx, col.Name, utils.MongoCollectionRT), &documentdb.MongoDBResourceMongoDBCollectionArgs{
+		res.Collections[col.Id.Name], err = documentdb.NewMongoDBResourceMongoDBCollection(ctx, utils.ResourceName(ctx, col.Id.Name, utils.MongoCollectionRT), &documentdb.MongoDBResourceMongoDBCollectionArgs{
 			ResourceGroupName: args.ResourceGroup.Name,
 			AccountName:       res.Account.Name,
 			DatabaseName:      res.MongoDB.Name,
-			CollectionName:    pulumi.String(col.Name),
+			CollectionName:    pulumi.String(col.Id.Name),
 			Location:          res.MongoDB.Location,
 			Options:           &documentdb.CreateUpdateOptionsArgs{},
 			Resource: documentdb.MongoDBCollectionResourceArgs{
-				Id: pulumi.String(col.Name),
+				Id: pulumi.String(col.Id.Name),
 			},
 		}, pulumi.Parent(res))
 		if err != nil {

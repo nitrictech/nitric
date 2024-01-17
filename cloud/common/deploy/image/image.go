@@ -67,7 +67,7 @@ var (
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
 
-	err := ctx.RegisterComponentResource("nitric:Image", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitriccommon:Image", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}

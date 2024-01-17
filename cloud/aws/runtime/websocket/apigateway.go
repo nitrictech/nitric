@@ -44,7 +44,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 	}
 
 	details, err := a.provider.Details(context.TODO(), &resourcepb.ResourceDetailsRequest{
-		Resource: &resourcepb.Resource{
+		Id: &resourcepb.ResourceIdentifier{
 			Name: socket,
 			Type: resourcepb.ResourceType_Websocket,
 		},

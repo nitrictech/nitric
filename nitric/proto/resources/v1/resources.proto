@@ -22,14 +22,14 @@ service Resources {
 }
 
 message PolicyResource {
-  repeated Resource principals = 1;
+  repeated ResourceIdentifier principals = 1;
   repeated Action actions = 2;
-  repeated Resource resources = 3;
+  repeated ResourceIdentifier resources = 3;
 }
 
 enum ResourceType {
   Api = 0;
-  Function = 1;
+  ExecUnit = 1;
   Bucket = 2;
   Topic = 3;
   Schedule = 4;
@@ -37,19 +37,20 @@ enum ResourceType {
   Collection = 6;
   Policy = 7;
   Secret = 8;
-  Notification = 9;
+  BucketListener = 9;
   Websocket = 10;
   Http = 11;
   ApiSecurityDefinition = 12;
 }
 
-message Resource {
+// Unique identifier for a resource within a nitric application.
+message ResourceIdentifier {
   ResourceType type = 1;
   string name = 2;
 }
 
 message ResourceDeclareRequest {
-  Resource resource = 1;
+  ResourceIdentifier id = 1;
 
   oneof config {
     PolicyResource policy = 10;
@@ -128,14 +129,15 @@ message WebsocketResourceDetails {
 }
 
 message ResourceDetailsRequest {
-  Resource resource = 1;
+  ResourceIdentifier id = 1;
 }
 
+// TODO: remove from resources.proto - more to websockets and APIs contracts. Remove id, provider and service.
 message ResourceDetailsResponse {
-  // The identifier of the resource
+  // The provider specific identifier of the resource, e.g. ARN
   string id = 1;
 
-  // The provider this resource is deployed with (e.g. aws)
+  // The provider this resource is deployed with (e.g. AWS)
   string provider = 2;
 
   // The service this resource is deployed on (e.g. ApiGateway)

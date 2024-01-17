@@ -26,7 +26,7 @@ import (
 )
 
 type DeployServer struct {
-	deploy.UnimplementedDeployServer
+	deploy.UnimplementedDeploymentServer
 }
 
 // Embeds the runtime directly into the deploytime binary

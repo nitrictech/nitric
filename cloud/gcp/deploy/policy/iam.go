@@ -191,15 +191,15 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 	}
 
 	for _, principal := range args.Policy.Principals {
-		sa := args.Principals[v1.ResourceType_Function][principal.Name]
+		sa := args.Principals[v1.ResourceType_Function][principal.Id.Name]
 
 		for _, resource := range args.Policy.Resources {
-			memberName := fmt.Sprintf("%s-%s", principal.Name, resource.Name)
+			memberName := fmt.Sprintf("%s-%s", principal.Id.Name, resource.Id.Name)
 			memberId := pulumi.Sprintf("serviceAccount:%s", sa.Email)
 
-			switch resource.Type {
+			switch resource.Id.Type {
 			case v1.ResourceType_Bucket:
-				b := args.Resources.Buckets[resource.Name]
+				b := args.Resources.Buckets[resource.Id.Name]
 
 				_, err = gcpstorage.NewBucketIAMMember(ctx, memberName, &gcpstorage.BucketIAMMemberArgs{
 					Bucket: b.CloudStorage.Name,
@@ -227,7 +227,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 					return nil, err
 				}
 			case v1.ResourceType_Topic:
-				t := args.Resources.Topics[resource.Name]
+				t := args.Resources.Topics[resource.Id.Name]
 
 				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
 					Topic:  t.PubSub.Name,
@@ -239,7 +239,7 @@ func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pu
 				}
 
 			case v1.ResourceType_Secret:
-				s := args.Resources.Secrets[resource.Name]
+				s := args.Resources.Secrets[resource.Id.Name]
 
 				_, err = secretmanager.NewSecretIamMember(ctx, memberName, &secretmanager.SecretIamMemberArgs{
 					SecretId: s.Secret.SecretId,

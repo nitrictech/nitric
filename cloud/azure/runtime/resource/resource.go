@@ -106,11 +106,11 @@ func (p *AzureResourceService) Declare(ctx context.Context, req *resourcepb.Reso
 }
 
 func (p *AzureResourceService) Details(ctx context.Context, req *resourcepb.ResourceDetailsRequest) (*resourcepb.ResourceDetailsResponse, error) {
-	switch req.Resource.Type {
+	switch req.Id.Type {
 	case resourcepb.ResourceType_Api:
-		return p.getApiDetails(ctx, req.Resource.Name)
+		return p.getApiDetails(ctx, req.Id.Name)
 	default:
-		return nil, fmt.Errorf("unsupported resource type %s", req.Resource.Type)
+		return nil, fmt.Errorf("unsupported resource type %s", req.Id.Type)
 	}
 }
 

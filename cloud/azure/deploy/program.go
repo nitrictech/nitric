@@ -204,9 +204,9 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			}
 
 			for _, eu := range executionUnits {
-				repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", contEnv.Registry.LoginServer, details.Project, eu.Name, "azure")
+				repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", contEnv.Registry.LoginServer, details.Project, eu.Id.Name, "azure")
 
-				image, err := image.NewImage(ctx, eu.Name, &image.ImageArgs{
+				image, err := image.NewImage(ctx, eu.Id.Name, &image.ImageArgs{
 					SourceImage:   eu.GetExecutionUnit().GetImage().GetUri(),
 					RepositoryUrl: repositoryUrl,
 					Username:      contEnv.RegistryUser.Elem(),
@@ -236,10 +236,10 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 
 				if euConfig.ContainerApps != nil {
 					schedules := lo.Filter(schedules, func(item *deploy.Resource, idx int) bool {
-						return item.GetSchedule().Target.GetExecutionUnit() == eu.Name
+						return item.GetSchedule().Target.GetExecutionUnit() == eu.Id.Name
 					})
 
-					apps[eu.Name], err = exec.NewContainerApp(ctx, eu.Name, &exec.ContainerAppArgs{
+					apps[eu.Id.Name], err = exec.NewContainerApp(ctx, eu.Id.Name, &exec.ContainerAppArgs{
 						ResourceGroupName:             rg.Name,
 						Location:                      pulumi.String(details.Region),
 						SubscriptionID:                pulumi.String(clientConfig.SubscriptionId),
@@ -261,7 +261,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 						return status.Errorf(codes.Internal, "error occurred whilst creating container app %s", err.Error())
 					}
 				} else {
-					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Name)
+					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %s", eu.Id.Name)
 				}
 			}
 		}
@@ -269,10 +269,10 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		for _, s := range schedules {
 			cAppTarget, ok := apps[s.GetSchedule().Target.GetExecutionUnit()]
 			if !ok {
-				return fmt.Errorf("could not find target %s for schedule %s", s.GetSchedule().Target, s.Name)
+				return fmt.Errorf("could not find target %s for schedule %s", s.GetSchedule().Target, s.Id.Name)
 			}
 
-			_, err := schedule.NewDaprCronBindingSchedule(ctx, s.Name, &schedule.ScheduleArgs{
+			_, err := schedule.NewDaprCronBindingSchedule(ctx, s.Id.Name, &schedule.ScheduleArgs{
 				ResourceGroupName: rg.Name,
 				Target:            cAppTarget,
 				Environment:       contEnv.ManagedEnv,
@@ -285,7 +285,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 
 		// For each bucket create a new bucket
 		for _, b := range buckets {
-			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Name, &bucket.AzureStorageBucketArgs{
+			azBucket, err := bucket.NewAzureStorageBucket(ctx, b.Id.Name, &bucket.AzureStorageBucketArgs{
 				Account:       storageAccount,
 				ResourceGroup: rg,
 			})
@@ -299,7 +299,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 					return fmt.Errorf("invalid execution unit %s given for bucket subscription", notification.GetExecutionUnit())
 				}
 
-				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
+				notificationName := fmt.Sprintf("%s-%s-%s-notify", b.Id.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
 				_, err := bucket.NewAzureBucketNotification(ctx, notificationName, &bucket.AzureBucketNotificationArgs{
 					Bucket:         azBucket,
 					StorageAccount: storageAccount,
@@ -313,7 +313,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 		}
 
 		for _, t := range topics {
-			deployedTopics[t.Name], err = topic.NewAzureEventGridTopic(ctx, t.Name, &topic.AzureEventGridTopicArgs{
+			deployedTopics[t.Id.Name], err = topic.NewAzureEventGridTopic(ctx, t.Id.Name, &topic.AzureEventGridTopicArgs{
 				ResourceGroup: rg,
 				StackID:       stackID,
 			})
@@ -322,7 +322,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			}
 
 			for _, s := range t.GetTopic().Subscriptions {
-				err := deployedTopics[t.Name].AddSubscription(ctx, utils.ResourceName(ctx, fmt.Sprintf("%s-%s", t.Name, s.GetExecutionUnit()), utils.EventSubscriptionRT), &topic.AzureEventGridTopicSubscriptionArgs{
+				err := deployedTopics[t.Id.Name].AddSubscription(ctx, utils.ResourceName(ctx, fmt.Sprintf("%s-%s", t.Id.Name, s.GetExecutionUnit()), utils.EventSubscriptionRT), &topic.AzureEventGridTopicSubscriptionArgs{
 					Target: apps[s.GetExecutionUnit()],
 				})
 				if err != nil {
@@ -339,10 +339,10 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			doc := &openapi3.T{}
 			err := doc.UnmarshalJSON([]byte(a.GetApi().GetOpenapi()))
 			if err != nil {
-				return fmt.Errorf("invalid document suppled for api: %s", a.Name)
+				return fmt.Errorf("invalid document suppled for api: %s", a.Id.Name)
 			}
 
-			_, err = api.NewAzureApiManagement(ctx, a.Name, &api.AzureApiManagementArgs{
+			_, err = api.NewAzureApiManagement(ctx, a.Id.Name, &api.AzureApiManagementArgs{
 				ResourceGroupName: rg.Name,
 				OrgName:           pulumi.String(details.Org),
 				AdminEmail:        pulumi.String(details.AdminEmail),
@@ -363,7 +363,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Azu
 			case *deploy.Resource_Http:
 				app := apps[t.Http.Target.GetExecutionUnit()]
 
-				_, err = api.NewAzureHttpProxy(ctx, res.Name, &api.AzureHttpProxyArgs{
+				_, err = api.NewAzureHttpProxy(ctx, res.Id.Name, &api.AzureHttpProxyArgs{
 					ResourceGroupName: rg.Name,
 					OrgName:           pulumi.String(details.Org),
 					AdminEmail:        pulumi.String(details.AdminEmail),

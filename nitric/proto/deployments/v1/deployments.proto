@@ -14,18 +14,18 @@ import "nitric/proto/resources/v1/resources.proto";
 import "nitric/proto/storage/v1/storage.proto";
 
 // The Nitric Deloyment Service contract
-service Deploy {
+service Deployment {
     // Begins a new deployment
     // Server will stream updates back to the connected client
     // on the status of the deployment
-    rpc Up (DeployUpRequest) returns (stream DeployUpEvent);
+    rpc Up (DeploymentUpRequest) returns (stream DeploymentUpEvent);
     // Tears down an existing deployment
     // Server will stream updates back to the connected client
     // on the status of the teardown
-    rpc Down (DeployDownRequest) returns (stream DeployDownEvent);
+    rpc Down (DeploymentDownRequest) returns (stream DeploymentDownEvent);
 }
 
-message DeployUpRequest {
+message DeploymentUpRequest {
     // The spec to deploy
     Spec spec = 1;
 
@@ -38,40 +38,77 @@ message DeployUpRequest {
     bool interactive = 3;
 }
 
-message DeployUpEvent {
+message DeploymentUpEvent {
     oneof content {
-        DeployEventMessage message = 1;
-        DeployUpEventResult result = 2;
+        string message = 1;
+        ResourceUpdate update = 2;
+        UpResult result = 3;
     }
 }
 
-// Messages to provide status updates on the deployment
-message DeployEventMessage {
-    string message = 1;
+enum ResourceDeploymentAction {
+    // A new resource is being created
+    CREATE = 0;
+    // An existing resource is being updated
+    UPDATE = 1;
+    // An existing resource is being replaced
+    REPLACE = 2;
+    // No-op on the resource (it already exists and requires no changes)
+    SAME = 3;
+    // An existing resource is being deleted
+    DELETE = 4;
 }
 
-message UpResult {
-    oneof content {
-        // Simple formatted string output as result
-        string string_result = 1;
+enum ResourceDeploymentStatus {
+    // The action hasn't started, usually due to a dependency
+    PENDING = 0;
+    // The action in currently in-flight, e.g. waiting for cloud provder to provision a resource
+    IN_PROGRESS = 1;
+    // The action has been applied successfully
+    SUCCESS = 2;
+    // The action has failed to be (completely) applied
+    FAILED = 3;
+}
 
-        // Additional result content types could be
-        // Struct (as a machine readable JSON value)
-        // Tabular? (display table output results)
-    }
+/*
+
+hello : service : created
+| latest message goes here.
+|- Container Image : created
+|- ECR Repository : failed
+
+*/
+
+message ResourceUpdate {
+    // The resource being updated, if this is nil the update applies to the stack
+    nitric.proto.resources.v1.ResourceIdentifier id = 1;
+
+    // The type of update being applied
+    ResourceDeploymentAction action = 3;
+
+    // The current status of the action being applied
+    ResourceDeploymentStatus status = 4;
+
+    // (optional) A globally unique identifier (scoped to the id above), used when Nitric Resources map 1:many in a cloud provider.
+    // e.g. the container image repository for a service deployment.
+    // This can also be set when id is nil above and it will imply a non-nitric resource that is necessary to deploy for a stack to operate 
+    // e.g. an Azure StorageAccount
+    string sub_resource = 5;
+
+    // Additional information about the update
+    string message = 6;
 }
 
 // Terminal message indicating deployment success
-message DeployUpEventResult {
+message UpResult {
     // Indicate the success status
     bool success = 1;
 
-    // Output state as a struct, this can be provided as an output file
-    // or pretty printed for CLI output
-    UpResult result = 2;
+    // Simple formatted string output as result
+    string details = 2;
 }
 
-message DeployDownRequest {
+message DeploymentDownRequest {
     // A map of attributes related to the deploy request
     // this allows for adding project identifiers etc.
     google.protobuf.Struct attributes = 1;
@@ -81,15 +118,16 @@ message DeployDownRequest {
     bool interactive = 2;
 }
 
-message DeployDownEvent {
+message DeploymentDownEvent {
     oneof content {
-        DeployEventMessage message = 1;
-        DeployDownEventResult result = 2;
+        string message = 1;
+        DownResult result = 2;
+        ResourceUpdate update = 3;
     }
 }
 
 // Terminal message indicating deployment success
-message DeployDownEventResult {}
+message DownResult {}
 
 // An image source to be used for execution unit deployment
 message ImageSource {
@@ -128,10 +166,10 @@ message ExecutionUnit {
 }
 
 message Bucket {
-    repeated BucketNotificationTarget notifications = 1;
+    repeated BucketListener listeners = 1;
 }
 
-message BucketNotificationTarget {
+message BucketListener {
     nitric.proto.storage.v1.RegistrationRequest config = 1;
     oneof target {
         // The name of an execution unit to target
@@ -237,9 +275,7 @@ message ScheduleCron {
 }
 
 message Resource {
-    string name = 1;
-
-    nitric.proto.resources.v1.ResourceType type = 2;
+    nitric.proto.resources.v1.ResourceIdentifier id = 1;
 
     oneof config {
         ExecutionUnit execution_unit = 10;

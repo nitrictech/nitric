@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (d *DeployServer) Down(request *deploy.DeployDownRequest, stream deploy.Deploy_DownServer) error {
+func (d *DeployServer) Down(request *deploy.DeploymentDownRequest, stream deploy.Deployment_DownServer) error {
 	details, err := getStackDetailsFromAttributes(request.Attributes.AsMap())
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, err.Error())

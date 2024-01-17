@@ -109,8 +109,8 @@ func (g *GcpResourceService) Declare(ctx context.Context, req *v1.ResourceDeclar
 }
 
 func (g *GcpResourceService) Details(ctx context.Context, req *v1.ResourceDetailsRequest) (*v1.ResourceDetailsResponse, error) {
-	resourceName := req.Resource.Name
-	resourceType := req.Resource.Type
+	resourceName := req.Id.Name
+	resourceType := req.Id.Type
 
 	switch resourceType {
 	case v1.ResourceType_Api:

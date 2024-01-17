@@ -109,7 +109,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 		stackID := <-stackIdChan
 
 		collections := lo.Filter[*deploy.Resource](spec.Resources, func(res *deploy.Resource, _ int) bool {
-			return res.Type == v1.ResourceType_Collection
+			return res.Id.Type == v1.ResourceType_Collection
 		})
 
 		// If collections are required we need to instansiate a default database if one doesn't exist
@@ -209,7 +209,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 				imageUriSplit := strings.Split(eu.ExecutionUnit.GetImage().GetUri(), "/")
 				imageName := imageUriSplit[len(imageUriSplit)-1]
 
-				image, err := image.NewImage(ctx, res.Name, &image.ImageArgs{
+				image, err := image.NewImage(ctx, res.Id.Name, &image.ImageArgs{
 					SourceImage:   eu.ExecutionUnit.GetImage().GetUri(),
 					RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", details.ProjectId, imageName),
 					Username:      pulumi.String("oauth2accesstoken"),
@@ -228,8 +228,8 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 					return err
 				}
 
-				sa, err := iam.NewServiceAccount(ctx, res.Name+"-cloudrun-exec-acct", &iam.GcpIamServiceAccountArgs{
-					AccountId: res.Name + "-exec",
+				sa, err := iam.NewServiceAccount(ctx, res.Id.Name+"-cloudrun-exec-acct", &iam.GcpIamServiceAccountArgs{
+					AccountId: res.Id.Name + "-exec",
 				}, defaultResourceOptions)
 				if err != nil {
 					return err
@@ -240,7 +240,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 				}
 
 				if unitConfig.CloudRun != nil {
-					execs[res.Name], err = exec.NewCloudRunner(ctx, res.Name, &exec.CloudRunnerArgs{
+					execs[res.Id.Name], err = exec.NewCloudRunner(ctx, res.Id.Name, &exec.CloudRunnerArgs{
 						StackID:         stackID,
 						Location:        pulumi.String(details.Region),
 						ProjectID:       details.ProjectId,
@@ -259,7 +259,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 					return status.Errorf(codes.InvalidArgument, "unsupported target for function config %+v", unitConfig)
 				}
 
-				principalMap[v1.ResourceType_Function][res.Name] = sa.ServiceAccount
+				principalMap[v1.ResourceType_Function][res.Id.Name] = sa.ServiceAccount
 			}
 		}
 
@@ -268,7 +268,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 		for _, res := range spec.Resources {
 			switch b := res.Config.(type) {
 			case *deploy.Resource_Bucket:
-				buckets[res.Name], err = storage.NewCloudStorageBucket(ctx, res.Name, &storage.CloudStorageBucketArgs{
+				buckets[res.Id.Name], err = storage.NewCloudStorageBucket(ctx, res.Id.Name, &storage.CloudStorageBucketArgs{
 					StackID:  stackID,
 					Bucket:   b.Bucket,
 					Location: details.Region,
@@ -284,11 +284,11 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 						return fmt.Errorf("invalid execution unit %s given for topic subscription", notification.GetExecutionUnit())
 					}
 
-					notificationName := fmt.Sprintf("%s-%s-%s-notify", res.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
+					notificationName := fmt.Sprintf("%s-%s-%s-notify", res.Id.Name, strings.ToLower(notification.Config.BlobEventType.String()), notification.GetExecutionUnit())
 					_, err = storage.NewCloudStorageNotification(ctx, notificationName, &storage.CloudStorageNotificationArgs{
 						StackID:  stackID,
 						Location: details.Region,
-						Bucket:   buckets[res.Name],
+						Bucket:   buckets[res.Id.Name],
 						Config:   notification.Config,
 						Function: unit,
 					}, defaultResourceOptions)
@@ -310,10 +310,10 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 				doc := &openapi3.T{}
 				err := doc.UnmarshalJSON([]byte(t.Api.GetOpenapi()))
 				if err != nil {
-					return fmt.Errorf("invalid document suppled for api: %s", res.Name)
+					return fmt.Errorf("invalid document suppled for api: %s", res.Id.Name)
 				}
 
-				apis[res.Name], err = gateway.NewApiGateway(ctx, res.Name, &gateway.ApiGatewayArgs{
+				apis[res.Id.Name], err = gateway.NewApiGateway(ctx, res.Id.Name, &gateway.ApiGatewayArgs{
 					StackID:     stackID,
 					ProjectId:   details.ProjectId,
 					Functions:   execs,
@@ -331,7 +331,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 			case *deploy.Resource_Http:
 				fun := execs[t.Http.Target.GetExecutionUnit()]
 
-				httpProxies[res.Name], err = gateway.NewHttpProxy(ctx, res.Name, &gateway.HttpProxyArgs{
+				httpProxies[res.Id.Name], err = gateway.NewHttpProxy(ctx, res.Id.Name, &gateway.HttpProxyArgs{
 					StackID:   stackID,
 					ProjectId: details.ProjectId,
 					Function:  fun,
@@ -346,7 +346,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 		for _, res := range spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Secret:
-				secrets[res.Name], err = secret.NewSecretManagerSecret(ctx, res.Name, &secret.SecretManagerSecretArgs{
+				secrets[res.Id.Name], err = secret.NewSecretManagerSecret(ctx, res.Id.Name, &secret.SecretManagerSecretArgs{
 					StackID:   stackID,
 					StackName: details.Stack,
 					Secret:    t.Secret,
@@ -361,7 +361,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 		for _, res := range spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Topic:
-				topics[res.Name], err = events.NewPubSubTopic(ctx, res.Name, &events.PubSubTopicArgs{
+				topics[res.Id.Name], err = events.NewPubSubTopic(ctx, res.Id.Name, &events.PubSubTopicArgs{
 					Topic:     t.Topic,
 					Location:  details.Region,
 					ProjectId: details.ProjectId,
@@ -372,7 +372,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 				}
 
 				for _, sub := range t.Topic.Subscriptions {
-					subName := events.GetSubName(sub.GetExecutionUnit(), res.Name)
+					subName := events.GetSubName(sub.GetExecutionUnit(), res.Id.Name)
 
 					// Get the deployed execution unit
 					unit, ok := execs[sub.GetExecutionUnit()]
@@ -381,7 +381,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 					}
 
 					_, err = events.NewPubSubPushSubscription(ctx, subName, &events.PubSubSubscriptionArgs{
-						Topic:    topics[res.Name],
+						Topic:    topics[res.Id.Name],
 						Function: unit,
 					}, defaultResourceOptions)
 					if err != nil {
@@ -404,7 +404,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 				}
 
 				// Create schedule targeting a given lambda
-				job, err := schedule.NewCloudSchedulerJob(ctx, res.Name, &schedule.CloudSchedulerArgs{
+				job, err := schedule.NewCloudSchedulerJob(ctx, res.Id.Name, &schedule.CloudSchedulerArgs{
 					Exec:     execUnit,
 					Schedule: t.Schedule,
 					Tz:       config.ScheduleTimezone,
@@ -413,7 +413,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 					return err
 				}
 
-				schedules[res.Name] = job.Job
+				schedules[res.Id.Name] = job.Job
 			}
 		}
 
@@ -421,7 +421,7 @@ func NewUpProgram(ctx context.Context, details *StackDetails, config *config.Gcp
 		for _, res := range spec.Resources {
 			switch t := res.Config.(type) {
 			case *deploy.Resource_Policy:
-				_, err := policy.NewIAMPolicy(ctx, res.Name, &policy.PolicyArgs{
+				_, err := policy.NewIAMPolicy(ctx, res.Id.Name, &policy.PolicyArgs{
 					Policy: t.Policy,
 					Resources: &policy.StackResources{
 						Buckets: buckets,
