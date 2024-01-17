@@ -120,7 +120,8 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 				nitricResource = nitricParentNode.Data.nitricResource
 			}
 
-			subResource = urn
+			urnParts := strings.Split(urn, "$")
+			subResource = urnParts[len(urnParts)-1]
 		}
 
 		return &deploymentspb.ResourceUpdate{
@@ -152,7 +153,8 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 				nitricResource = nitricParentNode.Data.nitricResource
 			}
 
-			subResource = urn
+			urnParts := strings.Split(urn, "$")
+			subResource = urnParts[len(urnParts)-1]
 		}
 
 		return &deploymentspb.ResourceUpdate{
