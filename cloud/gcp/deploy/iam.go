@@ -71,5 +71,10 @@ func NewServiceAccount(ctx *pulumi.Context, name string, args *GcpIamServiceAcco
 		return nil, err
 	}
 
-	return res, nil
+	err = ctx.RegisterResourceOutputs(res, pulumi.Map{
+		"name":             pulumi.String(res.Name),
+		"serviceAccountId": res.ServiceAccount.AccountId,
+	})
+
+	return res, err
 }

@@ -52,7 +52,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	invalidChars := regexp.MustCompile(`[^a-z0-9\-]`)
-	name = invalidChars.ReplaceAllString(name, "-")
+	gcpServiceName := invalidChars.ReplaceAllString(name, "-")
 
 	if config.GetImage == nil || config.GetImage().Uri == "" {
 		return fmt.Errorf("gcp provider can only deploy execution with an image source")
@@ -76,7 +76,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 	imageUriSplit := strings.Split(config.GetImage().GetUri(), "/")
 	imageName := imageUriSplit[len(imageUriSplit)-1]
 
-	image, err := image.NewImage(ctx, name, &image.ImageArgs{
+	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.config.ProjectId, imageName),
 		Username:      pulumi.String("oauth2accesstoken"),
@@ -95,8 +95,8 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 		return err
 	}
 
-	sa, err := NewServiceAccount(ctx, name+"-cloudrun-exec-acct", &GcpIamServiceAccountArgs{
-		AccountId: name + "-exec",
+	sa, err := NewServiceAccount(ctx, gcpServiceName+"-cloudrun-exec-acct", &GcpIamServiceAccountArgs{
+		AccountId: gcpServiceName + "-exec",
 	}, opts...)
 	if err != nil {
 		return err
@@ -106,11 +106,11 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 
 	// generate a token for internal application events to authenticate themeselves
 	// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
-	token, err := random.NewRandomPassword(ctx, name+"-event-token", &random.RandomPasswordArgs{
+	token, err := random.NewRandomPassword(ctx, gcpServiceName+"-event-token", &random.RandomPasswordArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(32),
 		Keepers: pulumi.ToMap(map[string]interface{}{
-			"name": name,
+			"name": gcpServiceName,
 		}),
 	})
 	if err != nil {
@@ -119,7 +119,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 
 	res.EventToken = token.Result
 
-	_, err = projects.NewIAMMember(ctx, name+"-project-member", &projects.IAMMemberArgs{
+	_, err = projects.NewIAMMember(ctx, gcpServiceName+"-project-member", &projects.IAMMemberArgs{
 		Project: pulumi.String(p.config.ProjectId),
 		Member:  pulumi.Sprintf("serviceAccount:%s", sa.ServiceAccount.Email),
 		Role:    p.baseComputeRole.Name,
@@ -129,7 +129,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	// give the service account permission to use itself
-	_, err = serviceaccount.NewIAMMember(ctx, name+"-acct-member", &serviceaccount.IAMMemberArgs{
+	_, err = serviceaccount.NewIAMMember(ctx, gcpServiceName+"-acct-member", &serviceaccount.IAMMemberArgs{
 		ServiceAccountId: sa.ServiceAccount.Name,
 		Member:           pulumi.Sprintf("serviceAccount:%s", sa.ServiceAccount.Email),
 		Role:             pulumi.String("roles/iam.serviceAccountUser"),
@@ -184,7 +184,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 		})
 	}
 
-	res.Service, err = cloudrun.NewService(ctx, name, &cloudrun.ServiceArgs{
+	res.Service, err = cloudrun.NewService(ctx, gcpServiceName, &cloudrun.ServiceArgs{
 		AutogenerateRevisionName: pulumi.BoolPtr(true),
 		Location:                 pulumi.String(p.region),
 		Project:                  pulumi.String(p.config.ProjectId),
@@ -222,8 +222,8 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 		return errors.WithMessage(err, "cloud run "+name)
 	}
 
-	svcAcct, err := NewServiceAccount(ctx, name+"-cloudrun-invoker", &GcpIamServiceAccountArgs{
-		AccountId: name,
+	svcAcct, err := NewServiceAccount(ctx, gcpServiceName+"-cloudrun-invoker", &GcpIamServiceAccountArgs{
+		AccountId: gcpServiceName,
 	})
 	if err != nil {
 		return errors.WithMessage(err, "invokerAccount "+name)
@@ -231,7 +231,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 
 	res.Invoker = svcAcct.ServiceAccount
 
-	_, err = cloudrun.NewIamMember(ctx, name+"-invoker", &cloudrun.IamMemberArgs{
+	_, err = cloudrun.NewIamMember(ctx, gcpServiceName+"-invoker", &cloudrun.IamMemberArgs{
 		Member:   pulumi.Sprintf("serviceAccount:%s", res.Invoker.Email),
 		Role:     pulumi.String("roles/run.invoker"),
 		Service:  res.Service.Name,

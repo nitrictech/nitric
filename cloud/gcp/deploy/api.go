@@ -96,7 +96,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}
 
 	// Get service targets for IAM binding
-	services := map[string]*cloudrun.Service{}
+	services := p.cloudRunServices
 
 	for _, pi := range v2doc.Paths {
 		for _, m := range []string{http.MethodGet, http.MethodPatch, http.MethodDelete, http.MethodPost, http.MethodPut} {
@@ -106,14 +106,14 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 			name, ok := keepOperation(pi.GetOperation(m).Extensions)
 			if !ok {
-				continue
+				return fmt.Errorf("found operation missing nitric target property: %+v", pi.GetOperation(m).Extensions)
 			}
 
 			if _, ok := p.cloudRunServices[name]; !ok {
-				continue
+				return fmt.Errorf("unable to find target service %s in %+v", name, p.cloudRunServices)
 			}
 
-			services[name] = p.cloudRunServices[name].Service
+			services[name] = p.cloudRunServices[name]
 
 			break
 		}
@@ -123,14 +123,18 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 	// collect name arn pairs for output iteration
 	for k, v := range services {
-		nameUrlPairs = append(nameUrlPairs, pulumi.All(k, v.Statuses).ApplyT(func(args []interface{}) nameUrlPair {
-			name := args[0].(string)
-			allServiceStatus := args[1].([]cloudrun.ServiceStatus)
+		nameUrlPairs = append(nameUrlPairs, pulumi.All(k, v.Url).ApplyT(func(args []interface{}) (nameUrlPair, error) {
+			name, nameOk := args[0].(string)
+			url, urlOk := args[1].(string)
+
+			if !nameOk || !urlOk {
+				return nameUrlPair{}, fmt.Errorf("invalid data %T %v", args, args)
+			}
 
 			return nameUrlPair{
 				name:      name,
-				invokeUrl: *allServiceStatus[0].Url,
-			}
+				invokeUrl: url,
+			}, nil
 		}))
 	}
 
@@ -189,8 +193,8 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		iamName := fmt.Sprintf("%s-%s-binding", name, serv.Name)
 
 		_, err = cloudrun.NewIamMember(ctx, iamName, &cloudrun.IamMemberArgs{
-			Service:  serv.Name,
-			Location: serv.Location,
+			Service:  serv.Service.Name,
+			Location: serv.Service.Location,
 			Member:   pulumi.Sprintf("serviceAccount:%s", svcAcct.ServiceAccount.Email),
 			Role:     pulumi.String("roles/run.invoker"),
 		}, opts...)
