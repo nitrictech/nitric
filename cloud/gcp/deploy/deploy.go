@@ -160,6 +160,7 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context) error {
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(8),
+		Upper:   pulumi.Bool(false),
 		Keepers: pulumi.ToMap(map[string]interface{}{
 			"stack-name": ctx.Stack(),
 		}),
