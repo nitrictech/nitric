@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package exec
+package deploy
 
 import (
 	"bytes"
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
+	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -33,10 +34,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 type ContainerAppArgs struct {
@@ -54,7 +55,7 @@ type ContainerAppArgs struct {
 	ManagedIdentityID             pulumi.StringOutput
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
-	Config                        config.AzureContainerAppsConfig
+	Config                        AzureContainerAppsConfig
 	Schedules                     []*deploy.Resource
 }
 
@@ -133,23 +134,48 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 // See below URL for mapping
 // https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
 var RoleDefinitions = map[string]string{
-	// "KVSecretsOfficer": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
-	// "BlobDataContrib":     "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
-	// "QueueDataContrib":    "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
-	// "EventGridDataSender": "d5a91429-5739-47e2-a06b-3470a27159e7",
+	"KVSecretsOfficer":    "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
+	"BlobDataContrib":     "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+	"QueueDataContrib":    "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
+	"EventGridDataSender": "d5a91429-5739-47e2-a06b-3470a27159e7",
 	// Access for locating resources
-	// FIXME: Lock down permissions for this: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#tag-contributor
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, opts ...pulumi.ResourceOption) (*ContainerApp, error) {
+func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, execUnit *deploymentspb.ExecutionUnit) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+
 	res := &ContainerApp{
 		Name: name,
 	}
 
-	err := ctx.RegisterComponentResource("nitric:func:ContainerApp", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitricazure:ContainerApp", name, res, opts...)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", p.containerEnv.Registry.LoginServer, p.projectName, name, "azure")
+
+	image, err := image.NewImage(ctx, name, &image.ImageArgs{
+		SourceImage:   execUnit.GetImage().Uri,
+		RepositoryUrl: repositoryUrl,
+		Username:      p.containerEnv.RegistryUser.Elem(),
+		Password:      p.containerEnv.RegistryPass.Elem(),
+		Server:        p.containerEnv.Registry.LoginServer,
+		Runtime:       runtime,
+	}, opts...)
+	if err != nil {
+		return err
+	}
+
+	if execUnit.Type == "" {
+		execUnit.Type = "default"
+	}
+
+	execUnitConfig := p.config.Config[execUnit.Type]
+
+	if execUnitConfig.ContainerApps == nil {
+		return fmt.Errorf("invalid container app config type: %s", execUnit.Type)
 	}
 
 	token, err := random.NewRandomPassword(ctx, res.Name+"-event-token", &random.RandomPasswordArgs{
@@ -160,36 +186,35 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		}),
 	})
 	if err != nil {
-		return nil, errors.WithMessage(err, "service event token")
+		return errors.WithMessage(err, "service event token")
 	}
 
 	res.EventToken = token.Result
 
-	res.Sp, err = NewServicePrincipal(ctx, name, &ServicePrincipalArgs{}, pulumi.Parent(res))
+	// the service principal's named doesn't need to be unique from the container app, so we reuse it.
+	principal, err := NewServicePrincipal(ctx, name, &ServicePrincipalArgs{}, pulumi.Parent(res))
 	if err != nil {
-		return nil, err
+		return err
 	}
+	p.principals[resourcespb.ResourceType_ExecUnit][name] = principal
+	res.Sp = principal
 
-	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", args.SubscriptionID, args.ResourceGroupName)
+	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", p.clientConfig.SubscriptionId, p.resourceGroup.Name)
 
-	// Assign roles to the new service principal
+	// Assign roles to the new SP
 	for defName, id := range RoleDefinitions {
-		_ = ctx.Log.Info("Assignment "+utils.ResourceName(ctx, name+defName, utils.AssignmentRT)+" roleDef "+id, &pulumi.LogArgs{Ephemeral: true})
+		_ = ctx.Log.Info("Assignment "+ResourceName(ctx, name+defName, AssignmentRT)+" roleDef "+id, &pulumi.LogArgs{Ephemeral: true})
 
-		_, err = authorization.NewRoleAssignment(ctx, utils.ResourceName(ctx, name+defName, utils.AssignmentRT), &authorization.RoleAssignmentArgs{
+		_, err = authorization.NewRoleAssignment(ctx, ResourceName(ctx, name+defName, AssignmentRT), &authorization.RoleAssignmentArgs{
 			PrincipalId:      res.Sp.ServicePrincipalId,
 			PrincipalType:    pulumi.StringPtr("ServicePrincipal"),
-			RoleDefinitionId: pulumi.Sprintf("/subscriptions/%s/providers/Microsoft.Authorization/roleDefinitions/%s", args.SubscriptionID, id),
+			RoleDefinitionId: pulumi.Sprintf("/subscriptions/%s/providers/Microsoft.Authorization/roleDefinitions/%s", p.clientConfig.SubscriptionId, id),
 			Scope:            scope,
 		}, pulumi.Parent(res))
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
 
-	// if this instance contains a schedule set the minimum instances to 1
-	if len(args.Schedules) > 0 {
-		args.Config.MinReplicas = lo.Max([]int{args.Config.MinReplicas, 1})
 	}
 
 	env := app.EnvironmentVarArray{
@@ -203,19 +228,19 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String(resource.NITRIC_STACK_ID),
-			Value: pulumi.String(args.StackID),
+			Value: pulumi.String(p.stackId),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
-			Value: pulumi.String(fmt.Sprint(args.ExecutionUnit.Workers)),
+			Value: pulumi.String(fmt.Sprint(execUnit.Workers)),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_SUBSCRIPTION_ID"),
-			Value: args.SubscriptionID,
+			Value: pulumi.String(p.clientConfig.SubscriptionId),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_RESOURCE_GROUP"),
-			Value: args.ResourceGroupName,
+			Value: p.resourceGroup.Name,
 		},
 		app.EnvironmentVarArgs{
 			Name:      pulumi.String("AZURE_CLIENT_ID"),
@@ -233,33 +258,47 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			Name:  pulumi.String("TOLERATE_MISSING_SERVICES"),
 			Value: pulumi.String("true"),
 		},
-		app.EnvironmentVarArgs{
-			Name:  pulumi.String("MONGODB_CONNECTION_STRING"),
-			Value: args.MongoDatabaseConnectionString,
-		},
-		app.EnvironmentVarArgs{
-			Name:  pulumi.String("MONGODB_DATABASE"),
-			Value: args.MongoDatabaseName,
-		},
+		// app.EnvironmentVarArgs{
+		// 	Name:  pulumi.String("MONGODB_CONNECTION_STRING"),
+		// 	Value: args.MongoDatabaseConnectionString,
+		// },
+		// app.EnvironmentVarArgs{
+		// 	Name:  pulumi.String("MONGODB_DATABASE"),
+		// 	Value: args.MongoDatabaseName,
+		// },
 	}
 
-	for k, v := range args.ExecutionUnit.Env {
+	for k, v := range execUnit.Env {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
 			Value: pulumi.String(v),
 		})
 	}
 
-	if len(args.Env) > 0 {
-		env = append(env, args.Env...)
+	// if len(args.Env) > 0 {
+	// 	env = append(env, args.Env...)
+	// }
+
+	//	If this instance contains a schedule set the minimum instances to 1
+	// schedules rely on the Dapr Runtime to trigger the function, without a running instance the Dapr Runtime will not execute, so the schedule won't trigger.
+	_, schedulesFound := lo.Find(p.resources, func(item *deploy.Resource) bool {
+		if item.GetSchedule() == nil {
+			return false
+		}
+		return item.GetSchedule().Target.GetExecutionUnit() == name
+	})
+
+	minReplicas := execUnitConfig.ContainerApps.MinReplicas
+	if schedulesFound {
+		minReplicas = lo.Max([]int{minReplicas, 1})
 	}
 
-	appName := utils.ResourceName(ctx, name, utils.ContainerAppRT)
+	appName := ResourceName(ctx, name, ContainerAppRT)
 
 	res.App, err = app.NewContainerApp(ctx, appName, &app.ContainerAppArgs{
-		ResourceGroupName:    args.ResourceGroupName,
-		Location:             args.Location,
-		ManagedEnvironmentId: args.ManagedEnv.ID(),
+		ResourceGroupName:    p.resourceGroup.Name,
+		Location:             p.resourceGroup.Location,
+		ManagedEnvironmentId: p.containerEnv.ManagedEnv.ID(),
 		Configuration: app.ConfigurationArgs{
 			ActiveRevisionsMode: pulumi.String("Single"),
 			Ingress: app.IngressArgs{
@@ -268,8 +307,8 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			},
 			Registries: app.RegistryCredentialsArray{
 				app.RegistryCredentialsArgs{
-					Server:            args.Registry.LoginServer,
-					Username:          args.RegistryUser,
+					Server:            p.containerEnv.Registry.LoginServer,
+					Username:          p.containerEnv.RegistryUser,
 					PasswordSecretRef: pulumi.String("pwd"),
 				},
 			},
@@ -282,7 +321,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 			Secrets: app.SecretArray{
 				app.SecretArgs{
 					Name:  pulumi.String("pwd"),
-					Value: args.RegistryPass,
+					Value: p.containerEnv.RegistryPass,
 				},
 				app.SecretArgs{
 					Name:  pulumi.String("client-id"),
@@ -298,19 +337,19 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.ExecutionUnit)),
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.ExecutionUnit)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
-				MaxReplicas: pulumi.Int(args.Config.MaxReplicas),
-				MinReplicas: pulumi.Int(args.Config.MinReplicas),
+				MaxReplicas: pulumi.Int(execUnitConfig.ContainerApps.MaxReplicas),
+				MinReplicas: pulumi.Int(minReplicas),
 			},
 			Containers: app.ContainerArray{
 				app.ContainerArgs{
 					Name:  pulumi.String("myapp"),
-					Image: args.ImageUri,
+					Image: image.URI(),
 					Resources: app.ContainerResourcesArgs{
-						Cpu:    pulumi.Float64(args.Config.Cpu),
-						Memory: pulumi.Sprintf("%.2fGi", args.Config.Memory),
+						Cpu:    pulumi.Float64(execUnitConfig.ContainerApps.Cpu),
+						Memory: pulumi.Sprintf("%.2fGi", execUnitConfig.ContainerApps.Memory),
 					},
 					Env: env,
 				},
@@ -318,7 +357,7 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 		},
 	}, pulumi.Parent(res))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	authName := fmt.Sprintf("%s-auth", appName)
@@ -338,21 +377,23 @@ func NewContainerApp(ctx *pulumi.Context, name string, args *ContainerAppArgs, o
 					OpenIdIssuer:            pulumi.Sprintf("https://sts.windows.net/%s/v2.0", res.Sp.TenantID),
 				},
 				Validation: &app.AzureActiveDirectoryValidationArgs{
-					AllowedAudiences: pulumi.StringArray{args.ManagedIdentityID},
+					AllowedAudiences: pulumi.StringArray{p.containerEnv.ManagedUser.ClientId},
 				},
 			},
 		},
 		Platform: &app.AuthPlatformArgs{
 			Enabled: pulumi.Bool(true),
 		},
-		ResourceGroupName: args.ResourceGroupName,
+		ResourceGroupName: p.resourceGroup.Name,
 	}, pulumi.Parent(res.App))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
+	err = ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":         pulumi.StringPtr(res.Name),
 		"containerApp": res.App,
 	})
+
+	return err
 }

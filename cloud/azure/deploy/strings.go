@@ -14,21 +14,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package deploy
 
 import (
-	"log"
-
-	"github.com/nitrictech/nitric/cloud/azure/deploy"
-	commondeploy "github.com/nitrictech/nitric/cloud/common/deploy"
+	"bytes"
 )
 
-// Start the deployment server
-func main() {
-	deploySrv, err := deploy.NewServer()
-	if err != nil {
-		log.Fatalf("error creating deployment server %v", err)
+func StringTrunc(s string, max int) string {
+	if len(s) <= max {
+		return s
 	}
 
-	commondeploy.StartServer(deploySrv)
+	return s[:max]
+}
+
+func JoinCamelCase(ss []string) string {
+	res := ss[0]
+
+	for i := 1; i < len(ss); i++ {
+		word := ss[i]
+		res += string(bytes.ToUpper([]byte{word[0]}))
+		res += word[1:]
+	}
+
+	return res
 }

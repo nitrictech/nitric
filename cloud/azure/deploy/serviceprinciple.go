@@ -14,10 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package exec
+package deploy
 
 import (
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/pulumi/pulumi-azuread/sdk/v5/go/azuread"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -49,7 +48,7 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 	// create an application per service principal
 	appRoleId := pulumi.String("4962773b-9cdb-44cf-a8bf-237846a00ab7")
 
-	app, err := azuread.NewApplication(ctx, utils.ResourceName(ctx, name, utils.ADApplicationRT), &azuread.ApplicationArgs{
+	app, err := azuread.NewApplication(ctx, ResourceName(ctx, name, ADApplicationRT), &azuread.ApplicationArgs{
 		DisplayName: pulumi.String(name + "App"),
 		Owners: pulumi.StringArray{
 			pulumi.String(current.ObjectId),
@@ -74,7 +73,7 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 
 	res.ClientID = app.ApplicationId
 
-	sp, err := azuread.NewServicePrincipal(ctx, utils.ResourceName(ctx, name, utils.ADServicePrincipalRT), &azuread.ServicePrincipalArgs{
+	sp, err := azuread.NewServicePrincipal(ctx, ResourceName(ctx, name, ADServicePrincipalRT), &azuread.ServicePrincipalArgs{
 		ApplicationId: app.ApplicationId,
 		Owners: pulumi.StringArray{
 			pulumi.String(current.ObjectId),
@@ -96,7 +95,7 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 		return nil, err
 	}
 
-	spPwd, err := azuread.NewServicePrincipalPassword(ctx, utils.ResourceName(ctx, name, utils.ADServicePrincipalPasswordRT), &azuread.ServicePrincipalPasswordArgs{
+	spPwd, err := azuread.NewServicePrincipalPassword(ctx, ResourceName(ctx, name, ADServicePrincipalPasswordRT), &azuread.ServicePrincipalPasswordArgs{
 		ServicePrincipalId: sp.ID().ToStringOutput(),
 	}, pulumi.Parent(res))
 	if err != nil {

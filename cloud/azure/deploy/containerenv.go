@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package exec
+package deploy
 
 import (
 	"fmt"
@@ -27,19 +27,18 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/operationalinsights"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
 
 type ContainerEnvArgs struct {
-	ResourceGroupName pulumi.StringInput
-	Location          pulumi.StringInput
-	EnvMap            map[string]string
-	StackID           string
+	// ResourceGroupName pulumi.StringInput
+	// Location          pulumi.StringInput
+	EnvMap map[string]string
+	// StackID           string
 
-	KVaultName                  pulumi.StringInput
-	StorageAccountBlobEndpoint  pulumi.StringInput
-	StorageAccountQueueEndpoint pulumi.StringInput
+	// KVaultName                  pulumi.StringInput
+	// StorageAccountBlobEndpoint  pulumi.StringInput
+	// StorageAccountQueueEndpoint pulumi.StringInput
 }
 
 type ContainerEnv struct {
@@ -54,19 +53,19 @@ type ContainerEnv struct {
 	ManagedUser  *managedidentity.UserAssignedIdentity
 }
 
-func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, opts ...pulumi.ResourceOption) (*ContainerEnv, error) {
+func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name string, envMap map[string]string, opts ...pulumi.ResourceOption) (*ContainerEnv, error) {
 	res := &ContainerEnv{
 		Name: name,
 	}
 
-	err := ctx.RegisterComponentResource("nitric:func:ContainerEnv", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitricazure:ContainerEnv", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	res.ManagedUser, err = managedidentity.NewUserAssignedIdentity(ctx, "managed-identity", &managedidentity.UserAssignedIdentityArgs{
-		Location:          args.Location,
-		ResourceGroupName: args.ResourceGroupName,
+		Location:          p.resourceGroup.Location,
+		ResourceGroupName: p.resourceGroup.Name,
 		ResourceName:      pulumi.String("managed-identity"),
 	}, pulumi.Parent(res))
 	if err != nil {
@@ -75,24 +74,17 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 
 	env := app.EnvironmentVarArray{}
 
-	if args.StorageAccountBlobEndpoint != nil {
+	if p.storageAccount != nil {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT"),
-			Value: args.StorageAccountBlobEndpoint,
+			Value: p.storageAccount.PrimaryEndpoints.Blob(),
 		})
 	}
 
-	if args.StorageAccountQueueEndpoint != nil {
-		env = append(env, app.EnvironmentVarArgs{
-			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT"),
-			Value: args.StorageAccountQueueEndpoint,
-		})
-	}
-
-	if args.KVaultName != nil {
+	if p.keyVault != nil {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("KVAULT_NAME"),
-			Value: args.KVaultName,
+			Value: p.keyVault.Name,
 		})
 	}
 
@@ -101,7 +93,7 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 		Value: pulumi.String(fmt.Sprint(3000)),
 	})
 
-	for k, v := range args.EnvMap {
+	for k, v := range envMap {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
 			Value: pulumi.String(v),
@@ -110,9 +102,9 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 
 	res.Env = env
 
-	res.Registry, err = containerregistry.NewRegistry(ctx, utils.ResourceName(ctx, name, utils.RegistryRT), &containerregistry.RegistryArgs{
-		ResourceGroupName: args.ResourceGroupName,
-		Location:          args.Location,
+	res.Registry, err = containerregistry.NewRegistry(ctx, ResourceName(ctx, name, RegistryRT), &containerregistry.RegistryArgs{
+		ResourceGroupName: p.resourceGroup.Name,
+		Location:          p.resourceGroup.Location,
 		AdminUserEnabled:  pulumi.BoolPtr(true),
 		Sku: containerregistry.SkuArgs{
 			Name: pulumi.String("Basic"),
@@ -122,9 +114,9 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 		return nil, err
 	}
 
-	aw, err := operationalinsights.NewWorkspace(ctx, utils.ResourceName(ctx, name, utils.AnalyticsWorkspaceRT), &operationalinsights.WorkspaceArgs{
-		Location:          args.Location,
-		ResourceGroupName: args.ResourceGroupName,
+	aw, err := operationalinsights.NewWorkspace(ctx, ResourceName(ctx, name, AnalyticsWorkspaceRT), &operationalinsights.WorkspaceArgs{
+		Location:          p.resourceGroup.Location,
+		ResourceGroupName: p.resourceGroup.Name,
 		Sku: &operationalinsights.WorkspaceSkuArgs{
 			Name: pulumi.String("PerGB2018"),
 		},
@@ -135,13 +127,13 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 	}
 
 	sharedKeys := operationalinsights.GetSharedKeysOutput(ctx, operationalinsights.GetSharedKeysOutputArgs{
-		ResourceGroupName: args.ResourceGroupName,
+		ResourceGroupName: p.resourceGroup.Name,
 		WorkspaceName:     aw.Name,
 	})
 
-	res.ManagedEnv, err = app.NewManagedEnvironment(ctx, utils.ResourceName(ctx, name, utils.KubeRT), &app.ManagedEnvironmentArgs{
-		Location:          args.Location,
-		ResourceGroupName: args.ResourceGroupName,
+	res.ManagedEnv, err = app.NewManagedEnvironment(ctx, ResourceName(ctx, name, KubeRT), &app.ManagedEnvironmentArgs{
+		Location:          p.resourceGroup.Location,
+		ResourceGroupName: p.resourceGroup.Name,
 		AppLogsConfiguration: app.AppLogsConfigurationArgs{
 			Destination: pulumi.String("log-analytics"),
 			LogAnalyticsConfiguration: app.LogAnalyticsConfigurationArgs{
@@ -149,13 +141,13 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, ctx.Stack()+"Kube", resources.ExecutionUnit)),
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, ctx.Stack()+"Kube", resources.ExecutionUnit)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}
 
-	creds := pulumi.All(args.ResourceGroupName, res.Registry.Name).ApplyT(func(args []interface{}) (*containerregistry.ListRegistryCredentialsResult, error) {
+	creds := pulumi.All(p.resourceGroup.Name, res.Registry.Name).ApplyT(func(args []interface{}) (*containerregistry.ListRegistryCredentialsResult, error) {
 		rgName := args[0].(string)
 		regName := args[1].(string)
 
@@ -180,5 +172,7 @@ func NewContainerEnv(ctx *pulumi.Context, name string, args *ContainerEnvArgs, o
 		return cred.Passwords[0].Value, nil
 	}).(pulumi.StringPtrOutput)
 
-	return res, nil
+	err = ctx.RegisterResourceOutputs(res, pulumi.Map{})
+
+	return res, err
 }

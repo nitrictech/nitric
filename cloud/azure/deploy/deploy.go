@@ -21,8 +21,6 @@ import (
 
 	_ "embed"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	commonresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
@@ -66,9 +64,9 @@ type NitricAzurePulumiProvider struct {
 
 	buckets map[string]*storage.BlobContainer
 
-	principals map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal
+	principals map[resourcespb.ResourceType]map[string]*ServicePrincipal
 
-	containerApps map[string]*exec.ContainerApp
+	containerApps map[string]*ContainerApp
 	topics        map[string]*eventgrid.Topic
 
 	roles *Roles
@@ -162,7 +160,7 @@ var baseComputePermissions []string = []string{
 func createKeyVault(ctx *pulumi.Context, group *resources.ResourceGroup, tenantId string, tags map[string]string) (*keyvault.Vault, error) {
 	// Create a stack level keyvault if secrets are enabled
 	// At the moment secrets have no config level setting
-	vaultName := utils.ResourceName(ctx, "", utils.KeyVaultRT)
+	vaultName := ResourceName(ctx, "", KeyVaultRT)
 
 	keyVault, err := keyvault.NewVault(ctx, vaultName, &keyvault.VaultArgs{
 		Location:          group.Location,
@@ -186,7 +184,7 @@ func createKeyVault(ctx *pulumi.Context, group *resources.ResourceGroup, tenantI
 }
 
 func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, tags map[string]string) (*storage.StorageAccount, error) {
-	accName := utils.ResourceName(ctx, "", utils.StorageAccountRT)
+	accName := ResourceName(ctx, "", StorageAccountRT)
 	storageAccount, err := storage.NewStorageAccount(ctx, accName, &storage.StorageAccountArgs{
 		AccessTier:        storage.AccessTierHot,
 		ResourceGroupName: group.Name,
@@ -242,7 +240,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
-	a.resourceGroup, err = resources.NewResourceGroup(ctx, utils.ResourceName(ctx, "", utils.ResourceGroupRT), &resources.ResourceGroupArgs{
+	a.resourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
 		Location: pulumi.String(a.region),
 		Tags:     pulumi.ToStringMap(tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack)),
 	})
@@ -296,8 +294,8 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	return &NitricAzurePulumiProvider{
 		buckets:       make(map[string]*storage.BlobContainer),
-		containerApps: map[string]*exec.ContainerApp{},
+		containerApps: map[string]*ContainerApp{},
 		topics:        map[string]*eventgrid.Topic{},
-		principals:    map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal{},
+		principals:    map[resourcespb.ResourceType]map[string]*ServicePrincipal{},
 	}
 }

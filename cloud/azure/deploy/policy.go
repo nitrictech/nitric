@@ -23,12 +23,8 @@ import (
 
 	iam "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
-	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/bucket"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
@@ -40,30 +36,7 @@ type Policy struct {
 	RolePolicies []*iam.RolePolicy
 }
 
-type StackResources struct {
-	SubscriptionId pulumi.StringInput
-	Topics         map[string]*topic.AzureEventGridTopic
-	Buckets        map[string]*bucket.AzureStorageBucket
-	// Collections    map[string]*documentdb.MongoDBResourceMongoDBCollection
-	// The vault that all secrets are stored in
-	KeyVault *keyvault.Vault
-}
-
-type PrincipalMap = map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal
-
-type PolicyArgs struct {
-	ResourceGroupName pulumi.StringInput
-
-	Policy *deploymentspb.Policy
-	// Nitric Action to AzureAD role mappings
-	// AvailableRoles map[v1.Action]*authorization.RoleDefinition
-	// Nitric roles
-	Roles *Roles
-	// Resources in the stack that must be protected
-	Resources *StackResources
-	// Resources in the stack that may act as actors
-	Principals PrincipalMap
-}
+type PrincipalMap = map[resourcespb.ResourceType]map[string]*ServicePrincipal
 
 func actionsToAzureRoleDefinitions(roles map[resourcespb.Action]*authorization.RoleDefinition, actions []resourcespb.Action) map[string]*authorization.RoleDefinition {
 	azureRoles := map[string]*authorization.RoleDefinition{}

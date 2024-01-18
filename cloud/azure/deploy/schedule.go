@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
@@ -28,7 +27,7 @@ import (
 
 type ScheduleArgs struct {
 	ResourceGroupName pulumi.StringInput
-	Target            *exec.ContainerApp
+	Target            *ContainerApp
 	Environment       *app.ManagedEnvironment
 	Schedule          *deploymentspb.Schedule
 }

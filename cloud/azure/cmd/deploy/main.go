@@ -17,7 +17,7 @@
 package main
 
 import (
-	deploy "github.com/nitrictech/nitric/cloud/azure/deploysdk"
+	"github.com/nitrictech/nitric/cloud/azure/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 )
 

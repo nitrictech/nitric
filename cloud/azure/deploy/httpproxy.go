@@ -14,18 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package api
+package deploy
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
 
@@ -34,7 +33,7 @@ type AzureHttpProxyArgs struct {
 	ResourceGroupName pulumi.StringInput
 	OrgName           pulumi.StringInput
 	AdminEmail        pulumi.StringInput
-	App               *exec.ContainerApp
+	App               *ContainerApp
 	ManagedIdentity   *managedidentity.UserAssignedIdentity
 }
 
@@ -66,24 +65,20 @@ const proxyTemplate = `<policies>
 	</on-error>
 </policies>`
 
-func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArgs, opts ...pulumi.ResourceOption) (*AzureHttpProxy, error) {
-	res := &AzureHttpProxy{Name: name}
+func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resource, name string, http *deploymentspb.Http) error {
+	var err error
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	err := ctx.RegisterComponentResource("nitric:api:AzureApiManagement", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	managedIdentities := args.ManagedIdentity.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
+	managedIdentities := p.containerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
 		return apimanagement.UserIdentityPropertiesMap{
 			id: nil,
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementProxyRT), &apimanagement.ApiManagementServiceArgs{
-		ResourceGroupName: args.ResourceGroupName,
-		PublisherEmail:    args.AdminEmail,
-		PublisherName:     args.OrgName,
+	mgmtService, err := apimanagement.NewApiManagementService(ctx, ResourceName(ctx, name, ApiManagementProxyRT), &apimanagement.ApiManagementServiceArgs{
+		ResourceGroupName: p.resourceGroup.Name,
+		PublisherEmail:    pulumi.String(p.config.AdminEmail),
+		PublisherName:     pulumi.String(p.config.Org),
 		Sku: apimanagement.ApiManagementServiceSkuPropertiesArgs{
 			Name:     pulumi.String("Consumption"),
 			Capacity: pulumi.Int(0),
@@ -92,60 +87,64 @@ func NewAzureHttpProxy(ctx *pulumi.Context, name string, args *AzureHttpProxyArg
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.HttpProxy)),
-	})
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.HttpProxy)),
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	spec := newApiSpec(name)
 
 	b, err := spec.MarshalJSON()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	apiId := pulumi.String(name)
 
-	res.Api, err = apimanagement.NewApi(ctx, utils.ResourceName(ctx, name, utils.ApiHttpProxyRT), &apimanagement.ApiArgs{
+	proxyApi, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiHttpProxyRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.Sprintf("%s-api", name),
 		Protocols:            apimanagement.ProtocolArray{"https"},
 		ApiId:                apiId,
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),
-		ResourceGroupName:    args.ResourceGroupName,
+		ResourceGroupName:    p.resourceGroup.Name,
 		SubscriptionRequired: pulumi.Bool(false),
-		ServiceName:          res.Service.Name,
+		ServiceName:          mgmtService.Name,
 		Value:                pulumi.String(string(b)),
-	})
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	for _, p := range spec.Paths {
-		for _, op := range p.Operations() {
-			_, err = apimanagement.NewApiOperationPolicy(ctx, utils.ResourceName(ctx, name+"-"+op.OperationID, utils.ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
-				ResourceGroupName: args.ResourceGroupName,
+	targetContainerApp := p.containerApps[http.GetTarget().GetExecutionUnit()]
+
+	for _, path := range spec.Paths {
+		for _, op := range path.Operations() {
+			_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
+				ResourceGroupName: p.resourceGroup.Name,
 				ApiId:             apiId,
-				ServiceName:       res.Service.Name,
+				ServiceName:       mgmtService.Name,
 				OperationId:       pulumi.String(op.OperationID),
 				PolicyId:          pulumi.String("policy"),
 				Format:            pulumi.String("xml"),
-				Value:             pulumi.Sprintf(proxyTemplate, args.App.App.LatestRevisionFqdn, args.ManagedIdentity.ClientId, args.ManagedIdentity.ClientId),
-			}, pulumi.Parent(res.Api), pulumi.DependsOn([]pulumi.Resource{res.Api}))
+				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, p.containerEnv.ManagedUser.ClientId, p.containerEnv.ManagedUser.ClientId),
+			}, pulumi.Parent(proxyApi), pulumi.DependsOn([]pulumi.Resource{proxyApi}))
 			if err != nil {
-				return nil, errors.WithMessage(err, "NewApiOperationPolicy proxy")
+				return errors.WithMessage(err, "NewApiOperationPolicy proxy")
 			}
 		}
 	}
 
-	ctx.Export("api:"+name, res.Service.GatewayUrl)
+	/*
+		res, ctx.RegisterResourceOutputs(res, pulumi.Map{
+			"name":    pulumi.String(name),
+			"service": res.Service,
+			"api":     res.Api,
+		})
+	*/
 
-	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
-		"name":    pulumi.String(name),
-		"service": res.Service,
-		"api":     res.Api,
-	})
+	return nil
 }
 
 func newApiSpec(name string) *openapi3.T {

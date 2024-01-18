@@ -3,7 +3,6 @@ package deploy
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
@@ -41,7 +40,7 @@ func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Conte
 		return err
 	}
 
-	_, err = pulumiEventgrid.NewEventSubscription(ctx, utils.ResourceName(ctx, bucketName+target.Name, utils.EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
+	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, bucketName+target.Name, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
 		Scope: p.storageAccount.ID(),
 		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
 			Url: pulumi.Sprintf("%s/x-nitric-notification/bucket/%s?token=%s", hostUrl, bucketName, target.EventToken),
@@ -70,7 +69,7 @@ func (p *NitricAzurePulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Re
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	p.buckets[name], err = storage.NewBlobContainer(ctx, utils.ResourceName(ctx, name, utils.StorageContainerRT), &storage.BlobContainerArgs{
+	p.buckets[name], err = storage.NewBlobContainer(ctx, ResourceName(ctx, name, StorageContainerRT), &storage.BlobContainerArgs{
 		ResourceGroupName: p.resourceGroup.Name,
 		AccountName:       p.storageAccount.Name,
 	}, opts...)

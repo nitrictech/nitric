@@ -17,7 +17,6 @@ package deploy
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -61,7 +60,7 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 
 	subName := topicName + "-" + config.GetExecutionUnit()
 
-	_, err = pulumiEventgrid.NewEventSubscription(ctx, utils.ResourceName(ctx, subName, utils.EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
+	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
 		Scope: topic.ID(),
 		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
 			Url: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", hostUrl, topicName, target.EventToken),
@@ -83,7 +82,7 @@ func (p *NitricAzurePulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Res
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	p.topics[name], err = eventgrid.NewTopic(ctx, utils.ResourceName(ctx, name, utils.EventGridRT), &eventgrid.TopicArgs{
+	p.topics[name], err = eventgrid.NewTopic(ctx, ResourceName(ctx, name, EventGridRT), &eventgrid.TopicArgs{
 		ResourceGroupName: p.resourceGroup.Name,
 		Location:          p.resourceGroup.Location,
 		Tags:              pulumi.ToStringMap(tags.Tags(p.stackId, name, nitricresources.Topic)),

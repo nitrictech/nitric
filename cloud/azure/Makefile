@@ -8,21 +8,21 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploysdk/runtime-azure
+	@touch deploy/runtime-azure
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploysdk/runtime-azure
+	@rm deploy/runtime-azure
 
 runtimebin:
 	@echo Building Azure Runtime Server
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-azure -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-azure deploysdk/runtime-azure
+	@cp bin/runtime-azure deploy/runtime-azure
 
 deploybin: predeploybin
 	@echo Building Azure Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploysdk/runtime-azure
+	@rm deploy/runtime-azure
 
 .PHONY: install
 install: deploybin

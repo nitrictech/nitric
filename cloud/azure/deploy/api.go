@@ -1,56 +1,20 @@
-// Copyright Nitric Pty Ltd.
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package api
+package deploy
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
-	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 )
-
-type AzureApiManagementArgs struct {
-	StackID           string
-	ResourceGroupName pulumi.StringInput
-	OrgName           pulumi.StringInput
-	AdminEmail        pulumi.StringInput
-	OpenAPISpec       *openapi3.T
-	Apps              map[string]*exec.ContainerApp
-	ManagedIdentity   *managedidentity.UserAssignedIdentity
-}
-
-type AzureApiManagement struct {
-	pulumi.ResourceState
-
-	Name    string
-	Api     *apimanagement.Api
-	Service *apimanagement.ApiManagementService
-}
 
 const policyTemplate = `<policies><inbound><base /><set-backend-service base-url="https://%s" />%s<authentication-managed-identity resource="%s" client-id="%s" /><set-header name="X-Forwarded-Authorization" exists-action="override"><value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>`
 
@@ -94,24 +58,25 @@ func setSecurityRequirements(secReq *openapi3.SecurityRequirements, secDef map[s
 	return jwtTemplates
 }
 
-func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManagementArgs, opts ...pulumi.ResourceOption) (*AzureApiManagement, error) {
-	res := &AzureApiManagement{Name: name}
+func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	err := ctx.RegisterComponentResource("nitric:api:AzureApiManagement", name, res, opts...)
+	openapiDoc := &openapi3.T{}
+	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid document supplied for api: %s", name)
 	}
 
-	managedIdentities := args.ManagedIdentity.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
+	managedIdentities := p.containerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
 		return apimanagement.UserIdentityPropertiesMap{
 			id: nil,
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	res.Service, err = apimanagement.NewApiManagementService(ctx, utils.ResourceName(ctx, name, utils.ApiManagementServiceRT), &apimanagement.ApiManagementServiceArgs{
-		ResourceGroupName: args.ResourceGroupName,
-		PublisherEmail:    args.AdminEmail,
-		PublisherName:     args.OrgName,
+	mgmtService, err := apimanagement.NewApiManagementService(ctx, ResourceName(ctx, name, ApiManagementServiceRT), &apimanagement.ApiManagementServiceArgs{
+		ResourceGroupName: p.resourceGroup.Name,
+		PublisherEmail:    pulumi.String(p.config.AdminEmail),
+		PublisherName:     pulumi.String(p.config.Org),
 		Sku: apimanagement.ApiManagementServiceSkuPropertiesArgs{
 			Name:     pulumi.String("Consumption"),
 			Capacity: pulumi.Int(0),
@@ -120,57 +85,57 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.API)),
-	})
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.API)),
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	displayName := name + "-api"
-	if args.OpenAPISpec.Info != nil && args.OpenAPISpec.Info.Title != "" {
-		displayName = args.OpenAPISpec.Info.Title
+	if openapiDoc.Info != nil && openapiDoc.Info.Title != "" {
+		displayName = openapiDoc.Info.Title
 	}
 
-	b, err := marshalOpenAPISpec(args.OpenAPISpec)
+	b, err := marshalOpenAPISpec(openapiDoc)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	res.Api, err = apimanagement.NewApi(ctx, utils.ResourceName(ctx, name, utils.ApiRT), &apimanagement.ApiArgs{
+	api, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.String(displayName),
 		Protocols:            apimanagement.ProtocolArray{"https"},
 		ApiId:                pulumi.String(name),
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),
-		ResourceGroupName:    args.ResourceGroupName,
+		ResourceGroupName:    p.resourceGroup.Name,
 		SubscriptionRequired: pulumi.Bool(false),
-		ServiceName:          res.Service.Name,
+		ServiceName:          mgmtService.Name,
 		// XXX: Do we need to stringify this?
 		// Not need to transform the original spec,
 		// the mapping occurs as part of the operation policies below
 		Value: pulumi.String(string(b)),
-	})
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	secDef := map[string]securityDefinition{}
 
-	if args.OpenAPISpec.Components.SecuritySchemes != nil {
+	if openapiDoc.Components.SecuritySchemes != nil {
 		// Start translating to AWS centric security schemes
-		for apiName, scheme := range args.OpenAPISpec.Components.SecuritySchemes {
+		for apiName, scheme := range openapiDoc.Components.SecuritySchemes {
 			// implement OpenIDConnect security
 			if scheme.Value.Type == "openIdConnect" {
 				// We need to extract audience values as well
 				// lets use an extension to store these with the document
 				audiences, err := commonutils.GetAudiencesFromExtension(scheme.Value.Extensions)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 				oidConf, err := commonutils.GetOpenIdConnectConfig(scheme.Value.OpenIdConnectUrl)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 				secDef[apiName] = securityDefinition{
@@ -181,14 +146,14 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 		}
 	}
 
-	for _, pathItem := range args.OpenAPISpec.Paths {
+	for _, pathItem := range openapiDoc.Paths {
 		for _, op := range pathItem.Operations() {
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
 				var jwtTemplates []string
 
 				// Apply top level security
-				if args.OpenAPISpec.Security != nil {
-					jwtTemplates = setSecurityRequirements(&args.OpenAPISpec.Security, secDef)
+				if openapiDoc.Security != nil {
+					jwtTemplates = setSecurityRequirements(&openapiDoc.Security, secDef)
 				}
 
 				// Override with path security
@@ -209,7 +174,7 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 					continue
 				}
 
-				app, ok := args.Apps[target]
+				app, ok := p.containerApps[target]
 				if !ok {
 					continue
 				}
@@ -217,33 +182,27 @@ func NewAzureApiManagement(ctx *pulumi.Context, name string, args *AzureApiManag
 				// this.api.id returns a URL path, which is the incorrect value here.
 				//   We instead need the value passed to apiId in the api creation above.
 				// However, we want to maintain the pulumi dependency, so we need to keep the 'apply' call.
-				apiId := res.Api.ID().ToStringOutput().ApplyT(func(id string) string {
+				apiId := api.ID().ToStringOutput().ApplyT(func(id string) string {
 					return name
 				}).(pulumi.StringOutput)
 
 				_ = ctx.Log.Info("op policy "+op.OperationID+" , name "+name, &pulumi.LogArgs{Ephemeral: true})
 
-				_, err = apimanagement.NewApiOperationPolicy(ctx, utils.ResourceName(ctx, name+"-"+op.OperationID, utils.ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
-					ResourceGroupName: args.ResourceGroupName,
+				_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
+					ResourceGroupName: p.resourceGroup.Name,
 					ApiId:             apiId,
-					ServiceName:       res.Service.Name,
+					ServiceName:       mgmtService.Name,
 					OperationId:       pulumi.String(op.OperationID),
 					PolicyId:          pulumi.String("policy"),
 					Format:            pulumi.String("xml"),
-					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, args.ManagedIdentity.ClientId, args.ManagedIdentity.ClientId),
-				}, pulumi.Parent(res.Api))
+					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, p.containerEnv.ManagedUser.ClientId, p.containerEnv.ManagedUser.ClientId),
+				}, pulumi.Parent(api))
 				if err != nil {
-					return nil, errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
+					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
 				}
 			}
 		}
 	}
 
-	ctx.Export("api:"+name, res.Service.GatewayUrl)
-
-	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
-		"name":    pulumi.String(name),
-		"service": res.Service,
-		"api":     res.Api,
-	})
+	return nil
 }
