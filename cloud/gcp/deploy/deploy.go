@@ -24,6 +24,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
@@ -123,10 +124,6 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 	return nil
 }
 
-func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
-	return nil
-}
-
 var baseComputePermissions []string = []string{
 	"storage.buckets.list",
 	"storage.buckets.get",
@@ -155,7 +152,7 @@ var baseComputePermissions []string = []string{
 	"monitoring.timeSeries.create",
 }
 
-func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context) error {
+func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error {
 	// make our random stackId
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
@@ -261,6 +258,10 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
+	return nil
 }
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {

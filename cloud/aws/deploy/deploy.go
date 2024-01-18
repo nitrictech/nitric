@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
@@ -132,7 +133,7 @@ func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
 	return nil
 }
 
-func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context) error {
+func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error {
 	// make our random stackId
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
