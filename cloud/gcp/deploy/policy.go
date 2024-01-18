@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package policy
+package deploy
 
 import (
 	"fmt"
@@ -23,6 +23,8 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
 	events "github.com/nitrictech/nitric/cloud/gcp/deploy/topic"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
@@ -175,85 +177,95 @@ func actionsToGcpActions(actions []v1.Action) []string {
 	return gcpActions
 }
 
-func NewIAMPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pulumi.ResourceOption) (*Policy, error) {
-	res := &Policy{Name: name, RolePolicies: make([]*projects.IAMMember, 0)}
-
-	err := ctx.RegisterComponentResource("nitric:func:GCPPolicy", name, res, opts...)
-	if err != nil {
-		return nil, err
+func (a *NitricGcpPulumiProvider) serviceAccountForPrincipal(resource *deploymentspb.Resource) (*serviceaccount.Account, error) {
+	switch resource.Id.Type {
+	case resourcespb.ResourceType_ExecUnit:
+		if f, ok := a.cloudRunServices[resource.Id.Name]; ok {
+			return f.ServiceAccount, nil
+		}
+	default:
+		return nil, fmt.Errorf("could not find role for principal: %+v", resource)
 	}
 
-	actions := actionsToGcpActions(args.Policy.Actions)
+	return nil, fmt.Errorf("could not find role for principal: %+v", resource)
+}
 
-	rolePolicy, err := NewCustomRole(ctx, name, actions, pulumi.Parent(res))
+func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error {
+	actions := actionsToGcpActions(config.Actions)
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+
+	rolePolicy, err := NewCustomRole(ctx, name, actions, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	for _, principal := range args.Policy.Principals {
-		sa := args.Principals[v1.ResourceType_Function][principal.Id.Name]
+	for _, principal := range config.Principals {
+		sa, err := p.serviceAccountForPrincipal(principal)
+		if err != nil {
+			return err
+		}
 
-		for _, resource := range args.Policy.Resources {
+		for _, resource := range config.Resources {
 			memberName := fmt.Sprintf("%s-%s", principal.Id.Name, resource.Id.Name)
 			memberId := pulumi.Sprintf("serviceAccount:%s", sa.Email)
 
 			switch resource.Id.Type {
 			case v1.ResourceType_Bucket:
-				b := args.Resources.Buckets[resource.Id.Name]
+				b := p.buckets[resource.Id.Name]
 
 				_, err = gcpstorage.NewBucketIAMMember(ctx, memberName, &gcpstorage.BucketIAMMemberArgs{
-					Bucket: b.CloudStorage.Name,
+					Bucket: b.Name,
 					Member: memberId,
 					Role:   rolePolicy.Name,
-				}, pulumi.Parent(res))
+				}, opts...)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 			case v1.ResourceType_Collection:
 				collActions := filterCollectionActions(actions)
 
-				collRole, err := NewCustomRole(ctx, memberName+"-role", collActions, pulumi.Parent(res))
+				collRole, err := NewCustomRole(ctx, memberName+"-role", collActions, opts...)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 				_, err = projects.NewIAMMember(ctx, memberName, &projects.IAMMemberArgs{
 					Member:  memberId,
-					Project: args.ProjectID,
+					Project: pulumi.String(p.config.ProjectId),
 					Role:    collRole.Name,
-				}, pulumi.Parent(res))
+				}, opts...)
 				if err != nil {
-					return nil, err
+					return err
 				}
 			case v1.ResourceType_Topic:
-				t := args.Resources.Topics[resource.Id.Name]
+				t := p.topics[resource.Id.Name]
 
 				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
-					Topic:  t.PubSub.Name,
+					Topic:  t.Name,
 					Member: memberId,
 					Role:   rolePolicy.Name,
-				}, pulumi.Parent(res))
+				}, opts...)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 			case v1.ResourceType_Secret:
-				s := args.Resources.Secrets[resource.Id.Name]
+				s := p.secrets[resource.Id.Name]
 
 				_, err = secretmanager.NewSecretIamMember(ctx, memberName, &secretmanager.SecretIamMemberArgs{
-					SecretId: s.Secret.SecretId,
+					SecretId: s.SecretId,
 					Member:   memberId,
 					Role:     rolePolicy.Name,
-				}, pulumi.Parent(res))
+				}, opts...)
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
 	}
 
-	return res, nil
+	return nil
 }
 
 func NewCustomRole(ctx *pulumi.Context, name string, actions []string, opts ...pulumi.ResourceOption) (*projects.IAMCustomRole, error) {

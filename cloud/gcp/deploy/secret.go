@@ -14,12 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secret
+package deploy
 
 import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -31,35 +31,22 @@ type SecretManagerSecret struct {
 	Secret *secretmanager.Secret
 }
 
-type SecretManagerSecretArgs struct {
-	Location  string
-	StackID   string
-	StackName string
-	Secret    *v1.Secret
-}
+func (p *NitricGcpPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Secret) error {
+	var err error
+	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-func NewSecretManagerSecret(ctx *pulumi.Context, name string, args *SecretManagerSecretArgs, opts ...pulumi.ResourceOption) (*SecretManagerSecret, error) {
-	res := &SecretManagerSecret{
-		Name: name,
-	}
+	secId := pulumi.Sprintf("%s-%s", p.stackName, name)
 
-	err := ctx.RegisterComponentResource("nitric:secret:GCPSecretManager", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	secId := pulumi.Sprintf("%s-%s", args.StackName, name)
-
-	res.Secret, err = secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
+	p.secrets[name], err = secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
 		Replication: secretmanager.SecretReplicationArgs{
 			Automatic: pulumi.Bool(true),
 		},
 		SecretId: secId,
-		Labels:   pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Secret)),
-	})
+		Labels:   pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Secret)),
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return res, nil
+	return nil
 }

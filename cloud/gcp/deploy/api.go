@@ -114,7 +114,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 				continue
 			}
 
-			services[name] = p.cloudRunServices[name]
+			services[name] = p.cloudRunServices[name].Service
 
 			break
 		}
@@ -170,7 +170,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 	resourceLabels := common.Tags(p.stackId, name, resources.API)
 
-	p.apis[name], err = apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
+	api, err := apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),
 		Labels: pulumi.ToStringMap(resourceLabels),
 	}, opts...)
@@ -203,7 +203,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	// Deploy the config
 	config, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
 		Project:     pulumi.String(p.config.ProjectId),
-		Api:         p.apis[name].ApiId,
+		Api:         api.ApiId,
 		DisplayName: pulumi.String(name + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{
 			apigateway.ApiConfigOpenapiDocumentArgs{
@@ -229,7 +229,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	p.apiGateways[name], err = apigateway.NewGateway(ctx, name+"-gateway", &apigateway.GatewayArgs{
 		DisplayName: pulumi.String(name + "-gateway"),
 		GatewayId:   pulumi.String(name + "-gateway"),
-		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, p.apis[name].ApiId, config.ApiConfigId),
+		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, config.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
 	}, opts...)
 	if err != nil {

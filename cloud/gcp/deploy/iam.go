@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iam
+package deploy
 
 import (
 	"regexp"
@@ -42,7 +42,7 @@ func NewServiceAccount(ctx *pulumi.Context, name string, args *GcpIamServiceAcco
 		Name: name,
 	}
 
-	err := ctx.RegisterComponentResource("nitric:iam:GCPServiceAccount", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitricgcp:iam:GCPServiceAccount", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}

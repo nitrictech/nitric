@@ -1,8 +1,10 @@
-// Copyright 2021 Nitric Technologies Pty Ltd.
+// Copyright Nitric Pty Ltd.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// You may obtain a copy of the License at:
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -12,8 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package deploy
+package main
 
-const (
-	pulumiGcpVersion = "6.67.0"
+import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	deploy "github.com/nitrictech/nitric/cloud/gcp/deploysdk"
 )
+
+// Start the deployment server
+func main() {
+	gcpStack := deploy.NewNitricGcpProvider()
+
+	providerServer := provider.NewPulumiProviderServer(gcpStack)
+
+	providerServer.Start()
+}

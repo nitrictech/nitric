@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package events
+package deploy
 
 import (
 	"fmt"
@@ -23,6 +23,7 @@ import (
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
@@ -81,39 +82,42 @@ func GetSubName(executionName string, topicName string) string {
 	return fmt.Sprintf("%s-%s-sub", executionName, topicName)
 }
 
-func NewPubSubPushSubscription(ctx *pulumi.Context, name string, args *PubSubSubscriptionArgs, opts ...pulumi.ResourceOption) (*PubSubSubscription, error) {
-	res := &PubSubSubscription{
-		Name: name,
-	}
+func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error {
+	var err error
+	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	err := ctx.RegisterComponentResource("nitric:topic:GCPPubSubTopicSubscription", name, res, opts...)
+	p.topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
+		Labels: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Topic)),
+	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	s, err := pubsub.NewSubscription(ctx, name, &pubsub.SubscriptionArgs{
-		Topic:              args.Topic.PubSub.Name, // The GCP topic name
-		AckDeadlineSeconds: pulumi.Int(300),
-		RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
-			MinimumBackoff: pulumi.String("15s"),
-			MaximumBackoff: pulumi.String("600s"),
-		},
-		PushConfig: pubsub.SubscriptionPushConfigArgs{
-			OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
-				ServiceAccountEmail: args.Function.Invoker.Email,
+	for _, sub := range config.Subscriptions {
+		targetService := p.cloudRunServices[sub.GetExecutionUnit()]
+
+		_, err := pubsub.NewSubscription(ctx, GetSubName(targetService.Name, name), &pubsub.SubscriptionArgs{
+			Topic:              p.topics[name].Name, // The GCP topic name
+			AckDeadlineSeconds: pulumi.Int(300),
+			RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
+				MinimumBackoff: pulumi.String("15s"),
+				MaximumBackoff: pulumi.String("600s"),
 			},
-			// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
-			PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", args.Function.Url, args.Topic.Name, args.Function.EventToken),
-		},
-		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
-			Ttl: pulumi.String(""),
-		},
-	}, append(opts, pulumi.Parent(args.Function))...)
-	if err != nil {
-		return nil, errors.WithMessage(err, "subscription "+name+"-sub")
+			PushConfig: pubsub.SubscriptionPushConfigArgs{
+				OidcToken: pubsub.SubscriptionPushConfigOidcTokenArgs{
+					ServiceAccountEmail: targetService.Invoker.Email,
+				},
+				// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
+				PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", targetService.Url, p.topics[name].Name, targetService.EventToken),
+			},
+			ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
+				Ttl: pulumi.String(""),
+			},
+		}, opts...)
+		if err != nil {
+			return errors.WithMessage(err, "subscription "+name+"-sub")
+		}
 	}
 
-	res.Subscription = s
-
-	return res, nil
+	return nil
 }

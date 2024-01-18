@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package schedule
+package deploy
 
 import (
 	"encoding/base64"
@@ -48,30 +48,23 @@ type ScheduleEvent struct {
 	Payload     map[string]interface{} `yaml:"payload,omitempty"`
 }
 
-func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudSchedulerArgs, opts ...pulumi.ResourceOption) (*CloudScheduler, error) {
-	res := &CloudScheduler{
-		Name: name,
-	}
-
-	err := ctx.RegisterComponentResource("nitric:schedule:GCPCloudSchedulerSchedule", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
+func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Schedule) error {
+	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
 	cronExpression := ""
 
-	switch t := args.Schedule.Cadence.(type) {
+	switch t := config.Cadence.(type) {
 	case *deploymentspb.Schedule_Cron:
 		cronExpression = t.Cron.Expression
 	case *deploymentspb.Schedule_Every:
 		parts := strings.Split(strings.TrimSpace(t.Every.Rate), " ")
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid schedule rate: %s", t.Every.Rate)
+			return fmt.Errorf("invalid schedule rate: %s", t.Every.Rate)
 		}
 
 		initialRate, err := strconv.Atoi(parts[0])
 		if err != nil {
-			return nil, fmt.Errorf("invalid schedule rate, must start with an integer")
+			return fmt.Errorf("invalid schedule rate, must start with an integer")
 		}
 
 		// Google App Engine cron syntax only support hours, minutes and seconds. Convert days to hours
@@ -83,32 +76,31 @@ func NewCloudSchedulerJob(ctx *pulumi.Context, name string, args *CloudScheduler
 
 		cronExpression = fmt.Sprintf("every %s %s", parts[0], parts[1])
 	default:
-		return nil, fmt.Errorf("unknown schedule type, must be one of: cron, every")
+		return fmt.Errorf("unknown schedule type, must be one of: cron, every")
 	}
 
 	eventJSON, err := json.Marshal(map[string]interface{}{
 		"schedule": name,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	targetService := p.cloudRunServices[config.Target.GetExecutionUnit()]
 
 	payload := base64.StdEncoding.EncodeToString(eventJSON)
 
-	res.Job, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
-		TimeZone: pulumi.String(args.Tz),
+	_, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
+		TimeZone: pulumi.String(p.config.ScheduleTimezone),
 		HttpTarget: &cloudscheduler.JobHttpTargetArgs{
-			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s?token=%s", args.Exec.Url, name, args.Exec.EventToken),
+			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s?token=%s", targetService.Url, name, targetService.EventToken),
 			OidcToken: &cloudscheduler.JobHttpTargetOidcTokenArgs{
-				ServiceAccountEmail: args.Exec.Invoker.Email,
+				ServiceAccountEmail: targetService.Invoker.Email,
 			},
 			Body: pulumi.String(payload),
 		},
 		Schedule: pulumi.String(cronExpression),
-	}, append(opts, pulumi.Parent(res))...)
-	if err != nil {
-		return nil, err
-	}
+	}, opts...)
 
-	return res, err
+	return err
 }

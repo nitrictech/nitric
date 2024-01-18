@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package deploy
 
 import (
 	"github.com/imdario/mergo"
@@ -38,6 +38,7 @@ type GcpCloudRunConfig struct {
 type GcpConfig struct {
 	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
+	ProjectId                             string `mapstructure:"gcp-project-id"`
 	Refresh                               bool
 }
 
