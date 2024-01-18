@@ -12,7 +12,7 @@ type NitricPulumiProvider interface {
 	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
 	Init(attributes map[string]interface{}) error
 	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
-	Pre(*pulumi.Context, resources []*deploymentspb.Resource) error
+	Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error
 	// Config - Return the Pulumi ConfigMap for the provider
 	Config() (auto.ConfigMap, error)
 
