@@ -66,19 +66,12 @@ type NitricAzurePulumiProvider struct {
 
 	buckets map[string]*storage.BlobContainer
 
-	// delayQueue      *cloudtasks.Queue
-	// authToken       *oauth2.Token
-	// baseComputeRole *projects.IAMCustomRole
+	principals map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal
 
 	containerApps map[string]*exec.ContainerApp
 	topics        map[string]*eventgrid.Topic
-	// httpProxies      map[string]*apigateway.Gateway
-	// apiGateways      map[string]*apigateway.Gateway
-	// cloudRunServices map[string]*NitricCloudRunService
-	// buckets          map[string]*storage.Bucket
-	// topics           map[string]*pubsub.Topic
-	// secrets          map[string]*secretmanager.Secret
 
+	roles *Roles
 	provider.NitricDefaultOrder
 }
 
@@ -257,6 +250,12 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return errors.WithMessage(err, "resource group create")
 	}
 
+	// TODO: Filter down to required roles only
+	a.roles, err = CreateRoles(ctx, a.stackId, a.clientConfig.SubscriptionId, a.resourceGroup.Name)
+	if err != nil {
+		return err
+	}
+
 	// envMap := map[string]string{}
 	// contEnvArgs := &exec.ContainerEnvArgs{
 	// 	ResourceGroupName: rg.Name,
@@ -296,6 +295,9 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 
 func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	return &NitricAzurePulumiProvider{
-		buckets: make(map[string]*storage.BlobContainer),
+		buckets:       make(map[string]*storage.BlobContainer),
+		containerApps: map[string]*exec.ContainerApp{},
+		topics:        map[string]*eventgrid.Topic{},
+		principals:    map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal{},
 	}
 }

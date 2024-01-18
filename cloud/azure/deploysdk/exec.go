@@ -35,11 +35,12 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/nitrictech/nitric/cloud/azure/deploy/config"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/policy"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 type ContainerAppArgs struct {
@@ -66,7 +67,7 @@ type ContainerApp struct {
 
 	Name       string
 	hostUrl    *pulumi.StringOutput
-	Sp         *policy.ServicePrincipal
+	Sp         *exec.ServicePrincipal
 	App        *app.ContainerApp
 	EventToken pulumi.StringOutput
 }
@@ -194,10 +195,12 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 	res.EventToken = token.Result
 
 	// the service principal's named doesn't need to be unique from the container app, so we reuse it.
-	res.Sp, err = policy.NewServicePrincipal(ctx, name, &policy.ServicePrincipalArgs{}, pulumi.Parent(res))
+	principal, err := exec.NewServicePrincipal(ctx, name, &exec.ServicePrincipalArgs{}, pulumi.Parent(res))
 	if err != nil {
 		return err
 	}
+	p.principals[resourcespb.ResourceType_ExecUnit][name] = principal
+	res.Sp = principal
 
 	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", p.clientConfig.SubscriptionId, p.resourceGroup.Name)
 

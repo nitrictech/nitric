@@ -23,15 +23,11 @@ import (
 
 	iam "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
-	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/bucket"
 	"github.com/nitrictech/nitric/cloud/azure/deploy/exec"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/queue"
-	"github.com/nitrictech/nitric/cloud/azure/deploy/topic"
 	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 type Policy struct {
@@ -41,38 +37,38 @@ type Policy struct {
 	RolePolicies []*iam.RolePolicy
 }
 
-type StackResources struct {
-	SubscriptionId pulumi.StringInput
-	Topics         map[string]*topic.AzureEventGridTopic
-	Queues         map[string]*queue.AzureStorageQueue
-	Buckets        map[string]*bucket.AzureStorageBucket
-	// Collections    map[string]*documentdb.MongoDBResourceMongoDBCollection
-	// The vault that all secrets are stored in
-	KeyVault *keyvault.Vault
-}
+// type StackResources struct {
+// 	SubscriptionId pulumi.StringInput
+// 	Topics         map[string]*topic.AzureEventGridTopic
+// 	Queues         map[string]*queue.AzureStorageQueue
+// 	Buckets        map[string]*bucket.AzureStorageBucket
+// 	// Collections    map[string]*documentdb.MongoDBResourceMongoDBCollection
+// 	// The vault that all secrets are stored in
+// 	KeyVault *keyvault.Vault
+// }
 
-type PrincipalMap = map[v1.ResourceType]map[string]*exec.ServicePrincipal
+type PrincipalMap = map[resourcespb.ResourceType]map[string]*exec.ServicePrincipal
 
-type PolicyArgs struct {
-	ResourceGroupName pulumi.StringInput
+// type PolicyArgs struct {
+// 	ResourceGroupName pulumi.StringInput
 
-	Policy *deploy.Policy
-	// Nitric Action to AzureAD role mappings
-	// AvailableRoles map[v1.Action]*authorization.RoleDefinition
-	// Nitric roles
-	Roles *Roles
-	// Resources in the stack that must be protected
-	Resources *StackResources
-	// Resources in the stack that may act as actors
-	Principals PrincipalMap
-}
+// 	Policy *deploy.Policy
+// 	// Nitric Action to AzureAD role mappings
+// 	// AvailableRoles map[v1.Action]*authorization.RoleDefinition
+// 	// Nitric roles
+// 	Roles *Roles
+// 	// Resources in the stack that must be protected
+// 	Resources *StackResources
+// 	// Resources in the stack that may act as actors
+// 	Principals PrincipalMap
+// }
 
-func actionsToAzureRoleDefinitions(roles map[v1.Action]*authorization.RoleDefinition, actions []v1.Action) map[string]*authorization.RoleDefinition {
+func actionsToAzureRoleDefinitions(roles map[resourcespb.Action]*authorization.RoleDefinition, actions []resourcespb.Action) map[string]*authorization.RoleDefinition {
 	azureRoles := map[string]*authorization.RoleDefinition{}
 
 	for _, a := range actions {
 		if role, ok := roles[a]; ok {
-			azureRoles[v1.Action_name[int32(a)]] = role
+			azureRoles[resourcespb.Action_name[int32(a)]] = role
 		}
 	}
 
@@ -87,7 +83,7 @@ type resourceScope struct {
 // "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}"
 func scopeFromResource(resource *deploy.Resource, deployedResources *StackResources, resourceGroupName pulumi.StringInput) (*resourceScope, error) {
 	switch resource.Type {
-	case v1.ResourceType_Topic:
+	case resourcespb.ResourceType_Topic:
 		topic, ok := deployedResources.Topics[resource.Name]
 		if !ok {
 			return nil, fmt.Errorf("topic %s not found", resource.Name)
@@ -101,22 +97,7 @@ func scopeFromResource(resource *deploy.Resource, deployedResources *StackResour
 				topic.Topic.Name,
 			),
 		}, nil
-	case v1.ResourceType_Queue:
-		queue, ok := deployedResources.Queues[resource.Name]
-		if !ok {
-			return nil, fmt.Errorf("queue %s not found", resource.Name)
-		}
-
-		return &resourceScope{
-			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
-				deployedResources.SubscriptionId,
-				queue.ResourceGroup.Name,
-				queue.Account.Name,
-				queue.Queue.Name,
-			),
-		}, nil
-	case v1.ResourceType_Bucket:
+	case resourcespb.ResourceType_Bucket:
 		bucket, ok := deployedResources.Buckets[resource.Name]
 		if !ok {
 			return nil, fmt.Errorf("bucket %s not found", resource.Name)
@@ -137,7 +118,7 @@ func scopeFromResource(resource *deploy.Resource, deployedResources *StackResour
 				bucket.Container.Name,
 			),
 		}, nil
-	case v1.ResourceType_Secret:
+	case resourcespb.ResourceType_Secret:
 		if deployedResources.KeyVault == nil {
 			return nil, fmt.Errorf("secret %s not found", resource.Name)
 		}
@@ -176,7 +157,7 @@ func NewAzureADPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts .
 	}
 
 	for _, resource := range args.Policy.Resources {
-		if resource.Type == v1.ResourceType_Collection {
+		if resource.Type == resourcespb.ResourceType_Collection {
 			continue
 		}
 
