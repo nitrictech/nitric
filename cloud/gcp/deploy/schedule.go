@@ -23,25 +23,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudscheduler"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
-
-type CloudScheduler struct {
-	pulumi.ResourceState
-
-	Name string
-	Job  *cloudscheduler.Job
-}
-
-type CloudSchedulerArgs struct {
-	Location string
-	Exec     *exec.CloudRunner
-	Schedule *deploymentspb.Schedule
-	Tz       string
-}
 
 type ScheduleEvent struct {
 	PayloadType string                 `yaml:"payloadType"`

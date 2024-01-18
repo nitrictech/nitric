@@ -13,7 +13,7 @@ runtimebin:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-gcp deploysdk/runtime-gcp
+	@cp bin/runtime-gcp deploy/runtime-gcp
 
 sec:
 	@touch deploy/runtime-gcp
@@ -25,7 +25,7 @@ sec:
 deploybin: predeploybin
 	@echo Building GCP Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploysdk/runtime-gcp
+	@rm deploy/runtime-gcp
 
 .PHONY: install
 install: deploybin

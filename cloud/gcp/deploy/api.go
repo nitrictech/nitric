@@ -35,7 +35,6 @@ import (
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 )
 
 type nameUrlPair struct {
@@ -178,7 +177,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return errors.WithMessage(err, "api "+name)
 	}
 
-	svcAcct, err := iam.NewServiceAccount(ctx, name+"-api-invoker", &iam.GcpIamServiceAccountArgs{
+	svcAcct, err := NewServiceAccount(ctx, name+"-api-invoker", &GcpIamServiceAccountArgs{
 		AccountId: name + "-api",
 	}, opts...)
 	if err != nil {

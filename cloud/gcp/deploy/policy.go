@@ -19,10 +19,6 @@ package deploy
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/secret"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/storage"
-	events "github.com/nitrictech/nitric/cloud/gcp/deploy/topic"
-	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -40,24 +36,6 @@ type Policy struct {
 
 	Name         string
 	RolePolicies []*projects.IAMMember
-}
-
-type StackResources struct {
-	Topics  map[string]*events.PubSubTopic
-	Buckets map[string]*storage.CloudStorageBucket
-	Secrets map[string]*secret.SecretManagerSecret
-}
-
-type PrincipalMap = map[v1.ResourceType]map[string]*serviceaccount.Account
-
-type PolicyArgs struct {
-	Policy *deploy.Policy
-	// Resources in the stack that must be protected
-	Resources *StackResources
-	// Resources in the stack that may act as actors
-	Principals PrincipalMap
-
-	ProjectID pulumi.StringInput
 }
 
 var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{

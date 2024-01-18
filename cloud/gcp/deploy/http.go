@@ -29,22 +29,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 )
-
-type HttpProxyArgs struct {
-	ProjectId string
-	StackID   string
-	Function  *exec.CloudRunner
-}
-
-type HttpProxy struct {
-	pulumi.ResourceState
-
-	Name    string
-	Gateway *apigateway.Gateway
-	Api     *apigateway.Api
-}
 
 func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Http) error {
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
@@ -115,99 +100,6 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 
 	return nil
 }
-
-// func NewHttpProxy(ctx *pulumi.Context, name string, args *HttpProxyArgs, opts ...pulumi.ResourceOption) (*HttpProxy, error) {
-// 	res := &HttpProxy{Name: name}
-
-// 	err := ctx.RegisterComponentResource("nitric:api:GcpApiGateway", name, res, opts...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	opts = append(opts, pulumi.Parent(res))
-
-// 	resourceLabels := common.Tags(args.StackID, name, resources.HttpProxy)
-
-// 	res.Api, err = apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
-// 		ApiId:  pulumi.String(name),
-// 		Labels: pulumi.ToStringMap(resourceLabels),
-// 	}, opts...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "api "+name)
-// 	}
-
-// 	invoker, err := serviceaccount.NewAccount(ctx, name+"-acct", &serviceaccount.AccountArgs{
-// 		AccountId: pulumi.String(utils.StringTrunc(name, 30-5) + "-acct"),
-// 	}, opts...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "api serviceaccount "+name)
-// 	}
-
-// 	// Bind that IAM account as a member of the function
-
-// 	iamName := fmt.Sprintf("%s-%s-binding", name, args.Function.Name)
-
-// 	_, err = cloudrun.NewIamMember(ctx, iamName, &cloudrun.IamMemberArgs{
-// 		Service:  args.Function.Service.Name,
-// 		Location: args.Function.Service.Location,
-// 		Member:   pulumi.Sprintf("serviceAccount:%s", invoker.Email),
-// 		Role:     pulumi.String("roles/run.invoker"),
-// 	}, opts...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "api iamMember "+iamName)
-// 	}
-
-// 	doc := args.Function.Url.ToStringOutput().ApplyT(func(url string) (string, error) {
-// 		apiDoc := newApiSpec(name, url)
-
-// 		v2doc, err := openapi2conv.FromV3(apiDoc)
-// 		if err != nil {
-// 			return "", err
-// 		}
-
-// 		b, err := v2doc.MarshalJSON()
-// 		if err != nil {
-// 			return "", err
-// 		}
-
-// 		return base64.StdEncoding.EncodeToString(b), nil
-// 	}).(pulumi.StringOutput)
-
-// 	// Deploy the config
-// 	config, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
-// 		Project:     pulumi.String(args.ProjectId),
-// 		Api:         res.Api.ApiId,
-// 		DisplayName: pulumi.String(name + "-config"),
-// 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{
-// 			apigateway.ApiConfigOpenapiDocumentArgs{
-// 				Document: apigateway.ApiConfigOpenapiDocumentDocumentArgs{
-// 					Path:     pulumi.String("openapi.json"),
-// 					Contents: doc,
-// 				},
-// 			},
-// 		},
-// 		Labels: pulumi.ToStringMap(resourceLabels),
-// 	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "api config")
-// 	}
-
-// 	// Deploy the gateway
-// 	res.Gateway, err = apigateway.NewGateway(ctx, name+"-gateway", &apigateway.GatewayArgs{
-// 		DisplayName: pulumi.String(name + "-gateway"),
-// 		GatewayId:   pulumi.String(name + "-gateway"),
-// 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", args.ProjectId, res.Api.ApiId, config.ApiConfigId),
-// 		Labels:      pulumi.ToStringMap(resourceLabels),
-// 	}, opts...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "api gateway")
-// 	}
-
-// 	url := res.Gateway.DefaultHostname.ApplyT(func(hn string) string { return "https://" + hn })
-// 	ctx.Export("api:"+name, url)
-
-// 	return res, nil
-// }
 
 func newApiSpec(name, functionUrl string) *openapi3.T {
 	doc := &openapi3.T{

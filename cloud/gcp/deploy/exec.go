@@ -23,7 +23,6 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/iam"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
@@ -223,7 +222,7 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 		return errors.WithMessage(err, "cloud run "+name)
 	}
 
-	svcAcct, err := iam.NewServiceAccount(ctx, name+"-cloudrun-invoker", &iam.GcpIamServiceAccountArgs{
+	svcAcct, err := NewServiceAccount(ctx, name+"-cloudrun-invoker", &GcpIamServiceAccountArgs{
 		AccountId: name,
 	})
 	if err != nil {

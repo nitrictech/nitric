@@ -22,61 +22,11 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/exec"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	v1 "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
-
-type PubSubTopic struct {
-	pulumi.ResourceState
-
-	Name   string
-	PubSub *pubsub.Topic
-}
-
-type PubSubTopicArgs struct {
-	Location  string
-	StackID   string
-	ProjectId string
-
-	Topic *v1.Topic
-}
-
-func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opts ...pulumi.ResourceOption) (*PubSubTopic, error) {
-	res := &PubSubTopic{
-		Name: name,
-	}
-
-	err := ctx.RegisterComponentResource("nitric:topic:GCPPubSubTopic", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Topic)),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
-type PubSubSubscription struct {
-	pulumi.ResourceState
-
-	Name string
-
-	Subscription *pubsub.Subscription
-}
-
-type PubSubSubscriptionArgs struct {
-	Function *exec.CloudRunner
-	Topic    *PubSubTopic
-}
 
 func GetSubName(executionName string, topicName string) string {
 	return fmt.Sprintf("%s-%s-sub", executionName, topicName)
