@@ -129,18 +129,18 @@ message DeploymentDownEvent {
 // Terminal message indicating deployment success
 message DownResult {}
 
-// An image source to be used for execution unit deployment
+// An image source to be used for service deployment
 message ImageSource {
     // URI of the docker image
     // TODO: May also need to provide auth information (although this should just be configured on the running client already)
     string uri = 1;
 }
 
-// A unit of execution (i.e. function/container)
+// A unit of service (i.e. function/container)
 message Service {
-    // Source of the exection unit
+    // Source of the service
     oneof source {
-        // Container image as a execution unit
+        // Container image as a service
         ImageSource image = 1;
         // Alternative sources could include 
         // - zipped code sources
@@ -148,7 +148,7 @@ message Service {
         
     }
 
-    // Expected worker count for this execution unit
+    // Expected worker count for this service
     int32 workers = 10;
     // Configurable timeout for request handling
     int32 timeout = 11 [deprecated = true];
@@ -156,12 +156,12 @@ message Service {
     int32 memory = 12 [deprecated = true];
 
     // A simple type property
-    // describes the requested type of execution unit that this should be
+    // describes the requested type of service that this should be
     // for this project, a provider can implement how this request is satisfied
     // in any way
     string type = 13;
 
-    // Environment variables for this execution unit
+    // Environment variables for this service unit
     map<string, string> env = 14; 
 }
 
@@ -172,8 +172,8 @@ message Bucket {
 message BucketListener {
     nitric.proto.storage.v1.RegistrationRequest config = 1;
     oneof target {
-        // The name of an execution unit to target
-        string execution_unit = 2;
+        // The name of an service to target
+        string service = 2;
     }
 }
 
@@ -192,8 +192,8 @@ message Secret {
 
 message SubscriptionTarget {
     oneof target {
-        // The name of an execution unit to target
-        string execution_unit = 1;
+        // The name of an service to target
+        string service = 1;
 
         // Additional targets could potentially include
         // - HTTP/API Endpoints
@@ -207,8 +207,8 @@ message TopicSubscription {
 
 message HttpTarget {
     oneof target {
-        // The name of an execution unit to target
-        string execution_unit = 1;
+        // The name of an service to target
+        string service = 1;
     }
 }
 
@@ -220,7 +220,7 @@ message Http {
 message Api {
     oneof document {
         // An OpenAPI document for deployment
-        // This document will contain extensions that hint of execution units that should be targeted as part of the deployment
+        // This document will contain extensions that hint of service that should be targeted as part of the deployment
         string openapi = 1;
     }
 }
@@ -237,8 +237,8 @@ message Websocket {
 
 message WebsocketTarget {
     oneof target {
-        // The name of an execution unit to target
-        string execution_unit = 1;
+        // The name of a service to target
+        string service = 1;
 
         // Additional targets could potentially include
         // - HTTP/API Endpoints
@@ -247,8 +247,8 @@ message WebsocketTarget {
 
 message ScheduleTarget {
     oneof target {
-        // The name of an execution unit to target
-        string execution_unit = 1;
+        // The name of a service to target
+        string service = 1;
 
         // Additional targets could potentially include
         // - HTTP/API Endpoints
