@@ -29,7 +29,7 @@ message PolicyResource {
 
 enum ResourceType {
   Api = 0;
-  ExecUnit = 1;
+  Service = 1;
   Bucket = 2;
   Topic = 3;
   Schedule = 4;
