@@ -51,7 +51,7 @@ type ContainerAppArgs struct {
 	ManagedEnv                    *app.ManagedEnvironment
 	Env                           app.EnvironmentVarArray
 	ImageUri                      pulumi.StringInput
-	ExecutionUnit                 *deploy.Service
+	Service                       *deploy.Service
 	ManagedIdentityID             pulumi.StringOutput
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
@@ -142,7 +142,7 @@ var RoleDefinitions = map[string]string{
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, execUnit *deploymentspb.Service) error {
+func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *deploymentspb.Service) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &ContainerApp{
@@ -157,7 +157,7 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 	repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", p.containerEnv.Registry.LoginServer, p.projectName, name, "azure")
 
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
-		SourceImage:   execUnit.GetImage().Uri,
+		SourceImage:   service.GetImage().Uri,
 		RepositoryUrl: repositoryUrl,
 		Username:      p.containerEnv.RegistryUser.Elem(),
 		Password:      p.containerEnv.RegistryPass.Elem(),
@@ -168,14 +168,14 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 		return err
 	}
 
-	if execUnit.Type == "" {
-		execUnit.Type = "default"
+	if service.Type == "" {
+		service.Type = "default"
 	}
 
-	execUnitConfig := p.config.Config[execUnit.Type]
+	serviceConfig := p.config.Config[service.Type]
 
-	if execUnitConfig.ContainerApps == nil {
-		return fmt.Errorf("invalid container app config type: %s", execUnit.Type)
+	if serviceConfig.ContainerApps == nil {
+		return fmt.Errorf("invalid container app config type: %s", service.Type)
 	}
 
 	token, err := random.NewRandomPassword(ctx, res.Name+"-event-token", &random.RandomPasswordArgs{
@@ -232,7 +232,7 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
-			Value: pulumi.String(fmt.Sprint(execUnit.Workers)),
+			Value: pulumi.String(fmt.Sprint(service.Workers)),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_SUBSCRIPTION_ID"),
@@ -268,7 +268,7 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 		// },
 	}
 
-	for k, v := range execUnit.Env {
+	for k, v := range service.Env {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
 			Value: pulumi.String(v),
@@ -285,10 +285,10 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 		if item.GetSchedule() == nil {
 			return false
 		}
-		return item.GetSchedule().Target.GetExecutionUnit() == name
+		return item.GetSchedule().Target.GetService() == name
 	})
 
-	minReplicas := execUnitConfig.ContainerApps.MinReplicas
+	minReplicas := serviceConfig.ContainerApps.MinReplicas
 	if schedulesFound {
 		minReplicas = lo.Max([]int{minReplicas, 1})
 	}
@@ -337,10 +337,10 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.ExecutionUnit)),
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Service)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
-				MaxReplicas: pulumi.Int(execUnitConfig.ContainerApps.MaxReplicas),
+				MaxReplicas: pulumi.Int(serviceConfig.ContainerApps.MaxReplicas),
 				MinReplicas: pulumi.Int(minReplicas),
 			},
 			Containers: app.ContainerArray{
@@ -348,8 +348,8 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 					Name:  pulumi.String("myapp"),
 					Image: image.URI(),
 					Resources: app.ContainerResourcesArgs{
-						Cpu:    pulumi.Float64(execUnitConfig.ContainerApps.Cpu),
-						Memory: pulumi.Sprintf("%.2fGi", execUnitConfig.ContainerApps.Memory),
+						Cpu:    pulumi.Float64(serviceConfig.ContainerApps.Cpu),
+						Memory: pulumi.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
 					},
 					Env: env,
 				},

@@ -60,9 +60,9 @@ func (a *NitricAwsPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 		return err
 	}
 
-	target, ok := a.lambdas[config.Target.GetExecutionUnit()]
+	target, ok := a.lambdas[config.Target.GetService()]
 	if !ok {
-		return fmt.Errorf("unable to find target lambda: %s", config.Target.GetExecutionUnit())
+		return fmt.Errorf("unable to find target lambda: %s", config.Target.GetService())
 	}
 
 	_, err = iam.NewRolePolicy(ctx, fmt.Sprintf("schedule-%s-policy", name), &iam.RolePolicyArgs{

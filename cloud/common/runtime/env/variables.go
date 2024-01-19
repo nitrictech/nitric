@@ -2,7 +2,7 @@ package env
 
 import "github.com/nitrictech/nitric/core/pkg/env"
 
-// The unique id of the nitric stack that this execution in running in
+// The unique id of the nitric stack that this service in running in
 var NITRIC_STACK_ID = env.GetEnv("NITRIC_STACK_ID", "")
 
 // % of	calls to trace, 0-100

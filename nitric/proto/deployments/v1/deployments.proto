@@ -161,7 +161,7 @@ message Service {
     // in any way
     string type = 13;
 
-    // Environment variables for this service unit
+    // Environment variables for this service
     map<string, string> env = 14; 
 }
 
@@ -220,7 +220,7 @@ message Http {
 message Api {
     oneof document {
         // An OpenAPI document for deployment
-        // This document will contain extensions that hint of service that should be targeted as part of the deployment
+        // This document will contain extensions that hint of services that should be targeted as part of the deployment
         string openapi = 1;
     }
 }
@@ -237,7 +237,7 @@ message Websocket {
 
 message WebsocketTarget {
     oneof target {
-        // The name of a service to target
+        // The name of an service to target
         string service = 1;
 
         // Additional targets could potentially include
@@ -247,7 +247,7 @@ message WebsocketTarget {
 
 message ScheduleTarget {
     oneof target {
-        // The name of a service to target
+        // The name of an service to target
         string service = 1;
 
         // Additional targets could potentially include

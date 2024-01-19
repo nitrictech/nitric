@@ -27,8 +27,8 @@ type NitricPulumiProvider interface {
 	Http(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Http) error
 	// Bucket - Deploy a Storage Bucket
 	Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error
-	// ExecUnit - Deploy an Execution Unit (Service)
-	ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
+	// Service - Deploy an service (Service)
+	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
 	// Topic - Deploy a Pub/Sub Topic
 	Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error
 	// Secret - Deploy a Secret
@@ -55,8 +55,8 @@ func just(all []*deploymentspb.Resource, only resourcespb.ResourceType) []*deplo
 }
 
 // Order - the default resource deployment order
-// By default deploy Execution Units (services) first, other resources typically depend on them
-// e.g. topics may need to know about exec units in order to setup subscriptions.
+// By default deploy services (services) first, other resources typically depend on them
+// e.g. topics may need to know about services in order to setup subscriptions.
 func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploymentspb.Resource {
 	typeOrder := []resourcespb.ResourceType{
 		resourcespb.ResourceType_Service,

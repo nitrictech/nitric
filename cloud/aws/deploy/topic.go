@@ -168,9 +168,9 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 	}
 
 	for _, sub := range config.Subscriptions {
-		targetLambda, ok := a.lambdas[sub.GetExecutionUnit()]
+		targetLambda, ok := a.lambdas[sub.GetService()]
 		if !ok {
-			return fmt.Errorf("unable to find lambda %s for subscription", sub.GetExecutionUnit())
+			return fmt.Errorf("unable to find lambda %s for subscription", sub.GetService())
 		}
 
 		createSubscription(ctx, parent, name, a.topics[name].sns, targetLambda)

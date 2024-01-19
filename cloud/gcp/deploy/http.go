@@ -36,7 +36,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 
 	resourceLabels := common.Tags(p.stackId, name, resources.HttpProxy)
 
-	targetService := p.cloudRunServices[config.Target.GetExecutionUnit()]
+	targetService := p.cloudRunServices[config.Target.GetService()]
 
 	api, err := apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),

@@ -42,7 +42,7 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	target := p.containerApps[config.GetTarget().GetExecutionUnit()]
+	target := p.containerApps[config.GetTarget().GetService()]
 
 	normalizedName := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	cronExpression := ""

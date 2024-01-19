@@ -141,7 +141,7 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, ctx.Stack()+"Kube", resources.ExecutionUnit)),
+		Tags: pulumi.ToStringMap(common.Tags(p.stackId, ctx.Stack()+"Kube", resources.Service)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err

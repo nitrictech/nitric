@@ -28,8 +28,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func GetSubName(executionName string, topicName string) string {
-	return fmt.Sprintf("%s-%s-sub", executionName, topicName)
+func GetSubName(serviceName string, topicName string) string {
+	return fmt.Sprintf("%s-%s-sub", serviceName, topicName)
 }
 
 func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error {
@@ -44,7 +44,7 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 	}
 
 	for _, sub := range config.Subscriptions {
-		targetService := p.cloudRunServices[sub.GetExecutionUnit()]
+		targetService := p.cloudRunServices[sub.GetService()]
 
 		_, err := pubsub.NewSubscription(ctx, GetSubName(targetService.Name, name), &pubsub.SubscriptionArgs{
 			Topic:              p.topics[name].Name, // The GCP topic name

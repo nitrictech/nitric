@@ -44,7 +44,7 @@ type NitricCloudRunService struct {
 	EventToken     pulumi.StringOutput
 }
 
-func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
+func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &NitricCloudRunService{
@@ -55,14 +55,14 @@ func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 	gcpServiceName := invalidChars.ReplaceAllString(name, "-")
 
 	if config.GetImage == nil || config.GetImage().Uri == "" {
-		return fmt.Errorf("gcp provider can only deploy execution with an image source")
+		return fmt.Errorf("gcp provider can only deploy service with an image source")
 	}
 
 	if config.Type == "" {
 		config.Type = "default"
 	}
 
-	// get config for execution unit
+	// get config for service
 	unitConfig, hasConfig := p.config.Config[config.Type]
 	if !hasConfig {
 		return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", config.Type, p.config.Config)

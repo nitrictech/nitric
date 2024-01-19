@@ -717,7 +717,7 @@ type Service struct {
 	// for this project, a provider can implement how this request is satisfied
 	// in any way
 	Type string `protobuf:"bytes,13,opt,name=type,proto3" json:"type,omitempty"`
-	// Environment variables for this service unit
+	// Environment variables for this service
 	Env map[string]string `protobuf:"bytes,14,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -933,7 +933,7 @@ type isBucketListener_Target interface {
 
 type BucketListener_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,2,opt,name=service,proto3,oneof"`
+	Service string `protobuf:"bytes,2,opt,name=service,json=service,proto3,oneof"`
 }
 
 func (*BucketListener_Service) isBucketListener_Target() {}
@@ -1124,7 +1124,7 @@ type isSubscriptionTarget_Target interface {
 
 type SubscriptionTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
 }
 
 func (*SubscriptionTarget_Service) isSubscriptionTarget_Target() {}
@@ -1239,7 +1239,7 @@ type isHttpTarget_Target interface {
 
 type HttpTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
 }
 
 func (*HttpTarget_Service) isHttpTarget_Target() {}
@@ -1355,7 +1355,7 @@ type isApi_Document interface {
 
 type Api_Openapi struct {
 	// An OpenAPI document for deployment
-	// This document will contain extensions that hint of service that should be targeted as part of the deployment
+	// This document will contain extensions that hint of services that should be targeted as part of the deployment
 	Openapi string `protobuf:"bytes,1,opt,name=openapi,proto3,oneof"`
 }
 
@@ -1490,8 +1490,8 @@ type isWebsocketTarget_Target interface {
 }
 
 type WebsocketTarget_Service struct {
-	// The name of a service to target
-	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
+	// The name of an service to target
+	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
 }
 
 func (*WebsocketTarget_Service) isWebsocketTarget_Target() {}
@@ -1558,8 +1558,8 @@ type isScheduleTarget_Target interface {
 }
 
 type ScheduleTarget_Service struct {
-	// The name of a service to target
-	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
+	// The name of an service to target
+	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
 }
 
 func (*ScheduleTarget_Service) isScheduleTarget_Target() {}

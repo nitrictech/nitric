@@ -23,7 +23,7 @@ func eventTypeToStorageEventType(eventType *storagepb.BlobEventType) []string {
 
 func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Context, parent pulumi.Resource, bucketName string, config *deploymentspb.BucketListener) error {
 
-	target, ok := p.containerApps[config.GetExecutionUnit()]
+	target, ok := p.containerApps[config.GetService()]
 	if !ok {
 		return fmt.Errorf("")
 	}
@@ -78,7 +78,7 @@ func (p *NitricAzurePulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	for _, sub := range config.Listeners {
-		err = p.newAzureBucketNotification(ctx, parent, name+sub.GetExecutionUnit(), sub)
+		err = p.newAzureBucketNotification(ctx, parent, name+sub.GetService(), sub)
 		if err != nil {
 			return err
 		}

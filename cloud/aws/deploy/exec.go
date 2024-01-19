@@ -37,17 +37,17 @@ import (
 func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId string, name string) (*ecr.Repository, error) {
 	return ecr.NewRepository(ctx, name, &ecr.RepositoryArgs{
 		ForceDelete: pulumi.BoolPtr(true),
-		Tags:        pulumi.ToStringMap(tags.Tags(stackId, name, resources.ExecutionUnit)),
+		Tags:        pulumi.ToStringMap(tags.Tags(stackId, name, resources.Service)),
 	}, pulumi.Parent(parent))
 }
 
 func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *deploymentspb.Service) (*image.Image, error) {
 	if config.GetImage() == nil {
-		return nil, fmt.Errorf("aws provider can only deploy execution with an image source")
+		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
 	}
 
 	if config.GetImage().GetUri() == "" {
-		return nil, fmt.Errorf("aws provider can only deploy execution with an image source")
+		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
 	}
 
 	if config.Type == "" {
@@ -70,7 +70,7 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 	}, pulumi.DependsOn([]pulumi.Resource{repo}))
 }
 
-func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
+func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
@@ -81,11 +81,11 @@ func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	if config.GetImage() == nil {
-		return fmt.Errorf("aws provider can only deploy execution with an image source")
+		return fmt.Errorf("aws provider can only deploy service with an image source")
 	}
 
 	if config.GetImage().GetUri() == "" {
-		return fmt.Errorf("aws provider can only deploy execution with an image source")
+		return fmt.Errorf("aws provider can only deploy service with an image source")
 	}
 
 	if config.Type == "" {
@@ -123,7 +123,7 @@ func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 
 	a.lambdaRoles[name], err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(tmpJSON),
-		Tags:             pulumi.ToStringMap(tags.Tags(a.stackId, name+"LambdaRole", resources.ExecutionUnit)),
+		Tags:             pulumi.ToStringMap(tags.Tags(a.stackId, name+"LambdaRole", resources.Service)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Re
 		Timeout:     pulumi.IntPtr(typeConfig.Lambda.Timeout),
 		PackageType: pulumi.String("Image"),
 		Role:        a.lambdaRoles[name].Arn,
-		Tags:        pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.ExecutionUnit)),
+		Tags:        pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.Service)),
 		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 	}, opts...)

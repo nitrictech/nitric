@@ -28,9 +28,9 @@ import (
 )
 
 func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error {
-	defaultTarget := a.lambdas[config.MessageTarget.GetExecutionUnit()]
-	connectTarget := a.lambdas[config.ConnectTarget.GetExecutionUnit()]
-	disconnectTarget := a.lambdas[config.DisconnectTarget.GetExecutionUnit()]
+	defaultTarget := a.lambdas[config.MessageTarget.GetService()]
+	connectTarget := a.lambdas[config.ConnectTarget.GetService()]
+	disconnectTarget := a.lambdas[config.DisconnectTarget.GetService()]
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 

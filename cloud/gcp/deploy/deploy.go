@@ -181,7 +181,7 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 		return err
 	}
 
-	// Deploy all execution units
+	// Deploy all services
 	a.authToken, err = getGCPToken(ctx)
 	if err != nil {
 		return err

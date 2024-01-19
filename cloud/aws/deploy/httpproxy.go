@@ -30,7 +30,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	targetLambda := a.lambdas[http.Target.GetExecutionUnit()]
+	targetLambda := a.lambdas[http.Target.GetService()]
 
 	doc := targetLambda.InvokeArn.ApplyT(func(invokeArn string) (string, error) {
 		spec := newApiSpec(name, invokeArn)
@@ -64,7 +64,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	}
 
 	// Generate lambda permissions enabling the API Gateway to invoke the function it targets
-	_, err = awslambda.NewPermission(ctx, name+http.Target.GetExecutionUnit(), &awslambda.PermissionArgs{
+	_, err = awslambda.NewPermission(ctx, name+http.Target.GetService(), &awslambda.PermissionArgs{
 		Function:  targetLambda.Name,
 		Action:    pulumi.String("lambda:InvokeFunction"),
 		Principal: pulumi.String("apigateway.amazonaws.com"),

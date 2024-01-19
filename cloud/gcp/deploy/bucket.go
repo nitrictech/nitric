@@ -56,7 +56,7 @@ func (p *NitricGcpPulumiProvider) newCloudStorageNotification(ctx *pulumi.Contex
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	name := bucketName + "-" + listener.GetExecutionUnit()
+	name := bucketName + "-" + listener.GetService()
 
 	if listener == nil || listener.Config == nil {
 		return fmt.Errorf("invalid config provided for bucket notification")
@@ -69,9 +69,9 @@ func (p *NitricGcpPulumiProvider) newCloudStorageNotification(ctx *pulumi.Contex
 		return err
 	}
 
-	targetService, ok := p.cloudRunServices[listener.GetExecutionUnit()]
+	targetService, ok := p.cloudRunServices[listener.GetService()]
 	if !ok {
-		return fmt.Errorf("unable to find target service for bucket listener: %s", listener.GetExecutionUnit())
+		return fmt.Errorf("unable to find target service for bucket listener: %s", listener.GetService())
 	}
 
 	targetBucket, ok := p.buckets[bucketName]

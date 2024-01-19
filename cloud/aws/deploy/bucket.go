@@ -55,11 +55,11 @@ func createNotification(ctx *pulumi.Context, name string, args *S3NotificationAr
 	notificationTargetLambdas := s3.BucketNotificationLambdaFunctionArray{}
 
 	for _, listener := range args.Listeners {
-		// Get the deployed execution unit
-		funcName := listener.GetExecutionUnit()
+		// Get the deployed service
+		funcName := listener.GetService()
 		lambdaFunc, ok := args.Lambdas[funcName]
 		if !ok {
-			return nil, fmt.Errorf("invalid execution unit %s given for bucket subscription", funcName)
+			return nil, fmt.Errorf("invalid service %s given for bucket subscription", funcName)
 		}
 
 		// Don't create duplicate permissions

@@ -107,20 +107,20 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}
 	}
 
-	nitricExecTargets := map[string]*lambda.Function{}
+	nitricServiceTargets := map[string]*lambda.Function{}
 	for _, p := range openapiDoc.Paths {
 		for _, op := range p.Operations() {
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
 				if targetMap, isMap := v.(map[string]any); isMap {
-					execUnitName := targetMap["name"].(string)
-					nitricExecTargets[execUnitName] = a.lambdas[execUnitName]
+					serviceName := targetMap["name"].(string)
+					nitricServiceTargets[serviceName] = a.lambdas[serviceName]
 				}
 			}
 		}
 	}
 
 	// collect name arn pairs for output iteration
-	for k, v := range nitricExecTargets {
+	for k, v := range nitricServiceTargets {
 		nameArnPairs = append(nameArnPairs, pulumi.All(k, v.InvokeArn).ApplyT(func(args []interface{}) nameArnPair {
 			name := args[0].(string)
 			arn := args[1].(string)
@@ -197,7 +197,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}
 
 	// Generate permissions enabling the API Gateway to invoke the functions it targets
-	for fName, fun := range nitricExecTargets {
+	for fName, fun := range nitricServiceTargets {
 		_, err = lambda.NewPermission(ctx, name+fName, &lambda.PermissionArgs{
 			Function:  fun.Name,
 			Action:    pulumi.String("lambda:InvokeFunction"),

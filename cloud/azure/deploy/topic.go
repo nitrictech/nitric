@@ -43,9 +43,9 @@ type AzureEventGridTopicArgs struct {
 func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Context, parent pulumi.Resource, topicName string, config *deploymentspb.SubscriptionTarget) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	target, ok := p.containerApps[config.GetExecutionUnit()]
+	target, ok := p.containerApps[config.GetService()]
 	if !ok {
-		return fmt.Errorf("Unable to find container app for execution unit: %s", config.GetExecutionUnit())
+		return fmt.Errorf("Unable to find container app for service: %s", config.GetService())
 	}
 
 	topic, ok := p.topics[topicName]
@@ -58,7 +58,7 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 		return err
 	}
 
-	subName := topicName + "-" + config.GetExecutionUnit()
+	subName := topicName + "-" + config.GetService()
 
 	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
 		Scope: topic.ID(),

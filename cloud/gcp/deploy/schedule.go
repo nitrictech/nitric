@@ -71,7 +71,7 @@ func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 		return err
 	}
 
-	targetService := p.cloudRunServices[config.Target.GetExecutionUnit()]
+	targetService := p.cloudRunServices[config.Target.GetService()]
 
 	payload := base64.StdEncoding.EncodeToString(eventJSON)
 

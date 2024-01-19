@@ -117,7 +117,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 		return err
 	}
 
-	targetContainerApp := p.containerApps[http.GetTarget().GetExecutionUnit()]
+	targetContainerApp := p.containerApps[http.GetTarget().GetService()]
 
 	for _, path := range spec.Paths {
 		for _, op := range path.Operations() {
