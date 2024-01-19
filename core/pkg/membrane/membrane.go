@@ -148,10 +148,22 @@ func (s *Membrane) waitForMinimumWorkers(timeout int) error {
 	return nil
 }
 
+type MembraneStartOptions func(m *Membrane)
+
+func WithGrpcServer(s *grpc.Server) MembraneStartOptions {
+	return func(m *Membrane) {
+		m.grpcServer = s
+	}
+}
+
 // Start the membrane
-func (s *Membrane) Start() error {
+func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	if err := s.processManager.StartPreProcesses(); err != nil {
 		return err
+	}
+
+	for _, opt := range startOpts {
+		opt(s)
 	}
 
 	maxWorkers, err := env.MAX_WORKERS.Int()
@@ -159,34 +171,36 @@ func (s *Membrane) Start() error {
 		return err
 	}
 
-	opts := []grpc.ServerOption{
-		// FIXME: Find out what the max worker value
-		grpc.MaxConcurrentStreams(uint32(maxWorkers)),
+	if s.grpcServer == nil {
+		opts := []grpc.ServerOption{
+			// FIXME: Find out what the max worker value
+			grpc.MaxConcurrentStreams(uint32(maxWorkers)),
+		}
+
+		if s.createTracerProvider != nil {
+			tp, err := s.createTracerProvider(context.Background())
+			if err != nil {
+				s.log(fmt.Sprintf("traceProvider %v", err))
+				return err
+			}
+
+			if tp != nil {
+				s.log(fmt.Sprintf("traceProvider connected"))
+				otel.SetTracerProvider(tp)
+			}
+
+			interceptorOpts := []otelgrpc.Option{
+				otelgrpc.WithPropagators(propagation.TraceContext{}),
+			}
+
+			opts = append(opts,
+				grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(interceptorOpts...)),
+				grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(interceptorOpts...)),
+			)
+		}
+
+		s.grpcServer = grpc.NewServer(opts...)
 	}
-
-	if s.createTracerProvider != nil {
-		tp, err := s.createTracerProvider(context.Background())
-		if err != nil {
-			s.log(fmt.Sprintf("traceProvider %v", err))
-			return err
-		}
-
-		if tp != nil {
-			s.log(fmt.Sprintf("traceProvider connected"))
-			otel.SetTracerProvider(tp)
-		}
-
-		interceptorOpts := []otelgrpc.Option{
-			otelgrpc.WithPropagators(propagation.TraceContext{}),
-		}
-
-		opts = append(opts,
-			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(interceptorOpts...)),
-			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(interceptorOpts...)),
-		)
-	}
-
-	s.grpcServer = grpc.NewServer(opts...)
 
 	// Register the listener servers
 	if s.options.ApiPlugin == nil {
