@@ -51,7 +51,7 @@ type ContainerAppArgs struct {
 	ManagedEnv                    *app.ManagedEnvironment
 	Env                           app.EnvironmentVarArray
 	ImageUri                      pulumi.StringInput
-	ExecutionUnit                 *deploy.ExecutionUnit
+	ExecutionUnit                 *deploy.Service
 	ManagedIdentityID             pulumi.StringOutput
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
@@ -142,7 +142,7 @@ var RoleDefinitions = map[string]string{
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, execUnit *deploymentspb.ExecutionUnit) error {
+func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, execUnit *deploymentspb.Service) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &ContainerApp{
@@ -196,7 +196,7 @@ func (p *NitricAzurePulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.
 	if err != nil {
 		return err
 	}
-	p.principals[resourcespb.ResourceType_ExecUnit][name] = principal
+	p.principals[resourcespb.ResourceType_Service][name] = principal
 	res.Sp = principal
 
 	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", p.clientConfig.SubscriptionId, p.resourceGroup.Name)

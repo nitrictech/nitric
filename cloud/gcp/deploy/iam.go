@@ -19,7 +19,7 @@ package deploy
 import (
 	"regexp"
 
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
+	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"

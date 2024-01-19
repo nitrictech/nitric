@@ -44,7 +44,7 @@ type NitricCloudRunService struct {
 	EventToken     pulumi.StringOutput
 }
 
-func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.ExecutionUnit) error {
+func (p *NitricGcpPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &NitricCloudRunService{

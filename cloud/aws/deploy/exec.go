@@ -41,7 +41,7 @@ func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId st
 	}, pulumi.Parent(parent))
 }
 
-func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *deploymentspb.ExecutionUnit) (*image.Image, error) {
+func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *deploymentspb.Service) (*image.Image, error) {
 	if config.GetImage() == nil {
 		return nil, fmt.Errorf("aws provider can only deploy execution with an image source")
 	}
@@ -70,7 +70,7 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 	}, pulumi.DependsOn([]pulumi.Resource{repo}))
 }
 
-func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.ExecutionUnit) error {
+func (a *NitricAwsPulumiProvider) ExecUnit(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 

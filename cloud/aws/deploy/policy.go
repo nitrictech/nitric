@@ -135,7 +135,7 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 
 func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resource) (*iam.Role, error) {
 	switch resource.Id.Type {
-	case resourcespb.ResourceType_ExecUnit:
+	case resourcespb.ResourceType_Service:
 		if f, ok := a.lambdaRoles[resource.Id.Name]; ok {
 			return f, nil
 		}

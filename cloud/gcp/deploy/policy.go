@@ -157,7 +157,7 @@ func actionsToGcpActions(actions []v1.Action) []string {
 
 func (a *NitricGcpPulumiProvider) serviceAccountForPrincipal(resource *deploymentspb.Resource) (*serviceaccount.Account, error) {
 	switch resource.Id.Type {
-	case resourcespb.ResourceType_ExecUnit:
+	case resourcespb.ResourceType_Service:
 		if f, ok := a.cloudRunServices[resource.Id.Name]; ok {
 			return f.ServiceAccount, nil
 		}

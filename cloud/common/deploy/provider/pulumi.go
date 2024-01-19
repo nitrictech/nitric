@@ -50,8 +50,8 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 			}
 
 			switch t := res.Config.(type) {
-			case *deploymentspb.Resource_ExecutionUnit:
-				err = nitricProvider.ExecUnit(ctx, parent, res.Id.Name, t.ExecutionUnit)
+			case *deploymentspb.Resource_Service:
+				err = nitricProvider.ExecUnit(ctx, parent, res.Id.Name, t.Service)
 			case *deploymentspb.Resource_Secret:
 				err = nitricProvider.Secret(ctx, parent, res.Id.Name, t.Secret)
 			case *deploymentspb.Resource_Topic:
