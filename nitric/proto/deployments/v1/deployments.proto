@@ -137,7 +137,7 @@ message ImageSource {
 }
 
 // A unit of execution (i.e. function/container)
-message ExecutionUnit {
+message Service {
     // Source of the exection unit
     oneof source {
         // Container image as a execution unit
@@ -278,7 +278,7 @@ message Resource {
     nitric.proto.resources.v1.ResourceIdentifier id = 1;
 
     oneof config {
-        ExecutionUnit execution_unit = 10;
+        Service service = 10;
         Bucket bucket = 11;
         Topic topic = 12;
         Api api = 13;
