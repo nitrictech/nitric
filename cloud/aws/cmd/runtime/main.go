@@ -20,6 +20,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
 	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/documents"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
@@ -55,6 +56,7 @@ func main() {
 		membraneOpts.GatewayPlugin, _ = base_http.NewHttpGateway(nil)
 	}
 
+	membraneOpts.ApiPlugin = api.NewAwsApiGatewayProvider(provider)
 	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(provider)
 	membraneOpts.DocumentPlugin, _ = dynamodb_service.New(provider)
 	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)

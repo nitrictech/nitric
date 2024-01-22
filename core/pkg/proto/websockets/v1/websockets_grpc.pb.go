@@ -27,6 +27,8 @@ type WebsocketClient interface {
 	// Close a websocket connection
 	// This can be used to force a client to disconnect
 	Close(ctx context.Context, in *WebsocketCloseRequest, opts ...grpc.CallOption) (*WebsocketCloseResponse, error)
+	// Retrieve details about an API
+	Details(ctx context.Context, in *WebsocketDetailsRequest, opts ...grpc.CallOption) (*WebsocketDetailsResponse, error)
 }
 
 type websocketClient struct {
@@ -55,6 +57,15 @@ func (c *websocketClient) Close(ctx context.Context, in *WebsocketCloseRequest, 
 	return out, nil
 }
 
+func (c *websocketClient) Details(ctx context.Context, in *WebsocketDetailsRequest, opts ...grpc.CallOption) (*WebsocketDetailsResponse, error) {
+	out := new(WebsocketDetailsResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.websockets.v1.Websocket/Details", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WebsocketServer is the server API for Websocket service.
 // All implementations should embed UnimplementedWebsocketServer
 // for forward compatibility
@@ -64,6 +75,8 @@ type WebsocketServer interface {
 	// Close a websocket connection
 	// This can be used to force a client to disconnect
 	Close(context.Context, *WebsocketCloseRequest) (*WebsocketCloseResponse, error)
+	// Retrieve details about an API
+	Details(context.Context, *WebsocketDetailsRequest) (*WebsocketDetailsResponse, error)
 }
 
 // UnimplementedWebsocketServer should be embedded to have forward compatible implementations.
@@ -75,6 +88,9 @@ func (UnimplementedWebsocketServer) Send(context.Context, *WebsocketSendRequest)
 }
 func (UnimplementedWebsocketServer) Close(context.Context, *WebsocketCloseRequest) (*WebsocketCloseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
+func (UnimplementedWebsocketServer) Details(context.Context, *WebsocketDetailsRequest) (*WebsocketDetailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Details not implemented")
 }
 
 // UnsafeWebsocketServer may be embedded to opt out of forward compatibility for this service.
@@ -124,6 +140,24 @@ func _Websocket_Close_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Websocket_Details_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WebsocketDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WebsocketServer).Details(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.proto.websockets.v1.Websocket/Details",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WebsocketServer).Details(ctx, req.(*WebsocketDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Websocket_ServiceDesc is the grpc.ServiceDesc for Websocket service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -138,6 +172,10 @@ var Websocket_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Close",
 			Handler:    _Websocket_Close_Handler,
+		},
+		{
+			MethodName: "Details",
+			Handler:    _Websocket_Details_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

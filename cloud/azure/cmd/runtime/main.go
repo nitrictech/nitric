@@ -21,6 +21,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitrictech/nitric/cloud/azure/runtime/api"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 
 	mongodb_service "github.com/nitrictech/nitric/cloud/azure/runtime/document"
@@ -43,6 +44,8 @@ func main() {
 	}
 
 	membraneOpts := membrane.DefaultMembraneOptions()
+
+	membraneOpts.ApiPlugin = api.NewAzureApiGatewayProvider(provider)
 
 	membraneOpts.DocumentPlugin, err = mongodb_service.New()
 	if err != nil {

@@ -13,6 +13,17 @@ option csharp_namespace = "Nitric.Proto.Apis.v1";
 service Api {
   // Serve a route on an API
   rpc Serve(stream ClientMessage) returns (stream ServerMessage);
+
+  // Retrieve details about an API
+  rpc Details(ApiDetailsRequest) returns (ApiDetailsResponse);
+}
+
+message ApiDetailsRequest {
+  string apiName = 1;
+}
+
+message ApiDetailsResponse {
+  string url = 1;
 }
 
 message ClientMessage {

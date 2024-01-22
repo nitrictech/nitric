@@ -16,9 +16,6 @@ service Resources {
   // At Deploy time this will create resources as part of the nitric stacks dependency graph
   // At runtime
   rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
-
-  // Retrieve details about a resource at runtime
-  rpc Details (ResourceDetailsRequest) returns (ResourceDetailsResponse);
 }
 
 message PolicyResource {
@@ -119,33 +116,3 @@ enum Action {
 }
 
 message ResourceDeclareResponse {}
-
-message ApiResourceDetails {
-  string url = 1;
-}
-
-message WebsocketResourceDetails {
-  string url = 1;
-}
-
-message ResourceDetailsRequest {
-  ResourceIdentifier id = 1;
-}
-
-// TODO: remove from resources.proto - more to websockets and APIs contracts. Remove id, provider and service.
-message ResourceDetailsResponse {
-  // The provider specific identifier of the resource, e.g. ARN
-  string id = 1;
-
-  // The provider this resource is deployed with (e.g. AWS)
-  string provider = 2;
-
-  // The service this resource is deployed on (e.g. ApiGateway)
-  string service = 3;
-
-  // Details about the resource
-  oneof details {
-    ApiResourceDetails api = 10;
-    WebsocketResourceDetails websocket = 11;
-  }
-}

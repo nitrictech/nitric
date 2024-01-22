@@ -70,7 +70,11 @@ type AzureResourceService struct {
 	cache     azResourceCache
 }
 
-func (p *AzureResourceService) getApiDetails(ctx context.Context, name string) (*resourcepb.ResourceDetailsResponse, error) {
+type AzureApiMgmtDetails struct {
+	Url string
+}
+
+func (p *AzureResourceService) GetApiDetails(ctx context.Context, name string) (*AzureApiMgmtDetails, error) {
 	res, err := p.srvClient.ListByResourceGroupComplete(ctx, p.rgName)
 	if err != nil {
 		return nil, err
@@ -80,15 +84,8 @@ func (p *AzureResourceService) getApiDetails(ctx context.Context, name string) (
 		service := res.Value()
 
 		if t, ok := service.Tags[fmt.Sprintf("x-nitric-stackId-%s", p.stackId)]; ok && t != nil && *t == name {
-			return &resourcepb.ResourceDetailsResponse{
-				Id:       *service.ID,
-				Provider: "azure",
-				Service:  "ApiManagement",
-				Details: &resourcepb.ResourceDetailsResponse_Api{
-					Api: &resourcepb.ApiResourceDetails{
-						Url: *service.GatewayURL,
-					},
-				},
+			return &AzureApiMgmtDetails{
+				Url: *service.GatewayURL,
 			}, nil
 		}
 
@@ -103,15 +100,6 @@ func (p *AzureResourceService) getApiDetails(ctx context.Context, name string) (
 
 func (p *AzureResourceService) Declare(ctx context.Context, req *resourcepb.ResourceDeclareRequest) (*resourcepb.ResourceDeclareResponse, error) {
 	return &resourcepb.ResourceDeclareResponse{}, nil
-}
-
-func (p *AzureResourceService) Details(ctx context.Context, req *resourcepb.ResourceDetailsRequest) (*resourcepb.ResourceDetailsResponse, error) {
-	switch req.Id.Type {
-	case resourcepb.ResourceType_Api:
-		return p.getApiDetails(ctx, req.Id.Name)
-	default:
-		return nil, fmt.Errorf("unsupported resource type %s", req.Id.Type)
-	}
 }
 
 func (p *AzureResourceService) GetResources(ctx context.Context, r AzResource) (map[string]AzGenericResource, error) {

@@ -933,7 +933,7 @@ type isBucketListener_Target interface {
 
 type BucketListener_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,2,opt,name=service,json=service,proto3,oneof"`
+	Service string `protobuf:"bytes,2,opt,name=service,proto3,oneof"`
 }
 
 func (*BucketListener_Service) isBucketListener_Target() {}
@@ -1124,7 +1124,7 @@ type isSubscriptionTarget_Target interface {
 
 type SubscriptionTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
 }
 
 func (*SubscriptionTarget_Service) isSubscriptionTarget_Target() {}
@@ -1239,7 +1239,7 @@ type isHttpTarget_Target interface {
 
 type HttpTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
 }
 
 func (*HttpTarget_Service) isHttpTarget_Target() {}
@@ -1491,7 +1491,7 @@ type isWebsocketTarget_Target interface {
 
 type WebsocketTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
 }
 
 func (*WebsocketTarget_Service) isWebsocketTarget_Target() {}
@@ -1559,7 +1559,7 @@ type isScheduleTarget_Target interface {
 
 type ScheduleTarget_Service struct {
 	// The name of an service to target
-	Service string `protobuf:"bytes,1,opt,name=service,json=service,proto3,oneof"`
+	Service string `protobuf:"bytes,1,opt,name=service,proto3,oneof"`
 }
 
 func (*ScheduleTarget_Service) isScheduleTarget_Target() {}

@@ -15,6 +15,7 @@
 package apis
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -22,6 +23,8 @@ import (
 
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	"github.com/nitrictech/nitric/core/pkg/workers"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type WorkerConnection = workers.WorkerRequestBroker[*apispb.ServerMessage, *apispb.ClientMessage]
@@ -100,6 +103,10 @@ func (s *RouteWorkerManager) WorkerCount() int {
 	}
 
 	return total
+}
+
+func (a *RouteWorkerManager) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "Not Implemented")
 }
 
 // registerRouteHandler registers a worker by the routes and methods it handles.

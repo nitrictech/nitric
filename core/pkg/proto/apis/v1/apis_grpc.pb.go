@@ -24,6 +24,8 @@ const _ = grpc.SupportPackageIsVersion7
 type ApiClient interface {
 	// Serve a route on an API
 	Serve(ctx context.Context, opts ...grpc.CallOption) (Api_ServeClient, error)
+	// Retrieve details about an API
+	Details(ctx context.Context, in *ApiDetailsRequest, opts ...grpc.CallOption) (*ApiDetailsResponse, error)
 }
 
 type apiClient struct {
@@ -65,12 +67,23 @@ func (x *apiServeClient) Recv() (*ServerMessage, error) {
 	return m, nil
 }
 
+func (c *apiClient) Details(ctx context.Context, in *ApiDetailsRequest, opts ...grpc.CallOption) (*ApiDetailsResponse, error) {
+	out := new(ApiDetailsResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.apis.v1.Api/Details", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServer is the server API for Api service.
 // All implementations should embed UnimplementedApiServer
 // for forward compatibility
 type ApiServer interface {
 	// Serve a route on an API
 	Serve(Api_ServeServer) error
+	// Retrieve details about an API
+	Details(context.Context, *ApiDetailsRequest) (*ApiDetailsResponse, error)
 }
 
 // UnimplementedApiServer should be embedded to have forward compatible implementations.
@@ -79,6 +92,9 @@ type UnimplementedApiServer struct {
 
 func (UnimplementedApiServer) Serve(Api_ServeServer) error {
 	return status.Errorf(codes.Unimplemented, "method Serve not implemented")
+}
+func (UnimplementedApiServer) Details(context.Context, *ApiDetailsRequest) (*ApiDetailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Details not implemented")
 }
 
 // UnsafeApiServer may be embedded to opt out of forward compatibility for this service.
@@ -118,13 +134,36 @@ func (x *apiServeServer) Recv() (*ClientMessage, error) {
 	return m, nil
 }
 
+func _Api_Details_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApiDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServer).Details(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/nitric.proto.apis.v1.Api/Details",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServer).Details(ctx, req.(*ApiDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Api_ServiceDesc is the grpc.ServiceDesc for Api service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Api_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "nitric.proto.apis.v1.Api",
 	HandlerType: (*ApiServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Details",
+			Handler:    _Api_Details_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Serve",

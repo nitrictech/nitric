@@ -76,7 +76,11 @@ func filter(stackName string, name string) string {
 	return fmt.Sprintf("labels.%s:%s", tags.GetResourceNameKey(stackName), name)
 }
 
-func (g *GcpResourceService) getApiGatewayDetails(ctx context.Context, name string) (*v1.ResourceDetailsResponse, error) {
+type GcpApiGatewayDetails struct {
+	Url string
+}
+
+func (g *GcpResourceService) GetApiGatewayDetails(ctx context.Context, name string) (*GcpApiGatewayDetails, error) {
 	projectName, err := g.GetProjectID()
 	if err != nil {
 		return nil, err
@@ -89,15 +93,8 @@ func (g *GcpResourceService) getApiGatewayDetails(ctx context.Context, name stri
 
 	// there should only be a single entry in this array, we'll grab the first and then break
 	if gw, err := gws.Next(); gw != nil && err == nil {
-		return &v1.ResourceDetailsResponse{
-			Id:       gw.Name,
-			Provider: "gcp",
-			Service:  "ApiGateway",
-			Details: &v1.ResourceDetailsResponse_Api{
-				Api: &v1.ApiResourceDetails{
-					Url: fmt.Sprintf("https://%s", gw.DefaultHostname),
-				},
-			},
+		return &GcpApiGatewayDetails{
+			Url: fmt.Sprintf("https://%s", gw.DefaultHostname),
 		}, nil
 	} else {
 		return nil, err
@@ -106,18 +103,6 @@ func (g *GcpResourceService) getApiGatewayDetails(ctx context.Context, name stri
 
 func (g *GcpResourceService) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
 	return &v1.ResourceDeclareResponse{}, nil
-}
-
-func (g *GcpResourceService) Details(ctx context.Context, req *v1.ResourceDetailsRequest) (*v1.ResourceDetailsResponse, error) {
-	resourceName := req.Id.Name
-	resourceType := req.Id.Type
-
-	switch resourceType {
-	case v1.ResourceType_Api:
-		return g.getApiGatewayDetails(ctx, resourceName)
-	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
-	}
 }
 
 func (g *GcpResourceService) GetProjectID() (string, error) {

@@ -21,6 +21,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
 	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/document"
 	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
@@ -41,6 +42,8 @@ func main() {
 	if err != nil {
 		log.Default().Fatalf("Failed create core provider: %s", err.Error())
 	}
+
+	membraneOpts.ApiPlugin = api.NewGcpApiGatewayProvider(provider)
 
 	membraneOpts.SecretManagerPlugin, err = secret_manager_secret_service.New()
 	if err != nil {

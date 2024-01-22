@@ -24,7 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
-	resourcepb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	websocketpb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
@@ -43,19 +43,11 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		return client, nil
 	}
 
-	details, err := a.provider.Details(context.TODO(), &resourcepb.ResourceDetailsRequest{
-		Id: &resourcepb.ResourceIdentifier{
-			Name: socket,
-			Type: resourcepb.ResourceType_Websocket,
-		},
+	details, err := a.Details(context.TODO(), &websocketpb.WebsocketDetailsRequest{
+		SocketName: socket,
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	apiDetails, ok := details.Details.(*resourcepb.ResourceDetailsResponse_Websocket)
-	if !ok {
-		return nil, fmt.Errorf("an error occurred resolving API Gateway details")
 	}
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -63,7 +55,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}
 
-	callbackUrl := strings.Replace(apiDetails.Websocket.Url, "wss", "https", 1)
+	callbackUrl := strings.Replace(details.Url, "wss", "https", 1)
 	callbackUrl = callbackUrl + "/$default"
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)
@@ -73,6 +65,20 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 	)))
 
 	return a.clients[socket], nil
+}
+
+func (a *ApiGatewayWebsocketService) Details(ctx context.Context, req *websocketpb.WebsocketDetailsRequest) (*websocketpb.WebsocketDetailsResponse, error) {
+	gwDetails, err := a.provider.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
+		Type: resourcespb.ResourceType_Websocket,
+		Name: req.SocketName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &websocketpb.WebsocketDetailsResponse{
+		Url: gwDetails.Url,
+	}, nil
 }
 
 func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.WebsocketSendRequest) (*websocketpb.WebsocketSendResponse, error) {

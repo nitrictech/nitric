@@ -36,6 +36,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 	resourcepb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 type AwsResource = string
@@ -83,9 +84,18 @@ func (a *AwsResourceService) Declare(ctx context.Context, req *resourcepb.Resour
 	return &resourcepb.ResourceDeclareResponse{}, nil
 }
 
-func (a *AwsResourceService) Details(ctx context.Context, req *resourcepb.ResourceDetailsRequest) (*resourcepb.ResourceDetailsResponse, error) {
-	resourceName := req.Id.Name
-	resourceType := req.Id.Type
+type AWSApiGatewayDetails struct {
+	Url string
+}
+
+// GetAWSApiGatewayDetails - Get the details for an AWS API Gateway resource related to a Nitric API or Websocket
+func (a *AwsResourceService) GetAWSApiGatewayDetails(ctx context.Context, identifier *resourcespb.ResourceIdentifier) (*AWSApiGatewayDetails, error) {
+	resourceName := identifier.Name
+	resourceType := identifier.Type
+
+	if resourceType != resourcepb.ResourceType_Api && resourceType != resourcepb.ResourceType_Websocket {
+		return nil, fmt.Errorf("resource type %s is not an API Gateway", resourceType)
+	}
 
 	rt, ok := resourceDetailsTypeMap[resourceType]
 	if !ok {
@@ -103,41 +113,18 @@ func (a *AwsResourceService) Details(ctx context.Context, req *resourcepb.Resour
 		return nil, fmt.Errorf("unable to find resource %s for name: %s", resourceType, resourceName)
 	}
 
-	details := &resourcepb.ResourceDetailsResponse{
-		Id:       arn.ARN,
-		Provider: "aws",
+	// split arn to find the apiId
+	arnParts := strings.Split(arn.ARN, "/")
+	apiId := arnParts[len(arnParts)-1]
+	// Get api detail
+	api, err := a.GetApiGatewayById(ctx, apiId)
+	if err != nil {
+		return nil, err
 	}
 
-	switch rt {
-	case AwsResource_Api:
-		// split arn to find the apiId
-		arnParts := strings.Split(arn.ARN, "/")
-		apiId := arnParts[len(arnParts)-1]
-		// Get api detail
-		api, err := a.GetApiGatewayById(ctx, apiId)
-		if err != nil {
-			return nil, err
-		}
-
-		details.Service = "ApiGateway"
-		if resourceType == resourcepb.ResourceType_Api {
-			details.Details = &resourcepb.ResourceDetailsResponse_Api{
-				Api: &resourcepb.ApiResourceDetails{
-					Url: *api.ApiEndpoint,
-				},
-			}
-		} else {
-			details.Details = &resourcepb.ResourceDetailsResponse_Websocket{
-				Websocket: &resourcepb.WebsocketResourceDetails{
-					Url: fmt.Sprintf("%s/$default", *api.ApiEndpoint),
-				},
-			}
-		}
-
-		return details, nil
-	default:
-		return nil, fmt.Errorf("unimplemented resource type")
-	}
+	return &AWSApiGatewayDetails{
+		Url: *api.ApiEndpoint,
+	}, nil
 }
 
 func (a *AwsResourceService) GetApiGatewayById(ctx context.Context, apiId string) (*apigatewayv2.GetApiOutput, error) {
