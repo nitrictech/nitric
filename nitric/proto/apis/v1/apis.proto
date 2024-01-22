@@ -19,7 +19,7 @@ service Api {
 }
 
 message ApiDetailsRequest {
-  string apiName = 1;
+  string api_name = 1;
 }
 
 message ApiDetailsResponse {
