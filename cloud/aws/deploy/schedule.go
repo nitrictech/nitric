@@ -83,7 +83,11 @@ func (a *NitricAwsPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 		Target: &scheduler.ScheduleTargetArgs{
 			Arn:     target.Arn,
 			RoleArn: role.Arn,
-			Input:   embeds.GetScheduleInputDocument(pulumi.String(name)),
+			RetryPolicy: &scheduler.ScheduleTargetRetryPolicyArgs{
+				MaximumEventAgeInSeconds: pulumi.Int(60),
+				MaximumRetryAttempts:     pulumi.Int(5),
+			},
+			Input: embeds.GetScheduleInputDocument(pulumi.String(name)),
 		},
 	}, opts...)
 	if err != nil {
