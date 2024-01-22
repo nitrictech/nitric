@@ -53,6 +53,8 @@ type NitricPulumiProvider interface {
 	Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error
 	// Policy - Deploy a Policy
 	Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error
+	// KeyValueStore - Deploy a Key Value Store
+	KeyValueStore(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.KeyValueStore) error
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(ctx *pulumi.Context) error
