@@ -62,20 +62,16 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 		"states:StartExecution",
 		"states:StateSyncExecution",
 	},
-	resourcespb.Action_CollectionDocumentRead: {
+	resourcespb.Action_KeyValueStoreRead: {
 		"dynamodb:GetItem",
 		"dynamodb:BatchGetItem",
 	},
-	resourcespb.Action_CollectionDocumentWrite: {
+	resourcespb.Action_KeyValueStoreWrite: {
 		"dynamodb:UpdateItem",
 		"dynamodb:PutItem",
 	},
-	resourcespb.Action_CollectionDocumentDelete: {
+	resourcespb.Action_KeyValueStoreDelete: {
 		"dynamodb:DeleteItem",
-	},
-	resourcespb.Action_CollectionQuery: {
-		"dynamodb:Query",
-		"dynamodb:Scan",
 	},
 	// XXX: Cannot be applied to single resources
 	// v1.Action_CollectionList: {
@@ -113,7 +109,7 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 		if t, ok := a.topics[resource.Id.Name]; ok {
 			return []interface{}{t.sns.Arn, t.sfn.Arn}, nil
 		}
-	case resourcespb.ResourceType_Collection:
+	case resourcespb.ResourceType_KeyValueStore:
 		if c, ok := a.collections[resource.Id.Name]; ok {
 			return []interface{}{c.Arn}, nil
 		}

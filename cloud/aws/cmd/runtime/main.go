@@ -21,9 +21,9 @@ import (
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
-	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/documents"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
+	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/keyvalue"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
@@ -58,7 +58,7 @@ func main() {
 
 	membraneOpts.ApiPlugin = api.NewAwsApiGatewayProvider(provider)
 	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(provider)
-	membraneOpts.DocumentPlugin, _ = dynamodb_service.New(provider)
+	membraneOpts.KeyValuePlugin, _ = dynamodb_service.New(provider)
 	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 	membraneOpts.ResourcesPlugin = provider

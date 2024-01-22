@@ -182,7 +182,7 @@ message Topic {
     repeated SubscriptionTarget subscriptions = 1;
 }
 
-message Collection {
+message KeyValueStore {
 
 }
 
@@ -284,7 +284,7 @@ message Resource {
         Api api = 13;
         Policy policy = 14;
         Schedule schedule = 15;
-        Collection collection = 16;
+        KeyValueStore key_value_store = 16;
         Secret secret = 17;
         Websocket websocket = 18;
         Http http = 19;

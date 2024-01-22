@@ -7,5 +7,4 @@ use (
 	./cloud/debug
 	./cloud/gcp
 	./core
-	./e2e
 )

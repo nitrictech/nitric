@@ -33,8 +33,8 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
-	documentspb "github.com/nitrictech/nitric/core/pkg/proto/documents/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
+	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	secretspb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
@@ -66,7 +66,7 @@ type MembraneOptions struct {
 	MinWorkers *int
 
 	// Resource access plugins
-	DocumentPlugin      documentspb.DocumentsServer
+	KeyValuePlugin      keyvaluepb.KeyValueServer
 	TopicsPlugin        topicspb.TopicsServer
 	StoragePlugin       storagepb.StorageServer
 	SecretManagerPlugin secretspb.SecretManagerServer
@@ -236,7 +236,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	// Load & Register the service plugins
 	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.options.SecretManagerPlugin)
 
-	documentspb.RegisterDocumentsServer(s.grpcServer, s.options.DocumentPlugin)
+	keyvaluepb.RegisterKeyValueServer(s.grpcServer, s.options.KeyValuePlugin)
 	topicspb.RegisterTopicsServer(s.grpcServer, s.options.TopicsPlugin)
 	storagepb.RegisterStorageServer(s.grpcServer, s.options.StoragePlugin)
 	secretspb.RegisterSecretManagerServer(s.grpcServer, secretsServerWithValidation)

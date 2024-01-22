@@ -118,7 +118,7 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	for _, resource := range policy.Resources {
-		if resource.Id.Type == resourcespb.ResourceType_Collection {
+		if resource.Id.Type == resourcespb.ResourceType_KeyValueStore {
 			continue
 		}
 

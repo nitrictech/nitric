@@ -47,7 +47,7 @@ func main() {
 		log.Default().Println("Failed to load secret plugin:", err.Error())
 	}
 
-	membraneOpts.DocumentPlugin, err = firestore_service.New()
+	membraneOpts.KeyValuePlugin, err = firestore_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}

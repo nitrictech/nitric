@@ -47,7 +47,7 @@ func main() {
 
 	membraneOpts.ApiPlugin = api.NewAzureApiGatewayProvider(provider)
 
-	membraneOpts.DocumentPlugin, err = mongodb_service.New()
+	membraneOpts.KeyValuePlugin, err = mongodb_service.New()
 	if err != nil {
 		log.Default().Println("Failed to load document plugin:", err.Error())
 	}
