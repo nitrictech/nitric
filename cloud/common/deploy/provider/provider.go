@@ -78,6 +78,7 @@ func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploym
 		resourcespb.ResourceType_Secret,
 		resourcespb.ResourceType_Topic,
 		resourcespb.ResourceType_Bucket,
+		resourcespb.ResourceType_KeyValueStore,
 		resourcespb.ResourceType_Api,
 		resourcespb.ResourceType_Http,
 		resourcespb.ResourceType_Policy,

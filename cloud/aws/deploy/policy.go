@@ -110,7 +110,7 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 			return []interface{}{t.sns.Arn, t.sfn.Arn}, nil
 		}
 	case resourcespb.ResourceType_KeyValueStore:
-		if c, ok := a.collections[resource.Id.Name]; ok {
+		if c, ok := a.keyValueStores[resource.Id.Name]; ok {
 			return []interface{}{c.Arn}, nil
 		}
 	case resourcespb.ResourceType_Secret:
@@ -144,13 +144,6 @@ func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resou
 
 func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
-
-	// res := &Policy{Name: name, RolePolicies: make([]*iam.RolePolicy, 0)}
-
-	// err := ctx.RegisterComponentResource("nitric:policy:AwsIamPolicy", name, res, opts...)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	// Get Actions
 	actions := actionsToAwsActions(config.Actions)
@@ -227,8 +220,6 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 		if err != nil {
 			return err
 		}
-
-		// res.RolePolicies = append(res.RolePolicies, rolePol)
 	}
 
 	return nil

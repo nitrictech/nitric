@@ -62,8 +62,8 @@ type NitricAwsPulumiProvider struct {
 	buckets             map[string]*s3.Bucket
 	bucketNotifications map[string]*s3.BucketNotification
 	topics              map[string]*topic
-	collections         map[string]*dynamodb.Table
 	websockets          map[string]*apigatewayv2.Api
+	keyValueStores      map[string]*dynamodb.Table
 
 	provider.NitricDefaultOrder
 
@@ -179,8 +179,8 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		secrets:             make(map[string]*secretsmanager.Secret),
 		buckets:             make(map[string]*s3.Bucket),
 		bucketNotifications: make(map[string]*s3.BucketNotification),
-		collections:         make(map[string]*dynamodb.Table),
 		websockets:          make(map[string]*apigatewayv2.Api),
 		topics:              make(map[string]*topic),
+		keyValueStores:      make(map[string]*dynamodb.Table),
 	}
 }
