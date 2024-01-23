@@ -279,6 +279,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	// Start the gateway
 	go func(errch chan error) {
 		s.log(fmt.Sprintf("Starting Gateway, %d workers currently available", s.WorkerCount()))
+
 		errch <- s.options.GatewayPlugin.Start(&gateway.GatewayStartOpts{
 			ApiPlugin:               s.options.ApiPlugin,
 			HttpPlugin:              s.options.HttpPlugin,

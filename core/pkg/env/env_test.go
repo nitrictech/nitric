@@ -54,18 +54,18 @@ var _ = Describe("Env", func() {
 		})
 
 		When("TEST_ENV is an integer string", func() {
-			os.Setenv("TEST_ENV", "123")
+			os.Setenv("MY_TEST_ENV", "123")
 
 			env := GetEnv("MY_TEST_ENV", "")
 
 			It("should return int values", func() {
 				val, err := env.Int()
 
-				By("correctly parsing the int value")
-				Expect(val).To(Equal(123))
-
 				By("not returning an error")
 				Expect(err).To(BeNil())
+
+				By("correctly parsing the int value")
+				Expect(val).To(Equal(123))
 			})
 
 			It("should not return bool values", func() {
@@ -76,9 +76,9 @@ var _ = Describe("Env", func() {
 		})
 
 		When("TEST_ENV is a boolean string", func() {
-			os.Setenv("TEST_ENV", "True")
+			os.Setenv("BOOL_TEST_ENV", "True")
 
-			env := GetEnv("MY_TEST_ENV", "")
+			env := GetEnv("BOOL_TEST_ENV", "")
 
 			It("should return boolean values", func() {
 				val, err := env.Bool()
