@@ -44,8 +44,10 @@ type GcpResourceService struct {
 	region              string
 }
 
-var _ GcpResourceProvider = &GcpResourceService{}
-var _ v1.ResourcesServer = &GcpResourceService{}
+var (
+	_ GcpResourceProvider = &GcpResourceService{}
+	_ v1.ResourcesServer  = &GcpResourceService{}
+)
 
 const (
 	metadataFlavorKey      = "Metadata-Flavor"

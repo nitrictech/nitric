@@ -156,7 +156,6 @@ func (g *gcpMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.
 				},
 			},
 		})
-
 		if err != nil {
 			// FIXME: Make sure that all schedule failures have consistent behaviour across providers
 			log.Default().Printf("could not handle schedule %s event\n", scheduleName)

@@ -265,7 +265,6 @@ func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
 }
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
-
 	return &NitricGcpPulumiProvider{
 		httpProxies:      make(map[string]*apigateway.Gateway),
 		apiGateways:      make(map[string]*apigateway.Gateway),

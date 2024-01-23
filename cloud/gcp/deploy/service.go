@@ -54,7 +54,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	invalidChars := regexp.MustCompile(`[^a-z0-9\-]`)
 	gcpServiceName := invalidChars.ReplaceAllString(name, "-")
 
-	if config.GetImage == nil || config.GetImage().Uri == "" {
+	if config.GetImage() == nil || config.GetImage().Uri == "" {
 		return fmt.Errorf("gcp provider can only deploy service with an image source")
 	}
 

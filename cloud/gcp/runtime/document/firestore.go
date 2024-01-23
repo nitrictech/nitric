@@ -16,10 +16,9 @@ package document
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
-
-	"errors"
 
 	document "github.com/nitrictech/nitric/core/pkg/decorators/documents"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
