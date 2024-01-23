@@ -42,7 +42,7 @@ type RoleDefinition struct {
 }
 
 var roleDefinitions = map[resourcespb.Action]RoleDefinition{
-	resourcespb.Action_KeyValueStoreRead:   {
+	resourcespb.Action_KeyValueStoreRead: {
 		Description: pulumi.String("keyvalue read access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
@@ -56,7 +56,8 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 		AssignableScopes: pulumi.ToStringArray([]string{
 			"/",
 		}),
-	resourcespb.Action_KeyValueStoreWrite:  {
+	},
+	resourcespb.Action_KeyValueStoreWrite: {
 		Description: pulumi.String("keyvalue write access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
