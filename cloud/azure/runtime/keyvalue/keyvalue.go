@@ -186,7 +186,7 @@ func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, sto
 }
 
 // New creates a new AWS DynamoDB implementation of a DocumentServiceServer
-func New(provider resource.AwsResourceProvider) (*AzureStorageTableKeyValueService, error) {
+func New() (*AzureStorageTableKeyValueService, error) {
 	storageAccountName := env.AZURE_STORAGE_ACCOUNT_NAME.String()
 	if storageAccountName == "" {
 		return nil, fmt.Errorf("failed to determine Azure Storage Account name, environment variable not set")
