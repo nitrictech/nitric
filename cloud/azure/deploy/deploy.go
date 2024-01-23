@@ -248,6 +248,11 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return errors.WithMessage(err, "resource group create")
 	}
 
+	a.containerEnv, err = a.newContainerEnv(ctx, a.stackId, map[string]string{})
+	if err != nil {
+		return err
+	}
+
 	// TODO: Filter down to required roles only
 	a.roles, err = CreateRoles(ctx, a.stackId, a.clientConfig.SubscriptionId, a.resourceGroup.Name)
 	if err != nil {

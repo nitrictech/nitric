@@ -214,7 +214,6 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		if err != nil {
 			return err
 		}
-
 	}
 
 	env := app.EnvironmentVarArray{
