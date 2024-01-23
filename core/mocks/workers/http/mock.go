@@ -5,9 +5,11 @@
 package mock_http
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
 	fasthttp "github.com/valyala/fasthttp"
 )
 
@@ -47,6 +49,21 @@ func (m *MockHttpRequestHandler) HandleRequest(arg0 *fasthttp.Request) (*fasthtt
 func (mr *MockHttpRequestHandlerMockRecorder) HandleRequest(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRequest", reflect.TypeOf((*MockHttpRequestHandler)(nil).HandleRequest), arg0)
+}
+
+// Proxy mocks base method.
+func (m *MockHttpRequestHandler) Proxy(arg0 context.Context, arg1 *httppb.HttpProxyRequest) (*httppb.HttpProxyResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Proxy", arg0, arg1)
+	ret0, _ := ret[0].(*httppb.HttpProxyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Proxy indicates an expected call of Proxy.
+func (mr *MockHttpRequestHandlerMockRecorder) Proxy(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Proxy", reflect.TypeOf((*MockHttpRequestHandler)(nil).Proxy), arg0, arg1)
 }
 
 // WorkerCount mocks base method.

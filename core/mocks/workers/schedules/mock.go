@@ -49,6 +49,20 @@ func (mr *MockScheduleRequestHandlerMockRecorder) HandleRequest(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRequest", reflect.TypeOf((*MockScheduleRequestHandler)(nil).HandleRequest), arg0)
 }
 
+// Schedule mocks base method.
+func (m *MockScheduleRequestHandler) Schedule(arg0 schedulespb.Schedules_ScheduleServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Schedule", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Schedule indicates an expected call of Schedule.
+func (mr *MockScheduleRequestHandlerMockRecorder) Schedule(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Schedule", reflect.TypeOf((*MockScheduleRequestHandler)(nil).Schedule), arg0)
+}
+
 // WorkerCount mocks base method.
 func (m *MockScheduleRequestHandler) WorkerCount() int {
 	m.ctrl.T.Helper()

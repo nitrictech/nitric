@@ -49,6 +49,20 @@ func (mr *MockBucketRequestHandlerMockRecorder) HandleRequest(arg0 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRequest", reflect.TypeOf((*MockBucketRequestHandler)(nil).HandleRequest), arg0)
 }
 
+// Listen mocks base method.
+func (m *MockBucketRequestHandler) Listen(arg0 storagepb.StorageListener_ListenServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Listen", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Listen indicates an expected call of Listen.
+func (mr *MockBucketRequestHandlerMockRecorder) Listen(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Listen", reflect.TypeOf((*MockBucketRequestHandler)(nil).Listen), arg0)
+}
+
 // WorkerCount mocks base method.
 func (m *MockBucketRequestHandler) WorkerCount() int {
 	m.ctrl.T.Helper()

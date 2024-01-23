@@ -5,6 +5,7 @@
 package mock_apis
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -34,6 +35,21 @@ func (m *MockApiRequestHandler) EXPECT() *MockApiRequestHandlerMockRecorder {
 	return m.recorder
 }
 
+// Details mocks base method.
+func (m *MockApiRequestHandler) Details(arg0 context.Context, arg1 *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret0, _ := ret[0].(*apispb.ApiDetailsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Details indicates an expected call of Details.
+func (mr *MockApiRequestHandlerMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockApiRequestHandler)(nil).Details), arg0, arg1)
+}
+
 // HandleRequest mocks base method.
 func (m *MockApiRequestHandler) HandleRequest(arg0 string, arg1 *apispb.ServerMessage) (*apispb.ClientMessage, error) {
 	m.ctrl.T.Helper()
@@ -47,6 +63,20 @@ func (m *MockApiRequestHandler) HandleRequest(arg0 string, arg1 *apispb.ServerMe
 func (mr *MockApiRequestHandlerMockRecorder) HandleRequest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRequest", reflect.TypeOf((*MockApiRequestHandler)(nil).HandleRequest), arg0, arg1)
+}
+
+// Serve mocks base method.
+func (m *MockApiRequestHandler) Serve(arg0 apispb.Api_ServeServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Serve", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Serve indicates an expected call of Serve.
+func (mr *MockApiRequestHandlerMockRecorder) Serve(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Serve", reflect.TypeOf((*MockApiRequestHandler)(nil).Serve), arg0)
 }
 
 // WorkerCount mocks base method.
