@@ -33,7 +33,7 @@ import (
 
 type (
 	HttpMiddleware func(*fasthttp.RequestCtx, *gateway.GatewayStartOpts) bool
-	//EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+	// EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
 )
 
 // A callback function that allows for custom routing configuration to be setup by consumer packages.

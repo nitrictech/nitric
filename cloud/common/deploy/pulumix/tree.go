@@ -17,8 +17,6 @@ package pulumix
 import (
 	"strings"
 	"time"
-
-	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
 type Tree[T any] struct {
@@ -59,17 +57,15 @@ type Node[T any] struct {
 
 // FindParent - finds the first parent node that matches the given function
 func (n *Node[T]) FindParent(fn func(n *Node[T]) bool) *Node[T] {
-	for {
-		if n.Parent == nil {
-			return nil
-		}
-
-		if fn(n.Parent) {
-			return n.Parent
-		}
-
-		return n.Parent.FindParent(fn)
+	if n.Parent == nil {
+		return nil
 	}
+
+	if fn(n.Parent) {
+		return n.Parent
+	}
+
+	return n.Parent.FindParent(fn)
 }
 
 func (n *Node[T]) AddChild(node *Node[T]) {
@@ -91,8 +87,6 @@ type PulumiData struct {
 	EndTime     time.Time
 	LastMessage string
 }
-
-type pulumiDataTree = Tree[resourcespb.ResourceIdentifier]
 
 func (pd PulumiData) Name() string {
 	urnParts := strings.Split(pd.Urn, "::")

@@ -1,3 +1,17 @@
+// Copyright 2021 Nitric Technologies Pty Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package pulumix
 
 import (
@@ -32,7 +46,7 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 
 		nitricResource := NitricResourceIdFromPulumiUrn(evt.ResourcePreEvent.Metadata.URN)
 
-		nitricAction := deploymentspb.ResourceDeploymentAction_SAME
+		// nitricAction := deploymentspb.ResourceDeploymentAction_SAME
 
 		/*
 			TODO: review unhandled cases (currently defaulting to update)
@@ -46,6 +60,7 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 			OpImportReplacement
 		*/
 
+		var nitricAction deploymentspb.ResourceDeploymentAction
 		switch evt.ResourcePreEvent.Metadata.Op {
 		case apitype.OpCreate:
 			nitricAction = deploymentspb.ResourceDeploymentAction_CREATE
@@ -130,7 +145,6 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 			Status:      deploymentspb.ResourceDeploymentStatus_SUCCESS,
 			SubResource: subResource,
 		}, nil
-
 	} else if evt.ResOpFailedEvent != nil {
 		urn := evt.ResOpFailedEvent.Metadata.URN
 		// Happens after resource updates fail to apply
@@ -173,8 +187,10 @@ type ResourceData struct {
 	action         deploymentspb.ResourceDeploymentAction
 }
 
-type DataTree = Tree[ResourceData]
-type DataNode = Node[ResourceData]
+type (
+	DataTree = Tree[ResourceData]
+	DataNode = Node[ResourceData]
+)
 
 func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumiEventsChan <-chan events.EngineEvent) error {
 	evtHandler := pulumiEventHandler{
