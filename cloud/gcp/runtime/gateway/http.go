@@ -125,7 +125,7 @@ func (g *gcpMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasth
 			}
 
 			if !response.GetMessageResponse().Success {
-				ctx.Error(fmt.Sprintf("Event handler returned success false"), 500)
+				ctx.Error("Event handler returned success false", 500)
 				return
 			}
 
