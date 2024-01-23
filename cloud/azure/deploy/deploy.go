@@ -129,34 +129,6 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 	return nil
 }
 
-var baseComputePermissions []string = []string{
-	"storage.buckets.list",
-	"storage.buckets.get",
-	"cloudtasks.queues.get",
-	"cloudtasks.tasks.create",
-	"cloudtrace.traces.patch",
-	"monitoring.timeSeries.create",
-	// permission for blob signing
-	// this is safe as only permissions this account has are delegated
-	"iam.serviceAccounts.signBlob",
-	// Basic list permissions
-	"pubsub.topics.list",
-	"pubsub.topics.get",
-	"pubsub.snapshots.list",
-	"pubsub.subscriptions.get",
-	"resourcemanager.projects.get",
-	"secretmanager.secrets.list",
-	"apigateway.gateways.list",
-
-	// telemetry
-	"monitoring.metricDescriptors.create",
-	"monitoring.metricDescriptors.get",
-	"monitoring.metricDescriptors.list",
-	"monitoring.monitoredResourceDescriptors.get",
-	"monitoring.monitoredResourceDescriptors.list",
-	"monitoring.timeSeries.create",
-}
-
 func createKeyVault(ctx *pulumi.Context, group *resources.ResourceGroup, tenantId string, tags map[string]string) (*keyvault.Vault, error) {
 	// Create a stack level keyvault if secrets are enabled
 	// At the moment secrets have no config level setting
