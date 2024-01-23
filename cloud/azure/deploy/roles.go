@@ -42,6 +42,50 @@ type RoleDefinition struct {
 }
 
 var roleDefinitions = map[resourcespb.Action]RoleDefinition{
+	resourcespb.Action_KeyValueStoreRead:   {
+		Description: pulumi.String("keyvalue read access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/read"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	resourcespb.Action_KeyValueStoreWrite:  {
+		Description: pulumi.String("keyvalue write access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/write"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
+	resourcespb.Action_KeyValueStoreDelete: {
+		Description: pulumi.String("keyvalue delete access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/delete"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
 	resourcespb.Action_BucketFileGet: {
 		Description: pulumi.String("bucket read access"),
 		Permissions: authorization.PermissionArray{

@@ -72,6 +72,21 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 				topic.Name,
 			),
 		}, nil
+	case resourcespb.ResourceType_KeyValueStore:
+		kv, ok := p.keyValueStores[resource.Id.Name]
+		if !ok {
+			return nil, fmt.Errorf("key value store %s not found", resource.Id.Name)
+		}
+
+		return &resourceScope{
+			scope: pulumi.Sprintf(
+				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
+				p.clientConfig.SubscriptionId,
+				p.resourceGroup.Name,
+				p.storageAccount.Name,
+				kv.Name,
+			),
+		}, nil
 	case resourcespb.ResourceType_Bucket:
 		bucket, ok := p.buckets[resource.Id.Name]
 		if !ok {
@@ -118,10 +133,6 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	for _, resource := range policy.Resources {
-		if resource.Id.Type == resourcespb.ResourceType_KeyValueStore {
-			continue
-		}
-
 		for _, principal := range policy.Principals {
 			// The roles we need to assign
 			roles := actionsToAzureRoleDefinitions(p.roles.RoleDefinitions, policy.Actions)
@@ -160,55 +171,3 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 
 	return nil
 }
-
-// func NewAzureADPolicy(ctx *pulumi.Context, name string, args *PolicyArgs, opts ...pulumi.ResourceOption) (*Policy, error) {
-// 	res := &Policy{Name: name, RolePolicies: make([]*iam.RolePolicy, 0)}
-
-// 	err := ctx.RegisterComponentResource("nitric:policy:AazureADPolicy", name, res, opts...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	for _, resource := range args.Policy.Resources {
-// 		if resource.Id.Type == resourcespb.ResourceType_Collection {
-// 			continue
-// 		}
-
-// 		for _, principal := range args.Policy.Principals {
-// 			// The roles we need to assign
-// 			roles := actionsToAzureRoleDefinitions(args.Roles.RoleDefinitions, args.Policy.Actions)
-// 			if len(roles) == 0 {
-// 				return nil, fmt.Errorf("policy contained not assignable actions %+v, %+v", args.Policy, args.Roles.RoleDefinitions)
-// 			}
-
-// 			sp, ok := args.Principals[principal.Id.Type][principal.Id.Name]
-// 			if !ok {
-// 				return nil, fmt.Errorf("principal %s of type %s not found", principal.Id.Name, principal.Id.Type)
-// 			}
-
-// 			// We have the principal and the roles we need to assign
-// 			// just need to scope the resource type to the RoleAssignments
-// 			for roleName, role := range roles {
-// 				// FIXME: Implement collection and secret least priveledge
-// 				scope, err := p.scopeFromResource(resource)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-
-// 				_, err = authorization.NewRoleAssignment(ctx, fmt.Sprintf("%s-%s", principal.Id.Name, roleName), &authorization.RoleAssignmentArgs{
-// 					PrincipalId:      sp.ServicePrincipalId,
-// 					PrincipalType:    pulumi.String("ServicePrincipal"),
-// 					RoleDefinitionId: role.ID(),
-// 					// Convert the target resources into a scope
-// 					Scope:     scope.scope,
-// 					Condition: scope.condition,
-// 				}, pulumi.Parent(res))
-// 				if err != nil {
-// 					return nil, fmt.Errorf("there was an error creating the role assignment: %w", err)
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return res, nil
-// }
