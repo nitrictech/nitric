@@ -22,7 +22,7 @@ service Websocket {
 }
 
 message WebsocketDetailsRequest {
-  string socketName = 1;
+  string socket_name = 1;
 }
 
 message WebsocketDetailsResponse {
