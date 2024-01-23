@@ -71,7 +71,6 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 }
 
 func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
-
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	// Create the ECR repository to push the image to

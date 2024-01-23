@@ -409,7 +409,8 @@ var _ = Describe("Secrets Manager Plugin", func() {
 								Name: "Test",
 							},
 							Version: "Version-Id",
-						}})
+						},
+					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("unable to access secret value"))

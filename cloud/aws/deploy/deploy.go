@@ -171,7 +171,6 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 }
 
 func NewNitricAwsProvider() *NitricAwsPulumiProvider {
-
 	return &NitricAwsPulumiProvider{
 		lambdas:             make(map[string]*lambda.Function),
 		lambdaRoles:         make(map[string]*iam.Role),

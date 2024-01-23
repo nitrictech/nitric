@@ -63,7 +63,6 @@ func createSecret(ctx *pulumi.Context, name string, tags map[string]string) (*se
 	sec, err := secretsmanager.NewSecret(ctx, name, &secretsmanager.SecretArgs{
 		Tags: pulumi.ToStringMap(tags),
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +81,6 @@ func (a *NitricAwsPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 	if a.config.Import.Secrets != nil {
 		importArn = a.config.Import.Secrets[name]
 	}
-	importArn = a.config.Import.Secrets[name]
 
 	if importArn != "" {
 		secret, err = tagSecret(ctx, importArn, name, awsTags, a.resourceTaggingClient)

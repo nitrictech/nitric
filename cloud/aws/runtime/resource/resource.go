@@ -77,8 +77,10 @@ type AwsResourceProvider interface {
 	GetResources(context.Context, AwsResource) (map[string]ResolvedResource, error)
 }
 
-var _ AwsResourceProvider = &AwsResourceService{}
-var _ resourcepb.ResourcesServer = &AwsResourceService{}
+var (
+	_ AwsResourceProvider        = &AwsResourceService{}
+	_ resourcepb.ResourcesServer = &AwsResourceService{}
+)
 
 func (a *AwsResourceService) Declare(ctx context.Context, req *resourcepb.ResourceDeclareRequest) (*resourcepb.ResourceDeclareResponse, error) {
 	return &resourcepb.ResourceDeclareResponse{}, nil

@@ -148,7 +148,6 @@ func (s *DynamoDocService) Get(ctx context.Context, req *documentpb.DocumentGetR
 			Content: documentContent,
 		},
 	}, nil
-
 }
 
 // Set a document in the DynamoDB table
@@ -576,7 +575,7 @@ func (s *DynamoDocService) performQuery(
 
 	// Configure fetch Limit
 	if limit > 0 {
-		limit64 := int32(limit)
+		limit64 := limit
 		input.Limit = &(limit64)
 
 		if len(pagingToken) > 0 {
@@ -655,7 +654,7 @@ func (s *DynamoDocService) performScan(
 	// Configure fetch Limit
 	if limit > 0 {
 		// Account for parent record in fetch limit
-		limit32 := int32(limit)
+		limit32 := limit
 		input.Limit = &(limit32)
 
 		if len(pagingToken) > 0 {
