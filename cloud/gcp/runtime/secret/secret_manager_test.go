@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secret/v1"
+	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 
 	mocks "github.com/nitrictech/nitric/cloud/gcp/mocks/gcp_secret"
 )

@@ -16,6 +16,17 @@ service Websocket {
   // Close a websocket connection
   // This can be used to force a client to disconnect
   rpc Close(WebsocketCloseRequest) returns (WebsocketCloseResponse);
+
+  // Retrieve details about an API
+  rpc Details(WebsocketDetailsRequest) returns (WebsocketDetailsResponse);
+}
+
+message WebsocketDetailsRequest {
+  string socket_name = 1;
+}
+
+message WebsocketDetailsResponse {
+  string url = 1;
 }
 
 service WebsocketHandler {

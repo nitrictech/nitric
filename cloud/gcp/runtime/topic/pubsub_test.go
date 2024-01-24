@@ -31,7 +31,7 @@ import (
 	mock_core "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
 	mock_pubsub "github.com/nitrictech/nitric/cloud/gcp/mocks/pubsub"
 	pubsub_service "github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
-	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topic/v1"
+	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 )
 
 var _ = Describe("Pubsub Plugin", func() {

@@ -56,7 +56,7 @@ func (s *KeyVaultSecretService) Put(ctx context.Context, req *secretpb.SecretPut
 
 	result, err := s.client.SetSecret(
 		ctx,
-		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName),
 		req.Secret.Name,
 		keyvault.SecretSetParameters{
 			Value: &stringVal,

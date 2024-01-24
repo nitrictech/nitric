@@ -644,7 +644,7 @@ var _ = Describe("Storage", func() {
 					mockObjectIterator.EXPECT().Next().Return(nil, iterator.Done),
 				)
 
-				resp, err := storagePlugin.ListFiles(context.TODO(), &storagePb.StorageListFilesRequest{
+				resp, err := storagePlugin.ListBlobs(context.TODO(), &storagePb.StorageListBlobsRequest{
 					BucketName: "test-bucket",
 					Prefix:     "test/",
 				})
@@ -653,10 +653,10 @@ var _ = Describe("Storage", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning a single file")
-				Expect(resp.Files).To(HaveLen(1))
+				Expect(resp.Blobs).To(HaveLen(1))
 
 				By("The file having the returned name")
-				Expect(resp.Files[0].Key).To(Equal("test/test-file"))
+				Expect(resp.Blobs[0].Key).To(Equal("test/test-file"))
 			})
 		})
 
@@ -671,7 +671,7 @@ var _ = Describe("Storage", func() {
 				mockBucketIterator.EXPECT().Next().Return(nil, iterator.Done)
 				mockStorageClient.EXPECT().Buckets(gomock.Any(), gomock.Any()).Return(mockBucketIterator)
 
-				resp, err := storagePlugin.ListFiles(context.TODO(), &storagePb.StorageListFilesRequest{
+				resp, err := storagePlugin.ListBlobs(context.TODO(), &storagePb.StorageListBlobsRequest{
 					BucketName: "test-bucket",
 				})
 

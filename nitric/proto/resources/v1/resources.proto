@@ -16,20 +16,17 @@ service Resources {
   // At Deploy time this will create resources as part of the nitric stacks dependency graph
   // At runtime
   rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
-
-  // Retrieve details about a resource at runtime
-  rpc Details (ResourceDetailsRequest) returns (ResourceDetailsResponse);
 }
 
 message PolicyResource {
-  repeated Resource principals = 1;
+  repeated ResourceIdentifier principals = 1;
   repeated Action actions = 2;
-  repeated Resource resources = 3;
+  repeated ResourceIdentifier resources = 3;
 }
 
 enum ResourceType {
   Api = 0;
-  Function = 1;
+  Service = 1;
   Bucket = 2;
   Topic = 3;
   Schedule = 4;
@@ -37,19 +34,20 @@ enum ResourceType {
   Collection = 6;
   Policy = 7;
   Secret = 8;
-  Notification = 9;
+  BucketListener = 9;
   Websocket = 10;
   Http = 11;
   ApiSecurityDefinition = 12;
 }
 
-message Resource {
+// Unique identifier for a resource within a nitric application.
+message ResourceIdentifier {
   ResourceType type = 1;
   string name = 2;
 }
 
 message ResourceDeclareRequest {
-  Resource resource = 1;
+  ResourceIdentifier id = 1;
 
   oneof config {
     PolicyResource policy = 10;
@@ -118,32 +116,3 @@ enum Action {
 }
 
 message ResourceDeclareResponse {}
-
-message ApiResourceDetails {
-  string url = 1;
-}
-
-message WebsocketResourceDetails {
-  string url = 1;
-}
-
-message ResourceDetailsRequest {
-  Resource resource = 1;
-}
-
-message ResourceDetailsResponse {
-  // The identifier of the resource
-  string id = 1;
-
-  // The provider this resource is deployed with (e.g. aws)
-  string provider = 2;
-
-  // The service this resource is deployed on (e.g. ApiGateway)
-  string service = 3;
-
-  // Details about the resource
-  oneof details {
-    ApiResourceDetails api = 10;
-    WebsocketResourceDetails websocket = 11;
-  }
-}

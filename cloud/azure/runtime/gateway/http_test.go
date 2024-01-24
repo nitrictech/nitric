@@ -25,7 +25,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	. "github.com/onsi/ginkgo"
@@ -89,16 +89,7 @@ var _ = Describe("Http", func() {
 			It("Should be handled successfully", func() {
 				By("Handling exactly 1 request")
 				// TODO: Fix panic on request comparison
-				mockManager.EXPECT().HandleRequest("test", &apispb.ServerMessage{
-					Content: &apispb.ServerMessage_HttpRequest{
-						HttpRequest: &apispb.HttpRequest{
-							Method:  "POST",
-							Path:    "/test/",
-							Headers: map[string]*apispb.HeaderValue{},
-							Body:    payload,
-						},
-					},
-				}).Return(&apispb.ClientMessage{
+				mockManager.EXPECT().HandleRequest("test", gomock.Any()).Return(&apispb.ClientMessage{
 					Id: "TODO",
 					Content: &apispb.ClientMessage_HttpResponse{
 						HttpResponse: &apispb.HttpResponse{

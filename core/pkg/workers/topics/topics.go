@@ -68,6 +68,7 @@ func (s *SubscriberManager) unregisterSubscriber(topicName string, subscriber *W
 		delete(s.subscriberMap, topicName)
 	}
 }
+
 func (s *SubscriberManager) WorkerCount() int {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

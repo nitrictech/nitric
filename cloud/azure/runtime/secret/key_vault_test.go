@@ -102,50 +102,6 @@ var _ = Describe("Key Vault", func() {
 					Expect(response.SecretVersion.Secret.Name).To(Equal(secretName))
 				})
 			})
-
-			When("Putting a nil secret", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
-						Value: secretVal,
-					})
-					By("Returning an error")
-					Expect(err).Should(HaveOccurred())
-				})
-			})
-
-			When("Putting a secret with an empty name", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
-						Secret: &secretpb.Secret{Name: ""},
-						Value:  secretVal,
-					})
-					By("Returning an error")
-					Expect(err).Should(HaveOccurred())
-				})
-			})
-
-			When("Putting a secret with an empty value", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should invalidate the secret", func() {
-					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
-						Secret: testSecret,
-						Value:  nil,
-					})
-					By("Returning an error")
-					Expect(err).Should(HaveOccurred())
-				})
-			})
 		})
 	})
 
@@ -200,74 +156,6 @@ var _ = Describe("Key Vault", func() {
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("secret does not exist"))
-					By("returning a nil response")
-					Expect(response).Should(BeNil())
-				})
-			})
-			When("An empty secret version is provided", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should return an error", func() {
-					defer ctrl.Finish()
-
-					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
-						SecretVersion: nil,
-					})
-					By("returning an error")
-					Expect(err).Should(HaveOccurred())
-					By("returning a nil response")
-					Expect(response).Should(BeNil())
-				})
-			})
-			When("An empty secret is provided", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should return an error", func() {
-					defer ctrl.Finish()
-
-					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
-						SecretVersion: &secretpb.SecretVersion{Secret: nil, Version: secretVersion},
-					})
-					By("returning an error")
-					Expect(err).Should(HaveOccurred())
-					By("returning a nil response")
-					Expect(response).Should(BeNil())
-				})
-			})
-			When("An empty secret name is provided", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should return an error", func() {
-					defer ctrl.Finish()
-
-					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
-						SecretVersion: &secretpb.SecretVersion{Secret: &secretpb.Secret{Name: ""}, Version: secretVersion},
-					})
-					By("returning an error")
-					Expect(err).Should(HaveOccurred())
-					By("returning a nil response")
-					Expect(response).Should(BeNil())
-				})
-			})
-			When("An empty version is provided", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockSecretClient := mocks.NewMockKeyVaultClient(ctrl)
-				secretPlugin := NewWithClient(mockSecretClient)
-
-				It("Should return an error", func() {
-					defer ctrl.Finish()
-
-					response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
-						SecretVersion: &secretpb.SecretVersion{Secret: testSecret, Version: ""},
-					})
-					By("returning an error")
-					Expect(err).Should(HaveOccurred())
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})

@@ -41,7 +41,11 @@ type HttpRequestHandler interface {
 // returns false if the timeout elapses before a connection is established
 func IsPortOpen(host string, timeout time.Duration) bool {
 	conn, err := net.DialTimeout("tcp", host, timeout)
-	defer conn.Close()
+	if err != nil {
+		return false
+	}
+
+	err = conn.Close()
 	return err == nil
 }
 

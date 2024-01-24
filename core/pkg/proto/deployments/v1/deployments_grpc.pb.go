@@ -18,34 +18,34 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// DeployClient is the client API for Deploy service.
+// DeploymentClient is the client API for Deployment service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DeployClient interface {
+type DeploymentClient interface {
 	// Begins a new deployment
 	// Server will stream updates back to the connected client
 	// on the status of the deployment
-	Up(ctx context.Context, in *DeployUpRequest, opts ...grpc.CallOption) (Deploy_UpClient, error)
+	Up(ctx context.Context, in *DeploymentUpRequest, opts ...grpc.CallOption) (Deployment_UpClient, error)
 	// Tears down an existing deployment
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
-	Down(ctx context.Context, in *DeployDownRequest, opts ...grpc.CallOption) (Deploy_DownClient, error)
+	Down(ctx context.Context, in *DeploymentDownRequest, opts ...grpc.CallOption) (Deployment_DownClient, error)
 }
 
-type deployClient struct {
+type deploymentClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewDeployClient(cc grpc.ClientConnInterface) DeployClient {
-	return &deployClient{cc}
+func NewDeploymentClient(cc grpc.ClientConnInterface) DeploymentClient {
+	return &deploymentClient{cc}
 }
 
-func (c *deployClient) Up(ctx context.Context, in *DeployUpRequest, opts ...grpc.CallOption) (Deploy_UpClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Deploy_ServiceDesc.Streams[0], "/nitric.proto.deployments.v1.Deploy/Up", opts...)
+func (c *deploymentClient) Up(ctx context.Context, in *DeploymentUpRequest, opts ...grpc.CallOption) (Deployment_UpClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Deployment_ServiceDesc.Streams[0], "/nitric.proto.deployments.v1.Deployment/Up", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &deployUpClient{stream}
+	x := &deploymentUpClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -55,29 +55,29 @@ func (c *deployClient) Up(ctx context.Context, in *DeployUpRequest, opts ...grpc
 	return x, nil
 }
 
-type Deploy_UpClient interface {
-	Recv() (*DeployUpEvent, error)
+type Deployment_UpClient interface {
+	Recv() (*DeploymentUpEvent, error)
 	grpc.ClientStream
 }
 
-type deployUpClient struct {
+type deploymentUpClient struct {
 	grpc.ClientStream
 }
 
-func (x *deployUpClient) Recv() (*DeployUpEvent, error) {
-	m := new(DeployUpEvent)
+func (x *deploymentUpClient) Recv() (*DeploymentUpEvent, error) {
+	m := new(DeploymentUpEvent)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *deployClient) Down(ctx context.Context, in *DeployDownRequest, opts ...grpc.CallOption) (Deploy_DownClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Deploy_ServiceDesc.Streams[1], "/nitric.proto.deployments.v1.Deploy/Down", opts...)
+func (c *deploymentClient) Down(ctx context.Context, in *DeploymentDownRequest, opts ...grpc.CallOption) (Deployment_DownClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Deployment_ServiceDesc.Streams[1], "/nitric.proto.deployments.v1.Deployment/Down", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &deployDownClient{stream}
+	x := &deploymentDownClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -87,117 +87,117 @@ func (c *deployClient) Down(ctx context.Context, in *DeployDownRequest, opts ...
 	return x, nil
 }
 
-type Deploy_DownClient interface {
-	Recv() (*DeployDownEvent, error)
+type Deployment_DownClient interface {
+	Recv() (*DeploymentDownEvent, error)
 	grpc.ClientStream
 }
 
-type deployDownClient struct {
+type deploymentDownClient struct {
 	grpc.ClientStream
 }
 
-func (x *deployDownClient) Recv() (*DeployDownEvent, error) {
-	m := new(DeployDownEvent)
+func (x *deploymentDownClient) Recv() (*DeploymentDownEvent, error) {
+	m := new(DeploymentDownEvent)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-// DeployServer is the server API for Deploy service.
-// All implementations should embed UnimplementedDeployServer
+// DeploymentServer is the server API for Deployment service.
+// All implementations should embed UnimplementedDeploymentServer
 // for forward compatibility
-type DeployServer interface {
+type DeploymentServer interface {
 	// Begins a new deployment
 	// Server will stream updates back to the connected client
 	// on the status of the deployment
-	Up(*DeployUpRequest, Deploy_UpServer) error
+	Up(*DeploymentUpRequest, Deployment_UpServer) error
 	// Tears down an existing deployment
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
-	Down(*DeployDownRequest, Deploy_DownServer) error
+	Down(*DeploymentDownRequest, Deployment_DownServer) error
 }
 
-// UnimplementedDeployServer should be embedded to have forward compatible implementations.
-type UnimplementedDeployServer struct {
+// UnimplementedDeploymentServer should be embedded to have forward compatible implementations.
+type UnimplementedDeploymentServer struct {
 }
 
-func (UnimplementedDeployServer) Up(*DeployUpRequest, Deploy_UpServer) error {
+func (UnimplementedDeploymentServer) Up(*DeploymentUpRequest, Deployment_UpServer) error {
 	return status.Errorf(codes.Unimplemented, "method Up not implemented")
 }
-func (UnimplementedDeployServer) Down(*DeployDownRequest, Deploy_DownServer) error {
+func (UnimplementedDeploymentServer) Down(*DeploymentDownRequest, Deployment_DownServer) error {
 	return status.Errorf(codes.Unimplemented, "method Down not implemented")
 }
 
-// UnsafeDeployServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DeployServer will
+// UnsafeDeploymentServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DeploymentServer will
 // result in compilation errors.
-type UnsafeDeployServer interface {
-	mustEmbedUnimplementedDeployServer()
+type UnsafeDeploymentServer interface {
+	mustEmbedUnimplementedDeploymentServer()
 }
 
-func RegisterDeployServer(s grpc.ServiceRegistrar, srv DeployServer) {
-	s.RegisterService(&Deploy_ServiceDesc, srv)
+func RegisterDeploymentServer(s grpc.ServiceRegistrar, srv DeploymentServer) {
+	s.RegisterService(&Deployment_ServiceDesc, srv)
 }
 
-func _Deploy_Up_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(DeployUpRequest)
+func _Deployment_Up_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DeploymentUpRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DeployServer).Up(m, &deployUpServer{stream})
+	return srv.(DeploymentServer).Up(m, &deploymentUpServer{stream})
 }
 
-type Deploy_UpServer interface {
-	Send(*DeployUpEvent) error
+type Deployment_UpServer interface {
+	Send(*DeploymentUpEvent) error
 	grpc.ServerStream
 }
 
-type deployUpServer struct {
+type deploymentUpServer struct {
 	grpc.ServerStream
 }
 
-func (x *deployUpServer) Send(m *DeployUpEvent) error {
+func (x *deploymentUpServer) Send(m *DeploymentUpEvent) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Deploy_Down_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(DeployDownRequest)
+func _Deployment_Down_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DeploymentDownRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DeployServer).Down(m, &deployDownServer{stream})
+	return srv.(DeploymentServer).Down(m, &deploymentDownServer{stream})
 }
 
-type Deploy_DownServer interface {
-	Send(*DeployDownEvent) error
+type Deployment_DownServer interface {
+	Send(*DeploymentDownEvent) error
 	grpc.ServerStream
 }
 
-type deployDownServer struct {
+type deploymentDownServer struct {
 	grpc.ServerStream
 }
 
-func (x *deployDownServer) Send(m *DeployDownEvent) error {
+func (x *deploymentDownServer) Send(m *DeploymentDownEvent) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-// Deploy_ServiceDesc is the grpc.ServiceDesc for Deploy service.
+// Deployment_ServiceDesc is the grpc.ServiceDesc for Deployment service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Deploy_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "nitric.proto.deployments.v1.Deploy",
-	HandlerType: (*DeployServer)(nil),
+var Deployment_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "nitric.proto.deployments.v1.Deployment",
+	HandlerType: (*DeploymentServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Up",
-			Handler:       _Deploy_Up_Handler,
+			Handler:       _Deployment_Up_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "Down",
-			Handler:       _Deploy_Down_Handler,
+			Handler:       _Deployment_Down_Handler,
 			ServerStreams: true,
 		},
 	},

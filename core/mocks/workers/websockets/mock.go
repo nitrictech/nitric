@@ -34,6 +34,20 @@ func (m *MockWebsocketRequestHandler) EXPECT() *MockWebsocketRequestHandlerMockR
 	return m.recorder
 }
 
+// HandleEvents mocks base method.
+func (m *MockWebsocketRequestHandler) HandleEvents(arg0 websocketspb.WebsocketHandler_HandleEventsServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleEvents", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleEvents indicates an expected call of HandleEvents.
+func (mr *MockWebsocketRequestHandlerMockRecorder) HandleEvents(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockWebsocketRequestHandler)(nil).HandleEvents), arg0)
+}
+
 // HandleRequest mocks base method.
 func (m *MockWebsocketRequestHandler) HandleRequest(arg0 *websocketspb.ServerMessage) (*websocketspb.ClientMessage, error) {
 	m.ctrl.T.Helper()

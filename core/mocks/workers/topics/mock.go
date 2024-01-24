@@ -49,6 +49,20 @@ func (mr *MockSubscriptionRequestHandlerMockRecorder) HandleRequest(arg0 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRequest", reflect.TypeOf((*MockSubscriptionRequestHandler)(nil).HandleRequest), arg0)
 }
 
+// Subscribe mocks base method.
+func (m *MockSubscriptionRequestHandler) Subscribe(arg0 topicspb.Subscriber_SubscribeServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockSubscriptionRequestHandlerMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockSubscriptionRequestHandler)(nil).Subscribe), arg0)
+}
+
 // WorkerCount mocks base method.
 func (m *MockSubscriptionRequestHandler) WorkerCount() int {
 	m.ctrl.T.Helper()
