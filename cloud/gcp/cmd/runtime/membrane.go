@@ -22,8 +22,8 @@ import (
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
-	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/document"
 	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
+	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/keyvalue"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	secret_manager_secret_service "github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
 	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
