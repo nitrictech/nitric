@@ -48,7 +48,6 @@ type AztableEntity struct {
 func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Get")
 	client, err := s.clientFactory(req.Key.Store)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -97,7 +96,6 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Set")
 	client, err := s.clientFactory(req.Key.Store)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -147,7 +145,6 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Delete")
 	client, err := s.clientFactory(req.Key.Store)
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -200,7 +197,6 @@ func New() (*AzureStorageTableKeyValueService, error) {
 	return &AzureStorageTableKeyValueService{
 		clientFactory: newStorageTablesClientFactory(cred, storageAccountName),
 	}, nil
-
 }
 
 // NewWithClient creates a DocumentServiceServer with an given DynamoDB client instance.

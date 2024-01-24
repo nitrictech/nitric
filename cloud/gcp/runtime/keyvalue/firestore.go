@@ -16,7 +16,6 @@ package document
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"

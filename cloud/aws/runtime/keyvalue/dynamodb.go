@@ -146,7 +146,6 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 			Content: documentContent,
 		},
 	}, nil
-
 }
 
 // Set a document in the DynamoDB table
