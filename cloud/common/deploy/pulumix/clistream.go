@@ -184,11 +184,11 @@ func (p *pulumiEventHandler) handleResourceFailedEvent(resOpFailedEvent *apitype
 
 func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent) (*deploymentspb.ResourceUpdate, error) {
 	if evt.ResourcePreEvent != nil {
-		p.handleResourcePreEvent(evt.ResourcePreEvent)
+		return p.handleResourcePreEvent(evt.ResourcePreEvent)
 	} else if evt.ResOutputsEvent != nil {
-		p.handleResourceOutputsEvent(evt.ResOutputsEvent)
+		return p.handleResourceOutputsEvent(evt.ResOutputsEvent)
 	} else if evt.ResOpFailedEvent != nil {
-		p.handleResourceFailedEvent(evt.ResOpFailedEvent)
+		return p.handleResourceFailedEvent(evt.ResOpFailedEvent)
 	}
 
 	return nil, fmt.Errorf("unknown event type")
