@@ -45,8 +45,8 @@ func IsPortOpen(host string, timeout time.Duration) bool {
 		return false
 	}
 
-	conn.Close()
-	return true
+	err = conn.Close()
+	return err == nil
 }
 
 func (h *HttpServer) WorkerCount() int {
