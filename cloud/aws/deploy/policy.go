@@ -16,6 +16,8 @@
 
 package deploy
 
+//#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
+
 import (
 	"crypto/md5"
 	"encoding/hex"
@@ -27,8 +29,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
-
-//#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 
 func md5Hash(b []byte) string {
 	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
