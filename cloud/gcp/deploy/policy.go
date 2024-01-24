@@ -62,14 +62,14 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"pubsub.topics.publish",
 	},
 	v1.Action_TopicList: {}, // see above in gcpListActions
-	v1.Action_CollectionDocumentDelete: {
+	v1.Action_KeyValueStoreDelete: {
 		"appengine.applications.get",
 		"datastore.databases.get",
 		"datastore.indexes.get",
 		"datastore.namespaces.get",
 		"datastore.entities.delete",
 	},
-	v1.Action_CollectionDocumentRead: {
+	v1.Action_KeyValueStoreRead: {
 		"appengine.applications.get",
 		"datastore.databases.get",
 		"datastore.entities.get",
@@ -77,23 +77,12 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"datastore.namespaces.get",
 		"datastore.entities.list",
 	},
-	v1.Action_CollectionDocumentWrite: {
+	v1.Action_KeyValueStoreWrite: {
 		"appengine.applications.get",
 		"datastore.indexes.list",
 		"datastore.namespaces.list",
 		"datastore.entities.create",
 		"datastore.entities.update",
-	},
-	v1.Action_CollectionQuery: {
-		"appengine.applications.get",
-		"datastore.databases.get",
-		"datastore.entities.get",
-		"datastore.entities.list",
-		"datastore.indexes.get",
-		"datastore.namespaces.get",
-	},
-	v1.Action_CollectionList: {
-		"appengine.applications.get",
 	},
 	v1.Action_SecretAccess: {
 		"resourcemanager.projects.get",
@@ -122,9 +111,9 @@ var collectionActions []string = nil
 func getCollectionActions() []string {
 	if collectionActions == nil {
 		collectionActions = make([]string, 0)
-		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_CollectionDocumentRead]...)
-		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_CollectionDocumentWrite]...)
-		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_CollectionDocumentDelete]...)
+		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_KeyValueStoreRead]...)
+		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_KeyValueStoreWrite]...)
+		collectionActions = append(collectionActions, gcpActionsMap[v1.Action_KeyValueStoreDelete]...)
 	}
 
 	return collectionActions
@@ -200,7 +189,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 					return err
 				}
 
-			case v1.ResourceType_Collection:
+			case v1.ResourceType_KeyValueStore:
 				collActions := filterCollectionActions(actions)
 
 				collRole, err := NewCustomRole(ctx, memberName+"-role", collActions, opts...)

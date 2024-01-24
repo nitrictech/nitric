@@ -1,0 +1,77 @@
+syntax = "proto3";
+package nitric.proto.KeyValue.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+// option go_package = "nitric/v1;v1";
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1;KeyValuepb";
+option java_package = "io.nitric.proto.keyvalue.v1";
+option java_multiple_files = true;
+option java_outer_classname = "KeyValue";
+option php_namespace = "Nitric\\Proto\\KeyValue\\V1";
+option csharp_namespace = "Nitric.Proto.KeyValue.v1";
+
+// Service for storage and retrieval of simple JSON keyValue
+service KeyValue {
+  // Get an existing document
+  rpc Get (KeyValueGetRequest) returns (KeyValueGetResponse);
+
+  // Create a new or overwrite an existing document
+  rpc Set (KeyValueSetRequest) returns (KeyValueSetResponse);
+
+  // Delete an existing document
+  rpc Delete (KeyValueDeleteRequest) returns (KeyValueDeleteResponse);
+}
+
+// Provides a Key Value Store type for storing documents
+message Store {
+  // The store name
+  string name = 1;
+}
+
+// ValueRef provides a unique identifier for a value
+message ValueRef {
+  // The key/value store name
+  string store = 1;
+
+  // The item's unique key within the store
+  string key = 2;
+}
+
+// Value provides a return value type
+message Value {
+  // ValueRef of the key/value pair, which includes the store and key
+  ValueRef ref = 1;
+
+  // The content (JSON object)
+  google.protobuf.Struct content = 2;
+}
+
+// Service Request & Response Messages
+
+message KeyValueGetRequest {
+  // ValueRef of the key/value pair to get, which includes the store and key
+  ValueRef ref = 1;
+}
+
+message KeyValueGetResponse {
+  // The retrieved value
+  Value value = 1;
+}
+
+message KeyValueSetRequest {
+  // ValueRef of the key/value pair to set, which includes the store and key
+  ValueRef ref = 1 ;
+  // The value content to store (JSON object)
+  google.protobuf.Struct content = 3;
+}
+
+message KeyValueSetResponse {}
+
+message KeyValueDeleteRequest {
+  // ValueRef of the key/value pair to delete, which includes the store and key
+  ValueRef ref = 1;
+}
+
+message KeyValueDeleteResponse {}

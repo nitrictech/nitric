@@ -76,6 +76,10 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 
 	if p.storageAccount != nil {
 		env = append(env, app.EnvironmentVarArgs{
+			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_NAME"),
+			Value: p.storageAccount.Name,
+		})
+		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT"),
 			Value: p.storageAccount.PrimaryEndpoints.Blob(),
 		})

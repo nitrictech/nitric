@@ -31,7 +31,7 @@ enum ResourceType {
   Topic = 3;
   Schedule = 4;
   Subscription = 5;
-  Collection = 6;
+  KeyValueStore = 6;
   Policy = 7;
   Secret = 8;
   BucketListener = 9;
@@ -53,7 +53,7 @@ message ResourceDeclareRequest {
     PolicyResource policy = 10;
     BucketResource bucket = 11;
     TopicResource topic = 12;
-    CollectionResource collection = 13;
+    KeyValueStoreResource key_value_store = 13;
     SecretResource secret = 14;
     ApiResource api = 15;
     ApiSecurityDefinitionResource api_security_definition = 16;
@@ -62,7 +62,7 @@ message ResourceDeclareRequest {
 
 message BucketResource {}
 message TopicResource {}
-message CollectionResource {}
+message KeyValueStoreResource {}
 message SecretResource {}
 
 message ApiOpenIdConnectionDefinition {
@@ -101,11 +101,9 @@ enum Action {
   TopicEventPublish = 202;
 
   // Collection Permissions: 3XX
-  CollectionDocumentRead = 300;
-  CollectionDocumentWrite = 301;
-  CollectionDocumentDelete = 302;
-  CollectionQuery = 303;
-  CollectionList = 304;
+  KeyValueStoreRead = 300;
+  KeyValueStoreWrite = 301;
+  KeyValueStoreDelete = 302;
 
   // Secret Permissions: 5XX
   SecretPut = 400;

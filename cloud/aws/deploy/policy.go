@@ -62,20 +62,16 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 		"states:StartExecution",
 		"states:StateSyncExecution",
 	},
-	resourcespb.Action_CollectionDocumentRead: {
+	resourcespb.Action_KeyValueStoreRead: {
 		"dynamodb:GetItem",
 		"dynamodb:BatchGetItem",
 	},
-	resourcespb.Action_CollectionDocumentWrite: {
+	resourcespb.Action_KeyValueStoreWrite: {
 		"dynamodb:UpdateItem",
 		"dynamodb:PutItem",
 	},
-	resourcespb.Action_CollectionDocumentDelete: {
+	resourcespb.Action_KeyValueStoreDelete: {
 		"dynamodb:DeleteItem",
-	},
-	resourcespb.Action_CollectionQuery: {
-		"dynamodb:Query",
-		"dynamodb:Scan",
 	},
 	// XXX: Cannot be applied to single resources
 	// v1.Action_CollectionList: {
@@ -113,8 +109,8 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 		if t, ok := a.topics[resource.Id.Name]; ok {
 			return []interface{}{t.sns.Arn, t.sfn.Arn}, nil
 		}
-	case resourcespb.ResourceType_Collection:
-		if c, ok := a.collections[resource.Id.Name]; ok {
+	case resourcespb.ResourceType_KeyValueStore:
+		if c, ok := a.keyValueStores[resource.Id.Name]; ok {
 			return []interface{}{c.Arn}, nil
 		}
 	case resourcespb.ResourceType_Secret:
@@ -148,13 +144,6 @@ func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resou
 
 func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
-
-	// res := &Policy{Name: name, RolePolicies: make([]*iam.RolePolicy, 0)}
-
-	// err := ctx.RegisterComponentResource("nitric:policy:AwsIamPolicy", name, res, opts...)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	// Get Actions
 	actions := actionsToAwsActions(config.Actions)
@@ -231,8 +220,6 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 		if err != nil {
 			return err
 		}
-
-		// res.RolePolicies = append(res.RolePolicies, rolePol)
 	}
 
 	return nil

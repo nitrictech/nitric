@@ -90,28 +90,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: ./cloud/azure/all.coverprofile
           flags: azure # optional
-
-
-  # Run integration tests
-  test-integration:
-    runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.21.6
-      - name: Setup Golang caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Run Integration Tests
-        run: make test-integration

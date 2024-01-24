@@ -69,6 +69,8 @@ type NitricAzurePulumiProvider struct {
 	containerApps map[string]*ContainerApp
 	topics        map[string]*eventgrid.Topic
 
+	keyValueStores map[string]*storage.Table
+
 	roles *Roles
 	provider.NitricDefaultOrder
 }
@@ -270,9 +272,10 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 
 func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	return &NitricAzurePulumiProvider{
-		buckets:       make(map[string]*storage.BlobContainer),
-		containerApps: map[string]*ContainerApp{},
-		topics:        map[string]*eventgrid.Topic{},
-		principals:    map[resourcespb.ResourceType]map[string]*ServicePrincipal{},
+		buckets:        make(map[string]*storage.BlobContainer),
+		containerApps:  map[string]*ContainerApp{},
+		topics:         map[string]*eventgrid.Topic{},
+		principals:     map[resourcespb.ResourceType]map[string]*ServicePrincipal{},
+		keyValueStores: map[string]*storage.Table{},
 	}
 }
