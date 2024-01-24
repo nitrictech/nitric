@@ -47,7 +47,7 @@ type AztableEntity struct {
 // Get a document from the DynamoDB table
 func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Get")
-	client, err := s.clientFactory(req.Key.Store)
+	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -56,7 +56,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 		)
 	}
 
-	err = document.ValidateKey(req.Key)
+	err = document.ValidateValueRef(req.Ref)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -65,7 +65,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 		)
 	}
 
-	response, err := client.GetEntity(ctx, req.Key.Store, req.Key.Key, nil)
+	response, err := client.GetEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -86,7 +86,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 
 	return &keyvaluepb.KeyValueGetResponse{
 		Value: &keyvaluepb.Value{
-			Key:     req.Key,
+			Ref:     req.Ref,
 			Content: entity.Content,
 		},
 	}, nil
@@ -95,7 +95,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 // Set a document in the DynamoDB table
 func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Set")
-	client, err := s.clientFactory(req.Key.Store)
+	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -104,7 +104,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 		)
 	}
 
-	if err := document.ValidateKey(req.Key); err != nil {
+	if err := document.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -114,8 +114,8 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 
 	entity := AztableEntity{
 		Entity: aztables.Entity{
-			PartitionKey: req.Key.Store,
-			RowKey:       req.Key.Key,
+			PartitionKey: req.Ref.Store,
+			RowKey:       req.Ref.Key,
 		},
 		Content: req.Content,
 	}
@@ -144,7 +144,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 // Delete a document from the DynamoDB table
 func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Delete")
-	client, err := s.clientFactory(req.Key.Store)
+	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -153,7 +153,7 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 		)
 	}
 
-	if err := document.ValidateKey(req.Key); err != nil {
+	if err := document.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -161,7 +161,7 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 		)
 	}
 
-	_, err = client.DeleteEntity(ctx, req.Key.Store, req.Key.Key, nil)
+	_, err = client.DeleteEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

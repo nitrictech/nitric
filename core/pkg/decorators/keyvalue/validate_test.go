@@ -27,13 +27,13 @@ var _ = Describe("Document Plugin", func() {
 	When("ValidateKey", func() {
 		When("Nil key", func() {
 			It("should return error", func() {
-				err := document.ValidateKey(nil)
+				err := document.ValidateValueRef(nil)
 				Expect(err.Error()).To(ContainSubstring("provide non-nil key"))
 			})
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := document.ValidateKey(&keyvaluepb.Key{})
+				err := document.ValidateValueRef(&keyvaluepb.Key{})
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
@@ -42,7 +42,7 @@ var _ = Describe("Document Plugin", func() {
 				key := &keyvaluepb.Key{
 					Store: "users",
 				}
-				err := document.ValidateKey(key)
+				err := document.ValidateValueRef(key)
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})

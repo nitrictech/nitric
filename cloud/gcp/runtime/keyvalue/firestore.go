@@ -41,7 +41,7 @@ var _ v1.KeyValueServer = &FirestoreDocService{}
 func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetRequest) (*v1.KeyValueGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Get")
 
-	if err := keyvalue.ValidateKey(req.Key); err != nil {
+	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -49,7 +49,7 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 		)
 	}
 
-	doc := s.getDocRef(req.Key)
+	doc := s.getDocRef(req.Ref)
 
 	value, err := doc.Get(ctx)
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 
 	return &v1.KeyValueGetResponse{
 		Value: &v1.Value{
-			Key:     req.Key,
+			Ref:     req.Ref,
 			Content: documentContent,
 		},
 	}, nil
@@ -88,7 +88,7 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetRequest) (*v1.KeyValueSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Set")
 
-	if err := keyvalue.ValidateKey(req.Key); err != nil {
+	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -104,7 +104,7 @@ func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetReques
 		)
 	}
 
-	doc := s.getDocRef(req.Key)
+	doc := s.getDocRef(req.Ref)
 
 	if _, err := doc.Set(ctx, req.Content.AsMap()); err != nil {
 		if status.Code(err) == grpcCodes.PermissionDenied {
@@ -128,7 +128,7 @@ func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetReques
 func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDeleteRequest) (*v1.KeyValueDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Delete")
 
-	if err := keyvalue.ValidateKey(req.Key); err != nil {
+	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -136,7 +136,7 @@ func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDelete
 		)
 	}
 
-	doc := s.getDocRef(req.Key)
+	doc := s.getDocRef(req.Ref)
 
 	// Delete document
 	if _, err := doc.Delete(ctx); err != nil {
@@ -182,6 +182,6 @@ func NewWithClient(client *firestore.Client) (v1.KeyValueServer, error) {
 	}, nil
 }
 
-func (s *FirestoreDocService) getDocRef(key *v1.Key) *firestore.DocumentRef {
-	return s.client.Collection(key.Store).Doc(key.Key)
+func (s *FirestoreDocService) getDocRef(ref *v1.ValueRef) *firestore.DocumentRef {
+	return s.client.Collection(ref.Store).Doc(ref.Key)
 }

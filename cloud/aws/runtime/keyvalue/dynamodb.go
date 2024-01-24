@@ -64,7 +64,7 @@ func isDynamoAccessDeniedErr(err error) bool {
 func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
 
-	err := document.ValidateKey(req.Key)
+	err := document.ValidateValueRef(req.Ref)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
@@ -73,7 +73,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	keyMap := createKeyMap(req.Key)
+	keyMap := createKeyMap(req.Ref)
 	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
 		return nil, newErr(
@@ -83,7 +83,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	tableName, err := s.getTableName(ctx, req.Key.Store)
+	tableName, err := s.getTableName(ctx, req.Ref.Store)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 
 		return nil, newErr(
 			codes.Internal,
-			fmt.Sprintf("error retrieving key %v", req.Key),
+			fmt.Sprintf("error retrieving value with key %s from store %s", req.Ref.Key, req.Ref.Store),
 			err,
 		)
 	}
@@ -113,7 +113,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 	if result.Item == nil {
 		return nil, newErr(
 			codes.NotFound,
-			fmt.Sprintf("%v not found", req.Key),
+			fmt.Sprintf("%v not found", req.Ref),
 			err,
 		)
 	}
@@ -142,7 +142,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 
 	return &keyvaluepb.KeyValueGetResponse{
 		Value: &keyvaluepb.Value{
-			Key:     req.Key,
+			Ref:     req.Ref,
 			Content: documentContent,
 		},
 	}, nil
@@ -152,7 +152,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Set")
 
-	if err := document.ValidateKey(req.Key); err != nil {
+	if err := document.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -169,7 +169,7 @@ func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValu
 	}
 
 	// Construct DynamoDB attribute value object
-	itemMap := createItemMap(req.Content.AsMap(), req.Key)
+	itemMap := createItemMap(req.Content.AsMap(), req.Ref)
 	itemAttributeMap, err := attributevalue.MarshalMap(itemMap)
 	if err != nil {
 		return nil, newErr(
@@ -179,7 +179,7 @@ func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	tableName, err := s.getTableName(ctx, req.Key.Store)
+	tableName, err := s.getTableName(ctx, req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -217,7 +217,7 @@ func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValu
 func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Delete")
 
-	if err := document.ValidateKey(req.Key); err != nil {
+	if err := document.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
 			"invalid key",
@@ -225,17 +225,17 @@ func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyV
 		)
 	}
 
-	keyMap := createKeyMap(req.Key)
+	keyMap := createKeyMap(req.Ref)
 	attributeMap, err := attributevalue.MarshalMap(keyMap)
 	if err != nil {
 		return nil, newErr(
 			codes.InvalidArgument,
-			fmt.Sprintf("failed to marshal keys: %v", req.Key),
+			fmt.Sprintf("failed to marshal keys: %v", req.Ref),
 			err,
 		)
 	}
 
-	tableName, err := s.getTableName(ctx, req.Key.Store)
+	tableName, err := s.getTableName(ctx, req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -261,7 +261,7 @@ func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyV
 
 		return nil, newErr(
 			codes.Internal,
-			fmt.Sprintf("error deleting %v item %v : %v", req.Key.Store, req.Key.Key, err),
+			fmt.Sprintf("error deleting %v item %v : %v", req.Ref.Store, req.Ref.Key, err),
 			err,
 		)
 	}
@@ -299,23 +299,23 @@ func NewWithClient(provider resource.AwsResourceProvider, client *dynamodb.Clien
 	}, nil
 }
 
-func createKeyMap(key *keyvaluepb.Key) map[string]string {
+func createKeyMap(ref *keyvaluepb.ValueRef) map[string]string {
 	keyMap := make(map[string]string)
 
-	keyMap[AttribPk] = key.Key
-	keyMap[AttribSk] = key.Store + "#"
+	keyMap[AttribPk] = ref.Key
+	keyMap[AttribSk] = ref.Store + "#"
 
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, key *keyvaluepb.Key) map[string]interface{} {
+func createItemMap(source map[string]interface{}, ref *keyvaluepb.ValueRef) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
 		newMap[key] = value
 	}
 
-	keyMap := createKeyMap(key)
+	keyMap := createKeyMap(ref)
 
 	// Add key attributes
 	newMap[AttribPk] = keyMap[AttribPk]

@@ -30,8 +30,8 @@ import (
 // 	"startsWith": true,
 // }
 
-// ValidateKey - validates a document key, used for operations on a single document e.g. Get, Set, Delete
-func ValidateKey(key *v1.Key) error {
+// ValidateValueRef - validates a document key, used for operations on a single document e.g. Get, Set, Delete
+func ValidateValueRef(key *v1.ValueRef) error {
 	if key == nil {
 		return fmt.Errorf("provide non-nil key")
 	}

@@ -24,35 +24,35 @@ service KeyValue {
   rpc Delete (KeyValueDeleteRequest) returns (KeyValueDeleteResponse);
 }
 
-// Provides a Collection type for storing documents
+// Provides a Key Value Store type for storing documents
 message Store {
   // The store name
   string name = 1;
 }
 
-// Provides a document identifying key type
-message Key {
-  // The item collection
+// ValueRef provides a unique identifier for a value
+message ValueRef {
+  // The key/value store name
   string store = 1;
 
-  // The items unique key
+  // The item's unique key within the store
   string key = 2;
 }
 
-// Provides a return document type
+// Value provides a return value type
 message Value {
-  // The document's unique key, including collection/sub-collections
-  Key key = 1;
+  // ValueRef of the key/value pair, which includes the store and key
+  ValueRef ref = 1;
 
-  // The document content (JSON object)
+  // The content (JSON object)
   google.protobuf.Struct content = 2;
 }
 
 // Service Request & Response Messages
 
 message KeyValueGetRequest {
-  // Key of the document to retrieve
-  Key key = 1;
+  // ValueRef of the key/value pair to get, which includes the store and key
+  ValueRef ref = 1;
 }
 
 message KeyValueGetResponse {
@@ -61,17 +61,17 @@ message KeyValueGetResponse {
 }
 
 message KeyValueSetRequest {
-  // Key of the document to set
-  Key key = 1 ;
-  // The document content to store (JSON object)
+  // ValueRef of the key/value pair to set, which includes the store and key
+  ValueRef ref = 1 ;
+  // The value content to store (JSON object)
   google.protobuf.Struct content = 3;
 }
 
 message KeyValueSetResponse {}
 
 message KeyValueDeleteRequest {
-  // Key of the document to delete
-  Key key = 1;
+  // ValueRef of the key/value pair to delete, which includes the store and key
+  ValueRef ref = 1;
 }
 
 message KeyValueDeleteResponse {}
