@@ -38,8 +38,27 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 		meta = resourcePreEvent.Metadata.Old
 	}
 
+	// check if the parent is a nitric resource
+	var nitricParent *resourcespb.ResourceIdentifier
+	if meta != nil {
+		nitricParent = NitricResourceIdFromPulumiUrn(meta.Parent)
+	}
+
 	parentNode := p.tree.FindNode(meta.Parent)
-	if parentNode == nil {
+	if parentNode == nil && nitricParent != nil {
+		// we couldn't find the parent but it is a nitric resource so should exist already
+		parentNode = &DataNode{
+			Id: meta.Parent,
+			// TODO: Populate the nitric resource
+			Data: &ResourceData{
+				nitricResource: nitricParent,
+				action:         deploymentspb.ResourceDeploymentAction_SAME,
+			},
+			Children: make([]*DataNode, 0),
+		}
+
+		p.tree.Root.AddChild(parentNode)
+	} else if parentNode == nil {
 		parentNode = p.tree.Root
 	}
 
@@ -75,17 +94,21 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 		nitricAction = deploymentspb.ResourceDeploymentAction_UPDATE
 	}
 
-	node := &DataNode{
-		Id: resourcePreEvent.Metadata.URN,
-		// TODO: Populate the nitric resource
-		Data: &ResourceData{
-			nitricResource: nitricResource,
-			action:         nitricAction,
-		},
-		Children: make([]*DataNode, 0),
-	}
+	var node *DataNode
+	node = p.tree.FindNode(resourcePreEvent.Metadata.URN)
 
-	parentNode.AddChild(node)
+	if node == nil {
+		node = &DataNode{
+			Id: resourcePreEvent.Metadata.URN,
+			// TODO: Populate the nitric resource
+			Data: &ResourceData{
+				nitricResource: nitricResource,
+				action:         nitricAction,
+			},
+			Children: make([]*DataNode, 0),
+		}
+		parentNode.AddChild(node)
+	}
 
 	if nitricResource != nil {
 		return &deploymentspb.ResourceUpdate{
@@ -236,7 +259,7 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 	return nil
 }
 
-func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pulumiEventsChan <-chan events.EngineEvent) error {
+func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pulumiEventsChan <-chan events.EngineEvent) (err error) {
 	evtHandler := pulumiEventHandler{
 		tree: DataTree{
 			Root: &DataNode{
