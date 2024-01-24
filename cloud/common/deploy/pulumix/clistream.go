@@ -255,6 +255,7 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 			continue
 		}
 
+		fmt.Printf("sending resource update: %+v", nitricEvent)
 		err = stream.Send(&deploymentspb.DeploymentDownEvent{
 			Content: &deploymentspb.DeploymentDownEvent_Update{
 				Update: nitricEvent,
