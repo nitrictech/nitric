@@ -28,56 +28,78 @@ type pulumiEventHandler struct {
 	tree DataTree
 }
 
-func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent) (*deploymentspb.ResourceUpdate, error) {
-	if evt.ResourcePreEvent != nil {
-		// Add as a root key to the map
+func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.ResourcePreEvent) (*deploymentspb.ResourceUpdate, error) {
+	// Add as a root key to the map
 
-		// Happens before resource updates are applied
-		// attempt to locate the parent node
-		meta := evt.ResourcePreEvent.Metadata.New
-		if meta == nil {
-			meta = evt.ResourcePreEvent.Metadata.Old
+	// Happens before resource updates are applied
+	// attempt to locate the parent node
+	meta := resourcePreEvent.Metadata.New
+	if meta == nil {
+		meta = resourcePreEvent.Metadata.Old
+	}
+
+	// check if the parent is a nitric resource
+	var nitricParent *resourcespb.ResourceIdentifier
+	if meta != nil {
+		nitricParent = NitricResourceIdFromPulumiUrn(meta.Parent)
+	}
+
+	parentNode := p.tree.FindNode(meta.Parent)
+	if parentNode == nil && nitricParent != nil {
+		// we couldn't find the parent but it is a nitric resource so should exist already
+		parentNode = &DataNode{
+			Id: meta.Parent,
+			// TODO: Populate the nitric resource
+			Data: &ResourceData{
+				nitricResource: nitricParent,
+				action:         deploymentspb.ResourceDeploymentAction_SAME,
+			},
+			Children: make([]*DataNode, 0),
 		}
 
-		parentNode := p.tree.FindNode(meta.Parent)
-		if parentNode == nil {
-			parentNode = p.tree.Root
-		}
+		p.tree.Root.AddChild(parentNode)
+	} else if parentNode == nil {
+		parentNode = p.tree.Root
+	}
 
-		nitricResource := NitricResourceIdFromPulumiUrn(evt.ResourcePreEvent.Metadata.URN)
+	nitricResource := NitricResourceIdFromPulumiUrn(resourcePreEvent.Metadata.URN)
 
-		// nitricAction := deploymentspb.ResourceDeploymentAction_SAME
+	// nitricAction := deploymentspb.ResourceDeploymentAction_SAME
 
-		/*
-			TODO: review unhandled cases (currently defaulting to update)
-			OpRead
-			OpReadReplacement
-			OpRefresh
-			OpReadDiscard
-			OpDiscardReplaced
-			OpRemovePendingReplace
-			OpImport
-			OpImportReplacement
-		*/
+	/*
+		TODO: review unhandled cases (currently defaulting to update)
+		OpRead
+		OpReadReplacement
+		OpRefresh
+		OpReadDiscard
+		OpDiscardReplaced
+		OpRemovePendingReplace
+		OpImport
+		OpImportReplacement
+	*/
 
-		var nitricAction deploymentspb.ResourceDeploymentAction
-		switch evt.ResourcePreEvent.Metadata.Op {
-		case apitype.OpCreate:
-			nitricAction = deploymentspb.ResourceDeploymentAction_CREATE
-		case apitype.OpDelete, apitype.OpDeleteReplaced:
-			nitricAction = deploymentspb.ResourceDeploymentAction_DELETE
-		case apitype.OpReplace, apitype.OpCreateReplacement:
-			nitricAction = deploymentspb.ResourceDeploymentAction_REPLACE
-		case apitype.OpSame:
-			nitricAction = deploymentspb.ResourceDeploymentAction_SAME
-		case apitype.OpUpdate:
-			nitricAction = deploymentspb.ResourceDeploymentAction_UPDATE
-		default:
-			nitricAction = deploymentspb.ResourceDeploymentAction_UPDATE
-		}
+	var nitricAction deploymentspb.ResourceDeploymentAction
+	switch resourcePreEvent.Metadata.Op {
+	case apitype.OpCreate:
+		nitricAction = deploymentspb.ResourceDeploymentAction_CREATE
+	case apitype.OpDelete, apitype.OpDeleteReplaced:
+		nitricAction = deploymentspb.ResourceDeploymentAction_DELETE
+	case apitype.OpReplace, apitype.OpCreateReplacement:
+		nitricAction = deploymentspb.ResourceDeploymentAction_REPLACE
+	case apitype.OpSame:
+		nitricAction = deploymentspb.ResourceDeploymentAction_SAME
+	case apitype.OpUpdate:
+		nitricAction = deploymentspb.ResourceDeploymentAction_UPDATE
+	default:
+		nitricAction = deploymentspb.ResourceDeploymentAction_UPDATE
+	}
 
-		node := &DataNode{
-			Id: evt.ResourcePreEvent.Metadata.URN,
+	var node *DataNode
+	node = p.tree.FindNode(resourcePreEvent.Metadata.URN)
+
+	if node == nil {
+		node = &DataNode{
+			Id: resourcePreEvent.Metadata.URN,
 			// TODO: Populate the nitric resource
 			Data: &ResourceData{
 				nitricResource: nitricResource,
@@ -85,98 +107,111 @@ func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent)
 			},
 			Children: make([]*DataNode, 0),
 		}
-
 		parentNode.AddChild(node)
+	}
 
-		if nitricResource != nil {
-			return &deploymentspb.ResourceUpdate{
-				Id:          nitricResource,
-				Action:      nitricAction,
-				Status:      deploymentspb.ResourceDeploymentStatus_PENDING,
-				SubResource: "",
-			}, nil
-		} else {
-			nitricResourceNode := node.FindParent(func(n *DataNode) bool {
-				return n.Data != nil && n.Data.nitricResource != nil
-			})
-			if nitricResourceNode != nil {
-				nitricResource = nitricResourceNode.Data.nitricResource
-			}
-
-			urnParts := strings.Split(evt.ResourcePreEvent.Metadata.URN, "$")
-			return &deploymentspb.ResourceUpdate{
-				Id:          nitricResource,
-				Action:      node.Data.action,
-				Status:      deploymentspb.ResourceDeploymentStatus_IN_PROGRESS,
-				SubResource: urnParts[len(urnParts)-1],
-			}, nil
+	if nitricResource != nil {
+		return &deploymentspb.ResourceUpdate{
+			Id:          nitricResource,
+			Action:      nitricAction,
+			Status:      deploymentspb.ResourceDeploymentStatus_PENDING,
+			SubResource: "",
+		}, nil
+	} else {
+		nitricResourceNode := node.FindParent(func(n *DataNode) bool {
+			return n.Data != nil && n.Data.nitricResource != nil
+		})
+		if nitricResourceNode != nil {
+			nitricResource = nitricResourceNode.Data.nitricResource
 		}
+
+		urnParts := strings.Split(resourcePreEvent.Metadata.URN, "$")
+		return &deploymentspb.ResourceUpdate{
+			Id:          nitricResource,
+			Action:      node.Data.action,
+			Status:      deploymentspb.ResourceDeploymentStatus_IN_PROGRESS,
+			SubResource: urnParts[len(urnParts)-1],
+		}, nil
+	}
+}
+
+func (p *pulumiEventHandler) handleResourceOutputsEvent(resOutputsEvent *apitype.ResOutputsEvent) (*deploymentspb.ResourceUpdate, error) {
+	// Happens after resource updates are applied
+	// Find the URN in the tree
+	urn := resOutputsEvent.Metadata.URN
+	// Happens after resource updates fail to apply
+	resourceNode := p.tree.FindNode(urn)
+	var nitricResource *resourcespb.ResourceIdentifier
+	var subResource string
+
+	if resourceNode.Data != nil && resourceNode.Data.nitricResource != nil {
+		// we have a nitric resource
+		nitricResource = resourceNode.Data.nitricResource
+	} else {
+		// just a regular pleb resource
+		// find its nitric parent
+
+		nitricParentNode := resourceNode.FindParent(func(n *DataNode) bool {
+			return n.Data != nil && n.Data.nitricResource != nil
+		})
+
+		if nitricParentNode != nil {
+			nitricResource = nitricParentNode.Data.nitricResource
+		}
+
+		urnParts := strings.Split(urn, "$")
+		subResource = urnParts[len(urnParts)-1]
+	}
+
+	return &deploymentspb.ResourceUpdate{
+		Id:          nitricResource,
+		Action:      resourceNode.Data.action,
+		Status:      deploymentspb.ResourceDeploymentStatus_SUCCESS,
+		SubResource: subResource,
+	}, nil
+}
+
+func (p *pulumiEventHandler) handleResourceFailedEvent(resOpFailedEvent *apitype.ResOpFailedEvent) (*deploymentspb.ResourceUpdate, error) {
+	urn := resOpFailedEvent.Metadata.URN
+	// Happens after resource updates fail to apply
+	resourceNode := p.tree.FindNode(urn)
+	var nitricResource *resourcespb.ResourceIdentifier
+	var subResource string
+
+	if resourceNode.Data != nil && resourceNode.Data.nitricResource != nil {
+		// we have a nitric resource
+		nitricResource = resourceNode.Data.nitricResource
+	} else {
+		// just a regular pleb resource
+		// find its nitric parent
+
+		nitricParentNode := resourceNode.FindParent(func(n *DataNode) bool {
+			return n.Data != nil && n.Data.nitricResource != nil
+		})
+
+		if nitricParentNode != nil {
+			nitricResource = nitricParentNode.Data.nitricResource
+		}
+
+		urnParts := strings.Split(urn, "$")
+		subResource = urnParts[len(urnParts)-1]
+	}
+
+	return &deploymentspb.ResourceUpdate{
+		Id:          nitricResource,
+		Action:      resourceNode.Data.action,
+		Status:      deploymentspb.ResourceDeploymentStatus_FAILED,
+		SubResource: subResource,
+	}, nil
+}
+
+func (p *pulumiEventHandler) engineEventToResourceUpdate(evt events.EngineEvent) (*deploymentspb.ResourceUpdate, error) {
+	if evt.ResourcePreEvent != nil {
+		return p.handleResourcePreEvent(evt.ResourcePreEvent)
 	} else if evt.ResOutputsEvent != nil {
-		// Happens after resource updates are applied
-		// Find the URN in the tree
-		urn := evt.ResOutputsEvent.Metadata.URN
-		// Happens after resource updates fail to apply
-		resourceNode := p.tree.FindNode(urn)
-		var nitricResource *resourcespb.ResourceIdentifier
-		var subResource string
-
-		if resourceNode.Data != nil && resourceNode.Data.nitricResource != nil {
-			// we have a nitric resource
-			nitricResource = resourceNode.Data.nitricResource
-		} else {
-			// just a regular pleb resource
-			// find its nitric parent
-
-			nitricParentNode := resourceNode.FindParent(func(n *DataNode) bool {
-				return n.Data != nil && n.Data.nitricResource != nil
-			})
-
-			if nitricParentNode != nil {
-				nitricResource = nitricParentNode.Data.nitricResource
-			}
-
-			urnParts := strings.Split(urn, "$")
-			subResource = urnParts[len(urnParts)-1]
-		}
-
-		return &deploymentspb.ResourceUpdate{
-			Id:          nitricResource,
-			Action:      resourceNode.Data.action,
-			Status:      deploymentspb.ResourceDeploymentStatus_SUCCESS,
-			SubResource: subResource,
-		}, nil
+		return p.handleResourceOutputsEvent(evt.ResOutputsEvent)
 	} else if evt.ResOpFailedEvent != nil {
-		urn := evt.ResOpFailedEvent.Metadata.URN
-		// Happens after resource updates fail to apply
-		resourceNode := p.tree.FindNode(urn)
-		var nitricResource *resourcespb.ResourceIdentifier
-		var subResource string
-
-		if resourceNode.Data != nil && resourceNode.Data.nitricResource != nil {
-			// we have a nitric resource
-			nitricResource = resourceNode.Data.nitricResource
-		} else {
-			// just a regular pleb resource
-			// find its nitric parent
-
-			nitricParentNode := resourceNode.FindParent(func(n *DataNode) bool {
-				return n.Data != nil && n.Data.nitricResource != nil
-			})
-
-			if nitricParentNode != nil {
-				nitricResource = nitricParentNode.Data.nitricResource
-			}
-
-			urnParts := strings.Split(urn, "$")
-			subResource = urnParts[len(urnParts)-1]
-		}
-
-		return &deploymentspb.ResourceUpdate{
-			Id:          nitricResource,
-			Action:      resourceNode.Data.action,
-			Status:      deploymentspb.ResourceDeploymentStatus_FAILED,
-			SubResource: subResource,
-		}, nil
+		return p.handleResourceFailedEvent(evt.ResOpFailedEvent)
 	}
 
 	return nil, fmt.Errorf("unknown event type")
@@ -224,7 +259,7 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 	return nil
 }
 
-func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pulumiEventsChan <-chan events.EngineEvent) error {
+func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pulumiEventsChan <-chan events.EngineEvent) (err error) {
 	evtHandler := pulumiEventHandler{
 		tree: DataTree{
 			Root: &DataNode{
@@ -243,6 +278,7 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 			continue
 		}
 
+		fmt.Printf("sending resource update: %+v", nitricEvent)
 		err = stream.Send(&deploymentspb.DeploymentDownEvent{
 			Content: &deploymentspb.DeploymentDownEvent_Update{
 				Update: nitricEvent,
