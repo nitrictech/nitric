@@ -274,6 +274,8 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		})
 	}
 
+	env = append(env, p.containerEnv.Env...)
+
 	// if len(args.Env) > 0 {
 	// 	env = append(env, args.Env...)
 	// }
