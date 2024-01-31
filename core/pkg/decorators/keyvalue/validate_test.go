@@ -33,13 +33,13 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := document.ValidateValueRef(&keyvaluepb.Key{})
+				err := document.ValidateValueRef(&keyvaluepb.ValueRef{})
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return error", func() {
-				key := &keyvaluepb.Key{
+				key := &keyvaluepb.ValueRef{
 					Store: "users",
 				}
 				err := document.ValidateValueRef(key)
