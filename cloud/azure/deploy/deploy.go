@@ -222,6 +222,25 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return errors.WithMessage(err, "resource group create")
 	}
 
+	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
+		pterm.Info.Println("Stack declares one or more secrets, creating stack level Azure Key Vault")
+		a.keyVault, err = createKeyVault(ctx, a.resourceGroup, a.clientConfig.TenantId, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
+		if err != nil {
+			return errors.WithMessage(err, "keyvault create")
+		}
+	}
+
+	// Create a storage account if buckets
+	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
+	// This means we need to create a storage account for each stack, before buckets can be created.
+	if hasResourceType(nitricResources, resourcespb.ResourceType_Bucket) {
+		pterm.Info.Println("Stack declares one or more buckets, creating stack level Azure Storage Account")
+		a.storageAccount, err = createStorageAccount(ctx, a.resourceGroup, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
+		if err != nil {
+			return errors.WithMessage(err, "storage account create")
+		}
+	}
+
 	a.containerEnv, err = a.newContainerEnv(ctx, a.stackId, map[string]string{})
 	if err != nil {
 		return err
@@ -244,24 +263,6 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// Create a key vault if secrets are required.
 	// Unlike AWS and GCP which have centralized secrets management, Azure allows for multiple key vaults.
 	// This means we need to create a keyvault for each stack.
-	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
-		pterm.Info.Println("Stack declares one or more secrets, creating stack level Azure Key Vault")
-		a.keyVault, err = createKeyVault(ctx, a.resourceGroup, a.clientConfig.TenantId, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
-		if err != nil {
-			return errors.WithMessage(err, "keyvault create")
-		}
-	}
-
-	// Create a storage account if buckets
-	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
-	// This means we need to create a storage account for each stack, before buckets can be created.
-	if hasResourceType(nitricResources, resourcespb.ResourceType_Bucket) {
-		pterm.Info.Println("Stack declares one or more buckets, creating stack level Azure Storage Account")
-		a.storageAccount, err = createStorageAccount(ctx, a.resourceGroup, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
-		if err != nil {
-			return errors.WithMessage(err, "storage account create")
-		}
-	}
 
 	return nil
 }

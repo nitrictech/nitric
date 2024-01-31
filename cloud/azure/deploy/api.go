@@ -160,6 +160,10 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		}
 	}
 
+	if len(openapiDoc.Paths) < 1 {
+		return fmt.Errorf("no paths defined in api: %s", name)
+	}
+
 	for _, pathItem := range openapiDoc.Paths {
 		for _, op := range pathItem.Operations() {
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
@@ -180,17 +184,17 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 
 				targetMap, isMap := v.(map[string]interface{})
 				if !isMap {
-					continue
+					return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
 				}
 
 				target, isString := targetMap["name"].(string)
 				if !isString {
-					continue
+					return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
 				}
 
 				app, ok := p.containerApps[target]
 				if !ok {
-					continue
+					return fmt.Errorf("Unable to find container app for service: %s", target)
 				}
 
 				// this.api.id returns a URL path, which is the incorrect value here.
@@ -214,6 +218,8 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 				if err != nil {
 					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
 				}
+			} else {
+				return fmt.Errorf("operation: %s missing x-nitric-target annotation", op.OperationID)
 			}
 		}
 	}

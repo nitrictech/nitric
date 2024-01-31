@@ -394,5 +394,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		"containerApp": res.App,
 	})
 
+	p.containerApps[name] = res
+
 	return err
 }
