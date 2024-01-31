@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 	"runtime/debug"
+	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
@@ -105,6 +107,44 @@ func stackAndProjectFromAttributes(attributesMap map[string]interface{}) (string
 	return projectName, stackName, nil
 }
 
+var pulumiErrorParser = regexp.MustCompile(`(.*)\ncode: (\d+)\s*\nstdout: (.*)\s*?\nstderr: (.*)\s*?`)
+
+type pulumiError struct {
+	Stdout  string
+	Stderr  string
+	Message string
+}
+
+func (p pulumiError) Error() string {
+	parts := []string{}
+	if p.Message != "" {
+		parts = append(parts, p.Message)
+	}
+	if p.Stdout != "" {
+		parts = append(parts, p.Stdout)
+	}
+	if p.Stderr != "" {
+		parts = append(parts, p.Stderr)
+	}
+	return strings.Join(parts, "\n")
+}
+
+func parsePulumiError(err error) error {
+	if pulumiErrorParser.MatchString(err.Error()) {
+		parts := pulumiErrorParser.FindStringSubmatch(err.Error())
+
+		pe := pulumiError{
+			Message: parts[1],
+			Stdout:  parts[3],
+			Stderr:  parts[4],
+		}
+
+		return pe
+	}
+
+	return nil
+}
+
 // Up - automatically called by the Nitric CLI via the `up` command
 func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
@@ -144,8 +184,24 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 	_, err = autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
 
 	if err != nil {
-		// TODO: remove when CLI is displaying this clearly.
-		fmt.Println(err.Error())
+		// Check for common Pulumi 'autoError' types
+		if auto.IsConcurrentUpdateError(err) {
+			if pe := parsePulumiError(err); pe != nil {
+				err = pe
+			}
+			return fmt.Errorf("the pulumi stack file is locked.\nThis occurs when a previous deployment is still in progress or was interrupted.\n%s", err)
+		} else if auto.IsSelectStack404Error(err) {
+			return fmt.Errorf("stack not found. %s", err)
+		} else if auto.IsCreateStack409Error(err) {
+			return fmt.Errorf("failed to create Pulumi stack, this may be a bug in nitric. Seek help https://github.com/nitrictech/nitric/issues\n%s", err)
+		} else if auto.IsCompilationError(err) {
+			return fmt.Errorf("failed to compile Pulumi program, this may be a bug in your chosen provider or with nitric. Seek help https://github.com/nitrictech/nitric/issues\n%s", err)
+		}
+
+		if pe := parsePulumiError(err); pe != nil {
+			return pe
+		}
+
 		return err
 	}
 
