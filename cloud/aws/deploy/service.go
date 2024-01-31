@@ -67,7 +67,7 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 			MetricName:    "awsemf",
 			Extensions:    []string{},
 		},
-	}, pulumi.DependsOn([]pulumi.Resource{repo}))
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
 }
 
 func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
