@@ -271,11 +271,15 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 }
 
 func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
+	principalsMap := map[resourcespb.ResourceType]map[string]*ServicePrincipal{}
+
+	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
+
 	return &NitricAzurePulumiProvider{
 		buckets:        make(map[string]*storage.BlobContainer),
 		containerApps:  map[string]*ContainerApp{},
 		topics:         map[string]*eventgrid.Topic{},
-		principals:     map[resourcespb.ResourceType]map[string]*ServicePrincipal{},
+		principals:     principalsMap,
 		keyValueStores: map[string]*storage.Table{},
 	}
 }
