@@ -258,8 +258,6 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 			// unknown event, possibly still useful for debugging.
 			pterm.Debug.Printfln("%+v", evt)
 			continue
-		} else {
-			pterm.Info.Printfln("%s", resourceUpdateToString(updateDetails))
 		}
 
 		err = stream.Send(&deploymentspb.DeploymentUpEvent{
@@ -293,8 +291,6 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 			// unknown event, possibly still useful for debugging.
 			pterm.Debug.Printfln("%+v", evt)
 			continue
-		} else {
-			pterm.Info.Printfln("%s", resourceUpdateToString(nitricEvent))
 		}
 
 		fmt.Printf("sending resource update: %+v", nitricEvent)
