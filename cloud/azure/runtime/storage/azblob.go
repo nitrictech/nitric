@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azblob_service_iface "github.com/nitrictech/nitric/cloud/azure/runtime/storage/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
+	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
@@ -240,7 +240,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {
 	return func(credential azblob.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			log.Default().Println("Error refreshing token: ", err)
+			logger.Errorf("Error refreshing token: %s", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)

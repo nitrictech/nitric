@@ -17,7 +17,6 @@ package base_http
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/cloud/common/runtime/env"
+	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 )
@@ -145,7 +145,7 @@ func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(c
 	return func(rc *fasthttp.RequestCtx) {
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
-			log.Default().Println("Error handling request: ", err)
+			logger.Errorf("Error handling request: %s", err)
 			rc.Error("Internal Server Error", 500)
 			return
 		}

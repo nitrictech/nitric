@@ -31,7 +31,7 @@ import (
 func main() {
 	deploySrv, err := deploy.NewServer()
 	if err != nil {
-		log.Fatalf("error creating deployment server %v", err)
+		logger.Fatalf("error creating deployment server %v", err)
 	}
 
 	port := env.PORT.String()

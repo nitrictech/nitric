@@ -17,7 +17,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"regexp"
 	"runtime/debug"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
+	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
@@ -258,7 +258,7 @@ func (s *PulumiProviderServer) Start() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		log.Fatalf("error listening on port %s %v", port, err)
+		logger.Fatalf("error listening on port %s %v", port, err)
 	}
 
 	srv := grpc.NewServer()
@@ -268,6 +268,6 @@ func (s *PulumiProviderServer) Start() {
 	fmt.Printf("Deployment server started on %s\n", lis.Addr().String())
 	err = srv.Serve(lis)
 	if err != nil {
-		log.Fatalf("error serving requests %v", err)
+		logger.Fatalf("error serving requests %v", err)
 	}
 }

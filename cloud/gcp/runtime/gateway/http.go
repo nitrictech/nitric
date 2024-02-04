@@ -18,13 +18,13 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
@@ -158,7 +158,7 @@ func (g *gcpMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.
 		})
 		if err != nil {
 			// FIXME: Make sure that all schedule failures have consistent behaviour across providers
-			log.Default().Printf("could not handle schedule %s event\n", scheduleName)
+			logger.Errorf("could not handle trigger for schedule %s: %s", scheduleName, err.Error())
 		}
 
 		ctx.SuccessString("text/plain", "success")
