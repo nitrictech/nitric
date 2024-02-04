@@ -107,7 +107,7 @@ func (h *HttpServer) Proxy(ctx context.Context, req *httppb.HttpProxyRequest) (*
 
 // HandleRequest forwards proxy request to the underlying HTTP server
 func (srv *HttpServer) HandleRequest(request *fasthttp.Request) (*fasthttp.Response, error) {
-	if srv.host != "" {
+	if srv.host == "" {
 		return nil, fmt.Errorf("http server not registered")
 	}
 
