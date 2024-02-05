@@ -64,7 +64,7 @@ func main() {
 
 	membraneOpts.QueuesPlugin, err = pubsub_queue_service.New()
 	if err != nil {
-		log.Default().Println("Failed to load events plugin:", err.Error())
+		logger.Errorf("Failed to load queues plugin: %s", err.Error())
 	}
 
 	membraneOpts.StoragePlugin, err = storage_service.New()

@@ -70,7 +70,7 @@ func main() {
 
 	membraneOpts.QueuesPlugin, err = azqueue_service.New()
 	if err != nil {
-		log.Default().Println("Failed to load queue plugin:", err.Error())
+		logger.Errorf("Failed to load queue plugin: %s", err.Error())
 	}
 
 	membraneOpts.SecretManagerPlugin, err = key_vault.New()
