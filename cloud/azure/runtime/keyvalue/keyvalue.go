@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
@@ -28,6 +29,7 @@ import (
 	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -41,7 +43,7 @@ var _ keyvaluepb.KeyValueServer = &AzureStorageTableKeyValueService{}
 type AztableEntity struct {
 	aztables.Entity
 
-	Content *structpb.Struct
+	Content aztables.EDMBinary
 }
 
 // Get a document from the DynamoDB table
@@ -84,10 +86,20 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 		)
 	}
 
+	var structContent structpb.Struct
+	err = proto.Unmarshal(entity.Content, &structContent)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"Unable to convert value to pb struct",
+			err,
+		)
+	}
+
 	return &keyvaluepb.KeyValueGetResponse{
 		Value: &keyvaluepb.Value{
 			Ref:     req.Ref,
-			Content: entity.Content,
+			Content: &structContent,
 		},
 	}, nil
 }
@@ -112,12 +124,22 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 		)
 	}
 
+	content, err := proto.Marshal(req.Content)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"Unable to marshal content",
+			err,
+		)
+	}
+
 	entity := AztableEntity{
 		Entity: aztables.Entity{
 			PartitionKey: req.Ref.Store,
 			RowKey:       req.Ref.Key,
+			Timestamp:    aztables.EDMDateTime(time.Now()),
 		},
-		Content: req.Content,
+		Content: content,
 	}
 
 	entityJson, err := json.Marshal(entity)
@@ -129,7 +151,9 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 		)
 	}
 
-	_, err = client.UpsertEntity(ctx, entityJson, nil)
+	_, err = client.UpsertEntity(ctx, entityJson, &aztables.UpsertEntityOptions{
+		UpdateMode: aztables.UpdateModeReplace,
+	})
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

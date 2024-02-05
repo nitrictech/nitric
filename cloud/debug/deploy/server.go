@@ -23,7 +23,7 @@ import (
 )
 
 type DeployServer struct {
-	deploymentspb.UnimplementedDeployServer
+	deploymentspb.UnimplementedDeploymentServer
 }
 
 func NewServer() (*DeployServer, error) {

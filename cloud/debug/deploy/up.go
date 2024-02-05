@@ -26,7 +26,7 @@ import (
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploymentspb.DeployUpRequest, stream deploymentspb.Deploy_UpServer) (err error) {
+func (d *DeployServer) Up(request *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
@@ -60,15 +60,11 @@ func (d *DeployServer) Up(request *deploymentspb.DeployUpRequest, stream deploym
 				return err
 			}
 
-			err = stream.Send(&deploymentspb.DeployUpEvent{
-				Content: &deploymentspb.DeployUpEvent_Result{
-					Result: &deploymentspb.DeployUpEventResult{
+			err = stream.Send(&deploymentspb.DeploymentUpEvent{
+				Content: &deploymentspb.DeploymentUpEvent_Result{
+					Result: &deploymentspb.UpResult{
 						Success: true,
-						Result: &deploymentspb.UpResult{
-							Content: &deploymentspb.UpResult_StringResult{
-								StringResult: fmt.Sprintf("spec written to: %s", absPath),
-							},
-						},
+						Details: fmt.Sprintf("spec written to: %s", absPath),
 					},
 				},
 			})
@@ -77,15 +73,11 @@ func (d *DeployServer) Up(request *deploymentspb.DeployUpRequest, stream deploym
 			}
 		}
 	} else {
-		err = stream.Send(&deploymentspb.DeployUpEvent{
-			Content: &deploymentspb.DeployUpEvent_Result{
-				Result: &deploymentspb.DeployUpEventResult{
+		err = stream.Send(&deploymentspb.DeploymentUpEvent{
+			Content: &deploymentspb.DeploymentUpEvent_Result{
+				Result: &deploymentspb.UpResult{
 					Success: true,
-					Result: &deploymentspb.UpResult{
-						Content: &deploymentspb.UpResult_StringResult{
-							StringResult: string(reqJson),
-						},
-					},
+					Details: string(reqJson),
 				},
 			},
 		})

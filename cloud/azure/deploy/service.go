@@ -74,9 +74,16 @@ type ContainerApp struct {
 func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 	if c.hostUrl == nil {
 		// Set the hostUrl from the App FQDN
-		hostUrl := c.App.LatestRevisionFqdn.ApplyT(func(fqdn string) (string, error) {
+		hostUrl := pulumi.All(c.App.LatestRevisionFqdn, c.EventToken).ApplyT(func(args []interface{}) (string, error) {
 			// Get the full URL of the deployed container
-			hostUrl := "https://" + fqdn
+			fqdn := args[0].(string)
+			token := args[1].(string)
+
+			// TODO: Should probably use a health check.
+			// this callback in mainly used to get the hostURL for subscriptions
+			// so ensuring that the deployed gateway is configured to validate subscription requests
+			// doesn't hurt
+			hostUrl := fmt.Sprintf("https://%s/x-nitric-topic/test?token=%s", fqdn, token)
 
 			hCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
@@ -105,9 +112,7 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 					return "", err
 				}
 
-				// TODO: Implement a membrane health check handler in the Membrane and trigger that instead.
-				// Set event type header to simulate a subscription validation event.
-				// These events are automatically resolved by the Membrane and won't be processed by handlers.
+				// Ensure that the gateway is configured to accept subscription validation
 				req.Header.Set("aeg-event-type", "SubscriptionValidation")
 				req.Header.Set("Content-Type", "application/json")
 				client := &http.Client{
@@ -274,6 +279,8 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		})
 	}
 
+	env = append(env, p.containerEnv.Env...)
+
 	// if len(args.Env) > 0 {
 	// 	env = append(env, args.Env...)
 	// }
@@ -393,6 +400,8 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		"name":         pulumi.StringPtr(res.Name),
 		"containerApp": res.App,
 	})
+
+	p.containerApps[name] = res
 
 	return err
 }
