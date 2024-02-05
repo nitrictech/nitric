@@ -39,12 +39,6 @@ import (
 	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
-const (
-	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
-	ErrCodeNoSuchTagSet = "NoSuchTagSet"
-	ErrCodeAccessDenied = "AccessDenied"
-)
-
 type SQSQueueService struct {
 	provider resource.AwsResourceProvider
 	client   sqsiface.SQSAPI
