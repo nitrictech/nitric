@@ -143,7 +143,6 @@ func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRe
 	}
 
 	// SendBatch once we've published all tasks to the client
-	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more sense...
 	results := make([]ifaces_pubsub.PublishResult, 0)
 	failedTasks := make([]*queuespb.FailedSendRequest, 0)
 	publishedTasks := make([]*queuespb.QueueSendRequest, 0)
