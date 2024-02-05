@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	"github.com/charmbracelet/log"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
 	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/keyvalue"
@@ -29,6 +28,7 @@ import (
 	secret_manager_secret_service "github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
 	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
 	pubsub_service "github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 )
 

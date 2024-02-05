@@ -20,7 +20,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/pkg/errors"
 )
 

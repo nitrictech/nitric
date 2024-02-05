@@ -29,7 +29,7 @@ import (
 	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 )
 

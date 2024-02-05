@@ -30,8 +30,8 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azblob_service_iface "github.com/nitrictech/nitric/cloud/azure/runtime/storage/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 

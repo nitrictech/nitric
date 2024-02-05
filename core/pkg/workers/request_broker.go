@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/core/pkg/help"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"google.golang.org/grpc"
 )
 

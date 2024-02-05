@@ -22,7 +22,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/api"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
 	aztables_service "github.com/nitrictech/nitric/cloud/azure/runtime/keyvalue"

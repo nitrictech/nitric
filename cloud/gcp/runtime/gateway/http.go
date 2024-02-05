@@ -24,9 +24,9 @@ import (
 	"github.com/valyala/fasthttp"
 
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"

@@ -26,8 +26,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/nitrictech/nitric/cloud/common/runtime/env"
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 )
 

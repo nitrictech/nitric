@@ -27,10 +27,10 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
-	"github.com/nitrictech/nitric/cloud/common/runtime/logger"
 	"github.com/nitrictech/nitric/core/pkg/decorators"
 	"github.com/nitrictech/nitric/core/pkg/env"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
