@@ -86,6 +86,22 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_WebsocketManage: {
 		"execute-api:ManageConnections",
 	},
+	resourcespb.Action_QueueSend: {
+		"sqs:SendMessage",
+	},
+	resourcespb.Action_QueueReceive: {
+		"sqs:ReceiveMessage",
+		"sqs:DeleteMessage",
+	},
+	// XXX: Cannot be applied to single resources
+	// v1.Action_QueueList: {
+	// 	"sqs:ListQueues",
+	// },
+	resourcespb.Action_QueueDetail: {
+		"sqs:GetQueueAttributes",
+		"sqs:GetQueueUrl",
+		"sqs:ListQueueTags",
+	},
 }
 
 func actionsToAwsActions(actions []resourcespb.Action) []string {
@@ -108,6 +124,10 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 	case resourcespb.ResourceType_Topic:
 		if t, ok := a.topics[resource.Id.Name]; ok {
 			return []interface{}{t.sns.Arn, t.sfn.Arn}, nil
+		}
+	case resourcespb.ResourceType_Queue:
+		if q, ok := a.queues[resource.Id.Name]; ok {
+			return []interface{}{q.Arn}, nil
 		}
 	case resourcespb.ResourceType_KeyValueStore:
 		if c, ok := a.keyValueStores[resource.Id.Name]; ok {

@@ -25,14 +25,18 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/smithy-go"
+	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
+
+	"errors"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queue/v1"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+
+	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 const (
@@ -46,7 +50,7 @@ type SQSQueueService struct {
 	client   sqsiface.SQSAPI
 }
 
-var _ queuepb.QueueServiceServer = &SQSQueueService{}
+var _ queuepb.QueuesServer = &SQSQueueService{}
 
 // Get the URL for a given queue name
 func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) (*string, error) {
@@ -61,7 +65,7 @@ func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) 
 		return nil, fmt.Errorf("queue %s does not exist", queue)
 	}
 
-	arnParts := strings.Split(queueArn, ":")
+	arnParts := strings.Split(queueArn.ARN, ":")
 	accountId := arnParts[4]
 	queueName := arnParts[5]
 
@@ -85,22 +89,23 @@ func isSQSAccessDeniedErr(err error) bool {
 }
 
 func (s *SQSQueueService) Send(ctx context.Context, req *queuepb.QueueSendRequestBatch) (*queuepb.QueueSendResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.SendBatch",
-		map[string]interface{}{
-			"queue":     req.QueueName,
-			"tasks.len": len(req.Requests),
-		},
-	)
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.SendBatch")
+
+	requestIdMap := map[string]*queuepb.QueueSendRequest{}
 
 	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
 		for _, sendTaskReq := range req.Requests {
 			t := sendTaskReq
+
+			// generate a unique Id for each task
+			id := uuid.New()
+			requestIdMap[id.String()] = t
+
 			if bytes, err := json.Marshal(t); err == nil {
 				entries = append(entries, types.SendMessageBatchRequestEntry{
-					Id:          &t.Id,
+					Id:          aws.String(id.String()),
 					MessageBody: aws.String(string(bytes)),
 				})
 			} else {
@@ -119,8 +124,8 @@ func (s *SQSQueueService) Send(ctx context.Context, req *queuepb.QueueSendReques
 			// process out Failed messages to return to the user...
 			failedTasks := make([]*queuepb.FailedSendRequest, 0, len(out.Failed))
 			for _, failed := range out.Failed {
-				for _, e := range req.Requests {
-					if e.Id == *failed.Id {
+				for id, e := range requestIdMap {
+					if id == *failed.Id {
 						failedTasks = append(failedTasks, &queuepb.FailedSendRequest{
 							Request: e,
 							Message: *failed.Message,
@@ -159,13 +164,7 @@ func (s *SQSQueueService) Send(ctx context.Context, req *queuepb.QueueSendReques
 }
 
 func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceiveRequest) (*queuepb.QueueReceiveResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.Receive",
-		map[string]interface{}{
-			"depth": req.Depth,
-			"queue": req.QueueName,
-		},
-	)
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.Receive")
 
 	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		req := sqs.ReceiveMessageInput{
@@ -226,13 +225,7 @@ func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceive
 
 // Completes a previously popped queue item
 func (s *SQSQueueService) Complete(ctx context.Context, req *queuepb.QueueCompleteRequest) (*queuepb.QueueCompleteResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.Complete",
-		map[string]interface{}{
-			"queue":   req.QueueName,
-			"leaseId": req.LeaseId,
-		},
-	)
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.Complete")
 
 	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		req := sqs.DeleteMessageInput{
@@ -258,8 +251,8 @@ func (s *SQSQueueService) Complete(ctx context.Context, req *queuepb.QueueComple
 	}
 }
 
-func New(provider resource.AwsResourceProvider) (queuepb.QueueServiceServer, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+func New(provider resource.AwsResourceProvider) (queuepb.QueuesServer, error) {
+	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
@@ -276,7 +269,7 @@ func New(provider resource.AwsResourceProvider) (queuepb.QueueServiceServer, err
 	}, nil
 }
 
-func NewWithClient(provider resource.AwsResourceProvider, client sqsiface.SQSAPI) queuepb.QueueServiceServer {
+func NewWithClient(provider resource.AwsResourceProvider, client sqsiface.SQSAPI) queuepb.QueuesServer {
 	return &SQSQueueService{
 		client:   client,
 		provider: provider,

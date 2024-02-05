@@ -36,6 +36,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -62,6 +63,7 @@ type NitricAwsPulumiProvider struct {
 	buckets             map[string]*s3.Bucket
 	bucketNotifications map[string]*s3.BucketNotification
 	topics              map[string]*topic
+	queues              map[string]*sqs.Queue
 	websockets          map[string]*apigatewayv2.Api
 	keyValueStores      map[string]*dynamodb.Table
 
@@ -181,6 +183,7 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		bucketNotifications: make(map[string]*s3.BucketNotification),
 		websockets:          make(map[string]*apigatewayv2.Api),
 		topics:              make(map[string]*topic),
+		queues:              make(map[string]*sqs.Queue),
 		keyValueStores:      make(map[string]*dynamodb.Table),
 	}
 }

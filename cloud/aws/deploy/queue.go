@@ -14,43 +14,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package queue
+package deploy
 
 import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-type SQSQueue struct {
-	pulumi.ResourceState
-	Sqs  *sqs.Queue
-	Name string
-}
-
-type SQSQueueArgs struct {
-	Queue   *v1.Queue
-	StackID string
-}
-
-func NewSQSQueue(ctx *pulumi.Context, name string, args *SQSQueueArgs, opts ...pulumi.ResourceOption) (*SQSQueue, error) {
-	res := &SQSQueue{Name: name}
-
-	err := ctx.RegisterComponentResource("nitric:queue:AwsSqsQueue", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
+// Bucket - Implements deployments of Nitric Buckets using AWS S3
+func (a *NitricAwsPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Queue) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	queue, err := sqs.NewQueue(ctx, name, &sqs.QueueArgs{
-		Tags: pulumi.ToStringMap(common.Tags(args.StackID, name, resources.Queue)),
-	})
+		Tags: pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Queue)),
+	}, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	res.Sqs = queue
+	a.queues[name] = queue
 
-	return res, nil
+	return nil
 }
