@@ -13,7 +13,7 @@ option csharp_namespace = "Nitric.Proto.Queues.v1";
 
 // The Nitric Queue Service contract
 service Queues {
-  // Send a single event to a queue
+  // Send messages to a queue
   rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
   // Receive event(s) off a queue
   rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
