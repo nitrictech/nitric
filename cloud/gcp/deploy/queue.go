@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
@@ -44,7 +45,7 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	resourceLabels := common.Tags(p.stackID, name, resources.Queue)
+	resourceLabels := common.Tags(p.stackId, name, resources.Queue)
 
 	p.queues[name], err = pubsub.NewTopic(ctx, fmt.Sprintf("%s-queue", name), &pubsub.TopicArgs{
 		Labels: pulumi.ToStringMap(resourceLabels),
@@ -53,7 +54,7 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	_, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
+	p.queueSubscriptions[name], err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
 		Topic:  p.queues[name].Name,
 		Labels: pulumi.ToStringMap(resourceLabels),
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
@@ -65,37 +66,4 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 	}
 
 	return nil
-}
-
-func NewPubSubTopic(ctx *pulumi.Context, name string, args *PubSubTopicArgs, opts ...pulumi.ResourceOption) (*PubSubTopic, error) {
-	res := &PubSubTopic{
-		Name: name,
-	}
-
-	err := ctx.RegisterComponentResource("nitric:queue:GCPPubSubTopic", name, res, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	resourceLabels := common.Tags(args.StackID, name, resources.Queue)
-
-	res.PubSub, err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(resourceLabels),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	res.Subscription, err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
-		Topic:  res.PubSub.Name,
-		Labels: pulumi.ToStringMap(resourceLabels),
-		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
-			Ttl: pulumi.String(""),
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }

@@ -62,6 +62,20 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"pubsub.topics.publish",
 	},
 	v1.Action_TopicList: {}, // see above in gcpListActions
+	v1.Action_QueueSend: {
+		"pubsub.topics.get",
+		"pubsub.topics.publish",
+	},
+	v1.Action_QueueReceive: {
+		"pubsub.topics.get",
+		"pubsub.topics.attachSubscription",
+		"pubsub.snapshots.seek",
+		"pubsub.subscriptions.consume",
+	},
+	v1.Action_QueueDetail: {
+		"pubsub.topics.get",
+	},
+	v1.Action_QueueList: {}, // see above in gcpListActions
 	v1.Action_KeyValueStoreDelete: {
 		"appengine.applications.get",
 		"datastore.databases.get",
@@ -216,7 +230,43 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 				if err != nil {
 					return err
 				}
+			case v1.ResourceType_Queue:
+				q := p.queues[resource.Id.Name]
 
+				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
+					Topic:  q.Name,
+					Member: memberId,
+					Role:   rolePolicy.Name,
+				}, opts...)
+				if err != nil {
+					return err
+				}
+
+				needSubConsume := false
+
+				for _, act := range config.Actions {
+					if act == v1.Action_QueueReceive {
+						needSubConsume = true
+						break
+					}
+				}
+
+				if needSubConsume {
+					subscription := p.queueSubscriptions[resource.Id.Name]
+					subRolePolicy, err := NewCustomRole(ctx, name+"subscription", []string{"pubsub.subscriptions.consume"}, opts...)
+					if err != nil {
+						return err
+					}
+
+					_, err = pubsub.NewSubscriptionIAMMember(ctx, memberName, &pubsub.SubscriptionIAMMemberArgs{
+						Subscription: subscription.Name,
+						Member:       memberId,
+						Role:         subRolePolicy.Name,
+					}, opts...)
+					if err != nil {
+						return err
+					}
+				}
 			case v1.ResourceType_Secret:
 				s := p.secrets[resource.Id.Name]
 

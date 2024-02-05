@@ -24,6 +24,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
 	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/keyvalue"
+	pubsub_queue_service "github.com/nitrictech/nitric/cloud/gcp/runtime/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	secret_manager_secret_service "github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
 	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
@@ -59,6 +60,11 @@ func main() {
 	membraneOpts.TopicsPlugin, err = pubsub_service.New(provider)
 	if err != nil {
 		logger.Errorf("Failed to load events plugin: %s", err.Error())
+	}
+
+	membraneOpts.QueuesPlugin, err = pubsub_queue_service.New()
+	if err != nil {
+		log.Default().Println("Failed to load events plugin:", err.Error())
 	}
 
 	membraneOpts.StoragePlugin, err = storage_service.New()
