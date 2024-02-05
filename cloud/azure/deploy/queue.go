@@ -1,7 +1,6 @@
 package deploy
 
 import (
-	"github.com/nitrictech/nitric/cloud/azure/deploy/utils"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -11,7 +10,7 @@ func (a *NitricAzurePulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Res
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	a.queues[name], err = storage.NewQueue(ctx, utils.ResourceName(ctx, name, utils.StorageQueueRT), &storage.QueueArgs{
+	a.queues[name], err = storage.NewQueue(ctx, ResourceName(ctx, name, StorageQueueRT), &storage.QueueArgs{
 		AccountName:       a.storageAccount.Name,
 		ResourceGroupName: a.resourceGroup.Name,
 	}, opts...)
