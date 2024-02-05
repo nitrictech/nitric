@@ -22,7 +22,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	document "github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
@@ -226,7 +225,7 @@ func New() (*AzureStorageTableKeyValueService, error) {
 // NewWithClient creates a DocumentServiceServer with an given DynamoDB client instance.
 //
 //	Primarily used for testing
-func NewWithClient(provider resource.AwsResourceProvider, clientFactory AzureStorageClientFactory) (*AzureStorageTableKeyValueService, error) {
+func NewWithClient(clientFactory AzureStorageClientFactory) (*AzureStorageTableKeyValueService, error) {
 	return &AzureStorageTableKeyValueService{
 		// storageAccountName: storageAccountName,
 		// defaultCredential:  cred,

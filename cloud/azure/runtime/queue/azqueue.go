@@ -25,14 +25,16 @@ import (
 	"github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azqueueserviceiface "github.com/nitrictech/nitric/cloud/azure/runtime/queue/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queue/v1"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+
+	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 // Set to 30 seconds,
@@ -42,7 +44,7 @@ type AzqueueQueueService struct {
 	client azqueueserviceiface.AzqueueServiceUrlIface
 }
 
-var _ queuepb.QueueServiceServer = &AzqueueQueueService{}
+var _ queuespb.QueuesServer = &AzqueueQueueService{}
 
 // Returns an adapted azqueue MessagesUrl, which is a client for interacting with messages in a specific queue
 func (s *AzqueueQueueService) getMessagesUrl(queue string) azqueueserviceiface.AzqueueMessageUrlIface {
@@ -58,29 +60,23 @@ func (s *AzqueueQueueService) getMessageIdUrl(queue string, messageId azqueue.Me
 	return mUrl.NewMessageIDURL(messageId)
 }
 
-type azTask struct {
-	Id      string
-	Payload map[string]interface{}
-}
+// type azTask struct {
+// 	Id      string
+// 	Payload map[string]interface{}
+// }
 
-func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *queuepb.QueueSendRequest) (*queuepb.QueueSendResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzqueueQueueService.Send",
-		map[string]interface{}{
-			"queue": queueName,
-			"task":  req.Payload,
-		},
-	)
+func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *queuespb.QueueSendRequest) (*queuespb.QueueSendResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Send")
 
 	messages := s.getMessagesUrl(queueName)
 
-	task := &azTask{
-		Id:      req.Id,
-		Payload: req.Payload.AsMap(),
-	}
+	// task := &azTask{
+	// 	Id:      req.Id,
+	// 	Payload: req.Payload.AsMap(),
+	// }
 
 	// Send the tasks to the queue
-	if taskBytes, err := json.Marshal(task); err == nil {
+	if taskBytes, err := proto.Marshal(req.Payload); err == nil {
 		if _, err := messages.Enqueue(ctx, string(taskBytes), 0, 0); err != nil {
 			return nil, newErr(
 				codes.Internal,
@@ -99,22 +95,22 @@ func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *q
 	return nil, nil
 }
 
-func (s *AzqueueQueueService) Send(ctx context.Context, req *queuepb.QueueSendRequestBatch) (*queuepb.QueueSendResponse, error) {
-	failedRequests := make([]*queuepb.FailedSendRequest, 0)
+func (s *AzqueueQueueService) Send(ctx context.Context, req *queuespb.QueueSendRequestBatch) (*queuespb.QueueSendResponse, error) {
+	failedRequests := make([]*queuespb.FailedSendRequest, 0)
 
 	for _, r := range req.Requests {
 		// t := task
 		// Azure Storage Queues don't support batches, so each task must be sent individually.
 		_, err := s.send(ctx, req.QueueName, r)
 		if err != nil {
-			failedRequests = append(failedRequests, &queuepb.FailedSendRequest{
+			failedRequests = append(failedRequests, &queuespb.FailedSendRequest{
 				Request: r,
 				Message: err.Error(),
 			})
 		}
 	}
 
-	return &queuepb.QueueSendResponse{
+	return &queuespb.QueueSendResponse{
 		FailedRequests: failedRequests,
 	}, nil
 }
@@ -147,14 +143,8 @@ func leaseFromString(leaseID string) (*AzureQueueItemLease, error) {
 }
 
 // Receive - Receives a collection of tasks off a given queue.
-func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuepb.QueueReceiveRequest) (*queuepb.QueueReceiveResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzqueueQueueService.Receive",
-		map[string]interface{}{
-			"queue": req.QueueName,
-			"depth": req.Depth,
-		},
-	)
+func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueReceiveRequest) (*queuespb.QueueReceiveResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Receive")
 
 	// if err := options.Validate(); err != nil {
 	// 	return nil, newErr(
@@ -176,17 +166,17 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuepb.QueueRec
 	}
 
 	if dequeueResp.NumMessages() == 0 {
-		return &queuepb.QueueReceiveResponse{
-			Tasks: []*queuepb.ReceivedTask{},
+		return &queuespb.QueueReceiveResponse{
+			Tasks: []*queuespb.ReceivedTask{},
 		}, nil
 	}
 
 	// Convert the Azure Storage Queues messages into Nitric tasks
-	tasks := []*queuepb.ReceivedTask{}
+	tasks := []*queuespb.ReceivedTask{}
 	for i := int32(0); i < dequeueResp.NumMessages(); i++ {
 		m := dequeueResp.Message(i)
-		var nitricTask azTask
-		err := json.Unmarshal([]byte(m.Text), &nitricTask)
+		var structPayload structpb.Struct
+		err := proto.Unmarshal([]byte(m.Text), &structPayload)
 		if err != nil {
 			// TODO: append error to error list and Nack the message.
 			continue
@@ -206,35 +196,20 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuepb.QueueRec
 			)
 		}
 
-		structPayload, err := structpb.NewStruct(nitricTask.Payload)
-		if err != nil {
-			return nil, newErr(
-				codes.Internal,
-				"Unable to make struct from payload",
-				err,
-			)
-		}
-
-		tasks = append(tasks, &queuepb.ReceivedTask{
+		tasks = append(tasks, &queuespb.ReceivedTask{
 			LeaseId: leaseID,
-			Payload: structPayload,
+			Payload: &structPayload,
 		})
 	}
 
-	return &queuepb.QueueReceiveResponse{
+	return &queuespb.QueueReceiveResponse{
 		Tasks: tasks,
 	}, nil
 }
 
 // Complete - Completes a previously popped queue item
-func (s *AzqueueQueueService) Complete(ctx context.Context, req *queuepb.QueueCompleteRequest) (*queuepb.QueueCompleteResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzqueueQueueService.Complete",
-		map[string]interface{}{
-			"queue":   req.QueueName,
-			"leaseId": req.LeaseId,
-		},
-	)
+func (s *AzqueueQueueService) Complete(ctx context.Context, req *queuespb.QueueCompleteRequest) (*queuespb.QueueCompleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Complete")
 
 	lease, err := leaseFromString(req.LeaseId)
 	if err != nil {
@@ -256,7 +231,7 @@ func (s *AzqueueQueueService) Complete(ctx context.Context, req *queuepb.QueueCo
 		)
 	}
 
-	return &queuepb.QueueCompleteResponse{}, nil
+	return &queuespb.QueueCompleteResponse{}, nil
 }
 
 const expiryBuffer = 2 * time.Minute
@@ -279,7 +254,7 @@ func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azqueue.TokenRefresh
 
 // New - Constructs a new Azure Storage Queues client with defaults
 func New() (*AzqueueQueueService, error) {
-	queueUrl := utils.GetEnv(azureutils.AZURE_STORAGE_QUEUE_ENDPOINT, "")
+	queueUrl := env.AZURE_STORAGE_QUEUE_ENDPOINT.String()
 	if queueUrl == "" {
 		return nil, fmt.Errorf("failed to determine Azure Storage Queue endpoint, environment variable %s not set", azureutils.AZURE_STORAGE_QUEUE_ENDPOINT)
 	}

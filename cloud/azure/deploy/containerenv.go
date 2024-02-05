@@ -83,6 +83,10 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT"),
 			Value: p.storageAccount.PrimaryEndpoints.Blob(),
 		})
+		env = append(env, app.EnvironmentVarArgs{
+			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT"),
+			Value: p.storageAccount.PrimaryEndpoints.Queue(),
+		})
 	}
 
 	if p.keyVault != nil {
