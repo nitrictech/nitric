@@ -61,9 +61,8 @@ message QueueCompleteResponse {}
 
 // A task to be sent to a queue.
 message QueueSendRequest {
-  string id = 1;
   // The payload of the task
-  google.protobuf.Struct payload = 2;
+  google.protobuf.Struct payload = 1;
 }
 
 message ReceivedTask {
