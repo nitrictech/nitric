@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.4
-// source: nitric/proto/queue/v1/queue.proto
+// source: nitric/proto/queues/v1/queues.proto
 
-package queuepb
+package queuespb
 
 import (
 	context "context"
@@ -40,7 +40,7 @@ func NewQueueServiceClient(cc grpc.ClientConnInterface) QueueServiceClient {
 
 func (c *queueServiceClient) Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error) {
 	out := new(QueueSendResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queue.v1.QueueService/Send", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Send", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (c *queueServiceClient) Send(ctx context.Context, in *QueueSendRequestBatch
 
 func (c *queueServiceClient) Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error) {
 	out := new(QueueReceiveResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queue.v1.QueueService/Receive", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Receive", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (c *queueServiceClient) Receive(ctx context.Context, in *QueueReceiveReques
 
 func (c *queueServiceClient) Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error) {
 	out := new(QueueCompleteResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queue.v1.QueueService/Complete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Complete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func _QueueService_Send_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queue.v1.QueueService/Send",
+		FullMethod: "/nitric.proto.queues.v1.QueueService/Send",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueueServiceServer).Send(ctx, req.(*QueueSendRequestBatch))
@@ -130,7 +130,7 @@ func _QueueService_Receive_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queue.v1.QueueService/Receive",
+		FullMethod: "/nitric.proto.queues.v1.QueueService/Receive",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueueServiceServer).Receive(ctx, req.(*QueueReceiveRequest))
@@ -148,7 +148,7 @@ func _QueueService_Complete_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queue.v1.QueueService/Complete",
+		FullMethod: "/nitric.proto.queues.v1.QueueService/Complete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueueServiceServer).Complete(ctx, req.(*QueueCompleteRequest))
@@ -160,7 +160,7 @@ func _QueueService_Complete_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var QueueService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "nitric.proto.queue.v1.QueueService",
+	ServiceName: "nitric.proto.queues.v1.QueueService",
 	HandlerType: (*QueueServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -177,5 +177,5 @@ var QueueService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "nitric/proto/queue/v1/queue.proto",
+	Metadata: "nitric/proto/queues/v1/queues.proto",
 }

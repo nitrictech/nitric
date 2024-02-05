@@ -1,15 +1,15 @@
 syntax = "proto3";
-package nitric.proto.queue.v1;
+package nitric.proto.queues.v1;
 
 import "google/protobuf/struct.proto";
 
 // protoc plugin options for code generation
-option go_package = "github.com/nitrictech/nitric/core/pkg/proto/queue/v1;queuepb";
-option java_package = "io.nitric.proto.queue.v1";
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/queues/v1;queuespb";
+option java_package = "io.nitric.proto.queues.v1";
 option java_multiple_files = true;
-option java_outer_classname = "Queues";
-option php_namespace = "Nitric\\Proto\\Queue\\V1";
-option csharp_namespace = "Nitric.Proto.Queue.v1";
+option java_outer_classname = "QueuesService";
+option php_namespace = "Nitric\\Proto\\Queues\\V1";
+option csharp_namespace = "Nitric.Proto.Queues.v1";
 
 // The Nitric Queue Service contract
 service QueueService {
