@@ -24,7 +24,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// Bucket - Implements deployments of Nitric Buckets using AWS S3
+// Queue - Implements deployments of Nitric Queues using AWS SQS
 func (a *NitricAwsPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Queue) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
