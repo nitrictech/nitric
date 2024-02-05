@@ -92,7 +92,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 // Retrieves the Nitric "Queue Subscription" for the specified queue (PubSub Topic).
 //
 // GCP PubSub requires a Subscription in order to Pull messages from a Topic.
-// we use this behavior to emulate a queue.
+// we use this behavior to implement queues.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
 func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName string) (ifaces_pubsub.Subscription, error) {
