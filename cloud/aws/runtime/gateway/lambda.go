@@ -32,6 +32,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -321,14 +322,14 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topic
 
 		tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
 		if err != nil {
-			log.Default().Printf("unable to find nitric topic: %v", err)
+			logger.Errorf("unable to find nitric topic: %v", err)
 			continue
 		}
 
 		var message topicspb.Message
 
 		if err := proto.Unmarshal([]byte(messageString), &message); err != nil {
-			log.Default().Printf("unable to unmarshal nitric message from sns trigger: %v", err)
+			logger.Errorf("unable to unmarshal nitric message from SNS trigger: %v", err)
 			continue
 		}
 
@@ -382,7 +383,7 @@ func (s *LambdaGateway) processS3Event(ctx context.Context, storageListeners sto
 	for _, s3Record := range records {
 		bucketName, err := s.getBucketNameForArn(ctx, s3Record.EventSourceArn)
 		if err != nil {
-			log.Default().Println("unable to locate nitric bucket")
+			logger.Errorf("unable to find nitric bucket: %w", err)
 			return nil, fmt.Errorf("unable to find nitric bucket: %w", err)
 		}
 

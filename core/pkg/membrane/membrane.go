@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/decorators"
 	"github.com/nitrictech/nitric/core/pkg/env"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
@@ -110,12 +110,6 @@ type Membrane struct {
 	minWorkers int
 }
 
-func (s *Membrane) log(msg string) {
-	if !s.suppressLogs {
-		log.Default().Println(msg)
-	}
-}
-
 func (s *Membrane) WorkerCount() int {
 	return s.options.ApiPlugin.WorkerCount() +
 		s.options.HttpPlugin.WorkerCount() +
@@ -180,12 +174,12 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 		if s.createTracerProvider != nil {
 			tp, err := s.createTracerProvider(context.Background())
 			if err != nil {
-				s.log(fmt.Sprintf("traceProvider %v", err))
+				logger.Errorf("traceProvider %v", err)
 				return err
 			}
 
 			if tp != nil {
-				s.log(fmt.Sprintf("traceProvider connected"))
+				logger.Debug("traceProvider connected")
 				otel.SetTracerProvider(tp)
 			}
 
@@ -248,14 +242,14 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 		return fmt.Errorf("could not listen on configured service address: %w", err)
 	}
 
-	s.log("Registered Gateway Plugin")
+	logger.Debug("Registered Gateway Plugin")
 
 	// Start the gRPC server
 	go (func() {
-		s.log(fmt.Sprintf("Services listening on: %s", s.options.ServiceAddress))
+		logger.Debugf("Services listening on: %s", s.options.ServiceAddress)
 		err := s.grpcServer.Serve(lis)
 		if err != nil {
-			s.log(fmt.Sprintf("grpc serve %v", err))
+			logger.Errorf("grpc serve %v", err)
 		}
 	})()
 
@@ -267,7 +261,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 
 	// Wait for the minimum number of active workers to be available before beginning the gateway
 	// This ensures workers have registered and can handle triggers as soon the gateway is ready, if a minimum > 1 has been set
-	s.log("Waiting for active workers")
+	logger.Debug("Waiting for active workers")
 	err = s.waitForMinimumWorkers(s.options.ChildTimeoutSeconds)
 	if err != nil {
 		return err
@@ -278,7 +272,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 
 	// Start the gateway
 	go func(errch chan error) {
-		s.log(fmt.Sprintf("Starting Gateway, %d workers currently available", s.WorkerCount()))
+		logger.Debugf("Starting Gateway, %d workers currently available", s.WorkerCount())
 
 		errch <- s.options.GatewayPlugin.Start(&gateway.GatewayStartOpts{
 			ApiPlugin:               s.options.ApiPlugin,
@@ -357,7 +351,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 	createTracerProvider := options.CreateTracerProvider
 
 	if createTracerProvider != nil && fileExists(bin.String()) && fileExists(config.String()) {
-		log.Default().Println("Tracing is enabled")
+		logger.Debug("Tracing is enabled")
 
 		options.PreCommands = [][]string{
 			{
@@ -365,7 +359,7 @@ func New(options *MembraneOptions) (*Membrane, error) {
 			},
 		}
 	} else {
-		log.Default().Printf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin.String()), fileExists(config.String()))
+		logger.Debugf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin.String()), fileExists(config.String()))
 		createTracerProvider = nil
 	}
 

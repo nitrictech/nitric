@@ -15,7 +15,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,6 +29,7 @@ import (
 	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 )
 
@@ -38,13 +38,15 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
 
+	logger.SetLogLevel(logger.INFO)
+
 	gatewayEnv := env.GATEWAY_ENVIRONMENT.String()
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 
 	provider, err := resource.New()
 	if err != nil {
-		log.Fatalf("could not create aws provider: %v", err)
+		logger.Fatalf("could not create aws provider: %v", err)
 		return
 	}
 
@@ -67,7 +69,7 @@ func main() {
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
-		log.Default().Fatalf("There was an error initialising the membrane server: %v", err)
+		logger.Fatalf("There was an error initializing the membrane server: %v", err)
 	}
 
 	errChan := make(chan error)
@@ -78,9 +80,9 @@ func main() {
 
 	select {
 	case membraneError := <-errChan:
-		log.Default().Printf("Membrane Error: %v, exiting\n", membraneError)
+		logger.Errorf("Membrane Error: %v, exiting\n", membraneError)
 	case sigTerm := <-term:
-		log.Default().Printf("Received %v, exiting\n", sigTerm)
+		logger.Infof("Received %v, exiting\n", sigTerm)
 	}
 
 	m.Stop()

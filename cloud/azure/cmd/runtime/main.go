@@ -16,13 +16,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/api"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
 	aztables_service "github.com/nitrictech/nitric/cloud/azure/runtime/keyvalue"
@@ -40,7 +40,7 @@ func main() {
 
 	provider, err := resource.New()
 	if err != nil {
-		log.Fatalf("could not create core azure provider: %v", err)
+		logger.Fatalf("could not create core azure provider: %v", err)
 	}
 
 	membraneOpts := membrane.DefaultMembraneOptions()
@@ -49,34 +49,34 @@ func main() {
 
 	membraneOpts.KeyValuePlugin, err = aztables_service.New()
 	if err != nil {
-		log.Default().Println("Failed to load document plugin:", err.Error())
+		logger.Errorf("Failed to load document plugin: %s", err.Error())
 	}
 
 	membraneOpts.TopicsPlugin, err = event_grid.New(provider)
 	if err != nil {
-		log.Default().Println("Failed to load event plugin:", err.Error())
+		logger.Errorf("Failed to load event plugin: %s", err.Error())
 	}
 
 	membraneOpts.GatewayPlugin, err = http_service.New(provider)
 	if err != nil {
-		log.Default().Println("Failed to load gateway plugin:", err.Error())
+		logger.Errorf("Failed to load gateway plugin: %s", err.Error())
 	}
 
 	membraneOpts.StoragePlugin, err = azblob_service.New()
 	if err != nil {
-		log.Default().Println("Failed to load storage plugin:", err.Error())
+		logger.Errorf("Failed to load storage plugin: %s", err.Error())
 	}
 
 	membraneOpts.SecretManagerPlugin, err = key_vault.New()
 	if err != nil {
-		log.Default().Println("Failed to load secret plugin:", err.Error())
+		logger.Errorf("Failed to load secret plugin: %s", err.Error())
 	}
 
 	membraneOpts.ResourcesPlugin = provider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
+		logger.Fatalf("There was an error initializing the membrane server: %v", err)
 	}
 
 	errChan := make(chan error)

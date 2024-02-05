@@ -16,11 +16,11 @@ package pm
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"syscall"
 
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/pkg/errors"
 )
 
@@ -100,7 +100,7 @@ func (pm *pMgr) Monitor() error {
 
 func (p *process) start() error {
 	if len(p.Command) == 0 {
-		log.Default().Println("No Command Specified, Skipping...")
+		logger.Debug("No Command Specified, Skipping...")
 
 		return nil
 	}
@@ -109,7 +109,7 @@ func (p *process) start() error {
 	p.cmd.Stdout = os.Stdout
 	p.cmd.Stderr = os.Stderr
 
-	log.Default().Printf("Starting: %s", p.Command[0])
+	logger.Debugf("Starting: %s", p.Command[0])
 
 	return errors.WithMessagef(p.cmd.Start(), "there was an error starting the process %s", p.Command[0])
 }

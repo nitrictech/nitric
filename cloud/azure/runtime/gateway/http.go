@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
@@ -138,14 +138,14 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 
 			resp, err := opts.TopicsListenerPlugin.HandleRequest(evt)
 			if err != nil {
-				log.Default().Println("could not get worker for topic: ", topicName)
+				logger.Errorf("could not get worker for topic: %s", topicName)
 				// TODO: Handle error
 				continue
 			}
 
 			if !resp.GetMessageResponse().Success {
 				// FIXME: Handle error return
-				log.Default().Println("event handling failed", topicName)
+				logger.Errorf("event handling failed %s", topicName)
 				continue
 			}
 
@@ -256,13 +256,13 @@ func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) 
 
 			resp, err := opts.StorageListenerPlugin.HandleRequest(evt)
 			if err != nil {
-				log.Default().Println("could not handle event: ", err)
+				logger.Errorf("could not handle event: %s", err)
 				ctx.Error("failed handling event", 500)
 				return
 			}
 
 			if !resp.GetBlobEventResponse().Success {
-				log.Default().Println("failed handling event: ", evt)
+				logger.Errorf("failed handling event: %s", evt)
 				ctx.Error("failed handling event", 500)
 				return
 			}

@@ -16,10 +16,10 @@ package workers
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/nitrictech/nitric/core/pkg/help"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	"google.golang.org/grpc"
 )
 
@@ -99,7 +99,7 @@ func (w *WorkerRequestBroker[Request, Response]) Run() error {
 		if !ok {
 			// This would indicate a critical bug, it means that the client (SDK) did not return a response with an ID that matches a request that was sent to it
 			// OR there may have been a network error that resulted in duplicate responses
-			log.Default().Printf("ERROR: nitric received a response for an unknown request, response could not be returned: %s", help.BugInNitricHelpText())
+			logger.Errorf("nitric received a response for an unknown request, response could not be returned: %s", help.BugInNitricHelpText())
 		}
 
 		responseChannel <- response

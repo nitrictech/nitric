@@ -20,6 +20,7 @@ import (
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	"github.com/pterm/pterm"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/apitype"
 )
@@ -227,6 +228,18 @@ type (
 	DataNode = Node[ResourceData]
 )
 
+func resourceUpdateToString(update *deploymentspb.ResourceUpdate) string {
+	if update != nil {
+		if update.Id != nil {
+			return fmt.Sprintf("%s:%s %s:%s\n%s\n%s", update.Id.Type.String(), update.Id.Name, update.Action.String(), update.Status.String(), update.SubResource, update.Message)
+		} else {
+			return fmt.Sprintf("%s:%s %s:%s\n%s\n%s", "nil", "nil", update.Action.String(), update.Status.String(), update.SubResource, update.Message)
+		}
+	} else {
+		return ""
+	}
+}
+
 func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumiEventsChan <-chan events.EngineEvent) error {
 	evtHandler := pulumiEventHandler{
 		tree: DataTree{
@@ -242,7 +255,8 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 		// translate the engine event to a server message and send back to the CLIent
 		updateDetails, err := evtHandler.engineEventToResourceUpdate(evt)
 		if err != nil {
-			fmt.Println("encountered an error: ", err.Error())
+			// unknown event, possibly still useful for debugging.
+			pterm.Debug.Printfln("%+v", evt)
 			continue
 		}
 
@@ -274,7 +288,8 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 		// translate the engine event to a server message and send back to the CLIent
 		nitricEvent, err := evtHandler.engineEventToResourceUpdate(evt)
 		if err != nil {
-			fmt.Println("encountered an error: ", err.Error())
+			// unknown event, possibly still useful for debugging.
+			pterm.Debug.Printfln("%+v", evt)
 			continue
 		}
 
