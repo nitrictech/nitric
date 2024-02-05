@@ -57,6 +57,70 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 			"/",
 		}),
 	},
+	resourcespb.Action_QueueList: {
+		Description: pulumi.String("queue list access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
+				},
+				DataActions: pulumi.StringArray{},
+				NotActions:  pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
+	resourcespb.Action_QueueDetail: {
+		Description: pulumi.String("queue detail access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
+				},
+				DataActions: pulumi.StringArray{},
+				NotActions:  pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
+	resourcespb.Action_QueueSend: {
+		Description: pulumi.String("queue send access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/messages/write"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
+	resourcespb.Action_QueueReceive: {
+		Description: pulumi.String("queue receive access"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
+				},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/messages/read"),
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/messages/delete"),
+					// pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/messages/update"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		AssignableScopes: pulumi.ToStringArray([]string{
+			"/",
+		}),
+	},
 	resourcespb.Action_KeyValueStoreWrite: {
 		Description: pulumi.String("keyvalue write access"),
 		Permissions: authorization.PermissionArray{
