@@ -17,7 +17,7 @@ service Queues {
   rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
   // Receive event(s) off a queue
   rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
-  // Complete an event previously popped from a queue
+  // Complete an item previously popped from a queue
   rpc Complete (QueueCompleteRequest) returns (QueueCompleteResponse);
 }
 
