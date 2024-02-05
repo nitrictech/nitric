@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// QueueServiceClient is the client API for QueueService service.
+// QueuesClient is the client API for Queues service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type QueueServiceClient interface {
+type QueuesClient interface {
 	// Send a single event to a queue
 	Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error)
 	// Receive event(s) off a queue
@@ -30,45 +30,45 @@ type QueueServiceClient interface {
 	Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error)
 }
 
-type queueServiceClient struct {
+type queuesClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewQueueServiceClient(cc grpc.ClientConnInterface) QueueServiceClient {
-	return &queueServiceClient{cc}
+func NewQueuesClient(cc grpc.ClientConnInterface) QueuesClient {
+	return &queuesClient{cc}
 }
 
-func (c *queueServiceClient) Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error) {
+func (c *queuesClient) Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error) {
 	out := new(QueueSendResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Send", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Send", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queueServiceClient) Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error) {
+func (c *queuesClient) Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error) {
 	out := new(QueueReceiveResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Receive", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Receive", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queueServiceClient) Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error) {
+func (c *queuesClient) Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error) {
 	out := new(QueueCompleteResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.QueueService/Complete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Complete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// QueueServiceServer is the server API for QueueService service.
-// All implementations should embed UnimplementedQueueServiceServer
+// QueuesServer is the server API for Queues service.
+// All implementations should embed UnimplementedQueuesServer
 // for forward compatibility
-type QueueServiceServer interface {
+type QueuesServer interface {
 	// Send a single event to a queue
 	Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error)
 	// Receive event(s) off a queue
@@ -77,103 +77,103 @@ type QueueServiceServer interface {
 	Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error)
 }
 
-// UnimplementedQueueServiceServer should be embedded to have forward compatible implementations.
-type UnimplementedQueueServiceServer struct {
+// UnimplementedQueuesServer should be embedded to have forward compatible implementations.
+type UnimplementedQueuesServer struct {
 }
 
-func (UnimplementedQueueServiceServer) Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error) {
+func (UnimplementedQueuesServer) Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
 }
-func (UnimplementedQueueServiceServer) Receive(context.Context, *QueueReceiveRequest) (*QueueReceiveResponse, error) {
+func (UnimplementedQueuesServer) Receive(context.Context, *QueueReceiveRequest) (*QueueReceiveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Receive not implemented")
 }
-func (UnimplementedQueueServiceServer) Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error) {
+func (UnimplementedQueuesServer) Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
 }
 
-// UnsafeQueueServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to QueueServiceServer will
+// UnsafeQueuesServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to QueuesServer will
 // result in compilation errors.
-type UnsafeQueueServiceServer interface {
-	mustEmbedUnimplementedQueueServiceServer()
+type UnsafeQueuesServer interface {
+	mustEmbedUnimplementedQueuesServer()
 }
 
-func RegisterQueueServiceServer(s grpc.ServiceRegistrar, srv QueueServiceServer) {
-	s.RegisterService(&QueueService_ServiceDesc, srv)
+func RegisterQueuesServer(s grpc.ServiceRegistrar, srv QueuesServer) {
+	s.RegisterService(&Queues_ServiceDesc, srv)
 }
 
-func _QueueService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Queues_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueueSendRequestBatch)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueueServiceServer).Send(ctx, in)
+		return srv.(QueuesServer).Send(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queues.v1.QueueService/Send",
+		FullMethod: "/nitric.proto.queues.v1.Queues/Send",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueueServiceServer).Send(ctx, req.(*QueueSendRequestBatch))
+		return srv.(QueuesServer).Send(ctx, req.(*QueueSendRequestBatch))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _QueueService_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Queues_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueueReceiveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueueServiceServer).Receive(ctx, in)
+		return srv.(QueuesServer).Receive(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queues.v1.QueueService/Receive",
+		FullMethod: "/nitric.proto.queues.v1.Queues/Receive",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueueServiceServer).Receive(ctx, req.(*QueueReceiveRequest))
+		return srv.(QueuesServer).Receive(ctx, req.(*QueueReceiveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _QueueService_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Queues_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueueCompleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueueServiceServer).Complete(ctx, in)
+		return srv.(QueuesServer).Complete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queues.v1.QueueService/Complete",
+		FullMethod: "/nitric.proto.queues.v1.Queues/Complete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueueServiceServer).Complete(ctx, req.(*QueueCompleteRequest))
+		return srv.(QueuesServer).Complete(ctx, req.(*QueueCompleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// QueueService_ServiceDesc is the grpc.ServiceDesc for QueueService service.
+// Queues_ServiceDesc is the grpc.ServiceDesc for Queues service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var QueueService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "nitric.proto.queues.v1.QueueService",
-	HandlerType: (*QueueServiceServer)(nil),
+var Queues_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "nitric.proto.queues.v1.Queues",
+	HandlerType: (*QueuesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Send",
-			Handler:    _QueueService_Send_Handler,
+			Handler:    _Queues_Send_Handler,
 		},
 		{
 			MethodName: "Receive",
-			Handler:    _QueueService_Receive_Handler,
+			Handler:    _Queues_Receive_Handler,
 		},
 		{
 			MethodName: "Complete",
-			Handler:    _QueueService_Complete_Handler,
+			Handler:    _Queues_Complete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

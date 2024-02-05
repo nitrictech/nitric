@@ -12,7 +12,7 @@ option php_namespace = "Nitric\\Proto\\Queues\\V1";
 option csharp_namespace = "Nitric.Proto.Queues.v1";
 
 // The Nitric Queue Service contract
-service QueueService {
+service Queues {
   // Send a single event to a queue
   rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
   // Receive event(s) off a queue
