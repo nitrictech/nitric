@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,13 +25,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/smithy-go"
-	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"google.golang.org/grpc/codes"
-
-	"errors"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"

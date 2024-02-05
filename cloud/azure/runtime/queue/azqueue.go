@@ -25,8 +25,8 @@ import (
 	"github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
