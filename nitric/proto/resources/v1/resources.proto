@@ -38,6 +38,7 @@ enum ResourceType {
   Websocket = 10;
   Http = 11;
   ApiSecurityDefinition = 12;
+  Queue = 13;
 }
 
 // Unique identifier for a resource within a nitric application.
@@ -57,11 +58,13 @@ message ResourceDeclareRequest {
     SecretResource secret = 14;
     ApiResource api = 15;
     ApiSecurityDefinitionResource api_security_definition = 16;
+    QueueResource queue = 17;
   }
 }
 
 message BucketResource {}
 message TopicResource {}
+message QueueResource {}
 message KeyValueStoreResource {}
 message SecretResource {}
 
@@ -105,12 +108,18 @@ enum Action {
   KeyValueStoreWrite = 301;
   KeyValueStoreDelete = 302;
 
-  // Secret Permissions: 5XX
+  // Secret Permissions: 4XX
   SecretPut = 400;
   SecretAccess = 401;
 
-  // Websocket Permissions: 6XX
+  // Websocket Permissions: 5XX
   WebsocketManage = 500;
+
+  // Queue Permissions: 6XX
+  QueueSend = 600;
+  QueueReceive = 601;
+  QueueList = 602;
+  QueueDetail = 603;
 }
 
 message ResourceDeclareResponse {}
