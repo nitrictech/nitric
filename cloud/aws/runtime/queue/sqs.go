@@ -16,7 +16,6 @@ package queue
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/smithy-go"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"google.golang.org/grpc/codes"
@@ -103,7 +103,7 @@ func (s *SQSQueueService) Send(ctx context.Context, req *queuepb.QueueSendReques
 			id := uuid.New()
 			requestIdMap[id.String()] = t
 
-			if bytes, err := json.Marshal(t); err == nil {
+			if bytes, err := proto.Marshal(t.Payload); err == nil {
 				entries = append(entries, types.SendMessageBatchRequestEntry{
 					Id:          aws.String(id.String()),
 					MessageBody: aws.String(string(bytes)),
@@ -199,7 +199,7 @@ func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceive
 			receivedTask := &queuepb.ReceivedTask{
 				LeaseId: *m.ReceiptHandle,
 			}
-			err := json.Unmarshal([]byte(*m.Body), &receivedTask.Payload)
+			err := proto.Unmarshal([]byte(*m.Body), receivedTask.Payload)
 			if err != nil {
 				return nil, newErr(
 					codes.Internal,
