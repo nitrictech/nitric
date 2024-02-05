@@ -21,17 +21,23 @@ import (
 
 	azqueue "github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	mock_azqueue "github.com/nitrictech/nitric/cloud/azure/mocks/azqueue"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
-	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queue/v1"
+	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 var _ = Describe("Azqueue", func() {
+	testStruct, err := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
+	Expect(err).To(BeNil())
+
+	testPayloadBytes, err := proto.Marshal(testStruct)
+	Expect(err).To(BeNil())
+
 	Context("Send", func() {
 		When("Azure returns a successfully response", func() {
 			crtl := gomock.NewController(GinkgoT())
@@ -54,12 +60,10 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
+					string(testPayloadBytes),
 					time.Duration(0),
 					time.Duration(0),
 				).Times(2).Return(&azqueue.EnqueueMessageResponse{}, nil)
-
-				testStruct, _ := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
 
 				resp, err := queuePlugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
 					QueueName: "test-queue",
@@ -104,13 +108,13 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
+					string(testPayloadBytes),
 					time.Duration(0),
 					time.Duration(0),
 				).AnyTimes( /* Using AnyTimes because Times(2) doesn't work for multiple returns */
 				).Return(nil, fmt.Errorf("a test error")).Return(&azqueue.EnqueueMessageResponse{}, nil)
 
-				testStruct, _ := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
+				// testStruct, _ := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
 
 				resp, err := queuePlugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
 					QueueName: "test-queue",
@@ -128,7 +132,7 @@ var _ = Describe("Azqueue", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Not returning failed tasks")
-				Expect(resp.FailedRequests).To(Equal([]*queue.FailedTask{}))
+				Expect(len(resp.FailedRequests)).To(Equal(0))
 
 				crtl.Finish()
 			})
@@ -170,7 +174,7 @@ var _ = Describe("Azqueue", func() {
 					PopReceipt:      "popreceipt",
 					NextVisibleTime: time.Time{},
 					DequeueCount:    0,
-					Text:            "{\"payload\":{\"testval\":\"testkey\"}}",
+					Text:            string(testPayloadBytes),
 				})
 
 				resp, err := queuePlugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{

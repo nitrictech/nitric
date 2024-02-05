@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/smithy-go"
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"google.golang.org/grpc/codes"
@@ -196,10 +197,8 @@ func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceive
 
 		tasks := make([]*queuepb.ReceivedTask, 0, len(res.Messages))
 		for _, m := range res.Messages {
-			receivedTask := &queuepb.ReceivedTask{
-				LeaseId: *m.ReceiptHandle,
-			}
-			err := proto.Unmarshal([]byte(*m.Body), receivedTask.Payload)
+			var structPayload structpb.Struct
+			err := proto.Unmarshal([]byte(*m.Body), &structPayload)
 			if err != nil {
 				return nil, newErr(
 					codes.Internal,
@@ -208,7 +207,10 @@ func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceive
 				)
 			}
 
-			tasks = append(tasks, receivedTask)
+			tasks = append(tasks, &queuepb.ReceivedTask{
+				LeaseId: *m.ReceiptHandle,
+				Payload: &structPayload,
+			})
 		}
 
 		return &queuepb.QueueReceiveResponse{

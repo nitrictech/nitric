@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
@@ -35,8 +36,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-
-	"errors"
 
 	ifaces_pubsub "github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
@@ -186,6 +185,7 @@ func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRe
 		FailedRequests: failedTasks,
 	}, nil
 }
+
 func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueReceiveRequest) (*queuespb.QueueReceiveResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Receive")
 
@@ -262,6 +262,7 @@ func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueRec
 		Tasks: tasks,
 	}, nil
 }
+
 func (s *PubsubQueueService) Complete(ctx context.Context, req *queuespb.QueueCompleteRequest) (*queuespb.QueueCompleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Complete")
 
