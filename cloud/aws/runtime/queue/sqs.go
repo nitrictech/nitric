@@ -62,7 +62,7 @@ func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) 
 	queueArn, ok := queues[queue]
 
 	if !ok {
-		return nil, fmt.Errorf("queue %s does not exist", queue)
+		return nil, fmt.Errorf("arn for queue %s could not be determined", queue)
 	}
 
 	arnParts := strings.Split(queueArn.ARN, ":")
