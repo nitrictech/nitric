@@ -72,6 +72,8 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 				err = nitricProvider.Secret(ctx, parent, res.Id.Name, t.Secret)
 			case *deploymentspb.Resource_Topic:
 				err = nitricProvider.Topic(ctx, parent, res.Id.Name, t.Topic)
+			case *deploymentspb.Resource_Queue:
+				err = nitricProvider.Queue(ctx, parent, res.Id.Name, t.Queue)
 			case *deploymentspb.Resource_Bucket:
 				err = nitricProvider.Bucket(ctx, parent, res.Id.Name, t.Bucket)
 			case *deploymentspb.Resource_Api:

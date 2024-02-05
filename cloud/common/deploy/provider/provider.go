@@ -45,6 +45,8 @@ type NitricPulumiProvider interface {
 	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
 	// Topic - Deploy a Pub/Sub Topic
 	Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error
+	// Queue - Deploy a Queue
+	Queue(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Queue) error
 	// Secret - Deploy a Secret
 	Secret(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Secret) error
 	// Schedule - Deploy a Schedule
