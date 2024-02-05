@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package topic_test
+package queue
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestSns(t *testing.T) {
+func TestSqs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "SNS Event Service Suite")
+	RunSpecs(t, "SQS Queue Service Suite")
 }
