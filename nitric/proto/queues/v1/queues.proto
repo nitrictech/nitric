@@ -15,7 +15,7 @@ option csharp_namespace = "Nitric.Proto.Queues.v1";
 service Queues {
   // Send messages to a queue
   rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
-  // Receive event(s) off a queue
+  // Receive message(s) from a queue
   rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
   // Complete an item previously popped from a queue
   rpc Complete (QueueCompleteRequest) returns (QueueCompleteResponse);
