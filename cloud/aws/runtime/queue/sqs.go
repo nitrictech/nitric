@@ -56,7 +56,7 @@ var _ queuepb.QueuesServer = &SQSQueueService{}
 func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) (*string, error) {
 	queues, err := s.provider.GetResources(ctx, resource.AwsResource_Queue)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving queue list")
+		return nil, fmt.Errorf("error retrieving queue list: %w", err)
 	}
 
 	queueArn, ok := queues[queue]
