@@ -182,6 +182,8 @@ message Topic {
     repeated SubscriptionTarget subscriptions = 1;
 }
 
+message Queue {}
+
 message KeyValueStore {
 
 }
@@ -288,6 +290,7 @@ message Resource {
         Secret secret = 17;
         Websocket websocket = 18;
         Http http = 19;
+        Queue queue = 20;
     }
 }
 

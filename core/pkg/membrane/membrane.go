@@ -35,6 +35,7 @@ import (
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
 	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	secretspb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
@@ -71,6 +72,7 @@ type MembraneOptions struct {
 	StoragePlugin       storagepb.StorageServer
 	SecretManagerPlugin secretspb.SecretManagerServer
 	WebsocketPlugin     websocketspb.WebsocketServer
+	QueuesPlugin        queuespb.QueuesServer
 
 	// Worker plugins
 	ApiPlugin               apis.ApiRequestHandler
@@ -236,6 +238,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	secretspb.RegisterSecretManagerServer(s.grpcServer, secretsServerWithValidation)
 	resourcespb.RegisterResourcesServer(s.grpcServer, s.options.ResourcesPlugin)
 	websocketspb.RegisterWebsocketServer(s.grpcServer, s.options.WebsocketPlugin)
+	queuespb.RegisterQueuesServer(s.grpcServer, s.options.QueuesPlugin)
 
 	lis, err := net.Listen("tcp", s.options.ServiceAddress)
 	if err != nil {

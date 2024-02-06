@@ -108,6 +108,21 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 				bucket.Name,
 			),
 		}, nil
+	case resourcespb.ResourceType_Queue:
+		queue, ok := p.queues[resource.Id.Name]
+		if !ok {
+			return nil, fmt.Errorf("queue %s not found", resource.Id.Name)
+		}
+
+		return &resourceScope{
+			scope: pulumi.Sprintf(
+				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
+				p.clientConfig.SubscriptionId,
+				p.resourceGroup.Name,
+				p.storageAccount.Name,
+				queue.Name,
+			),
+		}, nil
 	case resourcespb.ResourceType_Secret:
 		if p.keyVault == nil {
 			return nil, fmt.Errorf("secret %s not found", resource.Id.Name)

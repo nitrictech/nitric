@@ -1,0 +1,79 @@
+syntax = "proto3";
+package nitric.proto.queues.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/queues/v1;queuespb";
+option java_package = "io.nitric.proto.queues.v1";
+option java_multiple_files = true;
+option java_outer_classname = "QueuesService";
+option php_namespace = "Nitric\\Proto\\Queues\\V1";
+option csharp_namespace = "Nitric.Proto.Queues.v1";
+
+// The Nitric Queue Service contract
+service Queues {
+  // Send messages to a queue
+  rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
+  // Receive message(s) from a queue
+  rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
+  // Complete an item previously popped from a queue
+  rpc Complete (QueueCompleteRequest) returns (QueueCompleteResponse);
+}
+
+message QueueSendRequestBatch {
+  // The Nitric name for the queue
+  // this will automatically be resolved to the provider specific queue identifier.
+  string queue_name = 1;
+  // Array of tasks to push to the queue
+  repeated QueueSendRequest requests = 2;
+}
+
+// Response for sending a collection of tasks
+message QueueSendResponse {
+  // A list of tasks that failed to be queued
+  repeated FailedSendRequest failed_requests = 1;
+}
+
+message QueueReceiveRequest {
+  // The nitric name for the queue
+  // this will automatically be resolved to the provider specific queue identifier.
+  string queue_name = 1;
+  // The max number of items to pop off the queue, may be capped by provider specific limitations
+  int32 depth = 2;
+}
+
+message QueueReceiveResponse {
+  // Array of tasks popped off the queue
+  repeated ReceivedTask tasks = 1;
+}
+
+message QueueCompleteRequest {
+  // The nitric name for the queue
+  //  this will automatically be resolved to the provider specific queue identifier.
+  string queue_name = 1;
+
+  // Lease id of the task to be completed
+  string lease_id = 2;
+}
+
+message QueueCompleteResponse {}
+
+// A task to be sent to a queue.
+message QueueSendRequest {
+  // The payload of the task
+  google.protobuf.Struct payload = 1;
+}
+
+message ReceivedTask {
+  string lease_id = 1;
+
+  google.protobuf.Struct payload = 2;
+}
+
+message FailedSendRequest {
+  // The task that failed to be pushed
+  QueueSendRequest request = 1;
+  // A message describing the failure
+  string message = 2;
+}

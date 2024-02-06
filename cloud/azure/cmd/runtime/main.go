@@ -26,6 +26,7 @@ import (
 
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
 	aztables_service "github.com/nitrictech/nitric/cloud/azure/runtime/keyvalue"
+	azqueue_service "github.com/nitrictech/nitric/cloud/azure/runtime/queue"
 	key_vault "github.com/nitrictech/nitric/cloud/azure/runtime/secret"
 	azblob_service "github.com/nitrictech/nitric/cloud/azure/runtime/storage"
 	event_grid "github.com/nitrictech/nitric/cloud/azure/runtime/topic"
@@ -65,6 +66,11 @@ func main() {
 	membraneOpts.StoragePlugin, err = azblob_service.New()
 	if err != nil {
 		logger.Errorf("Failed to load storage plugin: %s", err.Error())
+	}
+
+	membraneOpts.QueuesPlugin, err = azqueue_service.New()
+	if err != nil {
+		logger.Errorf("Failed to load queue plugin: %s", err.Error())
 	}
 
 	membraneOpts.SecretManagerPlugin, err = key_vault.New()

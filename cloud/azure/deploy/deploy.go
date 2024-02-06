@@ -64,6 +64,8 @@ type NitricAzurePulumiProvider struct {
 
 	buckets map[string]*storage.BlobContainer
 
+	queues map[string]*storage.Queue
+
 	principals map[resourcespb.ResourceType]map[string]*ServicePrincipal
 
 	containerApps map[string]*ContainerApp

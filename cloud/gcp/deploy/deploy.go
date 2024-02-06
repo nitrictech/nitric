@@ -55,12 +55,14 @@ type NitricGcpPulumiProvider struct {
 	authToken       *oauth2.Token
 	baseComputeRole *projects.IAMCustomRole
 
-	httpProxies      map[string]*apigateway.Gateway
-	apiGateways      map[string]*apigateway.Gateway
-	cloudRunServices map[string]*NitricCloudRunService
-	buckets          map[string]*storage.Bucket
-	topics           map[string]*pubsub.Topic
-	secrets          map[string]*secretmanager.Secret
+	httpProxies        map[string]*apigateway.Gateway
+	apiGateways        map[string]*apigateway.Gateway
+	cloudRunServices   map[string]*NitricCloudRunService
+	buckets            map[string]*storage.Bucket
+	topics             map[string]*pubsub.Topic
+	queues             map[string]*pubsub.Topic
+	queueSubscriptions map[string]*pubsub.Subscription
+	secrets            map[string]*secretmanager.Secret
 
 	provider.NitricDefaultOrder
 }
@@ -266,11 +268,13 @@ func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		httpProxies:      make(map[string]*apigateway.Gateway),
-		apiGateways:      make(map[string]*apigateway.Gateway),
-		cloudRunServices: make(map[string]*NitricCloudRunService),
-		buckets:          make(map[string]*storage.Bucket),
-		topics:           make(map[string]*pubsub.Topic),
-		secrets:          make(map[string]*secretmanager.Secret),
+		httpProxies:        make(map[string]*apigateway.Gateway),
+		apiGateways:        make(map[string]*apigateway.Gateway),
+		cloudRunServices:   make(map[string]*NitricCloudRunService),
+		buckets:            make(map[string]*storage.Bucket),
+		topics:             make(map[string]*pubsub.Topic),
+		queues:             make(map[string]*pubsub.Topic),
+		queueSubscriptions: make(map[string]*pubsub.Subscription),
+		secrets:            make(map[string]*secretmanager.Secret),
 	}
 }

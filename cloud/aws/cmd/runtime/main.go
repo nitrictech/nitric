@@ -23,6 +23,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
 	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/keyvalue"
+	sqs_service "github.com/nitrictech/nitric/cloud/aws/runtime/queue"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
@@ -66,6 +67,7 @@ func main() {
 	membraneOpts.ResourcesPlugin = provider
 	membraneOpts.CreateTracerProvider = newTracerProvider
 	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
+	membraneOpts.QueuesPlugin, _ = sqs_service.New(provider)
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
