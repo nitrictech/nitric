@@ -133,6 +133,11 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
+	p.apis[name] = ApiResources{
+		Api:                  api,
+		ApiManagementService: mgmtService,
+	}
+
 	secDef := map[string]securityDefinition{}
 
 	if openapiDoc.Components.SecuritySchemes != nil {

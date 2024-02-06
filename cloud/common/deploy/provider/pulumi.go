@@ -44,6 +44,8 @@ func NewPulumiProviderServer(provider NitricPulumiProvider) *PulumiProviderServe
 	}
 }
 
+const resultCtxKey = "nitric:stack:result"
+
 func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider) func(*pulumi.Context) error {
 	return func(ctx *pulumi.Context) (err error) {
 		defer func() {
@@ -90,8 +92,20 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 			}
 		}
 
+		err = nitricProvider.Post(ctx)
+		if err != nil {
+			return err
+		}
+
+		result, err := nitricProvider.Result(ctx)
+		if err != nil {
+			return err
+		}
+
+		ctx.Export(resultCtxKey, result)
+
 		// Validate extract and whatever else
-		return nitricProvider.Post(ctx)
+		return nil
 	}
 }
 
@@ -183,7 +197,20 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	_, err = autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
+	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
+
+	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
+	if !ok {
+		resultStr = ""
+	}
+
+	stream.Send(&deploymentspb.DeploymentUpEvent{
+		Content: &deploymentspb.DeploymentUpEvent_Result{
+			Result: &deploymentspb.UpResult{
+				Details: resultStr,
+			},
+		},
+	})
 
 	if err != nil {
 		// Check for common Pulumi 'autoError' types

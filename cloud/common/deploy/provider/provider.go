@@ -60,6 +60,9 @@ type NitricPulumiProvider interface {
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(ctx *pulumi.Context) error
+
+	// Result - Last method to be called, return the result of the deployment to be printed to stdout
+	Result(ctx *pulumi.Context) (pulumi.StringOutput, error)
 }
 
 // NitricDefaultOrder - Partial implementation of NitricPulumiProvider which implements the standard resource deployment order
