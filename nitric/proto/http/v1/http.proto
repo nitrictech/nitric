@@ -11,13 +11,19 @@ option csharp_namespace = "Nitric.Proto.Http.v1";
 
 // Service for publishing asynchronous messages
 service Http {
-  // Serve a route on an API Gateway
-  rpc Proxy(HttpProxyRequest) returns (HttpProxyResponse);
+  // Proxy an HTTP server
+  rpc Proxy(stream ClientMessage) returns (stream ServerMessage);
 }
+
+message ClientMessage {
+    // Details of the HTTP server to proxy
+    HttpProxyRequest request = 1;
+}
+
+message ServerMessage {}
 
 message HttpProxyRequest {
     // The local port the server can be accessed on
     string host = 1;
 }
 
-message HttpProxyResponse {}

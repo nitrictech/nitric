@@ -383,7 +383,7 @@ func (s *LambdaGateway) processS3Event(ctx context.Context, storageListeners sto
 	for _, s3Record := range records {
 		bucketName, err := s.getBucketNameForArn(ctx, s3Record.EventSourceArn)
 		if err != nil {
-			logger.Errorf("unable to find nitric bucket: %w", err)
+			logger.Errorf("unable to find nitric bucket: %s", err.Error())
 			return nil, fmt.Errorf("unable to find nitric bucket: %w", err)
 		}
 

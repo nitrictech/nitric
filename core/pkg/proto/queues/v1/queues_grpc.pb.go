@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueuesClient interface {
-	// Send a single event to a queue
+	// Send messages to a queue
 	Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error)
-	// Receive event(s) off a queue
+	// Receive message(s) from a queue
 	Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error)
-	// Complete an event previously popped from a queue
+	// Complete an item previously popped from a queue
 	Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error)
 }
 
@@ -69,11 +69,11 @@ func (c *queuesClient) Complete(ctx context.Context, in *QueueCompleteRequest, o
 // All implementations should embed UnimplementedQueuesServer
 // for forward compatibility
 type QueuesServer interface {
-	// Send a single event to a queue
+	// Send messages to a queue
 	Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error)
-	// Receive event(s) off a queue
+	// Receive message(s) from a queue
 	Receive(context.Context, *QueueReceiveRequest) (*QueueReceiveResponse, error)
-	// Complete an event previously popped from a queue
+	// Complete an item previously popped from a queue
 	Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error)
 }
 
