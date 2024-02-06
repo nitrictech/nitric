@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HttpClient interface {
 	// Serve a route on an API Gateway
-	Proxy(ctx context.Context, in *HttpProxyRequest, opts ...grpc.CallOption) (*HttpProxyResponse, error)
+	Proxy(ctx context.Context, opts ...grpc.CallOption) (Http_ProxyClient, error)
 }
 
 type httpClient struct {
@@ -34,13 +34,35 @@ func NewHttpClient(cc grpc.ClientConnInterface) HttpClient {
 	return &httpClient{cc}
 }
 
-func (c *httpClient) Proxy(ctx context.Context, in *HttpProxyRequest, opts ...grpc.CallOption) (*HttpProxyResponse, error) {
-	out := new(HttpProxyResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.http.v1.Http/Proxy", in, out, opts...)
+func (c *httpClient) Proxy(ctx context.Context, opts ...grpc.CallOption) (Http_ProxyClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Http_ServiceDesc.Streams[0], "/nitric.proto.http.v1.Http/Proxy", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &httpProxyClient{stream}
+	return x, nil
+}
+
+type Http_ProxyClient interface {
+	Send(*ClientMessage) error
+	Recv() (*ServerMessage, error)
+	grpc.ClientStream
+}
+
+type httpProxyClient struct {
+	grpc.ClientStream
+}
+
+func (x *httpProxyClient) Send(m *ClientMessage) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *httpProxyClient) Recv() (*ServerMessage, error) {
+	m := new(ServerMessage)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // HttpServer is the server API for Http service.
@@ -48,15 +70,15 @@ func (c *httpClient) Proxy(ctx context.Context, in *HttpProxyRequest, opts ...gr
 // for forward compatibility
 type HttpServer interface {
 	// Serve a route on an API Gateway
-	Proxy(context.Context, *HttpProxyRequest) (*HttpProxyResponse, error)
+	Proxy(Http_ProxyServer) error
 }
 
 // UnimplementedHttpServer should be embedded to have forward compatible implementations.
 type UnimplementedHttpServer struct {
 }
 
-func (UnimplementedHttpServer) Proxy(context.Context, *HttpProxyRequest) (*HttpProxyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Proxy not implemented")
+func (UnimplementedHttpServer) Proxy(Http_ProxyServer) error {
+	return status.Errorf(codes.Unimplemented, "method Proxy not implemented")
 }
 
 // UnsafeHttpServer may be embedded to opt out of forward compatibility for this service.
@@ -70,22 +92,30 @@ func RegisterHttpServer(s grpc.ServiceRegistrar, srv HttpServer) {
 	s.RegisterService(&Http_ServiceDesc, srv)
 }
 
-func _Http_Proxy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HttpProxyRequest)
-	if err := dec(in); err != nil {
+func _Http_Proxy_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(HttpServer).Proxy(&httpProxyServer{stream})
+}
+
+type Http_ProxyServer interface {
+	Send(*ServerMessage) error
+	Recv() (*ClientMessage, error)
+	grpc.ServerStream
+}
+
+type httpProxyServer struct {
+	grpc.ServerStream
+}
+
+func (x *httpProxyServer) Send(m *ServerMessage) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *httpProxyServer) Recv() (*ClientMessage, error) {
+	m := new(ClientMessage)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(HttpServer).Proxy(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/nitric.proto.http.v1.Http/Proxy",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HttpServer).Proxy(ctx, req.(*HttpProxyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 // Http_ServiceDesc is the grpc.ServiceDesc for Http service.
@@ -94,12 +124,14 @@ func _Http_Proxy_Handler(srv interface{}, ctx context.Context, dec func(interfac
 var Http_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "nitric.proto.http.v1.Http",
 	HandlerType: (*HttpServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Proxy",
-			Handler:    _Http_Proxy_Handler,
+			StreamName:    "Proxy",
+			Handler:       _Http_Proxy_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "nitric/proto/http/v1/http.proto",
 }

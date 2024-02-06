@@ -15,7 +15,6 @@
 package http
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"sync"
@@ -57,52 +56,53 @@ func (h *HttpServer) WorkerCount() int {
 	return 0
 }
 
-// WatchPort returns a channel that will emit an error if the port is not open.
-// The check interval is how often to check the port, the first check will be after the check interval.
-func WatchPort(host string, checkInterval time.Duration, timeout time.Duration, output chan error) {
-	go func() {
-		ticker := time.NewTicker(checkInterval)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			if !IsPortOpen(host, timeout) {
-				output <- fmt.Errorf("HTTP server %s is not available", host)
-			}
-		}
-	}()
-}
-
 const (
 	// Dial timeout for initial server check
 	initialStartTimeout = 5 * time.Second
 	// Polling interval for liveness check
-	portPollInterval = 5 * time.Second
-	// Dial timeout when polling
-	subsequentTimeout = 25 * time.Millisecond
+	// portPollInterval = 5 * time.Second
+	// // Dial timeout when polling
+	// subsequentTimeout = 25 * time.Millisecond
 )
 
-func (h *HttpServer) Proxy(ctx context.Context, req *httppb.HttpProxyRequest) (*httppb.HttpProxyResponse, error) {
+func (h *HttpServer) Proxy(stream httppb.Http_ProxyServer) error {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	if h.host != "" {
-		return nil, fmt.Errorf("http server already registered")
+		return fmt.Errorf("http server already registered")
 	}
 
-	host := req.GetHost()
+	msg, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+
+	if msg.GetRequest() == nil {
+		return fmt.Errorf("first request must be a proxy request")
+	}
+
+	host := msg.Request.Host
 
 	if host == "" {
-		return nil, fmt.Errorf("host is required")
+		return fmt.Errorf("host is required")
 	}
 
 	if !IsPortOpen(host, initialStartTimeout) {
-		return nil, fmt.Errorf("host %s failed to respond within %s", host, initialStartTimeout.String())
+		return fmt.Errorf("host %s failed to respond within %s", host, initialStartTimeout.String())
 	}
 
-	WatchPort(host, portPollInterval, subsequentTimeout, h.Output)
-
 	h.host = host
+	for {
+		_, err = stream.Recv()
 
-	return &httppb.HttpProxyResponse{}, nil
+		if err != nil {
+			break
+		}
+	}
+
+	h.host = ""
+	h.Output <- fmt.Errorf("HTTP server %s is not available", host)
+	return err
 }
 
 // HandleRequest forwards proxy request to the underlying HTTP server
