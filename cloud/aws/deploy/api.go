@@ -209,9 +209,9 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}
 	}
 
-	// endPoint := a.apis[name].ApiEndpoint.ApplyT(func(ep string) string {
-	// 	return ep
-	// }).(pulumi.StringInput)
+	endPoint := a.apis[name].ApiEndpoint.ApplyT(func(ep string) string {
+		return ep
+	}).(pulumi.StringInput)
 
 	if a.config.Apis[name] != nil {
 		// For each specified domain name
@@ -227,7 +227,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}
 	}
 
-	// ctx.Export("api:"+name, endPoint)
+	ctx.Export("api:"+name, endPoint)
 
 	return nil
 }

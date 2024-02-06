@@ -19,6 +19,7 @@ package deploy
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	_ "embed"
 
@@ -55,8 +56,8 @@ type NitricGcpPulumiProvider struct {
 	authToken       *oauth2.Token
 	baseComputeRole *projects.IAMCustomRole
 
-	httpProxies        map[string]*apigateway.Gateway
 	apiGateways        map[string]*apigateway.Gateway
+	httpProxies        map[string]*apigateway.Gateway
 	cloudRunServices   map[string]*NitricCloudRunService
 	buckets            map[string]*storage.Bucket
 	topics             map[string]*pubsub.Topic
@@ -264,6 +265,44 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 
 func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
 	return nil
+}
+
+func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
+	outputs := []interface{}{}
+
+	// Add APIs outputs
+	if len(a.apiGateways) > 0 {
+		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
+		for apiName, api := range a.apiGateways {
+			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", apiName, api.DefaultHostname))
+		}
+	}
+
+	// Add HTTP Proxy outputs
+	if len(a.httpProxies) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
+		for proxyName, proxy := range a.httpProxies {
+			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", proxyName, proxy.DefaultHostname))
+		}
+	}
+
+	output, ok := pulumi.All(outputs...).ApplyT(func(deets []interface{}) string {
+		stringyOutputs := make([]string, len(deets))
+		for i, d := range deets {
+			stringyOutputs[i] = d.(string)
+		}
+
+		return strings.Join(stringyOutputs, "\n")
+	}).(pulumi.StringOutput)
+
+	if !ok {
+		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+	}
+
+	return output, nil
 }
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {

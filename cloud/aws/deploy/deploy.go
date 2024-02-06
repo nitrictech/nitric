@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"strings"
 
 	_ "embed"
 
@@ -131,10 +132,6 @@ func (a *NitricAwsPulumiProvider) Init(attributes map[string]interface{}) error 
 	return nil
 }
 
-func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
-	return nil
-}
-
 func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error {
 	// make our random stackId
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
@@ -170,6 +167,59 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 	}
 
 	return nil
+}
+
+func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
+	return nil
+}
+
+func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
+	outputs := []interface{}{}
+
+	// Add APIs outputs
+	if len(a.apis) > 0 {
+		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
+		for apiName, api := range a.apis {
+			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiEndpoint))
+		}
+	}
+
+	// Add HTTP Proxy outputs
+	if len(a.httpProxies) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
+		for proxyName, proxy := range a.httpProxies {
+			outputs = append(outputs, pulumi.Sprintf("%s: %s", proxyName, proxy.ApiEndpoint))
+		}
+	}
+
+	// Add Websocket outputs
+	if len(a.websockets) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("Websockets:\n──────────────"))
+		for wsName, ws := range a.websockets {
+			outputs = append(outputs, pulumi.Sprintf("%s: %s", wsName, ws.ApiEndpoint))
+		}
+	}
+
+	output, ok := pulumi.All(outputs...).ApplyT(func(deets []interface{}) string {
+		stringyOutputs := make([]string, len(deets))
+		for i, d := range deets {
+			stringyOutputs[i] = d.(string)
+		}
+
+		return strings.Join(stringyOutputs, "\n")
+	}).(pulumi.StringOutput)
+
+	if !ok {
+		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+	}
+
+	return output, nil
 }
 
 func NewNitricAwsProvider() *NitricAwsPulumiProvider {

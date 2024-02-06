@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"strings"
 
 	_ "embed"
 
@@ -29,6 +30,7 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -43,6 +45,11 @@ import (
 
 //go:embed runtime-azure
 var runtime []byte
+
+type ApiResources struct {
+	ApiManagementService *apimanagement.ApiManagementService
+	Api                  *apimanagement.Api
+}
 
 type NitricAzurePulumiProvider struct {
 	stackId       string
@@ -62,7 +69,9 @@ type NitricAzurePulumiProvider struct {
 
 	containerEnv *ContainerEnv
 
-	buckets map[string]*storage.BlobContainer
+	apis        map[string]ApiResources
+	httpProxies map[string]ApiResources
+	buckets     map[string]*storage.BlobContainer
 
 	queues map[string]*storage.Queue
 
@@ -273,12 +282,52 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 	return nil
 }
 
+func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
+	outputs := []interface{}{}
+
+	// Add APIs outputs
+	if len(a.apis) > 0 {
+		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
+		for apiName, api := range a.apis {
+			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiManagementService.GatewayUrl))
+		}
+	}
+
+	// Add HTTP Proxy outputs
+	if len(a.httpProxies) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
+		for proxyName, proxy := range a.httpProxies {
+			outputs = append(outputs, pulumi.Sprintf("%s: %s", proxyName, proxy.ApiManagementService.GatewayUrl))
+		}
+	}
+
+	output, ok := pulumi.All(outputs...).ApplyT(func(deets []interface{}) string {
+		stringyOutputs := make([]string, len(deets))
+		for i, d := range deets {
+			stringyOutputs[i] = d.(string)
+		}
+
+		return strings.Join(stringyOutputs, "\n")
+	}).(pulumi.StringOutput)
+
+	if !ok {
+		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+	}
+
+	return output, nil
+}
+
 func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	principalsMap := map[resourcespb.ResourceType]map[string]*ServicePrincipal{}
 
 	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
 
 	return &NitricAzurePulumiProvider{
+		apis:           map[string]ApiResources{},
+		httpProxies:    map[string]ApiResources{},
 		buckets:        make(map[string]*storage.BlobContainer),
 		containerApps:  map[string]*ContainerApp{},
 		topics:         map[string]*eventgrid.Topic{},

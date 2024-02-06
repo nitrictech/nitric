@@ -117,6 +117,11 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 		return err
 	}
 
+	p.httpProxies[name] = ApiResources{
+		Api:                  proxyApi,
+		ApiManagementService: mgmtService,
+	}
+
 	targetContainerApp := p.containerApps[http.GetTarget().GetService()]
 
 	for _, path := range spec.Paths {
