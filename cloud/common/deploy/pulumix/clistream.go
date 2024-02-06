@@ -228,18 +228,6 @@ type (
 	DataNode = Node[ResourceData]
 )
 
-func resourceUpdateToString(update *deploymentspb.ResourceUpdate) string {
-	if update != nil {
-		if update.Id != nil {
-			return fmt.Sprintf("%s:%s %s:%s\n%s\n%s", update.Id.Type.String(), update.Id.Name, update.Action.String(), update.Status.String(), update.SubResource, update.Message)
-		} else {
-			return fmt.Sprintf("%s:%s %s:%s\n%s\n%s", "nil", "nil", update.Action.String(), update.Status.String(), update.SubResource, update.Message)
-		}
-	} else {
-		return ""
-	}
-}
-
 func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumiEventsChan <-chan events.EngineEvent) error {
 	evtHandler := pulumiEventHandler{
 		tree: DataTree{

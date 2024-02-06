@@ -191,7 +191,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 			if pe := parsePulumiError(err); pe != nil {
 				err = pe
 			}
-			return fmt.Errorf("the pulumi stack file is locked.\nThis occurs when a previous deployment is still in progress or was interrupted.\n%W", err)
+			return fmt.Errorf("the pulumi stack file is locked.\nThis occurs when a previous deployment is still in progress or was interrupted.\n%w", err)
 		} else if auto.IsSelectStack404Error(err) {
 			return fmt.Errorf("stack not found. %w", err)
 		} else if auto.IsCreateStack409Error(err) {
