@@ -247,7 +247,7 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Errorf(err.Error())
 		return err
 	}
 

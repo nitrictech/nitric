@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
-	"github.com/pterm/pterm"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/apitype"
 )
@@ -256,7 +256,7 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 		updateDetails, err := evtHandler.engineEventToResourceUpdate(evt)
 		if err != nil {
 			// unknown event, possibly still useful for debugging.
-			pterm.Debug.Printfln("%+v", evt)
+			logger.Debugf("%+v", evt)
 			continue
 		}
 
@@ -289,11 +289,10 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 		nitricEvent, err := evtHandler.engineEventToResourceUpdate(evt)
 		if err != nil {
 			// unknown event, possibly still useful for debugging.
-			pterm.Debug.Printfln("%+v", evt)
+			logger.Debugf("%+v", evt)
 			continue
 		}
 
-		fmt.Printf("sending resource update: %+v", nitricEvent)
 		err = stream.Send(&deploymentspb.DeploymentDownEvent{
 			Content: &deploymentspb.DeploymentDownEvent_Update{
 				Update: nitricEvent,
