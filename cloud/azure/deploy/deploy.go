@@ -25,10 +25,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	commonresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
-	"github.com/pterm/pterm"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -225,7 +225,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	}
 
 	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
-		pterm.Info.Println("Stack declares one or more secrets, creating stack level Azure Key Vault")
+		logger.Info("Stack declares one or more secrets, creating stack level Azure Key Vault")
 		a.keyVault, err = createKeyVault(ctx, a.resourceGroup, a.clientConfig.TenantId, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "keyvault create")
@@ -236,7 +236,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
 	// This means we need to create a storage account for each stack, before buckets can be created.
 	if hasResourceType(nitricResources, resourcespb.ResourceType_Bucket) {
-		pterm.Info.Println("Stack declares one or more buckets, creating stack level Azure Storage Account")
+		logger.Info("Stack declares one or more buckets, creating stack level Azure Storage Account")
 		a.storageAccount, err = createStorageAccount(ctx, a.resourceGroup, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "storage account create")
