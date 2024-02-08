@@ -85,7 +85,7 @@ func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 			Body: pulumi.String(payload),
 		},
 		Schedule: pulumi.String(cronExpression),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 
 	return err
 }

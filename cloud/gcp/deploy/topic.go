@@ -38,7 +38,7 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 
 	p.topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
 		Labels: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Topic)),
-	})
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 			ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 				Ttl: pulumi.String(""),
 			},
-		}, opts...)
+		}, p.WithDefaultResourceOptions(opts...)...)
 		if err != nil {
 			return errors.WithMessage(err, "subscription "+name+"-sub")
 		}

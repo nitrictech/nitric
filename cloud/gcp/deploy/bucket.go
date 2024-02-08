@@ -38,7 +38,7 @@ func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 	p.buckets[name], err = storage.NewBucket(ctx, name, &storage.BucketArgs{
 		Location: pulumi.String(p.region),
 		Labels:   pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (p *NitricGcpPulumiProvider) newCloudStorageNotification(ctx *pulumi.Contex
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),
 		},
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "subscription "+name)
 	}
@@ -128,7 +128,7 @@ func (p *NitricGcpPulumiProvider) newCloudStorageNotification(ctx *pulumi.Contex
 		Topic:            topic.ID(),
 		EventTypes:       pulumi.ToStringArray(notificationTypeToStorageEventType(listener.Config.BlobEventType)),
 		ObjectNamePrefix: pulumi.String(prefix),
-	}, append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)
+	}, p.WithDefaultResourceOptions(append(opts, pulumi.DependsOn([]pulumi.Resource{binding}))...)...)
 	if err != nil {
 		return errors.WithMessage(err, "storage notification "+name)
 	}

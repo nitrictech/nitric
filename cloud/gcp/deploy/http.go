@@ -47,7 +47,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	api, err := apigateway.NewApi(ctx, normalizedName, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(normalizedName),
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api "+name)
 	}
@@ -88,7 +88,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 			},
 		},
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
+	}, p.WithDefaultResourceOptions(append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api config")
 	}
@@ -99,7 +99,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 		GatewayId:   pulumi.String(normalizedName + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, apiConfig.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api gateway")
 	}

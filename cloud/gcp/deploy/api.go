@@ -176,14 +176,14 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	api, err := apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api "+name)
 	}
 
 	svcAcct, err := NewServiceAccount(ctx, name+"-api-invoker", &GcpIamServiceAccountArgs{
 		AccountId: name + "-api",
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api serviceaccount "+name)
 	}
@@ -197,7 +197,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			Location: serv.Service.Location,
 			Member:   pulumi.Sprintf("serviceAccount:%s", svcAcct.ServiceAccount.Email),
 			Role:     pulumi.String("roles/run.invoker"),
-		}, opts...)
+		}, p.WithDefaultResourceOptions(opts...)...)
 		if err != nil {
 			return errors.WithMessage(err, "api iamMember "+iamName)
 		}
@@ -223,7 +223,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			},
 		},
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
+	}, p.WithDefaultResourceOptions(append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api config")
 	}
@@ -234,7 +234,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		GatewayId:   pulumi.String(name + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, config.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api gateway")
 	}

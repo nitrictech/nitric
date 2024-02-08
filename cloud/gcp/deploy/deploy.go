@@ -90,6 +90,14 @@ func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 	}, nil
 }
 
+func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.ResourceOption) []pulumi.ResourceOption {
+	defaultOptions := []pulumi.ResourceOption{
+		pulumi.DependsOn([]pulumi.Resource{a.project}),
+	}
+
+	return append(defaultOptions, opts...)
+}
+
 func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error {
 	var err error
 
