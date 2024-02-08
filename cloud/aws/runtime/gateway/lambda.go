@@ -301,7 +301,7 @@ func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHan
 	responseString := base64.StdEncoding.EncodeToString(resp.Body())
 
 	return events.APIGatewayProxyResponse{
-		StatusCode:      int(resp.StatusCode()),
+		StatusCode:      resp.StatusCode(),
 		Headers:         lambdaHTTPHeaders,
 		Body:            responseString,
 		IsBase64Encoded: true,
@@ -327,10 +327,8 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, apismanager apis.Api
 	}
 
 	if nitricType == "http-proxy" {
-		fmt.Println("handling http proxy request")
 		return handleHttpProxyRequest(ctx, httpmanager, evt)
 	} else {
-		fmt.Println("handling nitric api request")
 		return handleApiGatewayRequest(ctx, nitricName, apismanager, evt)
 	}
 }
@@ -389,7 +387,7 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topic
 
 		var message topicspb.Message
 
-		if err := proto.Unmarshal([]byte(messageBytes), &message); err != nil {
+		if err := proto.Unmarshal(messageBytes, &message); err != nil {
 			logger.Errorf("unable to unmarshal nitric message from SNS trigger: %v", err)
 			continue
 		}
