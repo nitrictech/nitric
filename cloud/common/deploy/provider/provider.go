@@ -81,6 +81,7 @@ func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploym
 	typeOrder := []resourcespb.ResourceType{
 		resourcespb.ResourceType_Service,
 		resourcespb.ResourceType_Secret,
+		resourcespb.ResourceType_Queue,
 		resourcespb.ResourceType_Topic,
 		resourcespb.ResourceType_Bucket,
 		resourcespb.ResourceType_KeyValueStore,

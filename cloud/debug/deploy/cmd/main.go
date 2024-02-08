@@ -23,6 +23,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/cloud/debug/deploy"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"google.golang.org/grpc"
 )
