@@ -16,6 +16,7 @@ package topic
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -144,7 +145,7 @@ func (s *SnsEventService) Publish(ctx context.Context, req *topicpb.TopicPublish
 			err,
 		)
 	}
-	message := string(messageBytes)
+	message := base64.StdEncoding.EncodeToString(messageBytes)
 
 	if req.Delay != nil && req.Delay.AsDuration() > 0 {
 		err = s.publishDelayed(ctx, req.TopicName, req.Delay.AsDuration(), message)

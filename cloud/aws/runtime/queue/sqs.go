@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -98,9 +99,11 @@ func (s *SQSQueueService) Send(ctx context.Context, req *queuepb.QueueSendReques
 			requestIdMap[id.String()] = t
 
 			if bytes, err := proto.Marshal(t.Payload); err == nil {
+				msgString := base64.StdEncoding.EncodeToString(bytes)
+
 				entries = append(entries, types.SendMessageBatchRequestEntry{
 					Id:          aws.String(id.String()),
-					MessageBody: aws.String(string(bytes)),
+					MessageBody: aws.String(msgString),
 				})
 			} else {
 				return nil, newErr(
@@ -191,7 +194,17 @@ func (s *SQSQueueService) Receive(ctx context.Context, req *queuepb.QueueReceive
 		tasks := make([]*queuepb.ReceivedTask, 0, len(res.Messages))
 		for _, m := range res.Messages {
 			var structPayload structpb.Struct
-			err := proto.Unmarshal([]byte(*m.Body), &structPayload)
+
+			msgBytes, err := base64.StdEncoding.DecodeString(*m.Body)
+			if err != nil {
+				return nil, newErr(
+					codes.Internal,
+					"failed unmarshalling body",
+					err,
+				)
+			}
+
+			err = proto.Unmarshal(msgBytes, &structPayload)
 			if err != nil {
 				return nil, newErr(
 					codes.Internal,
