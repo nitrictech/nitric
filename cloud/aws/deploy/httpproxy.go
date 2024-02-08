@@ -32,8 +32,10 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 
 	targetLambda := a.lambdas[http.Target.GetService()]
 
+	httpProxyGatewayTags := common.Tags(a.stackId, name, resources.HttpProxy)
+
 	doc := targetLambda.InvokeArn.ApplyT(func(invokeArn string) (string, error) {
-		spec := newApiSpec(name, invokeArn)
+		spec := newApiSpec(name, invokeArn, httpProxyGatewayTags)
 
 		b, err := spec.MarshalJSON()
 		if err != nil {
@@ -46,7 +48,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	a.httpProxies[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
-		Tags:           pulumi.ToStringMap(common.Tags(a.stackId, name, resources.HttpProxy)),
+		Tags:           pulumi.ToStringMap(httpProxyGatewayTags),
 		FailOnWarnings: pulumi.Bool(true),
 	}, opts...)
 	if err != nil {
@@ -57,7 +59,6 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      a.httpProxies[name].ID(),
-		Tags:       pulumi.ToStringMap(common.Tags(a.stackId, name+"DefaultStage", resources.HttpProxy)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -77,7 +78,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	return nil
 }
 
-func newApiSpec(name, invokeArn string) *openapi3.T {
+func newApiSpec(name, invokeArn string, tags map[string]string) *openapi3.T {
 	doc := &openapi3.T{
 		Info: &openapi3.Info{
 			Title:   name,
@@ -97,6 +98,13 @@ func newApiSpec(name, invokeArn string) *openapi3.T {
 				Options: getOperation(invokeArn, "options"),
 			},
 		},
+	}
+
+	for n, v := range tags {
+		doc.Tags = append(doc.Tags, &openapi3.Tag{
+			Name:       n,
+			Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": v},
+		})
 	}
 
 	return doc
