@@ -82,8 +82,8 @@ func NewProject(ctx *pulumi.Context, name string, args *ProjectArgs, opts ...pul
 		Role:    pulumi.String("roles/iam.serviceAccountTokenCreator"),
 		Member:  serviceAccount,
 		Project: pulumi.String(args.ProjectId),
-	}, pulumi.Parent(res),
-		pulumi.DependsOn(deps)) // Only create this once the google managed service account is available
+		// Only create this once the google managed service account is available
+	}, pulumi.Parent(res), pulumi.DependsOn(deps))
 
 	if err != nil {
 		return nil, err
