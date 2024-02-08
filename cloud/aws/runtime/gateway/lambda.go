@@ -24,6 +24,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/protobuf/proto"
@@ -39,6 +40,7 @@ import (
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 	"github.com/nitrictech/nitric/core/pkg/workers/apis"
+	"github.com/nitrictech/nitric/core/pkg/workers/http"
 	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
 	"github.com/nitrictech/nitric/core/pkg/workers/storage"
 	"github.com/nitrictech/nitric/core/pkg/workers/topics"
@@ -183,19 +185,7 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, websockets web
 	}, nil
 }
 
-// handleApiEvent translates AWS API events to Nitric API events and forwards them to be handled by registered workers.
-func (s *LambdaGateway) handleApiEvent(ctx context.Context, apismanager apis.ApiRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
-	api, err := s.provider.GetApiGatewayById(ctx, evt.RequestContext.APIID)
-	if err != nil {
-		return nil, err
-	}
-
-	stackID := commonenv.NITRIC_STACK_ID.String()
-	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
-	if !ok {
-		return nil, fmt.Errorf("received request from non-nitric API gateway")
-	}
-
+func handleApiGatewayRequest(ctx context.Context, nitricName string, apismanager apis.ApiRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
 	// Copy the headers and re-write for the proxy
 	headerCopy := map[string]*apispb.HeaderValue{}
 
@@ -280,6 +270,69 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, apismanager apis.Api
 	}, nil
 }
 
+func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+	request := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(request)
+
+	request.Header.SetMethod(evt.RequestContext.HTTP.Method)
+	request.SetRequestURI(evt.RawPath)
+	request.SetBody([]byte(evt.Body))
+
+	// Copy the headers and re-write for the proxy
+	for key, val := range evt.Headers {
+		request.Header.Add(key, val)
+	}
+
+	// Copy the cookies over
+	for _, cookie := range evt.Cookies {
+		request.Header.Add("Cookie", cookie)
+	}
+
+	resp, err := httpmanager.HandleRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	lambdaHTTPHeaders := make(map[string]string)
+	resp.Header.VisitAll(func(key, value []byte) {
+		lambdaHTTPHeaders[string(key)] = string(value)
+	})
+
+	responseString := base64.StdEncoding.EncodeToString(resp.Body())
+
+	return events.APIGatewayProxyResponse{
+		StatusCode:      resp.StatusCode(),
+		Headers:         lambdaHTTPHeaders,
+		Body:            responseString,
+		IsBase64Encoded: true,
+	}, nil
+}
+
+// handleApiEvent translates AWS API events to Nitric API events and forwards them to be handled by registered workers.
+func (s *LambdaGateway) handleApiEvent(ctx context.Context, apismanager apis.ApiRequestHandler, httpmanager http.HttpRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+	api, err := s.provider.GetApiGatewayById(ctx, evt.RequestContext.APIID)
+	if err != nil {
+		return nil, err
+	}
+
+	stackID := commonenv.NITRIC_STACK_ID.String()
+	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
+	if !ok {
+		return nil, fmt.Errorf("received request from non-nitric API gateway")
+	}
+
+	nitricType, ok := api.Tags[tags.GetResourceTypeKey(stackID)]
+	if !ok {
+		return nil, fmt.Errorf("received request from non-nitric API gateway")
+	}
+
+	if nitricType == "http-proxy" {
+		return handleHttpProxyRequest(ctx, httpmanager, evt)
+	} else {
+		return handleApiGatewayRequest(ctx, nitricName, apismanager, evt)
+	}
+}
+
 type ScheduleMessage struct {
 	Schedule string
 }
@@ -326,9 +379,15 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topic
 			continue
 		}
 
+		messageBytes, err := base64.StdEncoding.DecodeString(messageString)
+		if err != nil {
+			logger.Errorf("unable decode SNS payload: %v", err)
+			continue
+		}
+
 		var message topicspb.Message
 
-		if err := proto.Unmarshal([]byte(messageString), &message); err != nil {
+		if err := proto.Unmarshal(messageBytes, &message); err != nil {
 			logger.Errorf("unable to unmarshal nitric message from SNS trigger: %v", err)
 			continue
 		}
@@ -432,7 +491,7 @@ func (s *LambdaGateway) routeEvent(ctx context.Context, opts *gateway.GatewaySta
 	case websocketEvent:
 		return s.handleWebsocketEvent(ctx, opts.WebsocketListenerPlugin, evt.APIGatewayWebsocketProxyRequest)
 	case httpEvent:
-		return s.handleApiEvent(ctx, opts.ApiPlugin, evt.APIGatewayV2HTTPRequest)
+		return s.handleApiEvent(ctx, opts.ApiPlugin, opts.HttpPlugin, evt.APIGatewayV2HTTPRequest)
 	case healthcheck:
 		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
 	case sns:
