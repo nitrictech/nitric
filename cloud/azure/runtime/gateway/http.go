@@ -71,12 +71,12 @@ func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
 	return &message, nil
 }
 
-func eventAuthorised(ctx *fasthttp.RequestCtx) bool {
-	token := ctx.QueryArgs().Peek("token")
-	evtToken := os.Getenv("EVENT_TOKEN")
+// func eventAuthorised(ctx *fasthttp.RequestCtx) bool {
+// 	token := ctx.QueryArgs().Peek("token")
+// 	evtToken := os.Getenv("EVENT_TOKEN")
 
-	return string(token) == evtToken
-}
+// 	return string(token) == evtToken
+// }
 
 func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, events []eventgrid.Event) {
 	subPayload := events[0]
@@ -96,18 +96,20 @@ func (a *azMiddleware) handleSubscriptionValidation(ctx *fasthttp.RequestCtx, ev
 
 func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		fmt.Println("Got a subscription notification")
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
 			return
 		}
 
-		if !eventAuthorised(ctx) {
-			ctx.Error("Unauthorized", 401)
-			return
-		}
+		// if !eventAuthorised(ctx) {
+		// 	ctx.Error("Unauthorized", 401)
+		// 	return
+		// }
 
 		eventgridEvents, err := extractEvents(ctx)
 		if err != nil {
+			fmt.Println("unable to extract events")
 			ctx.Error(err.Error(), 400)
 			return
 		}
@@ -115,17 +117,21 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 		for _, event := range eventgridEvents {
 			eventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 			if eventType == "SubscriptionValidation" {
+				fmt.Println("handling validation event")
 				a.handleSubscriptionValidation(ctx, eventgridEvents)
 				return
 			}
 
 			message, err := extractMessage(event)
 			if err != nil {
+				fmt.Println("error extracting message", err)
 				ctx.Error(err.Error(), 500)
 				return
 			}
 
 			topicName := ctx.UserValue("name").(string)
+
+			fmt.Println("got topic name", topicName)
 
 			evt := &topicspb.ServerMessage{
 				Content: &topicspb.ServerMessage_MessageRequest{
@@ -136,8 +142,10 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 				},
 			}
 
+			fmt.Println("handling request", topicName)
 			resp, err := opts.TopicsListenerPlugin.HandleRequest(evt)
 			if err != nil {
+				fmt.Println("error handling request", err)
 				logger.Errorf("could not get worker for topic: %s", topicName)
 				// TODO: Handle error
 				continue
@@ -150,6 +158,7 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 			}
 
 			// TODO: event handling failure???
+			fmt.Println("doneskis", topicName)
 			ctx.SuccessString("text/plain", "success")
 		}
 	}
@@ -157,15 +166,16 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 
 func (a *azMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		fmt.Println("Got a schedule notification")
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
 			return
 		}
 
-		if !eventAuthorised(ctx) {
-			ctx.Error("Unauthorized", 401)
-			return
-		}
+		// if !eventAuthorised(ctx) {
+		// 	ctx.Error("Unauthorized", 401)
+		// 	return
+		// }
 
 		scheduleName := ctx.UserValue("name").(string)
 
@@ -200,10 +210,11 @@ func notificationEventToEventType(eventType *string) (*storagepb.BlobEventType, 
 
 func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		if !eventAuthorised(ctx) {
-			ctx.Error("Unauthorized", 401)
-			return
-		}
+		fmt.Println("Got a bucket notification")
+		// if !eventAuthorised(ctx) {
+		// 	ctx.Error("Unauthorized", 401)
+		// 	return
+		// }
 
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
@@ -273,9 +284,13 @@ func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) 
 }
 
 func (a *azMiddleware) router(r *router.Router, opts *gateway.GatewayStartOpts) {
-	r.ANY(base_http.DefaultTopicRoute, a.handleSubscription(opts))
-	r.ANY(base_http.DefaultScheduleRoute, a.handleSchedule(opts))
-	r.ANY(base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(opts))
+	evtToken := os.Getenv("EVENT_TOKEN")
+
+	fmt.Println("Adding event handler routes using" + evtToken)
+
+	r.ANY("/"+evtToken+base_http.DefaultTopicRoute, a.handleSubscription(opts))
+	r.ANY("/"+evtToken+base_http.DefaultScheduleRoute, a.handleSchedule(opts))
+	r.ANY("/"+evtToken+base_http.DefaultBucketNotificationRoute, a.handleBucketNotification(opts))
 }
 
 // Create a new HTTP Gateway plugin
