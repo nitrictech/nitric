@@ -313,6 +313,10 @@ var actionNames = map[resourcespb.Action]string{
 	resourcespb.Action_KeyValueStoreDelete: "KeyValueStoreDelete",
 	resourcespb.Action_KeyValueStoreRead:   "KeyValueStoreRead",
 	resourcespb.Action_KeyValueStoreWrite:  "KeyValueStoreWrite",
+	resourcespb.Action_QueueSend:           "QueueSend",
+	resourcespb.Action_QueueReceive:        "QueueReceive",
+	resourcespb.Action_QueueDetail:         "QueueDetail",
+	resourcespb.Action_QueueList:           "QueueList",
 }
 
 func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {
