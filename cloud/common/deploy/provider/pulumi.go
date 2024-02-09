@@ -197,7 +197,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	_, err = stack.Refresh(context.TODO())
+	_, err = autoStack.Refresh(context.TODO())
 	if err != nil {
 		logger.Errorf(err.Error())
 		return err
