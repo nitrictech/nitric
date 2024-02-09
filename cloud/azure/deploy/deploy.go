@@ -329,6 +329,7 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 		apis:           map[string]ApiResources{},
 		httpProxies:    map[string]ApiResources{},
 		buckets:        make(map[string]*storage.BlobContainer),
+		queues:         make(map[string]*storage.Queue),
 		containerApps:  map[string]*ContainerApp{},
 		topics:         map[string]*eventgrid.Topic{},
 		principals:     principalsMap,
