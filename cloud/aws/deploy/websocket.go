@@ -19,8 +19,9 @@ package deploy
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
-	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
@@ -36,7 +37,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 
 	websocketApi, err := apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		ProtocolType: pulumi.String("WEBSOCKET"),
-		Tags:         pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Websocket)),
+		Tags:         pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.Websocket)),
 		// TODO: We won't actually be using this, but it is required.
 		// Instead we'll be using the $default route
 		RouteSelectionExpression: pulumi.String("$request.body.action"),
@@ -45,12 +46,14 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		return err
 	}
 
+	a.websockets[name] = websocketApi
+
 	// Create the API integrations
 	integrationDefault, err := apigatewayv2.NewIntegration(ctx, fmt.Sprintf("%s-default-integration", name), &apigatewayv2.IntegrationArgs{
 		ApiId:           websocketApi.ID(),
 		IntegrationType: pulumi.String("AWS_PROXY"),
 		IntegrationUri:  defaultTarget.Arn,
-	})
+	}, opts...)
 	if err != nil {
 		return err
 	}
@@ -72,7 +75,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 			ApiId:           websocketApi.ID(),
 			IntegrationType: pulumi.String("AWS_PROXY"),
 			IntegrationUri:  connectTarget.Arn,
-		})
+		}, opts...)
 		if err != nil {
 			return err
 		}
@@ -95,7 +98,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 			ApiId:           websocketApi.ID(),
 			IntegrationType: pulumi.String("AWS_PROXY"),
 			IntegrationUri:  disconnectTarget.Arn,
-		})
+		}, opts...)
 		if err != nil {
 			return err
 		}
@@ -117,7 +120,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		ApiId:    websocketApi.ID(),
 		RouteKey: pulumi.String("$default"),
 		Target:   pulumi.Sprintf("integrations/%s", integrationDefault.ID()),
-	})
+	}, opts...)
 	if err != nil {
 		return err
 	}
@@ -127,7 +130,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		ApiId:    websocketApi.ID(),
 		RouteKey: pulumi.String("$connect"),
 		Target:   pulumi.Sprintf("integrations/%s", integrationConnect.ID()),
-	})
+	}, opts...)
 	if err != nil {
 		return err
 	}
@@ -137,16 +140,16 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		ApiId:    websocketApi.ID(),
 		RouteKey: pulumi.String("$disconnect"),
 		Target:   pulumi.Sprintf("integrations/%s", integrationDisconnect.ID()),
-	})
+	}, opts...)
 	if err != nil {
 		return err
 	}
 
 	_, err = apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
 		AutoDeploy: pulumi.BoolPtr(true),
-		Name:       pulumi.String("$default"),
+		Name:       pulumi.String(common.DefaultWsStageName),
 		ApiId:      websocketApi.ID(),
-		Tags:       pulumi.ToStringMap(common.Tags(a.stackId, name+"DefaultStage", resources.Websocket)),
+		Tags:       pulumi.ToStringMap(tags.Tags(a.stackId, name+"DefaultStage", resources.Websocket)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -155,12 +158,6 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 	if err != nil {
 		return err
 	}
-
-	endPoint := websocketApi.ApiEndpoint.ApplyT(func(ep string) string {
-		return ep
-	}).(pulumi.StringInput)
-
-	ctx.Export("api:"+name, endPoint)
 
 	return nil
 }
