@@ -128,6 +128,8 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				Actions: pulumi.StringArray{},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/write"),
+					// Delete is required for upserting
+					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/delete"),
 				},
 				NotActions: pulumi.StringArray{},
 			},
