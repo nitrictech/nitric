@@ -49,7 +49,7 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 
 	p.queues[name], err = pubsub.NewTopic(ctx, fmt.Sprintf("%s-queue", name), &pubsub.TopicArgs{
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),
 		},
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}

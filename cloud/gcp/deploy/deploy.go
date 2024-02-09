@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
@@ -56,6 +57,7 @@ type NitricGcpPulumiProvider struct {
 	authToken       *oauth2.Token
 	baseComputeRole *projects.IAMCustomRole
 
+	project            *Project
 	apiGateways        map[string]*apigateway.Gateway
 	httpProxies        map[string]*apigateway.Gateway
 	cloudRunServices   map[string]*NitricCloudRunService
@@ -86,6 +88,14 @@ func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 		"gcp:version":    auto.ConfigValue{Value: pulumiGcpVersion},
 		"docker:version": auto.ConfigValue{Value: deploy.PulumiDockerVersion},
 	}, nil
+}
+
+func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.ResourceOption) []pulumi.ResourceOption {
+	defaultOptions := []pulumi.ResourceOption{
+		pulumi.DependsOn([]pulumi.Resource{a.project}),
+	}
+
+	return append(defaultOptions, opts...)
 }
 
 func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error {
@@ -176,6 +186,21 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 	})
 
 	a.stackId = <-stackIdChan
+
+	project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
+		ProjectId: &a.config.ProjectId,
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	a.project, err = NewProject(ctx, "project", &ProjectArgs{
+		ProjectId:     a.config.ProjectId,
+		ProjectNumber: project.Number,
+	})
+	if err != nil {
+		return err
+	}
 
 	a.delayQueue, err = cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
 		Location: pulumi.String(a.region),

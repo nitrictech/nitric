@@ -43,7 +43,7 @@ func (p *NitricGcpPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 		},
 		SecretId: secId,
 		Labels:   pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Secret)),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}

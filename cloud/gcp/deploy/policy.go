@@ -51,6 +51,8 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"storage.multipartUploads.create",
 		"storage.multipartUploads.listParts",
 		"storage.objects.create",
+		// This permission is needed to overwrite an existing object
+		"storage.objects.delete",
 	},
 	v1.Action_BucketFileDelete: {
 		"storage.objects.delete",

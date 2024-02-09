@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"encoding/base64"
+	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -38,10 +39,15 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 
 	targetService := p.cloudRunServices[config.Target.GetService()]
 
-	api, err := apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
-		ApiId:  pulumi.String(name),
+	// normalise the name to match the required format
+	// ^projects/([a-z0-9-]+)/locations/([a-z0-9-]+)(/([a-z]+)/([a-z0-9-.]+))+$
+
+	normalizedName := strings.Replace(name, "_", "-", -1)
+
+	api, err := apigateway.NewApi(ctx, normalizedName, &apigateway.ApiArgs{
+		ApiId:  pulumi.String(normalizedName),
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api "+name)
 	}
@@ -63,10 +69,10 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	}).(pulumi.StringOutput)
 
 	// Deploy the config
-	apiConfig, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
+	apiConfig, err := apigateway.NewApiConfig(ctx, normalizedName+"-config", &apigateway.ApiConfigArgs{
 		Project:     pulumi.String(p.config.ProjectId),
 		Api:         api.ApiId,
-		DisplayName: pulumi.String(name + "-config"),
+		DisplayName: pulumi.String(normalizedName + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{
 			apigateway.ApiConfigOpenapiDocumentArgs{
 				Document: apigateway.ApiConfigOpenapiDocumentDocumentArgs{
@@ -82,18 +88,18 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 			},
 		},
 		Labels: pulumi.ToStringMap(resourceLabels),
-	}, append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)
+	}, p.WithDefaultResourceOptions(append(opts, pulumi.ReplaceOnChanges([]string{"*"}))...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api config")
 	}
 
 	// Deploy the gateway
-	_, err = apigateway.NewGateway(ctx, name+"-gateway", &apigateway.GatewayArgs{
-		DisplayName: pulumi.String(name + "-gateway"),
-		GatewayId:   pulumi.String(name + "-gateway"),
+	_, err = apigateway.NewGateway(ctx, normalizedName+"-gateway", &apigateway.GatewayArgs{
+		DisplayName: pulumi.String(normalizedName + "-gateway"),
+		GatewayId:   pulumi.String(normalizedName + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, apiConfig.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "api gateway")
 	}

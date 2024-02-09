@@ -38,7 +38,7 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 
 	p.topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
 		Labels: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Topic)),
-	})
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
@@ -58,12 +58,12 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 					ServiceAccountEmail: targetService.Invoker.Email,
 				},
 				// https://cloud.google.com/appengine/docs/flexible/writing-and-responding-to-pub-sub-messages?tab=go#top
-				PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", targetService.Url, p.topics[name].Name, targetService.EventToken),
+				PushEndpoint: pulumi.Sprintf("%s/x-nitric-topic/%s?token=%s", targetService.Url, name, targetService.EventToken),
 			},
 			ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 				Ttl: pulumi.String(""),
 			},
-		}, opts...)
+		}, p.WithDefaultResourceOptions(opts...)...)
 		if err != nil {
 			return errors.WithMessage(err, "subscription "+name+"-sub")
 		}

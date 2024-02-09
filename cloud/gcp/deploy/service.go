@@ -90,14 +90,14 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			TraceExporterConfig: `{"retry_on_failure": {"enabled": false}}`,
 			Extensions:          []string{},
 		},
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
 
 	sa, err := NewServiceAccount(ctx, gcpServiceName+"-cloudrun-exec-acct", &GcpIamServiceAccountArgs{
 		AccountId: gcpServiceName + "-exec",
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		ServiceAccountId: sa.ServiceAccount.Name,
 		Member:           pulumi.Sprintf("serviceAccount:%s", sa.ServiceAccount.Email),
 		Role:             pulumi.String("roles/iam.serviceAccountUser"),
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "service account self membership "+name)
 	}
@@ -217,7 +217,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 				},
 			},
 		},
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "cloud run "+name)
 	}
@@ -236,7 +236,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		Role:     pulumi.String("roles/run.invoker"),
 		Service:  res.Service.Name,
 		Location: res.Service.Location,
-	}, opts...)
+	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "iam member "+name)
 	}
