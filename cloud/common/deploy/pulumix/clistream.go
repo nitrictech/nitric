@@ -83,9 +83,9 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 	switch resourcePreEvent.Metadata.Op {
 	case apitype.OpCreate:
 		nitricAction = deploymentspb.ResourceDeploymentAction_CREATE
-	case apitype.OpDelete, apitype.OpDeleteReplaced:
+	case apitype.OpDelete:
 		nitricAction = deploymentspb.ResourceDeploymentAction_DELETE
-	case apitype.OpReplace, apitype.OpCreateReplacement:
+	case apitype.OpReplace, apitype.OpCreateReplacement, apitype.OpDeleteReplaced:
 		nitricAction = deploymentspb.ResourceDeploymentAction_REPLACE
 	case apitype.OpSame:
 		nitricAction = deploymentspb.ResourceDeploymentAction_SAME
