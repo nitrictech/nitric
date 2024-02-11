@@ -80,6 +80,10 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 				err = nitricProvider.Bucket(ctx, parent, res.Id.Name, t.Bucket)
 			case *deploymentspb.Resource_Api:
 				err = nitricProvider.Api(ctx, parent, res.Id.Name, t.Api)
+			case *deploymentspb.Resource_Websocket:
+				err = nitricProvider.Websocket(ctx, parent, res.Id.Name, t.Websocket)
+			case *deploymentspb.Resource_Schedule:
+				err = nitricProvider.Schedule(ctx, parent, res.Id.Name, t.Schedule)
 			case *deploymentspb.Resource_Policy:
 				err = nitricProvider.Policy(ctx, parent, res.Id.Name, t.Policy)
 			case *deploymentspb.Resource_Http:

@@ -15,17 +15,37 @@
 package grpc_errors
 
 import (
+	"fmt"
+
+	// structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type ScopedErrorFactory = func(c codes.Code, msg string, cause error) error
 
 func ErrorsWithScope(scope string) ScopedErrorFactory {
 	return func(code codes.Code, msg string, cause error) error {
+		scopedMsg := fmt.Sprintf("%s %s", scope, msg)
+
+		st := status.New(code, scopedMsg)
 		if cause != nil {
-			return status.Errorf(code, "%s: %s\n %s", scope, msg, cause.Error())
+			errorDetails := map[string]interface{}{
+				"cause": cause.Error(),
+			}
+
+			detail, err := structpb.NewStruct(errorDetails)
+			if err != nil {
+				return status.Errorf(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
+			}
+
+			st, err = st.WithDetails(detail)
+			if err != nil {
+				return status.Errorf(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
+			}
 		}
-		return status.Errorf(code, "%s: %s\n", scope, msg)
+
+		return st.Err()
 	}
 }

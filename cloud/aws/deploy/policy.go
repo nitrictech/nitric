@@ -146,7 +146,7 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 			"invalid resource type: %s. Did you mean to define it as a principal?", resource.Id.Type)
 	}
 
-	return nil, fmt.Errorf("unable to find resource %s::%s", resource.Id.Type, resource.Id.Name)
+	return nil, fmt.Errorf("unable to find %s named %s in AWS provider resource cache", resource.Id.Type, resource.Id.Name)
 }
 
 func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resource) (*iam.Role, error) {
@@ -175,7 +175,7 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 		if arn, err := a.arnForResource(res); err == nil {
 			targetArns = append(targetArns, arn...)
 		} else {
-			return err
+			return fmt.Errorf("failed to create policy, unable to determine resource ARN: %w", err)
 		}
 	}
 

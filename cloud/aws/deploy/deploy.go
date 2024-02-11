@@ -27,6 +27,7 @@ import (
 	lambdaClient "github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -202,7 +203,7 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		}
 		outputs = append(outputs, pulumi.Sprintf("Websockets:\n──────────────"))
 		for wsName, ws := range a.websockets {
-			outputs = append(outputs, pulumi.Sprintf("%s: %s", wsName, ws.ApiEndpoint))
+			outputs = append(outputs, pulumi.Sprintf("%s: %s/%s", wsName, ws.ApiEndpoint, common.DefaultWsStageName))
 		}
 	}
 

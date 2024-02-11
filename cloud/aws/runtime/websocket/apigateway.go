@@ -22,11 +22,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
+	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	websocketpb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
 )
 
 type ApiGatewayWebsocketService struct {
@@ -40,6 +44,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 	awsRegion := env.AWS_REGION.String()
 
 	if client, ok := a.clients[socket]; ok {
+		logger.Debug("using existing websocket client found in cache")
 		return client, nil
 	}
 
@@ -47,16 +52,19 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		SocketName: socket,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting websocket details: %w", err)
 	}
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
-		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
+		return nil, fmt.Errorf("error creating new AWS session: %w", sessionError)
 	}
 
-	callbackUrl := strings.Replace(details.Url, "wss", "https", 1)
-	callbackUrl = callbackUrl + "/$default"
+	// post requests are made to the https endpoint, so the scheme needs to be changed
+	callbackUrl := details.Url
+	if strings.HasPrefix(details.Url, "wss") {
+		callbackUrl = strings.Replace(details.Url, "wss", "https", 1)
+	}
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
@@ -77,14 +85,20 @@ func (a *ApiGatewayWebsocketService) Details(ctx context.Context, req *websocket
 	}
 
 	return &websocketpb.WebsocketDetailsResponse{
-		Url: gwDetails.Url,
+		Url: fmt.Sprintf("%s/%s", gwDetails.Url, common.DefaultWsStageName),
 	}, nil
 }
 
 func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.WebsocketSendRequest) (*websocketpb.WebsocketSendResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("ApiGateway.Websocket.Send")
+
 	client, err := a.getClientForSocket(req.SocketName)
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"error getting websocket client",
+			err,
+		)
 	}
 
 	_, err = client.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
@@ -93,7 +107,11 @@ func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, newErr(
+			codes.Internal,
+			"error sending message to websocket",
+			err,
+		)
 	}
 
 	return &websocketpb.WebsocketSendResponse{}, nil
