@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -70,14 +71,10 @@ func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *q
 
 	messages := s.getMessagesUrl(queueName)
 
-	// task := &azTask{
-	// 	Id:      req.Id,
-	// 	Payload: req.Payload.AsMap(),
-	// }
-
 	// Send the tasks to the queue
 	if taskBytes, err := proto.Marshal(req.Payload); err == nil {
-		if _, err := messages.Enqueue(ctx, string(taskBytes), 0, 0); err != nil {
+		taskPayload := base64.StdEncoding.EncodeToString(taskBytes)
+		if _, err := messages.Enqueue(ctx, string(taskPayload), 0, 0); err != nil {
 			return nil, newErr(
 				codes.Internal,
 				"error sending task to queue",
@@ -176,10 +173,27 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueRe
 	for i := int32(0); i < dequeueResp.NumMessages(); i++ {
 		m := dequeueResp.Message(i)
 		var structPayload structpb.Struct
-		err := proto.Unmarshal([]byte(m.Text), &structPayload)
+
+		fmt.Printf("deserializing payload: %s", m.Text)
+
+		// bytePayload := []byte(m.Text)
+		bytePayload, err := base64.StdEncoding.DecodeString(m.Text)
+		if err != nil {
+			return nil, newErr(
+				codes.Internal,
+				"failed to decode queue item payload",
+				err,
+			)
+		}
+
+		err = proto.Unmarshal(bytePayload, &structPayload)
 		if err != nil {
 			// TODO: append error to error list and Nack the message.
-			continue
+			return nil, newErr(
+				codes.Internal,
+				"failed to deserialize queue item payload",
+				err,
+			)
 		}
 
 		lease := AzureQueueItemLease{

@@ -140,7 +140,7 @@ func (p *pulumiEventHandler) handleResourceOutputsEvent(resOutputsEvent *apitype
 	// Happens after resource updates are applied
 	// Find the URN in the tree
 	urn := resOutputsEvent.Metadata.URN
-	// Happens after resource updates fail to apply
+
 	resourceNode := p.tree.FindNode(urn)
 	var nitricResource *resourcespb.ResourceIdentifier
 	var subResource string
