@@ -64,7 +64,7 @@ func (s *EventGridEventService) nitricEventToAzureEvent(topic string, payload *t
 func (s *EventGridEventService) Publish(ctx context.Context, req *topicpb.TopicPublishRequest) (*topicpb.TopicPublishResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("EventGrid.Publish")
 
-	if req.Delay != nil {
+	if req.Delay.AsDuration() != time.Duration(0) {
 		return nil, newErr(codes.Unimplemented, "delayed messages with eventgrid are unsupported", nil)
 	}
 

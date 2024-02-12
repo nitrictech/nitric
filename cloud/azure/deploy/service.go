@@ -83,7 +83,8 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 			// this callback in mainly used to get the hostURL for subscriptions
 			// so ensuring that the deployed gateway is configured to validate subscription requests
 			// doesn't hurt
-			hostUrl := fmt.Sprintf("https://%s/x-nitric-topic/test?token=%s", fqdn, token)
+			hostUrl := fmt.Sprintf("https://%s", fqdn)
+			healthcheckUrl := fmt.Sprintf("%s/%s/x-nitric-topic/test", hostUrl, token)
 
 			hCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
@@ -107,7 +108,7 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 
 				body := bytes.NewBuffer(jsonStr)
 
-				req, err := http.NewRequestWithContext(hCtx, "POST", hostUrl, body)
+				req, err := http.NewRequestWithContext(hCtx, "POST", healthcheckUrl, body)
 				if err != nil {
 					return "", err
 				}

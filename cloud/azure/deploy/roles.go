@@ -128,6 +128,8 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				Actions: pulumi.StringArray{},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/write"),
+					// Delete is required for upserting
+					pulumi.String("Microsoft.Storage/storageAccounts/tableServices/tables/entities/delete"),
 				},
 				NotActions: pulumi.StringArray{},
 			},
@@ -313,6 +315,10 @@ var actionNames = map[resourcespb.Action]string{
 	resourcespb.Action_KeyValueStoreDelete: "KeyValueStoreDelete",
 	resourcespb.Action_KeyValueStoreRead:   "KeyValueStoreRead",
 	resourcespb.Action_KeyValueStoreWrite:  "KeyValueStoreWrite",
+	resourcespb.Action_QueueSend:           "QueueSend",
+	resourcespb.Action_QueueReceive:        "QueueReceive",
+	resourcespb.Action_QueueDetail:         "QueueDetail",
+	resourcespb.Action_QueueList:           "QueueList",
 }
 
 func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {

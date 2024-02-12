@@ -201,7 +201,17 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
+	_, err = autoStack.Refresh(context.TODO())
+	if err != nil {
+		logger.Errorf(err.Error())
+		return err
+	}
+
 	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
+	if err != nil {
+		logger.Errorf(err.Error())
+		return err
+	}
 
 	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
 	if !ok {
@@ -275,8 +285,13 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 		return err
 	}
 
-	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
+	_, err = stack.Refresh(context.TODO())
+	if err != nil {
+		logger.Errorf(err.Error())
+		return err
+	}
 
+	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
 	if err != nil {
 		logger.Errorf(err.Error())
 		return err

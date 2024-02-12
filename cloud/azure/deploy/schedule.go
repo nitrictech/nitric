@@ -85,7 +85,7 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 			},
 			app.DaprMetadataArgs{
 				Name:  pulumi.String("route"),
-				Value: pulumi.Sprintf("/x-nitric-schedule/%s?token=%s", normalizedName, target.EventToken),
+				Value: pulumi.Sprintf("%s/x-nitric-schedule/%s", target.EventToken, normalizedName),
 			},
 		},
 		Scopes: pulumi.StringArray{
