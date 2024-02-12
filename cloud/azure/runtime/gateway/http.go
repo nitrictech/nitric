@@ -15,6 +15,7 @@
 package http_service
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -54,8 +55,13 @@ func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
 
 func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
 	var payloadBytes []byte
+	var err error
 	if stringData, ok := event.Data.(string); ok {
-		payloadBytes = []byte(stringData)
+		// byte payloads are automatically base64 encoded when publishing to event grid
+		payloadBytes, err = base64.StdEncoding.DecodeString(stringData)
+		if err != nil {
+			return nil, err
+		}
 	} else if byteData, ok := event.Data.([]byte); ok {
 		payloadBytes = byteData
 	} else {
@@ -64,7 +70,7 @@ func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
 
 	var message topicpb.Message
 
-	if err := proto.Unmarshal(payloadBytes, &message); err != nil {
+	if err = proto.Unmarshal(payloadBytes, &message); err != nil {
 		return nil, err
 	}
 
