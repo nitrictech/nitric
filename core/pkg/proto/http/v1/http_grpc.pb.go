@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HttpClient interface {
-	// Serve a route on an API Gateway
+	// Proxy an HTTP server
 	Proxy(ctx context.Context, opts ...grpc.CallOption) (Http_ProxyClient, error)
 }
 
@@ -69,7 +69,7 @@ func (x *httpProxyClient) Recv() (*ServerMessage, error) {
 // All implementations should embed UnimplementedHttpServer
 // for forward compatibility
 type HttpServer interface {
-	// Serve a route on an API Gateway
+	// Proxy an HTTP server
 	Proxy(Http_ProxyServer) error
 }
 

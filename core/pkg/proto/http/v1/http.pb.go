@@ -25,7 +25,7 @@ type ClientMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The HTTP request to be proxied
+	// Details of the HTTP server to proxy
 	Request *HttpProxyRequest `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 }
 
