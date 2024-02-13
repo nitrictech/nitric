@@ -172,7 +172,9 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	err = s.provider.Init(req.Attributes.AsMap())
+	attributesMap := req.Attributes.AsMap()
+
+	err = s.provider.Init(attributesMap)
 	if err != nil {
 		return err
 	}
@@ -201,10 +203,15 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	_, err = autoStack.Refresh(context.TODO())
-	if err != nil {
-		logger.Errorf(err.Error())
-		return err
+	refresh, ok := attributesMap["refresh"].(bool)
+
+	if ok && refresh {
+		logger.Info("refreshing pulumi stack")
+		_, err = autoStack.Refresh(context.TODO())
+		if err != nil {
+			logger.Errorf(err.Error())
+			return err
+		}
 	}
 
 	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
