@@ -145,6 +145,12 @@ func (p *pulumiEventHandler) handleResourceOutputsEvent(resOutputsEvent *apitype
 	var nitricResource *resourcespb.ResourceIdentifier
 	var subResource string
 
+	// FIXME: Discover root cause of missing resource nodes
+	if resourceNode == nil {
+		logger.Warnf("recieved urn %s for pulumi resource outputs, but wasn't found in resource tree", urn)
+		return nil, nil
+	}
+
 	if resourceNode.Data != nil && resourceNode.Data.nitricResource != nil {
 		// we have a nitric resource
 		nitricResource = resourceNode.Data.nitricResource
@@ -281,14 +287,16 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 			continue
 		}
 
-		err = stream.Send(&deploymentspb.DeploymentDownEvent{
-			Content: &deploymentspb.DeploymentDownEvent_Update{
-				Update: nitricEvent,
-			},
-		})
+		if nitricEvent != nil {
+			err = stream.Send(&deploymentspb.DeploymentDownEvent{
+				Content: &deploymentspb.DeploymentDownEvent_Update{
+					Update: nitricEvent,
+				},
+			})
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
