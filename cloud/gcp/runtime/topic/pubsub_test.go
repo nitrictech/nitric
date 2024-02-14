@@ -110,7 +110,7 @@ var _ = Describe("Pubsub Plugin", func() {
 				})
 
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = insufficient permissions"))
+				Expect(err.Error()).Should(ContainSubstring("PermissionDenied desc = PubsubEventService.Publish permission denied, have you requested access to this topic?"))
 			})
 		})
 	})
