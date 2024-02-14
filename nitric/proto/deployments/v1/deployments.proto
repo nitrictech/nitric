@@ -104,8 +104,11 @@ message UpResult {
     // Indicate the success status
     bool success = 1;
 
-    // Simple formatted string output as result
-    string details = 2;
+    
+    oneof content {
+        // Simple formatted string output as result
+        string simple = 2;
+    }
 }
 
 message DeploymentDownRequest {
