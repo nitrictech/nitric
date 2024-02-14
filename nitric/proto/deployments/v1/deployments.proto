@@ -106,8 +106,8 @@ message UpResult {
 
     
     oneof content {
-        // Simple formatted string output as result
-        string simple = 2;
+        // Simple text output as result
+        string Text = 2;
     }
 }
 
