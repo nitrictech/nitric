@@ -94,7 +94,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	}
 
 	// Deploy the gateway
-	_, err = apigateway.NewGateway(ctx, normalizedName+"-gateway", &apigateway.GatewayArgs{
+	p.httpProxies[name], err = apigateway.NewGateway(ctx, normalizedName+"-gateway", &apigateway.GatewayArgs{
 		DisplayName: pulumi.String(normalizedName + "-gateway"),
 		GatewayId:   pulumi.String(normalizedName + "-gateway"),
 		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, apiConfig.ApiConfigId),
