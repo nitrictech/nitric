@@ -174,7 +174,9 @@ func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
 
 	// proxy to http if available
 	// if opts.HttpPlugin.WorkerCount() > 0 {
-	r.ANY("/{path?:*}", s.newHttpProxyHandler(opts))
+	if opts.HttpPlugin != nil {
+		r.ANY("/{path?:*}", s.newHttpProxyHandler(opts))
+	}
 	// }
 
 	s.server = &fasthttp.Server{
