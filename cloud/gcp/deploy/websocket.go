@@ -22,5 +22,5 @@ import (
 )
 
 func (a *NitricGcpPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error {
-	return fmt.Errorf("Websockets not implemented for GCP")
+	return fmt.Errorf("websockets aren't yet supported by Nitric on Google Cloud, remove the web sockets from your project and try again or run `nitric down` to destroy this stack")
 }
