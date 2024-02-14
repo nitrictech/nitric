@@ -174,7 +174,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("aws error"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = Unknown desc = SecretManagerSecretService.Put unable to put secret"))
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})

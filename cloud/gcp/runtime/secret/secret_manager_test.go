@@ -135,7 +135,7 @@ var _ = Describe("Secret Manager", func() {
 					By("Returning a permission denied error")
 					Expect(err).Should(HaveOccurred())
 					fmt.Println(err.Error())
-					Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = insufficient permissions"))
+					Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = SecretManagerSecretService.Put permission denied, have you requested access to this secret?"))
 				})
 			})
 
@@ -150,7 +150,7 @@ var _ = Describe("Secret Manager", func() {
 						Value: testSecretVal,
 					})
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-nil secret"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 
@@ -168,7 +168,7 @@ var _ = Describe("Secret Manager", func() {
 					})
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-blank secret name"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 
@@ -185,7 +185,7 @@ var _ = Describe("Secret Manager", func() {
 					})
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-blank secret value"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 		})
@@ -266,7 +266,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("Returning a permission denied error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = insufficient permissions"))
+						Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = SecretManagerSecretService.Access permission denied, have you requested access to this secret?"))
 					})
 				})
 
@@ -323,7 +323,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("provide non-blank name"))
+						Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Access invalid secret version"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())
@@ -346,7 +346,7 @@ var _ = Describe("Secret Manager", func() {
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("provide non-blank version"))
+						Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Access invalid secret version"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())
