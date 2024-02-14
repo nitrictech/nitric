@@ -147,7 +147,7 @@ func (p *pulumiEventHandler) handleResourceOutputsEvent(resOutputsEvent *apitype
 
 	// FIXME: Discover root cause of missing resource nodes
 	if resourceNode == nil {
-		logger.Warnf("recieved urn %s for pulumi resource outputs, but wasn't found in resource tree", urn)
+		logger.Warnf("received urn %s for pulumi resource out of order, this will not impact your deployment only the nitric display", urn)
 		return nil, nil
 	}
 
@@ -259,7 +259,6 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 				Update: updateDetails,
 			},
 		})
-
 		if err != nil {
 			return err
 		}
@@ -293,7 +292,6 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 					Update: nitricEvent,
 				},
 			})
-
 			if err != nil {
 				return err
 			}

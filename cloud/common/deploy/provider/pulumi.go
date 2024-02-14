@@ -216,26 +216,6 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
 	if err != nil {
-		logger.Errorf(err.Error())
-		return err
-	}
-
-	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
-	if !ok {
-		resultStr = ""
-	}
-
-	stream.Send(&deploymentspb.DeploymentUpEvent{
-		Content: &deploymentspb.DeploymentUpEvent_Result{
-			Result: &deploymentspb.UpResult{
-				Content: &deploymentspb.UpResult_Text{
-					Text: resultStr,
-				},
-			},
-		},
-	})
-
-	if err != nil {
 		// Check for common Pulumi 'autoError' types
 		if auto.IsConcurrentUpdateError(err) {
 			if pe := parsePulumiError(err); pe != nil {
@@ -257,7 +237,20 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	return nil
+	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
+	if !ok {
+		resultStr = ""
+	}
+
+	err = stream.Send(&deploymentspb.DeploymentUpEvent{
+		Content: &deploymentspb.DeploymentUpEvent_Result{
+			Result: &deploymentspb.UpResult{
+				Details: resultStr,
+			},
+		},
+	})
+
+	return err
 }
 
 // Down - automatically called by the Nitric CLI via the `down` command
