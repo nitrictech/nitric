@@ -39,7 +39,6 @@ func tagSecret(ctx *pulumi.Context, name string, importArn string, tags map[stri
 		ResourceARNList: aws.StringSlice([]string{secretLookup.Arn}),
 		Tags:            aws.StringMap(tags),
 	})
-
 	if err != nil {
 		return nil, err
 	}

@@ -105,7 +105,6 @@ func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.
 		ConnectionId: aws.String(req.ConnectionId),
 		Data:         req.Data,
 	})
-
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,

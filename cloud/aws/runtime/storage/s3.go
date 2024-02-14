@@ -310,7 +310,6 @@ func (s *S3StorageService) Exists(ctx context.Context, req *storagepb.StorageExi
 		Bucket: b,
 		Key:    aws.String(req.Key),
 	})
-
 	if err != nil {
 		if isS3AccessDeniedErr(err) {
 			return nil, newErr(
