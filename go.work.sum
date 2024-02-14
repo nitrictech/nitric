@@ -774,6 +774,7 @@ github.com/bwesterb/go-ristretto v1.2.2 h1:S2C0mmSjCLS3H9+zfXoIoKzl+cOncvBvt6pE+
 github.com/bwesterb/go-ristretto v1.2.2/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/bwesterb/go-ristretto v1.2.3 h1:1w53tCkGhCQ5djbat3+MH0BAQ5Kfgbt56UZQ/JMzngw=
 github.com/bwmarrin/snowflake v0.3.0 h1:xm67bEhkKh6ij1790JB83OujPR5CzNe8QuQqAgISZN0=
+github.com/ccojocar/zxcvbn-go v1.0.1 h1:+sxrANSCj6CdadkcMnvde/GWU1vZiiXRbqYSCalV4/4=
 github.com/ccojocar/zxcvbn-go v1.0.1/go.mod h1:g1qkXtUSvHP8lhHp5GrSmTz6uWALGRMQdw6Qnz/hi60=
 github.com/cenkalti/backoff/v3 v3.2.2/go.mod h1:cIeZDE3IrqwwJl6VUwCN6trj1oXrTS4rc0ij+ULvLYs=
 github.com/census-instrumentation/opencensus-proto v0.2.1 h1:glEXhBS5PSLLv4IXzLA5yPRVX4bilULVyxxbrfOtDAk=
