@@ -74,7 +74,7 @@ func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *q
 	// Send the tasks to the queue
 	if taskBytes, err := proto.Marshal(req.Payload); err == nil {
 		taskPayload := base64.StdEncoding.EncodeToString(taskBytes)
-		if _, err := messages.Enqueue(ctx, string(taskPayload), 0, 0); err != nil {
+		if _, err := messages.Enqueue(ctx, taskPayload, 0, 0); err != nil {
 			return nil, newErr(
 				codes.Internal,
 				"error sending task to queue",

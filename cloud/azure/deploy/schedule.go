@@ -93,7 +93,6 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 			target.App.Configuration.Dapr().AppId().Elem(),
 		},
 	}, opts...)
-
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("unable to create nitric schedule %s: failed to create DaprComponent for app", name))
 	}
