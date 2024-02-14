@@ -16,10 +16,8 @@
 
 package deploy
 
-//#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
-
 import (
-	"crypto/md5"
+	"crypto/md5" //#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
