@@ -16,22 +16,28 @@ package topic_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"time"
 
+	tasks "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	mock_cloudtasks "github.com/nitrictech/nitric/cloud/gcp/mocks/cloudtasks"
 	mock_core "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
 	mock_pubsub "github.com/nitrictech/nitric/cloud/gcp/mocks/pubsub"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	pubsub_service "github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
 	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	"github.com/nitrictech/nitric/test"
 )
 
 var _ = Describe("Pubsub Plugin", func() {
@@ -153,14 +159,38 @@ var _ = Describe("Pubsub Plugin", func() {
 				mockTopic.EXPECT().String().Return("test")
 
 				By("the publish being successful")
-				// TODO: We want to validate that create task is called with the correct parameters.
-				// This will require a custom gomock matcher, implemented here...
-				cloudtasksClient.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+				matchBy := test.MatchBy(func(actual *tasks.CreateTaskRequest) (string, bool) {
+
+					if actual.Parent != env.DELAY_QUEUE_NAME.String() {
+						fmt.Printf("Parent didn't match\n")
+						return fmt.Sprintf("parent to match %s got %s", env.DELAY_QUEUE_NAME.String(), actual.Parent), false
+					}
+
+					httpRequest := &tasks.HttpRequest{
+						AuthorizationHeader: &tasks.HttpRequest_OauthToken{
+							OauthToken: &tasks.OAuthToken{
+								ServiceAccountEmail: "test@test.com",
+							},
+						},
+						HttpMethod: tasks.HttpMethod_POST,
+						Url:        fmt.Sprintf("https://pubsub.googleapis.com/v1/%s:publish", "test"),
+						Body:       []byte("{\"messages\":[{\"attributes\":{\"x-cloud-trace-context\":\"00000000000000000000000000000000/0;o=0\",\"x-nitric-topic\":\"Test\"},\"data\":\"ChAKDgoEVGVzdBIGGgR0ZXN0\"}]}"),
+					}
+
+					if !proto.Equal(actual.Task.GetHttpRequest(), httpRequest) {
+						return fmt.Sprintf("%+v\nActual: %+v", httpRequest, actual.Task.GetHttpRequest()), false
+					}
+
+					return "partial match is valid", true
+				})
+
+				cloudtasksClient.EXPECT().CreateTask(gomock.Any(), matchBy).Return(nil, nil)
 
 				_, err := pubsubPlugin.Publish(context.TODO(), &topicpb.TopicPublishRequest{
 					TopicName: "Test",
 					Message:   message,
-					Delay:     durationpb.New(60),
+					Delay:     durationpb.New(60 * time.Second),
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 			})

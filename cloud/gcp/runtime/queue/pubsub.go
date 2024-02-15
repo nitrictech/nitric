@@ -39,6 +39,7 @@ import (
 
 	ifaces_pubsub "github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
@@ -247,7 +248,10 @@ func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueRec
 		var structPayload structpb.Struct
 		err := proto.Unmarshal(m.Message.Data, &structPayload)
 		if err != nil {
-			// TODO: append error to error list and Nack the message.
+			// This item could be immediately requeued.
+			// However, that risks the unprocessable items being reprocessed immediately,
+			// causing a loop where the receiver frequently attempts to receive the same item.
+			logger.Errorf("failed to deserialize queue item payload: %s", err.Error())
 			continue
 		}
 
@@ -335,8 +339,7 @@ func New() (*PubsubQueueService, error) {
 	}
 
 	return &PubsubQueueService{
-		client: ifaces_pubsub.AdaptPubsubClient(client),
-		// TODO: replace this with a better mechanism for mocking the client.
+		client:              ifaces_pubsub.AdaptPubsubClient(client),
 		newSubscriberClient: adaptNewClient(pubsubbase.NewSubscriberClient),
 		projectId:           credentials.ProjectID,
 	}, nil

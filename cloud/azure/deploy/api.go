@@ -124,9 +124,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		ResourceGroupName:    p.resourceGroup.Name,
 		SubscriptionRequired: pulumi.Bool(false),
 		ServiceName:          mgmtService.Name,
-		// XXX: Do we need to stringify this?
-		// Not need to transform the original spec,
-		// the mapping occurs as part of the operation policies below
+		// No need to transform the original spec, the mapping occurs as part of the operation policies below
 		Value: pulumi.String(string(b)),
 	}, opts...)
 	if err != nil {

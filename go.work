@@ -1,4 +1,4 @@
-go 1.21
+go 1.21.3
 
 use (
 	./cloud/aws
@@ -7,4 +7,5 @@ use (
 	./cloud/debug
 	./cloud/gcp
 	./core
+	./test
 )

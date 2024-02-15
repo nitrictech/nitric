@@ -135,7 +135,7 @@ message DownResult {}
 // An image source to be used for service deployment
 message ImageSource {
     // URI of the docker image
-    // TODO: May also need to provide auth information (although this should just be configured on the running client already)
+    // To support remote images this may also need to provide auth information
     string uri = 1;
 }
 
@@ -297,14 +297,10 @@ message Resource {
     }
 }
 
-// This is already defined in the resource contracts...
-// Need to determine if it's worth re-using
+// This is already defined in the resource contracts,
 // unfortunately there are parts we don't want to duplicate, such as API config
 message Policy {
     repeated Resource principals = 1;
-    // TODO: Split out discrete action definitions from resources
-    // Also need to allow custom action types as well
-    // Should incorporate action re-use here...
     repeated nitric.proto.resources.v1.Action actions = 2;
     repeated Resource resources = 3;
 }

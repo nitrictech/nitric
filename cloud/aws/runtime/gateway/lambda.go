@@ -165,9 +165,8 @@ func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, websockets web
 	resp, err := websockets.HandleRequest(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-			Body:       "error processing lambda request",
-			// TODO: Need to determine best case when to use this...
+			StatusCode:      500,
+			Body:            "error processing lambda request",
 			IsBase64Encoded: false,
 		}, nil
 	}
@@ -401,13 +400,6 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topic
 			},
 		}
 
-		// TODO: Reimplement telemetry
-		// var mc propagation.MapCarrier = attrs
-		// trigResp, err := wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
-		// if err != nil {
-		// 	return nil, err
-		// }
-
 		resp, err := subscriptions.HandleRequest(request)
 		if err != nil {
 			return nil, err
@@ -464,14 +456,6 @@ func (s *LambdaGateway) processS3Event(ctx context.Context, storageListeners sto
 				},
 			},
 		}
-
-		// TODO: reimplement tracing
-		// var mc propagation.MapCarrier = s3Record.ResponseElements
-
-		// _, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
-		// if err != nil {
-		//	return nil, err
-		// }
 
 		resp, err := storageListeners.HandleRequest(msg)
 		if err != nil {

@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/core/pkg/help"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	"github.com/getkin/kin-openapi/openapi2"
@@ -148,8 +149,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			if pair, ok := p.(nameUrlPair); ok {
 				naps[pair.name] = pair.invokeUrl
 			} else {
-				// XXX: Should not occur
-				return "", fmt.Errorf("invalid data %T %v", p, p)
+				return "", fmt.Errorf("failed to resolve Cloud Run container URL for api %s, invalid name URL pair value %T %v, %s", name, p, p, help.BugInNitricHelpText())
 			}
 		}
 

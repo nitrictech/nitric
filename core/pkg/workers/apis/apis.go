@@ -58,7 +58,6 @@ func extractPathParams(route string, requestPath string) (map[string]string, err
 	pathSegments := splitPath(route)
 	params := make(map[string]string)
 
-	// TODO: Filter for trailing/leading slashes
 	if len(requestPathSegments) != len(pathSegments) {
 		return nil, fmt.Errorf("path template mismatch")
 	}

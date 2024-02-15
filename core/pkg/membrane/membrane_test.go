@@ -58,7 +58,6 @@ var _ = Describe("Membrane", func() {
 				By("starting the gateway plugin")
 				mockGateway.EXPECT().Start(gomock.Any()).Times(1).Return(nil)
 
-				// FIXME: Race condition causing inconsistent error here
 				_ = membrane.Start()
 			})
 		})
@@ -128,7 +127,6 @@ var _ = Describe("Membrane", func() {
 				})
 
 				It("Should wait for the service to start", func() {
-					// FIXME: Inconsistent error return with mocks
 					_ = mb.Start()
 				})
 			})

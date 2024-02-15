@@ -146,9 +146,6 @@ func (g *gcpMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.
 			ctx.Error("Can not handle event for empty schedule", 400)
 		}
 
-		// var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
-		// traceCtx := propagator.CloudTraceFormatPropagator{}.Extract(context.TODO(), hc)
-
 		_, err := opts.SchedulesPlugin.HandleRequest(&schedulespb.ServerMessage{
 			Content: &schedulespb.ServerMessage_IntervalRequest{
 				IntervalRequest: &schedulespb.IntervalRequest{
@@ -157,8 +154,9 @@ func (g *gcpMiddleware) handleSchedule(opts *gateway.GatewayStartOpts) fasthttp.
 			},
 		})
 		if err != nil {
-			// FIXME: Make sure that all schedule failures have consistent behaviour across providers
 			logger.Errorf("could not handle trigger for schedule %s: %s", scheduleName, err.Error())
+			ctx.Error("could not handle trigger", 500)
+			return
 		}
 
 		ctx.SuccessString("text/plain", "success")
@@ -187,8 +185,6 @@ func (g *gcpMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts)
 		bodyBytes := ctx.Request.Body()
 
 		// Check if the payload contains a pubsub event
-		// TODO: We probably want to use a simpler method than this
-		// like reading off the request origin to ensure it is from pubsub
 		var pubsubEvent PubSubMessage
 		if err := json.Unmarshal(bodyBytes, &pubsubEvent); err == nil && pubsubEvent.Subscription != "" {
 			bucketName := ctx.UserValue("name").(string)
@@ -199,17 +195,6 @@ func (g *gcpMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts)
 				ctx.Error(err.Error(), 400)
 				return
 			}
-
-			// traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
-			// traceCtx := context.TODO()
-
-			// if pubsubEvent.Message.Attributes[traceKey] != "" {
-			// 	var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
-			// 	traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, mc)
-			// } else {
-			// 	var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
-			// 	traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, hc)
-			// }
 
 			resp, err := opts.StorageListenerPlugin.HandleRequest(&storagepb.ServerMessage{
 				Content: &storagepb.ServerMessage_BlobEventRequest{
@@ -230,7 +215,7 @@ func (g *gcpMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts)
 			}
 
 			if !resp.GetBlobEventResponse().Success {
-				ctx.Error(fmt.Sprintf("Error handling event"), 500)
+				ctx.Error("Error handling event", 500)
 				return
 			}
 

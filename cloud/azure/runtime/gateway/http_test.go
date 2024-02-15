@@ -39,6 +39,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	"github.com/nitrictech/nitric/test"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
@@ -79,9 +80,8 @@ var _ = Describe("Http", func() {
 		_ = gw.Start(gatewayOptions)
 	}(httpPlugin)
 
-	// Delay to allow the HTTP server to correctly start
-	// FIXME: Should block on channels...
-	time.Sleep(1000 * time.Millisecond)
+	// Delay to allow the HTTP server to correctly start, ideally we could block on a channel instead of waiting a fixed time
+	time.Sleep(1 * time.Second)
 
 	When("Invoking the Azure AppService HTTP Gateway", func() {
 		When("with a standard Nitric Request", func() {
@@ -95,8 +95,24 @@ var _ = Describe("Http", func() {
 
 			It("Should be handled successfully", func() {
 				By("Handling exactly 1 request")
-				// TODO: Fix panic on request comparison
-				mockManager.EXPECT().HandleRequest("test", gomock.Any()).Return(&apispb.ClientMessage{
+
+				mockRequest := &apispb.ServerMessage{
+					Content: &apispb.ServerMessage_HttpRequest{
+						HttpRequest: &apispb.HttpRequest{
+							Method: "POST",
+							Path:   "test/",
+							Headers: map[string]*apispb.HeaderValue{
+								"Content-Length":  {Value: []string{"4"}},
+								"User-Agent":      {Value: []string{"Go-http-client/1.1"}},
+								"X-Forwarded-For": {Value: []string{"127.0.0.1:9001"}},
+								"Accept-Encoding": {Value: []string{"gzip"}},
+							},
+							Body: payload,
+						},
+					},
+				}
+
+				mockManager.EXPECT().HandleRequest("test", test.ProtoEq(mockRequest)).Return(&apispb.ClientMessage{
 					Id: "TODO",
 					Content: &apispb.ClientMessage_HttpResponse{
 						HttpResponse: &apispb.HttpResponse{
@@ -161,8 +177,7 @@ var _ = Describe("Http", func() {
 			})
 		})
 
-		// FIXME: See why the plugin is nil
-		PWhen("With a Notification event", func() {
+		When("With a Notification event", func() {
 			ctrl := gomock.NewController(GinkgoT())
 
 			mockManager := mock_topics.NewMockSubscriptionRequestHandler(ctrl)
@@ -188,15 +203,17 @@ var _ = Describe("Http", func() {
 				// By("Returning the expected worker")
 				// pool.EXPECT().GetWorker(gomock.Any()).AnyTimes().Return(mockHandler, nil)
 
-				By("Handling exactly 1 request")
-				mockManager.EXPECT().HandleRequest(&topicspb.ServerMessage{
+				mockRequest := &topicspb.ServerMessage{
 					Content: &topicspb.ServerMessage_MessageRequest{
 						MessageRequest: &topicspb.MessageRequest{
 							TopicName: testTopic,
 							Message:   messagePayload,
 						},
 					},
-				}).Return(&topicspb.ClientMessage{
+				}
+
+				By("Handling exactly 1 request")
+				mockManager.EXPECT().HandleRequest(test.ProtoEq(mockRequest)).Return(&topicspb.ClientMessage{
 					Content: &topicspb.ClientMessage_MessageResponse{
 						MessageResponse: &topicspb.MessageResponse{
 							Success: true,

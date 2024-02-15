@@ -108,7 +108,6 @@ func (s *S3StorageService) Read(ctx context.Context, req *storagepb.StorageReadR
 		}
 
 		defer resp.Body.Close()
-		// TODO: Wrap the possible error from ReadAll
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
@@ -169,7 +168,6 @@ func (s *S3StorageService) Delete(ctx context.Context, req *storagepb.StorageDel
 	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Delete")
 
 	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
-		// TODO: should we handle delete markers, etc.?
 		if _, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: b,
 			Key:    aws.String(req.Key),
@@ -319,7 +317,6 @@ func (s *S3StorageService) Exists(ctx context.Context, req *storagepb.StorageExi
 			)
 		}
 
-		// FIXME: handle errors that aren't "not found"
 		return &storagepb.StorageExistsResponse{
 			Exists: false,
 		}, nil

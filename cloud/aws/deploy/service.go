@@ -148,6 +148,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	listActions := []string{
+		// TODO: test that all resources still work without these permissions
 		"sns:ListTopics",
 		"sqs:ListQueues",
 		"dynamodb:ListTables",
@@ -155,6 +156,11 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		"tag:GetResources",
 		"apigateway:GET",
 	}
+
+	// This is a tag key unique to this instance of the deployed stack.
+	// Any resource with this unique tag will inherently be scoped to this stack.
+	// This is used to scope the permissions of the lambda to only resources created by this stack.
+	// stackScopedNameKey := tags.GetResourceNameKey(a.stackId)
 
 	// Add resource list permissions
 	// Currently the membrane will use list operations
@@ -165,6 +171,12 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 				"Action":   append(listActions, telemetryActions...),
 				"Effect":   "Allow",
 				"Resource": "*",
+				// "Condition": map[string]map[string]string{
+				// 	// Only apply this to resources who have a resource name key that matches this stack
+				// 	"Null": {
+				// 		fmt.Sprintf("aws:ResourceTag/%s", stackScopedNameKey): "false",
+				// 	},
+				// },
 			},
 		},
 	})
@@ -172,8 +184,6 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return err
 	}
 
-	// TODO: Lock this SNS topics for which this function has pub definitions
-	// FIXME: Limit to known resources
 	_, err = iam.NewRolePolicy(ctx, name+"ListAccess", &iam.RolePolicyArgs{
 		Role:   a.lambdaRoles[name].ID(),
 		Policy: pulumi.String(tmpJSON),

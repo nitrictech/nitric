@@ -54,7 +54,6 @@ func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 
 		// Google App Engine cron syntax only support hours, minutes and seconds. Convert days to hours
 		if strings.HasPrefix(parts[1], "day") {
-			// TODO: verify that rates exceeding 24 hours are supported.
 			parts[0] = fmt.Sprintf("%d", initialRate*24)
 			parts[1] = "hours"
 		}

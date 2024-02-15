@@ -21,9 +21,6 @@ import (
 	"net"
 	"time"
 
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
@@ -93,16 +90,8 @@ type MembraneOptions struct {
 }
 
 type Membrane struct {
-	// Address & port to bind the membrane service interfaces to
-	// serviceAddress string
-
-	processManager       pm.ProcessManager
-	tracerProvider       *sdktrace.TracerProvider
-	createTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
-
-	// childTimeoutSeconds int
-
-	options MembraneOptions
+	processManager pm.ProcessManager
+	options        MembraneOptions
 
 	// Suppress println statements in the membrane server
 	suppressLogs bool
@@ -169,30 +158,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 
 	if s.grpcServer == nil {
 		opts := []grpc.ServerOption{
-			// FIXME: Find out what the max worker value
 			grpc.MaxConcurrentStreams(uint32(maxWorkers)),
-		}
-
-		if s.createTracerProvider != nil {
-			tp, err := s.createTracerProvider(context.Background())
-			if err != nil {
-				logger.Errorf("traceProvider %v", err)
-				return err
-			}
-
-			if tp != nil {
-				logger.Debug("traceProvider connected")
-				otel.SetTracerProvider(tp)
-			}
-
-			interceptorOpts := []otelgrpc.Option{
-				otelgrpc.WithPropagators(propagation.TraceContext{}),
-			}
-
-			opts = append(opts,
-				grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(interceptorOpts...)),
-				grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(interceptorOpts...)),
-			)
 		}
 
 		s.grpcServer = grpc.NewServer(opts...)
@@ -287,12 +253,6 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 		})
 	}(gatewayErrchan)
 
-	// Start the worker pool monitor
-	// go func(errch chan error) {
-	// 	s.log("Starting Worker Supervisor")
-	// 	errch <- s.pool.Monitor()
-	// }(poolErrchan)
-
 	processErrchan := make(chan error)
 	go func(errch chan error) {
 		errch <- s.processManager.Monitor()
@@ -309,8 +269,6 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 			return nil
 		}
 		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
-	// case poolErr := <-poolErrchan:
-	// 	exitErr = fmt.Errorf(fmt.Sprintf("Supervisor error: %v, exiting", poolErr))
 	case processErr := <-processErrchan:
 		exitErr = fmt.Errorf(fmt.Sprintf("Process error: %v, exiting", processErr))
 	}
@@ -319,9 +277,6 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 }
 
 func (s *Membrane) Stop() {
-	if s.tracerProvider != nil {
-		_ = s.tracerProvider.Shutdown(context.Background())
-	}
 	_ = s.options.GatewayPlugin.Stop()
 	s.grpcServer.Stop()
 	s.processManager.StopAll()
@@ -349,29 +304,10 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		return nil, errors.New("missing gateway plugin, Gateway plugin must not be nil")
 	}
 
-	bin := env.OTELCOL_BIN
-	config := env.OTELCOL_CONFIG
-	createTracerProvider := options.CreateTracerProvider
-
-	if createTracerProvider != nil && fileExists(bin.String()) && fileExists(config.String()) {
-		logger.Debug("Tracing is enabled")
-
-		options.PreCommands = [][]string{
-			{
-				bin.String(), "--config", config.String(),
-			},
-		}
-	} else {
-		logger.Debugf("Tracing is disabled %v %v %v", createTracerProvider != nil, fileExists(bin.String()), fileExists(config.String()))
-		createTracerProvider = nil
-	}
-
 	return &Membrane{
-		// serviceAddress:       options.ServiceAddress,
-		processManager:       pm.NewProcessManager(options.ChildCommand, options.PreCommands),
-		createTracerProvider: createTracerProvider,
-		options:              *options,
-		minWorkers:           minWorkers,
-		suppressLogs:         options.SuppressLogs,
+		processManager: pm.NewProcessManager(options.ChildCommand, options.PreCommands),
+		options:        *options,
+		minWorkers:     minWorkers,
+		suppressLogs:   options.SuppressLogs,
 	}, nil
 }

@@ -48,7 +48,7 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_BucketFileDelete: {
 		"s3:DeleteObject",
 	},
-	// XXX: Cannot be applied to single resources
+	// Cannot be applied to single resources
 	// v1.Action_TopicList: {
 	// 	"sns:ListTopics",
 	// },
@@ -71,7 +71,7 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_KeyValueStoreDelete: {
 		"dynamodb:DeleteItem",
 	},
-	// XXX: Cannot be applied to single resources
+	// Cannot be applied to single resources
 	// v1.Action_CollectionList: {
 	// 	"dynamodb:ListTables",
 	// },
@@ -91,7 +91,7 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 		"sqs:ReceiveMessage",
 		"sqs:DeleteMessage",
 	},
-	// XXX: Cannot be applied to single resources
+	// Cannot be applied to single resources
 	// v1.Action_QueueList: {
 	// 	"sqs:ListQueues",
 	// },
@@ -183,8 +183,10 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 
 	for _, princ := range config.Principals {
 		if role, err := a.roleForPrincipal(princ); err == nil {
-			// TODO: Eventually we'll need to combine resource type with principal
-			// but only functions can really be principals for now
+			if princ.Id.Type != resourcespb.ResourceType_Service {
+				return fmt.Errorf("invalid principal type: %s. Only services can be principals", princ.Id.Type)
+			}
+
 			principalRoles[princ.Id.Name] = role
 		} else {
 			return err

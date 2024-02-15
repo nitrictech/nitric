@@ -38,8 +38,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 	websocketApi, err := apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		ProtocolType: pulumi.String("WEBSOCKET"),
 		Tags:         pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.Websocket)),
-		// TODO: We won't actually be using this, but it is required.
-		// Instead we'll be using the $default route
+		// This isn't used (see AWS docs), but it is required. Instead we use the $default route
 		RouteSelectionExpression: pulumi.String("$request.body.action"),
 	}, opts...)
 	if err != nil {

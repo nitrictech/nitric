@@ -50,14 +50,10 @@ var (
 	// Alphanumerics and hyphens. Start and end with alphanumeric.
 	AnalyticsWorkspaceRT = ResourceType{Abbreviation: "log", MaxLen: 24, AllowHyphen: true}
 	AssignmentRT         = ResourceType{Abbreviation: "assign", MaxLen: 64, UseName: true}
-	// TODO find docs on this..
-	KubeRT = ResourceType{Abbreviation: "kube", MaxLen: 64, AllowUpperCase: true}
+	KubeRT               = ResourceType{Abbreviation: "kube", MaxLen: 64, AllowUpperCase: true}
 	// lowercase letters, numbers, and the '-' character, and must be between 3 and 50 characters.
-	CosmosDBAccountRT = ResourceType{Abbreviation: "cosmos", MaxLen: 50, AllowHyphen: true}
-	// TODO find requirements
-	MongoDBRT = ResourceType{Abbreviation: "mongo", MaxLen: 24, AllowUpperCase: true}
-	// TODO find requirements
-	MongoCollectionRT            = ResourceType{Abbreviation: "coll", MaxLen: 24, AllowUpperCase: true, UseName: true}
+	CosmosDBAccountRT            = ResourceType{Abbreviation: "cosmos", MaxLen: 50, AllowHyphen: true}
+	MongoDBRT                    = ResourceType{Abbreviation: "mongo", MaxLen: 24, AllowUpperCase: true}
 	ADApplicationRT              = ResourceType{Abbreviation: "aad-app", MaxLen: 64, UseName: true}
 	ADServicePrincipalRT         = ResourceType{Abbreviation: "aad-sp", MaxLen: 64, UseName: true}
 	ADServicePrincipalPasswordRT = ResourceType{Abbreviation: "aad-spp", MaxLen: 64, UseName: true}
@@ -69,30 +65,21 @@ var (
 	// Lowercase letters, numbers, and hyphens.
 	// Can't start or end with hyphen. Can't use consecutive hyphens.
 	StorageQueueRT = ResourceType{MaxLen: 63, AllowHyphen: true, UseName: true}
-
 	// Alphanumerics and hyphens. Start with letter. End with letter or digit. Can't contain consecutive hyphens.
 	KeyVaultRT = ResourceType{Abbreviation: "kv", MaxLen: 14, AllowUpperCase: true}
-
 	// Alphanumerics and hyphens.
 	EventGridRT = ResourceType{Abbreviation: "evgt", MaxLen: 24, AllowUpperCase: true, AllowHyphen: true, UseName: true}
-
 	// Alphanumerics and hyphens.
 	EventSubscriptionRT = ResourceType{Abbreviation: "sub", MaxLen: 24, AllowUpperCase: true, AllowHyphen: true, UseName: true}
-
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiRT = ResourceType{Abbreviation: "api", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true}
-
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiHttpProxyRT = ResourceType{Abbreviation: "httpproxy", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
-
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiManagementRT = ResourceType{Abbreviation: "api-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true}
-
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiManagementServiceRT = ResourceType{Abbreviation: "api-mgmt", MaxLen: 50, AllowHyphen: true, AllowUpperCase: true}
-
-	ApiManagementProxyRT = ResourceType{Abbreviation: "httpproxy-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
-
+	ApiManagementProxyRT   = ResourceType{Abbreviation: "httpproxy-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiOperationPolicyRT = ResourceType{Abbreviation: "api-op-pol", MaxLen: 80, AllowUpperCase: true, AllowHyphen: true, UseName: true}
 )

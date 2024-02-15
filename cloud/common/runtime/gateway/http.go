@@ -204,7 +204,6 @@ func (s *HttpGateway) Stop() error {
 }
 
 // Create new HTTP gateway
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func NewHttpGateway(opts *HttpGatewayOptions) (gateway.GatewayService, error) {
 	address := env.GATEWAY_ADDRESS.String()
 
