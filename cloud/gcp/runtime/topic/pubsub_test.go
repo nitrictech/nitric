@@ -161,7 +161,6 @@ var _ = Describe("Pubsub Plugin", func() {
 				By("the publish being successful")
 
 				matchBy := test.MatchBy(func(actual *tasks.CreateTaskRequest) (string, bool) {
-
 					if actual.Parent != env.DELAY_QUEUE_NAME.String() {
 						fmt.Printf("Parent didn't match\n")
 						return fmt.Sprintf("parent to match %s got %s", env.DELAY_QUEUE_NAME.String(), actual.Parent), false
