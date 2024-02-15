@@ -15,13 +15,11 @@
 package membrane
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 
 	"github.com/nitrictech/nitric/core/pkg/decorators"
@@ -82,8 +80,6 @@ type MembraneOptions struct {
 	// Server listeners
 
 	ResourcesPlugin resourcespb.ResourcesServer
-
-	CreateTracerProvider func(ctx context.Context) (*sdktrace.TracerProvider, error)
 
 	SuppressLogs            bool
 	TolerateMissingServices bool

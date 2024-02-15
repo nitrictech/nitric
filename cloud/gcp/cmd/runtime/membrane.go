@@ -78,7 +78,6 @@ func main() {
 	}
 
 	membraneOpts.ResourcesPlugin = provider
-	membraneOpts.CreateTracerProvider = newTraceProvider
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

@@ -60,7 +60,6 @@ func main() {
 	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)
 	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
 	membraneOpts.ResourcesPlugin = provider
-	membraneOpts.CreateTracerProvider = newTracerProvider
 	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
 
 	m, err := membrane.New(membraneOpts)
