@@ -190,7 +190,7 @@ func (s *SQSQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeu
 			)
 		}
 
-		tasks := make([]*queuespb.ReceivedMessage, 0, len(res.Messages))
+		tasks := make([]*queuespb.DequeuedMessage, 0, len(res.Messages))
 		for _, m := range res.Messages {
 			var queueMessage queuespb.QueueMessage
 
@@ -212,7 +212,7 @@ func (s *SQSQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeu
 				)
 			}
 
-			tasks = append(tasks, &queuespb.ReceivedMessage{
+			tasks = append(tasks, &queuespb.DequeuedMessage{
 				LeaseId: *m.ReceiptHandle,
 				Message: &queueMessage,
 			})

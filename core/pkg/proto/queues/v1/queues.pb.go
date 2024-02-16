@@ -192,7 +192,7 @@ type QueueDequeueResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Array of messages popped off the queue
-	Messages []*ReceivedMessage `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Messages []*DequeuedMessage `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
 }
 
 func (x *QueueDequeueResponse) Reset() {
@@ -227,7 +227,7 @@ func (*QueueDequeueResponse) Descriptor() ([]byte, []int) {
 	return file_nitric_proto_queues_v1_queues_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueueDequeueResponse) GetMessages() []*ReceivedMessage {
+func (x *QueueDequeueResponse) GetMessages() []*DequeuedMessage {
 	if x != nil {
 		return x.Messages
 	}
@@ -401,7 +401,7 @@ type QueueMessage_StructPayload struct {
 
 func (*QueueMessage_StructPayload) isQueueMessage_Content() {}
 
-type ReceivedMessage struct {
+type DequeuedMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -410,8 +410,8 @@ type ReceivedMessage struct {
 	Message *QueueMessage `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 }
 
-func (x *ReceivedMessage) Reset() {
-	*x = ReceivedMessage{}
+func (x *DequeuedMessage) Reset() {
+	*x = DequeuedMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_nitric_proto_queues_v1_queues_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -419,13 +419,13 @@ func (x *ReceivedMessage) Reset() {
 	}
 }
 
-func (x *ReceivedMessage) String() string {
+func (x *DequeuedMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReceivedMessage) ProtoMessage() {}
+func (*DequeuedMessage) ProtoMessage() {}
 
-func (x *ReceivedMessage) ProtoReflect() protoreflect.Message {
+func (x *DequeuedMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_nitric_proto_queues_v1_queues_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -437,19 +437,19 @@ func (x *ReceivedMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReceivedMessage.ProtoReflect.Descriptor instead.
-func (*ReceivedMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use DequeuedMessage.ProtoReflect.Descriptor instead.
+func (*DequeuedMessage) Descriptor() ([]byte, []int) {
 	return file_nitric_proto_queues_v1_queues_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ReceivedMessage) GetLeaseId() string {
+func (x *DequeuedMessage) GetLeaseId() string {
 	if x != nil {
 		return x.LeaseId
 	}
 	return ""
 }
 
-func (x *ReceivedMessage) GetMessage() *QueueMessage {
+func (x *DequeuedMessage) GetMessage() *QueueMessage {
 	if x != nil {
 		return x.Message
 	}
@@ -545,7 +545,7 @@ var file_nitric_proto_queues_v1_queues_proto_rawDesc = []byte{
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67,
 	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6e, 0x69, 0x74, 0x72, 0x69,
 	0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x71, 0x75, 0x65, 0x75, 0x65, 0x73, 0x2e, 0x76,
-	0x31, 0x2e, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x31, 0x2e, 0x44, 0x65, 0x71, 0x75, 0x65, 0x75, 0x65, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
 	0x65, 0x52, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x22, 0x50, 0x0a, 0x14, 0x51,
 	0x75, 0x65, 0x75, 0x65, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x71, 0x75, 0x65, 0x75, 0x65, 0x5f, 0x6e, 0x61, 0x6d,
@@ -559,7 +559,7 @@ var file_nitric_proto_queues_v1_queues_proto_rawDesc = []byte{
 	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
 	0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x48, 0x00, 0x52, 0x0d, 0x73, 0x74, 0x72, 0x75, 0x63,
 	0x74, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x42, 0x09, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74,
-	0x65, 0x6e, 0x74, 0x22, 0x6c, 0x0a, 0x0f, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x64, 0x4d,
+	0x65, 0x6e, 0x74, 0x22, 0x6c, 0x0a, 0x0f, 0x44, 0x65, 0x71, 0x75, 0x65, 0x75, 0x65, 0x64, 0x4d,
 	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x5f,
 	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49,
 	0x64, 0x12, 0x3e, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01,
@@ -627,16 +627,16 @@ var file_nitric_proto_queues_v1_queues_proto_goTypes = []interface{}{
 	(*QueueCompleteRequest)(nil),  // 4: nitric.proto.queues.v1.QueueCompleteRequest
 	(*QueueCompleteResponse)(nil), // 5: nitric.proto.queues.v1.QueueCompleteResponse
 	(*QueueMessage)(nil),          // 6: nitric.proto.queues.v1.QueueMessage
-	(*ReceivedMessage)(nil),       // 7: nitric.proto.queues.v1.ReceivedMessage
+	(*DequeuedMessage)(nil),       // 7: nitric.proto.queues.v1.DequeuedMessage
 	(*FailedEnqueueMessage)(nil),  // 8: nitric.proto.queues.v1.FailedEnqueueMessage
 	(*structpb.Struct)(nil),       // 9: google.protobuf.Struct
 }
 var file_nitric_proto_queues_v1_queues_proto_depIdxs = []int32{
 	6, // 0: nitric.proto.queues.v1.QueueEnqueueRequest.messages:type_name -> nitric.proto.queues.v1.QueueMessage
 	8, // 1: nitric.proto.queues.v1.QueueEnqueueResponse.failed_messages:type_name -> nitric.proto.queues.v1.FailedEnqueueMessage
-	7, // 2: nitric.proto.queues.v1.QueueDequeueResponse.messages:type_name -> nitric.proto.queues.v1.ReceivedMessage
+	7, // 2: nitric.proto.queues.v1.QueueDequeueResponse.messages:type_name -> nitric.proto.queues.v1.DequeuedMessage
 	9, // 3: nitric.proto.queues.v1.QueueMessage.struct_payload:type_name -> google.protobuf.Struct
-	6, // 4: nitric.proto.queues.v1.ReceivedMessage.message:type_name -> nitric.proto.queues.v1.QueueMessage
+	6, // 4: nitric.proto.queues.v1.DequeuedMessage.message:type_name -> nitric.proto.queues.v1.QueueMessage
 	6, // 5: nitric.proto.queues.v1.FailedEnqueueMessage.message:type_name -> nitric.proto.queues.v1.QueueMessage
 	0, // 6: nitric.proto.queues.v1.Queues.Enqueue:input_type -> nitric.proto.queues.v1.QueueEnqueueRequest
 	2, // 7: nitric.proto.queues.v1.Queues.Dequeue:input_type -> nitric.proto.queues.v1.QueueDequeueRequest
@@ -742,7 +742,7 @@ func file_nitric_proto_queues_v1_queues_proto_init() {
 			}
 		}
 		file_nitric_proto_queues_v1_queues_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReceivedMessage); i {
+			switch v := v.(*DequeuedMessage); i {
 			case 0:
 				return &v.state
 			case 1:

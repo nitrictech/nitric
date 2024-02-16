@@ -57,41 +57,13 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 			"/",
 		}),
 	},
-	resourcespb.Action_QueueList: {
-		Description: pulumi.String("queue list access"),
-		Permissions: authorization.PermissionArray{
-			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{
-					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
-				},
-				DataActions: pulumi.StringArray{},
-				NotActions:  pulumi.StringArray{},
-			},
-		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
-	},
-	resourcespb.Action_QueueDetail: {
-		Description: pulumi.String("queue detail access"),
-		Permissions: authorization.PermissionArray{
-			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{
-					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
-				},
-				DataActions: pulumi.StringArray{},
-				NotActions:  pulumi.StringArray{},
-			},
-		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
-	},
-	resourcespb.Action_QueueSend: {
+	resourcespb.Action_QueueEnqueue: {
 		Description: pulumi.String("queue send access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{},
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/read"),
+				},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/queueServices/queues/messages/write"),
 				},
@@ -102,7 +74,7 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 			"/",
 		}),
 	},
-	resourcespb.Action_QueueReceive: {
+	resourcespb.Action_QueueDequeue: {
 		Description: pulumi.String("queue receive access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
@@ -214,41 +186,12 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 			"/",
 		}),
 	},
-	resourcespb.Action_TopicDetail: {
-		Description: pulumi.String("topic detail access"),
-		Permissions: authorization.PermissionArray{
-			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{
-					pulumi.String("Microsoft.EventGrid/topics/read"),
-				},
-				DataActions: pulumi.StringArray{},
-				NotActions:  pulumi.StringArray{},
-			},
-		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
-	},
-	resourcespb.Action_TopicList: {
-		Description: pulumi.String("topic list access"),
-		Permissions: authorization.PermissionArray{
-			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{
-					pulumi.String("Microsoft.EventGrid/topics/read"),
-				},
-				DataActions: pulumi.StringArray{},
-				NotActions:  pulumi.StringArray{},
-			},
-		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
-	},
-	resourcespb.Action_TopicEventPublish: {
+	resourcespb.Action_TopicPublish: {
 		Description: pulumi.String("topic event publish access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
 				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.EventGrid/topics/read"),
 					pulumi.String("Microsoft.EventGrid/topics/*/write"),
 				},
 				DataActions: pulumi.StringArray{
@@ -307,18 +250,14 @@ var actionNames = map[resourcespb.Action]string{
 	resourcespb.Action_BucketFilePut:       "BucketFilePut",
 	resourcespb.Action_BucketFileDelete:    "BucketFileDelete",
 	resourcespb.Action_BucketFileList:      "BucketFileList",
-	resourcespb.Action_TopicDetail:         "TopicDetail",
-	resourcespb.Action_TopicEventPublish:   "TopicPublish",
-	resourcespb.Action_TopicList:           "TopicList",
+	resourcespb.Action_TopicPublish:        "TopicPublish",
 	resourcespb.Action_SecretAccess:        "SecretAccess",
 	resourcespb.Action_SecretPut:           "SecretPut",
 	resourcespb.Action_KeyValueStoreDelete: "KeyValueStoreDelete",
 	resourcespb.Action_KeyValueStoreRead:   "KeyValueStoreRead",
 	resourcespb.Action_KeyValueStoreWrite:  "KeyValueStoreWrite",
-	resourcespb.Action_QueueSend:           "QueueSend",
-	resourcespb.Action_QueueReceive:        "QueueReceive",
-	resourcespb.Action_QueueDetail:         "QueueDetail",
-	resourcespb.Action_QueueList:           "QueueList",
+	resourcespb.Action_QueueEnqueue:        "QueueEnqueue",
+	resourcespb.Action_QueueDequeue:        "QueueDequeue",
 }
 
 func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {

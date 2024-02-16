@@ -26,6 +26,7 @@ import (
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func md5Hash(b []byte) string {
@@ -48,14 +49,8 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_BucketFileDelete: {
 		"s3:DeleteObject",
 	},
-	// Cannot be applied to single resources
-	// v1.Action_TopicList: {
-	// 	"sns:ListTopics",
-	// },
-	resourcespb.Action_TopicDetail: {
+	resourcespb.Action_TopicPublish: {
 		"sns:GetTopicAttributes",
-	},
-	resourcespb.Action_TopicEventPublish: {
 		"sns:Publish",
 		"states:StartExecution",
 		"states:StateSyncExecution",
@@ -71,10 +66,6 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_KeyValueStoreDelete: {
 		"dynamodb:DeleteItem",
 	},
-	// Cannot be applied to single resources
-	// v1.Action_CollectionList: {
-	// 	"dynamodb:ListTables",
-	// },
 	resourcespb.Action_SecretAccess: {
 		"secretsmanager:GetSecretValue",
 	},
@@ -84,18 +75,15 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_WebsocketManage: {
 		"execute-api:ManageConnections",
 	},
-	resourcespb.Action_QueueSend: {
+	resourcespb.Action_QueueEnqueue: {
 		"sqs:SendMessage",
+		"sqs:GetQueueAttributes",
+		"sqs:GetQueueUrl",
+		"sqs:ListQueueTags",
 	},
-	resourcespb.Action_QueueReceive: {
+	resourcespb.Action_QueueDequeue: {
 		"sqs:ReceiveMessage",
 		"sqs:DeleteMessage",
-	},
-	// Cannot be applied to single resources
-	// v1.Action_QueueList: {
-	// 	"sqs:ListQueues",
-	// },
-	resourcespb.Action_QueueDetail: {
 		"sqs:GetQueueAttributes",
 		"sqs:GetQueueUrl",
 		"sqs:ListQueueTags",
@@ -108,6 +96,8 @@ func actionsToAwsActions(actions []resourcespb.Action) []string {
 	for _, a := range actions {
 		awsActions = append(awsActions, awsActionsMap[a]...)
 	}
+
+	awsActions = lo.Uniq(awsActions)
 
 	return awsActions
 }

@@ -45,7 +45,7 @@ message QueueDequeueRequest {
 
 message QueueDequeueResponse {
   // Array of messages popped off the queue
-  repeated ReceivedMessage messages = 1;
+  repeated DequeuedMessage messages = 1;
 }
 
 message QueueCompleteRequest {
@@ -67,7 +67,7 @@ message QueueMessage {
   }
 }
 
-message ReceivedMessage {
+message DequeuedMessage {
   string lease_id = 1;
 
   QueueMessage message = 2;

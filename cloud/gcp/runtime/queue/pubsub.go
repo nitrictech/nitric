@@ -236,12 +236,12 @@ func (s *PubsubQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDeq
 	// we return our own empty list in turn.
 	if len(res.ReceivedMessages) == 0 {
 		return &queuespb.QueueDequeueResponse{
-			Messages: []*queuespb.ReceivedMessage{},
+			Messages: []*queuespb.DequeuedMessage{},
 		}, nil
 	}
 
 	// Convert the PubSub messages into Nitric tasks
-	var tasks []*queuespb.ReceivedMessage
+	var tasks []*queuespb.DequeuedMessage
 	for _, m := range res.ReceivedMessages {
 		// var nitricTask queuespb.ReceivedTask
 		var queueMessage queuespb.QueueMessage
@@ -254,7 +254,7 @@ func (s *PubsubQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDeq
 			continue
 		}
 
-		tasks = append(tasks, &queuespb.ReceivedMessage{
+		tasks = append(tasks, &queuespb.DequeuedMessage{
 			Message: &queueMessage,
 			LeaseId: m.AckId,
 		})

@@ -156,12 +156,12 @@ func (s *AzqueueQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDe
 
 	if dequeueResp.NumMessages() == 0 {
 		return &queuespb.QueueDequeueResponse{
-			Messages: []*queuespb.ReceivedMessage{},
+			Messages: []*queuespb.DequeuedMessage{},
 		}, nil
 	}
 
 	// Convert the Azure Storage Queues messages into Nitric tasks
-	tasks := []*queuespb.ReceivedMessage{}
+	tasks := []*queuespb.DequeuedMessage{}
 	for i := int32(0); i < dequeueResp.NumMessages(); i++ {
 		m := dequeueResp.Message(i)
 		var queueMessage queuespb.QueueMessage
@@ -201,7 +201,7 @@ func (s *AzqueueQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDe
 			)
 		}
 
-		tasks = append(tasks, &queuespb.ReceivedMessage{
+		tasks = append(tasks, &queuespb.DequeuedMessage{
 			LeaseId: leaseID,
 			Message: &queueMessage,
 		})
