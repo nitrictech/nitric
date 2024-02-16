@@ -55,9 +55,9 @@ message WebsocketCloseConnectionRequest {
 message WebsocketCloseConnectionResponse {}
 
 
-// Messages the client is able to send to the server
+// ClientMessages are sent from the service to the nitric server
 message ClientMessage {
-  // Client message ID, used to pair requests/responses
+  // Globally unique id to pair requests/responses
   string id = 1;
 
   oneof content {
@@ -106,7 +106,7 @@ message WebsocketEventRequest {
 
 message QueryValue { repeated string value = 1; }
 
-// Messages the server is able to send to the client
+// ServerMessages are sent from the nitric server to the service
 message ServerMessage {
   // Server message ID, used to pair requests/responses
   string id = 1;

@@ -14,17 +14,17 @@ option csharp_namespace = "Nitric.Proto.KeyValue.v1";
 
 // Service for storage and retrieval of simple JSON keyValue
 service KeyValue {
-  // Get an existing document
+  // Get an existing value
   rpc Get (KeyValueGetRequest) returns (KeyValueGetResponse);
 
-  // Create a new or overwrite an existing document
+  // Create a new or overwrite an existing value
   rpc Set (KeyValueSetRequest) returns (KeyValueSetResponse);
 
-  // Delete an existing document
+  // Delete a key and its value
   rpc Delete (KeyValueDeleteRequest) returns (KeyValueDeleteResponse);
 }
 
-// Provides a Key Value Store type for storing documents
+// Provides a Key/Value Store
 message Store {
   // The store name
   string name = 1;
@@ -47,8 +47,6 @@ message Value {
   // The content (JSON object)
   google.protobuf.Struct content = 2;
 }
-
-// Service Request & Response Messages
 
 message KeyValueGetRequest {
   // ValueRef of the key/value pair to get, which includes the store and key
