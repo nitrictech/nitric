@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Provides a Key Value Store type for storing documents
+// Provides a Key/Value Store
 type Store struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

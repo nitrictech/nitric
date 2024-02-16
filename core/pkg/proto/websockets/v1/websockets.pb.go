@@ -365,13 +365,13 @@ func (*WebsocketCloseConnectionResponse) Descriptor() ([]byte, []int) {
 	return file_nitric_proto_websockets_v1_websockets_proto_rawDescGZIP(), []int{5}
 }
 
-// Messages the client is able to send to the server
+// ClientMessages are sent from the service to the nitric server
 type ClientMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Client message ID, used to pair requests/responses
+	// Globally unique id to pair requests/responses
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
 	//
@@ -716,7 +716,7 @@ func (x *QueryValue) GetValue() []string {
 	return nil
 }
 
-// Messages the server is able to send to the client
+// ServerMessages are sent from the nitric server to the service
 type ServerMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

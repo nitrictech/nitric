@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KeyValueClient interface {
-	// Get an existing document
+	// Get an existing value
 	Get(ctx context.Context, in *KeyValueGetRequest, opts ...grpc.CallOption) (*KeyValueGetResponse, error)
-	// Create a new or overwrite an existing document
+	// Create a new or overwrite an existing value
 	Set(ctx context.Context, in *KeyValueSetRequest, opts ...grpc.CallOption) (*KeyValueSetResponse, error)
-	// Delete an existing document
+	// Delete a key and its value
 	Delete(ctx context.Context, in *KeyValueDeleteRequest, opts ...grpc.CallOption) (*KeyValueDeleteResponse, error)
 }
 
@@ -69,11 +69,11 @@ func (c *keyValueClient) Delete(ctx context.Context, in *KeyValueDeleteRequest, 
 // All implementations should embed UnimplementedKeyValueServer
 // for forward compatibility
 type KeyValueServer interface {
-	// Get an existing document
+	// Get an existing value
 	Get(context.Context, *KeyValueGetRequest) (*KeyValueGetResponse, error)
-	// Create a new or overwrite an existing document
+	// Create a new or overwrite an existing value
 	Set(context.Context, *KeyValueSetRequest) (*KeyValueSetResponse, error)
-	// Delete an existing document
+	// Delete a key and its value
 	Delete(context.Context, *KeyValueDeleteRequest) (*KeyValueDeleteResponse, error)
 }
 

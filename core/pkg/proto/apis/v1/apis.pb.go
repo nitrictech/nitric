@@ -114,6 +114,7 @@ func (x *ApiDetailsResponse) GetUrl() string {
 	return ""
 }
 
+// ClientMessage sent by the service to the nitric server
 type ClientMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -193,7 +194,7 @@ type isClientMessage_Content interface {
 }
 
 type ClientMessage_RegistrationRequest struct {
-	// Register a subscription to a topic
+	// Register an API route handler
 	RegistrationRequest *RegistrationRequest `protobuf:"bytes,2,opt,name=registration_request,json=registrationRequest,proto3,oneof"`
 }
 
@@ -399,7 +400,7 @@ type HttpResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The HTTP status of the request
+	// The HTTP response status code
 	Status int32 `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"`
 	// HTTP response headers
 	Headers map[string]*HeaderValue `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -460,6 +461,7 @@ func (x *HttpResponse) GetBody() []byte {
 	return nil
 }
 
+// ServerMessage sent by the nitric server to the service
 type ServerMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -539,12 +541,12 @@ type isServerMessage_Content interface {
 }
 
 type ServerMessage_RegistrationResponse struct {
-	// Response to a topic subscription request
+	// Response to an API serve request
 	RegistrationResponse *RegistrationResponse `protobuf:"bytes,2,opt,name=registration_response,json=registrationResponse,proto3,oneof"`
 }
 
 type ServerMessage_HttpRequest struct {
-	// Response to a topic message request
+	// HTTP request to be routed to the service (handler)
 	HttpRequest *HttpRequest `protobuf:"bytes,3,opt,name=http_request,json=httpRequest,proto3,oneof"`
 }
 

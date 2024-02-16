@@ -20,6 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ClientMessages are sent from the service to the nitric server
 type ClientMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -99,12 +100,12 @@ type isClientMessage_Content interface {
 }
 
 type ClientMessage_RegistrationRequest struct {
-	// Register a subscription to a schedule
+	// Register new a schedule
 	RegistrationRequest *RegistrationRequest `protobuf:"bytes,2,opt,name=registration_request,json=registrationRequest,proto3,oneof"`
 }
 
 type ClientMessage_IntervalResponse struct {
-	// Response to a schedule interval
+	// Response to a schedule interval (i.e. response from callback function)
 	IntervalResponse *IntervalResponse `protobuf:"bytes,3,opt,name=interval_response,json=intervalResponse,proto3,oneof"`
 }
 
@@ -159,6 +160,7 @@ func (x *IntervalRequest) GetScheduleName() string {
 	return ""
 }
 
+// ServerMessages are sent from the nitric server to the service
 type ServerMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -243,7 +245,7 @@ type ServerMessage_RegistrationResponse struct {
 }
 
 type ServerMessage_IntervalRequest struct {
-	// A schedule interval trigger request
+	// A schedule interval trigger request (i.e. call the callback)
 	IntervalRequest *IntervalRequest `protobuf:"bytes,3,opt,name=interval_request,json=intervalRequest,proto3,oneof"`
 }
 

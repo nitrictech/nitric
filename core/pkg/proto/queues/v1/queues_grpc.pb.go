@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueuesClient interface {
-	// Send messages to a queue
-	Enqueue(ctx context.Context, in *QueueEnqueueRequestBatch, opts ...grpc.CallOption) (*QueueEnqueueResponse, error)
+	// Send message(s) to a queue
+	Enqueue(ctx context.Context, in *QueueEnqueueRequest, opts ...grpc.CallOption) (*QueueEnqueueResponse, error)
 	// Receive message(s) from a queue
 	Dequeue(ctx context.Context, in *QueueDequeueRequest, opts ...grpc.CallOption) (*QueueDequeueResponse, error)
-	// Complete an item previously popped from a queue
+	// Complete an message previously popped from a queue
 	Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error)
 }
 
@@ -38,7 +38,7 @@ func NewQueuesClient(cc grpc.ClientConnInterface) QueuesClient {
 	return &queuesClient{cc}
 }
 
-func (c *queuesClient) Enqueue(ctx context.Context, in *QueueEnqueueRequestBatch, opts ...grpc.CallOption) (*QueueEnqueueResponse, error) {
+func (c *queuesClient) Enqueue(ctx context.Context, in *QueueEnqueueRequest, opts ...grpc.CallOption) (*QueueEnqueueResponse, error) {
 	out := new(QueueEnqueueResponse)
 	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Enqueue", in, out, opts...)
 	if err != nil {
@@ -69,11 +69,11 @@ func (c *queuesClient) Complete(ctx context.Context, in *QueueCompleteRequest, o
 // All implementations should embed UnimplementedQueuesServer
 // for forward compatibility
 type QueuesServer interface {
-	// Send messages to a queue
-	Enqueue(context.Context, *QueueEnqueueRequestBatch) (*QueueEnqueueResponse, error)
+	// Send message(s) to a queue
+	Enqueue(context.Context, *QueueEnqueueRequest) (*QueueEnqueueResponse, error)
 	// Receive message(s) from a queue
 	Dequeue(context.Context, *QueueDequeueRequest) (*QueueDequeueResponse, error)
-	// Complete an item previously popped from a queue
+	// Complete an message previously popped from a queue
 	Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error)
 }
 
@@ -81,7 +81,7 @@ type QueuesServer interface {
 type UnimplementedQueuesServer struct {
 }
 
-func (UnimplementedQueuesServer) Enqueue(context.Context, *QueueEnqueueRequestBatch) (*QueueEnqueueResponse, error) {
+func (UnimplementedQueuesServer) Enqueue(context.Context, *QueueEnqueueRequest) (*QueueEnqueueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Enqueue not implemented")
 }
 func (UnimplementedQueuesServer) Dequeue(context.Context, *QueueDequeueRequest) (*QueueDequeueResponse, error) {
@@ -103,7 +103,7 @@ func RegisterQueuesServer(s grpc.ServiceRegistrar, srv QueuesServer) {
 }
 
 func _Queues_Enqueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueueEnqueueRequestBatch)
+	in := new(QueueEnqueueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func _Queues_Enqueue_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/nitric.proto.queues.v1.Queues/Enqueue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueuesServer).Enqueue(ctx, req.(*QueueEnqueueRequestBatch))
+		return srv.(QueuesServer).Enqueue(ctx, req.(*QueueEnqueueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

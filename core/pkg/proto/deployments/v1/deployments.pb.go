@@ -710,7 +710,7 @@ func (x *ImageSource) GetUri() string {
 	return ""
 }
 
-// A unit of service (i.e. function/container)
+// A unit of compute (i.e. function/container)
 type Service struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1302,7 +1302,7 @@ type HttpTarget_Service struct {
 
 func (*HttpTarget_Service) isHttpTarget_Target() {}
 
-// A http resource
+// An http proxy resource
 type Http struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
