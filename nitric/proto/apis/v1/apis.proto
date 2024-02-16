@@ -15,7 +15,7 @@ service Api {
   rpc Serve(stream ClientMessage) returns (stream ServerMessage);
 
   // Retrieve details about an API
-  rpc Details(ApiDetailsRequest) returns (ApiDetailsResponse);
+  rpc ApiDetails(ApiDetailsRequest) returns (ApiDetailsResponse);
 }
 
 message ApiDetailsRequest {

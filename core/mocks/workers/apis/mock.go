@@ -35,19 +35,19 @@ func (m *MockApiRequestHandler) EXPECT() *MockApiRequestHandlerMockRecorder {
 	return m.recorder
 }
 
-// Details mocks base method.
-func (m *MockApiRequestHandler) Details(arg0 context.Context, arg1 *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+// ApiDetails mocks base method.
+func (m *MockApiRequestHandler) ApiDetails(arg0 context.Context, arg1 *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Details", arg0, arg1)
+	ret := m.ctrl.Call(m, "ApiDetails", arg0, arg1)
 	ret0, _ := ret[0].(*apispb.ApiDetailsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Details indicates an expected call of Details.
-func (mr *MockApiRequestHandlerMockRecorder) Details(arg0, arg1 interface{}) *gomock.Call {
+// ApiDetails indicates an expected call of ApiDetails.
+func (mr *MockApiRequestHandlerMockRecorder) ApiDetails(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Details", reflect.TypeOf((*MockApiRequestHandler)(nil).Details), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApiDetails", reflect.TypeOf((*MockApiRequestHandler)(nil).ApiDetails), arg0, arg1)
 }
 
 // HandleRequest mocks base method.

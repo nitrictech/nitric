@@ -11,14 +11,14 @@ option csharp_namespace = "Nitric.Proto.Websockets.v1";
 
 service Websocket {
   // Send a messages to a websocket
-  rpc Send(WebsocketSendRequest) returns (WebsocketSendResponse);
+  rpc SendMessage(WebsocketSendRequest) returns (WebsocketSendResponse);
 
   // Close a websocket connection
   // This can be used to force a client to disconnect
-  rpc Close(WebsocketCloseRequest) returns (WebsocketCloseResponse);
+  rpc CloseConnection(WebsocketCloseConnectionRequest) returns (WebsocketCloseConnectionResponse);
 
   // Retrieve details about an API
-  rpc Details(WebsocketDetailsRequest) returns (WebsocketDetailsResponse);
+  rpc SocketDetails(WebsocketDetailsRequest) returns (WebsocketDetailsResponse);
 }
 
 message WebsocketDetailsRequest {
@@ -45,14 +45,14 @@ message WebsocketSendRequest {
 
 message WebsocketSendResponse {}
 
-message WebsocketCloseRequest {
+message WebsocketCloseConnectionRequest {
     // The nitric name of the socket to send on
     string socket_name = 1;
     // The connection ID of the client to send to
     string connection_id = 2;
 }
 
-message WebsocketCloseResponse {}
+message WebsocketCloseConnectionResponse {}
 
 
 // Messages the client is able to send to the server

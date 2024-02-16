@@ -48,7 +48,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		return client, nil
 	}
 
-	details, err := a.Details(context.TODO(), &websocketpb.WebsocketDetailsRequest{
+	details, err := a.SocketDetails(context.TODO(), &websocketpb.WebsocketDetailsRequest{
 		SocketName: socket,
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 	return a.clients[socket], nil
 }
 
-func (a *ApiGatewayWebsocketService) Details(ctx context.Context, req *websocketpb.WebsocketDetailsRequest) (*websocketpb.WebsocketDetailsResponse, error) {
+func (a *ApiGatewayWebsocketService) SocketDetails(ctx context.Context, req *websocketpb.WebsocketDetailsRequest) (*websocketpb.WebsocketDetailsResponse, error) {
 	gwDetails, err := a.provider.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
 		Type: resourcespb.ResourceType_Websocket,
 		Name: req.SocketName,
@@ -89,7 +89,7 @@ func (a *ApiGatewayWebsocketService) Details(ctx context.Context, req *websocket
 	}, nil
 }
 
-func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.WebsocketSendRequest) (*websocketpb.WebsocketSendResponse, error) {
+func (a *ApiGatewayWebsocketService) SendMessage(ctx context.Context, req *websocketpb.WebsocketSendRequest) (*websocketpb.WebsocketSendResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("ApiGateway.Websocket.Send")
 
 	client, err := a.getClientForSocket(req.SocketName)
@@ -116,7 +116,7 @@ func (a *ApiGatewayWebsocketService) Send(ctx context.Context, req *websocketpb.
 	return &websocketpb.WebsocketSendResponse{}, nil
 }
 
-func (a *ApiGatewayWebsocketService) Close(ctx context.Context, req *websocketpb.WebsocketCloseRequest) (*websocketpb.WebsocketCloseResponse, error) {
+func (a *ApiGatewayWebsocketService) CloseConnection(ctx context.Context, req *websocketpb.WebsocketCloseConnectionRequest) (*websocketpb.WebsocketCloseConnectionResponse, error) {
 	client, err := a.getClientForSocket(req.SocketName)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (a *ApiGatewayWebsocketService) Close(ctx context.Context, req *websocketpb
 		return nil, err
 	}
 
-	return &websocketpb.WebsocketCloseResponse{}, nil
+	return &websocketpb.WebsocketCloseConnectionResponse{}, nil
 }
 
 func NewAwsApiGatewayWebsocket(provider *resource.AwsResourceService) (*ApiGatewayWebsocketService, error) {
