@@ -14,28 +14,28 @@ option csharp_namespace = "Nitric.Proto.Queues.v1";
 // The Nitric Queue Service contract
 service Queues {
   // Send messages to a queue
-  rpc Send (QueueSendRequestBatch) returns (QueueSendResponse);
+  rpc Enqueue (QueueEnqueueRequestBatch) returns (QueueEnqueueResponse);
   // Receive message(s) from a queue
-  rpc Receive (QueueReceiveRequest) returns (QueueReceiveResponse);
+  rpc Dequeue (QueueDequeueRequest) returns (QueueDequeueResponse);
   // Complete an item previously popped from a queue
   rpc Complete (QueueCompleteRequest) returns (QueueCompleteResponse);
 }
 
-message QueueSendRequestBatch {
+message QueueEnqueueRequestBatch {
   // The Nitric name for the queue
   // this will automatically be resolved to the provider specific queue identifier.
   string queue_name = 1;
   // Array of tasks to push to the queue
-  repeated QueueSendRequest requests = 2;
+  repeated QueueEnqueueRequest requests = 2;
 }
 
 // Response for sending a collection of tasks
-message QueueSendResponse {
+message QueueEnqueueResponse {
   // A list of tasks that failed to be queued
-  repeated FailedSendRequest failed_requests = 1;
+  repeated FailedEnqueueRequest failed_requests = 1;
 }
 
-message QueueReceiveRequest {
+message QueueDequeueRequest {
   // The nitric name for the queue
   // this will automatically be resolved to the provider specific queue identifier.
   string queue_name = 1;
@@ -43,7 +43,7 @@ message QueueReceiveRequest {
   int32 depth = 2;
 }
 
-message QueueReceiveResponse {
+message QueueDequeueResponse {
   // Array of tasks popped off the queue
   repeated ReceivedTask tasks = 1;
 }
@@ -60,7 +60,7 @@ message QueueCompleteRequest {
 message QueueCompleteResponse {}
 
 // A task to be sent to a queue.
-message QueueSendRequest {
+message QueueEnqueueRequest {
   // The payload of the task
   google.protobuf.Struct payload = 1;
 }
@@ -71,9 +71,9 @@ message ReceivedTask {
   google.protobuf.Struct payload = 2;
 }
 
-message FailedSendRequest {
+message FailedEnqueueRequest {
   // The task that failed to be pushed
-  QueueSendRequest request = 1;
+  QueueEnqueueRequest request = 1;
   // A message describing the failure
   string message = 2;
 }
