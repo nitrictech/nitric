@@ -39,7 +39,7 @@ type EventGridEventService struct {
 
 var _ topicpb.TopicsServer = &EventGridEventService{}
 
-func (s *EventGridEventService) nitricEventToAzureEvent(topic string, payload *topicpb.Message) (*eventgrid.Event, error) {
+func (s *EventGridEventService) nitricEventToAzureEvent(topic string, payload *topicpb.TopicMessage) (*eventgrid.Event, error) {
 	dataVersion := "1.0"
 	eventType := "nitric"
 

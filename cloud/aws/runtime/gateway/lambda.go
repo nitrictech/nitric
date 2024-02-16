@@ -384,7 +384,7 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topic
 			continue
 		}
 
-		var message topicspb.Message
+		var message topicspb.TopicMessage
 
 		if err := proto.Unmarshal(messageBytes, &message); err != nil {
 			logger.Errorf("unable to unmarshal nitric message from SNS trigger: %v", err)

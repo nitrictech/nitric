@@ -52,7 +52,7 @@ func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
 	return eventgridEvents, nil
 }
 
-func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
+func extractMessage(event eventgrid.Event) (*topicpb.TopicMessage, error) {
 	var payloadBytes []byte
 	var err error
 	if stringData, ok := event.Data.(string); ok {
@@ -67,7 +67,7 @@ func extractMessage(event eventgrid.Event) (*topicpb.Message, error) {
 		return nil, fmt.Errorf("invalid event data type: %T", event.Data)
 	}
 
-	var message topicpb.Message
+	var message topicpb.TopicMessage
 
 	if err = proto.Unmarshal(payloadBytes, &message); err != nil {
 		return nil, err

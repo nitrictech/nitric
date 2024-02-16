@@ -28,7 +28,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azqueueserviceiface "github.com/nitrictech/nitric/cloud/azure/runtime/queue/iface"
@@ -67,49 +66,49 @@ func (s *AzqueueQueueService) getMessageIdUrl(queue string, messageId azqueue.Me
 // 	Payload map[string]interface{}
 // }
 
-func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *queuespb.QueueSendRequest) (*queuespb.QueueSendResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Send")
+func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *queuespb.QueueMessage) error {
+	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Enqueue")
 
 	messages := s.getMessagesUrl(queueName)
 
 	// Send the tasks to the queue
-	if taskBytes, err := proto.Marshal(req.Payload); err == nil {
+	if taskBytes, err := proto.Marshal(req); err == nil {
 		taskPayload := base64.StdEncoding.EncodeToString(taskBytes)
 		if _, err := messages.Enqueue(ctx, taskPayload, 0, 0); err != nil {
-			return nil, newErr(
+			return newErr(
 				codes.Internal,
 				"error sending task to queue",
 				err,
 			)
 		}
 	} else {
-		return nil, newErr(
+		return newErr(
 			codes.Internal,
 			"error marshalling the task",
 			err,
 		)
 	}
 
-	return nil, nil
+	return nil
 }
 
-func (s *AzqueueQueueService) Send(ctx context.Context, req *queuespb.QueueSendRequestBatch) (*queuespb.QueueSendResponse, error) {
-	failedRequests := make([]*queuespb.FailedSendRequest, 0)
+func (s *AzqueueQueueService) Enqueue(ctx context.Context, req *queuespb.QueueEnqueueRequest) (*queuespb.QueueEnqueueResponse, error) {
+	failedRequests := make([]*queuespb.FailedEnqueueMessage, 0)
 
-	for _, r := range req.Requests {
+	for _, r := range req.Messages {
 		// t := task
 		// Azure Storage Queues don't support batches, so each task must be sent individually.
-		_, err := s.send(ctx, req.QueueName, r)
+		err := s.send(ctx, req.QueueName, r)
 		if err != nil {
-			failedRequests = append(failedRequests, &queuespb.FailedSendRequest{
-				Request: r,
-				Message: err.Error(),
+			failedRequests = append(failedRequests, &queuespb.FailedEnqueueMessage{
+				Message: r,
+				Details: err.Error(),
 			})
 		}
 	}
 
-	return &queuespb.QueueSendResponse{
-		FailedRequests: failedRequests,
+	return &queuespb.QueueEnqueueResponse{
+		FailedMessages: failedRequests,
 	}, nil
 }
 
@@ -141,16 +140,8 @@ func leaseFromString(leaseID string) (*AzureQueueItemLease, error) {
 }
 
 // Receive - Receives a collection of tasks off a given queue.
-func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueReceiveRequest) (*queuespb.QueueReceiveResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Receive")
-
-	// if err := options.Validate(); err != nil {
-	// 	return nil, newErr(
-	// 		codes.InvalidArgument,
-	// 		"invalid receive options provided",
-	// 		err,
-	// 	)
-	// }
+func (s *AzqueueQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeueRequest) (*queuespb.QueueDequeueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzqueueQueueService.Dequeue")
 
 	messages := s.getMessagesUrl(req.QueueName)
 
@@ -164,16 +155,16 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueRe
 	}
 
 	if dequeueResp.NumMessages() == 0 {
-		return &queuespb.QueueReceiveResponse{
-			Tasks: []*queuespb.ReceivedTask{},
+		return &queuespb.QueueDequeueResponse{
+			Messages: []*queuespb.ReceivedMessage{},
 		}, nil
 	}
 
 	// Convert the Azure Storage Queues messages into Nitric tasks
-	tasks := []*queuespb.ReceivedTask{}
+	tasks := []*queuespb.ReceivedMessage{}
 	for i := int32(0); i < dequeueResp.NumMessages(); i++ {
 		m := dequeueResp.Message(i)
-		var structPayload structpb.Struct
+		var queueMessage queuespb.QueueMessage
 
 		fmt.Printf("deserializing payload: %s", m.Text)
 
@@ -187,7 +178,7 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueRe
 			)
 		}
 
-		err = proto.Unmarshal(bytePayload, &structPayload)
+		err = proto.Unmarshal(bytePayload, &queueMessage)
 		if err != nil {
 			// This item could have its visibility timeout reset and be requeued.
 			// However, that risks the unprocessable items being reprocessed immediately,
@@ -210,14 +201,14 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueRe
 			)
 		}
 
-		tasks = append(tasks, &queuespb.ReceivedTask{
+		tasks = append(tasks, &queuespb.ReceivedMessage{
 			LeaseId: leaseID,
-			Payload: &structPayload,
+			Message: &queueMessage,
 		})
 	}
 
-	return &queuespb.QueueReceiveResponse{
-		Tasks: tasks,
+	return &queuespb.QueueDequeueResponse{
+		Messages: tasks,
 	}, nil
 }
 
