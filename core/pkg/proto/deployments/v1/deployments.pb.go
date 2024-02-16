@@ -667,7 +667,7 @@ type ImageSource struct {
 	unknownFields protoimpl.UnknownFields
 
 	// URI of the docker image
-	// TODO: May also need to provide auth information (although this should just be configured on the running client already)
+	// To support remote images this may also need to provide auth information
 	Uri string `protobuf:"bytes,1,opt,name=uri,proto3" json:"uri,omitempty"`
 }
 
@@ -2022,8 +2022,7 @@ func (*Resource_Http) isResource_Config() {}
 
 func (*Resource_Queue) isResource_Config() {}
 
-// This is already defined in the resource contracts...
-// Need to determine if it's worth re-using
+// This is already defined in the resource contracts,
 // unfortunately there are parts we don't want to duplicate, such as API config
 type Policy struct {
 	state         protoimpl.MessageState
@@ -2031,11 +2030,8 @@ type Policy struct {
 	unknownFields protoimpl.UnknownFields
 
 	Principals []*Resource `protobuf:"bytes,1,rep,name=principals,proto3" json:"principals,omitempty"`
-	// TODO: Split out discrete action definitions from resources
-	// Also need to allow custom action types as well
-	// Should incorporate action re-use here...
-	Actions   []v1.Action `protobuf:"varint,2,rep,packed,name=actions,proto3,enum=nitric.proto.resources.v1.Action" json:"actions,omitempty"`
-	Resources []*Resource `protobuf:"bytes,3,rep,name=resources,proto3" json:"resources,omitempty"`
+	Actions    []v1.Action `protobuf:"varint,2,rep,packed,name=actions,proto3,enum=nitric.proto.resources.v1.Action" json:"actions,omitempty"`
+	Resources  []*Resource `protobuf:"bytes,3,rep,name=resources,proto3" json:"resources,omitempty"`
 }
 
 func (x *Policy) Reset() {

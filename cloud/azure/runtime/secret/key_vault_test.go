@@ -155,7 +155,7 @@ var _ = Describe("Key Vault", func() {
 					})
 					By("returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("secret does not exist"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = Internal desc = KeyVaultSecretService.Access failed to access secret"))
 					By("returning a nil response")
 					Expect(response).Should(BeNil())
 				})

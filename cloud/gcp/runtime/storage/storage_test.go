@@ -153,7 +153,7 @@ var _ = Describe("Storage", func() {
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(ContainSubstring("googleapi: Error 403: insufficient permissions"))
+					Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = StorageStorageService.Write unable to write to file, have you requested access to this bucket?"))
 					ctrl.Finish()
 				})
 			})
@@ -282,7 +282,7 @@ var _ = Describe("Storage", func() {
 						})
 
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("googleapi: Error 403: insufficient permissions"))
+						Expect(err.Error()).To(ContainSubstring("rpc error: code = PermissionDenied desc = StorageStorageService.Read unable to read file, have you requested access to this bucket?"))
 						Expect(item).To(BeNil())
 					})
 				})
@@ -428,7 +428,7 @@ var _ = Describe("Storage", func() {
 
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(ContainSubstring("googleapi: Error 403: insufficient permissions"))
+						Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = StorageStorageService.Delete unable to delete to file, have you requested access to this bucket?"))
 					})
 				})
 			})

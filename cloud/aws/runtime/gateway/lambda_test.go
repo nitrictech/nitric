@@ -50,7 +50,6 @@ import (
 
 type MockLambdaRuntime struct {
 	lambda_service.LambdaRuntimeHandler
-	// FIXME: Make this a union array of stuff to send....
 	eventQueue []interface{}
 }
 
@@ -65,7 +64,6 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 		Expect(err).To(BeNil())
 
 		// Unmarshal the thing into the event type we expect...
-		// TODO: Do something with out results here...
 		_, err = typedFunc(context.TODO(), evt)
 
 		if err != nil {

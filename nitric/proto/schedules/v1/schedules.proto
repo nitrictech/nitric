@@ -31,10 +31,6 @@ message IntervalRequest {
   string schedule_name = 1;
 }
 
-message MessageResponse {
-  bool success = 1;
-}
-
 message ServerMessage {
   // globally unique ID of the request/response pair
   string id = 1;

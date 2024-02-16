@@ -233,6 +233,9 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return errors.WithMessage(err, "resource group create")
 	}
 
+	// Create a key vault if secrets are required.
+	// Unlike AWS and GCP which have centralized secrets management, Azure allows for multiple key vaults.
+	// This means we need to create a keyvault for each stack.
 	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
 		logger.Info("Stack declares one or more secrets, creating stack level Azure Key Vault")
 		a.keyVault, err = createKeyVault(ctx, a.resourceGroup, a.clientConfig.TenantId, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
@@ -257,23 +260,11 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
-	// TODO: Filter down to required roles only
+	// Greedily create all the roles for consistency. Could be reduced to required roles only in future.
 	a.roles, err = CreateRoles(ctx, a.stackId, a.clientConfig.SubscriptionId, a.resourceGroup.Name)
 	if err != nil {
 		return err
 	}
-
-	// envMap := map[string]string{}
-	// contEnvArgs := &exec.ContainerEnvArgs{
-	// 	ResourceGroupName: rg.Name,
-	// 	Location:          rg.Location,
-	// 	EnvMap:            envMap,
-	// 	StackID:           stackID,
-	// }
-
-	// Create a key vault if secrets are required.
-	// Unlike AWS and GCP which have centralized secrets management, Azure allows for multiple key vaults.
-	// This means we need to create a keyvault for each stack.
 
 	return nil
 }

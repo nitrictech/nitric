@@ -34,16 +34,22 @@ import (
 	mock_provider "github.com/nitrictech/nitric/cloud/azure/mocks/provider"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	mock_apis "github.com/nitrictech/nitric/core/mocks/workers/apis"
+	mock_http "github.com/nitrictech/nitric/core/mocks/workers/http"
 	mock_topics "github.com/nitrictech/nitric/core/mocks/workers/topics"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	"github.com/nitrictech/nitric/test"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
 
 var _ = Describe("Http", func() {
 	ctrl := gomock.NewController(GinkgoT())
+
+	testEvtToken := "test"
+	os.Setenv("EVENT_TOKEN", testEvtToken)
+
 	// pool := mock_pool.NewMockWorkerPool(ctrl)
 
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
@@ -74,9 +80,8 @@ var _ = Describe("Http", func() {
 		_ = gw.Start(gatewayOptions)
 	}(httpPlugin)
 
-	// Delay to allow the HTTP server to correctly start
-	// FIXME: Should block on channels...
-	time.Sleep(1000 * time.Millisecond)
+	// Delay to allow the HTTP server to correctly start, ideally we could block on a channel instead of waiting a fixed time
+	time.Sleep(1 * time.Second)
 
 	When("Invoking the Azure AppService HTTP Gateway", func() {
 		When("with a standard Nitric Request", func() {
@@ -84,12 +89,30 @@ var _ = Describe("Http", func() {
 			ctrl := gomock.NewController(GinkgoT())
 
 			mockManager := mock_apis.NewMockApiRequestHandler(ctrl)
+			mockHttpManager := mock_http.NewMockHttpRequestHandler(ctrl)
 			gatewayOptions.ApiPlugin = mockManager
+			gatewayOptions.HttpPlugin = mockHttpManager
 
 			It("Should be handled successfully", func() {
 				By("Handling exactly 1 request")
-				// TODO: Fix panic on request comparison
-				mockManager.EXPECT().HandleRequest("test", gomock.Any()).Return(&apispb.ClientMessage{
+
+				mockRequest := &apispb.ServerMessage{
+					Content: &apispb.ServerMessage_HttpRequest{
+						HttpRequest: &apispb.HttpRequest{
+							Method: "POST",
+							Path:   "test/",
+							Headers: map[string]*apispb.HeaderValue{
+								"Content-Length":  {Value: []string{"4"}},
+								"User-Agent":      {Value: []string{"Go-http-client/1.1"}},
+								"X-Forwarded-For": {Value: []string{"127.0.0.1:9001"}},
+								"Accept-Encoding": {Value: []string{"gzip"}},
+							},
+							Body: payload,
+						},
+					},
+				}
+
+				mockManager.EXPECT().HandleRequest("test", test.ProtoEq(mockRequest)).Return(&apispb.ClientMessage{
 					Id: "TODO",
 					Content: &apispb.ClientMessage_HttpResponse{
 						HttpResponse: &apispb.HttpResponse{
@@ -133,7 +156,7 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/x-nitric-topic/test", gatewayUrl, testEvtToken), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "SubscriptionValidation")
 				resp, err := http.DefaultClient.Do(request)
@@ -180,15 +203,17 @@ var _ = Describe("Http", func() {
 				// By("Returning the expected worker")
 				// pool.EXPECT().GetWorker(gomock.Any()).AnyTimes().Return(mockHandler, nil)
 
-				By("Handling exactly 1 request")
-				mockManager.EXPECT().HandleRequest(&topicspb.ServerMessage{
+				mockRequest := &topicspb.ServerMessage{
 					Content: &topicspb.ServerMessage_MessageRequest{
 						MessageRequest: &topicspb.MessageRequest{
 							TopicName: testTopic,
 							Message:   messagePayload,
 						},
 					},
-				}).Return(&topicspb.ClientMessage{
+				}
+
+				By("Handling exactly 1 request")
+				mockManager.EXPECT().HandleRequest(test.ProtoEq(mockRequest)).Return(&topicspb.ClientMessage{
 					Content: &topicspb.ClientMessage_MessageResponse{
 						MessageResponse: &topicspb.MessageResponse{
 							Success: true,
@@ -207,7 +232,7 @@ var _ = Describe("Http", func() {
 
 				requestBody, err := json.Marshal(evt)
 				Expect(err).To(BeNil())
-				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(requestBody))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/x-nitric-topic/test", gatewayUrl, testEvtToken), bytes.NewReader(requestBody))
 				Expect(err).To(BeNil())
 				request.Header.Add("aeg-event-type", "Notification")
 				_, _ = http.DefaultClient.Do(request)

@@ -174,7 +174,9 @@ func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
 
 	// proxy to http if available
 	// if opts.HttpPlugin.WorkerCount() > 0 {
-	r.ANY("/{path?:*}", s.newHttpProxyHandler(opts))
+	if opts.HttpPlugin != nil {
+		r.ANY("/{path?:*}", s.newHttpProxyHandler(opts))
+	}
 	// }
 
 	s.server = &fasthttp.Server{
@@ -202,7 +204,6 @@ func (s *HttpGateway) Stop() error {
 }
 
 // Create new HTTP gateway
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
 func NewHttpGateway(opts *HttpGatewayOptions) (gateway.GatewayService, error) {
 	address := env.GATEWAY_ADDRESS.String()
 

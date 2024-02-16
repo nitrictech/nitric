@@ -57,7 +57,7 @@ func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Conte
 		Scope: p.storageAccount.ID(),
 		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
 			Url: pulumi.Sprintf("%s/%s/x-nitric-notification/bucket/%s", hostUrl, target.EventToken, bucketName),
-			// TODO: Reduce event chattiness here and handle internally in the Azure AppService HTTP Gateway?
+			// Only send one event per batch to avoid a single failure nacking multiple events.
 			MaxEventsPerBatch:         pulumi.Int(1),
 			ActiveDirectoryAppIdOrUri: target.Sp.ClientID,
 			ActiveDirectoryTenantId:   target.Sp.TenantID,

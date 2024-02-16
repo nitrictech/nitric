@@ -70,8 +70,7 @@ var _ = Describe("Http", func() {
 		})
 	}(httpPlugin)
 
-	// Delay to allow the HTTP server to correctly start
-	// FIXME: Should block on channels...
+	// Give the gateway time to start, ideally we would block on a channel
 	time.Sleep(500 * time.Millisecond)
 
 	When("Invoking the GCP HTTP Gateway", func() {

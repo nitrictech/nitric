@@ -45,7 +45,6 @@ type azMiddleware struct {
 func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
 	var eventgridEvents []eventgrid.Event
 	bytes := ctx.Request.Body()
-	// TODO: verify topic for validity
 	if err := json.Unmarshal(bytes, &eventgridEvents); err != nil {
 		return nil, errors.New("invalid event grid types")
 	}
@@ -134,19 +133,18 @@ func (a *azMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fastht
 
 			resp, err := opts.TopicsListenerPlugin.HandleRequest(evt)
 			if err != nil {
-				logger.Errorf("could not get worker for topic: %s", topicName)
-				// TODO: Handle error
-				continue
+				logger.Errorf("error handling event from topic %s: %s", topicName, err.Error())
+				ctx.Error("failed handling event, error returned from subscriber function", 500)
+				return
 			}
 
 			if !resp.GetMessageResponse().Success {
-				// FIXME: Handle error return
-				logger.Errorf("event handling failed %s", topicName)
-				continue
+				logger.Errorf("event handling failed %s, subscriber returned success=false", topicName)
+				ctx.Error("subscriber returned non-success response", 500)
+				return
 			}
-
-			ctx.SuccessString("text/plain", "success")
 		}
+		ctx.SuccessString("text/plain", "success")
 	}
 }
 

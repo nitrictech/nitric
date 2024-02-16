@@ -122,8 +122,7 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 
 	// Enable a role with publish access to this stacks topics only
 	_, err = iam.NewRolePolicy(ctx, fmt.Sprintf("%s-delay-ctrl", name), &iam.RolePolicyArgs{
-		Role: sfnRole,
-		// TODO: Limit to only this stacks topics (deployed above)
+		Role:   sfnRole,
 		Policy: policy,
 	}, opts...)
 	if err != nil {

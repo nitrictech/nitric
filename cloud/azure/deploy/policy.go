@@ -138,7 +138,6 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 			),
 			// condition: pulumi.Sprintf("@Resource[Microsoft.KeyVault/vaults/secrets].name equals %s'", resource.Name),
 		}, nil
-		// TODO
 	default:
 		return nil, fmt.Errorf("unknown resource type %s", resource.Id.Type)
 	}
@@ -163,7 +162,6 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 			// We have the principal and the roles we need to assign
 			// just need to scope the resource type to the RoleAssignments
 			for roleName, role := range roles {
-				// FIXME: Implement collection and secret least priveledge
 				scope, err := p.scopeFromResource(resource)
 				if err != nil {
 					return err

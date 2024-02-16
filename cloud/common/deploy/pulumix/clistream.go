@@ -50,7 +50,6 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 		// we couldn't find the parent but it is a nitric resource so should exist already
 		parentNode = &DataNode{
 			Id: meta.Parent,
-			// TODO: Populate the nitric resource
 			Data: &ResourceData{
 				nitricResource: nitricParent,
 				action:         deploymentspb.ResourceDeploymentAction_SAME,
@@ -68,7 +67,7 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 	// nitricAction := deploymentspb.ResourceDeploymentAction_SAME
 
 	/*
-		TODO: review unhandled cases (currently defaulting to update)
+		Unhandled cases, currently defaulting to update
 		OpRead
 		OpReadReplacement
 		OpRefresh
@@ -101,7 +100,6 @@ func (p *pulumiEventHandler) handleResourcePreEvent(resourcePreEvent *apitype.Re
 	if node == nil {
 		node = &DataNode{
 			Id: resourcePreEvent.Metadata.URN,
-			// TODO: Populate the nitric resource
 			Data: &ResourceData{
 				nitricResource: nitricResource,
 				action:         nitricAction,
@@ -145,9 +143,8 @@ func (p *pulumiEventHandler) handleResourceOutputsEvent(resOutputsEvent *apitype
 	var nitricResource *resourcespb.ResourceIdentifier
 	var subResource string
 
-	// FIXME: Discover root cause of missing resource nodes
 	if resourceNode == nil {
-		logger.Warnf("recieved urn %s for pulumi resource outputs, but wasn't found in resource tree", urn)
+		logger.Warnf("received urn %s for pulumi resource out of order, this will not impact your deployment only the nitric display", urn)
 		return nil, nil
 	}
 
@@ -259,7 +256,6 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 				Update: updateDetails,
 			},
 		})
-
 		if err != nil {
 			return err
 		}
@@ -293,7 +289,6 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 					Update: nitricEvent,
 				},
 			})
-
 			if err != nil {
 				return err
 			}

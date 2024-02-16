@@ -23,6 +23,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/core/pkg/help"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
@@ -141,8 +142,8 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			if pair, ok := p.(nameArnPair); ok {
 				naps[pair.name] = pair.invokeArn
 			} else {
-				// XXX: Should not occur
-				return "", fmt.Errorf("invalid data %T %v", p, p)
+				// This error shouldn't occur.
+				return "", fmt.Errorf("failed to resolve lambda ARN for api %s, invalid name ARN pair value %T %v, %s", name, p, p, help.BugInNitricHelpText())
 			}
 		}
 

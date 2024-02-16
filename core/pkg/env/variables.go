@@ -20,11 +20,3 @@ var (
 	MIN_WORKERS     = GetEnv("MIN_WORKERS", "1")
 	SERVICE_ADDRESS = GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 )
-
-// Open telemetry environment variables
-// FIXME: there are a provider level concern so should be implemented in the provider layer
-var (
-	OTELCOL_BIN      = GetEnv("OTELCOL_BIN", "/usr/bin/otelcol-contrib")
-	OTELCOL_CONFIG   = GetEnv("OTELCOL_CONFIG", "/etc/otelcol/config.yaml")
-	MEMBRANE_VERSION = GetEnv("MEMBRANE_VERSION", "unknown")
-)

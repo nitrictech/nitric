@@ -79,8 +79,7 @@ func (c *ContainerApp) HostUrl() (pulumi.StringOutput, error) {
 			fqdn := args[0].(string)
 			token := args[1].(string)
 
-			// TODO: Should probably use a health check.
-			// this callback in mainly used to get the hostURL for subscriptions
+			// This callback in mainly used to get the hostURL for subscriptions
 			// so ensuring that the deployed gateway is configured to validate subscription requests
 			// doesn't hurt
 			hostUrl := fmt.Sprintf("https://%s", fqdn)

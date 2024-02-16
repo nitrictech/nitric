@@ -34,6 +34,7 @@ import (
 	azqueueserviceiface "github.com/nitrictech/nitric/cloud/azure/runtime/queue/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
@@ -74,7 +75,7 @@ func (s *AzqueueQueueService) send(ctx context.Context, queueName string, req *q
 	// Send the tasks to the queue
 	if taskBytes, err := proto.Marshal(req.Payload); err == nil {
 		taskPayload := base64.StdEncoding.EncodeToString(taskBytes)
-		if _, err := messages.Enqueue(ctx, string(taskPayload), 0, 0); err != nil {
+		if _, err := messages.Enqueue(ctx, taskPayload, 0, 0); err != nil {
 			return nil, newErr(
 				codes.Internal,
 				"error sending task to queue",
@@ -188,12 +189,11 @@ func (s *AzqueueQueueService) Receive(ctx context.Context, req *queuespb.QueueRe
 
 		err = proto.Unmarshal(bytePayload, &structPayload)
 		if err != nil {
-			// TODO: append error to error list and Nack the message.
-			return nil, newErr(
-				codes.Internal,
-				"failed to deserialize queue item payload",
-				err,
-			)
+			// This item could have its visibility timeout reset and be requeued.
+			// However, that risks the unprocessable items being reprocessed immediately,
+			// causing a loop where the receiver frequently attempts to receive the same item.
+			logger.Errorf("failed to deserialize queue item payload: %s", err.Error())
+			continue
 		}
 
 		lease := AzureQueueItemLease{

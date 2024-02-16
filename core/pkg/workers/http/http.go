@@ -94,7 +94,6 @@ func (h *HttpServer) Proxy(stream httppb.Http_ProxyServer) error {
 	h.host = host
 	for {
 		_, err = stream.Recv()
-
 		if err != nil {
 			break
 		}

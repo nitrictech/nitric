@@ -71,7 +71,6 @@ func (a *AzblobStorageService) Read(ctx context.Context, req *storagepb.StorageR
 		)
 	}
 
-	// TODO: Configure retries
 	data := r.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
 
 	body, err := io.ReadAll(data)
@@ -255,9 +254,6 @@ func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefreshe
 
 // New - Creates a new instance of the AzblobStorageService
 func New() (*AzblobStorageService, error) {
-	// TODO: Create a default storage account for the stack???
-	// XXX: This will limit a membrane wrapped application
-	// to accessing a single storage account
 	blobEndpoint := env.AZURE_STORAGE_BLOB_ENDPOINT.String()
 	if blobEndpoint == "" {
 		return nil, fmt.Errorf("failed to determine Azure Storage Blob endpoint, environment variable not set")

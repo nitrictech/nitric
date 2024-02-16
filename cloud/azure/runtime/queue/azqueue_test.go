@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -36,6 +37,7 @@ var _ = Describe("Azqueue", func() {
 	Expect(err).To(BeNil())
 
 	testPayloadBytes, err := proto.Marshal(testStruct)
+	testB64Payload := base64.StdEncoding.EncodeToString(testPayloadBytes)
 	Expect(err).To(BeNil())
 
 	Context("Send", func() {
@@ -60,7 +62,7 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					string(testPayloadBytes),
+					testB64Payload,
 					time.Duration(0),
 					time.Duration(0),
 				).Times(2).Return(&azqueue.EnqueueMessageResponse{}, nil)
@@ -108,7 +110,7 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					string(testPayloadBytes),
+					testB64Payload,
 					time.Duration(0),
 					time.Duration(0),
 				).AnyTimes( /* Using AnyTimes because Times(2) doesn't work for multiple returns */
@@ -174,7 +176,7 @@ var _ = Describe("Azqueue", func() {
 					PopReceipt:      "popreceipt",
 					NextVisibleTime: time.Time{},
 					DequeueCount:    0,
-					Text:            string(testPayloadBytes),
+					Text:            testB64Payload,
 				})
 
 				resp, err := queuePlugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{

@@ -16,6 +16,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -42,7 +43,10 @@ var _ = Describe("Sqs", func() {
 	Expect(err).To(BeNil())
 
 	testPayloadBytes, err := proto.Marshal(testStruct)
+
 	Expect(err).To(BeNil())
+
+	testPayloadB64 := base64.StdEncoding.EncodeToString(testPayloadBytes)
 
 	Context("getUrlForQueueName", func() {
 		When("GetResources returns an error", func() {
@@ -59,7 +63,7 @@ var _ = Describe("Sqs", func() {
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).To(Equal("error retrieving queue list"))
+				Expect(err.Error()).To(Equal("error retrieving queue list: mock-error"))
 				ctrl.Finish()
 			})
 		})
@@ -78,7 +82,7 @@ var _ = Describe("Sqs", func() {
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("queue test-queue does not exist"))
+				Expect(err.Error()).To(ContainSubstring("arn for queue test-queue could not be determined"))
 				ctrl.Finish()
 			})
 		})
@@ -204,7 +208,7 @@ var _ = Describe("Sqs", func() {
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("error retrieving queue list"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = NotFound desc = SQSQueueService.SendBatch unable to find queue"))
 					ctrl.Finish()
 				})
 			})
@@ -246,7 +250,7 @@ var _ = Describe("Sqs", func() {
 						Messages: []types.Message{
 							{
 								ReceiptHandle: aws.String("mockreceipthandle"),
-								Body:          aws.String(string(testPayloadBytes)),
+								Body:          aws.String(testPayloadB64),
 							},
 						},
 					}, nil)
@@ -257,10 +261,10 @@ var _ = Describe("Sqs", func() {
 						Depth:     10,
 					})
 
+					Expect(err).ShouldNot(HaveOccurred())
 					Expect(response.Tasks).To(HaveLen(1))
 					Expect(response.Tasks[0].LeaseId).To(BeEquivalentTo("mockreceipthandle"))
 					Expect(response.Tasks[0].Payload.AsMap()).To(BeEquivalentTo(testStruct.AsMap()))
-					Expect(err).ShouldNot(HaveOccurred())
 
 					ctrl.Finish()
 				})

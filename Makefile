@@ -26,6 +26,7 @@ lint: $(all)
 		$(MAKE) lint -C $$dir || exit 1; \
 	done
 
+.PHONY: test
 test: $(all)
 	for dir in $(all); do \
 		$(MAKE) test -C $$dir || exit 1; \

@@ -22,8 +22,6 @@ runtimebin:
 predeploybin: runtimebin
 	@cp bin/runtime-aws deploy/runtime-aws
 
-# FIXME: proto server registration error
-# There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin
 	@echo Building AWS Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
