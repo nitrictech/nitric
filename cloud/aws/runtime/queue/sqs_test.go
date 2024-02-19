@@ -35,6 +35,7 @@ import (
 	mocks_sqs "github.com/nitrictech/nitric/cloud/aws/mocks/sqs"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
+	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 var _ = Describe("Sqs", func() {
@@ -114,13 +115,15 @@ var _ = Describe("Sqs", func() {
 				By("Calling SendMessageBatch with the expected batch entries")
 				sqsMock.EXPECT().SendMessageBatch(gomock.Any(), gomock.Any()).Return(&sqs.SendMessageBatchOutput{}, nil)
 
-				_, err := plugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
+				_, err := plugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
-					Requests: []*queuepb.QueueSendRequest{
+					Messages: []*queuespb.QueueMessage{
 						{
-							Payload: &structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"Test": structpb.NewStringValue("Test"),
+							Content: &queuespb.QueueMessage_StructPayload{
+								StructPayload: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"Test": structpb.NewStringValue("Test"),
+									},
 								},
 							},
 						},
@@ -162,13 +165,15 @@ var _ = Describe("Sqs", func() {
 				By("Calling SendMessageBatch with the expected batch entries")
 				sqsMock.EXPECT().SendMessageBatch(gomock.Any(), gomock.Any()).Return(nil, opErr)
 
-				_, err := plugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
+				_, err := plugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
-					Requests: []*queuepb.QueueSendRequest{
+					Messages: []*queuepb.QueueMessage{
 						{
-							Payload: &structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"Test": structpb.NewStringValue("Test"),
+							Content: &queuepb.QueueMessage_StructPayload{
+								StructPayload: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"Test": structpb.NewStringValue("Test"),
+									},
 								},
 							},
 						},
@@ -193,13 +198,15 @@ var _ = Describe("Sqs", func() {
 					By("provider GetResources returning an error")
 					providerMock.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Queue).Return(nil, fmt.Errorf("mock-error"))
 
-					_, err := plugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
+					_, err := plugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 						QueueName: "test-queue",
-						Requests: []*queuepb.QueueSendRequest{
+						Messages: []*queuepb.QueueMessage{
 							{
-								Payload: &structpb.Struct{
-									Fields: map[string]*structpb.Value{
-										"Test": structpb.NewStringValue("Test"),
+								Content: &queuepb.QueueMessage_StructPayload{
+									StructPayload: &structpb.Struct{
+										Fields: map[string]*structpb.Value{
+											"Test": structpb.NewStringValue("Test"),
+										},
 									},
 								},
 							},
@@ -256,15 +263,15 @@ var _ = Describe("Sqs", func() {
 					}, nil)
 
 					By("Returning the task")
-					response, err := plugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{
+					response, err := plugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 						QueueName: "mock-queue",
 						Depth:     10,
 					})
 
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(response.Tasks).To(HaveLen(1))
-					Expect(response.Tasks[0].LeaseId).To(BeEquivalentTo("mockreceipthandle"))
-					Expect(response.Tasks[0].Payload.AsMap()).To(BeEquivalentTo(testStruct.AsMap()))
+					Expect(response.Messages).To(HaveLen(1))
+					Expect(response.Messages[0].LeaseId).To(BeEquivalentTo("mockreceipthandle"))
+					Expect(response.Messages[0].Message.GetStructPayload().AsMap()).To(BeEquivalentTo(testStruct.AsMap()))
 
 					ctrl.Finish()
 				})
@@ -302,13 +309,13 @@ var _ = Describe("Sqs", func() {
 						Messages: []types.Message{},
 					}, nil)
 
-					response, err := plugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{
+					response, err := plugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 						QueueName: "mock-queue",
 						Depth:     10,
 					})
 
 					By("Returning an empty array of tasks")
-					Expect(response.Tasks).To(HaveLen(0))
+					Expect(response.Messages).To(HaveLen(0))
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
@@ -352,7 +359,7 @@ var _ = Describe("Sqs", func() {
 						QueueUrl: queueUrl,
 					}).Times(1).Return(nil, opErr)
 
-					_, err := plugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{
+					_, err := plugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 						QueueName: "mock-queue",
 						Depth:     10,
 					})

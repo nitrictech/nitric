@@ -271,8 +271,8 @@ var _ = Describe("Lambda", func() {
 				"test": "test",
 			})
 
-			message := ep.Message{
-				Content: &ep.Message_StructPayload{
+			message := ep.TopicMessage{
+				Content: &ep.TopicMessage_StructPayload{
 					StructPayload: content,
 				},
 			}
