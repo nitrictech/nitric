@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
@@ -130,8 +129,8 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName
 	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
-func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRequestBatch) (*queuespb.QueueSendResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Send")
+func (s *PubsubQueueService) Enqueue(ctx context.Context, req *queuespb.QueueEnqueueRequest) (*queuespb.QueueEnqueueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Enqueue")
 
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
 	topic, err := s.getPubsubTopicFromName(req.QueueName)
@@ -145,16 +144,16 @@ func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRe
 
 	// SendBatch once we've published all tasks to the client
 	results := make([]ifaces_pubsub.PublishResult, 0)
-	failedTasks := make([]*queuespb.FailedSendRequest, 0)
-	publishedTasks := make([]*queuespb.QueueSendRequest, 0)
+	failedTasks := make([]*queuespb.FailedEnqueueMessage, 0)
+	publishedTasks := make([]*queuespb.QueueMessage, 0)
 
 	attributes := propagation.MapCarrier{}
 
 	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
 
-	for _, task := range req.Requests {
+	for _, task := range req.Messages {
 		t := task
-		if taskBytes, err := proto.Marshal(t.Payload); err == nil {
+		if taskBytes, err := proto.Marshal(t); err == nil {
 			msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
 				Data:       taskBytes,
 				Attributes: attributes,
@@ -163,9 +162,9 @@ func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRe
 			results = append(results, topic.Publish(ctx, msg))
 			publishedTasks = append(publishedTasks, t)
 		} else {
-			failedTasks = append(failedTasks, &queuespb.FailedSendRequest{
-				Request: t,
-				Message: "Error unmarshalling message for queue",
+			failedTasks = append(failedTasks, &queuespb.FailedEnqueueMessage{
+				Message: t,
+				Details: "Error unmarshalling message for queue",
 			})
 		}
 	}
@@ -174,20 +173,20 @@ func (s *PubsubQueueService) Send(ctx context.Context, req *queuespb.QueueSendRe
 		// Iterate over the results to check for successful publishing...
 		if _, err := result.Get(ctx); err != nil {
 			// Add this to our failures list in our results...
-			failedTasks = append(failedTasks, &queuespb.FailedSendRequest{
-				Request: publishedTasks[idx],
-				Message: err.Error(),
+			failedTasks = append(failedTasks, &queuespb.FailedEnqueueMessage{
+				Message: publishedTasks[idx],
+				Details: err.Error(),
 			})
 		}
 	}
 
-	return &queuespb.QueueSendResponse{
-		FailedRequests: failedTasks,
+	return &queuespb.QueueEnqueueResponse{
+		FailedMessages: failedTasks,
 	}, nil
 }
 
-func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueReceiveRequest) (*queuespb.QueueReceiveResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Receive")
+func (s *PubsubQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeueRequest) (*queuespb.QueueDequeueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Dequeue")
 
 	// Find the generic pull subscription for the provided topic (queue)
 	queueSubscription, err := s.getQueueSubscription(ctx, req.QueueName)
@@ -236,17 +235,17 @@ func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueRec
 	// An empty list is returned from PubSub if no messages are available
 	// we return our own empty list in turn.
 	if len(res.ReceivedMessages) == 0 {
-		return &queuespb.QueueReceiveResponse{
-			Tasks: []*queuespb.ReceivedTask{},
+		return &queuespb.QueueDequeueResponse{
+			Messages: []*queuespb.DequeuedMessage{},
 		}, nil
 	}
 
 	// Convert the PubSub messages into Nitric tasks
-	var tasks []*queuespb.ReceivedTask
+	var tasks []*queuespb.DequeuedMessage
 	for _, m := range res.ReceivedMessages {
 		// var nitricTask queuespb.ReceivedTask
-		var structPayload structpb.Struct
-		err := proto.Unmarshal(m.Message.Data, &structPayload)
+		var queueMessage queuespb.QueueMessage
+		err := proto.Unmarshal(m.Message.Data, &queueMessage)
 		if err != nil {
 			// This item could be immediately requeued.
 			// However, that risks the unprocessable items being reprocessed immediately,
@@ -255,14 +254,14 @@ func (s *PubsubQueueService) Receive(ctx context.Context, req *queuespb.QueueRec
 			continue
 		}
 
-		tasks = append(tasks, &queuespb.ReceivedTask{
-			Payload: &structPayload,
+		tasks = append(tasks, &queuespb.DequeuedMessage{
+			Message: &queueMessage,
 			LeaseId: m.AckId,
 		})
 	}
 
-	return &queuespb.QueueReceiveResponse{
-		Tasks: tasks,
+	return &queuespb.QueueDequeueResponse{
+		Messages: tasks,
 	}, nil
 }
 

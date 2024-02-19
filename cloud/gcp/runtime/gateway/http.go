@@ -75,7 +75,7 @@ func (g *gcpMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasth
 				ctx.Error("Can not handle event for empty topic", 400)
 			}
 
-			var message topicpb.Message
+			var message topicpb.TopicMessage
 			err := proto.Unmarshal(pubsubEvent.Message.Data, &message)
 			if err != nil {
 				ctx.Error("could not unmarshal event data", 500)

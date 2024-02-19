@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueuesClient interface {
-	// Send messages to a queue
-	Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error)
+	// Send message(s) to a queue
+	Enqueue(ctx context.Context, in *QueueEnqueueRequest, opts ...grpc.CallOption) (*QueueEnqueueResponse, error)
 	// Receive message(s) from a queue
-	Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error)
-	// Complete an item previously popped from a queue
+	Dequeue(ctx context.Context, in *QueueDequeueRequest, opts ...grpc.CallOption) (*QueueDequeueResponse, error)
+	// Complete an message previously popped from a queue
 	Complete(ctx context.Context, in *QueueCompleteRequest, opts ...grpc.CallOption) (*QueueCompleteResponse, error)
 }
 
@@ -38,18 +38,18 @@ func NewQueuesClient(cc grpc.ClientConnInterface) QueuesClient {
 	return &queuesClient{cc}
 }
 
-func (c *queuesClient) Send(ctx context.Context, in *QueueSendRequestBatch, opts ...grpc.CallOption) (*QueueSendResponse, error) {
-	out := new(QueueSendResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Send", in, out, opts...)
+func (c *queuesClient) Enqueue(ctx context.Context, in *QueueEnqueueRequest, opts ...grpc.CallOption) (*QueueEnqueueResponse, error) {
+	out := new(QueueEnqueueResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Enqueue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queuesClient) Receive(ctx context.Context, in *QueueReceiveRequest, opts ...grpc.CallOption) (*QueueReceiveResponse, error) {
-	out := new(QueueReceiveResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Receive", in, out, opts...)
+func (c *queuesClient) Dequeue(ctx context.Context, in *QueueDequeueRequest, opts ...grpc.CallOption) (*QueueDequeueResponse, error) {
+	out := new(QueueDequeueResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.queues.v1.Queues/Dequeue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,11 +69,11 @@ func (c *queuesClient) Complete(ctx context.Context, in *QueueCompleteRequest, o
 // All implementations should embed UnimplementedQueuesServer
 // for forward compatibility
 type QueuesServer interface {
-	// Send messages to a queue
-	Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error)
+	// Send message(s) to a queue
+	Enqueue(context.Context, *QueueEnqueueRequest) (*QueueEnqueueResponse, error)
 	// Receive message(s) from a queue
-	Receive(context.Context, *QueueReceiveRequest) (*QueueReceiveResponse, error)
-	// Complete an item previously popped from a queue
+	Dequeue(context.Context, *QueueDequeueRequest) (*QueueDequeueResponse, error)
+	// Complete an message previously popped from a queue
 	Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error)
 }
 
@@ -81,11 +81,11 @@ type QueuesServer interface {
 type UnimplementedQueuesServer struct {
 }
 
-func (UnimplementedQueuesServer) Send(context.Context, *QueueSendRequestBatch) (*QueueSendResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
+func (UnimplementedQueuesServer) Enqueue(context.Context, *QueueEnqueueRequest) (*QueueEnqueueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Enqueue not implemented")
 }
-func (UnimplementedQueuesServer) Receive(context.Context, *QueueReceiveRequest) (*QueueReceiveResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Receive not implemented")
+func (UnimplementedQueuesServer) Dequeue(context.Context, *QueueDequeueRequest) (*QueueDequeueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Dequeue not implemented")
 }
 func (UnimplementedQueuesServer) Complete(context.Context, *QueueCompleteRequest) (*QueueCompleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
@@ -102,38 +102,38 @@ func RegisterQueuesServer(s grpc.ServiceRegistrar, srv QueuesServer) {
 	s.RegisterService(&Queues_ServiceDesc, srv)
 }
 
-func _Queues_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueueSendRequestBatch)
+func _Queues_Enqueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueueEnqueueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueuesServer).Send(ctx, in)
+		return srv.(QueuesServer).Enqueue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queues.v1.Queues/Send",
+		FullMethod: "/nitric.proto.queues.v1.Queues/Enqueue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueuesServer).Send(ctx, req.(*QueueSendRequestBatch))
+		return srv.(QueuesServer).Enqueue(ctx, req.(*QueueEnqueueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Queues_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueueReceiveRequest)
+func _Queues_Dequeue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueueDequeueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueuesServer).Receive(ctx, in)
+		return srv.(QueuesServer).Dequeue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.queues.v1.Queues/Receive",
+		FullMethod: "/nitric.proto.queues.v1.Queues/Dequeue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueuesServer).Receive(ctx, req.(*QueueReceiveRequest))
+		return srv.(QueuesServer).Dequeue(ctx, req.(*QueueDequeueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -164,12 +164,12 @@ var Queues_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueuesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Send",
-			Handler:    _Queues_Send_Handler,
+			MethodName: "Enqueue",
+			Handler:    _Queues_Enqueue_Handler,
 		},
 		{
-			MethodName: "Receive",
-			Handler:    _Queues_Receive_Handler,
+			MethodName: "Dequeue",
+			Handler:    _Queues_Dequeue_Handler,
 		},
 		{
 			MethodName: "Complete",

@@ -9,7 +9,7 @@ option java_outer_classname = "Https";
 option php_namespace = "Nitric\\Proto\\Http\\V1";
 option csharp_namespace = "Nitric.Proto.Http.v1";
 
-// Service for publishing asynchronous messages
+// Service for proxying HTTP requests
 service Http {
   // Proxy an HTTP server
   rpc Proxy(stream ClientMessage) returns (stream ServerMessage);
@@ -23,7 +23,7 @@ message ClientMessage {
 message ServerMessage {}
 
 message HttpProxyRequest {
-    // The local port the server can be accessed on
+    // The address the server can be accessed on
     string host = 1;
 }
 

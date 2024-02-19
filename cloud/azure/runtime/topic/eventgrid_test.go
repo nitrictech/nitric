@@ -46,7 +46,7 @@ var getTopicResourcesResponse = map[string]resource.AzGenericResource{
 
 var _ = Describe("Event Grid Plugin", func() {
 	When("Publishing Messages", func() {
-		eventPayload := &topicpb.Message{}
+		eventPayload := &topicpb.TopicMessage{}
 
 		When("To a topic that does not exist", func() {
 			ctrl := gomock.NewController(GinkgoT())

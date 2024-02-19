@@ -32,7 +32,7 @@ service StorageListener {
   rpc Listen (stream ClientMessage) returns (stream ServerMessage);
 }
 
-
+// ClientMessages are sent from the service to the nitric server
 message ClientMessage {
   // globally unique ID of the request/response pair
   string id = 1;
@@ -40,11 +40,12 @@ message ClientMessage {
   oneof content {
     // Watch for changes on a bucket
     RegistrationRequest registration_request = 2;
-    // Stop watching for changes on a bucket
+    // Response to a blob event (change to a blob)
     BlobEventResponse blob_event_response = 3;
   }
 }
 
+// ServerMessages are sent from the nitric server to the service
 message ServerMessage {
   // globally unique ID of the request/response pair
   string id = 1;
@@ -52,7 +53,7 @@ message ServerMessage {
   oneof content {
     // Watch for changes on a bucket
     RegistrationResponse registration_response = 2;
-    // Stop watching for changes on a bucket
+    // Event for a blob in a bucket
     BlobEventRequest blob_event_request = 3;
   }
 }
@@ -60,7 +61,6 @@ message ServerMessage {
 message BlobEventRequest {
   string bucket_name = 1;
   
-  // Now we don't need to specify a type enum, the specific contents/type comes in a single field of the context.
   oneof event {
      BlobEvent blob_event = 10;
   }

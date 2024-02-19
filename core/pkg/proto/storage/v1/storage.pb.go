@@ -114,6 +114,7 @@ func (StoragePreSignUrlRequest_Operation) EnumDescriptor() ([]byte, []int) {
 	return file_nitric_proto_storage_v1_storage_proto_rawDescGZIP(), []int{13, 0}
 }
 
+// ClientMessages are sent from the service to the nitric server
 type ClientMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -198,7 +199,7 @@ type ClientMessage_RegistrationRequest struct {
 }
 
 type ClientMessage_BlobEventResponse struct {
-	// Stop watching for changes on a bucket
+	// Response to a blob event (change to a blob)
 	BlobEventResponse *BlobEventResponse `protobuf:"bytes,3,opt,name=blob_event_response,json=blobEventResponse,proto3,oneof"`
 }
 
@@ -206,6 +207,7 @@ func (*ClientMessage_RegistrationRequest) isClientMessage_Content() {}
 
 func (*ClientMessage_BlobEventResponse) isClientMessage_Content() {}
 
+// ServerMessages are sent from the nitric server to the service
 type ServerMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -290,7 +292,7 @@ type ServerMessage_RegistrationResponse struct {
 }
 
 type ServerMessage_BlobEventRequest struct {
-	// Stop watching for changes on a bucket
+	// Event for a blob in a bucket
 	BlobEventRequest *BlobEventRequest `protobuf:"bytes,3,opt,name=blob_event_request,json=blobEventRequest,proto3,oneof"`
 }
 
@@ -304,8 +306,6 @@ type BlobEventRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	BucketName string `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
-	// Now we don't need to specify a type enum, the specific contents/type comes in a single field of the context.
-	//
 	// Types that are assignable to Event:
 	//
 	//	*BlobEventRequest_BlobEvent

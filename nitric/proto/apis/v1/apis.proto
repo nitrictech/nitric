@@ -9,13 +9,13 @@ option java_outer_classname = "Apis";
 option php_namespace = "Nitric\\Proto\\Apis\\V1";
 option csharp_namespace = "Nitric.Proto.Apis.v1";
 
-// Service for publishing asynchronous messages
+// Service for API routing and handlers
 service Api {
   // Serve a route on an API
   rpc Serve(stream ClientMessage) returns (stream ServerMessage);
 
   // Retrieve details about an API
-  rpc Details(ApiDetailsRequest) returns (ApiDetailsResponse);
+  rpc ApiDetails(ApiDetailsRequest) returns (ApiDetailsResponse);
 }
 
 message ApiDetailsRequest {
@@ -26,12 +26,13 @@ message ApiDetailsResponse {
   string url = 1;
 }
 
+// ClientMessage sent by the service to the nitric server
 message ClientMessage {
   // globally unique ID of the request/response pair
   string id = 1;
 
   oneof content {
-    // Register a subscription to a topic
+    // Register an API route handler
     RegistrationRequest registration_request = 2;
 
     // Response to an HTTP request
@@ -65,7 +66,7 @@ message HttpRequest {
 
 // HttpResponseMessage
 message HttpResponse {
-  // The HTTP status of the request
+  // The HTTP response status code
   int32 status = 1;
 
   // HTTP response headers
@@ -75,15 +76,16 @@ message HttpResponse {
   bytes body = 3;
 }
 
+// ServerMessage sent by the nitric server to the service
 message ServerMessage {
   // globally unique ID of the request/response pair
   string id = 1;
 
   oneof content {
-    // Response to a topic subscription request
+    // Response to an API serve request
     RegistrationResponse registration_response = 2;
 
-    // Response to a topic message request
+    // HTTP request to be routed to the service (handler)
     HttpRequest http_request = 3;
   }
 }

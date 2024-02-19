@@ -104,7 +104,7 @@ func (s *RouteWorkerManager) WorkerCount() int {
 	return total
 }
 
-func (a *RouteWorkerManager) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+func (a *RouteWorkerManager) ApiDetails(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "Not Implemented")
 }
 

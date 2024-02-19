@@ -70,15 +70,6 @@ enum ResourceDeploymentStatus {
     FAILED = 3;
 }
 
-/*
-
-hello : service : created
-| latest message goes here.
-|- Container Image : created
-|- ECR Repository : failed
-
-*/
-
 message ResourceUpdate {
     // The resource being updated, if this is nil the update applies to the stack
     nitric.proto.resources.v1.ResourceIdentifier id = 1;
@@ -139,7 +130,7 @@ message ImageSource {
     string uri = 1;
 }
 
-// A unit of service (i.e. function/container)
+// A unit of compute (i.e. function/container)
 message Service {
     // Source of the service
     oneof source {
@@ -187,19 +178,14 @@ message Topic {
 
 message Queue {}
 
-message KeyValueStore {
+message KeyValueStore {}
 
-}
-
-message Secret {
-    
-}
+message Secret {}
 
 message SubscriptionTarget {
     oneof target {
         // The name of an service to target
         string service = 1;
-
         // Additional targets could potentially include
         // - HTTP/API Endpoints
         // - Queues
@@ -217,7 +203,7 @@ message HttpTarget {
     }
 }
 
-// A http resource
+// An http proxy resource
 message Http {
     HttpTarget target = 1;
 }
@@ -244,7 +230,6 @@ message WebsocketTarget {
     oneof target {
         // The name of an service to target
         string service = 1;
-
         // Additional targets could potentially include
         // - HTTP/API Endpoints
     }
@@ -254,7 +239,6 @@ message ScheduleTarget {
     oneof target {
         // The name of an service to target
         string service = 1;
-
         // Additional targets could potentially include
         // - HTTP/API Endpoints
     }

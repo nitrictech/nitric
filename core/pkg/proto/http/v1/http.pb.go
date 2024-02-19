@@ -111,7 +111,7 @@ type HttpProxyRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The local port the server can be accessed on
+	// The address the server can be accessed on
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 }
 

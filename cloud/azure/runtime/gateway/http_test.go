@@ -190,8 +190,8 @@ var _ = Describe("Http", func() {
 
 				structPayload, _ := structpb.NewStruct(payload)
 
-				messagePayload := &topicspb.Message{
-					Content: &topicspb.Message_StructPayload{
+				messagePayload := &topicspb.TopicMessage{
+					Content: &topicspb.TopicMessage_StructPayload{
 						StructPayload: structPayload,
 					},
 				}

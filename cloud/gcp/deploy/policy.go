@@ -29,6 +29,7 @@ import (
 	gcpstorage "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 type Policy struct {
@@ -57,27 +58,20 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 	v1.Action_BucketFileDelete: {
 		"storage.objects.delete",
 	},
-	v1.Action_TopicDetail: {
-		"pubsub.topics.get",
-	},
-	v1.Action_TopicEventPublish: {
-		"pubsub.topics.publish",
-	},
-	v1.Action_TopicList: {}, // see above in gcpListActions
-	v1.Action_QueueSend: {
+	v1.Action_TopicPublish: {
 		"pubsub.topics.get",
 		"pubsub.topics.publish",
 	},
-	v1.Action_QueueReceive: {
+	v1.Action_QueueEnqueue: {
+		"pubsub.topics.get",
+		"pubsub.topics.publish",
+	},
+	v1.Action_QueueDequeue: {
 		"pubsub.topics.get",
 		"pubsub.topics.attachSubscription",
 		"pubsub.snapshots.seek",
 		"pubsub.subscriptions.consume",
 	},
-	v1.Action_QueueDetail: {
-		"pubsub.topics.get",
-	},
-	v1.Action_QueueList: {}, // see above in gcpListActions
 	v1.Action_KeyValueStoreDelete: {
 		"appengine.applications.get",
 		"datastore.databases.get",
@@ -156,6 +150,8 @@ func actionsToGcpActions(actions []v1.Action) []string {
 	for _, a := range actions {
 		gcpActions = append(gcpActions, gcpActionsMap[a]...)
 	}
+
+	gcpActions = lo.Uniq(gcpActions)
 
 	return gcpActions
 }
@@ -247,7 +243,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 				needSubConsume := false
 
 				for _, act := range config.Actions {
-					if act == v1.Action_QueueReceive {
+					if act == v1.Action_QueueDequeue {
 						needSubConsume = true
 						break
 					}
