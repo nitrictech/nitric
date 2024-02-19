@@ -33,8 +33,14 @@ import (
 )
 
 var _ = Describe("Azqueue", func() {
-	testStruct, err := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
+	structPayload, err := structpb.NewStruct(map[string]interface{}{"Test": "Test"})
 	Expect(err).To(BeNil())
+
+	testStruct := &queuepb.QueueMessage{
+		Content: &queuepb.QueueMessage_StructPayload{
+			StructPayload: structPayload,
+		},
+	}
 
 	testPayloadBytes, err := proto.Marshal(testStruct)
 	testB64Payload := base64.StdEncoding.EncodeToString(testPayloadBytes)
@@ -70,16 +76,8 @@ var _ = Describe("Azqueue", func() {
 				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
 					Messages: []*queuepb.QueueMessage{
-						{
-							Content: &queuepb.QueueMessage_StructPayload{
-								StructPayload: testStruct,
-							},
-						},
-						{
-							Content: &queuepb.QueueMessage_StructPayload{
-								StructPayload: testStruct,
-							},
-						},
+						testStruct,
+						testStruct,
 					},
 				})
 
@@ -125,16 +123,8 @@ var _ = Describe("Azqueue", func() {
 				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
 					Messages: []*queuepb.QueueMessage{
-						{
-							Content: &queuepb.QueueMessage_StructPayload{
-								StructPayload: testStruct,
-							},
-						},
-						{
-							Content: &queuepb.QueueMessage_StructPayload{
-								StructPayload: testStruct,
-							},
-						},
+						testStruct,
+						testStruct,
 					},
 				})
 
@@ -197,7 +187,7 @@ var _ = Describe("Azqueue", func() {
 
 				By("Returning the dequeued task")
 				Expect(len(resp.Messages)).To(Equal(1))
-				Expect(resp.Messages[0].Message.GetStructPayload().AsMap()).To(Equal(map[string]interface{}{"testval": "testkey"}))
+				Expect(resp.Messages[0].Message.GetStructPayload().AsMap()).To(Equal(map[string]interface{}{"Test": "Test"}))
 
 				crtl.Finish()
 			})

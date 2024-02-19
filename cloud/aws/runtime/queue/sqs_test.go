@@ -39,9 +39,14 @@ import (
 )
 
 var _ = Describe("Sqs", func() {
-	testStruct, err := structpb.NewStruct(map[string]interface{}{"Test": "Test"})
-
+	structPayload, err := structpb.NewStruct(map[string]interface{}{"Test": "Test"})
 	Expect(err).To(BeNil())
+
+	testStruct := &queuespb.QueueMessage{
+		Content: &queuespb.QueueMessage_StructPayload{
+			StructPayload: structPayload,
+		},
+	}
 
 	testPayloadBytes, err := proto.Marshal(testStruct)
 
@@ -215,7 +220,7 @@ var _ = Describe("Sqs", func() {
 
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("rpc error: code = NotFound desc = SQSQueueService.SendBatch unable to find queue"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = NotFound desc = SQSQueueService.Enqueue unable to find queue"))
 					ctrl.Finish()
 				})
 			})
@@ -271,7 +276,7 @@ var _ = Describe("Sqs", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(response.Messages).To(HaveLen(1))
 					Expect(response.Messages[0].LeaseId).To(BeEquivalentTo("mockreceipthandle"))
-					Expect(response.Messages[0].Message.GetStructPayload().AsMap()).To(BeEquivalentTo(testStruct.AsMap()))
+					Expect(response.Messages[0].Message.GetStructPayload().AsMap()).To(BeEquivalentTo(testStruct.GetStructPayload().AsMap()))
 
 					ctrl.Finish()
 				})
