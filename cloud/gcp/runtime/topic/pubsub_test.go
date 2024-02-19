@@ -45,8 +45,8 @@ var _ = Describe("Pubsub Plugin", func() {
 
 	When("Publishing Messages", func() {
 		payload, _ := structpb.NewStruct(map[string]interface{}{"Test": "test"})
-		message := &topicpb.Message{
-			Content: &topicpb.Message_StructPayload{
+		message := &topicpb.TopicMessage{
+			Content: &topicpb.TopicMessage_StructPayload{
 				StructPayload: payload,
 			},
 		}
@@ -123,8 +123,8 @@ var _ = Describe("Pubsub Plugin", func() {
 
 	When("Publishing Delayed Messages", func() {
 		payload, _ := structpb.NewStruct(map[string]interface{}{"Test": "test"})
-		message := &topicpb.Message{
-			Content: &topicpb.Message_StructPayload{
+		message := &topicpb.TopicMessage{
+			Content: &topicpb.TopicMessage_StructPayload{
 				StructPayload: payload,
 			},
 		}

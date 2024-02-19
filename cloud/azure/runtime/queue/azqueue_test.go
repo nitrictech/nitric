@@ -67,14 +67,18 @@ var _ = Describe("Azqueue", func() {
 					time.Duration(0),
 				).Times(2).Return(&azqueue.EnqueueMessageResponse{}, nil)
 
-				resp, err := queuePlugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
+				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
-					Requests: []*queuepb.QueueSendRequest{
+					Messages: []*queuepb.QueueMessage{
 						{
-							Payload: testStruct,
+							Content: &queuepb.QueueMessage_StructPayload{
+								StructPayload: testStruct,
+							},
 						},
 						{
-							Payload: testStruct,
+							Content: &queuepb.QueueMessage_StructPayload{
+								StructPayload: testStruct,
+							},
 						},
 					},
 				})
@@ -83,7 +87,7 @@ var _ = Describe("Azqueue", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Not returning failed tasks")
-				Expect(len(resp.FailedRequests)).To(Equal(0))
+				Expect(len(resp.FailedMessages)).To(Equal(0))
 
 				crtl.Finish()
 			})
@@ -118,14 +122,18 @@ var _ = Describe("Azqueue", func() {
 
 				// testStruct, _ := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
 
-				resp, err := queuePlugin.Send(context.TODO(), &queuepb.QueueSendRequestBatch{
+				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
 					QueueName: "test-queue",
-					Requests: []*queuepb.QueueSendRequest{
+					Messages: []*queuepb.QueueMessage{
 						{
-							Payload: testStruct,
+							Content: &queuepb.QueueMessage_StructPayload{
+								StructPayload: testStruct,
+							},
 						},
 						{
-							Payload: testStruct,
+							Content: &queuepb.QueueMessage_StructPayload{
+								StructPayload: testStruct,
+							},
 						},
 					},
 				})
@@ -134,7 +142,7 @@ var _ = Describe("Azqueue", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Not returning failed tasks")
-				Expect(len(resp.FailedRequests)).To(Equal(0))
+				Expect(len(resp.FailedMessages)).To(Equal(0))
 
 				crtl.Finish()
 			})
@@ -179,7 +187,7 @@ var _ = Describe("Azqueue", func() {
 					Text:            testB64Payload,
 				})
 
-				resp, err := queuePlugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{
+				resp, err := queuePlugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 					QueueName: "test-queue",
 					Depth:     1,
 				})
@@ -188,8 +196,8 @@ var _ = Describe("Azqueue", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Returning the dequeued task")
-				Expect(len(resp.Tasks)).To(Equal(1))
-				Expect(resp.Tasks[0].Payload.AsMap()).To(Equal(map[string]interface{}{"testval": "testkey"}))
+				Expect(len(resp.Messages)).To(Equal(1))
+				Expect(resp.Messages[0].Message.GetStructPayload().AsMap()).To(Equal(map[string]interface{}{"testval": "testkey"}))
 
 				crtl.Finish()
 			})
@@ -221,7 +229,7 @@ var _ = Describe("Azqueue", func() {
 					30*time.Second, // visibility timeout - defaulted to 30 seconds
 				).Times(1).Return(nil, fmt.Errorf("a test error"))
 
-				_, err := queuePlugin.Receive(context.TODO(), &queuepb.QueueReceiveRequest{
+				_, err := queuePlugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 					QueueName: "test-queue",
 					Depth:     1,
 				})

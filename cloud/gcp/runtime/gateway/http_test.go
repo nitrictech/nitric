@@ -152,8 +152,8 @@ var _ = Describe("Http", func() {
 				"Test": "Test",
 			})
 
-			message := topicspb.Message{
-				Content: &topicspb.Message_StructPayload{
+			message := topicspb.TopicMessage{
+				Content: &topicspb.TopicMessage_StructPayload{
 					StructPayload: content,
 				},
 			}

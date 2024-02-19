@@ -50,8 +50,8 @@ var _ = Describe("Sns", func() {
 			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
 			payload, _ := structpb.NewStruct(map[string]interface{}{"Test": "test"})
 
-			message := &eventpb.Message{
-				Content: &eventpb.Message_StructPayload{
+			message := &eventpb.TopicMessage{
+				Content: &eventpb.TopicMessage_StructPayload{
 					StructPayload: payload,
 				},
 			}
@@ -97,8 +97,8 @@ var _ = Describe("Sns", func() {
 
 				_, err := eventsClient.Publish(context.TODO(), &eventpb.TopicPublishRequest{
 					TopicName: "test",
-					Message: &eventpb.Message{
-						Content: &eventpb.Message_StructPayload{
+					Message: &eventpb.TopicMessage{
+						Content: &eventpb.TopicMessage_StructPayload{
 							StructPayload: payload,
 						},
 					},
@@ -129,8 +129,8 @@ var _ = Describe("Sns", func() {
 				_, err := eventsClient.Publish(context.TODO(), &eventpb.TopicPublishRequest{
 					TopicName: "test",
 					Delay:     durationpb.New(time.Second * 0),
-					Message: &eventpb.Message{
-						Content: &eventpb.Message_StructPayload{
+					Message: &eventpb.TopicMessage{
+						Content: &eventpb.TopicMessage_StructPayload{
 							StructPayload: payload,
 						},
 					},
@@ -150,8 +150,8 @@ var _ = Describe("Sns", func() {
 			eventsClient, _ := sns_service.NewWithClient(awsMock, nil, sfnMock)
 			payload, _ := structpb.NewStruct(map[string]interface{}{"Test": "test"})
 
-			message := &eventpb.Message{
-				Content: &eventpb.Message_StructPayload{
+			message := &eventpb.TopicMessage{
+				Content: &eventpb.TopicMessage_StructPayload{
 					StructPayload: payload,
 				},
 			}
@@ -180,8 +180,8 @@ var _ = Describe("Sns", func() {
 				_, err := eventsClient.Publish(context.TODO(), &eventpb.TopicPublishRequest{
 					TopicName: "test",
 					Delay:     durationpb.New(time.Second * 1),
-					Message: &eventpb.Message{
-						Content: &eventpb.Message_StructPayload{
+					Message: &eventpb.TopicMessage{
+						Content: &eventpb.TopicMessage_StructPayload{
 							StructPayload: payload,
 						},
 					},
