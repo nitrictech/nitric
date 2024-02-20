@@ -63,8 +63,10 @@ func (d *DeployServer) Up(request *deploymentspb.DeploymentUpRequest, stream dep
 			err = stream.Send(&deploymentspb.DeploymentUpEvent{
 				Content: &deploymentspb.DeploymentUpEvent_Result{
 					Result: &deploymentspb.UpResult{
+						Content: &deploymentspb.UpResult_Text{
+							Text: fmt.Sprintf("spec written to: %s", absPath),
+						},
 						Success: true,
-						Details: fmt.Sprintf("spec written to: %s", absPath),
 					},
 				},
 			})
@@ -76,8 +78,9 @@ func (d *DeployServer) Up(request *deploymentspb.DeploymentUpRequest, stream dep
 		err = stream.Send(&deploymentspb.DeploymentUpEvent{
 			Content: &deploymentspb.DeploymentUpEvent_Result{
 				Result: &deploymentspb.UpResult{
-					Success: true,
-					Details: string(reqJson),
+					Content: &deploymentspb.UpResult_Text{
+						Text: string(reqJson),
+					},
 				},
 			},
 		})
