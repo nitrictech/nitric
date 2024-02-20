@@ -12,7 +12,7 @@ builds:
       - CGO_ENABLED=0
     id: aws
     binary: aws
-    main: ./deploy/cmd
+    main: ./cmd/deploy
     goos:
       - linux
       - windows
