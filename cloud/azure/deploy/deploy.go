@@ -188,7 +188,7 @@ func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, t
 
 func hasResourceType(resources []*deploymentspb.Resource, resourceType resourcespb.ResourceType) bool {
 	for _, r := range resources {
-		if r.GetId().GetType() != resourceType {
+		if r.GetId().GetType() == resourceType {
 			return true
 		}
 	}

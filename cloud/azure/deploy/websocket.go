@@ -22,5 +22,5 @@ import (
 )
 
 func (a *NitricAzurePulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error {
-	return fmt.Errorf("Websockets not implemented for Azure")
+	return fmt.Errorf("websockets aren't yet supported by Nitric on Azure, remove the web sockets from your project and try again or run `nitric down` to destroy this stack")
 }
