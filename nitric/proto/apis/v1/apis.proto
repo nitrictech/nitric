@@ -1,0 +1,113 @@
+syntax = "proto3";
+package nitric.proto.apis.v1;
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/apis/v1;apispb";
+option java_package = "io.nitric.proto.apis.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Apis";
+option php_namespace = "Nitric\\Proto\\Apis\\V1";
+option csharp_namespace = "Nitric.Proto.Apis.v1";
+
+// Service for API routing and handlers
+service Api {
+  // Serve a route on an API
+  rpc Serve(stream ClientMessage) returns (stream ServerMessage);
+
+  // Retrieve details about an API
+  rpc ApiDetails(ApiDetailsRequest) returns (ApiDetailsResponse);
+}
+
+message ApiDetailsRequest {
+  string api_name = 1;
+}
+
+message ApiDetailsResponse {
+  string url = 1;
+}
+
+// ClientMessage sent by the service to the nitric server
+message ClientMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // Register an API route handler
+    RegistrationRequest registration_request = 2;
+
+    // Response to an HTTP request
+    HttpResponse http_response = 3;
+  }
+}
+
+message HeaderValue { repeated string value = 1; }
+
+message QueryValue { repeated string value = 1; }
+
+message HttpRequest {
+  // The request method
+  string method = 1;
+
+  // The path of the request
+  string path = 2;
+
+  // HTTP request headers
+  map<string, HeaderValue> headers = 3;
+
+  // HTTP Query params
+  map<string, QueryValue> query_params = 4;
+
+  // HTTP Path parameters
+  map<string, string> path_params = 5;
+
+  // HTTP Request body
+  bytes body = 6;
+}
+
+// HttpResponseMessage
+message HttpResponse {
+  // The HTTP response status code
+  int32 status = 1;
+
+  // HTTP response headers
+  map<string, HeaderValue> headers = 2;
+
+  // HTTP response body
+  bytes body = 3;
+}
+
+// ServerMessage sent by the nitric server to the service
+message ServerMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // Response to an API serve request
+    RegistrationResponse registration_response = 2;
+
+    // HTTP request to be routed to the service (handler)
+    HttpRequest http_request = 3;
+  }
+}
+
+message RegistrationResponse {}
+
+message ApiWorkerScopes { repeated string scopes = 1; }
+
+message ApiWorkerOptions {
+  // Apply security definitions to this operation
+  // This will be mapped to named ApiSecurityDefinitionResource(s)
+  map<string, ApiWorkerScopes> security = 1;
+  // explicitly disable security for this endpoint
+  // We need to do this as the default value of a repeated field
+  // is always empty so there is no way of knowing if security is explicitly
+  // disabled
+  bool security_disabled = 2;
+}
+
+message RegistrationRequest {
+  string api = 1;
+  string path = 2;
+  repeated string methods = 3;
+  ApiWorkerOptions options = 4;
+}

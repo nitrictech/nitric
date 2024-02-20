@@ -26,10 +26,7 @@ lint: $(all)
 		$(MAKE) lint -C $$dir || exit 1; \
 	done
 
-test-integration:
-	@echo Running integration tests
-	@cd ./e2e && make
-
+.PHONY: test
 test: $(all)
 	for dir in $(all); do \
 		$(MAKE) test -C $$dir || exit 1; \

@@ -22,12 +22,12 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"google.golang.org/grpc/codes"
 
+	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 )
 
 type KeyVaultClient interface {
@@ -35,11 +35,13 @@ type KeyVaultClient interface {
 	GetSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string) (result keyvault.SecretBundle, err error)
 }
 
+// KeyVaultSecretService - Nitric Secret Service implementation for Azure Key Vault
 type KeyVaultSecretService struct {
-	secret.UnimplementedSecretPlugin
 	client    KeyVaultClient
 	vaultName string
 }
+
+var _ secretpb.SecretManagerServer = &KeyVaultSecretService{}
 
 // versionIdFromUrl - Extracts a secret version ID from a full secret version URL
 // the expected versionUrl format is https://{VAULT_NAME}.vault.azure.net/secrets/{SECRET_NAME}/{SECRET_VERSION}
@@ -48,62 +50,14 @@ func versionIdFromUrl(versionUrl string) string {
 	return urlParts[len(urlParts)-1]
 }
 
-func validateNewSecret(sec *secret.Secret, val []byte) error {
-	if sec == nil {
-		return fmt.Errorf("provide non-nil secret")
-	}
-	if len(sec.Name) == 0 {
-		return fmt.Errorf("provide non-blank secret name")
-	}
-	if len(val) == 0 {
-		return fmt.Errorf("provide non-blank secret value")
-	}
-
-	return nil
-}
-
-func validateSecretVersion(sec *secret.SecretVersion) error {
-	if sec == nil {
-		return fmt.Errorf("provide non-nil versioned secret")
-	}
-	if sec.Secret == nil {
-		return fmt.Errorf("provide non-nil secret")
-	}
-	if len(sec.Secret.Name) == 0 {
-		return fmt.Errorf("provide non-blank secret name")
-	}
-	if len(sec.Version) == 0 {
-		return fmt.Errorf("provide non-blank secret version")
-	}
-	return nil
-}
-
-func (s *KeyVaultSecretService) Put(ctx context.Context, sec *secret.Secret, val []byte) (*secret.SecretPutResponse, error) {
-	validationErr := errors.ErrorsWithScope(
-		"KeyVaultSecretService.Put",
-		map[string]interface{}{
-			"secret": "nil",
-		},
-	)
-	if err := validateNewSecret(sec, val); err != nil {
-		return nil, validationErr(
-			codes.InvalidArgument,
-			"invalid secret",
-			err,
-		)
-	}
-	newErr := errors.ErrorsWithScope(
-		"KeyVaultSecretService.Put",
-		map[string]interface{}{
-			"secret": sec.Name,
-		},
-	)
-	stringVal := string(val[:])
+func (s *KeyVaultSecretService) Put(ctx context.Context, req *secretpb.SecretPutRequest) (*secretpb.SecretPutResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("KeyVaultSecretService.Put")
+	stringVal := string(req.Value[:])
 
 	result, err := s.client.SetSecret(
 		ctx,
-		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
-		sec.Name,
+		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName),
+		req.Secret.Name,
 		keyvault.SecretSetParameters{
 			Value: &stringVal,
 		},
@@ -116,46 +70,28 @@ func (s *KeyVaultSecretService) Put(ctx context.Context, sec *secret.Secret, val
 		)
 	}
 
-	return &secret.SecretPutResponse{
-		SecretVersion: &secret.SecretVersion{
-			Secret: &secret.Secret{
-				Name: sec.Name,
+	return &secretpb.SecretPutResponse{
+		SecretVersion: &secretpb.SecretVersion{
+			Secret: &secretpb.Secret{
+				Name: req.Secret.Name,
 			},
 			Version: versionIdFromUrl(*result.ID),
 		},
 	}, nil
 }
 
-func (s *KeyVaultSecretService) Access(ctx context.Context, sv *secret.SecretVersion) (*secret.SecretAccessResponse, error) {
-	validationErr := errors.ErrorsWithScope(
-		"KeyVaultSecretService.Access",
-		map[string]interface{}{
-			"secret-version": "nil",
-		},
-	)
-	if err := validateSecretVersion(sv); err != nil {
-		return nil, validationErr(
-			codes.Internal,
-			"invalid secret version",
-			err,
-		)
-	}
-	newErr := errors.ErrorsWithScope(
-		"KeyVaultSecretService.Access",
-		map[string]interface{}{
-			"secret-version": sv.Secret.Name,
-		},
-	)
+func (s *KeyVaultSecretService) Access(ctx context.Context, req *secretpb.SecretAccessRequest) (*secretpb.SecretAccessResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("KeyVaultSecretService.Access")
 
 	// Key vault will default to latest if an empty string is provided
-	version := sv.Version
+	version := req.SecretVersion.Version
 	if version == "latest" {
 		version = ""
 	}
 	result, err := s.client.GetSecret(
 		ctx,
 		fmt.Sprintf("https://%s.vault.azure.net", s.vaultName), // https://myvault.vault.azure.net.
-		sv.Secret.Name,
+		req.SecretVersion.Secret.Name,
 		version,
 	)
 	if err != nil {
@@ -167,11 +103,11 @@ func (s *KeyVaultSecretService) Access(ctx context.Context, sv *secret.SecretVer
 	}
 	// Returned Secret ID: https://myvault.vault.azure.net/secrets/mysecret/11a536561da34d6b8b452d880df58f3a
 	// Split to get the version
-	return &secret.SecretAccessResponse{
+	return &secretpb.SecretAccessResponse{
 		// Return the original secret version payload
-		SecretVersion: &secret.SecretVersion{
-			Secret: &secret.Secret{
-				Name: sv.Secret.Name,
+		SecretVersion: &secretpb.SecretVersion{
+			Secret: &secretpb.Secret{
+				Name: req.SecretVersion.Secret.Name,
 			},
 			Version: versionIdFromUrl(*result.ID),
 		},
@@ -180,8 +116,8 @@ func (s *KeyVaultSecretService) Access(ctx context.Context, sv *secret.SecretVer
 }
 
 // New - Creates a new Nitric secret service with Azure Key Vault Provider
-func New() (secret.SecretService, error) {
-	vaultName := utils.GetEnv("KVAULT_NAME", "")
+func New() (*KeyVaultSecretService, error) {
+	vaultName := env.KVAULT_NAME.String()
 	if len(vaultName) == 0 {
 		return nil, fmt.Errorf("KVAULT_NAME not configured")
 	}
@@ -203,7 +139,7 @@ func New() (secret.SecretService, error) {
 	}, nil
 }
 
-func NewWithClient(client KeyVaultClient) secret.SecretService {
+func NewWithClient(client KeyVaultClient) *KeyVaultSecretService {
 	return &KeyVaultSecretService{
 		client:    client,
 		vaultName: "localvault",

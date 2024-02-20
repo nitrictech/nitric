@@ -21,15 +21,17 @@ import (
 	"io"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	mock_azblob "github.com/nitrictech/nitric/cloud/azure/mocks/azblob"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 var _ = Describe("Azblob", func() {
@@ -71,13 +73,16 @@ var _ = Describe("Azblob", func() {
 				By("Reading from the download response")
 				mockDown.EXPECT().Body(gomock.Any()).Times(1).Return(io.NopCloser(strings.NewReader("file-contents")))
 
-				data, err := storagePlugin.Read(context.TODO(), "my-bucket", "my-blob")
+				data, err := storagePlugin.Read(context.TODO(), &storagepb.StorageReadRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Returning the read data")
-				Expect(data).To(BeEquivalentTo([]byte("file-contents")))
+				Expect(data.Body).To(BeEquivalentTo([]byte("file-contents")))
 
 				crtl.Finish()
 			})
@@ -110,7 +115,10 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(nil, fmt.Errorf("Failed to download"))
 
-				_, err := storagePlugin.Read(context.TODO(), "my-bucket", "my-blob")
+				_, err := storagePlugin.Read(context.TODO(), &storagepb.StorageReadRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+				})
 
 				By("Returning an error")
 				Expect(err).To(HaveOccurred())
@@ -148,7 +156,11 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(&azblob.BlockBlobUploadResponse{}, nil)
 
-				err := storagePlugin.Write(context.TODO(), "my-bucket", "my-blob", []byte("test"))
+				_, err := storagePlugin.Write(context.TODO(), &storagepb.StorageWriteRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+					Body:       []byte("test"),
+				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -186,7 +198,11 @@ var _ = Describe("Azblob", func() {
 					azblob.ClientProvidedKeyOptions{},
 				).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				err := storagePlugin.Write(context.TODO(), "my-bucket", "my-blob", []byte("test"))
+				_, err := storagePlugin.Write(context.TODO(), &storagepb.StorageWriteRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+					Body:       []byte("test"),
+				})
 
 				By("returning an error")
 				Expect(err).To(HaveOccurred())
@@ -221,7 +237,10 @@ var _ = Describe("Azblob", func() {
 					azblob.BlobAccessConditions{},
 				).Times(1).Return(&azblob.BlobDeleteResponse{}, nil)
 
-				err := storagePlugin.Delete(context.TODO(), "my-bucket", "my-blob")
+				_, err := storagePlugin.Delete(context.TODO(), &storagepb.StorageDeleteRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -254,7 +273,10 @@ var _ = Describe("Azblob", func() {
 					azblob.BlobAccessConditions{},
 				).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				err := storagePlugin.Delete(context.TODO(), "my-bucket", "my-blob")
+				_, err := storagePlugin.Delete(context.TODO(), &storagepb.StorageDeleteRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+				})
 
 				By("Not returning an error")
 				Expect(err).To(HaveOccurred())
@@ -293,18 +315,19 @@ var _ = Describe("Azblob", func() {
 					},
 				}, nil)
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket", &storage.ListFileOptions{
-					Prefix: "/test/",
+				resp, err := storagePlugin.ListBlobs(context.TODO(), &storagepb.StorageListBlobsRequest{
+					BucketName: "my-bucket",
+					Prefix:     "/test/",
 				})
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning a single file")
-				Expect(files).To(HaveLen(1))
+				Expect(resp.Blobs).To(HaveLen(1))
 
 				By("Having the returned key")
-				Expect(files[0].Key).To(Equal("/test/test.png"))
+				Expect(resp.Blobs[0].Key).To(Equal("/test/test.png"))
 
 				ctrl.Finish()
 			})
@@ -326,7 +349,9 @@ var _ = Describe("Azblob", func() {
 				By("Azure returning an error")
 				mockContainer.EXPECT().ListBlobsFlatSegment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, fmt.Errorf("mock-error"))
 
-				files, err := storagePlugin.ListFiles(context.TODO(), "my-bucket", nil)
+				files, err := storagePlugin.ListBlobs(context.TODO(), &storagepb.StorageListBlobsRequest{
+					BucketName: "my-bucket",
+				})
 
 				By("returning nil results")
 				Expect(files).To(BeNil())
@@ -367,13 +392,18 @@ var _ = Describe("Azblob", func() {
 				By("Getting the URL")
 				mockBlob.EXPECT().Url().Return(*u)
 
-				url, err := storagePlugin.PreSignUrl(context.TODO(), "my-bucket", "my-blob", storage.READ, 3600)
+				resp, err := storagePlugin.PreSignUrl(context.TODO(), &storagepb.StoragePreSignUrlRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+					Operation:  storagepb.StoragePreSignUrlRequest_READ,
+					Expiry:     durationpb.New(time.Second * 3600),
+				})
 
 				By("Not returning an error")
 				Expect(err).ShouldNot(HaveOccurred())
 
 				By("Returning a pre-signed URL from the computed blob URL")
-				Expect(url).To(ContainSubstring("https://fake-account.com/my-bucket/my-blob"))
+				Expect(resp.Url).To(ContainSubstring("https://fake-account.com/my-bucket/my-blob"))
 			})
 		})
 
@@ -406,10 +436,15 @@ var _ = Describe("Azblob", func() {
 				By("Getting the URL")
 				mockBlob.EXPECT().Url().Return(*u)
 
-				url, err := storagePlugin.PreSignUrl(context.TODO(), "my-bucket", "my-blob", storage.READ, 3600)
+				resp, err := storagePlugin.PreSignUrl(context.TODO(), &storagepb.StoragePreSignUrlRequest{
+					BucketName: "my-bucket",
+					Key:        "my-blob",
+					Operation:  storagepb.StoragePreSignUrlRequest_READ,
+					Expiry:     durationpb.New(time.Second * 3600),
+				})
 
-				By("Not returning a url")
-				Expect(url).To(Equal(""))
+				By("Returning nil")
+				Expect(resp).To(BeNil())
 
 				By("Returning an error")
 				Expect(err).Should(HaveOccurred())
@@ -440,13 +475,16 @@ var _ = Describe("Azblob", func() {
 					mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&azblob.BlobGetPropertiesResponse{}, nil)
 
 					By("The file returning that it exists")
-					exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+					resp, err := storagePlugin.Exists(context.TODO(), &storagepb.StorageExistsRequest{
+						BucketName: "my-bucket",
+						Key:        "test-file",
+					})
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("Returning true")
-					Expect(exists).To(BeTrue())
+					Expect(resp.Exists).To(BeTrue())
 
 					ctrl.Finish()
 				})
@@ -477,13 +515,16 @@ var _ = Describe("Azblob", func() {
 					mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, mockError)
 
 					By("The file returning that it exists")
-					exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+					resp, err := storagePlugin.Exists(context.TODO(), &storagepb.StorageExistsRequest{
+						BucketName: "my-bucket",
+						Key:        "test-file",
+					})
 
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("Returning false")
-					Expect(exists).To(BeFalse())
+					Expect(resp.Exists).To(BeFalse())
 
 					ctrl.Finish()
 				})
@@ -511,17 +552,23 @@ var _ = Describe("Azblob", func() {
 				By("Producing a service code of azblob.ServiceCodeInternalError")
 				mockError.EXPECT().ServiceCode().Times(1).Return(azblob.ServiceCodeInternalError)
 
+				By("Inspecting the service error")
+				mockError.EXPECT().Error().AnyTimes()
+
 				By("Calling GetProperties on the file")
 				mockBlob.EXPECT().GetProperties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, mockError)
 
 				By("The file returning that it exists")
-				exists, err := storagePlugin.Exists(context.TODO(), "my-bucket", "test-file")
+				resp, err := storagePlugin.Exists(context.TODO(), &storagepb.StorageExistsRequest{
+					BucketName: "my-bucket",
+					Key:        "test-file",
+				})
 
 				By("Not returning an error")
 				Expect(err).Should(HaveOccurred())
 
-				By("Returning false")
-				Expect(exists).To(BeFalse())
+				By("Returning nil")
+				Expect(resp).To(BeNil())
 
 				ctrl.Finish()
 			})

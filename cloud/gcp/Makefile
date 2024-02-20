@@ -10,7 +10,7 @@ binaries: deploybin
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 runtimebin:
 	@echo Building GCP Runtime Server
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-s -w -extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
 	@cp bin/runtime-gcp deploy/runtime-gcp
@@ -20,17 +20,17 @@ sec:
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
 	@rm deploy/runtime-gcp
 
-# FIXME: proto server registration error
 # There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin
 	@echo Building GCP Deployment Server
-	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
 	@rm deploy/runtime-gcp
 
 .PHONY: install
 install: deploybin
 	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
@@ -67,7 +67,7 @@ generate-mocks:
 	@mkdir -p mocks/pubsub
 	@mkdir -p mocks/cloudtasks
 	@mkdir -p mocks/provider
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/runtime/core GcpProvider > mocks/provider/gcp.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/runtime/resource GcpResourceProvider > mocks/provider/gcp.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub PubsubClient,TopicIterator,Topic,PublishResult > mocks/pubsub/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/cloudtasks CloudtasksClient > mocks/cloudtasks/mock.go

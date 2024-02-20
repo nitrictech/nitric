@@ -17,18 +17,38 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net"
 
-	commondeploy "github.com/nitrictech/nitric/cloud/common/deploy"
+	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/cloud/debug/deploy"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"google.golang.org/grpc"
 )
 
 // Start the deployment server
 func main() {
 	deploySrv, err := deploy.NewServer()
 	if err != nil {
-		log.Fatalf("error creating deployment server %v", err)
+		logger.Fatalf("error creating deployment server %v", err)
 	}
 
-	commondeploy.StartServer(deploySrv)
+	port := env.PORT.String()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		log.Fatalf("error listening on port %s %v", port, err)
+	}
+
+	srv := grpc.NewServer()
+
+	deploymentspb.RegisterDeploymentServer(srv, deploySrv)
+
+	fmt.Printf("Deployment server started on %s\n", lis.Addr().String())
+	err = srv.Serve(lis)
+	if err != nil {
+		log.Fatalf("error serving requests %v", err)
+	}
 }

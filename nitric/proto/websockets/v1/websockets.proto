@@ -1,0 +1,147 @@
+syntax = "proto3";
+package nitric.proto.websockets.v1;
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1;websocketspb";
+option java_package = "io.nitric.proto.websockets.v1";
+option java_multiple_files = true;
+option java_outer_classname = "WebsocketsService";
+option php_namespace = "Nitric\\Proto\\Websockets\\V1";
+option csharp_namespace = "Nitric.Proto.Websockets.v1";
+
+service Websocket {
+  // Send a messages to a websocket
+  rpc SendMessage(WebsocketSendRequest) returns (WebsocketSendResponse);
+
+  // Close a websocket connection
+  // This can be used to force a client to disconnect
+  rpc CloseConnection(WebsocketCloseConnectionRequest) returns (WebsocketCloseConnectionResponse);
+
+  // Retrieve details about an API
+  rpc SocketDetails(WebsocketDetailsRequest) returns (WebsocketDetailsResponse);
+}
+
+message WebsocketDetailsRequest {
+  string socket_name = 1;
+}
+
+message WebsocketDetailsResponse {
+  string url = 1;
+}
+
+service WebsocketHandler {
+  // Handle incoming websocket events
+  rpc HandleEvents (stream ClientMessage) returns (stream ServerMessage);
+}
+
+message WebsocketSendRequest {
+    // The nitric name of the socket to send on
+    string socket_name = 1;
+    // The connection ID of the client to send to
+    string connection_id = 2;
+    // The data to send to the socket
+    bytes data = 3;
+}
+
+message WebsocketSendResponse {}
+
+message WebsocketCloseConnectionRequest {
+    // The nitric name of the socket to send on
+    string socket_name = 1;
+    // The connection ID of the client to send to
+    string connection_id = 2;
+}
+
+message WebsocketCloseConnectionResponse {}
+
+
+// ClientMessages are sent from the service to the nitric server
+message ClientMessage {
+  // Globally unique id to pair requests/responses
+  string id = 1;
+
+  oneof content {
+    // Client initialisation request
+    // A worker will not be eligible for triggers
+    // until it has identified itself
+    RegistrationRequest registration_request = 2;
+
+    // Client responding with result of a trigger
+    WebsocketEventResponse websocket_event_response = 3; 
+  }
+}
+
+enum WebsocketEventType {
+  // Specialised Event for handling new client connections
+  Connect = 0;
+  // Specialised Event for handling existing client connections
+  Disconnect = 1;
+  // All other types of events are messages
+  Message = 2;
+}
+
+// Placeholder message
+message RegistrationResponse {}
+
+message RegistrationRequest {
+  // The nitric name of the socket that this worker listens on
+  string socket_name = 1;
+  // The type of event that this worker handles
+  WebsocketEventType event_type = 2;
+}
+
+message WebsocketEventRequest {
+  // The nitric name of the socket that this worker listens on
+  string socket_name = 1;
+
+  // The connection this trigger came from
+  string connectionId = 2;
+
+  oneof websocket_event {
+    WebsocketConnectionEvent connection = 10;
+    WebsocketDisconnectionEvent disconnection = 11;
+    WebsocketMessageEvent message = 12;
+  }
+}
+
+message QueryValue { repeated string value = 1; }
+
+// ServerMessages are sent from the nitric server to the service
+message ServerMessage {
+  // Server message ID, used to pair requests/responses
+  string id = 1;
+
+  oneof content {
+    // Server responding
+    // with client configuration details to an
+    // InitRequest
+    RegistrationResponse registration_response = 2;
+
+    // Server requesting client to process an event
+    WebsocketEventRequest websocket_event_request = 3;
+  }
+}
+
+message WebsocketEventResponse {
+  oneof websocket_response {
+    WebsocketConnectionResponse connection_response = 10;
+    // WebsocketDisconnectionResponse disconnection_response = 11;
+    // WebsocketMessageEventResponse message_response = 12;
+  }
+}
+
+message WebsocketConnectionEvent {
+  // The query params available in the connection request
+  map<string, QueryValue> query_params = 1;
+}
+
+message WebsocketConnectionResponse {
+  bool reject = 1;
+}
+
+message WebsocketDisconnectionEvent {}
+
+message WebsocketMessageEvent {
+    // Data available on
+    bytes body = 1;
+}

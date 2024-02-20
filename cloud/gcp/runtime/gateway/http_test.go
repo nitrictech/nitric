@@ -22,19 +22,22 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	mock_provider "github.com/nitrictech/nitric/cloud/gcp/mocks/provider"
-	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
-	mock_worker "github.com/nitrictech/nitric/core/mocks/worker"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/events"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/worker/pool"
+	cloudrun_service "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
+	mock_apis "github.com/nitrictech/nitric/core/mocks/workers/apis"
+	mock_topics "github.com/nitrictech/nitric/core/mocks/workers/topics"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
+	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 )
 
 const GATEWAY_ADDRESS = "127.0.0.1:9001"
@@ -43,32 +46,31 @@ var _ = Describe("Http", func() {
 	defer GinkgoRecover()
 
 	ctrl := gomock.NewController(GinkgoT())
-	pool := pool.NewProcessPool(&pool.ProcessPoolOptions{})
 	gatewayUrl := fmt.Sprintf("http://%s", GATEWAY_ADDRESS)
+
+	mockApiRequestHandler := mock_apis.NewMockApiRequestHandler(ctrl)
+	mockTopicRequestHandler := mock_topics.NewMockSubscriptionRequestHandler(ctrl)
+
 	// Set this to loopback to ensure its not public in our CI/Testing environments
 	BeforeSuite(func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	mockHandler := mock_worker.NewMockWorker(ctrl)
-	mockHandler.EXPECT().HandlesTrigger(gomock.Any()).AnyTimes().Return(true)
+	provider := mock_provider.NewMockGcpResourceProvider(ctrl)
 
-	err := pool.AddWorker(mockHandler)
-	Expect(err).To(BeNil())
-
-	provider := mock_provider.NewMockGcpProvider(ctrl)
-
-	httpPlugin, err := cloudrun_plugin.New(provider)
+	httpPlugin, err := cloudrun_service.New(provider)
 	Expect(err).To(BeNil())
 
 	// Run on a non-blocking thread
 	go func(gw gateway.GatewayService) {
 		defer GinkgoRecover()
-		_ = gw.Start(pool)
+		_ = gw.Start(&gateway.GatewayStartOpts{
+			ApiPlugin:            mockApiRequestHandler,
+			TopicsListenerPlugin: mockTopicRequestHandler,
+		})
 	}(httpPlugin)
 
-	// Delay to allow the HTTP server to correctly start
-	// FIXME: Should block on channels...
+	// Give the gateway time to start, ideally we would block on a channel
 	time.Sleep(500 * time.Millisecond)
 
 	When("Invoking the GCP HTTP Gateway", func() {
@@ -76,23 +78,27 @@ var _ = Describe("Http", func() {
 			It("Should be handled successfully", func() {
 				payload := []byte("Test")
 
-				var capturedRequest *v1.TriggerRequest
+				var capturedRequest *apispb.ServerMessage
+				var capturedApiName string
 
 				By("Handling exactly 1 request")
-				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*v1.TriggerResponse, error) {
-					capturedRequest = arg1.(*v1.TriggerRequest)
+				mockApiRequestHandler.EXPECT().HandleRequest(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*apispb.ClientMessage, error) {
+					capturedApiName = arg0.(string)
+					capturedRequest = arg1.(*apispb.ServerMessage)
+					// apiName string, request *apispb.ServerMessage
 
-					return &v1.TriggerResponse{
-						Data: []byte("success"),
-						Context: &v1.TriggerResponse_Http{
-							Http: &v1.HttpResponseContext{
+					return &apispb.ClientMessage{
+						Id: "test",
+						Content: &apispb.ClientMessage_HttpResponse{
+							HttpResponse: &apispb.HttpResponse{
 								Status: 200,
+								Body:   []byte("success"),
 							},
 						},
 					}, nil
 				})
 
-				request, err := http.NewRequest("POST", fmt.Sprintf("%s/test", gatewayUrl), bytes.NewReader(payload))
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-api/%s/test", gatewayUrl, "test-api"), bytes.NewReader(payload))
 				Expect(err).To(BeNil())
 				request.Header.Add("x-nitric-request-id", "1234")
 				request.Header.Add("x-nitric-payload-type", "Test Payload")
@@ -112,20 +118,26 @@ var _ = Describe("Http", func() {
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
+				By("Routing to the correct api")
+				Expect(capturedApiName).To(Equal("test-api"))
+
+				By("Trimming the api name off the request path")
+				Expect(strings.Contains(capturedRequest.GetHttpRequest().Path, capturedApiName)).To(BeFalse())
+
 				By("Preserving the original requests method")
-				Expect(capturedRequest.GetHttp().Method).To(Equal("POST"))
+				Expect(capturedRequest.GetHttpRequest().Method).To(Equal("POST"))
 
 				By("Preserving the original requests path")
-				Expect(capturedRequest.GetHttp().Path).To(Equal("/test"))
+				Expect(capturedRequest.GetHttpRequest().Path).To(Equal("test"))
 
 				By("Preserving the original requests body")
-				Expect(capturedRequest.Data).To(BeEquivalentTo([]byte("Test")))
+				Expect(capturedRequest.GetHttpRequest().Body).To(BeEquivalentTo([]byte("Test")))
 
 				By("Preserving the original requests headers")
-				Expect(capturedRequest.GetHttp().Headers["User-Agent"].Value[0]).To(Equal("Test"))
-				Expect(capturedRequest.GetHttp().Headers["X-Nitric-Request-Id"].Value[0]).To(Equal("1234"))
-				Expect(capturedRequest.GetHttp().Headers["X-Nitric-Payload-Type"].Value[0]).To(Equal("Test Payload"))
-				Expect(capturedRequest.GetHttp().Headers["Cookie"].Value[0]).To(Equal("test1=testcookie1; test2=testcookie2"))
+				Expect(capturedRequest.GetHttpRequest().Headers["User-Agent"].Value[0]).To(Equal("Test"))
+				Expect(capturedRequest.GetHttpRequest().Headers["X-Nitric-Request-Id"].Value[0]).To(Equal("1234"))
+				Expect(capturedRequest.GetHttpRequest().Headers["X-Nitric-Payload-Type"].Value[0]).To(Equal("Test Payload"))
+				Expect(capturedRequest.GetHttpRequest().Headers["Cookie"].Value[0]).To(Equal("test1=testcookie1; test2=testcookie2"))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))
@@ -136,16 +148,20 @@ var _ = Describe("Http", func() {
 		})
 
 		When("From a subcription with a NitricEvent", func() {
-			eventPayload := map[string]interface{}{
+			content, _ := structpb.NewStruct(map[string]interface{}{
 				"Test": "Test",
-			}
-			eventBytes, _ := json.Marshal(&events.NitricEvent{
-				ID:          "1234",
-				PayloadType: "Test Payload",
-				Payload:     eventPayload,
 			})
 
-			b64Event := base64.StdEncoding.EncodeToString(eventBytes)
+			message := topicspb.TopicMessage{
+				Content: &topicspb.TopicMessage_StructPayload{
+					StructPayload: content,
+				},
+			}
+
+			messageBytes, err := proto.Marshal(&message)
+			Expect(err).To(BeNil())
+
+			b64Event := base64.StdEncoding.EncodeToString(messageBytes)
 			payloadBytes, _ := json.Marshal(&map[string]interface{}{
 				"subscription": "test",
 				"message": map[string]interface{}{
@@ -158,16 +174,16 @@ var _ = Describe("Http", func() {
 			})
 
 			It("Should handle the event successfully", func() {
-				var capturedRequest *v1.TriggerRequest
+				var capturedRequest *topicspb.ServerMessage
 
 				By("Handling exactly 1 request")
-				mockHandler.EXPECT().HandleTrigger(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}, arg1 interface{}) (*v1.TriggerResponse, error) {
-					capturedRequest = arg1.(*v1.TriggerRequest)
+				mockTopicRequestHandler.EXPECT().HandleRequest(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) (*topicspb.ClientMessage, error) {
+					capturedRequest = arg0.(*topicspb.ServerMessage)
 
-					return &v1.TriggerResponse{
-						Data: []byte("success"),
-						Context: &v1.TriggerResponse_Topic{
-							Topic: &v1.TopicResponseContext{
+					return &topicspb.ClientMessage{
+						Id: "test",
+						Content: &topicspb.ClientMessage_MessageResponse{
+							MessageResponse: &topicspb.MessageResponse{
 								Success: true,
 							},
 						},
@@ -184,8 +200,11 @@ var _ = Describe("Http", func() {
 				By("Not returning an error")
 				Expect(err).To(BeNil())
 
+				capturedMessageBytes, err := proto.Marshal(capturedRequest.GetMessageRequest().GetMessage())
+				Expect(err).To(BeNil())
+
 				By("Passing through the published message data")
-				Expect(capturedRequest.Data).To(BeEquivalentTo(eventBytes))
+				Expect(capturedMessageBytes).To(Equal(messageBytes))
 
 				By("The request returns a successful status")
 				Expect(resp.StatusCode).To(Equal(200))

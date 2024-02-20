@@ -19,27 +19,28 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"google.golang.org/grpc/codes"
 
+	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azblob_service_iface "github.com/nitrictech/nitric/cloud/azure/runtime/storage/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 // AzblobStorageService - Nitric membrane storage plugin implementation for Azure Storage
 type AzblobStorageService struct {
 	client azblob_service_iface.AzblobServiceUrlIface
-	storage.UnimplementedStoragePlugin
 }
+
+var _ storagepb.StorageServer = &AzblobStorageService{}
 
 func (a *AzblobStorageService) getContainerUrl(bucket string) azblob_service_iface.AzblobContainerUrlIface {
 	return a.client.NewContainerURL(bucket)
@@ -49,16 +50,10 @@ func (a *AzblobStorageService) getBlobUrl(bucket string, key string) azblob_serv
 	return a.getContainerUrl(bucket).NewBlockBlobURL(key)
 }
 
-func (a *AzblobStorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.Read",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (a *AzblobStorageService) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.Read")
 	// Get the bucket for this bucket name
-	blob := a.getBlobUrl(bucket, key)
+	blob := a.getBlobUrl(req.BucketName, req.Key)
 	//// download the blob
 	r, err := blob.Download(
 		ctx,
@@ -76,26 +71,30 @@ func (a *AzblobStorageService) Read(ctx context.Context, bucket string, key stri
 		)
 	}
 
-	// TODO: Configure retries
 	data := r.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
 
-	return io.ReadAll(data)
+	body, err := io.ReadAll(data)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"Error reading blob response",
+			err,
+		)
+	}
+
+	return &storagepb.StorageReadResponse{
+		Body: body,
+	}, nil
 }
 
-func (a *AzblobStorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.Write",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (a *AzblobStorageService) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.Write")
 
-	blob := a.getBlobUrl(bucket, key)
+	blob := a.getBlobUrl(req.BucketName, req.Key)
 
 	if _, err := blob.Upload(
 		ctx,
-		bytes.NewReader(object),
+		bytes.NewReader(req.Body),
 		azblob.BlobHTTPHeaders{},
 		azblob.Metadata{},
 		azblob.BlobAccessConditions{},
@@ -103,59 +102,46 @@ func (a *AzblobStorageService) Write(ctx context.Context, bucket string, key str
 		nil,
 		azblob.ClientProvidedKeyOptions{},
 	); err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"Unable to write blob data",
 			err,
 		)
 	}
 
-	return nil
+	return &storagepb.StorageWriteResponse{}, nil
 }
 
-func (a *AzblobStorageService) Delete(ctx context.Context, bucket string, key string) error {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.Delete",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (a *AzblobStorageService) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.Delete")
 
 	// Get the bucket for this bucket name
-	blob := a.getBlobUrl(bucket, key)
+	blob := a.getBlobUrl(req.BucketName, req.Key)
 
 	if _, err := blob.Delete(
 		context.TODO(),
 		azblob.DeleteSnapshotsOptionInclude,
 		azblob.BlobAccessConditions{},
 	); err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"Unable to delete blob",
 			err,
 		)
 	}
 
-	return nil
+	return &storagepb.StorageDeleteResponse{}, nil
 }
 
-func (s *AzblobStorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.PreSignUrl",
-		map[string]interface{}{
-			"bucket":    bucket,
-			"key":       key,
-			"operation": operation.String(),
-		},
-	)
+func (s *AzblobStorageService) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.PreSignUrl")
 
-	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(bucket, key).Url())
+	blobUrlParts := azblob.NewBlobURLParts(s.getBlobUrl(req.BucketName, req.Key).Url())
 	currentTime := time.Now().UTC()
-	validDuration := currentTime.Add(time.Duration(expiry) * time.Second)
+	validDuration := currentTime.Add(req.Expiry.AsDuration())
 	cred, err := s.client.GetUserDelegationCredential(ctx, azblob.NewKeyInfo(currentTime, validDuration), nil, nil)
 	if err != nil {
-		return "", newErr(
+		return nil, newErr(
 			codes.Internal,
 			"could not get user delegation credential",
 			err,
@@ -166,16 +152,16 @@ func (s *AzblobStorageService) PreSignUrl(ctx context.Context, bucket string, ke
 		Protocol:   azblob.SASProtocolHTTPS,
 		ExpiryTime: validDuration,
 		Permissions: azblob.BlobSASPermissions{
-			Read:  operation == storage.READ,
-			Write: operation == storage.WRITE,
+			Read:  req.Operation == storagepb.StoragePreSignUrlRequest_READ,
+			Write: req.Operation == storagepb.StoragePreSignUrlRequest_WRITE,
 		}.String(),
-		BlobName:      key,
-		ContainerName: bucket,
+		BlobName:      req.Key,
+		ContainerName: req.BucketName,
 	}
 
 	queryParams, err := sigOpts.NewSASQueryParameters(cred)
 	if err != nil {
-		return "", newErr(
+		return nil, newErr(
 			codes.Internal,
 			"error signing query params for URL",
 			err,
@@ -185,30 +171,22 @@ func (s *AzblobStorageService) PreSignUrl(ctx context.Context, bucket string, ke
 	blobUrlParts.SAS = queryParams
 	url := blobUrlParts.URL()
 
-	return url.String(), nil
+	return &storagepb.StoragePreSignUrlResponse{
+		Url: url.String(),
+	}, nil
 }
 
-func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string, options *storage.ListFileOptions) ([]*storage.FileInfo, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.ListFiles",
-		map[string]interface{}{
-			"bucket": bucket,
-		},
-	)
+func (s *AzblobStorageService) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.ListFiles")
 
-	prefix := ""
-	if options != nil {
-		prefix = options.Prefix
-	}
-
-	cUrl := s.getContainerUrl(bucket)
-	files := make([]*storage.FileInfo, 0)
+	cUrl := s.getContainerUrl(req.BucketName)
+	files := make([]*storagepb.Blob, 0)
 
 	// List the blob(s) in our container; since a container may hold millions of blobs, this is done 1 segment at a time.
 	for marker := (azblob.Marker{}); marker.NotDone(); { // The parens around Marker{} are required to avoid compiler error.
 		// Get a result segment starting with the blob indicated by the current Marker.
 		listBlob, err := cUrl.ListBlobsFlatSegment(ctx, marker, azblob.ListBlobsSegmentOptions{
-			Prefix: prefix,
+			Prefix: req.Prefix,
 		})
 		if err != nil {
 			return nil, newErr(codes.Internal, "error listing files", err)
@@ -219,25 +197,21 @@ func (s *AzblobStorageService) ListFiles(ctx context.Context, bucket string, opt
 
 		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
 		for _, blobInfo := range listBlob.Segment.BlobItems {
-			files = append(files, &storage.FileInfo{
+			files = append(files, &storagepb.Blob{
 				Key: blobInfo.Name,
 			})
 		}
 	}
 
-	return files, nil
+	return &storagepb.StorageListBlobsResponse{
+		Blobs: files,
+	}, nil
 }
 
-func (s *AzblobStorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
-	newErr := errors.ErrorsWithScope(
-		"AzblobStorageService.Exists",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *AzblobStorageService) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.Exists")
 
-	bUrl := s.getBlobUrl(bucket, key)
+	bUrl := s.getBlobUrl(req.BucketName, req.Key)
 
 	// Call get properties and use error to determine existence
 	_, err := bUrl.GetProperties(context.TODO(), azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
@@ -245,15 +219,19 @@ func (s *AzblobStorageService) Exists(ctx context.Context, bucket string, key st
 	//nolint:all
 	if storageErr, ok := err.(azblob.StorageError); ok {
 		if storageErr.ServiceCode() == azblob.ServiceCodeBlobNotFound {
-			return false, nil
+			return &storagepb.StorageExistsResponse{
+				Exists: false,
+			}, nil
 		}
 	}
 
 	if err != nil {
-		return false, newErr(codes.Internal, "error getting blob properties", err)
+		return nil, newErr(codes.Internal, "error getting blob properties", err)
 	}
 
-	return true, nil
+	return &storagepb.StorageExistsResponse{
+		Exists: true,
+	}, nil
 }
 
 const expiryBuffer = 2 * time.Minute
@@ -261,7 +239,7 @@ const expiryBuffer = 2 * time.Minute
 func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefresher {
 	return func(credential azblob.TokenCredential) time.Duration {
 		if err := spt.Refresh(); err != nil {
-			log.Default().Println("Error refreshing token: ", err)
+			logger.Errorf("Error refreshing token: %s", err)
 		} else {
 			tkn := spt.Token()
 			credential.SetToken(tkn.AccessToken)
@@ -275,13 +253,10 @@ func tokenRefresherFromSpt(spt *adal.ServicePrincipalToken) azblob.TokenRefreshe
 }
 
 // New - Creates a new instance of the AzblobStorageService
-func New() (storage.StorageService, error) {
-	// TODO: Create a default storage account for the stack???
-	// XXX: This will limit a membrane wrapped application
-	// to accessing a single storage account
-	blobEndpoint := utils.GetEnv(azureutils.AZURE_STORAGE_BLOB_ENDPOINT, "")
+func New() (*AzblobStorageService, error) {
+	blobEndpoint := env.AZURE_STORAGE_BLOB_ENDPOINT.String()
 	if blobEndpoint == "" {
-		return nil, fmt.Errorf("failed to determine Azure Storage Blob endpoint, environment variable %s not set", azureutils.AZURE_STORAGE_BLOB_ENDPOINT)
+		return nil, fmt.Errorf("failed to determine Azure Storage Blob endpoint, environment variable not set")
 	}
 
 	spt, err := azureutils.GetServicePrincipalToken(azure.PublicCloud.ResourceIdentifiers.Storage)

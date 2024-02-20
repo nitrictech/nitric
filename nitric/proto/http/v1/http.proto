@@ -1,0 +1,29 @@
+syntax = "proto3";
+package nitric.proto.http.v1;
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/http/v1;httppb";
+option java_package = "io.nitric.proto.http.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Https";
+option php_namespace = "Nitric\\Proto\\Http\\V1";
+option csharp_namespace = "Nitric.Proto.Http.v1";
+
+// Service for proxying HTTP requests
+service Http {
+  // Proxy an HTTP server
+  rpc Proxy(stream ClientMessage) returns (stream ServerMessage);
+}
+
+message ClientMessage {
+    // Details of the HTTP server to proxy
+    HttpProxyRequest request = 1;
+}
+
+message ServerMessage {}
+
+message HttpProxyRequest {
+    // The address the server can be accessed on
+    string host = 1;
+}
+

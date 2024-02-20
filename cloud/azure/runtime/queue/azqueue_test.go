@@ -16,97 +16,37 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
-	azqueue2 "github.com/Azure/azure-storage-queue-go/azqueue"
+	azqueue "github.com/Azure/azure-storage-queue-go/azqueue"
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	mock_azqueue "github.com/nitrictech/nitric/cloud/azure/mocks/azqueue"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
+	queuepb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 var _ = Describe("Azqueue", func() {
+	structPayload, err := structpb.NewStruct(map[string]interface{}{"Test": "Test"})
+	Expect(err).To(BeNil())
+
+	testStruct := &queuepb.QueueMessage{
+		Content: &queuepb.QueueMessage_StructPayload{
+			StructPayload: structPayload,
+		},
+	}
+
+	testPayloadBytes, err := proto.Marshal(testStruct)
+	testB64Payload := base64.StdEncoding.EncodeToString(testPayloadBytes)
+	Expect(err).To(BeNil())
+
 	Context("Send", func() {
-		When("Azure returns a successfully response", func() {
-			crtl := gomock.NewController(GinkgoT())
-			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
-			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
-			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
-
-			queuePlugin := &AzqueueQueueService{
-				client: mockAzqueue,
-			}
-
-			It("should successfully send the queue item(s)", func() {
-				By("Retrieving the Queue URL for the requested queue")
-				mockAzqueue.EXPECT().NewQueueURL("test-queue").Times(1).Return(mockQueue)
-
-				By("Retrieving the Message URL of the requested queue")
-				mockQueue.EXPECT().NewMessageURL().Times(1).Return(mockMessages)
-
-				By("Calling Enqueue once on the Message URL with the expected options")
-				mockMessages.EXPECT().Enqueue(
-					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
-					time.Duration(0),
-					time.Duration(0),
-				).Times(1).Return(&azqueue2.EnqueueMessageResponse{}, nil)
-
-				err := queuePlugin.Send(context.TODO(), "test-queue", queue.NitricTask{
-					Payload: map[string]interface{}{"testval": "testkey"},
-				})
-
-				By("Not returning an error")
-				Expect(err).ToNot(HaveOccurred())
-
-				crtl.Finish()
-			})
-		})
-
-		When("Azure returns an error response", func() {
-			crtl := gomock.NewController(GinkgoT())
-			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
-			mockQueue := mock_azqueue.NewMockAzqueueQueueUrlIface(crtl)
-			mockMessages := mock_azqueue.NewMockAzqueueMessageUrlIface(crtl)
-			// mockMessageId := mock_azqueue.NewMockAzqueueMessageIdUrlIface(crtl)
-
-			queuePlugin := &AzqueueQueueService{
-				client: mockAzqueue,
-			}
-
-			It("should successfully send the queue item(s)", func() {
-				By("Retrieving the Queue URL for the requested queue")
-				mockAzqueue.EXPECT().NewQueueURL("test-queue").Times(1).Return(mockQueue)
-
-				By("Retrieving the Message URL of the requested queue")
-				mockQueue.EXPECT().NewMessageURL().Times(1).Return(mockMessages)
-
-				By("Calling Enqueue once on the Message URL with the expected options")
-				mockMessages.EXPECT().Enqueue(
-					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
-					time.Duration(0),
-					time.Duration(0),
-				).Times(1).Return(nil, fmt.Errorf("a test error"))
-
-				err := queuePlugin.Send(context.TODO(), "test-queue", queue.NitricTask{
-					Payload: map[string]interface{}{"testval": "testkey"},
-				})
-
-				By("Returning an error")
-				Expect(err).To(HaveOccurred())
-
-				crtl.Finish()
-			})
-		})
-	})
-
-	Context("Send Batch", func() {
 		When("Azure returns a successfully response", func() {
 			crtl := gomock.NewController(GinkgoT())
 			mockAzqueue := mock_azqueue.NewMockAzqueueServiceUrlIface(crtl)
@@ -128,21 +68,24 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
+					testB64Payload,
 					time.Duration(0),
 					time.Duration(0),
-				).Times(2).Return(&azqueue2.EnqueueMessageResponse{}, nil)
+				).Times(2).Return(&azqueue.EnqueueMessageResponse{}, nil)
 
-				resp, err := queuePlugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
-					{Payload: map[string]interface{}{"testval": "testkey"}},
-					{Payload: map[string]interface{}{"testval": "testkey"}},
+				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
+					QueueName: "test-queue",
+					Messages: []*queuepb.QueueMessage{
+						testStruct,
+						testStruct,
+					},
 				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Not returning failed tasks")
-				Expect(len(resp.FailedTasks)).To(Equal(0))
+				Expect(len(resp.FailedMessages)).To(Equal(0))
 
 				crtl.Finish()
 			})
@@ -169,22 +112,27 @@ var _ = Describe("Azqueue", func() {
 				By("Calling Enqueue once on the Message URL with the expected options")
 				mockMessages.EXPECT().Enqueue(
 					gomock.Any(),
-					"{\"payload\":{\"testval\":\"testkey\"}}",
+					testB64Payload,
 					time.Duration(0),
 					time.Duration(0),
 				).AnyTimes( /* Using AnyTimes because Times(2) doesn't work for multiple returns */
-				).Return(nil, fmt.Errorf("a test error")).Return(&azqueue2.EnqueueMessageResponse{}, nil)
+				).Return(nil, fmt.Errorf("a test error")).Return(&azqueue.EnqueueMessageResponse{}, nil)
 
-				resp, err := queuePlugin.SendBatch(context.TODO(), "test-queue", []queue.NitricTask{
-					{Payload: map[string]interface{}{"testval": "testkey"}},
-					{Payload: map[string]interface{}{"testval": "testkey"}},
+				// testStruct, _ := structpb.NewStruct(map[string]interface{}{"testval": "testkey"})
+
+				resp, err := queuePlugin.Enqueue(context.TODO(), &queuepb.QueueEnqueueRequest{
+					QueueName: "test-queue",
+					Messages: []*queuepb.QueueMessage{
+						testStruct,
+						testStruct,
+					},
 				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Not returning failed tasks")
-				Expect(resp.FailedTasks).To(Equal([]*queue.FailedTask{}))
+				Expect(len(resp.FailedMessages)).To(Equal(0))
 
 				crtl.Finish()
 			})
@@ -219,29 +167,27 @@ var _ = Describe("Azqueue", func() {
 				).Times(1).Return(mockDequeueResp, nil)
 
 				mockDequeueResp.EXPECT().NumMessages().AnyTimes().Return(int32(1))
-				mockDequeueResp.EXPECT().Message(int32(0)).Times(1).Return(&azqueue2.DequeuedMessage{
+				mockDequeueResp.EXPECT().Message(int32(0)).Times(1).Return(&azqueue.DequeuedMessage{
 					ID: "testid",
 					// InsertionTime:   time.Time{},
 					// ExpirationTime:  time.Time{},
 					PopReceipt:      "popreceipt",
 					NextVisibleTime: time.Time{},
 					DequeueCount:    0,
-					Text:            "{\"payload\":{\"testval\":\"testkey\"}}",
+					Text:            testB64Payload,
 				})
 
-				depth := uint32(1)
-
-				tasks, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
+				resp, err := queuePlugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 					QueueName: "test-queue",
-					Depth:     &depth,
+					Depth:     1,
 				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
 
 				By("Returning the dequeued task")
-				Expect(len(tasks)).To(Equal(1))
-				Expect(tasks[0].Payload).To(Equal(map[string]interface{}{"testval": "testkey"}))
+				Expect(len(resp.Messages)).To(Equal(1))
+				Expect(resp.Messages[0].Message.GetStructPayload().AsMap()).To(Equal(map[string]interface{}{"Test": "Test"}))
 
 				crtl.Finish()
 			})
@@ -273,11 +219,9 @@ var _ = Describe("Azqueue", func() {
 					30*time.Second, // visibility timeout - defaulted to 30 seconds
 				).Times(1).Return(nil, fmt.Errorf("a test error"))
 
-				depth := uint32(1)
-
-				_, err := queuePlugin.Receive(context.TODO(), queue.ReceiveOptions{
+				_, err := queuePlugin.Dequeue(context.TODO(), &queuepb.QueueDequeueRequest{
 					QueueName: "test-queue",
-					Depth:     &depth,
+					Depth:     1,
 				})
 
 				By("Returning an error")
@@ -315,10 +259,13 @@ var _ = Describe("Azqueue", func() {
 				leaseStr, _ := lease.String()
 
 				By("Retrieving the Message ID URL specific to the dequeued task")
-				mockMessages.EXPECT().NewMessageIDURL(azqueue2.MessageID("testid")).Times(1).Return(mockMessageId)
-				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue2.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, nil)
+				mockMessages.EXPECT().NewMessageIDURL(azqueue.MessageID("testid")).Times(1).Return(mockMessageId)
+				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, nil)
 
-				err := queuePlugin.Complete(context.TODO(), "test-queue", leaseStr)
+				_, err := queuePlugin.Complete(context.TODO(), &queuepb.QueueCompleteRequest{
+					QueueName: "test-queue",
+					LeaseId:   leaseStr,
+				})
 
 				By("Not returning an error")
 				Expect(err).ToNot(HaveOccurred())
@@ -353,10 +300,13 @@ var _ = Describe("Azqueue", func() {
 				leaseStr, _ := lease.String()
 
 				By("Retrieving the Message ID URL specific to the dequeued task")
-				mockMessages.EXPECT().NewMessageIDURL(azqueue2.MessageID("testid")).Times(1).Return(mockMessageId)
-				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue2.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, fmt.Errorf("a test error"))
+				mockMessages.EXPECT().NewMessageIDURL(azqueue.MessageID("testid")).Times(1).Return(mockMessageId)
+				mockMessageId.EXPECT().Delete(gomock.Any(), azqueue.PopReceipt(lease.PopReceipt)).Times(1).Return(nil, fmt.Errorf("a test error"))
 
-				err := queuePlugin.Complete(context.TODO(), "test-queue", leaseStr)
+				_, err := queuePlugin.Complete(context.TODO(), &queuepb.QueueCompleteRequest{
+					QueueName: "test-queue",
+					LeaseId:   leaseStr,
+				})
 
 				By("Returning an error")
 				Expect(err).To(HaveOccurred())

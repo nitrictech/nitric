@@ -17,22 +17,21 @@ sec:
 # More binaries can be distributed in future if required
 runtimebin:
 	@echo Building AWS Runtime Server
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-s -w -extldflags=-static" ./runtime/cmd
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
 	@cp bin/runtime-aws deploy/runtime-aws
 
-# FIXME: proto server registration error
-# There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin
 	@echo Building AWS Deployment Server
-	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./deploy/cmd
+	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
 	@rm deploy/runtime-aws
 
 .PHONY: install
 install: deploybin
 	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@rm -f ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
 
 license-check: runtimebin
@@ -61,7 +60,11 @@ test-coverage: generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
 
-generate-mocks:
+
+clean-mocks:
+	@rm -rf ./mocks
+
+generate-mocks: clean-mocks
 	@echo Generating Mock Clients
 	@mkdir -p mocks/secrets_manager
 	@mkdir -p mocks/s3
@@ -76,6 +79,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/core AwsProvider > mocks/provider/aws.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceProvider > mocks/provider/aws.go
 
 generate-sources: generate-mocks

@@ -26,8 +26,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	secretpb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
+
 	mocks "github.com/nitrictech/nitric/cloud/gcp/mocks/gcp_secret"
-	"github.com/nitrictech/nitric/core/pkg/plugins/secret"
 )
 
 var _ = Describe("Secret Manager", func() {
@@ -37,7 +38,7 @@ var _ = Describe("Secret Manager", func() {
 		Name:   "projects/my-project/secrets/Test",
 		Labels: make(map[string]string),
 	}
-	testSecret := secret.Secret{
+	testSecret := &secretpb.Secret{
 		Name: "Test",
 	}
 	testSecretVal := []byte("Super Secret Message")
@@ -47,7 +48,7 @@ var _ = Describe("Secret Manager", func() {
 			When("Putting a Secret to an existing secret", func() {
 				crtl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-				secretPlugin := &secretManagerSecretService{
+				secretPlugin := &SecretManagerSecretService{
 					client:    mockSecretClient,
 					projectId: "my-project",
 					cache:     make(map[string]string),
@@ -83,7 +84,10 @@ var _ = Describe("Secret Manager", func() {
 						Name: "/projects/secrets/Test/versions/1",
 					}, nil).Times(1)
 
-					response, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					response, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  testSecretVal,
+					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -95,7 +99,7 @@ var _ = Describe("Secret Manager", func() {
 			When("Putting a Secret with insufficient permissions", func() {
 				crtl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-				secretPlugin := &secretManagerSecretService{
+				secretPlugin := &SecretManagerSecretService{
 					client:    mockSecretClient,
 					projectId: "my-project",
 					cache:     make(map[string]string),
@@ -124,53 +128,64 @@ var _ = Describe("Secret Manager", func() {
 						gomock.Any(),
 					).Return(nil, status.Error(codes.PermissionDenied, "insufficient permissions")).Times(1)
 
-					_, err := secretPlugin.Put(context.TODO(), &testSecret, testSecretVal)
+					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  testSecretVal,
+					})
 					By("Returning a permission denied error")
 					Expect(err).Should(HaveOccurred())
 					fmt.Println(err.Error())
-					Expect(err.Error()).Should(Equal("permission denied, have you requested access to this secret?: \n rpc error: code = PermissionDenied desc = insufficient permissions"))
+					Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = SecretManagerSecretService.Put permission denied, have you requested access to this secret?"))
 				})
 			})
 
 			When("Putting a nil secret", func() {
-				secretPlugin := &secretManagerSecretService{
+				secretPlugin := &SecretManagerSecretService{
 					projectId: "my-project",
 					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
-					_, err := secretPlugin.Put(context.TODO(), nil, testSecretVal)
+					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Value: testSecretVal,
+					})
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-nil secret"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 
 			When("Putting a secret with an empty name", func() {
-				secretPlugin := &secretManagerSecretService{
+				secretPlugin := &SecretManagerSecretService{
 					projectId: "my-project",
 					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
-					emptySecretName := &secret.Secret{}
-					_, err := secretPlugin.Put(context.TODO(), emptySecretName, testSecretVal)
+					emptySecretName := &secretpb.Secret{}
+					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: emptySecretName,
+						Value:  testSecretVal,
+					})
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-blank secret name"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 
 			When("Putting a secret with an empty value", func() {
-				secretPlugin := &secretManagerSecretService{
+				secretPlugin := &SecretManagerSecretService{
 					projectId: "my-project",
 					cache:     make(map[string]string),
 				}
 
 				It("Should return an error", func() {
-					_, err := secretPlugin.Put(context.TODO(), &testSecret, nil)
+					_, err := secretPlugin.Put(context.TODO(), &secretpb.SecretPutRequest{
+						Secret: testSecret,
+						Value:  nil,
+					})
 
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("provide non-blank secret value"))
+					Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Put invalid secret"))
 				})
 			})
 		})
@@ -182,7 +197,7 @@ var _ = Describe("Secret Manager", func() {
 				When("The secret exists", func() {
 					crtl := gomock.NewController(GinkgoT())
 					mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-					secretPlugin := &secretManagerSecretService{
+					secretPlugin := &SecretManagerSecretService{
 						client:    mockSecretClient,
 						projectId: "my-project",
 						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
@@ -202,11 +217,13 @@ var _ = Describe("Secret Manager", func() {
 								Data: []byte("Super Secret Message"),
 							},
 						}, nil).Times(1)
-						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-							Secret: &secret.Secret{
-								Name: "test-id",
+						response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+							SecretVersion: &secretpb.SecretVersion{
+								Secret: &secretpb.Secret{
+									Name: "test-id",
+								},
+								Version: "test-version-id",
 							},
-							Version: "test-version-id",
 						})
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
@@ -222,7 +239,7 @@ var _ = Describe("Secret Manager", func() {
 				When("There are insufficient permissions", func() {
 					crtl := gomock.NewController(GinkgoT())
 					mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-					secretPlugin := &secretManagerSecretService{
+					secretPlugin := &SecretManagerSecretService{
 						client:    mockSecretClient,
 						projectId: "my-project",
 						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
@@ -238,23 +255,25 @@ var _ = Describe("Secret Manager", func() {
 							},
 						).Return(nil, status.Error(codes.PermissionDenied, "insufficient permissions")).Times(1)
 
-						_, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-							Secret: &secret.Secret{
-								Name: "test-id",
+						_, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+							SecretVersion: &secretpb.SecretVersion{
+								Secret: &secretpb.Secret{
+									Name: "test-id",
+								},
+								Version: "test-version-id",
 							},
-							Version: "test-version-id",
 						})
 
 						By("Returning a permission denied error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(Equal("permission denied, have you requested access to this secret?: \n rpc error: code = PermissionDenied desc = insufficient permissions"))
+						Expect(err.Error()).Should(ContainSubstring("rpc error: code = PermissionDenied desc = SecretManagerSecretService.Access permission denied, have you requested access to this secret?"))
 					})
 				})
 
 				When("The secret doesn't exist", func() {
 					crtl := gomock.NewController(GinkgoT())
 					mockSecretClient := mocks.NewMockSecretManagerClient(crtl)
-					secretPlugin := &secretManagerSecretService{
+					secretPlugin := &SecretManagerSecretService{
 						client:    mockSecretClient,
 						projectId: "my-project",
 						cache:     map[string]string{"test-id": "projects/my-project/secrets/test-id"},
@@ -269,11 +288,13 @@ var _ = Describe("Secret Manager", func() {
 							},
 						).Return(nil, fmt.Errorf("failed to access secret")).Times(1)
 
-						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-							Secret: &secret.Secret{
-								Name: "test-id",
+						response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+							SecretVersion: &secretpb.SecretVersion{
+								Secret: &secretpb.Secret{
+									Name: "test-id",
+								},
+								Version: "test-version-id",
 							},
-							Version: "test-version-id",
 						})
 
 						By("returning an error")
@@ -285,43 +306,47 @@ var _ = Describe("Secret Manager", func() {
 					})
 				})
 				When("An empty name is provided", func() {
-					secretPlugin := &secretManagerSecretService{
+					secretPlugin := &SecretManagerSecretService{
 						projectId: "my-project",
 						cache:     make(map[string]string),
 					}
 
 					It("Should return an error", func() {
-						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-							Secret: &secret.Secret{
-								Name: "",
+						response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+							SecretVersion: &secretpb.SecretVersion{
+								Secret: &secretpb.Secret{
+									Name: "",
+								},
+								Version: "test-version-id",
 							},
-							Version: "test-version-id",
 						})
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("provide non-blank name"))
+						Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Access invalid secret version"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())
 					})
 				})
 				When("An empty version is provided", func() {
-					secretPlugin := &secretManagerSecretService{
+					secretPlugin := &SecretManagerSecretService{
 						projectId: "my-project",
 						cache:     make(map[string]string),
 					}
 					It("Should return an error", func() {
-						response, err := secretPlugin.Access(context.TODO(), &secret.SecretVersion{
-							Secret: &secret.Secret{
-								Name: "test-id",
+						response, err := secretPlugin.Access(context.TODO(), &secretpb.SecretAccessRequest{
+							SecretVersion: &secretpb.SecretVersion{
+								Secret: &secretpb.Secret{
+									Name: "test-id",
+								},
+								Version: "",
 							},
-							Version: "",
 						})
 
 						By("returning an error")
 						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("provide non-blank version"))
+						Expect(err.Error()).To(ContainSubstring("rpc error: code = InvalidArgument desc = SecretManagerSecretService.Access invalid secret version"))
 
 						By("returning a nil response")
 						Expect(response).Should(BeNil())

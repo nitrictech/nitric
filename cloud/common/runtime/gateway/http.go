@@ -20,24 +20,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fasthttp/router"
+	fasthttprouter "github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/span"
-	"github.com/nitrictech/nitric/core/pkg/utils"
-	"github.com/nitrictech/nitric/core/pkg/worker/pool"
+	"github.com/nitrictech/nitric/cloud/common/runtime/env"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 )
 
 type (
-	HttpMiddleware   func(*fasthttp.RequestCtx, pool.WorkerPool) bool
-	EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
+	HttpMiddleware func(*fasthttp.RequestCtx, *gateway.GatewayStartOpts) bool
+	// EventConstructor func(topicName string, ctx *fasthttp.RequestCtx) v1.TriggerRequest
 )
 
-type RouteRegister func(*router.Router, pool.WorkerPool)
+// A callback function that allows for custom routing configuration to be setup by consumer packages.
+type RouterRegistrationCallback func(*fasthttprouter.Router, *gateway.GatewayStartOpts)
 
 const (
 	DefaultTopicRoute              = "/x-nitric-topic/{name}"
@@ -45,24 +45,15 @@ const (
 	DefaultBucketNotificationRoute = "/x-nitric-notification/bucket/{name}"
 )
 
-type BaseHttpGatewayOptions struct {
-	// Middleware for handling events
-	// return bool will indicate whether to continue
-	// to the next (default) behaviour or not...
-	Middleware HttpMiddleware
-	Router     RouteRegister
+type HttpGatewayOptions struct {
+	RouteRegistrationHook RouterRegistrationCallback
 }
 
-type BaseHttpGateway struct {
+type HttpGateway struct {
 	address string
 	server  *fasthttp.Server
 	gateway.UnimplementedGatewayPlugin
-
-	// Middleware for handling events
-	// return bool will indicate whether to continue
-	// to the next (default) behaviour or not...
-	mw       HttpMiddleware
-	routeReg RouteRegister
+	routeRegistrationHook RouterRegistrationCallback
 }
 
 func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
@@ -82,62 +73,55 @@ func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 	return headerCopy
 }
 
-func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fasthttp.RequestCtx) {
+func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam string, originalPathParam string) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
-		if s.mw != nil {
-			if !s.mw(rc, workerPool) {
-				// middleware has indicated that is has processed the request
-				// so we can exit here
-				return
-			}
+		// The API name is captured in the path using a path rewrite at the cloud API Gateway layer, and used to route the request to the correct workers
+		// the path is extracted here for routing. The original path is captured and passed to the workers, removing the rewrite.
+		apiName, apiOk := rc.UserValue(apiNameParam).(string)
+		originalPath, pathOk := rc.UserValue(originalPathParam).(string)
+		if !apiOk || !pathOk {
+			rc.Error("invalid path", 400)
+			return
 		}
 
 		headerMap := HttpHeadersToMap(&rc.Request.Header)
 
 		// httpTrigger := triggers.FromHttpRequest(rc)
-		headers := map[string]*v1.HeaderValue{}
+		headers := map[string]*apispb.HeaderValue{}
 		for k, v := range headerMap {
-			headers[k] = &v1.HeaderValue{Value: v}
+			headers[k] = &apispb.HeaderValue{Value: v}
 		}
 
-		query := map[string]*v1.QueryValue{}
+		query := map[string]*apispb.QueryValue{}
 		rc.QueryArgs().VisitAll(func(key []byte, val []byte) {
 			k := string(key)
 
 			if query[k] == nil {
-				query[k] = &v1.QueryValue{}
+				query[k] = &apispb.QueryValue{}
 			}
 
 			query[k].Value = append(query[k].Value, string(val))
 		})
 
-		httpTrigger := &v1.TriggerRequest{
-			Data: rc.Request.Body(),
-			Context: &v1.TriggerRequest_Http{
-				Http: &v1.HttpTriggerContext{
+		httpTrigger := &apispb.ServerMessage{
+			Content: &apispb.ServerMessage_HttpRequest{
+				HttpRequest: &apispb.HttpRequest{
 					Method:      string(rc.Request.Header.Method()),
-					Path:        string(rc.URI().PathOriginal()),
+					Path:        originalPath,
 					Headers:     headers,
 					QueryParams: query,
+					Body:        rc.Request.Body(),
 				},
 			},
 		}
 
-		wrkr, err := workerPool.GetWorker(&pool.GetWorkerOptions{
-			Trigger: httpTrigger,
-		})
+		resp, err := opts.ApiPlugin.HandleRequest(apiName, httpTrigger)
 		if err != nil {
 			rc.Error("Unable to get worker to handle request", 500)
 			return
 		}
 
-		response, err := wrkr.HandleTrigger(span.FromHeaders(context.TODO(), headerMap), httpTrigger)
-		if err != nil {
-			rc.Error(fmt.Sprintf("Error handling HTTP Request: %v", err), 500)
-			return
-		}
-
-		if http := response.GetHttp(); http != nil {
+		if http := resp.GetHttpResponse(); http != nil {
 			// Copy headers across
 			for k, v := range http.Headers {
 				for _, val := range v.Value {
@@ -148,7 +132,7 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 			// Avoid content length header duplication
 			rc.Response.Header.Del("Content-Length")
 			rc.Response.SetStatusCode(int(http.Status))
-			rc.Response.SetBody(response.Data)
+			rc.Response.SetBody(resp.GetHttpResponse().Body)
 
 			return
 		}
@@ -157,15 +141,43 @@ func (s *BaseHttpGateway) httpHandler(workerPool pool.WorkerPool) func(ctx *fast
 	}
 }
 
-func (s *BaseHttpGateway) Start(pool pool.WorkerPool) error {
-	r := router.New()
+func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(ctx *fasthttp.RequestCtx) {
+	return func(rc *fasthttp.RequestCtx) {
+		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
+		if err != nil {
+			logger.Errorf("Error handling request: %s", err)
+			rc.Error("Internal Server Error", 500)
+			return
+		}
+
+		// Copy the given response back
+		resp.CopyTo(&rc.Response)
+	}
+}
+
+// Start the HTTP server and listen for requests, then route them to the appropriate handler(s
+func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
+	r := fasthttprouter.New()
 
 	// Allow custom provider level routing for handling events/schedules etc.
-	if s.routeReg != nil {
-		s.routeReg(r, pool)
+	if s.routeRegistrationHook != nil {
+		s.routeRegistrationHook(r, opts)
 	}
 
-	r.ANY("/{path?:*}", s.httpHandler(pool))
+	// if opts.ApiPlugin.WorkerCount() > 0 {
+	// Capture the API Name to allow for accurate worker routing.
+	// also capture the original path so it can be passed to the worker without the name prefix.
+	const apiNameParam = "apiName"
+	const originalPathParam = "path"
+	r.ANY(fmt.Sprintf("/x-nitric-api/{%s}/{%s?:*}", apiNameParam, originalPathParam), s.newApiHandler(opts, apiNameParam, originalPathParam))
+	// }
+
+	// proxy to http if available
+	// if opts.HttpPlugin.WorkerCount() > 0 {
+	if opts.HttpPlugin != nil {
+		r.ANY("/{path?:*}", s.newHttpProxyHandler(opts))
+	}
+	// }
 
 	s.server = &fasthttp.Server{
 		IdleTimeout:     time.Second * 1,
@@ -177,7 +189,8 @@ func (s *BaseHttpGateway) Start(pool pool.WorkerPool) error {
 	return s.server.ListenAndServe(s.address)
 }
 
-func (s *BaseHttpGateway) Stop() error {
+// Stop the HTTP gateway server
+func (s *HttpGateway) Stop() error {
 	tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
 	if ok {
 		_ = tp.ForceFlush(context.TODO())
@@ -191,13 +204,11 @@ func (s *BaseHttpGateway) Stop() error {
 }
 
 // Create new HTTP gateway
-// XXX: No External Args for function atm (currently the plugin loader does not pass any argument information)
-func New(opts *BaseHttpGatewayOptions) (gateway.GatewayService, error) {
-	address := utils.GetEnv("GATEWAY_ADDRESS", ":9001")
+func NewHttpGateway(opts *HttpGatewayOptions) (gateway.GatewayService, error) {
+	address := env.GATEWAY_ADDRESS.String()
 
-	return &BaseHttpGateway{
-		address:  address,
-		mw:       opts.Middleware,
-		routeReg: opts.Router,
+	return &HttpGateway{
+		address:               address,
+		routeRegistrationHook: opts.RouteRegistrationHook,
 	}, nil
 }

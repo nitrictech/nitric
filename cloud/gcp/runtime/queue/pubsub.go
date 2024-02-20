@@ -16,14 +16,16 @@ package queue
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
+	"google.golang.org/grpc/codes"
 	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"cloud.google.com/go/pubsub"
 	pubsubbase "cloud.google.com/go/pubsub/apiv1"
@@ -35,13 +37,15 @@ import (
 	"google.golang.org/api/option"
 
 	ifaces_pubsub "github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+
+	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 type PubsubQueueService struct {
-	queue.UnimplementedQueuePlugin
+	queuespb.UnimplementedQueuesServer
+	// queue.UnimplementedQueuePlugin
 	client              ifaces_pubsub.PubsubClient
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)
 	projectId           string
@@ -88,7 +92,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 // Retrieves the Nitric "Queue Subscription" for the specified queue (PubSub Topic).
 //
 // GCP PubSub requires a Subscription in order to Pull messages from a Topic.
-// we use this behavior to emulate a queue.
+// we use this behavior to implement queues.
 //
 // This retrieves the default Nitric Pull subscription for the Topic base on convention.
 func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName string) (ifaces_pubsub.Subscription, error) {
@@ -125,66 +129,11 @@ func (s *PubsubQueueService) getQueueSubscription(ctx context.Context, queueName
 	return nil, fmt.Errorf("pull subscription not found, pull subscribers may not be configured for this topic")
 }
 
-func (s *PubsubQueueService) Send(ctx context.Context, queue string, task queue.NitricTask) error {
-	newErr := errors.ErrorsWithScope(
-		"PubsubQueueService.Send",
-		map[string]interface{}{
-			"queue": queue,
-			"task":  task,
-		},
-	)
+func (s *PubsubQueueService) Enqueue(ctx context.Context, req *queuespb.QueueEnqueueRequest) (*queuespb.QueueEnqueueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Enqueue")
 
 	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic, err := s.getPubsubTopicFromName(queue)
-	if err != nil {
-		return newErr(
-			codes.NotFound,
-			"queue not found",
-			err,
-		)
-	}
-
-	if taskBytes, err := json.Marshal(task); err == nil {
-		attributes := propagation.MapCarrier{}
-
-		propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
-
-		msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
-			Attributes: attributes,
-			Data:       taskBytes,
-		})
-
-		result := topic.Publish(ctx, msg)
-
-		if _, err := result.Get(ctx); err != nil {
-			return newErr(
-				codes.Internal,
-				"error retrieving publish result",
-				err,
-			)
-		}
-	} else {
-		return newErr(
-			codes.Internal,
-			"error marshalling the task",
-			err,
-		)
-	}
-
-	return nil
-}
-
-func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"PubsubQueueService.SendBatch",
-		map[string]interface{}{
-			"queue":     q,
-			"tasks.len": len(tasks),
-		},
-	)
-
-	// We'll be using pubsub with pull subscribers to facilitate queue functionality
-	topic, err := s.getPubsubTopicFromName(q)
+	topic, err := s.getPubsubTopicFromName(req.QueueName)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -194,18 +143,17 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 	}
 
 	// SendBatch once we've published all tasks to the client
-	// TODO: We may want to revisit this, and chunk up our publishing in a way that makes more sense...
 	results := make([]ifaces_pubsub.PublishResult, 0)
-	failedTasks := make([]*queue.FailedTask, 0)
-	publishedTasks := make([]queue.NitricTask, 0)
+	failedTasks := make([]*queuespb.FailedEnqueueMessage, 0)
+	publishedTasks := make([]*queuespb.QueueMessage, 0)
 
 	attributes := propagation.MapCarrier{}
 
 	propagator.CloudTraceFormatPropagator{}.Inject(ctx, attributes)
 
-	for _, task := range tasks {
+	for _, task := range req.Messages {
 		t := task
-		if taskBytes, err := json.Marshal(t); err == nil {
+		if taskBytes, err := proto.Marshal(t); err == nil {
 			msg := ifaces_pubsub.AdaptPubsubMessage(&pubsub.Message{
 				Data:       taskBytes,
 				Attributes: attributes,
@@ -214,9 +162,9 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 			results = append(results, topic.Publish(ctx, msg))
 			publishedTasks = append(publishedTasks, t)
 		} else {
-			failedTasks = append(failedTasks, &queue.FailedTask{
-				Task:    &t,
-				Message: "Error unmarshalling message for queue",
+			failedTasks = append(failedTasks, &queuespb.FailedEnqueueMessage{
+				Message: t,
+				Details: "Error unmarshalling message for queue",
 			})
 		}
 	}
@@ -225,37 +173,23 @@ func (s *PubsubQueueService) SendBatch(ctx context.Context, q string, tasks []qu
 		// Iterate over the results to check for successful publishing...
 		if _, err := result.Get(ctx); err != nil {
 			// Add this to our failures list in our results...
-			failedTasks = append(failedTasks, &queue.FailedTask{
-				Task:    &publishedTasks[idx],
-				Message: err.Error(),
+			failedTasks = append(failedTasks, &queuespb.FailedEnqueueMessage{
+				Message: publishedTasks[idx],
+				Details: err.Error(),
 			})
 		}
 	}
 
-	return &queue.SendBatchResponse{
-		FailedTasks: failedTasks,
+	return &queuespb.QueueEnqueueResponse{
+		FailedMessages: failedTasks,
 	}, nil
 }
 
-// Receives a collection of tasks off a given queue.
-func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
-	newErr := errors.ErrorsWithScope(
-		"PubsubQueueService.Receive",
-		map[string]interface{}{
-			"options": options,
-		},
-	)
-
-	if err := options.Validate(); err != nil {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"invalid receive options provided",
-			err,
-		)
-	}
+func (s *PubsubQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeueRequest) (*queuespb.QueueDequeueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Dequeue")
 
 	// Find the generic pull subscription for the provided topic (queue)
-	queueSubscription, err := s.getQueueSubscription(ctx, options.QueueName)
+	queueSubscription, err := s.getQueueSubscription(ctx, req.QueueName)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -278,11 +212,11 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	defer client.Close()
 
 	// Retrieve the requested number of messages from the subscription (queue)
-	req := pubsubpb.PullRequest{
+	pubsubRequest := pubsubpb.PullRequest{
 		Subscription: queueSubscription.String(),
-		MaxMessages:  int32(*options.Depth),
+		MaxMessages:  req.GetDepth(),
 	}
-	res, err := client.Pull(ctx, &req)
+	res, err := client.Pull(ctx, &pubsubRequest)
 	if err != nil {
 		errStatus, _ := status.FromError(err)
 		if errStatus.Code() == grpccodes.PermissionDenied {
@@ -301,44 +235,43 @@ func (s *PubsubQueueService) Receive(ctx context.Context, options queue.ReceiveO
 	// An empty list is returned from PubSub if no messages are available
 	// we return our own empty list in turn.
 	if len(res.ReceivedMessages) == 0 {
-		return []queue.NitricTask{}, nil
+		return &queuespb.QueueDequeueResponse{
+			Messages: []*queuespb.DequeuedMessage{},
+		}, nil
 	}
 
 	// Convert the PubSub messages into Nitric tasks
-	var tasks []queue.NitricTask
+	var tasks []*queuespb.DequeuedMessage
 	for _, m := range res.ReceivedMessages {
-		var nitricTask queue.NitricTask
-		err := json.Unmarshal(m.Message.Data, &nitricTask)
+		// var nitricTask queuespb.ReceivedTask
+		var queueMessage queuespb.QueueMessage
+		err := proto.Unmarshal(m.Message.Data, &queueMessage)
 		if err != nil {
-			// TODO: append error to error list and Nack the message.
+			// This item could be immediately requeued.
+			// However, that risks the unprocessable items being reprocessed immediately,
+			// causing a loop where the receiver frequently attempts to receive the same item.
+			logger.Errorf("failed to deserialize queue item payload: %s", err.Error())
 			continue
 		}
 
-		tasks = append(tasks, queue.NitricTask{
-			ID:          nitricTask.ID,
-			Payload:     nitricTask.Payload,
-			PayloadType: nitricTask.PayloadType,
-			LeaseID:     m.AckId,
+		tasks = append(tasks, &queuespb.DequeuedMessage{
+			Message: &queueMessage,
+			LeaseId: m.AckId,
 		})
 	}
 
-	return tasks, nil
+	return &queuespb.QueueDequeueResponse{
+		Messages: tasks,
+	}, nil
 }
 
-// Completes a previously popped queue item
-func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId string) error {
-	newErr := errors.ErrorsWithScope(
-		"PubsubQueueService.Complete",
-		map[string]interface{}{
-			"queue":   queue,
-			"leaseId": leaseId,
-		},
-	)
+func (s *PubsubQueueService) Complete(ctx context.Context, req *queuespb.QueueCompleteRequest) (*queuespb.QueueCompleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("PubsubQueueService.Complete")
 
 	// Find the generic pull subscription for the provided topic (queue)
-	queueSubscription, err := s.getQueueSubscription(ctx, queue)
+	queueSubscription, err := s.getQueueSubscription(ctx, req.QueueName)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"could not find queue subscription",
 			err,
@@ -350,7 +283,7 @@ func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId
 	// the messages or an independent acknowledge function. It's only provided as a method on message objects.
 	client, err := s.newSubscriberClient(ctx)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"failed to create subscriberclient",
 			err,
@@ -359,28 +292,28 @@ func (s *PubsubQueueService) Complete(ctx context.Context, queue string, leaseId
 	defer client.Close()
 
 	// Acknowledge the queue item, so it's removed from the queue
-	req := pubsubpb.AcknowledgeRequest{
+	pubsubRequest := pubsubpb.AcknowledgeRequest{
 		Subscription: queueSubscription.String(),
-		AckIds:       []string{leaseId},
+		AckIds:       []string{req.LeaseId},
 	}
-	err = client.Acknowledge(ctx, &req)
+	err = client.Acknowledge(ctx, &pubsubRequest)
 	if err != nil {
 		errStatus, _ := status.FromError(err)
 		if errStatus.Code() == grpccodes.PermissionDenied {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"permission denied, have you requested access to the queue?",
 				err)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"failed to de-queue task",
 			err,
 		)
 	}
 
-	return nil
+	return &queuespb.QueueCompleteResponse{}, nil
 }
 
 // adaptNewClient - Adapts the pubsubbase.NewSubscriberClient func to one that implements the SubscriberClient
@@ -392,7 +325,7 @@ func adaptNewClient(f func(context.Context, ...option.ClientOption) (*pubsubbase
 }
 
 // New - Constructs a new GCP pubsub client with defaults
-func New() (queue.QueueService, error) {
+func New() (*PubsubQueueService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -405,14 +338,13 @@ func New() (queue.QueueService, error) {
 	}
 
 	return &PubsubQueueService{
-		client: ifaces_pubsub.AdaptPubsubClient(client),
-		// TODO: replace this with a better mechanism for mocking the client.
+		client:              ifaces_pubsub.AdaptPubsubClient(client),
 		newSubscriberClient: adaptNewClient(pubsubbase.NewSubscriberClient),
 		projectId:           credentials.ProjectID,
 	}, nil
 }
 
-func NewWithClient(client ifaces_pubsub.PubsubClient) queue.QueueService {
+func NewWithClient(client ifaces_pubsub.PubsubClient) *PubsubQueueService {
 	return &PubsubQueueService{
 		client:              client,
 		newSubscriberClient: nil,
@@ -420,7 +352,7 @@ func NewWithClient(client ifaces_pubsub.PubsubClient) queue.QueueService {
 }
 
 // *pubsubbase.SubscriberClient
-func NewWithClients(client ifaces_pubsub.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)) queue.QueueService {
+func NewWithClients(client ifaces_pubsub.PubsubClient, subscriberClientGenerator func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)) *PubsubQueueService {
 	return &PubsubQueueService{
 		client:              client,
 		newSubscriberClient: subscriberClientGenerator,

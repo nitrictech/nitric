@@ -24,30 +24,39 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"go.opentelemetry.io/contrib/propagators/aws/xray"
+	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	v1 "github.com/nitrictech/nitric/core/pkg/api/nitric/v1"
-	"github.com/nitrictech/nitric/core/pkg/plugins/gateway"
-	"github.com/nitrictech/nitric/core/pkg/utils"
-	"github.com/nitrictech/nitric/core/pkg/worker"
-	"github.com/nitrictech/nitric/core/pkg/worker/pool"
+	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
+	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
+	"github.com/nitrictech/nitric/core/pkg/workers/apis"
+	"github.com/nitrictech/nitric/core/pkg/workers/http"
+	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
+	"github.com/nitrictech/nitric/core/pkg/workers/storage"
+	"github.com/nitrictech/nitric/core/pkg/workers/topics"
+	"github.com/nitrictech/nitric/core/pkg/workers/websockets"
 )
 
 type LambdaRuntimeHandler func(interface{})
 
 func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string) (string, error) {
-	topics, err := s.provider.GetResources(ctx, core.AwsResource_Topic)
+	topics, err := s.provider.GetResources(ctx, resource.AwsResource_Topic)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving topics: %w", err)
 	}
 
-	for name, arn := range topics {
-		if arn == topicArn {
+	for name, topic := range topics {
+		if topic.ARN == topicArn {
 			return name, nil
 		}
 	}
@@ -56,13 +65,13 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 }
 
 func (s *LambdaGateway) getBucketNameForArn(ctx context.Context, bucketArn string) (string, error) {
-	buckets, err := s.provider.GetResources(ctx, core.AwsResource_Bucket)
+	buckets, err := s.provider.GetResources(ctx, resource.AwsResource_Bucket)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving topics: %w", err)
 	}
 
-	for name, arn := range buckets {
-		if arn == bucketArn {
+	for name, bucket := range buckets {
+		if bucket.ARN == bucketArn {
 			return name, nil
 		}
 	}
@@ -71,104 +80,129 @@ func (s *LambdaGateway) getBucketNameForArn(ctx context.Context, bucketArn strin
 }
 
 type LambdaGateway struct {
-	pool     pool.WorkerPool
-	provider core.AwsProvider
+	provider resource.AwsResourceProvider
 	runtime  LambdaRuntimeHandler
 	gateway.UnimplementedGatewayPlugin
 	finished chan int
 }
 
-// Handle websocket events
-func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, evt events.APIGatewayWebsocketProxyRequest) (interface{}, error) {
-	// Use the routekey to get the event type
+var _ gateway.GatewayService = &LambdaGateway{}
 
-	wsEvent := v1.WebsocketEvent_Message
-	switch evt.RequestContext.RouteKey {
-	case "$connect":
-		wsEvent = v1.WebsocketEvent_Connect
-	case "$disconnect":
-		wsEvent = v1.WebsocketEvent_Disconnect
+// isRejectedConnection returns true if the client message was a rejection response to a connection request.
+func isRejectedConnection(resp *websocketspb.ClientMessage) bool {
+	eventResponse := resp.GetWebsocketEventResponse()
+	if eventResponse == nil {
+		return false
+	}
+	connectionResponse := resp.GetWebsocketEventResponse().GetConnectionResponse()
+	if connectionResponse == nil {
+		return false
 	}
 
+	return connectionResponse.GetReject()
+}
+
+// handleWebsocketEvent translates AWS Websocket API events to Nitric Websocket events and forwards them to be handled by registered workers.
+func (s *LambdaGateway) handleWebsocketEvent(ctx context.Context, websockets websockets.WebsocketRequestHandler, evt events.APIGatewayWebsocketProxyRequest) (interface{}, error) {
 	api, err := s.provider.GetApiGatewayById(ctx, evt.RequestContext.APIID)
 	if err != nil {
 		return nil, err
 	}
 
-	stackID := utils.GetEnv("NITRIC_STACK_ID", "")
+	stackID := commonenv.NITRIC_STACK_ID.String()
 	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
 	if !ok {
 		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
 	}
 
-	queryParams := map[string]*v1.QueryValue{}
-	for k, v := range evt.QueryStringParameters {
-		queryParams[k] = &v1.QueryValue{
-			Value: []string{v},
-		}
-	}
-
-	req := &v1.TriggerRequest{
-		Data: []byte(evt.Body),
-		Context: &v1.TriggerRequest_Websocket{
-			Websocket: &v1.WebsocketTriggerContext{
-				ConnectionId: evt.RequestContext.ConnectionID,
-				Event:        wsEvent,
-				// Get the API gateways nitric name
-				Socket:      nitricName,
-				QueryParams: queryParams,
+	// Use the routekey to get the event type
+	wsEvent := &websocketspb.ServerMessage_WebsocketEventRequest{
+		WebsocketEventRequest: &websocketspb.WebsocketEventRequest{
+			ConnectionId: evt.RequestContext.ConnectionID,
+			SocketName:   nitricName,
+			WebsocketEvent: &websocketspb.WebsocketEventRequest_Message{
+				Message: &websocketspb.WebsocketMessageEvent{
+					Body: []byte(evt.Body),
+				},
 			},
 		},
 	}
-
-	wrk, err := s.pool.GetWorker(&pool.GetWorkerOptions{
-		Trigger: req,
-	})
-	if err != nil {
-		return nil, err
+	switch evt.RequestContext.RouteKey {
+	case "$connect":
+		queryParams := map[string]*websocketspb.QueryValue{}
+		for k, v := range evt.QueryStringParameters {
+			queryParams[k] = &websocketspb.QueryValue{
+				Value: []string{v},
+			}
+		}
+		wsEvent = &websocketspb.ServerMessage_WebsocketEventRequest{
+			WebsocketEventRequest: &websocketspb.WebsocketEventRequest{
+				ConnectionId: evt.RequestContext.ConnectionID,
+				SocketName:   nitricName,
+				WebsocketEvent: &websocketspb.WebsocketEventRequest_Connection{
+					Connection: &websocketspb.WebsocketConnectionEvent{
+						QueryParams: queryParams,
+					},
+				},
+			},
+		}
+	case "$disconnect":
+		wsEvent = &websocketspb.ServerMessage_WebsocketEventRequest{
+			WebsocketEventRequest: &websocketspb.WebsocketEventRequest{
+				ConnectionId: evt.RequestContext.ConnectionID,
+				SocketName:   nitricName,
+				WebsocketEvent: &websocketspb.WebsocketEventRequest_Disconnection{
+					Disconnection: &websocketspb.WebsocketDisconnectionEvent{},
+				},
+			},
+		}
 	}
 
-	_, err = wrk.HandleTrigger(ctx, req)
+	req := &websocketspb.ServerMessage{
+		Content: wsEvent,
+	}
+
+	resp, err := websockets.HandleRequest(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-			Body:       "Error processing lambda request",
-			// TODO: Need to determine best case when to use this...
+			StatusCode:      500,
+			Body:            "error processing lambda request",
 			IsBase64Encoded: false,
 		}, nil
 	}
 
-	// if response.GetWebsocket() == nil || !response.GetWebsocket().Success {
-	// 	return events.APIGatewayProxyResponse{
-	// 		StatusCode: 500,
-	// 	}, nil
-	// }
+	if isRejectedConnection(resp) {
+		return events.APIGatewayProxyResponse{
+			StatusCode:      401,
+			Body:            "not authorized",
+			IsBase64Encoded: false,
+		}, nil
+	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 	}, nil
 }
 
-// Handle API events
-func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+func handleApiGatewayRequest(ctx context.Context, nitricName string, apismanager apis.ApiRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
 	// Copy the headers and re-write for the proxy
-	headerCopy := map[string]*v1.HeaderValue{}
+	headerCopy := map[string]*apispb.HeaderValue{}
 
 	for key, val := range evt.Headers {
 		if strings.ToLower(key) == "host" {
-			headerCopy[xforwardHeader] = &v1.HeaderValue{
+			headerCopy[xforwardHeader] = &apispb.HeaderValue{
 				Value: []string{val},
 			}
 		} else {
 			if headerCopy[key] == nil {
-				headerCopy[key] = &v1.HeaderValue{}
+				headerCopy[key] = &apispb.HeaderValue{}
 			}
 			headerCopy[key].Value = append(headerCopy[key].Value, val)
 		}
 	}
 
 	// Copy the cookies over
-	headerCopy["Cookie"] = &v1.HeaderValue{
+	headerCopy["Cookie"] = &apispb.HeaderValue{
 		Value: evt.Cookies,
 	}
 
@@ -177,9 +211,9 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 	if err != nil {
 		return nil, fmt.Errorf("error parsing query for httpEvent: %w", err)
 	}
-	query := map[string]*v1.QueryValue{}
+	query := map[string]*apispb.QueryValue{}
 	for k, v := range qVals {
-		query[k] = &v1.QueryValue{
+		query[k] = &apispb.QueryValue{
 			Value: v,
 		}
 	}
@@ -196,99 +230,139 @@ func (s *LambdaGateway) handleApiEvent(ctx context.Context, evt events.APIGatewa
 		}
 	}
 
-	req := &v1.TriggerRequest{
-		Data: data,
-		Context: &v1.TriggerRequest_Http{
-			Http: &v1.HttpTriggerContext{
+	req := &apispb.ServerMessage{
+		Content: &apispb.ServerMessage_HttpRequest{
+			HttpRequest: &apispb.HttpRequest{
 				Method:      evt.RequestContext.HTTP.Method,
 				Path:        evt.RawPath,
 				QueryParams: query,
 				Headers:     headerCopy,
+				Body:        data,
+				PathParams:  evt.PathParameters,
 			},
 		},
 	}
 
-	wrk, err := s.pool.GetWorker(&pool.GetWorkerOptions{
-		Trigger: req,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := wrk.HandleTrigger(ctx, req)
+	resp, err := apismanager.HandleRequest(nitricName, req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-			Body:       "Error processing lambda request",
-			// TODO: Need to determine best case when to use this...
+			StatusCode:      500,
+			Body:            "Internal Server Error",
 			IsBase64Encoded: false,
 		}, nil
 	}
 
 	lambdaHTTPHeaders := make(map[string]string)
-	if response.GetHttp().Headers != nil {
-		for k, v := range response.GetHttp().Headers {
+	if resp.GetHttpResponse().Headers != nil {
+		for k, v := range resp.GetHttpResponse().Headers {
 			lambdaHTTPHeaders[k] = v.Value[0]
 		}
 	}
 
-	responseString := base64.StdEncoding.EncodeToString(response.Data)
+	responseString := base64.StdEncoding.EncodeToString(resp.GetHttpResponse().Body)
 
 	return events.APIGatewayProxyResponse{
-		StatusCode:      int(response.GetHttp().Status),
+		StatusCode:      int(resp.GetHttpResponse().Status),
 		Headers:         lambdaHTTPHeaders,
 		Body:            responseString,
 		IsBase64Encoded: true,
 	}, nil
 }
 
-type ScheduleMessage struct {
-	Schedule string
-}
+func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+	request := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(request)
 
-func (s *LambdaGateway) handleScheduleEvent(ctx context.Context, evt nitricScheduleEvent) (interface{}, error) {
-	if evt.Schedule == "" {
-		return nil, fmt.Errorf("unable to identify source nitric schedule")
+	request.Header.SetMethod(evt.RequestContext.HTTP.Method)
+	request.SetRequestURI(evt.RawPath)
+	request.SetBody([]byte(evt.Body))
+
+	// Copy the headers and re-write for the proxy
+	for key, val := range evt.Headers {
+		request.Header.Add(key, val)
 	}
 
-	request := &v1.TriggerRequest{
-		// Send empty data for now (no reason to send data for schedules at the moment)
-		Data: nil,
-		Context: &v1.TriggerRequest_Topic{
-			Topic: &v1.TopicTriggerContext{
-				Topic: worker.ScheduleKeyToTopicName(evt.Schedule),
-			},
-		},
+	// Copy the cookies over
+	for _, cookie := range evt.Cookies {
+		request.Header.Add("Cookie", cookie)
 	}
 
-	wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
-		Trigger: request,
-		// Only send Cloudwatch events to schedule workers
-		Filter: func(w worker.Worker) bool {
-			_, ok := w.(*worker.ScheduleWorker)
-			return ok
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("no worker available to handle schedule %s", evt.Schedule)
-	}
-
-	resp, err := wrkr.HandleTrigger(context.TODO(), request)
+	resp, err := httpmanager.HandleRequest(request)
 	if err != nil {
 		return nil, err
 	}
 
-	if !resp.GetTopic().Success {
-		return nil, fmt.Errorf("schedule execution failed")
+	lambdaHTTPHeaders := make(map[string]string)
+	resp.Header.VisitAll(func(key, value []byte) {
+		lambdaHTTPHeaders[string(key)] = string(value)
+	})
+
+	responseString := base64.StdEncoding.EncodeToString(resp.Body())
+
+	return events.APIGatewayProxyResponse{
+		StatusCode:      resp.StatusCode(),
+		Headers:         lambdaHTTPHeaders,
+		Body:            responseString,
+		IsBase64Encoded: true,
+	}, nil
+}
+
+// handleApiEvent translates AWS API events to Nitric API events and forwards them to be handled by registered workers.
+func (s *LambdaGateway) handleApiEvent(ctx context.Context, apismanager apis.ApiRequestHandler, httpmanager http.HttpRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
+	api, err := s.provider.GetApiGatewayById(ctx, evt.RequestContext.APIID)
+	if err != nil {
+		return nil, err
+	}
+
+	stackID := commonenv.NITRIC_STACK_ID.String()
+	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
+	if !ok {
+		return nil, fmt.Errorf("received request from non-nitric API gateway")
+	}
+
+	nitricType, ok := api.Tags[tags.GetResourceTypeKey(stackID)]
+	if !ok {
+		return nil, fmt.Errorf("received request from non-nitric API gateway")
+	}
+
+	if nitricType == "http-proxy" {
+		return handleHttpProxyRequest(ctx, httpmanager, evt)
+	} else {
+		return handleApiGatewayRequest(ctx, nitricName, apismanager, evt)
+	}
+}
+
+type ScheduleMessage struct {
+	Schedule string
+}
+
+// handleScheduleEvent translates AWS schedule events to Nitric schedule intervals and forwards them to be handled by registered workers.
+func (s *LambdaGateway) handleScheduleEvent(ctx context.Context, schedules schedules.ScheduleRequestHandler, evt nitricScheduleEvent) (interface{}, error) {
+	if evt.Schedule == "" {
+		return nil, fmt.Errorf("unable to identify source nitric schedule")
+	}
+
+	request := &schedulespb.ServerMessage{
+		// Send empty data for now (no reason to send data for schedules at the moment)
+		Content: &schedulespb.ServerMessage_IntervalRequest{
+			IntervalRequest: &schedulespb.IntervalRequest{
+				ScheduleName: evt.Schedule,
+			},
+		},
+	}
+
+	_, err := schedules.HandleRequest(request)
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (s *LambdaGateway) handleSnsEvents(ctx context.Context, records []Record) (interface{}, error) {
+// handleSnsEvents translates AWS SNS events to Nitric topic events and forwards them to be handled by registered workers.
+func (s *LambdaGateway) handleSnsEvents(ctx context.Context, subscriptions topics.SubscriptionRequestHandler, records []Record) (interface{}, error) {
 	for _, snsRecord := range records {
 		messageString := snsRecord.SNS.Message
-		// var id string
 		attrs := map[string]string{}
 
 		for k, v := range snsRecord.SNS.MessageAttributes {
@@ -300,137 +374,126 @@ func (s *LambdaGateway) handleSnsEvents(ctx context.Context, records []Record) (
 
 		tName, err := s.getTopicNameForArn(ctx, snsRecord.SNS.TopicArn)
 		if err != nil {
-			log.Default().Printf("unable to find nitric topic: %v", err)
+			logger.Errorf("unable to find nitric topic: %v", err)
 			continue
 		}
 
-		request := &v1.TriggerRequest{
-			Data: []byte(messageString),
-			Context: &v1.TriggerRequest_Topic{
-				Topic: &v1.TopicTriggerContext{
-					Topic: tName,
+		messageBytes, err := base64.StdEncoding.DecodeString(messageString)
+		if err != nil {
+			logger.Errorf("unable decode SNS payload: %v", err)
+			continue
+		}
+
+		var message topicspb.TopicMessage
+
+		if err := proto.Unmarshal(messageBytes, &message); err != nil {
+			logger.Errorf("unable to unmarshal nitric message from SNS trigger: %v", err)
+			continue
+		}
+
+		request := &topicspb.ServerMessage{
+			Content: &topicspb.ServerMessage_MessageRequest{
+				MessageRequest: &topicspb.MessageRequest{
+					TopicName: tName,
+					Message:   &message,
 				},
 			},
 		}
 
-		wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
-			Trigger: request,
-			// Only send SNS events to subscription workers
-			Filter: func(w worker.Worker) bool {
-				_, ok := w.(*worker.SubscriptionWorker)
-				return ok
-			},
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable to get worker to event trigger")
-		}
-
-		var mc propagation.MapCarrier = attrs
-
-		trigResp, err := wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
+		resp, err := subscriptions.HandleRequest(request)
 		if err != nil {
 			return nil, err
 		}
 
-		if trigResp.GetTopic() == nil || !trigResp.GetTopic().Success {
-			return nil, fmt.Errorf("event handler return non success")
+		if !resp.GetMessageResponse().Success {
+			return nil, fmt.Errorf("event processing failed")
 		}
 	}
 
 	return nil, nil
 }
 
+// handleHealthCheck responds to AWS Lambda service health checks with a 'healthy' response.
 func (s *LambdaGateway) handleHealthCheck(ctx context.Context, evt healthCheckEvent) (interface{}, error) {
 	return map[string]interface{}{
 		"healthy": true,
 	}, nil
 }
 
-// Converts the GCP event type to our abstract event type
-func notificationEventToEventType(eventType string) (v1.BucketNotificationType, error) {
+// Converts an AWS Lambda S3 event type to the corresponding nitric blob event type
+func s3EventTypeToNitricBlobEventType(eventType string) (*storagepb.BlobEventType, error) {
 	if ok := strings.Contains(eventType, "ObjectCreated:"); ok {
-		return v1.BucketNotificationType_Created, nil
+		return storagepb.BlobEventType_Created.Enum(), nil
 	} else if ok := strings.Contains(eventType, "ObjectRemoved:"); ok {
-		return v1.BucketNotificationType_Deleted, nil
+		return storagepb.BlobEventType_Deleted.Enum(), nil
 	}
-	return v1.BucketNotificationType_All, fmt.Errorf("unsupported bucket notification event type %s", eventType)
+	return nil, fmt.Errorf("unsupported blob event type, expected ObjectCreated or ObjectRemoved, got %s", eventType)
 }
 
-func (s *LambdaGateway) handleS3Event(ctx context.Context, records []Record) (interface{}, error) {
+func (s *LambdaGateway) processS3Event(ctx context.Context, storageListeners storage.BucketRequestHandler, records []Record) (interface{}, error) {
 	for _, s3Record := range records {
 		bucketName, err := s.getBucketNameForArn(ctx, s3Record.EventSourceArn)
 		if err != nil {
-			log.Default().Println("unable to locate nitric bucket")
+			logger.Errorf("unable to find nitric bucket: %s", err.Error())
 			return nil, fmt.Errorf("unable to find nitric bucket: %w", err)
 		}
 
-		eventType, err := notificationEventToEventType(s3Record.EventName)
+		eventType, err := s3EventTypeToNitricBlobEventType(s3Record.EventName)
 		if err != nil {
 			return nil, err
 		}
 
-		request := &v1.TriggerRequest{
-			Context: &v1.TriggerRequest_Notification{
-				Notification: &v1.NotificationTriggerContext{
-					Source: bucketName,
-					Notification: &v1.NotificationTriggerContext_Bucket{
-						Bucket: &v1.BucketNotification{
+		msg := &storagepb.ServerMessage{
+			Content: &storagepb.ServerMessage_BlobEventRequest{
+				BlobEventRequest: &storagepb.BlobEventRequest{
+					BucketName: bucketName,
+					Event: &storagepb.BlobEventRequest_BlobEvent{
+						BlobEvent: &storagepb.BlobEvent{
 							Key:  s3Record.S3.Object.Key,
-							Type: eventType,
+							Type: *eventType,
 						},
 					},
 				},
 			},
 		}
 
-		wrkr, err := s.pool.GetWorker(&pool.GetWorkerOptions{
-			Trigger: request,
-			// Only send S3 events to bucket notification workers
-			Filter: func(w worker.Worker) bool {
-				_, ok := w.(*worker.BucketNotificationWorker)
-				return ok
-			},
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable to get worker to event trigger")
-		}
-
-		var mc propagation.MapCarrier = s3Record.ResponseElements
-
-		_, err = wrkr.HandleTrigger(xray.Propagator{}.Extract(ctx, mc), request)
+		resp, err := storageListeners.HandleRequest(msg)
 		if err != nil {
 			return nil, err
+		}
+
+		if !resp.GetBlobEventResponse().Success {
+			return nil, fmt.Errorf("failed to process blob event")
 		}
 	}
 
 	return nil, nil
 }
 
-func (s *LambdaGateway) routeEvent(ctx context.Context, evt Event) (interface{}, error) {
+func (s *LambdaGateway) routeEvent(ctx context.Context, opts *gateway.GatewayStartOpts, evt Event) (interface{}, error) {
 	switch evt.Type() {
 	case websocketEvent:
-		return s.handleWebsocketEvent(ctx, evt.APIGatewayWebsocketProxyRequest)
+		return s.handleWebsocketEvent(ctx, opts.WebsocketListenerPlugin, evt.APIGatewayWebsocketProxyRequest)
 	case httpEvent:
-		return s.handleApiEvent(ctx, evt.APIGatewayV2HTTPRequest)
+		return s.handleApiEvent(ctx, opts.ApiPlugin, opts.HttpPlugin, evt.APIGatewayV2HTTPRequest)
 	case healthcheck:
 		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
 	case sns:
-		return s.handleSnsEvents(ctx, evt.Records)
+		return s.handleSnsEvents(ctx, opts.TopicsListenerPlugin, evt.Records)
 	case s3:
-		return s.handleS3Event(ctx, evt.Records)
+		return s.processS3Event(ctx, opts.StorageListenerPlugin, evt.Records)
 	case schedule:
-		return s.handleScheduleEvent(ctx, evt.nitricScheduleEvent)
+		return s.handleScheduleEvent(ctx, opts.SchedulesPlugin, evt.nitricScheduleEvent)
 	default:
 		return nil, fmt.Errorf("unhandled lambda event type: %+v", evt)
 	}
 }
 
-// Start the lambda gateway handler
-func (s *LambdaGateway) Start(pool pool.WorkerPool) error {
-	s.pool = pool
-	// Here we want to begin polling lambda for incoming requests...
+// Start polling the lambda runtime for events and route the to workers for processing
+func (s *LambdaGateway) Start(opts *gateway.GatewayStartOpts) error {
+	// Begin polling lambda for incoming requests...
 	s.runtime(func(ctx context.Context, evt Event) (interface{}, error) {
-		a, err := s.routeEvent(ctx, evt)
+		a, err := s.routeEvent(ctx, opts, evt)
 
 		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
 		if ok {
@@ -444,24 +507,22 @@ func (s *LambdaGateway) Start(pool pool.WorkerPool) error {
 	return nil
 }
 
+// Stop will block until the lambda runtime is finished
 func (s *LambdaGateway) Stop() error {
-	// XXX: This is a NO_OP Process, as this is a pull based system
+	// This is a NO_OP Process, as this is a pull based system
 	// We don't need to stop listening to anything
 	log.Default().Println("gateway 'Stop' called, waiting for lambda runtime to finish")
-	// Lambda can't be stopped, need to wait for it to finish
+	// IT CANNOT BE STOPPED!!! Lambda is done when it wants to be and you won't change its mind.
+	// But seriously we set the with SIGTERM option in Start for automatic graceful shutdown
 	<-s.finished
 	return nil
 }
 
-func New(provider core.AwsProvider) (gateway.GatewayService, error) {
-	return &LambdaGateway{
-		provider: provider,
-		runtime:  lambda.Start,
-		finished: make(chan int),
-	}, nil
+func New(provider *resource.AwsResourceService) (gateway.GatewayService, error) {
+	return NewWithRuntime(provider, lambda.Start)
 }
 
-func NewWithRuntime(provider core.AwsProvider, runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
+func NewWithRuntime(provider resource.AwsResourceProvider, runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
 	return &LambdaGateway{
 		provider: provider,
 		runtime:  runtime,

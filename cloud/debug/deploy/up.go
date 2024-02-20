@@ -22,11 +22,11 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
-	deploy "github.com/nitrictech/nitric/core/pkg/api/nitric/deploy/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // Up - Deploy requested infrastructure for a stack
-func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployService_UpServer) (err error) {
+func (d *DeployServer) Up(request *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
@@ -60,15 +60,13 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 				return err
 			}
 
-			err = stream.Send(&deploy.DeployUpEvent{
-				Content: &deploy.DeployUpEvent_Result{
-					Result: &deploy.DeployUpEventResult{
-						Success: true,
-						Result: &deploy.UpResult{
-							Content: &deploy.UpResult_StringResult{
-								StringResult: fmt.Sprintf("spec written to: %s", absPath),
-							},
+			err = stream.Send(&deploymentspb.DeploymentUpEvent{
+				Content: &deploymentspb.DeploymentUpEvent_Result{
+					Result: &deploymentspb.UpResult{
+						Content: &deploymentspb.UpResult_Text{
+							Text: fmt.Sprintf("spec written to: %s", absPath),
 						},
+						Success: true,
 					},
 				},
 			})
@@ -77,14 +75,11 @@ func (d *DeployServer) Up(request *deploy.DeployUpRequest, stream deploy.DeployS
 			}
 		}
 	} else {
-		err = stream.Send(&deploy.DeployUpEvent{
-			Content: &deploy.DeployUpEvent_Result{
-				Result: &deploy.DeployUpEventResult{
-					Success: true,
-					Result: &deploy.UpResult{
-						Content: &deploy.UpResult_StringResult{
-							StringResult: string(reqJson),
-						},
+		err = stream.Send(&deploymentspb.DeploymentUpEvent{
+			Content: &deploymentspb.DeploymentUpEvent_Result{
+				Result: &deploymentspb.UpResult{
+					Content: &deploymentspb.UpResult_Text{
+						Text: string(reqJson),
 					},
 				},
 			},

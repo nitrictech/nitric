@@ -16,6 +16,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,19 +31,21 @@ import (
 	"google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
 
 	ifaces_gcloud_storage "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_storage"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	plugin "github.com/nitrictech/nitric/core/pkg/plugins/storage"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	storagePb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 type StorageStorageService struct {
-	plugin.UnimplementedStoragePlugin
+	// plugin.UnimplementedStoragePlugin
 	client    ifaces_gcloud_storage.StorageClient
 	projectID string
 	cache     map[string]ifaces_gcloud_storage.BucketHandle
 }
+
+var _ storagePb.StorageServer = &StorageStorageService{}
 
 func (s *StorageStorageService) getBucketByName(bucket string) (ifaces_gcloud_storage.BucketHandle, error) {
 	if s.cache == nil {
@@ -82,16 +85,10 @@ func isPermissionDenied(err error) bool {
 /**
  * Retrieves a previously stored object from a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.Read",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *StorageStorageService) Read(ctx context.Context, req *storagePb.StorageReadRequest) (*storagePb.StorageReadResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.Read")
 
-	bucketHandle, err := s.getBucketByName(bucket)
+	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -100,7 +97,7 @@ func (s *StorageStorageService) Read(ctx context.Context, bucket string, key str
 		)
 	}
 
-	reader, err := bucketHandle.Object(key).NewReader(ctx)
+	reader, err := bucketHandle.Object(req.Key).NewReader(ctx)
 	if err != nil {
 		if isPermissionDenied(err) {
 			return nil, newErr(
@@ -135,43 +132,38 @@ func (s *StorageStorageService) Read(ctx context.Context, bucket string, key str
 		)
 	}
 
-	return bytes, nil
+	return &storagePb.StorageReadResponse{
+		Body: bytes,
+	}, nil
 }
 
 /**
  * Stores a new Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.Write",
-		map[string]interface{}{
-			"bucket":     bucket,
-			"key":        key,
-			"object.len": len(object),
-		},
-	)
+func (s *StorageStorageService) Write(ctx context.Context, req *storagePb.StorageWriteRequest) (*storagePb.StorageWriteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.Write")
 
-	bucketHandle, err := s.getBucketByName(bucket)
+	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to locate bucket",
 			err,
 		)
 	}
 
-	writer := bucketHandle.Object(key).NewWriter(ctx)
+	writer := bucketHandle.Object(req.Key).NewWriter(ctx)
 
-	if _, err := writer.Write(object); err != nil {
+	if _, err := writer.Write(req.Body); err != nil {
 		if isPermissionDenied(err) {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"unable to write to file, have you requested access to this bucket?",
 				err,
 			)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"unable to write object",
 			err,
@@ -180,47 +172,41 @@ func (s *StorageStorageService) Write(ctx context.Context, bucket string, key st
 
 	if err := writer.Close(); err != nil {
 		if isPermissionDenied(err) {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"unable to write to file, have you requested access to this bucket?",
 				err,
 			)
 		}
 
-		return newErr(
+		return nil, newErr(
 			codes.Internal,
 			"error closing object write",
 			err,
 		)
 	}
 
-	return nil
+	return &storagePb.StorageWriteResponse{}, nil
 }
 
 /**
  * Delete an Item in a Google Cloud Storage Bucket
  */
-func (s *StorageStorageService) Delete(ctx context.Context, bucket string, key string) error {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.Delete",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *StorageStorageService) Delete(ctx context.Context, req *storagePb.StorageDeleteRequest) (*storagePb.StorageDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.Delete")
 
-	bucketHandle, err := s.getBucketByName(bucket)
+	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to locate bucket",
 			err,
 		)
 	}
 
-	if err := bucketHandle.Object(key).Delete(ctx); err != nil {
+	if err := bucketHandle.Object(req.Key).Delete(ctx); err != nil {
 		if isPermissionDenied(err) {
-			return newErr(
+			return nil, newErr(
 				codes.PermissionDenied,
 				"unable to delete to file, have you requested access to this bucket?",
 				err,
@@ -230,7 +216,7 @@ func (s *StorageStorageService) Delete(ctx context.Context, bucket string, key s
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
 		if !errors.Is(err, storage.ErrObjectNotExist) {
-			return newErr(
+			return nil, newErr(
 				codes.NotFound,
 				"object does not exist",
 				err,
@@ -238,59 +224,13 @@ func (s *StorageStorageService) Delete(ctx context.Context, bucket string, key s
 		}
 	}
 
-	return nil
+	return &storagePb.StorageDeleteResponse{}, nil
 }
 
-func (s *StorageStorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation plugin.Operation, expiry uint32) (string, error) {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.PreSignedUrl",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *StorageStorageService) PreSignUrl(ctx context.Context, req *storagePb.StoragePreSignUrlRequest) (*storagePb.StoragePreSignUrlResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.PreSignedUrl")
 
-	bucketHandle, err := s.getBucketByName(bucket)
-	if err != nil {
-		return "", newErr(
-			codes.NotFound,
-			"unable to locate bucket",
-			err,
-		)
-	}
-
-	method := "GET"
-	if operation == plugin.WRITE {
-		method = "PUT"
-	}
-
-	opts := &storage.SignedURLOptions{
-		Scheme:  storage.SigningSchemeV4,
-		Method:  method,
-		Expires: time.Now().Add(time.Duration(expiry) * time.Second),
-	}
-
-	signedUrl, err := bucketHandle.SignedURL(key, opts)
-	if err != nil {
-		return "", newErr(
-			codes.Internal,
-			"failed to create signed url",
-			err,
-		)
-	}
-
-	return signedUrl, nil
-}
-
-func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string, options *plugin.ListFileOptions) ([]*plugin.FileInfo, error) {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.ListFiles",
-		map[string]interface{}{
-			"bucket": bucket,
-		},
-	)
-
-	bucketHandle, err := s.getBucketByName(bucket)
+	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
 		return nil, newErr(
 			codes.NotFound,
@@ -299,17 +239,49 @@ func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string, op
 		)
 	}
 
-	prefix := ""
-	if options != nil {
-		prefix = options.Prefix
+	method := "GET"
+	if req.Operation == storagePb.StoragePreSignUrlRequest_WRITE {
+		method = "PUT"
+	}
+
+	opts := &storage.SignedURLOptions{
+		Scheme:  storage.SigningSchemeV4,
+		Method:  method,
+		Expires: time.Now().Add(req.Expiry.AsDuration()),
+	}
+
+	signedUrl, err := bucketHandle.SignedURL(req.Key, opts)
+	if err != nil {
+		return nil, newErr(
+			codes.Internal,
+			"failed to create signed url",
+			err,
+		)
+	}
+
+	return &storagePb.StoragePreSignUrlResponse{
+		Url: signedUrl,
+	}, nil
+}
+
+func (s *StorageStorageService) ListBlobs(ctx context.Context, req *storagePb.StorageListBlobsRequest) (*storagePb.StorageListBlobsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.ListFiles")
+
+	bucketHandle, err := s.getBucketByName(req.BucketName)
+	if err != nil {
+		return nil, newErr(
+			codes.NotFound,
+			"unable to locate bucket",
+			err,
+		)
 	}
 
 	iter := bucketHandle.Objects(ctx, &storage.Query{
 		Projection: storage.ProjectionNoACL,
-		Prefix:     prefix,
+		Prefix:     req.Prefix,
 	})
 
-	fis := make([]*plugin.FileInfo, 0)
+	fis := make([]*storagePb.Blob, 0)
 	for {
 		obj, err := iter.Next()
 
@@ -320,47 +292,47 @@ func (s *StorageStorageService) ListFiles(ctx context.Context, bucket string, op
 			return nil, newErr(codes.Internal, "error occurred iterating objects", err)
 		}
 
-		fis = append(fis, &plugin.FileInfo{
+		fis = append(fis, &storagePb.Blob{
 			Key: obj.Name,
 		})
 	}
 
-	return fis, nil
+	return &storagePb.StorageListBlobsResponse{
+		Blobs: fis,
+	}, nil
 }
 
-func (s *StorageStorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
-	newErr := errors.ErrorsWithScope(
-		"StorageStorageService.Exists",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *StorageStorageService) Exists(ctx context.Context, req *storagePb.StorageExistsRequest) (*storagePb.StorageExistsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("StorageStorageService.Exists")
 
-	bucketHandle, err := s.getBucketByName(bucket)
+	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return false, newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to locate bucket",
 			err,
 		)
 	}
 
-	_, err = bucketHandle.Object(key).Attrs(ctx)
+	_, err = bucketHandle.Object(req.Key).Attrs(ctx)
 	if errors.Is(err, storage.ErrObjectNotExist) {
-		return false, nil
+		return &storagePb.StorageExistsResponse{
+			Exists: false,
+		}, nil
 	}
 	if err != nil {
-		return false, newErr(codes.Internal, "error calling object.Attrs", err)
+		return nil, newErr(codes.Internal, "error calling object.Attrs", err)
 	}
 
-	return true, nil
+	return &storagePb.StorageExistsResponse{
+		Exists: true,
+	}, nil
 }
 
 /**
  * Creates a new Storage Plugin for use in GCP
  */
-func New() (plugin.StorageService, error) {
+func New() (*StorageStorageService, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx,
@@ -384,7 +356,7 @@ func New() (plugin.StorageService, error) {
 	}, nil
 }
 
-func NewWithClient(client ifaces_gcloud_storage.StorageClient) (plugin.StorageService, error) {
+func NewWithClient(client ifaces_gcloud_storage.StorageClient) (*StorageStorageService, error) {
 	return &StorageStorageService{
 		client: client,
 	}, nil

@@ -1,0 +1,121 @@
+syntax = "proto3";
+package nitric.proto.resources.v1;
+
+//protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/resources/v1;resourcespb";
+option java_package = "io.nitric.proto.resources.v1";
+option java_multiple_files = true;
+option java_outer_classname = "Resources";
+option php_namespace = "Nitric\\Proto\\Resources\\V1";
+option csharp_namespace = "Nitric.Proto.Resources.v1";
+
+// Nitric Resource Service
+// The service definition exists to allow a nitric application to declare peripheral dependencies
+service Resources {
+  // Declare a resource for the nitric application
+  // At Deploy time this will create resources as part of the nitric stacks dependency graph
+  // At runtime
+  rpc Declare (ResourceDeclareRequest) returns (ResourceDeclareResponse);
+}
+
+message PolicyResource {
+  repeated ResourceIdentifier principals = 1;
+  repeated Action actions = 2;
+  repeated ResourceIdentifier resources = 3;
+}
+
+enum ResourceType {
+  Api = 0;
+  Service = 1;
+  Bucket = 2;
+  Topic = 3;
+  Schedule = 4;
+  Subscription = 5;
+  KeyValueStore = 6;
+  Policy = 7;
+  Secret = 8;
+  BucketListener = 9;
+  Websocket = 10;
+  Http = 11;
+  ApiSecurityDefinition = 12;
+  Queue = 13;
+}
+
+// Unique identifier for a resource within a nitric application.
+message ResourceIdentifier {
+  ResourceType type = 1;
+  string name = 2;
+}
+
+message ResourceDeclareRequest {
+  ResourceIdentifier id = 1;
+
+  oneof config {
+    PolicyResource policy = 10;
+    BucketResource bucket = 11;
+    TopicResource topic = 12;
+    KeyValueStoreResource key_value_store = 13;
+    SecretResource secret = 14;
+    ApiResource api = 15;
+    ApiSecurityDefinitionResource api_security_definition = 16;
+    QueueResource queue = 17;
+  }
+}
+
+message BucketResource {}
+message TopicResource {}
+message QueueResource {}
+message KeyValueStoreResource {}
+message SecretResource {}
+
+message ApiOpenIdConnectionDefinition {
+  string issuer = 1;
+  repeated string audiences = 2;
+}
+
+message ApiSecurityDefinitionResource {
+  string api_name = 1;
+
+  oneof definition {
+    ApiOpenIdConnectionDefinition oidc = 2;
+  } 
+}
+
+message ApiScopes {
+  repeated string scopes = 1;
+}
+
+message ApiResource {
+  // root level security map for this api
+  // references ApiSecurityDefinitionResource(s)
+  map<string, ApiScopes> security = 1;
+}
+
+enum Action {
+  // Bucket Permissions: 0XX
+  BucketFileList = 0;
+  BucketFileGet = 1;
+  BucketFilePut = 2;
+  BucketFileDelete = 3;
+
+  // Topic Permissions: 2XX
+  TopicPublish = 200;
+
+  // KeyValue Store Permissions: 3XX
+  KeyValueStoreRead = 300;
+  KeyValueStoreWrite = 301;
+  KeyValueStoreDelete = 302;
+
+  // Secret Permissions: 4XX
+  SecretPut = 400;
+  SecretAccess = 401;
+
+  // Websocket Permissions: 5XX
+  WebsocketManage = 500;
+
+  // Queue Permissions: 6XX
+  QueueEnqueue = 600;
+  QueueDequeue = 601;
+}
+
+message ResourceDeclareResponse {}

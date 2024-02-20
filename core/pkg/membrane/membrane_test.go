@@ -21,144 +21,44 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	mock_gateway "github.com/nitrictech/nitric/core/mocks/gateway"
+	"github.com/nitrictech/nitric/core/pkg/membrane"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	mock_gateway "github.com/nitrictech/nitric/core/mocks/gateway"
-	mock_pool "github.com/nitrictech/nitric/core/mocks/pool"
-	"github.com/nitrictech/nitric/core/pkg/membrane"
-	"github.com/nitrictech/nitric/core/pkg/plugins/document"
-	"github.com/nitrictech/nitric/core/pkg/plugins/events"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
 )
 
-type MockDocumentServer struct {
-	document.UnimplementedDocumentPlugin
-}
-
-type MockeventsServer struct {
-	events.UnimplementedEventsPlugin
-}
-
-type MockStorageServiceServer struct {
-	storage.UnimplementedStoragePlugin
-}
-
-type MockQueueServiceServer struct {
-	queue.UnimplementedQueuePlugin
-}
+var noMinWorkers = 0
 
 var _ = Describe("Membrane", func() {
-	ctrl := gomock.NewController(GinkgoT())
-	mockPool := mock_pool.NewMockWorkerPool(ctrl)
+	// ctrl := gomock.NewController(GinkgoT())
+	// mockPool := mock_pool.NewMockWorkerPool(ctrl)
 
-	BeforeSuite(func() {
-		mockPool.EXPECT().WaitForMinimumWorkers(gomock.Any()).AnyTimes().Return(nil)
-		mockPool.EXPECT().Monitor().AnyTimes().Return(nil)
-		mockPool.EXPECT().GetWorkerCount().AnyTimes().Return(1)
-		mockPool.EXPECT().GetMaxWorkers().AnyTimes().Return(100)
-		os.Args = []string{}
-	})
-
-	Context("New", func() {
-		Context("Tolerate Missing Services is enabled", func() {
-			When("The gateway plugin is missing", func() {
-				It("Should still fail to create", func() {
-					m, err := membrane.New(&membrane.MembraneOptions{
-						SuppressLogs:            true,
-						TolerateMissingServices: true,
-					})
-					Expect(err).Should(HaveOccurred())
-					Expect(m).To(BeNil())
-				})
-			})
-
-			When("The gateway plugin is present", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
-
-				mbraneOpts := membrane.MembraneOptions{
-					SuppressLogs:            true,
-					GatewayPlugin:           mockGateway,
-					TolerateMissingServices: true,
-					Pool:                    mockPool,
-				}
-				It("Should successfully create the membrane server", func() {
-					m, err := membrane.New(&mbraneOpts)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(m).ToNot(BeNil())
-				})
-			})
-		})
-
-		Context("Tolerate Missing Services is disabled", func() {
-			When("Only the gateway plugin is present", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
-
-				mbraneOpts := membrane.MembraneOptions{
-					TolerateMissingServices: false,
-					SuppressLogs:            true,
-					GatewayPlugin:           mockGateway,
-					Pool:                    mockPool,
-				}
-				It("Should fail to create", func() {
-					m, err := membrane.New(&mbraneOpts)
-					Expect(err).Should(HaveOccurred())
-					Expect(m).To(BeNil())
-				})
-			})
-
-			When("All plugins are present", func() {
-				mockDocumentServer := &MockDocumentServer{}
-				mockeventsServer := &MockeventsServer{}
-				mockStorageServiceServer := &MockStorageServiceServer{}
-				mockQueueServiceServer := &MockQueueServiceServer{}
-				ctrl := gomock.NewController(GinkgoT())
-				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
-
-				mbraneOpts := membrane.MembraneOptions{
-					TolerateMissingServices: false,
-					SuppressLogs:            true,
-					GatewayPlugin:           mockGateway,
-					DocumentPlugin:          mockDocumentServer,
-					EventsPlugin:            mockeventsServer,
-					StoragePlugin:           mockStorageServiceServer,
-					QueuePlugin:             mockQueueServiceServer,
-					Pool:                    mockPool,
-				}
-
-				It("Should successfully create the membrane server", func() {
-					m, err := membrane.New(&mbraneOpts)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(m).ToNot(BeNil())
-				})
-			})
-		})
-	})
+	// BeforeSuite(func() {
+	// 	mockPool.EXPECT().WaitForMinimumWorkers(gomock.Any()).AnyTimes().Return(nil)
+	// 	mockPool.EXPECT().Monitor().AnyTimes().Return(nil)
+	// 	mockPool.EXPECT().GetWorkerCount().AnyTimes().Return(1)
+	// 	mockPool.EXPECT().GetMaxWorkers().AnyTimes().Return(100)
+	// 	os.Args = []string{}
+	// })
 
 	Context("Starting the server", func() {
-		Context("That tolerates missing adapters", func() {
-			When("The Gateway plugin is available and working", func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
+		When("The Gateway plugin is available and working", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			mockGateway := mock_gateway.NewMockGatewayService(ctrl)
 
-				os.Args = []string{}
-				membrane, _ := membrane.New(&membrane.MembraneOptions{
-					GatewayPlugin:           mockGateway,
-					SuppressLogs:            true,
-					TolerateMissingServices: true,
-					Pool:                    mockPool,
-				})
+			os.Args = []string{}
+			membrane, _ := membrane.New(&membrane.MembraneOptions{
+				MinWorkers:              &noMinWorkers,
+				GatewayPlugin:           mockGateway,
+				SuppressLogs:            true,
+				TolerateMissingServices: true,
+			})
 
-				It("Should successfully start the membrane", func() {
-					By("starting the gateway plugin")
-					mockGateway.EXPECT().Start(mockPool).Times(1).Return(nil)
+			It("Should successfully start the membrane", func() {
+				By("starting the gateway plugin")
+				mockGateway.EXPECT().Start(gomock.Any()).Times(1).Return(nil)
 
-					// FIXME: Race condition causing inconsistent error here
-					_ = membrane.Start()
-				})
+				_ = membrane.Start()
 			})
 		})
 
@@ -169,11 +69,11 @@ var _ = Describe("Membrane", func() {
 			var lis net.Listener
 
 			membrane, _ := membrane.New(&membrane.MembraneOptions{
+				MinWorkers:              &noMinWorkers,
 				GatewayPlugin:           mockGateway,
 				SuppressLogs:            true,
 				TolerateMissingServices: true,
 				ServiceAddress:          "localhost:9005",
-				Pool:                    mockPool,
 			})
 
 			BeforeEach(func() {
@@ -211,7 +111,7 @@ var _ = Describe("Membrane", func() {
 					ChildTimeoutSeconds:     1,
 					TolerateMissingServices: true,
 					SuppressLogs:            true,
-					Pool:                    mockPool,
+					// Pool:                    mockPool,
 				})
 			})
 
@@ -227,7 +127,6 @@ var _ = Describe("Membrane", func() {
 				})
 
 				It("Should wait for the service to start", func() {
-					// FIXME: Inconsistent error return with mocks
 					_ = mb.Start()
 				})
 			})
@@ -239,7 +138,7 @@ var _ = Describe("Membrane", func() {
 				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
 
 				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildAddress:            "localhost:808",
+					// ChildAddress:            "localhost:808",
 					ChildCommand:            []string{"fakecommand"},
 					GatewayPlugin:           mockGateway,
 					TolerateMissingServices: true,

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
@@ -29,12 +30,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	mock_s3iface "github.com/nitrictech/nitric/cloud/aws/mocks/s3"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 var _ = Describe("S3", func() {
@@ -46,19 +48,23 @@ var _ = Describe("S3", func() {
 
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("Should successfully store the object", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-						"my-bucket": "arn:aws:s3:::my-bucket",
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+						"my-bucket": {ARN: "arn:aws:s3:::my-bucket"},
 					}, nil)
 
 					By("writing the item")
 					mockStorageClient.EXPECT().PutObject(gomock.Any(), gomock.Any()).Return(&s3.PutObjectOutput{}, nil)
 
-					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", testPayload)
+					_, err := storagePlugin.Write(context.TODO(), &storagepb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-item",
+						Body:       testPayload,
+					})
 					By("Not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 				})
@@ -68,13 +74,17 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 				It("Should fail to store the item", func() {
 					By("the bucket not existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{}, nil)
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{}, nil)
 
-					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", []byte("Test"))
+					_, err := storagePlugin.Write(context.TODO(), &storagepb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-item",
+						Body:       []byte("Test"),
+					})
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 				})
@@ -86,13 +96,13 @@ var _ = Describe("S3", func() {
 
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("Should fail to store the object", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-						"my-bucket": "arn:aws:s3:::my-bucket",
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+						"my-bucket": {ARN: "arn:aws:s3:::my-bucket"},
 					}, nil)
 
 					opErr := &smithy.OperationError{
@@ -103,7 +113,12 @@ var _ = Describe("S3", func() {
 					By("failing to write the item")
 					mockStorageClient.EXPECT().PutObject(gomock.Any(), gomock.Any()).Return(nil, opErr)
 
-					err := storagePlugin.Write(context.TODO(), "my-bucket", "test-item", testPayload)
+					_, err := storagePlugin.Write(context.TODO(), &storagepb.StorageWriteRequest{
+						BucketName: "my-bucket",
+						Key:        "test-item",
+						Body:       testPayload,
+					})
+
 					By("Returning an error")
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("unable to write file"))
@@ -118,13 +133,13 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should successfully retrieve the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket"},
 						}, nil)
 
 						By("the object existing")
@@ -135,12 +150,16 @@ var _ = Describe("S3", func() {
 							Body: io.NopCloser(bytes.NewReader([]byte("Test"))),
 						}, nil)
 
-						object, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						resp, err := storagePlugin.Read(context.TODO(), &storagepb.StorageReadRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
+
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("Returning the item")
-						Expect(object).To(Equal([]byte("Test")))
+						Expect(resp.Body).To(Equal([]byte("Test")))
 					})
 				})
 				When("The item doesn't exist", func() {
@@ -150,13 +169,13 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should fail to retrieve the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket"},
 						}, nil)
 
 						opErr := &smithy.OperationError{
@@ -170,12 +189,16 @@ var _ = Describe("S3", func() {
 							Key:    aws.String("test-key"),
 						}).Return(nil, opErr)
 
-						object, err := storagePlugin.Read(context.TODO(), "test-bucket", "test-key")
+						resp, err := storagePlugin.Read(context.TODO(), &storagepb.StorageReadRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
+
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("unable to read file"))
 						By("returning a nil response")
-						Expect(object).Should(BeNil())
+						Expect(resp).Should(BeNil())
 					})
 				})
 			})
@@ -190,13 +213,13 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should successfully delete the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket"},
 						}, nil)
 
 						opErr := &smithy.OperationError{
@@ -207,7 +230,11 @@ var _ = Describe("S3", func() {
 						By("not deleting the object")
 						mockStorageClient.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(nil, opErr)
 
-						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						_, err := storagePlugin.Delete(context.TODO(), &storagepb.StorageDeleteRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
+
 						By("Returning an error")
 						Expect(err).Should(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("unable to delete file"))
@@ -220,19 +247,22 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should fail to delete the object", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket-aaa111"},
 						}, nil)
 
 						By("successfully deleting the object")
 						mockStorageClient.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(&s3.DeleteObjectOutput{}, nil)
 
-						err := storagePlugin.Delete(context.TODO(), "test-bucket", "test-key")
+						_, err := storagePlugin.Delete(context.TODO(), &storagepb.StorageDeleteRequest{
+							BucketName: "test-bucket",
+							Key:        "test-key",
+						})
 						By("Not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 					})
@@ -245,7 +275,7 @@ var _ = Describe("S3", func() {
 	When("PreSignUrl", func() {
 		When("The bucket exists", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 			mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 			mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
 			storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
@@ -253,8 +283,8 @@ var _ = Describe("S3", func() {
 			When("A URL is requested for a known operation", func() {
 				It("Should successfully generate the URL", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+						"test-bucket": {ARN: "arn:aws:s3:::test-bucket-aaa111"},
 					}, nil)
 
 					mockPSStorageClient.EXPECT().PresignPutObject(gomock.Any(), &s3.PutObjectInput{
@@ -264,12 +294,17 @@ var _ = Describe("S3", func() {
 						URL: "aws.example.com",
 					}, nil)
 
-					url, err := storagePlugin.PreSignUrl(context.TODO(), "test-bucket", "test-key", 1, uint32(60))
+					resp, err := storagePlugin.PreSignUrl(context.TODO(), &storagepb.StoragePreSignUrlRequest{
+						BucketName: "test-bucket",
+						Key:        "test-key",
+						Expiry:     durationpb.New(time.Second * 60),
+						Operation:  storagepb.StoragePreSignUrlRequest_WRITE,
+					})
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("Return the correct url")
 					// always blank - it's the best we can do without a real mock.
-					Expect(url).To(Equal("aws.example.com"))
+					Expect(resp.Url).To(Equal("aws.example.com"))
 				})
 			})
 		})
@@ -281,13 +316,13 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("should list the files contained in the bucket", func() {
 					By("the bucket existing")
-					mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-						"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+					mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+						"test-bucket": {ARN: "arn:aws:s3:::test-bucket-aaa111"},
 					}, nil)
 
 					By("s3 returning files")
@@ -300,18 +335,19 @@ var _ = Describe("S3", func() {
 						}},
 					}, nil)
 
-					files, err := storagePlugin.ListFiles(context.TODO(), "test-bucket", &storage.ListFileOptions{
-						Prefix: "test/",
+					resp, err := storagePlugin.ListBlobs(context.TODO(), &storagepb.StorageListBlobsRequest{
+						BucketName: "test-bucket",
+						Prefix:     "test/",
 					})
 
 					By("not returning an error")
 					Expect(err).ShouldNot(HaveOccurred())
 
 					By("returning the file listing from s3")
-					Expect(files).To(HaveLen(1))
+					Expect(resp.Blobs).To(HaveLen(1))
 
 					By("having the returned keys")
-					Expect(files[0].Key).To(Equal("test/test"))
+					Expect(resp.Blobs[0].Key).To(Equal("test/test"))
 				})
 			})
 		})
@@ -323,14 +359,14 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				When("the file exists", func() {
 					It("should return true", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket-aaa111"},
 						}, nil)
 
 						By("the file existing")
@@ -339,21 +375,24 @@ var _ = Describe("S3", func() {
 							Key:    aws.String("test-file"),
 						}).Return(&s3.HeadObjectOutput{}, nil)
 
-						exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-file")
+						exists, err := storagePlugin.Exists(context.TODO(), &storagepb.StorageExistsRequest{
+							BucketName: "test-bucket",
+							Key:        "test-file",
+						})
 
 						By("not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("returning false")
-						Expect(exists).To(Equal(true))
+						Expect(exists.Exists).To(Equal(true))
 					})
 				})
 
 				When("the file does not exist", func() {
 					It("should return false", func() {
 						By("the bucket existing")
-						mockProvider.EXPECT().GetResources(gomock.Any(), core.AwsResource_Bucket).Return(map[string]string{
-							"test-bucket": "arn:aws:s3:::test-bucket-aaa111",
+						mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+							"test-bucket": {ARN: "arn:aws:s3:::test-bucket-aaa111"},
 						}, nil)
 
 						By("the file not existing")
@@ -362,13 +401,16 @@ var _ = Describe("S3", func() {
 							Key:    aws.String("test-file"),
 						}).Return(nil, fmt.Errorf("mock-error"))
 
-						exists, err := storagePlugin.Exists(context.TODO(), "test-bucket", "test-file")
+						exists, err := storagePlugin.Exists(context.TODO(), &storagepb.StorageExistsRequest{
+							BucketName: "test-bucket",
+							Key:        "test-file",
+						})
 
 						By("not returning an error")
 						Expect(err).ShouldNot(HaveOccurred())
 
 						By("returning false")
-						Expect(exists).To(Equal(false))
+						Expect(exists.Exists).To(Equal(false))
 					})
 				})
 			})

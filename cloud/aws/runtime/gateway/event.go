@@ -88,7 +88,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case s3:
 		s3Event := &events.S3Event{}
 		err = json.Unmarshal(data, s3Event)
-
 		if err != nil {
 			return err
 		}
@@ -110,7 +109,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case sns:
 		snsEvent := &events.SNSEvent{}
 		err = json.Unmarshal(data, snsEvent)
-
 		if err != nil {
 			return err
 		}
@@ -130,7 +128,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case httpEvent:
 		apiEvent := events.APIGatewayV2HTTPRequest{}
 		err = json.Unmarshal(data, &apiEvent)
-
 		if err != nil {
 			return err
 		}
@@ -139,7 +136,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case websocketEvent:
 		websocketEvent := events.APIGatewayWebsocketProxyRequest{}
 		err = json.Unmarshal(data, &websocketEvent)
-
 		if err != nil {
 			return err
 		}
@@ -148,7 +144,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case schedule:
 		nitricSchedule := nitricScheduleEvent{}
 		err = json.Unmarshal(data, &nitricSchedule)
-
 		if err != nil {
 			return err
 		}
@@ -157,7 +152,6 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case healthcheck:
 		checkEvent := healthCheckEvent{}
 		err = json.Unmarshal(data, &checkEvent)
-
 		if err != nil {
 			return err
 		}

@@ -67,7 +67,7 @@ var (
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
 
-	err := ctx.RegisterComponentResource("nitric:Image", name, res, opts...)
+	err := ctx.RegisterComponentResource("nitriccommon:Image", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (d *Image) URI() pulumi.StringOutput {
 	return d.DockerImage.RepoDigest.Elem().ToStringOutput()
 }
 
-// Returns the default docker file if telemetry sampling is disabled for this execution unit. Otherwise, will return a wrapped telemetry image.
+// Returns the default docker file if telemetry sampling is disabled for this service. Otherwise, will return a wrapped telemetry image.
 func getWrapperDockerfile(configArgs *telemetry.TelemetryConfigArgs) (*WrappedBuildInput, error) {
 	if configArgs != nil && configArgs.TraceSampling > 0 {
 		config, err := telemetry.NewTelemetryConfig(configArgs)

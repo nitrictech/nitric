@@ -17,24 +17,24 @@ package storage
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/storage"
-	"github.com/nitrictech/nitric/core/pkg/utils"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
 const (
@@ -43,30 +43,30 @@ const (
 	ErrCodeAccessDenied = "AccessDenied"
 )
 
-// S3StorageService - Is the concrete implementation of AWS S3 for the Nitric Storage Plugin
+// S3StorageService - an AWS S3 implementation of the Nitric Storage Service
 type S3StorageService struct {
-	// storage.UnimplementedStoragePlugin
-	client        s3iface.S3API
+	s3Client      s3iface.S3API
 	preSignClient s3iface.PreSignAPI
-	provider      core.AwsProvider
+	provider      resource.AwsResourceProvider
 	selector      BucketSelector
-	storage.UnimplementedStoragePlugin
 }
+
+var _ storagepb.StorageServer = (*S3StorageService)(nil)
 
 type BucketSelector = func(nitricName string) (*string, error)
 
-func (s *S3StorageService) getBucketName(ctx context.Context, bucket string) (*string, error) {
+func (s *S3StorageService) getS3BucketName(ctx context.Context, bucket string) (*string, error) {
 	if s.selector != nil {
 		return s.selector(bucket)
 	}
 
-	buckets, err := s.provider.GetResources(ctx, core.AwsResource_Bucket)
+	buckets, err := s.provider.GetResources(ctx, resource.AwsResource_Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bucket list: %w", err)
 	}
 
-	if bucketArn, ok := buckets[bucket]; ok {
-		bucketName := strings.Split(bucketArn, ":::")[1]
+	if s3Bucket, ok := buckets[bucket]; ok {
+		bucketName := strings.Split(s3Bucket.ARN, ":::")[1]
 
 		return aws.String(bucketName), nil
 	}
@@ -82,263 +82,254 @@ func isS3AccessDeniedErr(err error) bool {
 	return false
 }
 
-// Read - Retrieves an item from a bucket
-func (s *S3StorageService) Read(ctx context.Context, bucket string, key string) ([]byte, error) {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.Read",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+// Read and return the contents of a file in a bucket
+func (s *S3StorageService) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Read")
 
-	if b, err := s.getBucketName(ctx, bucket); err == nil {
-		resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
-			Bucket: b,
-			Key:    aws.String(key),
+	if s3BucketName, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
+		resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+			Bucket: s3BucketName,
+			Key:    aws.String(req.Key),
 		})
 		if err != nil {
 			if isS3AccessDeniedErr(err) {
 				return nil, newErr(
 					codes.PermissionDenied,
-					"unable to read file, have you requested access to this bucket?",
+					"unable to read file, this may be due to a missing permissions request in your code.",
 					err,
 				)
 			}
 
 			return nil, newErr(
-				codes.NotFound,
-				"error retrieving key",
+				codes.Unknown,
+				"error reading file",
 				err,
 			)
 		}
 
 		defer resp.Body.Close()
-		// TODO: Wrap the possible error from ReadAll
-		return io.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		return &storagepb.StorageReadResponse{
+			Body: bodyBytes,
+		}, nil
 	} else {
 		return nil, newErr(
 			codes.NotFound,
-			"unable to locate bucket",
+			"error finding S3 bucket",
 			err,
 		)
 	}
 }
 
-// Write - Writes an item to a bucket
-func (s *S3StorageService) Write(ctx context.Context, bucket string, key string, object []byte) error {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.Write",
-		map[string]interface{}{
-			"bucket":     bucket,
-			"key":        key,
-			"object.len": len(object),
-		},
-	)
+// Write contents to a file in a bucket
+func (s *S3StorageService) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Write")
 
-	if b, err := s.getBucketName(ctx, bucket); err == nil {
-		contentType := http.DetectContentType(object)
+	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
+		contentType := http.DetectContentType(req.Body)
 
-		if _, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		if _, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      b,
-			Body:        bytes.NewReader(object),
+			Body:        bytes.NewReader(req.Body),
 			ContentType: &contentType,
-			Key:         aws.String(key),
+			Key:         aws.String(req.Key),
 		}); err != nil {
 			if isS3AccessDeniedErr(err) {
-				return newErr(
+				return nil, newErr(
 					codes.PermissionDenied,
-					"unable to write file, have you requested access to this bucket?",
+					"unable to write file, this may be due to a missing permissions request in your code.",
 					err,
 				)
 			}
 
-			return newErr(
-				codes.Internal,
-				"unable to put object"+fmt.Sprintf("Error: %v, Type: %T\n", err, err),
+			return nil, newErr(
+				codes.Unknown,
+				"error writing file",
 				err,
 			)
 		}
 	} else {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
-			"unable to locate bucket",
+			"error finding S3 bucket",
 			err,
 		)
 	}
 
-	return nil
+	return &storagepb.StorageWriteResponse{}, nil
 }
 
-// Delete - Deletes an item from a bucket
-func (s *S3StorageService) Delete(ctx context.Context, bucket string, key string) error {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.Delete",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+// Delete a file from a bucket
+func (s *S3StorageService) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Delete")
 
-	if b, err := s.getBucketName(ctx, bucket); err == nil {
-		// TODO: should we handle delete markers, etc.?
-		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
+		if _, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: b,
-			Key:    aws.String(key),
+			Key:    aws.String(req.Key),
 		}); err != nil {
 			if isS3AccessDeniedErr(err) {
-				return newErr(
+				return nil, newErr(
 					codes.PermissionDenied,
-					"unable to delete file, have you requested access to this bucket?",
+					"unable to delete file, this may be due to a missing permissions request in your code.",
 					err,
 				)
 			}
 
-			return newErr(
-				codes.Internal,
-				"unable to delete object",
+			return nil, newErr(
+				codes.Unknown,
+				"error deleting file",
 				err,
 			)
 		}
 	} else {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
-			"unable to locate bucket",
+			"error finding S3 bucket",
 			err,
 		)
 	}
 
-	return nil
+	return &storagepb.StorageDeleteResponse{}, nil
 }
 
-// PreSignUrl - generates a signed URL which can be used to perform direct operations on a file
+// PreSignUrl generates a signed URL which can be used to perform direct operations on a file
 // useful for large file uploads/downloads so they can bypass application code and work directly with S3
-func (s *S3StorageService) PreSignUrl(ctx context.Context, bucket string, key string, operation storage.Operation, expiry uint32) (string, error) {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.PreSignUrl",
-		map[string]interface{}{
-			"bucket":    bucket,
-			"key":       key,
-			"operation": operation.String(),
-		},
-	)
+func (s *S3StorageService) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.PreSignUrl")
 
-	if b, err := s.getBucketName(ctx, bucket); err == nil {
-		switch operation {
-		case storage.READ:
-			req, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
+		switch req.Operation {
+		case storagepb.StoragePreSignUrlRequest_READ:
+			response, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 				Bucket: b,
-				Key:    aws.String(key),
-			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
+				Key:    aws.String(req.Key),
+			}, s3.WithPresignExpires(req.Expiry.AsDuration()))
 			if err != nil {
-				return "", newErr(
+				return nil, newErr(
 					codes.Internal,
-					"failed to generate pre-signed READ URL",
+					"failed to generate signed READ URL",
 					err,
 				)
 			}
-			return req.URL, err
-		case storage.WRITE:
+			return &storagepb.StoragePreSignUrlResponse{
+				Url: response.URL,
+			}, err
+		case storagepb.StoragePreSignUrlRequest_WRITE:
 			req, err := s.preSignClient.PresignPutObject(ctx, &s3.PutObjectInput{
 				Bucket: b,
-				Key:    aws.String(key),
-			}, s3.WithPresignExpires(time.Duration(expiry)*time.Second))
+				Key:    aws.String(req.Key),
+			}, s3.WithPresignExpires(req.Expiry.AsDuration()))
 			if err != nil {
-				return "", newErr(
+				return nil, newErr(
 					codes.Internal,
-					"failed to generate pre-signed WRITE URL",
+					"failed to generate signed WRITE URL",
 					err,
 				)
 			}
-			return req.URL, err
+			return &storagepb.StoragePreSignUrlResponse{
+				Url: req.URL,
+			}, err
 		default:
-			return "", fmt.Errorf("requested operation not supported for pre-signed AWS S3 urls")
+			return nil, newErr(codes.Unimplemented, "requested operation not supported for pre-signed AWS S3 URLs", nil)
 		}
 	} else {
-		return "", newErr(
+		return nil, newErr(
 			codes.NotFound,
-			"unable to locate bucket",
+			"error finding S3 bucket",
 			err,
 		)
 	}
 }
 
-func (s *S3StorageService) ListFiles(ctx context.Context, bucket string, options *storage.ListFileOptions) ([]*storage.FileInfo, error) {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.ListFiles",
-		map[string]interface{}{
-			"bucket": bucket,
-		},
-	)
+// ListFiles lists all files in a bucket
+func (s *S3StorageService) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.ListFiles")
 
 	var prefix *string = nil
-	if options != nil {
+	if req.Prefix != "" {
 		// Only apply if prefix isn't default
-		if options.Prefix != "" {
-			prefix = aws.String(options.Prefix)
-		}
+		prefix = &req.Prefix
 	}
 
-	if b, err := s.getBucketName(ctx, bucket); err == nil {
-		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
+		objects, err := s.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 			Bucket: b,
 			Prefix: prefix,
 		})
 		if err != nil {
+			if isS3AccessDeniedErr(err) {
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to list files, this may be due to a missing permissions request in your code.",
+					err,
+				)
+			}
+
 			return nil, newErr(
-				codes.Internal,
-				"unable to fetch file list",
+				codes.Unknown,
+				"error listing files",
 				err,
 			)
 		}
 
-		files := make([]*storage.FileInfo, 0, len(objects.Contents))
+		files := make([]*storagepb.Blob, 0, len(objects.Contents))
 		for _, o := range objects.Contents {
-			files = append(files, &storage.FileInfo{
+			files = append(files, &storagepb.Blob{
 				Key: *o.Key,
 			})
 		}
 
-		return files, nil
+		return &storagepb.StorageListBlobsResponse{
+			Blobs: files,
+		}, nil
 	} else {
 		return nil, newErr(
 			codes.NotFound,
-			"unable to locate bucket",
+			"error finding S3 bucket",
 			err,
 		)
 	}
 }
 
-func (s *S3StorageService) Exists(ctx context.Context, bucket string, key string) (bool, error) {
-	newErr := errors.ErrorsWithScope(
-		"S3StorageService.Exists",
-		map[string]interface{}{
-			"bucket": bucket,
-			"key":    key,
-		},
-	)
+func (s *S3StorageService) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Exists")
 
-	b, err := s.getBucketName(ctx, bucket)
+	b, err := s.getS3BucketName(ctx, req.BucketName)
 	if err != nil {
-		return false, newErr(codes.Internal, "unable to locate bucket", err)
+		return nil, newErr(codes.NotFound, "error finding S3 bucket", err)
 	}
 
-	_, err = s.client.HeadObject(ctx, &s3.HeadObjectInput{
+	_, err = s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: b,
-		Key:    aws.String(key),
+		Key:    aws.String(req.Key),
 	})
-
-	// TODO: Handle specific error types
 	if err != nil {
-		return false, nil
+		if isS3AccessDeniedErr(err) {
+			return nil, newErr(
+				codes.PermissionDenied,
+				"unable to check if file exists, this may be due to a missing permissions request in your code.",
+				err,
+			)
+		}
+
+		return &storagepb.StorageExistsResponse{
+			Exists: false,
+		}, nil
 	}
 
-	return true, nil
+	return &storagepb.StorageExistsResponse{
+		Exists: true,
+	}, nil
 }
 
 // New creates a new default S3 storage plugin
-func New(provider core.AwsProvider) (storage.StorageService, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+func New(provider resource.AwsResourceProvider) (*S3StorageService, error) {
+	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
@@ -350,16 +341,16 @@ func New(provider core.AwsProvider) (storage.StorageService, error) {
 	s3Client := s3.NewFromConfig(cfg)
 
 	return &S3StorageService{
-		client:        s3Client,
+		s3Client:      s3Client,
 		preSignClient: s3.NewPresignClient(s3Client),
 		provider:      provider,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(provider core.AwsProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (storage.StorageService, error) {
+func NewWithClient(provider resource.AwsResourceProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (*S3StorageService, error) {
 	s3Client := &S3StorageService{
-		client:        client,
+		s3Client:      client,
 		preSignClient: preSignClient,
 		provider:      provider,
 	}

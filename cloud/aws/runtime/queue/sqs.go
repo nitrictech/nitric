@@ -16,7 +16,8 @@ package queue
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,42 +26,40 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/smithy-go"
+	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface"
-	"github.com/nitrictech/nitric/cloud/aws/runtime/core"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors"
-	"github.com/nitrictech/nitric/core/pkg/plugins/errors/codes"
-	"github.com/nitrictech/nitric/core/pkg/plugins/queue"
-	"github.com/nitrictech/nitric/core/pkg/utils"
-)
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 
-const (
-	// ErrCodeNoSuchTagSet - AWS API neglects to include a constant for this error code.
-	ErrCodeNoSuchTagSet = "NoSuchTagSet"
-	ErrCodeAccessDenied = "AccessDenied"
+	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 )
 
 type SQSQueueService struct {
-	queue.UnimplementedQueuePlugin
-	provder core.AwsProvider
-	client  sqsiface.SQSAPI
+	provider resource.AwsResourceProvider
+	client   sqsiface.SQSAPI
 }
+
+var _ queuespb.QueuesServer = &SQSQueueService{}
 
 // Get the URL for a given queue name
 func (s *SQSQueueService) getUrlForQueueName(ctx context.Context, queue string) (*string, error) {
-	queues, err := s.provder.GetResources(ctx, core.AwsResource_Queue)
+	queues, err := s.provider.GetResources(ctx, resource.AwsResource_Queue)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving queue list")
+		return nil, fmt.Errorf("error retrieving queue list: %w", err)
 	}
 
 	queueArn, ok := queues[queue]
 
 	if !ok {
-		return nil, fmt.Errorf("queue %s does not exist", queue)
+		return nil, fmt.Errorf("arn for queue %s could not be determined", queue)
 	}
 
-	arnParts := strings.Split(queueArn, ":")
+	arnParts := strings.Split(queueArn.ARN, ":")
 	accountId := arnParts[4]
 	queueName := arnParts[5]
 
@@ -83,53 +82,27 @@ func isSQSAccessDeniedErr(err error) bool {
 	return false
 }
 
-func (s *SQSQueueService) Send(ctx context.Context, queueName string, task queue.NitricTask) error {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.Send",
-		map[string]interface{}{
-			"queue": queueName,
-			"task":  task,
-		},
-	)
+func (s *SQSQueueService) Enqueue(ctx context.Context, req *queuespb.QueueEnqueueRequest) (*queuespb.QueueEnqueueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.Enqueue")
 
-	tasks := []queue.NitricTask{task}
-	if _, err := s.SendBatch(ctx, queueName, tasks); err != nil {
-		if isSQSAccessDeniedErr(err) {
-			return newErr(
-				codes.PermissionDenied,
-				"unable to send task to queue, have you requested access to this queue?",
-				err,
-			)
-		}
+	requestIdMap := map[string]*queuespb.QueueMessage{}
 
-		return newErr(
-			codes.Internal,
-			"failed to send task",
-			err,
-		)
-	}
-	return nil
-}
-
-func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks []queue.NitricTask) (*queue.SendBatchResponse, error) {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.SendBatch",
-		map[string]interface{}{
-			"queue":     queueName,
-			"tasks.len": len(tasks),
-		},
-	)
-
-	if url, err := s.getUrlForQueueName(ctx, queueName); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		entries := make([]types.SendMessageBatchRequestEntry, 0)
 
-		for _, task := range tasks {
-			t := task
-			if bytes, err := json.Marshal(t); err == nil {
+		for _, sendTaskReq := range req.Messages {
+			t := sendTaskReq
+
+			// generate a unique Id for each task
+			id := uuid.New()
+			requestIdMap[id.String()] = t
+
+			if bytes, err := proto.Marshal(t); err == nil {
+				msgString := base64.StdEncoding.EncodeToString(bytes)
+
 				entries = append(entries, types.SendMessageBatchRequestEntry{
-					// Share the request ID here...
-					Id:          &t.ID,
-					MessageBody: aws.String(string(bytes)),
+					Id:          aws.String(id.String()),
+					MessageBody: aws.String(msgString),
 				})
 			} else {
 				return nil, newErr(
@@ -145,14 +118,13 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 			QueueUrl: url,
 		}); err == nil {
 			// process out Failed messages to return to the user...
-			failedTasks := make([]*queue.FailedTask, 0)
+			failedTasks := make([]*queuespb.FailedEnqueueMessage, 0, len(out.Failed))
 			for _, failed := range out.Failed {
-				for _, e := range tasks {
-					task := e
-					if task.ID == *failed.Id {
-						failedTasks = append(failedTasks, &queue.FailedTask{
-							Task:    &task,
-							Message: *failed.Message,
+				for id, e := range requestIdMap {
+					if id == *failed.Id {
+						failedTasks = append(failedTasks, &queuespb.FailedEnqueueMessage{
+							Message: e,
+							Details: *failed.Message,
 						})
 						// continue processing failed messages
 						break
@@ -160,8 +132,8 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 				}
 			}
 
-			return &queue.SendBatchResponse{
-				FailedTasks: failedTasks,
+			return &queuespb.QueueEnqueueResponse{
+				FailedMessages: failedTasks,
 			}, nil
 		} else {
 			if isSQSAccessDeniedErr(err) {
@@ -187,30 +159,16 @@ func (s *SQSQueueService) SendBatch(ctx context.Context, queueName string, tasks
 	}
 }
 
-func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOptions) ([]queue.NitricTask, error) {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.Receive",
-		map[string]interface{}{
-			"options": options,
-		},
-	)
+func (s *SQSQueueService) Dequeue(ctx context.Context, req *queuespb.QueueDequeueRequest) (*queuespb.QueueDequeueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.Dequeue")
 
-	if err := options.Validate(); err != nil {
-		return nil, newErr(
-			codes.InvalidArgument,
-			"invalid receive options",
-			err,
-		)
-	}
-
-	if url, err := s.getUrlForQueueName(ctx, options.QueueName); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		req := sqs.ReceiveMessageInput{
-			MaxNumberOfMessages: int32(*options.Depth),
+			MaxNumberOfMessages: req.Depth,
 			MessageAttributeNames: []string{
 				string(types.QueueAttributeNameAll),
 			},
 			QueueUrl: url,
-			// TODO: Consider explicit timeout values
 			// VisibilityTimeout:       nil,
 			// WaitTimeSeconds:         nil,
 		}
@@ -232,15 +190,11 @@ func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOpti
 			)
 		}
 
-		if len(res.Messages) == 0 {
-			return []queue.NitricTask{}, nil
-		}
-
-		var tasks []queue.NitricTask
+		tasks := make([]*queuespb.DequeuedMessage, 0, len(res.Messages))
 		for _, m := range res.Messages {
-			var nitricTask queue.NitricTask
-			bodyBytes := []byte(*m.Body)
-			err := json.Unmarshal(bodyBytes, &nitricTask)
+			var queueMessage queuespb.QueueMessage
+
+			msgBytes, err := base64.StdEncoding.DecodeString(*m.Body)
 			if err != nil {
 				return nil, newErr(
 					codes.Internal,
@@ -249,15 +203,24 @@ func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOpti
 				)
 			}
 
-			tasks = append(tasks, queue.NitricTask{
-				ID:          nitricTask.ID,
-				Payload:     nitricTask.Payload,
-				PayloadType: nitricTask.PayloadType,
-				LeaseID:     *m.ReceiptHandle,
+			err = proto.Unmarshal(msgBytes, &queueMessage)
+			if err != nil {
+				return nil, newErr(
+					codes.Internal,
+					"failed unmarshalling body",
+					err,
+				)
+			}
+
+			tasks = append(tasks, &queuespb.DequeuedMessage{
+				LeaseId: *m.ReceiptHandle,
+				Message: &queueMessage,
 			})
 		}
 
-		return tasks, nil
+		return &queuespb.QueueDequeueResponse{
+			Messages: tasks,
+		}, nil
 	} else {
 		return nil, newErr(
 			codes.NotFound,
@@ -268,32 +231,26 @@ func (s *SQSQueueService) Receive(ctx context.Context, options queue.ReceiveOpti
 }
 
 // Completes a previously popped queue item
-func (s *SQSQueueService) Complete(ctx context.Context, q string, leaseId string) error {
-	newErr := errors.ErrorsWithScope(
-		"SQSQueueService.Complete",
-		map[string]interface{}{
-			"queue":   q,
-			"leaseId": leaseId,
-		},
-	)
+func (s *SQSQueueService) Complete(ctx context.Context, req *queuespb.QueueCompleteRequest) (*queuespb.QueueCompleteResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("SQSQueueService.Complete")
 
-	if url, err := s.getUrlForQueueName(ctx, q); err == nil {
+	if url, err := s.getUrlForQueueName(ctx, req.QueueName); err == nil {
 		req := sqs.DeleteMessageInput{
 			QueueUrl:      url,
-			ReceiptHandle: aws.String(leaseId),
+			ReceiptHandle: aws.String(req.LeaseId),
 		}
 
 		if _, err := s.client.DeleteMessage(ctx, &req); err != nil {
-			return newErr(
+			return nil, newErr(
 				codes.Internal,
 				"failed to dequeue task",
 				err,
 			)
 		}
 
-		return nil
+		return &queuespb.QueueCompleteResponse{}, nil
 	} else {
-		return newErr(
+		return nil, newErr(
 			codes.NotFound,
 			"unable to find queue",
 			err,
@@ -301,8 +258,8 @@ func (s *SQSQueueService) Complete(ctx context.Context, q string, leaseId string
 	}
 }
 
-func New(provider core.AwsProvider) (queue.QueueService, error) {
-	awsRegion := utils.GetEnv("AWS_REGION", "us-east-1")
+func New(provider resource.AwsResourceProvider) (queuespb.QueuesServer, error) {
+	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if sessionError != nil {
@@ -314,14 +271,14 @@ func New(provider core.AwsProvider) (queue.QueueService, error) {
 	client := sqs.NewFromConfig(cfg)
 
 	return &SQSQueueService{
-		client:  client,
-		provder: provider,
+		client:   client,
+		provider: provider,
 	}, nil
 }
 
-func NewWithClient(provider core.AwsProvider, client sqsiface.SQSAPI) queue.QueueService {
+func NewWithClient(provider resource.AwsResourceProvider, client sqsiface.SQSAPI) queuespb.QueuesServer {
 	return &SQSQueueService{
-		client:  client,
-		provder: provider,
+		client:   client,
+		provider: provider,
 	}
 }
