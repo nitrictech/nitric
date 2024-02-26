@@ -68,8 +68,9 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 
 	response, err := client.GetEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
+
 		return nil, newErr(
-			codes.InvalidArgument,
+			codes.Unknown,
 			"failed to call aztables:GetEntity",
 			err,
 		)
