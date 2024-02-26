@@ -200,6 +200,14 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 
 	_, err = client.DeleteEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
+		if respErr, ok := err.(*azcore.ResponseError); ok {
+			switch respErr.StatusCode {
+			case http.StatusNotFound:
+				// not found isn't an error for delete
+				return &keyvaluepb.KeyValueDeleteResponse{}, nil
+			}
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to call aztables.DeleteEntity",
