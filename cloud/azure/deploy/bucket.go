@@ -91,7 +91,7 @@ func (p *NitricAzurePulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	for _, sub := range config.Listeners {
-		err = p.newAzureBucketNotification(ctx, parent, name+sub.GetService(), sub)
+		err = p.newAzureBucketNotification(ctx, parent, name, sub)
 		if err != nil {
 			return err
 		}
