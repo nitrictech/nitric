@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -79,6 +80,11 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
 	if err != nil {
 		return fmt.Errorf("invalid document supplied for api: %s", name)
+	}
+
+	if len(openapiDoc.Paths) < 1 {
+		logger.Warnf("skipping deployment of API %s, no routes defined", name)
+		return nil
 	}
 
 	managedIdentities := p.containerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
