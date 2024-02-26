@@ -113,7 +113,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 	if result.Item == nil {
 		return nil, newErr(
 			codes.NotFound,
-			fmt.Sprintf("%v not found", req.Ref),
+			fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
 			err,
 		)
 	}

@@ -18,8 +18,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
@@ -68,6 +70,17 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 
 	response, err := client.GetEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
+		if respErr, ok := err.(*azcore.ResponseError); ok {
+			switch respErr.StatusCode {
+			case http.StatusNotFound:
+				// Handle not found error
+				return nil, newErr(
+					codes.NotFound,
+					fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
+					err,
+				)
+			}
+		}
 
 		return nil, newErr(
 			codes.Unknown,
