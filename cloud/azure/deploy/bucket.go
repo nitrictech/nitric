@@ -38,19 +38,19 @@ func eventTypeToStorageEventType(eventType *storagepb.BlobEventType) []string {
 func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Context, parent pulumi.Resource, bucketName string, config *deploymentspb.BucketListener) error {
 	target, ok := p.containerApps[config.GetService()]
 	if !ok {
-		return fmt.Errorf("")
+		return fmt.Errorf("target container app %s not found", config.GetService())
 	}
 
 	bucket, ok := p.buckets[bucketName]
 	if !ok {
-		return fmt.Errorf("")
+		return fmt.Errorf("target bucket %s not found", bucketName)
 	}
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{target.App, bucket})}
 
 	hostUrl, err := target.HostUrl()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to determine container app host URL: %w", err)
 	}
 
 	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, bucketName+target.Name, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
