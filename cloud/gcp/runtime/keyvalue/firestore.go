@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package document
+package keyvalue
 
 import (
 	"context"
@@ -23,7 +23,6 @@ import (
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
 
 	"google.golang.org/grpc/codes"
-	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"cloud.google.com/go/firestore"
@@ -53,10 +52,17 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 
 	value, err := doc.Get(ctx)
 	if err != nil {
-		if status.Code(err) == grpcCodes.PermissionDenied {
+		switch status.Code(err) {
+		case codes.NotFound:
+			return nil, newErr(
+				codes.NotFound,
+				fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
+				err,
+			)
+		case codes.PermissionDenied:
 			return nil, newErr(
 				codes.PermissionDenied,
-				"permission denied, have you requested access to this collection?",
+				"permission denied, have you requested access to this key value store?",
 				err,
 			)
 		}
@@ -107,10 +113,10 @@ func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetReques
 	doc := s.getDocRef(req.Ref)
 
 	if _, err := doc.Set(ctx, req.Content.AsMap()); err != nil {
-		if status.Code(err) == grpcCodes.PermissionDenied {
+		if status.Code(err) == codes.PermissionDenied {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"permission denied, have you requested access to this collection?",
+				"permission denied, have you requested access to this key value store?",
 				err,
 			)
 		}
@@ -140,10 +146,10 @@ func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDelete
 
 	// Delete document
 	if _, err := doc.Delete(ctx); err != nil {
-		if status.Code(err) == grpcCodes.PermissionDenied {
+		if status.Code(err) == codes.PermissionDenied {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"permission denied, have you requested access to this collection?",
+				"permission denied, have you requested access to this key value store?",
 				err,
 			)
 		}

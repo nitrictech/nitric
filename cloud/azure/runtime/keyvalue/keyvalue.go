@@ -18,8 +18,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
@@ -68,8 +70,21 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 
 	response, err := client.GetEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
+			switch respErr.StatusCode {
+			case http.StatusNotFound:
+				// Handle not found error
+				return nil, newErr(
+					codes.NotFound,
+					fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
+					err,
+				)
+			}
+		}
+
 		return nil, newErr(
-			codes.InvalidArgument,
+			codes.Unknown,
 			"failed to call aztables:GetEntity",
 			err,
 		)
@@ -186,6 +201,15 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 
 	_, err = client.DeleteEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
+			switch respErr.StatusCode {
+			case http.StatusNotFound:
+				// not found isn't an error for delete
+				return &keyvaluepb.KeyValueDeleteResponse{}, nil
+			}
+		}
+
 		return nil, newErr(
 			codes.Internal,
 			"failed to call aztables.DeleteEntity",
