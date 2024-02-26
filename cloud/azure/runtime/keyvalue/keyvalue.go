@@ -70,7 +70,8 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 
 	response, err := client.GetEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
-		if respErr, ok := err.(*azcore.ResponseError); ok {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
 			switch respErr.StatusCode {
 			case http.StatusNotFound:
 				// Handle not found error
@@ -200,7 +201,8 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 
 	_, err = client.DeleteEntity(ctx, req.Ref.Store, req.Ref.Key, nil)
 	if err != nil {
-		if respErr, ok := err.(*azcore.ResponseError); ok {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
 			switch respErr.StatusCode {
 			case http.StatusNotFound:
 				// not found isn't an error for delete
