@@ -143,9 +143,10 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 
 func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
+		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
-			logger.Errorf("Error handling request: %s", err)
+			logger.Errorf("error handling request: %s", err)
 			rc.Error("Internal Server Error", 500)
 			return
 		}

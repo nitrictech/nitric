@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+
+	"github.com/nitrictech/nitric/core/pkg/env"
 )
 
 type LogLevel int
@@ -30,11 +32,22 @@ const (
 	FATAL
 )
 
+var levelNames = [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
+
 func (l LogLevel) String() string {
-	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}[l]
+	return levelNames[l]
 }
 
-var logLevel = INFO
+func LogLevelFromString(level string) LogLevel {
+	for i, name := range levelNames {
+		if name == level {
+			return LogLevel(i)
+		}
+	}
+	return INFO // default to INFO
+}
+
+var logLevel = LogLevelFromString(env.LOG_LEVEL.String())
 
 func SetLogLevel(level LogLevel) {
 	logLevel = level
