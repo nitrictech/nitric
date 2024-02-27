@@ -224,7 +224,17 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 // Return all keys in the Azure Storage table for a key/value store
 func (s *AzureStorageTableKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequest, stream keyvaluepb.KeyValue_KeysServer) error {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Keys")
-	client, err := s.clientFactory(req.GetStore().GetName())
+	storeName := req.GetStore().GetName()
+
+	if storeName == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	client, err := s.clientFactory(storeName)
 	if err != nil {
 		return newErr(
 			codes.Internal,
@@ -234,7 +244,7 @@ func (s *AzureStorageTableKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequ
 	}
 
 	// ge "GreaterThanOrEqual" is used for string prefix filtering (https://learn.microsoft.com/en-us/rest/api/storageservices/querying-tables-and-entities#filtering-on-string-properties)
-	keyFilter := fmt.Sprintf("PartitionKey eq '%s' and RowKey ge '%s'", req.GetStore().GetName(), req.GetPrefix())
+	keyFilter := fmt.Sprintf("PartitionKey eq '%s' and RowKey ge '%s'", storeName, req.GetPrefix())
 
 	pager := client.NewListEntitiesPager(
 		&aztables.ListEntitiesOptions{
@@ -283,6 +293,9 @@ type AzureStorageClientFactory func(tableName string) (*aztables.Client, error)
 
 func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, storageAccountName string) AzureStorageClientFactory {
 	return func(tableName string) (*aztables.Client, error) {
+		if tableName == "" {
+			return nil, fmt.Errorf("table name is required")
+		}
 		serviceURL := fmt.Sprintf("https://%s.table.core.windows.net/%s", storageAccountName, tableName)
 		return aztables.NewClient(serviceURL, creds, nil)
 	}
