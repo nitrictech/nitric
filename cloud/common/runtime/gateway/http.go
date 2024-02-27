@@ -156,6 +156,12 @@ func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(c
 	}
 }
 
+func (s *HttpGateway) newDaprConfigHandler() func(ctx *fasthttp.RequestCtx) {
+	return func(rc *fasthttp.RequestCtx) {
+		rc.Error("No config available", 404)
+	}
+}
+
 // Start the HTTP server and listen for requests, then route them to the appropriate handler(s
 func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
 	r := fasthttprouter.New()
@@ -164,6 +170,9 @@ func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
 	if s.routeRegistrationHook != nil {
 		s.routeRegistrationHook(r, opts)
 	}
+
+	// Handle Dapr config request
+	r.ANY("/dapr/config", s.newDaprConfigHandler())
 
 	// if opts.ApiPlugin.WorkerCount() > 0 {
 	// Capture the API Name to allow for accurate worker routing.
