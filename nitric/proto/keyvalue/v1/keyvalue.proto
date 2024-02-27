@@ -22,6 +22,9 @@ service KeyValue {
 
   // Delete a key and its value
   rpc Delete (KeyValueDeleteRequest) returns (KeyValueDeleteResponse);
+
+  // Iterate over all keys in a store
+  rpc Keys (KeyValueKeysRequest) returns (stream KeyValueKeysResponse);
 }
 
 // Provides a Key/Value Store
@@ -73,3 +76,16 @@ message KeyValueDeleteRequest {
 }
 
 message KeyValueDeleteResponse {}
+
+message KeyValueKeysRequest {
+  // The store to iterate over
+  Store store = 1;
+
+  // The prefix to filter keys by
+  string prefix = 2;
+}
+
+message KeyValueKeysResponse {
+  // The key of the key/value pair
+  string key = 1;
+}
