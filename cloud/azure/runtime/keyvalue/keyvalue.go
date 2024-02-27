@@ -39,7 +39,8 @@ type AzureStorageTableKeyValueService struct {
 	clientFactory AzureStorageClientFactory
 }
 
-var _ keyvaluepb.KeyValueServer = &AzureStorageTableKeyValueService{}
+// Ensure AzureStorageTableKeyValueService implements the KeyValueServer interface
+var _ keyvaluepb.KeyValueServer = (*AzureStorageTableKeyValueService)(nil)
 
 type AztableEntity struct {
 	aztables.Entity
@@ -47,7 +48,7 @@ type AztableEntity struct {
 	Content aztables.EDMBinary
 }
 
-// Get a document from the DynamoDB table
+// Get a value from the Azure Storage table
 func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Get")
 	client, err := s.clientFactory(req.Ref.Store)
@@ -95,7 +96,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
-			"Unable to convert value to pb struct",
+			"Unable to convert value to AztableEntity",
 			err,
 		)
 	}
@@ -118,7 +119,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 	}, nil
 }
 
-// Set a document in the DynamoDB table
+// Set a value in the Azure Storage table
 func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Set")
 	client, err := s.clientFactory(req.Ref.Store)
@@ -171,7 +172,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
-			"Unable to call aztables.UpsertEntity",
+			"unable to call aztables.UpsertEntity",
 			err,
 		)
 	}
@@ -179,7 +180,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 	return &keyvaluepb.KeyValueSetResponse{}, nil
 }
 
-// Delete a document from the DynamoDB table
+// Delete a key/value pair from the Azure Storage table
 func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Delete")
 	client, err := s.clientFactory(req.Ref.Store)
@@ -218,6 +219,64 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 	}
 
 	return &keyvaluepb.KeyValueDeleteResponse{}, nil
+}
+
+// Return all keys in the Azure Storage table for a key/value store
+func (s *AzureStorageTableKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequest, stream keyvaluepb.KeyValue_KeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Keys")
+	client, err := s.clientFactory(req.GetStore().GetName())
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to create client",
+			err,
+		)
+	}
+
+	// ge "GreaterThanOrEqual" is used for string prefix filtering (https://learn.microsoft.com/en-us/rest/api/storageservices/querying-tables-and-entities#filtering-on-string-properties)
+	keyFilter := fmt.Sprintf("PartitionKey eq '%s' and RowKey ge '%s'", req.GetStore().GetName(), req.GetPrefix())
+
+	pager := client.NewListEntitiesPager(
+		&aztables.ListEntitiesOptions{
+			Filter: &keyFilter,
+		},
+	)
+
+	for pager.More() {
+		response, err := pager.NextPage(context.TODO())
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"failed to call aztables.ListEntities",
+				err,
+			)
+		}
+
+		for _, entityBytes := range response.Entities {
+			var entity AztableEntity
+			err = json.Unmarshal(entityBytes, &entity)
+			if err != nil {
+				return newErr(
+					codes.Internal,
+					"Unable to convert value to AztableEntity",
+					err,
+				)
+			}
+
+			if err := stream.Send(&keyvaluepb.KeyValueKeysResponse{
+				Key: entity.RowKey,
+			}); err != nil {
+				return newErr(
+					codes.Internal,
+					"failed to send response",
+					err,
+				)
+			}
+
+		}
+	}
+
+	return nil
 }
 
 type AzureStorageClientFactory func(tableName string) (*aztables.Client, error)
