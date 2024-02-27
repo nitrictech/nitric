@@ -58,6 +58,7 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	resourcespb.Action_KeyValueStoreRead: {
 		"dynamodb:GetItem",
 		"dynamodb:BatchGetItem",
+		"dynamodb:Scan", // required to scan keys
 	},
 	resourcespb.Action_KeyValueStoreWrite: {
 		"dynamodb:UpdateItem",
