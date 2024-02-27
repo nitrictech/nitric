@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
@@ -50,7 +51,8 @@ type DynamoKeyValueService struct {
 	provider resource.AwsResourceProvider
 }
 
-var _ keyvaluepb.KeyValueServer = &DynamoKeyValueService{}
+// Ensure DynamoKeyValueService implements the KeyValueServer interface
+var _ keyvaluepb.KeyValueServer = (*DynamoKeyValueService)(nil)
 
 func isDynamoAccessDeniedErr(err error) bool {
 	var opErr *smithy.OperationError
@@ -267,6 +269,92 @@ func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyV
 	}
 
 	return &keyvaluepb.KeyValueDeleteResponse{}, nil
+}
+
+func (s *DynamoKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequest, stream keyvaluepb.KeyValue_KeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
+
+	if req.Store.GetName() == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	tableName, err := s.getTableName(context.TODO(), req.Store.Name)
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to match store name to dynamodb table",
+			err,
+		)
+	}
+
+	projection := expression.NamesList(expression.Name(AttribPk))
+	filter := expression.Name(AttribPk).BeginsWith(req.Prefix)
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
+
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to build key scan expression",
+			err,
+		)
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 tableName,
+		ProjectionExpression:      expr.Projection(),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	// Get all keys from the table
+	paginator := dynamodb.NewScanPaginator(s.client, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(context.Background())
+		if err != nil {
+			if isDynamoAccessDeniedErr(err) {
+				return newErr(
+					codes.PermissionDenied,
+					"unable to retrieve keys, this may be due to a missing permissions request in your code.",
+					err,
+				)
+			}
+
+			return newErr(
+				codes.Internal,
+				"unable to retrieve keys from dynamodb table",
+				err,
+			)
+		}
+
+		for _, item := range page.Items {
+			var itemMap map[string]interface{}
+			err = attributevalue.UnmarshalMap(item, &itemMap)
+			if err != nil {
+				return newErr(
+					codes.Internal,
+					"error unmarshalling key attributes",
+					err,
+				)
+			}
+
+			if err := stream.Send(&keyvaluepb.KeyValueKeysResponse{
+				Key: itemMap[AttribPk].(string),
+			}); err != nil {
+				return newErr(
+					codes.Internal,
+					"failed to send response",
+					err,
+				)
+			}
+		}
+	}
+
+	return nil
 }
 
 // New creates a new AWS DynamoDB implementation of a DocumentServiceServer

@@ -321,7 +321,6 @@ func (s *AzureStorageTableKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequ
 					err,
 				)
 			}
-
 		}
 	}
 
