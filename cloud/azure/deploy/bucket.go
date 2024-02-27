@@ -16,6 +16,7 @@ package deploy
 
 import (
 	"fmt"
+	"strings"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -33,6 +34,11 @@ func eventTypeToStorageEventType(eventType *storagepb.BlobEventType) []string {
 	default:
 		return []string{}
 	}
+}
+
+// removeWildcard - Remove the trailing wildcard from a prefix filter, they're not supported by Azure
+func removeWildcard(prefixFilter string) string {
+	return strings.TrimRight(prefixFilter, "*")
 }
 
 func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Context, parent pulumi.Resource, bucketName string, config *deploymentspb.BucketListener) error {
@@ -68,7 +74,7 @@ func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Conte
 		},
 		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&config.Config.BlobEventType)),
 		SubjectFilter: pulumiEventgrid.EventSubscriptionSubjectFilterArgs{
-			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", bucketName, config.Config.KeyPrefixFilter),
+			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", bucketName, removeWildcard(config.Config.KeyPrefixFilter)),
 		},
 	}, opts...)
 	if err != nil {
