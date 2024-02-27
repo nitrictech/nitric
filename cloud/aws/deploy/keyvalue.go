@@ -60,34 +60,3 @@ func (n *NitricAwsPulumiProvider) KeyValueStore(ctx *pulumi.Context, parent pulu
 
 	return err
 }
-
-// func NewDynamodbKeyValueStore(ctx *pulumi.Context, name string, args *DynamodbKeyValueStoreArgs, opts ...pulumi.ResourceOption) (*DynamodbKeyValueStore, error) {
-// 	res := &DynamodbKeyValueStore{Name: name}
-
-// 	err := ctx.RegisterComponentResource("nitric:keyvalue:Dynamodb", name, res, opts...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	res.Table, err = dynamodb.NewTable(ctx, name, &dynamodb.TableArgs{
-// 		Attributes: dynamodb.TableAttributeArray{
-// 			&dynamodb.TableAttributeArgs{
-// 				Name: pulumi.String("_pk"),
-// 				Type: pulumi.String("S"),
-// 			},
-// 			&dynamodb.TableAttributeArgs{
-// 				Name: pulumi.String("_sk"),
-// 				Type: pulumi.String("S"),
-// 			},
-// 		},
-// 		HashKey:     pulumi.String("_pk"),
-// 		RangeKey:    pulumi.String("_sk"),
-// 		BillingMode: pulumi.String("PAY_PER_REQUEST"),
-// 		Tags:        pulumi.ToStringMap(tags.Tags(args.StackID, name, resources.Collection)),
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return res, nil
-// }
