@@ -34,7 +34,6 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
-	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 )
 
@@ -52,7 +51,7 @@ func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
 	return eventgridEvents, nil
 }
 
-func extractMessage(event eventgrid.Event) (*topicpb.TopicMessage, error) {
+func extractMessage(event eventgrid.Event) (*topicspb.TopicMessage, error) {
 	var payloadBytes []byte
 	var err error
 	if stringData, ok := event.Data.(string); ok {
@@ -67,7 +66,7 @@ func extractMessage(event eventgrid.Event) (*topicpb.TopicMessage, error) {
 		return nil, fmt.Errorf("invalid event data type: %T", event.Data)
 	}
 
-	var message topicpb.TopicMessage
+	var message topicspb.TopicMessage
 
 	if err = proto.Unmarshal(payloadBytes, &message); err != nil {
 		return nil, err
@@ -188,40 +187,53 @@ func notificationEventToEventType(eventType *string) (*storagepb.BlobEventType, 
 
 func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
+		logger.Debug("handling a bucket notification")
 		if strings.ToUpper(string(ctx.Request.Header.Method())) == "OPTIONS" {
 			ctx.SuccessString("text/plain", "success")
 			return
 		}
 
-		eventgridEvents, err := extractEvents(ctx)
+		logger.Debug("extracting bucket notification events")
+		bucketEvents, err := extractEvents(ctx)
 		if err != nil {
+			logger.Debugf("error occurred extracting events: %s", err.Error())
 			ctx.Error(fmt.Sprintf("error occurred extracting events: %s", err.Error()), 400)
 			return
 		}
+		logger.Debug("extracted bucket notification events successfully")
 
-		for _, event := range eventgridEvents {
+		logger.Debug("handling bucket notification events")
+		for _, event := range bucketEvents {
 			azureEventType := string(ctx.Request.Header.Peek("aeg-event-type"))
 			if azureEventType == "SubscriptionValidation" {
-				a.handleSubscriptionValidation(ctx, eventgridEvents)
+				logger.Debug("handling subscription validation event")
+				a.handleSubscriptionValidation(ctx, bucketEvents)
 				return
 			}
 
 			bucketName := ctx.UserValue("name").(string)
 
+			logger.Debugf("identified bucket event from %s", bucketName)
+
 			eventType, err := notificationEventToEventType(event.EventType)
 			if err != nil {
+				logger.Errorf("unable to parse bucket event type: %s", err.Error())
 				ctx.Error(err.Error(), 400)
 				return
 			}
 
+			logger.Debugf("handling bucket event type: %s", *eventType)
+
 			// Subject is in the form: "/blobServices/default/containers/test-container/blobs/new-file.txt"
 			eventKeySeparated := strings.SplitN(*event.Subject, "/", 7)
 			if len(eventKeySeparated) < 7 {
+				logger.Errorf("invalid object key: %s", *event.Subject)
 				ctx.Error("object key cannot be empty", 400)
 				return
 			}
 
 			eventKey := eventKeySeparated[6]
+			logger.Debugf("identified bucket event key: %s", eventKey)
 
 			evt := &storagepb.ServerMessage{
 				Content: &storagepb.ServerMessage_BlobEventRequest{
@@ -239,8 +251,8 @@ func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) 
 
 			resp, err := opts.StorageListenerPlugin.HandleRequest(evt)
 			if err != nil {
-				logger.Errorf("could not handle event: %s", err)
-				ctx.Error("failed handling event", 500)
+				logger.Errorf("error handling event: %s", err)
+				ctx.Error("error handling event", 500)
 				return
 			}
 
@@ -250,6 +262,7 @@ func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) 
 				return
 			}
 
+			logger.Debug("handled bucket event successfully")
 			ctx.SuccessString("text/plain", "success")
 		}
 	}
@@ -257,6 +270,10 @@ func (a *azMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts) 
 
 func (a *azMiddleware) router(r *router.Router, opts *gateway.GatewayStartOpts) {
 	evtToken := os.Getenv("EVENT_TOKEN")
+
+	if evtToken == "" {
+		logger.Error("EVENT_TOKEN environment variable not set")
+	}
 
 	r.ANY("/"+evtToken+base_http.DefaultTopicRoute, a.handleSubscription(opts))
 	r.ANY("/"+evtToken+base_http.DefaultScheduleRoute, a.handleSchedule(opts))

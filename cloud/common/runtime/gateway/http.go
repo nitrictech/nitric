@@ -143,15 +143,22 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 
 func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
+		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
-			logger.Errorf("Error handling request: %s", err)
+			logger.Errorf("error handling request: %s", err)
 			rc.Error("Internal Server Error", 500)
 			return
 		}
 
 		// Copy the given response back
 		resp.CopyTo(&rc.Response)
+	}
+}
+
+func (s *HttpGateway) newDaprConfigHandler() func(ctx *fasthttp.RequestCtx) {
+	return func(rc *fasthttp.RequestCtx) {
+		rc.Error("No config available", 404)
 	}
 }
 
@@ -163,6 +170,9 @@ func (s *HttpGateway) Start(opts *gateway.GatewayStartOpts) error {
 	if s.routeRegistrationHook != nil {
 		s.routeRegistrationHook(r, opts)
 	}
+
+	// Handle Dapr config request
+	r.ANY("/dapr/config", s.newDaprConfigHandler())
 
 	// if opts.ApiPlugin.WorkerCount() > 0 {
 	// Capture the API Name to allow for accurate worker routing.
