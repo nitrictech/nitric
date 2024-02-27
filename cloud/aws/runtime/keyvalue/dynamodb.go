@@ -98,7 +98,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		if isDynamoAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to get document value, this may be due to a missing permissions request in your code.",
+				"unable to get value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}

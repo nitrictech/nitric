@@ -81,6 +81,13 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 					fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
 					err,
 				)
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to get value, this may be due to a missing permissions request in your code.",
+					err,
+				)
 			}
 		}
 
@@ -161,7 +168,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
-			"Unable to struct to json",
+			"unable to convert struct to json",
 			err,
 		)
 	}
@@ -170,8 +177,21 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 		UpdateMode: aztables.UpdateModeReplace,
 	})
 	if err != nil {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
+			switch respErr.StatusCode {
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to set value, this may be due to a missing permissions request in your code.",
+					err,
+				)
+			}
+		}
+
 		return nil, newErr(
-			codes.Internal,
+			codes.Unknown,
 			"unable to call aztables.UpsertEntity",
 			err,
 		)
@@ -208,6 +228,13 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 			case http.StatusNotFound:
 				// not found isn't an error for delete
 				return &keyvaluepb.KeyValueDeleteResponse{}, nil
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to delete value, this may be due to a missing permissions request in your code.",
+					err,
+				)
 			}
 		}
 
@@ -255,8 +282,20 @@ func (s *AzureStorageTableKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequ
 	for pager.More() {
 		response, err := pager.NextPage(context.TODO())
 		if err != nil {
+			var respErr *azcore.ResponseError
+			if errors.As(err, &respErr) {
+				switch respErr.StatusCode {
+				case http.StatusForbidden:
+					// Handle forbidden error
+					return newErr(
+						codes.PermissionDenied,
+						"unable to list keys, this may be due to a missing permissions request in your code.",
+						err,
+					)
+				}
+			}
 			return newErr(
-				codes.Internal,
+				codes.Unknown,
 				"failed to call aztables.ListEntities",
 				err,
 			)
