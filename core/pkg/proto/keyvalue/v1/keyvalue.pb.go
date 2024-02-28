@@ -463,111 +463,6 @@ func (*KeyValueDeleteResponse) Descriptor() ([]byte, []int) {
 	return file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDescGZIP(), []int{8}
 }
 
-type KeyValueKeysRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The store to iterate over
-	Store *Store `protobuf:"bytes,1,opt,name=store,proto3" json:"store,omitempty"`
-	// The prefix to filter keys by
-	Prefix string `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
-}
-
-func (x *KeyValueKeysRequest) Reset() {
-	*x = KeyValueKeysRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *KeyValueKeysRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*KeyValueKeysRequest) ProtoMessage() {}
-
-func (x *KeyValueKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use KeyValueKeysRequest.ProtoReflect.Descriptor instead.
-func (*KeyValueKeysRequest) Descriptor() ([]byte, []int) {
-	return file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *KeyValueKeysRequest) GetStore() *Store {
-	if x != nil {
-		return x.Store
-	}
-	return nil
-}
-
-func (x *KeyValueKeysRequest) GetPrefix() string {
-	if x != nil {
-		return x.Prefix
-	}
-	return ""
-}
-
-type KeyValueKeysResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The key of the key/value pair
-	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-}
-
-func (x *KeyValueKeysResponse) Reset() {
-	*x = KeyValueKeysResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *KeyValueKeysResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*KeyValueKeysResponse) ProtoMessage() {}
-
-func (x *KeyValueKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use KeyValueKeysResponse.ProtoReflect.Descriptor instead.
-func (*KeyValueKeysResponse) Descriptor() ([]byte, []int) {
-	return file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *KeyValueKeysResponse) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
 var File_nitric_proto_keyvalue_v1_keyvalue_proto protoreflect.FileDescriptor
 
 var file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDesc = []byte{
@@ -614,16 +509,7 @@ var file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDesc = []byte{
 	0x72, 0x69, 0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c,
 	0x75, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x65, 0x66, 0x52, 0x03,
 	0x72, 0x65, 0x66, 0x22, 0x18, 0x0a, 0x16, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x64, 0x0a,
-	0x13, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x4b, 0x65, 0x79, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x35, 0x0a, 0x05, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x6e, 0x69, 0x74, 0x72, 0x69, 0x63, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2e, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
-	0x74, 0x6f, 0x72, 0x65, 0x52, 0x05, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x70,
-	0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x72, 0x65,
-	0x66, 0x69, 0x78, 0x22, 0x28, 0x0a, 0x14, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x4b,
-	0x65, 0x79, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6b,
-	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x32, 0xbf, 0x02,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xbf, 0x02,
 	0x0a, 0x08, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x62, 0x0a, 0x03, 0x47, 0x65,
 	0x74, 0x12, 0x2c, 0x2e, 0x6e, 0x69, 0x74, 0x72, 0x69, 0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x2e, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4b, 0x65, 0x79,
@@ -669,7 +555,7 @@ func file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDescGZIP() []byte {
 	return file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDescData
 }
 
-var file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_nitric_proto_keyvalue_v1_keyvalue_proto_goTypes = []interface{}{
 	(*Store)(nil),                  // 0: nitric.proto.KeyValue.v1.Store
 	(*ValueRef)(nil),               // 1: nitric.proto.KeyValue.v1.ValueRef
@@ -680,30 +566,27 @@ var file_nitric_proto_keyvalue_v1_keyvalue_proto_goTypes = []interface{}{
 	(*KeyValueSetResponse)(nil),    // 6: nitric.proto.KeyValue.v1.KeyValueSetResponse
 	(*KeyValueDeleteRequest)(nil),  // 7: nitric.proto.KeyValue.v1.KeyValueDeleteRequest
 	(*KeyValueDeleteResponse)(nil), // 8: nitric.proto.KeyValue.v1.KeyValueDeleteResponse
-	(*KeyValueKeysRequest)(nil),    // 9: nitric.proto.KeyValue.v1.KeyValueKeysRequest
-	(*KeyValueKeysResponse)(nil),   // 10: nitric.proto.KeyValue.v1.KeyValueKeysResponse
-	(*structpb.Struct)(nil),        // 11: google.protobuf.Struct
+	(*structpb.Struct)(nil),        // 9: google.protobuf.Struct
 }
 var file_nitric_proto_keyvalue_v1_keyvalue_proto_depIdxs = []int32{
 	1,  // 0: nitric.proto.KeyValue.v1.Value.ref:type_name -> nitric.proto.KeyValue.v1.ValueRef
-	11, // 1: nitric.proto.KeyValue.v1.Value.content:type_name -> google.protobuf.Struct
+	9,  // 1: nitric.proto.KeyValue.v1.Value.content:type_name -> google.protobuf.Struct
 	1,  // 2: nitric.proto.KeyValue.v1.KeyValueGetRequest.ref:type_name -> nitric.proto.KeyValue.v1.ValueRef
 	2,  // 3: nitric.proto.KeyValue.v1.KeyValueGetResponse.value:type_name -> nitric.proto.KeyValue.v1.Value
 	1,  // 4: nitric.proto.KeyValue.v1.KeyValueSetRequest.ref:type_name -> nitric.proto.KeyValue.v1.ValueRef
-	11, // 5: nitric.proto.KeyValue.v1.KeyValueSetRequest.content:type_name -> google.protobuf.Struct
+	9,  // 5: nitric.proto.KeyValue.v1.KeyValueSetRequest.content:type_name -> google.protobuf.Struct
 	1,  // 6: nitric.proto.KeyValue.v1.KeyValueDeleteRequest.ref:type_name -> nitric.proto.KeyValue.v1.ValueRef
-	0,  // 7: nitric.proto.KeyValue.v1.KeyValueKeysRequest.store:type_name -> nitric.proto.KeyValue.v1.Store
-	3,  // 8: nitric.proto.KeyValue.v1.KeyValue.Get:input_type -> nitric.proto.KeyValue.v1.KeyValueGetRequest
-	5,  // 9: nitric.proto.KeyValue.v1.KeyValue.Set:input_type -> nitric.proto.KeyValue.v1.KeyValueSetRequest
-	7,  // 10: nitric.proto.KeyValue.v1.KeyValue.Delete:input_type -> nitric.proto.KeyValue.v1.KeyValueDeleteRequest
-	4,  // 11: nitric.proto.KeyValue.v1.KeyValue.Get:output_type -> nitric.proto.KeyValue.v1.KeyValueGetResponse
-	6,  // 12: nitric.proto.KeyValue.v1.KeyValue.Set:output_type -> nitric.proto.KeyValue.v1.KeyValueSetResponse
-	8,  // 13: nitric.proto.KeyValue.v1.KeyValue.Delete:output_type -> nitric.proto.KeyValue.v1.KeyValueDeleteResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	3,  // 7: nitric.proto.KeyValue.v1.KeyValue.Get:input_type -> nitric.proto.KeyValue.v1.KeyValueGetRequest
+	5,  // 8: nitric.proto.KeyValue.v1.KeyValue.Set:input_type -> nitric.proto.KeyValue.v1.KeyValueSetRequest
+	7,  // 9: nitric.proto.KeyValue.v1.KeyValue.Delete:input_type -> nitric.proto.KeyValue.v1.KeyValueDeleteRequest
+	4,  // 10: nitric.proto.KeyValue.v1.KeyValue.Get:output_type -> nitric.proto.KeyValue.v1.KeyValueGetResponse
+	6,  // 11: nitric.proto.KeyValue.v1.KeyValue.Set:output_type -> nitric.proto.KeyValue.v1.KeyValueSetResponse
+	8,  // 12: nitric.proto.KeyValue.v1.KeyValue.Delete:output_type -> nitric.proto.KeyValue.v1.KeyValueDeleteResponse
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_nitric_proto_keyvalue_v1_keyvalue_proto_init() }
@@ -820,30 +703,6 @@ func file_nitric_proto_keyvalue_v1_keyvalue_proto_init() {
 				return nil
 			}
 		}
-		file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyValueKeysRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_nitric_proto_keyvalue_v1_keyvalue_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyValueKeysResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -851,7 +710,7 @@ func file_nitric_proto_keyvalue_v1_keyvalue_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_nitric_proto_keyvalue_v1_keyvalue_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
