@@ -31,7 +31,7 @@ var _ keyvaluepb.KeyValueServer = (*KvStoreCompat)(nil)
 
 // Get an existing value
 func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
-	logger.Warnf("Your SDK is using the deprecated KeyValue service which will soon be removed, update your nitric language SDK")
+	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
 	resp, err := k.GetKey(ctx, &kvstorepb.KvStoreGetRequest{
 		Ref: &kvstorepb.ValueRef{
@@ -56,7 +56,7 @@ func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequ
 
 // Create a new or overwrite an existing value
 func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
-	logger.Warnf("Your SDK is using the deprecated KeyValue service which will soon be removed, update your nitric language SDK")
+	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
 	_, err := k.SetKey(ctx, &kvstorepb.KvStoreSetRequest{
 		Ref: &kvstorepb.ValueRef{
@@ -73,7 +73,7 @@ func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequ
 
 // Delete a key and its value
 func (k *KvStoreCompat) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
-	logger.Warnf("Your SDK is using the deprecated KeyValue service which will soon be removed, update your nitric language SDK")
+	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
 	_, err := k.DeleteKey(ctx, &kvstorepb.KvStoreDeleteRequest{
 		Ref: &kvstorepb.ValueRef{
