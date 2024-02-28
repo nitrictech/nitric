@@ -35,7 +35,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	document "github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
-	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 )
 
 const (
@@ -52,7 +52,8 @@ type DynamoKeyValueService struct {
 }
 
 // Ensure DynamoKeyValueService implements the KeyValueServer interface
-var _ keyvaluepb.KeyValueServer = (*DynamoKeyValueService)(nil)
+// var _ keyvaluepb.KeyValueServer = (*DynamoKeyValueService)(nil)
+var _ kvstorepb.KvStoreServer = (*DynamoKeyValueService)(nil)
 
 func isDynamoAccessDeniedErr(err error) bool {
 	var opErr *smithy.OperationError
@@ -63,7 +64,7 @@ func isDynamoAccessDeniedErr(err error) bool {
 }
 
 // Get a document from the DynamoDB table
-func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
+func (s *DynamoKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvStoreGetRequest) (*kvstorepb.KvStoreGetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
 
 	err := document.ValidateValueRef(req.Ref)
@@ -142,8 +143,8 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	return &keyvaluepb.KeyValueGetResponse{
-		Value: &keyvaluepb.Value{
+	return &kvstorepb.KvStoreGetResponse{
+		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: documentContent,
 		},
@@ -151,7 +152,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 }
 
 // Set a document in the DynamoDB table
-func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
+func (s *DynamoKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvStoreSetRequest) (*kvstorepb.KvStoreSetResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Set")
 
 	if err := document.ValidateValueRef(req.Ref); err != nil {
@@ -212,11 +213,11 @@ func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	return &keyvaluepb.KeyValueSetResponse{}, nil
+	return &kvstorepb.KvStoreSetResponse{}, nil
 }
 
 // Delete a document from the DynamoDB table
-func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
+func (s *DynamoKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteRequest) (*kvstorepb.KvStoreDeleteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Delete")
 
 	if err := document.ValidateValueRef(req.Ref); err != nil {
@@ -268,11 +269,11 @@ func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyV
 		)
 	}
 
-	return &keyvaluepb.KeyValueDeleteResponse{}, nil
+	return &kvstorepb.KvStoreDeleteResponse{}, nil
 }
 
-func (s *DynamoKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequest, stream keyvaluepb.KeyValue_KeysServer) error {
-	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
+func (s *DynamoKeyValueService) Keys(req *kvstorepb.KvStoreKeysRequest, stream kvstorepb.KvStore_KeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Keys")
 
 	if req.Store.GetName() == "" {
 		return newErr(
@@ -342,7 +343,7 @@ func (s *DynamoKeyValueService) Keys(req *keyvaluepb.KeyValueKeysRequest, stream
 				)
 			}
 
-			if err := stream.Send(&keyvaluepb.KeyValueKeysResponse{
+			if err := stream.Send(&kvstorepb.KvStoreKeysResponse{
 				Key: itemMap[AttribPk].(string),
 			}); err != nil {
 				return newErr(
@@ -387,7 +388,7 @@ func NewWithClient(provider resource.AwsResourceProvider, client *dynamodb.Clien
 	}, nil
 }
 
-func createKeyMap(ref *keyvaluepb.ValueRef) map[string]string {
+func createKeyMap(ref *kvstorepb.ValueRef) map[string]string {
 	keyMap := make(map[string]string)
 
 	keyMap[AttribPk] = ref.Key
@@ -396,7 +397,7 @@ func createKeyMap(ref *keyvaluepb.ValueRef) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, ref *keyvaluepb.ValueRef) map[string]interface{} {
+func createItemMap(source map[string]interface{}, ref *kvstorepb.ValueRef) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {
