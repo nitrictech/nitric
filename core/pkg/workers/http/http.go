@@ -38,14 +38,35 @@ type HttpRequestHandler interface {
 
 // IsPortOpen returns true if the port is open, false otherwise
 // returns false if the timeout elapses before a connection is established
-func IsPortOpen(host string, timeout time.Duration) bool {
-	conn, err := net.DialTimeout("tcp", host, timeout)
-	if err != nil {
-		return false
-	}
+func IsPortOpenWithRetry(host string, connectionTimeout time.Duration, maxRetries int) error {
+	// Create a channel for signaling when the connection is successful or max retries are reached
+	done := make(chan error, 1)
+	defer close(done)
 
-	err = conn.Close()
-	return err == nil
+	// Create a ticker to periodically attempt the connection
+	ticker := time.NewTicker(time.Millisecond * 50) // Adjust the interval as needed
+	defer ticker.Stop()
+
+	go func() {
+		for i := 0; i < maxRetries; i++ {
+			conn, err := net.DialTimeout("tcp", host, connectionTimeout)
+			if err == nil {
+				err = conn.Close()
+				if err != nil {
+					done <- fmt.Errorf("error closing connection to %s: %w", host, err)
+					return
+				}
+				done <- nil // Connection successful
+				return
+			}
+
+			<-ticker.C
+		}
+
+		done <- fmt.Errorf("exceeded maximum retries. Unable to connect to %s", host)
+	}()
+
+	return <-done
 }
 
 func (h *HttpServer) WorkerCount() int {
@@ -87,7 +108,8 @@ func (h *HttpServer) Proxy(stream httppb.Http_ProxyServer) error {
 		return fmt.Errorf("host is required")
 	}
 
-	if !IsPortOpen(host, initialStartTimeout) {
+	err = IsPortOpenWithRetry(host, initialStartTimeout, 3)
+	if err != nil {
 		return fmt.Errorf("host %s failed to respond within %s", host, initialStartTimeout.String())
 	}
 
