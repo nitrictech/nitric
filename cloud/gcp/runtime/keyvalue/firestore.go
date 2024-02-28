@@ -17,11 +17,13 @@ package keyvalue
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
 
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -164,6 +166,55 @@ func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDelete
 	return &v1.KeyValueDeleteResponse{}, nil
 }
 
+func (s *FirestoreDocService) Keys(req *v1.KeyValueKeysRequest, stream v1.KeyValue_KeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Keys")
+	storeName := req.GetStore().GetName()
+
+	if storeName == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	iter := s.getCollectionRef(storeName).DocumentRefs(stream.Context())
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"error iterating over firestore collection",
+				err,
+			)
+		}
+
+		// Range queries don't appear to be supported when querying based on document ID.
+		// e.g. Where(firestore.DocumentID, "<=", req.Prefix)
+		// since prefix is a string not a DocumentRef.
+		// Instead we filter the results as they're returned
+		if !strings.HasPrefix(doc.ID, req.Prefix) {
+			continue
+		}
+
+		if err := stream.Send(&v1.KeyValueKeysResponse{
+			Key: doc.ID,
+		}); err != nil {
+			return newErr(
+				codes.Internal,
+				"failed to send response",
+				err,
+			)
+		}
+	}
+
+	return nil
+}
+
 func New() (v1.KeyValueServer, error) {
 	ctx := context.Background()
 
@@ -189,5 +240,9 @@ func NewWithClient(client *firestore.Client) (v1.KeyValueServer, error) {
 }
 
 func (s *FirestoreDocService) getDocRef(ref *v1.ValueRef) *firestore.DocumentRef {
-	return s.client.Collection(ref.Store).Doc(ref.Key)
+	return s.getCollectionRef(ref.Store).Doc(ref.Key)
+}
+
+func (s *FirestoreDocService) getCollectionRef(store string) *firestore.CollectionRef {
+	return s.client.Collection(store)
 }
