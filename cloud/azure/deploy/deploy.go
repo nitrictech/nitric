@@ -244,10 +244,14 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		}
 	}
 
+	hasBuckets := hasResourceType(nitricResources, resourcespb.ResourceType_Bucket)
+	hasKvStores := hasResourceType(nitricResources, resourcespb.ResourceType_KeyValueStore)
+	hasQueues := hasResourceType(nitricResources, resourcespb.ResourceType_Queue)
+
 	// Create a storage account if buckets or key/value stores are required.
 	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
 	// This means we need to create a storage account for each stack, before buckets can be created.
-	if hasResourceType(nitricResources, resourcespb.ResourceType_Bucket) || hasResourceType(nitricResources, resourcespb.ResourceType_KeyValueStore) {
+	if hasBuckets || hasKvStores || hasQueues {
 		logger.Info("Stack declares bucket(s) or key/value store(s), creating stack level Azure Storage Account")
 		a.storageAccount, err = createStorageAccount(ctx, a.resourceGroup, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
