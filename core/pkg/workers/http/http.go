@@ -44,7 +44,7 @@ func IsPortOpenWithRetry(host string, connectionTimeout time.Duration, maxRetrie
 	defer close(done)
 
 	// Create a ticker to periodically attempt the connection
-	ticker := time.NewTicker(time.Second) // Adjust the interval as needed
+	ticker := time.NewTicker(time.Millisecond * 50) // Adjust the interval as needed
 	defer ticker.Stop()
 
 	go func() {
