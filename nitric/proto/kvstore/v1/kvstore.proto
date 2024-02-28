@@ -1,0 +1,91 @@
+syntax = "proto3";
+package nitric.proto.kvstore.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+// option go_package = "nitric/v1;v1";
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1;kvstorepb";
+option java_package = "io.nitric.proto.kvstore.v1";
+option java_multiple_files = true;
+option java_outer_classname = "KvStore";
+option php_namespace = "Nitric\\Proto\\KvStore\\V1";
+option csharp_namespace = "Nitric.Proto.KvStore.v1";
+
+// Service for storage and retrieval of simple JSON keyValue
+service KvStore {
+  // Get an existing value
+  rpc Get (KvStoreGetRequest) returns (KvStoreGetResponse);
+
+  // Create a new or overwrite an existing value
+  rpc Set (KvStoreSetRequest) returns (KvStoreSetResponse);
+
+  // Delete a key and its value
+  rpc Delete (KvStoreDeleteRequest) returns (KvStoreDeleteResponse);
+
+  // Iterate over all keys in a store
+  rpc Keys (KvStoreKeysRequest) returns (stream KvStoreKeysResponse);
+}
+
+// Provides a Key/Value Store
+message Store {
+  // The store name
+  string name = 1;
+}
+
+// ValueRef provides a unique identifier for a value
+message ValueRef {
+  // The key/value store name
+  string store = 1;
+
+  // The item's unique key within the store
+  string key = 2;
+}
+
+// Value provides a return value type
+message Value {
+  // ValueRef of the key/value pair, which includes the store and key
+  ValueRef ref = 1;
+
+  // The content (JSON object)
+  google.protobuf.Struct content = 2;
+}
+
+message KvStoreGetRequest {
+  // ValueRef of the key/value pair to get, which includes the store and key
+  ValueRef ref = 1;
+}
+
+message KvStoreGetResponse {
+  // The retrieved value
+  Value value = 1;
+}
+
+message KvStoreSetRequest {
+  // ValueRef of the key/value pair to set, which includes the store and key
+  ValueRef ref = 1 ;
+  // The value content to store (JSON object)
+  google.protobuf.Struct content = 3;
+}
+
+message KvStoreSetResponse {}
+
+message KvStoreDeleteRequest {
+  // ValueRef of the key/value pair to delete, which includes the store and key
+  ValueRef ref = 1;
+}
+
+message KvStoreDeleteResponse {}
+
+message KvStoreKeysRequest {
+  // The store to iterate over
+  Store store = 1;
+
+  // The prefix to filter keys by
+  string prefix = 2;
+}
+
+message KvStoreKeysResponse {
+  // The key of the key/value pair
+  string key = 1;
+}
