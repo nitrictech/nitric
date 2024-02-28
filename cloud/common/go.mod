@@ -3,10 +3,6 @@ module github.com/nitrictech/nitric/cloud/common
 go 1.21
 
 require (
-	github.com/charmbracelet/bubbles v0.16.1
-	github.com/charmbracelet/bubbletea v0.24.2
-	github.com/charmbracelet/lipgloss v0.8.0
-	github.com/charmbracelet/log v0.2.4
 	github.com/docker/docker v20.10.24+incompatible
 	github.com/golangci/golangci-lint v1.56.1
 	github.com/google/addlicense v1.1.1
@@ -62,6 +58,9 @@ require (
 	github.com/ccojocar/zxcvbn-go v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
+	github.com/charmbracelet/bubbles v0.16.1 // indirect
+	github.com/charmbracelet/bubbletea v0.24.2 // indirect
+	github.com/charmbracelet/lipgloss v0.8.0 // indirect
 	github.com/chavacava/garif v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/curioswitch/go-reassign v0.2.0 // indirect
@@ -78,7 +77,6 @@ require (
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/ghostiam/protogetter v0.3.4 // indirect
 	github.com/go-critic/go-critic v0.11.0 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/go-toolsmith/astcast v1.1.0 // indirect
 	github.com/go-toolsmith/astcopy v1.1.0 // indirect

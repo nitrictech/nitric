@@ -68,9 +68,9 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 
 	otelaws.AppendMiddlewares(&cfg.APIOptions)
 
-	a.clients[socket] = apigatewaymanagementapi.NewFromConfig(cfg, apigatewaymanagementapi.WithEndpointResolver(apigatewaymanagementapi.EndpointResolverFromURL(
-		callbackUrl,
-	)))
+	a.clients[socket] = apigatewaymanagementapi.NewFromConfig(cfg, func(o *apigatewaymanagementapi.Options) {
+		o.BaseEndpoint = aws.String(callbackUrl)
+	})
 
 	return a.clients[socket], nil
 }

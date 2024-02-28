@@ -16,6 +16,7 @@ package keyvalue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -182,7 +183,7 @@ func (s *FirestoreDocService) Keys(req *v1.KvStoreKeysRequest, stream v1.KvStore
 
 	for {
 		doc, err := iter.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {

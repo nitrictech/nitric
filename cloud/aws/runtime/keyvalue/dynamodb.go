@@ -295,7 +295,6 @@ func (s *DynamoKeyValueService) Keys(req *kvstorepb.KvStoreKeysRequest, stream k
 	projection := expression.NamesList(expression.Name(AttribPk))
 	filter := expression.Name(AttribPk).BeginsWith(req.Prefix)
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
-
 	if err != nil {
 		return newErr(
 			codes.Internal,
