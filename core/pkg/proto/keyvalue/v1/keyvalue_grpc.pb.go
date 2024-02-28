@@ -28,8 +28,6 @@ type KeyValueClient interface {
 	Set(ctx context.Context, in *KeyValueSetRequest, opts ...grpc.CallOption) (*KeyValueSetResponse, error)
 	// Delete a key and its value
 	Delete(ctx context.Context, in *KeyValueDeleteRequest, opts ...grpc.CallOption) (*KeyValueDeleteResponse, error)
-	// Iterate over all keys in a store
-	Keys(ctx context.Context, in *KeyValueKeysRequest, opts ...grpc.CallOption) (KeyValue_KeysClient, error)
 }
 
 type keyValueClient struct {
@@ -67,38 +65,6 @@ func (c *keyValueClient) Delete(ctx context.Context, in *KeyValueDeleteRequest, 
 	return out, nil
 }
 
-func (c *keyValueClient) Keys(ctx context.Context, in *KeyValueKeysRequest, opts ...grpc.CallOption) (KeyValue_KeysClient, error) {
-	stream, err := c.cc.NewStream(ctx, &KeyValue_ServiceDesc.Streams[0], "/nitric.proto.KeyValue.v1.KeyValue/Keys", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &keyValueKeysClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type KeyValue_KeysClient interface {
-	Recv() (*KeyValueKeysResponse, error)
-	grpc.ClientStream
-}
-
-type keyValueKeysClient struct {
-	grpc.ClientStream
-}
-
-func (x *keyValueKeysClient) Recv() (*KeyValueKeysResponse, error) {
-	m := new(KeyValueKeysResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // KeyValueServer is the server API for KeyValue service.
 // All implementations should embed UnimplementedKeyValueServer
 // for forward compatibility
@@ -109,8 +75,6 @@ type KeyValueServer interface {
 	Set(context.Context, *KeyValueSetRequest) (*KeyValueSetResponse, error)
 	// Delete a key and its value
 	Delete(context.Context, *KeyValueDeleteRequest) (*KeyValueDeleteResponse, error)
-	// Iterate over all keys in a store
-	Keys(*KeyValueKeysRequest, KeyValue_KeysServer) error
 }
 
 // UnimplementedKeyValueServer should be embedded to have forward compatible implementations.
@@ -125,9 +89,6 @@ func (UnimplementedKeyValueServer) Set(context.Context, *KeyValueSetRequest) (*K
 }
 func (UnimplementedKeyValueServer) Delete(context.Context, *KeyValueDeleteRequest) (*KeyValueDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
-}
-func (UnimplementedKeyValueServer) Keys(*KeyValueKeysRequest, KeyValue_KeysServer) error {
-	return status.Errorf(codes.Unimplemented, "method Keys not implemented")
 }
 
 // UnsafeKeyValueServer may be embedded to opt out of forward compatibility for this service.
@@ -195,27 +156,6 @@ func _KeyValue_Delete_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KeyValue_Keys_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(KeyValueKeysRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(KeyValueServer).Keys(m, &keyValueKeysServer{stream})
-}
-
-type KeyValue_KeysServer interface {
-	Send(*KeyValueKeysResponse) error
-	grpc.ServerStream
-}
-
-type keyValueKeysServer struct {
-	grpc.ServerStream
-}
-
-func (x *keyValueKeysServer) Send(m *KeyValueKeysResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 // KeyValue_ServiceDesc is the grpc.ServiceDesc for KeyValue service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -236,12 +176,6 @@ var KeyValue_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KeyValue_Delete_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Keys",
-			Handler:       _KeyValue_Keys_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "nitric/proto/keyvalue/v1/keyvalue.proto",
 }
