@@ -15,13 +15,13 @@ option csharp_namespace = "Nitric.Proto.KvStore.v1";
 // Service for storage and retrieval of simple JSON keyValue
 service KvStore {
   // Get an existing value
-  rpc Get (KvStoreGetRequest) returns (KvStoreGetResponse);
+  rpc GetKey (KvStoreGetRequest) returns (KvStoreGetResponse);
 
   // Create a new or overwrite an existing value
-  rpc Set (KvStoreSetRequest) returns (KvStoreSetResponse);
+  rpc SetKey (KvStoreSetRequest) returns (KvStoreSetResponse);
 
   // Delete a key and its value
-  rpc Delete (KvStoreDeleteRequest) returns (KvStoreDeleteResponse);
+  rpc DeleteKey (KvStoreDeleteRequest) returns (KvStoreDeleteResponse);
 
   // Iterate over all keys in a store
   rpc Keys (KvStoreKeysRequest) returns (stream KvStoreKeysResponse);
