@@ -40,9 +40,13 @@ message ClientMessage {
   }
 }
 
-message HeaderValue { repeated string value = 1; }
+message HeaderValue {
+  repeated string value = 1;
+}
 
-message QueryValue { repeated string value = 1; }
+message QueryValue {
+  repeated string value = 1;
+}
 
 message HttpRequest {
   // The request method
@@ -90,9 +94,12 @@ message ServerMessage {
   }
 }
 
-message RegistrationResponse {}
+message RegistrationResponse {
+}
 
-message ApiWorkerScopes { repeated string scopes = 1; }
+message ApiWorkerScopes {
+  repeated string scopes = 1;
+}
 
 message ApiWorkerOptions {
   // Apply security definitions to this operation

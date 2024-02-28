@@ -16,14 +16,15 @@ service Http {
 }
 
 message ClientMessage {
-    // Details of the HTTP server to proxy
-    HttpProxyRequest request = 1;
+  // Details of the HTTP server to proxy
+  HttpProxyRequest request = 1;
 }
 
-message ServerMessage {}
+message ServerMessage {
+}
 
 message HttpProxyRequest {
-    // The address the server can be accessed on
-    string host = 1;
+  // The address the server can be accessed on
+  string host = 1;
 }
 

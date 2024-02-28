@@ -62,6 +62,8 @@ message ScheduleCron {
   string expression = 1;
 }
 
-message RegistrationResponse {}
+message RegistrationResponse {
+}
 
-message IntervalResponse {}
+message IntervalResponse {
+}

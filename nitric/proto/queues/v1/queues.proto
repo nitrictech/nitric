@@ -57,7 +57,8 @@ message QueueCompleteRequest {
   string lease_id = 2;
 }
 
-message QueueCompleteResponse {}
+message QueueCompleteResponse {
+}
 
 // An message to be sent to a queue.
 message QueueMessage {
