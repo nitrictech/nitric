@@ -8,9 +8,9 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime-aws
+	@touch deploy/runtime/runtime-aws
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime-aws
+	@rm deploy/runtime/runtime-aws
 
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 # We only build a linux amd64 binary here to be packaged for cloud runtimes with docker

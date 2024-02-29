@@ -8,9 +8,9 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime-azure
+	@touch deploy/runtime/runtime-azure
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime-azure
+	@rm deploy/runtime/runtime-azure
 
 runtimebin:
 	@echo Building Azure Runtime Server
