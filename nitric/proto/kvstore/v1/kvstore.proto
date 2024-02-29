@@ -68,7 +68,8 @@ message KvStoreSetValueRequest {
   google.protobuf.Struct content = 3;
 }
 
-message KvStoreSetValueResponse {}
+message KvStoreSetValueResponse {
+}
 
 message KvStoreDeleteKeyRequest {
   // ValueRef of the key/value pair to delete, which includes the store and key
