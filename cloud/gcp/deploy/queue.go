@@ -45,17 +45,17 @@ func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	resourceLabels := common.Tags(p.stackId, name, resources.Queue)
+	resourceLabels := common.Tags(p.StackId, name, resources.Queue)
 
-	p.queues[name], err = pubsub.NewTopic(ctx, fmt.Sprintf("%s-queue", name), &pubsub.TopicArgs{
+	p.Queues[name], err = pubsub.NewTopic(ctx, fmt.Sprintf("%s-queue", name), &pubsub.TopicArgs{
 		Labels: pulumi.ToStringMap(resourceLabels),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
 
-	p.queueSubscriptions[name], err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
-		Topic:  p.queues[name].Name,
+	p.QueueSubscriptions[name], err = pubsub.NewSubscription(ctx, fmt.Sprintf("%s-nitricqueue", name), &pubsub.SubscriptionArgs{
+		Topic:  p.Queues[name].Name,
 		Labels: pulumi.ToStringMap(resourceLabels),
 		ExpirationPolicy: &pubsub.SubscriptionExpirationPolicyArgs{
 			Ttl: pulumi.String(""),

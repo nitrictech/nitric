@@ -50,27 +50,27 @@ import (
 )
 
 type NitricGcpPulumiProvider struct {
-	stackId       string
-	projectName   string
-	stackName     string
-	fullStackName string
+	StackId       string
+	ProjectName   string
+	StackName     string
+	FullStackName string
 
-	config *GcpConfig
-	region string
+	GcpConfig *GcpConfig
+	Region    string
 
-	delayQueue      *cloudtasks.Queue
-	authToken       *oauth2.Token
-	baseComputeRole *projects.IAMCustomRole
+	DelayQueue      *cloudtasks.Queue
+	AuthToken       *oauth2.Token
+	BaseComputeRole *projects.IAMCustomRole
 
-	project            *Project
-	apiGateways        map[string]*apigateway.Gateway
-	httpProxies        map[string]*apigateway.Gateway
-	cloudRunServices   map[string]*NitricCloudRunService
-	buckets            map[string]*storage.Bucket
-	topics             map[string]*pubsub.Topic
-	queues             map[string]*pubsub.Topic
-	queueSubscriptions map[string]*pubsub.Subscription
-	secrets            map[string]*secretmanager.Secret
+	Project            *Project
+	ApiGateways        map[string]*apigateway.Gateway
+	HttpProxies        map[string]*apigateway.Gateway
+	CloudRunServices   map[string]*NitricCloudRunService
+	Buckets            map[string]*storage.Bucket
+	Topics             map[string]*pubsub.Topic
+	Queues             map[string]*pubsub.Topic
+	QueueSubscriptions map[string]*pubsub.Subscription
+	Secrets            map[string]*secretmanager.Secret
 
 	provider.NitricDefaultOrder
 }
@@ -81,8 +81,8 @@ const pulumiGcpVersion = "6.67.0"
 
 func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
-		"gcp:region":     auto.ConfigValue{Value: a.region},
-		"gcp:project":    auto.ConfigValue{Value: a.config.ProjectId},
+		"gcp:region":     auto.ConfigValue{Value: a.Region},
+		"gcp:project":    auto.ConfigValue{Value: a.GcpConfig.ProjectId},
 		"gcp:version":    auto.ConfigValue{Value: pulumiGcpVersion},
 		"docker:version": auto.ConfigValue{Value: deploy.PulumiDockerVersion},
 	}, nil
@@ -90,7 +90,7 @@ func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 
 func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.ResourceOption) []pulumi.ResourceOption {
 	defaultOptions := []pulumi.ResourceOption{
-		pulumi.DependsOn([]pulumi.Resource{a.project}),
+		pulumi.DependsOn([]pulumi.Resource{a.Project}),
 	}
 
 	return append(defaultOptions, opts...)
@@ -104,9 +104,9 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 		return fmt.Errorf("Missing region attribute")
 	}
 
-	a.region = region
+	a.Region = region
 
-	a.config, err = ConfigFromAttributes(attributes)
+	a.GcpConfig, err = ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
@@ -114,15 +114,15 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 	var isString bool
 
 	iProject, hasProject := attributes["project"]
-	a.projectName, isString = iProject.(string)
-	if !hasProject || !isString || a.projectName == "" {
+	a.ProjectName, isString = iProject.(string)
+	if !hasProject || !isString || a.ProjectName == "" {
 		// need a valid project name
 		return fmt.Errorf("project is not set or invalid")
 	}
 
 	iStack, hasStack := attributes["stack"]
-	a.stackName, isString = iStack.(string)
-	if !hasStack || !isString || a.stackName == "" {
+	a.StackName, isString = iStack.(string)
+	if !hasStack || !isString || a.StackName == "" {
 		// need a valid stack name
 		return fmt.Errorf("stack is not set or invalid")
 	}
@@ -130,7 +130,7 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 	// Backwards compatible stack name
 	// The existing providers in the CLI
 	// Use the combined project and stack name
-	a.fullStackName = fmt.Sprintf("%s-%s", a.projectName, a.stackName)
+	a.FullStackName = fmt.Sprintf("%s-%s", a.ProjectName, a.StackName)
 
 	return nil
 }
@@ -183,49 +183,49 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 		return id
 	})
 
-	a.stackId = <-stackIdChan
+	a.StackId = <-stackIdChan
 
 	project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
-		ProjectId: &a.config.ProjectId,
+		ProjectId: &a.GcpConfig.ProjectId,
 	}, nil)
 	if err != nil {
 		return err
 	}
 
-	a.project, err = NewProject(ctx, "project", &ProjectArgs{
-		ProjectId:     a.config.ProjectId,
+	a.Project, err = NewProject(ctx, "project", &ProjectArgs{
+		ProjectId:     a.GcpConfig.ProjectId,
 		ProjectNumber: project.Number,
 	})
 	if err != nil {
 		return err
 	}
 
-	a.delayQueue, err = cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
-		Location: pulumi.String(a.region),
+	a.DelayQueue, err = cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
+		Location: pulumi.String(a.Region),
 	})
 	if err != nil {
 		return err
 	}
 
 	// Deploy all services
-	a.authToken, err = getGCPToken(ctx)
+	a.AuthToken, err = getGCPToken(ctx)
 	if err != nil {
 		return err
 	}
 
-	baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", a.fullStackName), &random.RandomStringArgs{
+	baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", a.FullStackName), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(8),
 		Keepers: pulumi.ToMap(map[string]interface{}{
-			"stack-name": a.fullStackName,
+			"stack-name": a.FullStackName,
 		}),
 	})
 	if err != nil {
 		return errors.WithMessage(err, "base customRole id")
 	}
 
-	a.baseComputeRole, err = projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
-		Title:       pulumi.String(a.fullStackName + "-functions-base-role"),
+	a.BaseComputeRole, err = projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
+		Title:       pulumi.String(a.FullStackName + "-functions-base-role"),
 		Permissions: pulumi.ToStringArray(baseComputePermissions),
 		RoleId:      baseCustomRoleId.ID(),
 	})
@@ -307,20 +307,20 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 	outputs := []interface{}{}
 
 	// Add APIs outputs
-	if len(a.apiGateways) > 0 {
+	if len(a.ApiGateways) > 0 {
 		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
-		for apiName, api := range a.apiGateways {
+		for apiName, api := range a.ApiGateways {
 			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", apiName, api.DefaultHostname))
 		}
 	}
 
 	// Add HTTP Proxy outputs
-	if len(a.httpProxies) > 0 {
+	if len(a.HttpProxies) > 0 {
 		if len(outputs) > 0 {
 			outputs = append(outputs, "\n")
 		}
 		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
-		for proxyName, proxy := range a.httpProxies {
+		for proxyName, proxy := range a.HttpProxies {
 			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", proxyName, proxy.DefaultHostname))
 		}
 	}
@@ -343,14 +343,14 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		httpProxies:        make(map[string]*apigateway.Gateway),
-		apiGateways:        make(map[string]*apigateway.Gateway),
-		cloudRunServices:   make(map[string]*NitricCloudRunService),
-		buckets:            make(map[string]*storage.Bucket),
-		topics:             make(map[string]*pubsub.Topic),
-		queues:             make(map[string]*pubsub.Topic),
-		queueSubscriptions: make(map[string]*pubsub.Subscription),
-		secrets:            make(map[string]*secretmanager.Secret),
+		HttpProxies:        make(map[string]*apigateway.Gateway),
+		ApiGateways:        make(map[string]*apigateway.Gateway),
+		CloudRunServices:   make(map[string]*NitricCloudRunService),
+		Buckets:            make(map[string]*storage.Bucket),
+		Topics:             make(map[string]*pubsub.Topic),
+		Queues:             make(map[string]*pubsub.Topic),
+		QueueSubscriptions: make(map[string]*pubsub.Subscription),
+		Secrets:            make(map[string]*secretmanager.Secret),
 	}
 }
 

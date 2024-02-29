@@ -64,13 +64,13 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	// get config for service
-	unitConfig, hasConfig := p.config.Config[config.Type]
+	unitConfig, hasConfig := p.GcpConfig.Config[config.Type]
 	if !hasConfig {
-		return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", config.Type, p.config.Config)
+		return status.Errorf(codes.InvalidArgument, "unable to find config %s in stack config %+v", config.Type, p.GcpConfig.Config)
 	}
 
 	if unitConfig.CloudRun == nil {
-		return status.Errorf(codes.InvalidArgument, "unable to find cloud run config in stack config %+v", p.config.Config)
+		return status.Errorf(codes.InvalidArgument, "unable to find cloud run config in stack config %+v", p.GcpConfig.Config)
 	}
 
 	// Get the image name:tag from the uri
@@ -79,9 +79,9 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
-		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.config.ProjectId, imageName),
+		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.GcpConfig.ProjectId, imageName),
 		Username:      pulumi.String("oauth2accesstoken"),
-		Password:      pulumi.String(p.authToken.AccessToken),
+		Password:      pulumi.String(p.AuthToken.AccessToken),
 		Server:        pulumi.String("https://gcr.io"),
 		Runtime:       runtime(),
 		Telemetry: &telemetry.TelemetryConfigArgs{
@@ -121,9 +121,9 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	res.EventToken = token.Result
 
 	_, err = projects.NewIAMMember(ctx, gcpServiceName+"-project-member", &projects.IAMMemberArgs{
-		Project: pulumi.String(p.config.ProjectId),
+		Project: pulumi.String(p.GcpConfig.ProjectId),
 		Member:  pulumi.Sprintf("serviceAccount:%s", sa.ServiceAccount.Email),
-		Role:    p.baseComputeRole.Name,
+		Role:    p.BaseComputeRole.Name,
 	})
 	if err != nil {
 		return errors.WithMessage(err, "function project membership "+name)
@@ -150,7 +150,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_STACK_ID"),
-			Value: pulumi.String(p.stackId),
+			Value: pulumi.String(p.StackId),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),
@@ -158,7 +158,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("GCP_REGION"),
-			Value: pulumi.String(p.region),
+			Value: pulumi.String(p.Region),
 		},
 		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_HTTP_PROXY_PORT"),
@@ -171,10 +171,10 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		Value: res.EventToken,
 	})
 
-	if p.delayQueue != nil {
+	if p.DelayQueue != nil {
 		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("DELAY_QUEUE_NAME"),
-			Value: pulumi.Sprintf("projects/%s/locations/%s/queues/%s", p.delayQueue.Project, p.delayQueue.Location, p.delayQueue.Name),
+			Value: pulumi.Sprintf("projects/%s/locations/%s/queues/%s", p.DelayQueue.Project, p.DelayQueue.Location, p.DelayQueue.Name),
 		})
 	}
 
@@ -187,8 +187,8 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	res.Service, err = cloudrun.NewService(ctx, gcpServiceName, &cloudrun.ServiceArgs{
 		AutogenerateRevisionName: pulumi.BoolPtr(true),
-		Location:                 pulumi.String(p.region),
-		Project:                  pulumi.String(p.config.ProjectId),
+		Location:                 pulumi.String(p.Region),
+		Project:                  pulumi.String(p.GcpConfig.ProjectId),
 		Template: cloudrun.ServiceTemplateArgs{
 			Metadata: cloudrun.ServiceTemplateMetadataArgs{
 				Annotations: pulumi.StringMap{
@@ -250,7 +250,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return *ss[0].Url, nil
 	}).(pulumi.StringInput)
 
-	p.cloudRunServices[name] = res
+	p.CloudRunServices[name] = res
 
 	return nil
 }
