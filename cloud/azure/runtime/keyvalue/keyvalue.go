@@ -49,7 +49,7 @@ type AztableEntity struct {
 }
 
 // Get a value from the Azure Storage table
-func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvStoreGetRequest) (*kvstorepb.KvStoreGetResponse, error) {
+func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvStoreGetKeyRequest) (*kvstorepb.KvStoreGetKeyResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.GetKey")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvst
 		)
 	}
 
-	return &kvstorepb.KvStoreGetResponse{
+	return &kvstorepb.KvStoreGetKeyResponse{
 		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: &structContent,
@@ -127,7 +127,7 @@ func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvst
 }
 
 // Set a value in the Azure Storage table
-func (s *AzureStorageTableKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvStoreSetRequest) (*kvstorepb.KvStoreSetResponse, error) {
+func (s *AzureStorageTableKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvStoreSetKeyRequest) (*kvstorepb.KvStoreSetKeyResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.SetKeys")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
@@ -197,11 +197,11 @@ func (s *AzureStorageTableKeyValueService) SetKey(ctx context.Context, req *kvst
 		)
 	}
 
-	return &kvstorepb.KvStoreSetResponse{}, nil
+	return &kvstorepb.KvStoreSetKeyResponse{}, nil
 }
 
 // Delete a key/value pair from the Azure Storage table
-func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteRequest) (*kvstorepb.KvStoreDeleteResponse, error) {
+func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteKeyRequest) (*kvstorepb.KvStoreDeleteKeyResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.DeleteKey")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
@@ -227,7 +227,7 @@ func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *k
 			switch respErr.StatusCode {
 			case http.StatusNotFound:
 				// not found isn't an error for delete
-				return &kvstorepb.KvStoreDeleteResponse{}, nil
+				return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
 			case http.StatusForbidden:
 				// Handle forbidden error
 				return nil, newErr(
@@ -245,11 +245,11 @@ func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *k
 		)
 	}
 
-	return &kvstorepb.KvStoreDeleteResponse{}, nil
+	return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
 }
 
 // Return all keys in the Azure Storage table for a key/value store
-func (s *AzureStorageTableKeyValueService) Keys(req *kvstorepb.KvStoreKeysRequest, stream kvstorepb.KvStore_KeysServer) error {
+func (s *AzureStorageTableKeyValueService) GetKeys(req *kvstorepb.KvStoreGetKeysRequest, stream kvstorepb.KvStore_GetKeysServer) error {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Keys")
 	storeName := req.GetStore().GetName()
 
@@ -312,7 +312,7 @@ func (s *AzureStorageTableKeyValueService) Keys(req *kvstorepb.KvStoreKeysReques
 				)
 			}
 
-			if err := stream.Send(&kvstorepb.KvStoreKeysResponse{
+			if err := stream.Send(&kvstorepb.KvStoreGetKeysResponse{
 				Key: entity.RowKey,
 			}); err != nil {
 				return newErr(

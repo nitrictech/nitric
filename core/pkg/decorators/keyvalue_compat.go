@@ -33,7 +33,7 @@ var _ keyvaluepb.KeyValueServer = (*KvStoreCompat)(nil)
 func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
-	resp, err := k.GetKey(ctx, &kvstorepb.KvStoreGetRequest{
+	resp, err := k.GetKey(ctx, &kvstorepb.KvStoreGetKeyRequest{
 		Ref: &kvstorepb.ValueRef{
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,
@@ -58,7 +58,7 @@ func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequ
 func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
-	_, err := k.SetKey(ctx, &kvstorepb.KvStoreSetRequest{
+	_, err := k.SetKey(ctx, &kvstorepb.KvStoreSetKeyRequest{
 		Ref: &kvstorepb.ValueRef{
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,
@@ -75,7 +75,7 @@ func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequ
 func (k *KvStoreCompat) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
 	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
-	_, err := k.DeleteKey(ctx, &kvstorepb.KvStoreDeleteRequest{
+	_, err := k.DeleteKey(ctx, &kvstorepb.KvStoreDeleteKeyRequest{
 		Ref: &kvstorepb.ValueRef{
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,

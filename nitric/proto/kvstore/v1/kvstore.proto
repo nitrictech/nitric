@@ -15,16 +15,16 @@ option csharp_namespace = "Nitric.Proto.KvStore.v1";
 // Service for storage and retrieval of simple JSON keyValue
 service KvStore {
   // Get an existing value
-  rpc GetKey (KvStoreGetRequest) returns (KvStoreGetResponse);
+  rpc GetKey (KvStoreGetKeyRequest) returns (KvStoreGetKeyResponse);
 
   // Create a new or overwrite an existing value
-  rpc SetKey (KvStoreSetRequest) returns (KvStoreSetResponse);
+  rpc SetKey (KvStoreSetKeyRequest) returns (KvStoreSetKeyResponse);
 
   // Delete a key and its value
-  rpc DeleteKey (KvStoreDeleteRequest) returns (KvStoreDeleteResponse);
+  rpc DeleteKey (KvStoreDeleteKeyRequest) returns (KvStoreDeleteKeyResponse);
 
   // Iterate over all keys in a store
-  rpc Keys (KvStoreKeysRequest) returns (stream KvStoreKeysResponse);
+  rpc GetKeys (KvStoreGetKeysRequest) returns (stream KvStoreGetKeysResponse);
 }
 
 // Provides a Key/Value Store
@@ -51,35 +51,35 @@ message Value {
   google.protobuf.Struct content = 2;
 }
 
-message KvStoreGetRequest {
+message KvStoreGetKeyRequest {
   // ValueRef of the key/value pair to get, which includes the store and key
   ValueRef ref = 1;
 }
 
-message KvStoreGetResponse {
+message KvStoreGetKeyResponse {
   // The retrieved value
   Value value = 1;
 }
 
-message KvStoreSetRequest {
+message KvStoreSetKeyRequest {
   // ValueRef of the key/value pair to set, which includes the store and key
   ValueRef ref = 1 ;
   // The value content to store (JSON object)
   google.protobuf.Struct content = 3;
 }
 
-message KvStoreSetResponse {
+message KvStoreSetKeyResponse {
 }
 
-message KvStoreDeleteRequest {
+message KvStoreDeleteKeyRequest {
   // ValueRef of the key/value pair to delete, which includes the store and key
   ValueRef ref = 1;
 }
 
-message KvStoreDeleteResponse {
+message KvStoreDeleteKeyResponse {
 }
 
-message KvStoreKeysRequest {
+message KvStoreGetKeysRequest {
   // The store to iterate over
   Store store = 1;
 
@@ -87,7 +87,7 @@ message KvStoreKeysRequest {
   string prefix = 2;
 }
 
-message KvStoreKeysResponse {
+message KvStoreGetKeysResponse {
   // The key of the key/value pair
   string key = 1;
 }
