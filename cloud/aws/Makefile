@@ -20,12 +20,12 @@ runtimebin:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-aws deploy/runtime-aws
+	@cp bin/runtime-aws deploy/runtime/runtime-aws
 
 deploybin: predeploybin
 	@echo Building AWS Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime-aws
+	@rm deploy/runtime/runtime-aws
 
 .PHONY: install
 install: deploybin

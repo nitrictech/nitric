@@ -23,6 +23,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -147,7 +148,7 @@ var RoleDefinitions = map[string]string{
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *deploymentspb.Service) error {
+func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *deploymentspb.Service, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &ContainerApp{
@@ -167,7 +168,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		Username:      p.containerEnv.RegistryUser.Elem(),
 		Password:      p.containerEnv.RegistryPass.Elem(),
 		Server:        p.containerEnv.Registry.LoginServer,
-		Runtime:       runtime,
+		Runtime:       runtime(),
 	}, opts...)
 	if err != nil {
 		return err

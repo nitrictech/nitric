@@ -43,9 +43,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-//go:embed runtime-azure
-var runtime []byte
-
 type ApiResources struct {
 	ApiManagementService *apimanagement.ApiManagementService
 	Api                  *apimanagement.Api

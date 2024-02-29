@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
@@ -44,7 +45,7 @@ type NitricCloudRunService struct {
 	EventToken     pulumi.StringOutput
 }
 
-func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error {
+func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &NitricCloudRunService{
@@ -82,7 +83,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		Username:      pulumi.String("oauth2accesstoken"),
 		Password:      pulumi.String(p.authToken.AccessToken),
 		Server:        pulumi.String("https://gcr.io"),
-		Runtime:       runtime,
+		Runtime:       runtime(),
 		Telemetry: &telemetry.TelemetryConfigArgs{
 			TraceSampling:       unitConfig.Telemetry,
 			TraceName:           "googlecloud",

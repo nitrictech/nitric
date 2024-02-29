@@ -42,7 +42,7 @@ type NitricPulumiProvider interface {
 	// Bucket - Deploy a Storage Bucket
 	Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error
 	// Service - Deploy an service (Service)
-	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
+	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service, runtimeProvider RuntimeProvider) error
 	// Topic - Deploy a Pub/Sub Topic
 	Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error
 	// Queue - Deploy a Queue

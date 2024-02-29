@@ -35,17 +35,19 @@ import (
 
 type PulumiProviderServer struct {
 	provider NitricPulumiProvider
+	runtime  RuntimeProvider
 }
 
-func NewPulumiProviderServer(provider NitricPulumiProvider) *PulumiProviderServer {
+func NewPulumiProviderServer(provider NitricPulumiProvider, runtime RuntimeProvider) *PulumiProviderServer {
 	return &PulumiProviderServer{
 		provider: provider,
+		runtime:  runtime,
 	}
 }
 
 const resultCtxKey = "nitric:stack:result"
 
-func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider) func(*pulumi.Context) error {
+func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider, runtime RuntimeProvider) func(*pulumi.Context) error {
 	return func(ctx *pulumi.Context) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -68,7 +70,7 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 
 			switch t := res.Config.(type) {
 			case *deploymentspb.Resource_Service:
-				err = nitricProvider.Service(ctx, parent, res.Id.Name, t.Service)
+				err = nitricProvider.Service(ctx, parent, res.Id.Name, t.Service, runtime)
 			case *deploymentspb.Resource_Secret:
 				err = nitricProvider.Secret(ctx, parent, res.Id.Name, t.Secret)
 			case *deploymentspb.Resource_Topic:
@@ -181,7 +183,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider)
+	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider, s.runtime)
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
 	if err != nil {

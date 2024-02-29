@@ -19,13 +19,14 @@ package main
 import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy"
+	"github.com/nitrictech/nitric/cloud/gcp/deploy/runtime"
 )
 
 // Start the deployment server
 func main() {
 	gcpStack := deploy.NewNitricGcpProvider()
 
-	providerServer := provider.NewPulumiProviderServer(gcpStack)
+	providerServer := provider.NewPulumiProviderServer(gcpStack, runtime.NitricGcpRuntime)
 
 	providerServer.Start()
 }
