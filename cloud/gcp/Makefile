@@ -37,15 +37,15 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime-gcp
+	@touch deploy/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime-gcp
+	@rm deploy/runtime/runtime-gcp
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime-gcp
+	@touch deploy/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime-gcp
+	@rm deploy/runtime/runtime-gcp
 
 license-check: runtimebin
 	@echo Checking GCP Membrane OSS Licenses
