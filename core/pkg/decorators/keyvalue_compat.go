@@ -63,6 +63,7 @@ func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequ
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,
 		},
+		Content: req.Content,
 	})
 	if err != nil {
 		return nil, err
