@@ -17,7 +17,7 @@ package keyvalue
 import (
 	"fmt"
 
-	v1 "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 )
 
 // Map of valid expression operators

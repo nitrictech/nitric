@@ -20,6 +20,7 @@ import (
 	_ "github.com/google/addlicense"
 	_ "github.com/onsi/ginkgo/ginkgo"
 	_ "github.com/uw-labs/lichen"
+	_ "github.com/yoheimuta/protolint/cmd/protolint"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
 	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
 )

@@ -21,7 +21,15 @@ fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run --fix
 
-lint:
+lint-contracts:
+	@echo "Linting contracts"
+	@go run github.com/yoheimuta/protolint/cmd/protolint ../nitric/
+
+lint-contracts-fix:
+	@echo "Linting contracts"
+	@go run github.com/yoheimuta/protolint/cmd/protolint -fix ../nitric/
+
+lint: lint-contracts
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	$(GOLANGCI_LINT) run
 

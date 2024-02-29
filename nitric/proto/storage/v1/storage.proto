@@ -1,5 +1,8 @@
 syntax = "proto3";
+
 package nitric.proto.storage.v1;
+
+import "google/protobuf/duration.proto";
 
 // protoc plugin options for code generation
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/storage/v1;storagepb";
@@ -8,8 +11,6 @@ option java_multiple_files = true;
 option java_outer_classname = "StorageService";
 option php_namespace = "Nitric\\Proto\\Storage\\V1";
 option csharp_namespace = "Nitric.Proto.Storage.v1";
-
-import "google/protobuf/duration.proto";
 
 // Services for storage and retrieval of blobs in the form of byte arrays, such as text and binary blobs.
 service Storage {
@@ -62,7 +63,7 @@ message BlobEventRequest {
   string bucket_name = 1;
   
   oneof event {
-     BlobEvent blob_event = 10;
+    BlobEvent blob_event = 10;
   }
 }
 
@@ -73,7 +74,6 @@ message BlobEvent {
   // The type of event that occurred
   BlobEventType type = 2;
 }
-
 
 message BlobEventResponse {
   bool success = 1;
@@ -112,7 +112,8 @@ message StorageWriteRequest {
 }
 
 // Result of putting a storage item
-message StorageWriteResponse {}
+message StorageWriteResponse {
+}
 
 // Request to retrieve a storage item
 message StorageReadRequest {
@@ -138,7 +139,8 @@ message StorageDeleteRequest {
 }
 
 // Result of deleting a storage item
-message StorageDeleteResponse {}
+message StorageDeleteResponse {
+}
 
 // Request to generate a pre-signed URL for a blob to perform a specific operation, such as read or write.
 message StoragePreSignUrlRequest {

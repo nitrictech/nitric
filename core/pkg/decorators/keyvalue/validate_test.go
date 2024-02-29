@@ -15,7 +15,7 @@ package keyvalue_test
 
 import (
 	document "github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
-	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,13 +33,13 @@ var _ = Describe("Document Plugin", func() {
 		})
 		When("Blank key.Collection", func() {
 			It("should return error", func() {
-				err := document.ValidateValueRef(&keyvaluepb.ValueRef{})
+				err := document.ValidateValueRef(&kvstorepb.ValueRef{})
 				Expect(err.Error()).To(ContainSubstring("provide non-blank key.Id"))
 			})
 		})
 		When("Blank key.Id", func() {
 			It("should return error", func() {
-				key := &keyvaluepb.ValueRef{
+				key := &kvstorepb.ValueRef{
 					Store: "users",
 				}
 				err := document.ValidateValueRef(key)

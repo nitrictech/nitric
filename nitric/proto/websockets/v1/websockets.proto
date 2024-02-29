@@ -35,24 +35,26 @@ service WebsocketHandler {
 }
 
 message WebsocketSendRequest {
-    // The nitric name of the socket to send on
-    string socket_name = 1;
-    // The connection ID of the client to send to
-    string connection_id = 2;
-    // The data to send to the socket
-    bytes data = 3;
+  // The nitric name of the socket to send on
+  string socket_name = 1;
+  // The connection ID of the client to send to
+  string connection_id = 2;
+  // The data to send to the socket
+  bytes data = 3;
 }
 
-message WebsocketSendResponse {}
+message WebsocketSendResponse {
+}
 
 message WebsocketCloseConnectionRequest {
-    // The nitric name of the socket to send on
-    string socket_name = 1;
-    // The connection ID of the client to send to
-    string connection_id = 2;
+  // The nitric name of the socket to send on
+  string socket_name = 1;
+  // The connection ID of the client to send to
+  string connection_id = 2;
 }
 
-message WebsocketCloseConnectionResponse {}
+message WebsocketCloseConnectionResponse {
+}
 
 
 // ClientMessages are sent from the service to the nitric server
@@ -81,7 +83,8 @@ enum WebsocketEventType {
 }
 
 // Placeholder message
-message RegistrationResponse {}
+message RegistrationResponse {
+}
 
 message RegistrationRequest {
   // The nitric name of the socket that this worker listens on
@@ -95,7 +98,7 @@ message WebsocketEventRequest {
   string socket_name = 1;
 
   // The connection this trigger came from
-  string connectionId = 2;
+  string connection_id = 2;
 
   oneof websocket_event {
     WebsocketConnectionEvent connection = 10;
@@ -104,7 +107,9 @@ message WebsocketEventRequest {
   }
 }
 
-message QueryValue { repeated string value = 1; }
+message QueryValue {
+  repeated string value = 1;
+}
 
 // ServerMessages are sent from the nitric server to the service
 message ServerMessage {
@@ -139,9 +144,10 @@ message WebsocketConnectionResponse {
   bool reject = 1;
 }
 
-message WebsocketDisconnectionEvent {}
+message WebsocketDisconnectionEvent {
+}
 
 message WebsocketMessageEvent {
-    // Data available on
-    bytes body = 1;
+  // Data available on
+  bytes body = 1;
 }

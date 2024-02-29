@@ -27,7 +27,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	document "github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
-	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -39,7 +39,8 @@ type AzureStorageTableKeyValueService struct {
 	clientFactory AzureStorageClientFactory
 }
 
-var _ keyvaluepb.KeyValueServer = &AzureStorageTableKeyValueService{}
+// Ensure AzureStorageTableKeyValueService implements the KeyValueServer interface
+var _ kvstorepb.KvStoreServer = (*AzureStorageTableKeyValueService)(nil)
 
 type AztableEntity struct {
 	aztables.Entity
@@ -47,9 +48,9 @@ type AztableEntity struct {
 	Content aztables.EDMBinary
 }
 
-// Get a document from the DynamoDB table
-func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Get")
+// Get a value from the Azure Storage table
+func (s *AzureStorageTableKeyValueService) GetValue(ctx context.Context, req *kvstorepb.KvStoreGetValueRequest) (*kvstorepb.KvStoreGetValueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.GetKey")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
@@ -80,6 +81,13 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 					fmt.Sprintf("key %s not found in store %s", req.Ref.Key, req.Ref.Store),
 					err,
 				)
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to get value, this may be due to a missing permissions request in your code.",
+					err,
+				)
 			}
 		}
 
@@ -95,7 +103,7 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
-			"Unable to convert value to pb struct",
+			"Unable to convert value to AztableEntity",
 			err,
 		)
 	}
@@ -110,17 +118,17 @@ func (s *AzureStorageTableKeyValueService) Get(ctx context.Context, req *keyvalu
 		)
 	}
 
-	return &keyvaluepb.KeyValueGetResponse{
-		Value: &keyvaluepb.Value{
+	return &kvstorepb.KvStoreGetValueResponse{
+		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: &structContent,
 		},
 	}, nil
 }
 
-// Set a document in the DynamoDB table
-func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Set")
+// Set a value in the Azure Storage table
+func (s *AzureStorageTableKeyValueService) SetValue(ctx context.Context, req *kvstorepb.KvStoreSetValueRequest) (*kvstorepb.KvStoreSetValueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.SetKeys")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
@@ -160,7 +168,7 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
-			"Unable to struct to json",
+			"unable to convert struct to json",
 			err,
 		)
 	}
@@ -169,19 +177,32 @@ func (s *AzureStorageTableKeyValueService) Set(ctx context.Context, req *keyvalu
 		UpdateMode: aztables.UpdateModeReplace,
 	})
 	if err != nil {
+		var respErr *azcore.ResponseError
+		if errors.As(err, &respErr) {
+			switch respErr.StatusCode {
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to set value, this may be due to a missing permissions request in your code.",
+					err,
+				)
+			}
+		}
+
 		return nil, newErr(
-			codes.Internal,
-			"Unable to call aztables.UpsertEntity",
+			codes.Unknown,
+			"unable to call aztables.UpsertEntity",
 			err,
 		)
 	}
 
-	return &keyvaluepb.KeyValueSetResponse{}, nil
+	return &kvstorepb.KvStoreSetValueResponse{}, nil
 }
 
-// Delete a document from the DynamoDB table
-func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Delete")
+// Delete a key/value pair from the Azure Storage table
+func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteKeyRequest) (*kvstorepb.KvStoreDeleteKeyResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.DeleteKey")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
 		return nil, newErr(
@@ -206,7 +227,14 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 			switch respErr.StatusCode {
 			case http.StatusNotFound:
 				// not found isn't an error for delete
-				return &keyvaluepb.KeyValueDeleteResponse{}, nil
+				return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
+			case http.StatusForbidden:
+				// Handle forbidden error
+				return nil, newErr(
+					codes.PermissionDenied,
+					"unable to delete value, this may be due to a missing permissions request in your code.",
+					err,
+				)
 			}
 		}
 
@@ -217,13 +245,95 @@ func (s *AzureStorageTableKeyValueService) Delete(ctx context.Context, req *keyv
 		)
 	}
 
-	return &keyvaluepb.KeyValueDeleteResponse{}, nil
+	return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
+}
+
+// Return all keys in the Azure Storage table for a key/value store
+func (s *AzureStorageTableKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKeysRequest, stream kvstorepb.KvStore_ScanKeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Keys")
+	storeName := req.GetStore().GetName()
+
+	if storeName == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	client, err := s.clientFactory(storeName)
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to create client",
+			err,
+		)
+	}
+
+	// ge "GreaterThanOrEqual" is used for string prefix filtering (https://learn.microsoft.com/en-us/rest/api/storageservices/querying-tables-and-entities#filtering-on-string-properties)
+	keyFilter := fmt.Sprintf("PartitionKey eq '%s' and RowKey ge '%s'", storeName, req.GetPrefix())
+
+	pager := client.NewListEntitiesPager(
+		&aztables.ListEntitiesOptions{
+			Filter: &keyFilter,
+		},
+	)
+
+	for pager.More() {
+		response, err := pager.NextPage(context.TODO())
+		if err != nil {
+			var respErr *azcore.ResponseError
+			if errors.As(err, &respErr) {
+				switch respErr.StatusCode {
+				case http.StatusForbidden:
+					// Handle forbidden error
+					return newErr(
+						codes.PermissionDenied,
+						"unable to list keys, this may be due to a missing permissions request in your code.",
+						err,
+					)
+				}
+			}
+			return newErr(
+				codes.Unknown,
+				"failed to call aztables.ListEntities",
+				err,
+			)
+		}
+
+		for _, entityBytes := range response.Entities {
+			var entity AztableEntity
+			err = json.Unmarshal(entityBytes, &entity)
+			if err != nil {
+				return newErr(
+					codes.Internal,
+					"Unable to convert value to AztableEntity",
+					err,
+				)
+			}
+
+			if err := stream.Send(&kvstorepb.KvStoreScanKeysResponse{
+				Key: entity.RowKey,
+			}); err != nil {
+				return newErr(
+					codes.Internal,
+					"failed to send response",
+					err,
+				)
+			}
+		}
+	}
+
+	return nil
 }
 
 type AzureStorageClientFactory func(tableName string) (*aztables.Client, error)
 
 func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, storageAccountName string) AzureStorageClientFactory {
 	return func(tableName string) (*aztables.Client, error) {
+		if tableName == "" {
+			return nil, fmt.Errorf("table name is required")
+		}
 		serviceURL := fmt.Sprintf("https://%s.table.core.windows.net/%s", storageAccountName, tableName)
 		return aztables.NewClient(serviceURL, creds, nil)
 	}

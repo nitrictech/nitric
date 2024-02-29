@@ -1,0 +1,23 @@
+lint:
+  rules:
+    # Determines whether or not to include the default set of linters.
+    # no_default: true
+
+    # Set the default to all linters. This option works the other way around as no_default does.
+    # If you want to enable this option, delete the comment out below and no_default.
+    # all_default: true
+
+    # The specific linters to remove.
+    remove:
+      - MAX_LINE_LENGTH
+      - ENUM_FIELD_NAMES_PREFIX
+      - ENUM_FIELD_NAMES_UPPER_SNAKE_CASE
+      - ENUM_FIELD_NAMES_ZERO_VALUE_END_WITH
+      - REPEATED_FIELD_NAMES_PLURALIZED
+
+  files:
+      # The specific files to exclude.
+      exclude:
+        # We already know this contract is non-compliant
+        # Will be removed in a future release
+        - ../nitric/proto/keyvalue/v1/keyvalue.proto

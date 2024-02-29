@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/smithy-go"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
@@ -34,7 +35,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	document "github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
-	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 )
 
 const (
@@ -50,7 +51,9 @@ type DynamoKeyValueService struct {
 	provider resource.AwsResourceProvider
 }
 
-var _ keyvaluepb.KeyValueServer = &DynamoKeyValueService{}
+// Ensure DynamoKeyValueService implements the KeyValueServer interface
+// var _ keyvaluepb.KeyValueServer = (*DynamoKeyValueService)(nil)
+var _ kvstorepb.KvStoreServer = (*DynamoKeyValueService)(nil)
 
 func isDynamoAccessDeniedErr(err error) bool {
 	var opErr *smithy.OperationError
@@ -61,7 +64,7 @@ func isDynamoAccessDeniedErr(err error) bool {
 }
 
 // Get a document from the DynamoDB table
-func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
+func (s *DynamoKeyValueService) GetValue(ctx context.Context, req *kvstorepb.KvStoreGetValueRequest) (*kvstorepb.KvStoreGetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
 
 	err := document.ValidateValueRef(req.Ref)
@@ -98,7 +101,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		if isDynamoAccessDeniedErr(err) {
 			return nil, newErr(
 				codes.PermissionDenied,
-				"unable to get document value, this may be due to a missing permissions request in your code.",
+				"unable to get value, this may be due to a missing permissions request in your code.",
 				err,
 			)
 		}
@@ -140,8 +143,8 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	return &keyvaluepb.KeyValueGetResponse{
-		Value: &keyvaluepb.Value{
+	return &kvstorepb.KvStoreGetValueResponse{
+		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: documentContent,
 		},
@@ -149,7 +152,7 @@ func (s *DynamoKeyValueService) Get(ctx context.Context, req *keyvaluepb.KeyValu
 }
 
 // Set a document in the DynamoDB table
-func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
+func (s *DynamoKeyValueService) SetValue(ctx context.Context, req *kvstorepb.KvStoreSetValueRequest) (*kvstorepb.KvStoreSetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Set")
 
 	if err := document.ValidateValueRef(req.Ref); err != nil {
@@ -210,11 +213,11 @@ func (s *DynamoKeyValueService) Set(ctx context.Context, req *keyvaluepb.KeyValu
 		)
 	}
 
-	return &keyvaluepb.KeyValueSetResponse{}, nil
+	return &kvstorepb.KvStoreSetValueResponse{}, nil
 }
 
 // Delete a document from the DynamoDB table
-func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyValueDeleteRequest) (*keyvaluepb.KeyValueDeleteResponse, error) {
+func (s *DynamoKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteKeyRequest) (*kvstorepb.KvStoreDeleteKeyResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Delete")
 
 	if err := document.ValidateValueRef(req.Ref); err != nil {
@@ -266,7 +269,92 @@ func (s *DynamoKeyValueService) Delete(ctx context.Context, req *keyvaluepb.KeyV
 		)
 	}
 
-	return &keyvaluepb.KeyValueDeleteResponse{}, nil
+	return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
+}
+
+func (s *DynamoKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKeysRequest, stream kvstorepb.KvStore_ScanKeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Keys")
+
+	if req.Store.GetName() == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	tableName, err := s.getTableName(context.TODO(), req.Store.Name)
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to match store name to dynamodb table",
+			err,
+		)
+	}
+
+	projection := expression.NamesList(expression.Name(AttribPk))
+	filter := expression.Name(AttribPk).BeginsWith(req.Prefix)
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
+	if err != nil {
+		return newErr(
+			codes.Internal,
+			"unable to build key scan expression",
+			err,
+		)
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 tableName,
+		ProjectionExpression:      expr.Projection(),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	// Get all keys from the table
+	paginator := dynamodb.NewScanPaginator(s.client, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(context.Background())
+		if err != nil {
+			if isDynamoAccessDeniedErr(err) {
+				return newErr(
+					codes.PermissionDenied,
+					"unable to retrieve keys, this may be due to a missing permissions request in your code.",
+					err,
+				)
+			}
+
+			return newErr(
+				codes.Internal,
+				"unable to retrieve keys from dynamodb table",
+				err,
+			)
+		}
+
+		for _, item := range page.Items {
+			var itemMap map[string]interface{}
+			err = attributevalue.UnmarshalMap(item, &itemMap)
+			if err != nil {
+				return newErr(
+					codes.Internal,
+					"error unmarshalling key attributes",
+					err,
+				)
+			}
+
+			if err := stream.Send(&kvstorepb.KvStoreScanKeysResponse{
+				Key: itemMap[AttribPk].(string),
+			}); err != nil {
+				return newErr(
+					codes.Internal,
+					"failed to send response",
+					err,
+				)
+			}
+		}
+	}
+
+	return nil
 }
 
 // New creates a new AWS DynamoDB implementation of a DocumentServiceServer
@@ -299,7 +387,7 @@ func NewWithClient(provider resource.AwsResourceProvider, client *dynamodb.Clien
 	}, nil
 }
 
-func createKeyMap(ref *keyvaluepb.ValueRef) map[string]string {
+func createKeyMap(ref *kvstorepb.ValueRef) map[string]string {
 	keyMap := make(map[string]string)
 
 	keyMap[AttribPk] = ref.Key
@@ -308,7 +396,7 @@ func createKeyMap(ref *keyvaluepb.ValueRef) map[string]string {
 	return keyMap
 }
 
-func createItemMap(source map[string]interface{}, ref *keyvaluepb.ValueRef) map[string]interface{} {
+func createItemMap(source map[string]interface{}, ref *kvstorepb.ValueRef) map[string]interface{} {
 	// Copy map
 	newMap := make(map[string]interface{})
 	for key, value := range source {

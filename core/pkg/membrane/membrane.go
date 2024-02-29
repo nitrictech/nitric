@@ -30,6 +30,7 @@ import (
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
 	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
@@ -62,7 +63,7 @@ type MembraneOptions struct {
 	MinWorkers *int
 
 	// Resource access plugins
-	KeyValuePlugin      keyvaluepb.KeyValueServer
+	KeyValuePlugin      kvstorepb.KvStoreServer
 	TopicsPlugin        topicspb.TopicsServer
 	StoragePlugin       storagepb.StorageServer
 	SecretManagerPlugin secretspb.SecretManagerServer
@@ -193,8 +194,11 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 
 	// Load & Register the service plugins
 	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.options.SecretManagerPlugin)
+	keyvalueServerWithCompat := decorators.KeyValueServerWithCompat(s.options.KeyValuePlugin)
 
-	keyvaluepb.RegisterKeyValueServer(s.grpcServer, s.options.KeyValuePlugin)
+	kvstorepb.RegisterKvStoreServer(s.grpcServer, keyvalueServerWithCompat)
+	// TODO: Deprecated, remove in future release
+	keyvaluepb.RegisterKeyValueServer(s.grpcServer, keyvalueServerWithCompat)
 	topicspb.RegisterTopicsServer(s.grpcServer, s.options.TopicsPlugin)
 	storagepb.RegisterStorageServer(s.grpcServer, s.options.StoragePlugin)
 	secretspb.RegisterSecretManagerServer(s.grpcServer, secretsServerWithValidation)

@@ -62,11 +62,16 @@ message ResourceDeclareRequest {
   }
 }
 
-message BucketResource {}
-message TopicResource {}
-message QueueResource {}
-message KeyValueStoreResource {}
-message SecretResource {}
+message BucketResource {
+}
+message TopicResource {
+}
+message QueueResource {
+}
+message KeyValueStoreResource {
+}
+message SecretResource {
+}
 
 message ApiOpenIdConnectionDefinition {
   string issuer = 1;
@@ -118,4 +123,5 @@ enum Action {
   QueueDequeue = 601;
 }
 
-message ResourceDeclareResponse {}
+message ResourceDeclareResponse {
+}

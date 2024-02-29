@@ -16,12 +16,15 @@ package keyvalue
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
-	v1 "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
+	v1 "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -35,10 +38,10 @@ type FirestoreDocService struct {
 	client *firestore.Client
 }
 
-var _ v1.KeyValueServer = &FirestoreDocService{}
+var _ v1.KvStoreServer = &FirestoreDocService{}
 
-func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetRequest) (*v1.KeyValueGetResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Get")
+func (s *FirestoreDocService) GetValue(ctx context.Context, req *v1.KvStoreGetValueRequest) (*v1.KvStoreGetValueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.GetKey")
 
 	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
@@ -83,7 +86,7 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 		)
 	}
 
-	return &v1.KeyValueGetResponse{
+	return &v1.KvStoreGetValueResponse{
 		Value: &v1.Value{
 			Ref:     req.Ref,
 			Content: documentContent,
@@ -91,8 +94,8 @@ func (s *FirestoreDocService) Get(ctx context.Context, req *v1.KeyValueGetReques
 	}, nil
 }
 
-func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetRequest) (*v1.KeyValueSetResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Set")
+func (s *FirestoreDocService) SetValue(ctx context.Context, req *v1.KvStoreSetValueRequest) (*v1.KvStoreSetValueResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.SetKey")
 
 	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
@@ -128,11 +131,11 @@ func (s *FirestoreDocService) Set(ctx context.Context, req *v1.KeyValueSetReques
 		)
 	}
 
-	return &v1.KeyValueSetResponse{}, nil
+	return &v1.KvStoreSetValueResponse{}, nil
 }
 
-func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDeleteRequest) (*v1.KeyValueDeleteResponse, error) {
-	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Delete")
+func (s *FirestoreDocService) DeleteKey(ctx context.Context, req *v1.KvStoreDeleteKeyRequest) (*v1.KvStoreDeleteKeyResponse, error) {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.DeleteKey")
 
 	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
 		return nil, newErr(
@@ -161,10 +164,59 @@ func (s *FirestoreDocService) Delete(ctx context.Context, req *v1.KeyValueDelete
 		)
 	}
 
-	return &v1.KeyValueDeleteResponse{}, nil
+	return &v1.KvStoreDeleteKeyResponse{}, nil
 }
 
-func New() (v1.KeyValueServer, error) {
+func (s *FirestoreDocService) ScanKeys(req *v1.KvStoreScanKeysRequest, stream v1.KvStore_ScanKeysServer) error {
+	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Keys")
+	storeName := req.GetStore().GetName()
+
+	if storeName == "" {
+		return newErr(
+			codes.InvalidArgument,
+			"store name is required",
+			nil,
+		)
+	}
+
+	iter := s.getCollectionRef(storeName).DocumentRefs(stream.Context())
+
+	for {
+		doc, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return newErr(
+				codes.Internal,
+				"error iterating over firestore collection",
+				err,
+			)
+		}
+
+		// Range queries don't appear to be supported when querying based on document ID.
+		// e.g. Where(firestore.DocumentID, "<=", req.Prefix)
+		// since prefix is a string not a DocumentRef.
+		// Instead we filter the results as they're returned
+		if !strings.HasPrefix(doc.ID, req.Prefix) {
+			continue
+		}
+
+		if err := stream.Send(&v1.KvStoreScanKeysResponse{
+			Key: doc.ID,
+		}); err != nil {
+			return newErr(
+				codes.Internal,
+				"failed to send response",
+				err,
+			)
+		}
+	}
+
+	return nil
+}
+
+func New() (v1.KvStoreServer, error) {
 	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -182,12 +234,16 @@ func New() (v1.KeyValueServer, error) {
 	}, nil
 }
 
-func NewWithClient(client *firestore.Client) (v1.KeyValueServer, error) {
+func NewWithClient(client *firestore.Client) (v1.KvStoreServer, error) {
 	return &FirestoreDocService{
 		client: client,
 	}, nil
 }
 
 func (s *FirestoreDocService) getDocRef(ref *v1.ValueRef) *firestore.DocumentRef {
-	return s.client.Collection(ref.Store).Doc(ref.Key)
+	return s.getCollectionRef(ref.Store).Doc(ref.Key)
+}
+
+func (s *FirestoreDocService) getCollectionRef(store string) *firestore.CollectionRef {
+	return s.client.Collection(store)
 }
