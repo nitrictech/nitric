@@ -197,6 +197,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	keyvalueServerWithCompat := decorators.KeyValueServerWithCompat(s.options.KeyValuePlugin)
 
 	kvstorepb.RegisterKvStoreServer(s.grpcServer, keyvalueServerWithCompat)
+	// TODO: Deprecated, remove in future release
 	keyvaluepb.RegisterKeyValueServer(s.grpcServer, keyvalueServerWithCompat)
 	topicspb.RegisterTopicsServer(s.grpcServer, s.options.TopicsPlugin)
 	storagepb.RegisterStorageServer(s.grpcServer, s.options.StoragePlugin)
