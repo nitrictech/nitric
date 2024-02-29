@@ -23,13 +23,13 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KvStoreClient interface {
 	// Get an existing value
-	GetKey(ctx context.Context, in *KvStoreGetKeyRequest, opts ...grpc.CallOption) (*KvStoreGetKeyResponse, error)
+	GetValue(ctx context.Context, in *KvStoreGetValueRequest, opts ...grpc.CallOption) (*KvStoreGetValueResponse, error)
 	// Create a new or overwrite an existing value
-	SetKey(ctx context.Context, in *KvStoreSetKeyRequest, opts ...grpc.CallOption) (*KvStoreSetKeyResponse, error)
+	SetValue(ctx context.Context, in *KvStoreSetValueRequest, opts ...grpc.CallOption) (*KvStoreSetValueResponse, error)
 	// Delete a key and its value
 	DeleteKey(ctx context.Context, in *KvStoreDeleteKeyRequest, opts ...grpc.CallOption) (*KvStoreDeleteKeyResponse, error)
 	// Iterate over all keys in a store
-	GetKeys(ctx context.Context, in *KvStoreGetKeysRequest, opts ...grpc.CallOption) (KvStore_GetKeysClient, error)
+	ScanKeys(ctx context.Context, in *KvStoreScanKeysRequest, opts ...grpc.CallOption) (KvStore_ScanKeysClient, error)
 }
 
 type kvStoreClient struct {
@@ -40,18 +40,18 @@ func NewKvStoreClient(cc grpc.ClientConnInterface) KvStoreClient {
 	return &kvStoreClient{cc}
 }
 
-func (c *kvStoreClient) GetKey(ctx context.Context, in *KvStoreGetKeyRequest, opts ...grpc.CallOption) (*KvStoreGetKeyResponse, error) {
-	out := new(KvStoreGetKeyResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.kvstore.v1.KvStore/GetKey", in, out, opts...)
+func (c *kvStoreClient) GetValue(ctx context.Context, in *KvStoreGetValueRequest, opts ...grpc.CallOption) (*KvStoreGetValueResponse, error) {
+	out := new(KvStoreGetValueResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.kvstore.v1.KvStore/GetValue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *kvStoreClient) SetKey(ctx context.Context, in *KvStoreSetKeyRequest, opts ...grpc.CallOption) (*KvStoreSetKeyResponse, error) {
-	out := new(KvStoreSetKeyResponse)
-	err := c.cc.Invoke(ctx, "/nitric.proto.kvstore.v1.KvStore/SetKey", in, out, opts...)
+func (c *kvStoreClient) SetValue(ctx context.Context, in *KvStoreSetValueRequest, opts ...grpc.CallOption) (*KvStoreSetValueResponse, error) {
+	out := new(KvStoreSetValueResponse)
+	err := c.cc.Invoke(ctx, "/nitric.proto.kvstore.v1.KvStore/SetValue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,12 @@ func (c *kvStoreClient) DeleteKey(ctx context.Context, in *KvStoreDeleteKeyReque
 	return out, nil
 }
 
-func (c *kvStoreClient) GetKeys(ctx context.Context, in *KvStoreGetKeysRequest, opts ...grpc.CallOption) (KvStore_GetKeysClient, error) {
-	stream, err := c.cc.NewStream(ctx, &KvStore_ServiceDesc.Streams[0], "/nitric.proto.kvstore.v1.KvStore/GetKeys", opts...)
+func (c *kvStoreClient) ScanKeys(ctx context.Context, in *KvStoreScanKeysRequest, opts ...grpc.CallOption) (KvStore_ScanKeysClient, error) {
+	stream, err := c.cc.NewStream(ctx, &KvStore_ServiceDesc.Streams[0], "/nitric.proto.kvstore.v1.KvStore/ScanKeys", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &kvStoreGetKeysClient{stream}
+	x := &kvStoreScanKeysClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -82,17 +82,17 @@ func (c *kvStoreClient) GetKeys(ctx context.Context, in *KvStoreGetKeysRequest, 
 	return x, nil
 }
 
-type KvStore_GetKeysClient interface {
-	Recv() (*KvStoreGetKeysResponse, error)
+type KvStore_ScanKeysClient interface {
+	Recv() (*KvStoreScanKeysResponse, error)
 	grpc.ClientStream
 }
 
-type kvStoreGetKeysClient struct {
+type kvStoreScanKeysClient struct {
 	grpc.ClientStream
 }
 
-func (x *kvStoreGetKeysClient) Recv() (*KvStoreGetKeysResponse, error) {
-	m := new(KvStoreGetKeysResponse)
+func (x *kvStoreScanKeysClient) Recv() (*KvStoreScanKeysResponse, error) {
+	m := new(KvStoreScanKeysResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -104,30 +104,30 @@ func (x *kvStoreGetKeysClient) Recv() (*KvStoreGetKeysResponse, error) {
 // for forward compatibility
 type KvStoreServer interface {
 	// Get an existing value
-	GetKey(context.Context, *KvStoreGetKeyRequest) (*KvStoreGetKeyResponse, error)
+	GetValue(context.Context, *KvStoreGetValueRequest) (*KvStoreGetValueResponse, error)
 	// Create a new or overwrite an existing value
-	SetKey(context.Context, *KvStoreSetKeyRequest) (*KvStoreSetKeyResponse, error)
+	SetValue(context.Context, *KvStoreSetValueRequest) (*KvStoreSetValueResponse, error)
 	// Delete a key and its value
 	DeleteKey(context.Context, *KvStoreDeleteKeyRequest) (*KvStoreDeleteKeyResponse, error)
 	// Iterate over all keys in a store
-	GetKeys(*KvStoreGetKeysRequest, KvStore_GetKeysServer) error
+	ScanKeys(*KvStoreScanKeysRequest, KvStore_ScanKeysServer) error
 }
 
 // UnimplementedKvStoreServer should be embedded to have forward compatible implementations.
 type UnimplementedKvStoreServer struct {
 }
 
-func (UnimplementedKvStoreServer) GetKey(context.Context, *KvStoreGetKeyRequest) (*KvStoreGetKeyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetKey not implemented")
+func (UnimplementedKvStoreServer) GetValue(context.Context, *KvStoreGetValueRequest) (*KvStoreGetValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetValue not implemented")
 }
-func (UnimplementedKvStoreServer) SetKey(context.Context, *KvStoreSetKeyRequest) (*KvStoreSetKeyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetKey not implemented")
+func (UnimplementedKvStoreServer) SetValue(context.Context, *KvStoreSetValueRequest) (*KvStoreSetValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetValue not implemented")
 }
 func (UnimplementedKvStoreServer) DeleteKey(context.Context, *KvStoreDeleteKeyRequest) (*KvStoreDeleteKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteKey not implemented")
 }
-func (UnimplementedKvStoreServer) GetKeys(*KvStoreGetKeysRequest, KvStore_GetKeysServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetKeys not implemented")
+func (UnimplementedKvStoreServer) ScanKeys(*KvStoreScanKeysRequest, KvStore_ScanKeysServer) error {
+	return status.Errorf(codes.Unimplemented, "method ScanKeys not implemented")
 }
 
 // UnsafeKvStoreServer may be embedded to opt out of forward compatibility for this service.
@@ -141,38 +141,38 @@ func RegisterKvStoreServer(s grpc.ServiceRegistrar, srv KvStoreServer) {
 	s.RegisterService(&KvStore_ServiceDesc, srv)
 }
 
-func _KvStore_GetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KvStoreGetKeyRequest)
+func _KvStore_GetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KvStoreGetValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KvStoreServer).GetKey(ctx, in)
+		return srv.(KvStoreServer).GetValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.kvstore.v1.KvStore/GetKey",
+		FullMethod: "/nitric.proto.kvstore.v1.KvStore/GetValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).GetKey(ctx, req.(*KvStoreGetKeyRequest))
+		return srv.(KvStoreServer).GetValue(ctx, req.(*KvStoreGetValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KvStore_SetKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KvStoreSetKeyRequest)
+func _KvStore_SetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KvStoreSetValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KvStoreServer).SetKey(ctx, in)
+		return srv.(KvStoreServer).SetValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/nitric.proto.kvstore.v1.KvStore/SetKey",
+		FullMethod: "/nitric.proto.kvstore.v1.KvStore/SetValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).SetKey(ctx, req.(*KvStoreSetKeyRequest))
+		return srv.(KvStoreServer).SetValue(ctx, req.(*KvStoreSetValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -195,24 +195,24 @@ func _KvStore_DeleteKey_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KvStore_GetKeys_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(KvStoreGetKeysRequest)
+func _KvStore_ScanKeys_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(KvStoreScanKeysRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(KvStoreServer).GetKeys(m, &kvStoreGetKeysServer{stream})
+	return srv.(KvStoreServer).ScanKeys(m, &kvStoreScanKeysServer{stream})
 }
 
-type KvStore_GetKeysServer interface {
-	Send(*KvStoreGetKeysResponse) error
+type KvStore_ScanKeysServer interface {
+	Send(*KvStoreScanKeysResponse) error
 	grpc.ServerStream
 }
 
-type kvStoreGetKeysServer struct {
+type kvStoreScanKeysServer struct {
 	grpc.ServerStream
 }
 
-func (x *kvStoreGetKeysServer) Send(m *KvStoreGetKeysResponse) error {
+func (x *kvStoreScanKeysServer) Send(m *KvStoreScanKeysResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -224,12 +224,12 @@ var KvStore_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*KvStoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetKey",
-			Handler:    _KvStore_GetKey_Handler,
+			MethodName: "GetValue",
+			Handler:    _KvStore_GetValue_Handler,
 		},
 		{
-			MethodName: "SetKey",
-			Handler:    _KvStore_SetKey_Handler,
+			MethodName: "SetValue",
+			Handler:    _KvStore_SetValue_Handler,
 		},
 		{
 			MethodName: "DeleteKey",
@@ -238,8 +238,8 @@ var KvStore_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetKeys",
-			Handler:       _KvStore_GetKeys_Handler,
+			StreamName:    "ScanKeys",
+			Handler:       _KvStore_ScanKeys_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -64,7 +64,7 @@ func isDynamoAccessDeniedErr(err error) bool {
 }
 
 // Get a document from the DynamoDB table
-func (s *DynamoKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvStoreGetKeyRequest) (*kvstorepb.KvStoreGetKeyResponse, error) {
+func (s *DynamoKeyValueService) GetValue(ctx context.Context, req *kvstorepb.KvStoreGetValueRequest) (*kvstorepb.KvStoreGetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Get")
 
 	err := document.ValidateValueRef(req.Ref)
@@ -143,7 +143,7 @@ func (s *DynamoKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvSto
 		)
 	}
 
-	return &kvstorepb.KvStoreGetKeyResponse{
+	return &kvstorepb.KvStoreGetValueResponse{
 		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: documentContent,
@@ -152,7 +152,7 @@ func (s *DynamoKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvSto
 }
 
 // Set a document in the DynamoDB table
-func (s *DynamoKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvStoreSetKeyRequest) (*kvstorepb.KvStoreSetKeyResponse, error) {
+func (s *DynamoKeyValueService) SetValue(ctx context.Context, req *kvstorepb.KvStoreSetValueRequest) (*kvstorepb.KvStoreSetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Set")
 
 	if err := document.ValidateValueRef(req.Ref); err != nil {
@@ -213,7 +213,7 @@ func (s *DynamoKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvSto
 		)
 	}
 
-	return &kvstorepb.KvStoreSetKeyResponse{}, nil
+	return &kvstorepb.KvStoreSetValueResponse{}, nil
 }
 
 // Delete a document from the DynamoDB table
@@ -272,7 +272,7 @@ func (s *DynamoKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.Kv
 	return &kvstorepb.KvStoreDeleteKeyResponse{}, nil
 }
 
-func (s *DynamoKeyValueService) GetKeys(req *kvstorepb.KvStoreGetKeysRequest, stream kvstorepb.KvStore_GetKeysServer) error {
+func (s *DynamoKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKeysRequest, stream kvstorepb.KvStore_ScanKeysServer) error {
 	newErr := grpc_errors.ErrorsWithScope("DynamoDocService.Keys")
 
 	if req.Store.GetName() == "" {
@@ -342,7 +342,7 @@ func (s *DynamoKeyValueService) GetKeys(req *kvstorepb.KvStoreGetKeysRequest, st
 				)
 			}
 
-			if err := stream.Send(&kvstorepb.KvStoreGetKeysResponse{
+			if err := stream.Send(&kvstorepb.KvStoreScanKeysResponse{
 				Key: itemMap[AttribPk].(string),
 			}); err != nil {
 				return newErr(

@@ -40,7 +40,7 @@ type FirestoreDocService struct {
 
 var _ v1.KvStoreServer = &FirestoreDocService{}
 
-func (s *FirestoreDocService) GetKey(ctx context.Context, req *v1.KvStoreGetKeyRequest) (*v1.KvStoreGetKeyResponse, error) {
+func (s *FirestoreDocService) GetValue(ctx context.Context, req *v1.KvStoreGetValueRequest) (*v1.KvStoreGetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.GetKey")
 
 	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
@@ -86,7 +86,7 @@ func (s *FirestoreDocService) GetKey(ctx context.Context, req *v1.KvStoreGetKeyR
 		)
 	}
 
-	return &v1.KvStoreGetKeyResponse{
+	return &v1.KvStoreGetValueResponse{
 		Value: &v1.Value{
 			Ref:     req.Ref,
 			Content: documentContent,
@@ -94,7 +94,7 @@ func (s *FirestoreDocService) GetKey(ctx context.Context, req *v1.KvStoreGetKeyR
 	}, nil
 }
 
-func (s *FirestoreDocService) SetKey(ctx context.Context, req *v1.KvStoreSetKeyRequest) (*v1.KvStoreSetKeyResponse, error) {
+func (s *FirestoreDocService) SetValue(ctx context.Context, req *v1.KvStoreSetValueRequest) (*v1.KvStoreSetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.SetKey")
 
 	if err := keyvalue.ValidateValueRef(req.Ref); err != nil {
@@ -131,7 +131,7 @@ func (s *FirestoreDocService) SetKey(ctx context.Context, req *v1.KvStoreSetKeyR
 		)
 	}
 
-	return &v1.KvStoreSetKeyResponse{}, nil
+	return &v1.KvStoreSetValueResponse{}, nil
 }
 
 func (s *FirestoreDocService) DeleteKey(ctx context.Context, req *v1.KvStoreDeleteKeyRequest) (*v1.KvStoreDeleteKeyResponse, error) {
@@ -167,7 +167,7 @@ func (s *FirestoreDocService) DeleteKey(ctx context.Context, req *v1.KvStoreDele
 	return &v1.KvStoreDeleteKeyResponse{}, nil
 }
 
-func (s *FirestoreDocService) GetKeys(req *v1.KvStoreGetKeysRequest, stream v1.KvStore_GetKeysServer) error {
+func (s *FirestoreDocService) ScanKeys(req *v1.KvStoreScanKeysRequest, stream v1.KvStore_ScanKeysServer) error {
 	newErr := grpc_errors.ErrorsWithScope("FirestoreDocService.Keys")
 	storeName := req.GetStore().GetName()
 
@@ -202,7 +202,7 @@ func (s *FirestoreDocService) GetKeys(req *v1.KvStoreGetKeysRequest, stream v1.K
 			continue
 		}
 
-		if err := stream.Send(&v1.KvStoreGetKeysResponse{
+		if err := stream.Send(&v1.KvStoreScanKeysResponse{
 			Key: doc.ID,
 		}); err != nil {
 			return newErr(

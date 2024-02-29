@@ -49,7 +49,7 @@ type AztableEntity struct {
 }
 
 // Get a value from the Azure Storage table
-func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvstorepb.KvStoreGetKeyRequest) (*kvstorepb.KvStoreGetKeyResponse, error) {
+func (s *AzureStorageTableKeyValueService) GetValue(ctx context.Context, req *kvstorepb.KvStoreGetValueRequest) (*kvstorepb.KvStoreGetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.GetKey")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvst
 		)
 	}
 
-	return &kvstorepb.KvStoreGetKeyResponse{
+	return &kvstorepb.KvStoreGetValueResponse{
 		Value: &kvstorepb.Value{
 			Ref:     req.Ref,
 			Content: &structContent,
@@ -127,7 +127,7 @@ func (s *AzureStorageTableKeyValueService) GetKey(ctx context.Context, req *kvst
 }
 
 // Set a value in the Azure Storage table
-func (s *AzureStorageTableKeyValueService) SetKey(ctx context.Context, req *kvstorepb.KvStoreSetKeyRequest) (*kvstorepb.KvStoreSetKeyResponse, error) {
+func (s *AzureStorageTableKeyValueService) SetValue(ctx context.Context, req *kvstorepb.KvStoreSetValueRequest) (*kvstorepb.KvStoreSetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.SetKeys")
 	client, err := s.clientFactory(req.Ref.Store)
 	if err != nil {
@@ -197,7 +197,7 @@ func (s *AzureStorageTableKeyValueService) SetKey(ctx context.Context, req *kvst
 		)
 	}
 
-	return &kvstorepb.KvStoreSetKeyResponse{}, nil
+	return &kvstorepb.KvStoreSetValueResponse{}, nil
 }
 
 // Delete a key/value pair from the Azure Storage table
@@ -249,7 +249,7 @@ func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *k
 }
 
 // Return all keys in the Azure Storage table for a key/value store
-func (s *AzureStorageTableKeyValueService) GetKeys(req *kvstorepb.KvStoreGetKeysRequest, stream kvstorepb.KvStore_GetKeysServer) error {
+func (s *AzureStorageTableKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKeysRequest, stream kvstorepb.KvStore_ScanKeysServer) error {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.Keys")
 	storeName := req.GetStore().GetName()
 
@@ -312,7 +312,7 @@ func (s *AzureStorageTableKeyValueService) GetKeys(req *kvstorepb.KvStoreGetKeys
 				)
 			}
 
-			if err := stream.Send(&kvstorepb.KvStoreGetKeysResponse{
+			if err := stream.Send(&kvstorepb.KvStoreScanKeysResponse{
 				Key: entity.RowKey,
 			}); err != nil {
 				return newErr(

@@ -33,7 +33,7 @@ var _ keyvaluepb.KeyValueServer = (*KvStoreCompat)(nil)
 func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequest) (*keyvaluepb.KeyValueGetResponse, error) {
 	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
-	resp, err := k.GetKey(ctx, &kvstorepb.KvStoreGetKeyRequest{
+	resp, err := k.GetValue(ctx, &kvstorepb.KvStoreGetValueRequest{
 		Ref: &kvstorepb.ValueRef{
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,
@@ -58,7 +58,7 @@ func (k *KvStoreCompat) Get(ctx context.Context, req *keyvaluepb.KeyValueGetRequ
 func (k *KvStoreCompat) Set(ctx context.Context, req *keyvaluepb.KeyValueSetRequest) (*keyvaluepb.KeyValueSetResponse, error) {
 	logger.Warnf("Your language SDK is using a version of the KeyValue service that is out of date, update your nitric language SDK")
 
-	_, err := k.SetKey(ctx, &kvstorepb.KvStoreSetKeyRequest{
+	_, err := k.SetValue(ctx, &kvstorepb.KvStoreSetValueRequest{
 		Ref: &kvstorepb.ValueRef{
 			Key:   req.Ref.Key,
 			Store: req.Ref.Store,
