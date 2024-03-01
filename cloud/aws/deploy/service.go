@@ -75,7 +75,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	// Create the ECR repository to push the image to
-	repo, err := createEcrRepository(ctx, parent, a.stackId, name)
+	repo, err := createEcrRepository(ctx, parent, a.StackId, name)
 	if err != nil {
 		return err
 	}
@@ -92,12 +92,12 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		config.Type = "default"
 	}
 
-	typeConfig, hasConfig := a.config.Config[config.Type]
+	typeConfig, hasConfig := a.AwsConfig.Config[config.Type]
 	if !hasConfig {
-		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.config)
+		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.AwsConfig)
 	}
 
-	image, err := createImage(ctx, parent, name, a.ecrAuthToken, repo, typeConfig, config, runtime)
+	image, err := createImage(ctx, parent, name, a.EcrAuthToken, repo, typeConfig, config, runtime)
 	if err != nil {
 		return err
 	}
@@ -121,9 +121,9 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return err
 	}
 
-	a.lambdaRoles[name], err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
+	a.LambdaRoles[name], err = iam.NewRole(ctx, name+"LambdaRole", &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(tmpJSON),
-		Tags:             pulumi.ToStringMap(tags.Tags(a.stackId, name+"LambdaRole", resources.Service)),
+		Tags:             pulumi.ToStringMap(tags.Tags(a.StackId, name+"LambdaRole", resources.Service)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	_, err = iam.NewRolePolicyAttachment(ctx, name+"LambdaBasicExecution", &iam.RolePolicyAttachmentArgs{
 		PolicyArn: iam.ManagedPolicyAWSLambdaBasicExecutionRole,
-		Role:      a.lambdaRoles[name].ID(),
+		Role:      a.LambdaRoles[name].ID(),
 	}, opts...)
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	_, err = iam.NewRolePolicy(ctx, name+"ListAccess", &iam.RolePolicyArgs{
-		Role:   a.lambdaRoles[name].ID(),
+		Role:   a.LambdaRoles[name].ID(),
 		Policy: pulumi.String(tmpJSON),
 	}, opts...)
 	if err != nil {
@@ -197,7 +197,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	envVars := pulumi.StringMap{
 		"NITRIC_ENVIRONMENT":     pulumi.String("cloud"),
-		"NITRIC_STACK_ID":        pulumi.String(a.stackId),
+		"NITRIC_STACK_ID":        pulumi.String(a.StackId),
 		"MIN_WORKERS":            pulumi.String(fmt.Sprint(config.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
@@ -215,14 +215,14 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		// Create a policy attachment for VPC access
 		_, err = iam.NewRolePolicyAttachment(ctx, name+"VPCAccessExecutionRole", &iam.RolePolicyAttachmentArgs{
 			PolicyArn: iam.ManagedPolicyAWSLambdaVPCAccessExecutionRole,
-			Role:      a.lambdaRoles[name].ID(),
+			Role:      a.LambdaRoles[name].ID(),
 		}, opts...)
 		if err != nil {
 			return err
 		}
 	}
 
-	a.lambdas[name], err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
+	a.Lambdas[name], err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		// Use repository to generate the URI, instead of the image, using the image results in errors when the same project is torn down and redeployed.
 		// This appears to be because the local image ends up with multiple repositories and the wrong one is selected.
 		// XXX: Reverted change for the above comment as lambda image deployments were not rolling forward (under tag latest)
@@ -231,8 +231,8 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		MemorySize:  pulumi.IntPtr(typeConfig.Lambda.Memory),
 		Timeout:     pulumi.IntPtr(typeConfig.Lambda.Timeout),
 		PackageType: pulumi.String("Image"),
-		Role:        a.lambdaRoles[name].Arn,
-		Tags:        pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.Service)),
+		Role:        a.LambdaRoles[name].Arn,
+		Tags:        pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Service)),
 		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 		// since we only rely on the repository to determine the ImageUri, the image must be added as a dependency to avoid a race.
@@ -243,9 +243,9 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	if typeConfig.Lambda.ProvisionedConcurreny > 0 {
 		_, err := awslambda.NewProvisionedConcurrencyConfig(ctx, name, &awslambda.ProvisionedConcurrencyConfigArgs{
-			FunctionName:                    a.lambdas[name].Arn,
+			FunctionName:                    a.Lambdas[name].Arn,
 			ProvisionedConcurrentExecutions: pulumi.Int(typeConfig.Lambda.ProvisionedConcurreny),
-			Qualifier:                       a.lambdas[name].Name,
+			Qualifier:                       a.Lambdas[name].Name,
 		})
 		if err != nil {
 			return err
@@ -253,7 +253,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	// ensure that the lambda was deployed successfully
-	_ = a.lambdas[name].Arn.ApplyT(func(arn string) (bool, error) {
+	_ = a.Lambdas[name].Arn.ApplyT(func(arn string) (bool, error) {
 		payload, _ := json.Marshal(map[string]interface{}{
 			"x-nitric-healthcheck": true,
 		})

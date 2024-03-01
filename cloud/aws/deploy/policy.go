@@ -107,27 +107,27 @@ func actionsToAwsActions(actions []resourcespb.Action) []string {
 func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resource) ([]interface{}, error) {
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Bucket:
-		if b, ok := a.buckets[resource.Id.Name]; ok {
+		if b, ok := a.Buckets[resource.Id.Name]; ok {
 			return []interface{}{b.Arn, pulumi.Sprintf("%s/*", b.Arn)}, nil
 		}
 	case resourcespb.ResourceType_Topic:
-		if t, ok := a.topics[resource.Id.Name]; ok {
+		if t, ok := a.Topics[resource.Id.Name]; ok {
 			return []interface{}{t.sns.Arn, t.sfn.Arn}, nil
 		}
 	case resourcespb.ResourceType_Queue:
-		if q, ok := a.queues[resource.Id.Name]; ok {
+		if q, ok := a.Queues[resource.Id.Name]; ok {
 			return []interface{}{q.Arn}, nil
 		}
 	case resourcespb.ResourceType_KeyValueStore:
-		if c, ok := a.keyValueStores[resource.Id.Name]; ok {
+		if c, ok := a.KeyValueStores[resource.Id.Name]; ok {
 			return []interface{}{c.Arn}, nil
 		}
 	case resourcespb.ResourceType_Secret:
-		if s, ok := a.secrets[resource.Id.Name]; ok {
+		if s, ok := a.Secrets[resource.Id.Name]; ok {
 			return []interface{}{s.Arn}, nil
 		}
 	case resourcespb.ResourceType_Websocket:
-		if w, ok := a.websockets[resource.Id.Name]; ok {
+		if w, ok := a.Websockets[resource.Id.Name]; ok {
 			return []interface{}{pulumi.Sprintf("%s/*", w.ExecutionArn)}, nil
 		}
 	default:
@@ -141,7 +141,7 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resource) (*iam.Role, error) {
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Service:
-		if f, ok := a.lambdaRoles[resource.Id.Name]; ok {
+		if f, ok := a.LambdaRoles[resource.Id.Name]; ok {
 			return f, nil
 		}
 	default:

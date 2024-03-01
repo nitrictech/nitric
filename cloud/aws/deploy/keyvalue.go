@@ -41,7 +41,7 @@ func (n *NitricAwsPulumiProvider) KeyValueStore(ctx *pulumi.Context, parent pulu
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	n.keyValueStores[name], err = dynamodb.NewTable(ctx, name, &dynamodb.TableArgs{
+	n.KeyValueStores[name], err = dynamodb.NewTable(ctx, name, &dynamodb.TableArgs{
 		Attributes: dynamodb.TableAttributeArray{
 			&dynamodb.TableAttributeArgs{
 				Name: pulumi.String("_pk"),
@@ -55,7 +55,7 @@ func (n *NitricAwsPulumiProvider) KeyValueStore(ctx *pulumi.Context, parent pulu
 		HashKey:     pulumi.String("_pk"),
 		RangeKey:    pulumi.String("_sk"),
 		BillingMode: pulumi.String("PAY_PER_REQUEST"),
-		Tags:        pulumi.ToStringMap(tags.Tags(n.stackId, name, resources.Collection)),
+		Tags:        pulumi.ToStringMap(tags.Tags(n.StackId, name, resources.Collection)),
 	}, opts...)
 
 	return err

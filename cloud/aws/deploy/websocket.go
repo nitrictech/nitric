@@ -29,15 +29,15 @@ import (
 )
 
 func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error {
-	defaultTarget := a.lambdas[config.MessageTarget.GetService()]
-	connectTarget := a.lambdas[config.ConnectTarget.GetService()]
-	disconnectTarget := a.lambdas[config.DisconnectTarget.GetService()]
+	defaultTarget := a.Lambdas[config.MessageTarget.GetService()]
+	connectTarget := a.Lambdas[config.ConnectTarget.GetService()]
+	disconnectTarget := a.Lambdas[config.DisconnectTarget.GetService()]
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	websocketApi, err := apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		ProtocolType: pulumi.String("WEBSOCKET"),
-		Tags:         pulumi.ToStringMap(tags.Tags(a.stackId, name, resources.Websocket)),
+		Tags:         pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Websocket)),
 		// This isn't used (see AWS docs), but it is required. Instead we use the $default route
 		RouteSelectionExpression: pulumi.String("$request.body.action"),
 	}, opts...)
@@ -45,7 +45,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		return err
 	}
 
-	a.websockets[name] = websocketApi
+	a.Websockets[name] = websocketApi
 
 	// Create the API integrations
 	integrationDefault, err := apigatewayv2.NewIntegration(ctx, fmt.Sprintf("%s-default-integration", name), &apigatewayv2.IntegrationArgs{
@@ -148,7 +148,7 @@ func (a *NitricAwsPulumiProvider) Websocket(ctx *pulumi.Context, parent pulumi.R
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String(common.DefaultWsStageName),
 		ApiId:      websocketApi.ID(),
-		Tags:       pulumi.ToStringMap(tags.Tags(a.stackId, name+"DefaultStage", resources.Websocket)),
+		Tags:       pulumi.ToStringMap(tags.Tags(a.StackId, name+"DefaultStage", resources.Websocket)),
 	}, opts...)
 	if err != nil {
 		return err
