@@ -50,10 +50,10 @@ import (
 
 type NitricAwsPulumiProvider struct {
 	StackId     string
-	projectName string
-	stackName   string
+	ProjectName string
+	StackName   string
 
-	fullStackName string
+	FullStackName string
 
 	AwsConfig *AwsConfig
 	Region    string
@@ -107,15 +107,15 @@ func (a *NitricAwsPulumiProvider) Init(attributes map[string]interface{}) error 
 	var isString bool
 
 	iProject, hasProject := attributes["project"]
-	a.projectName, isString = iProject.(string)
-	if !hasProject || !isString || a.projectName == "" {
+	a.ProjectName, isString = iProject.(string)
+	if !hasProject || !isString || a.ProjectName == "" {
 		// need a valid project name
 		return fmt.Errorf("project is not set or invalid")
 	}
 
 	iStack, hasStack := attributes["stack"]
-	a.stackName, isString = iStack.(string)
-	if !hasStack || !isString || a.stackName == "" {
+	a.StackName, isString = iStack.(string)
+	if !hasStack || !isString || a.StackName == "" {
 		// need a valid stack name
 		return fmt.Errorf("stack is not set or invalid")
 	}
@@ -123,7 +123,7 @@ func (a *NitricAwsPulumiProvider) Init(attributes map[string]interface{}) error 
 	// Backwards compatible stack name
 	// The existing providers in the CLI
 	// Use the combined project and stack name
-	a.fullStackName = fmt.Sprintf("%s-%s", a.projectName, a.stackName)
+	a.FullStackName = fmt.Sprintf("%s-%s", a.ProjectName, a.StackName)
 
 	return nil
 }
