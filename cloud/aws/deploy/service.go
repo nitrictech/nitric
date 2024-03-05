@@ -224,7 +224,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	a.lambdas[name], err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		// Use repository to generate the URI, instead of the image, using the image results in errors when the same project is torn down and redeployed.
 		// This appears to be because the local image ends up with multiple repositories and the wrong one is selected.
-		ImageUri:    pulumi.Sprintf("%s:latest", repo.RepositoryUrl),
+		ImageUri:    image.URI(),
 		MemorySize:  pulumi.IntPtr(typeConfig.Lambda.Memory),
 		Timeout:     pulumi.IntPtr(typeConfig.Lambda.Timeout),
 		PackageType: pulumi.String("Image"),
