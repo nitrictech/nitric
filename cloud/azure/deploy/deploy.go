@@ -49,37 +49,37 @@ type ApiResources struct {
 }
 
 type NitricAzurePulumiProvider struct {
-	stackId       string
-	projectName   string
-	stackName     string
-	fullStackName string
+	StackId       string
+	ProjectName   string
+	StackName     string
+	FullStackName string
 	resources     []*deploymentspb.Resource
 
-	config *AzureConfig
-	region string
+	AzureConfig *AzureConfig
+	Region      string
 
-	clientConfig *authorization.GetClientConfigResult
+	ClientConfig *authorization.GetClientConfigResult
 
-	resourceGroup  *resources.ResourceGroup
-	keyVault       *keyvault.Vault
-	storageAccount *storage.StorageAccount
+	ResourceGroup  *resources.ResourceGroup
+	KeyVault       *keyvault.Vault
+	StorageAccount *storage.StorageAccount
 
-	containerEnv *ContainerEnv
+	ContainerEnv *ContainerEnv
 
-	apis        map[string]ApiResources
-	httpProxies map[string]ApiResources
-	buckets     map[string]*storage.BlobContainer
+	Apis        map[string]ApiResources
+	HttpProxies map[string]ApiResources
+	Buckets     map[string]*storage.BlobContainer
 
-	queues map[string]*storage.Queue
+	Queues map[string]*storage.Queue
 
-	principals map[resourcespb.ResourceType]map[string]*ServicePrincipal
+	Principals map[resourcespb.ResourceType]map[string]*ServicePrincipal
 
-	containerApps map[string]*ContainerApp
-	topics        map[string]*eventgrid.Topic
+	ContainerApps map[string]*ContainerApp
+	Topics        map[string]*eventgrid.Topic
 
-	keyValueStores map[string]*storage.Table
+	KeyValueStores map[string]*storage.Table
 
-	roles *Roles
+	Roles *Roles
 	provider.NitricDefaultOrder
 }
 
@@ -92,8 +92,8 @@ const (
 
 func (a *NitricAzurePulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
-		"azure-native:location": auto.ConfigValue{Value: a.region},
-		"azure:location":        auto.ConfigValue{Value: a.region},
+		"azure-native:location": auto.ConfigValue{Value: a.Region},
+		"azure:location":        auto.ConfigValue{Value: a.Region},
 		"azure-native:version":  auto.ConfigValue{Value: pulumiAzureNativeVersion},
 		"azure:version":         auto.ConfigValue{Value: pulumiAzureVersion},
 		"docker:version":        auto.ConfigValue{Value: deploy.PulumiDockerVersion},
@@ -108,9 +108,9 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 		return fmt.Errorf("Missing region attribute")
 	}
 
-	a.region = region
+	a.Region = region
 
-	a.config, err = ConfigFromAttributes(attributes)
+	a.AzureConfig, err = ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
@@ -118,15 +118,15 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 	var isString bool
 
 	iProject, hasProject := attributes["project"]
-	a.projectName, isString = iProject.(string)
-	if !hasProject || !isString || a.projectName == "" {
+	a.ProjectName, isString = iProject.(string)
+	if !hasProject || !isString || a.ProjectName == "" {
 		// need a valid project name
 		return fmt.Errorf("project is not set or invalid")
 	}
 
 	iStack, hasStack := attributes["stack"]
-	a.stackName, isString = iStack.(string)
-	if !hasStack || !isString || a.stackName == "" {
+	a.StackName, isString = iStack.(string)
+	if !hasStack || !isString || a.StackName == "" {
 		// need a valid stack name
 		return fmt.Errorf("stack is not set or invalid")
 	}
@@ -134,7 +134,7 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 	// Backwards compatible stack name
 	// The existing providers in the CLI
 	// Use the combined project and stack name
-	a.fullStackName = fmt.Sprintf("%s-%s", a.projectName, a.stackName)
+	a.FullStackName = fmt.Sprintf("%s-%s", a.ProjectName, a.StackName)
 
 	return nil
 }
@@ -215,16 +215,16 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return id
 	})
 
-	a.stackId = <-stackIdChan
+	a.StackId = <-stackIdChan
 
-	a.clientConfig, err = authorization.GetClientConfig(ctx)
+	a.ClientConfig, err = authorization.GetClientConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	a.resourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
-		Location: pulumi.String(a.region),
-		Tags:     pulumi.ToStringMap(tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack)),
+	a.ResourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
+		Location: pulumi.String(a.Region),
+		Tags:     pulumi.ToStringMap(tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack)),
 	})
 	if err != nil {
 		return errors.WithMessage(err, "resource group create")
@@ -235,7 +235,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// This means we need to create a keyvault for each stack.
 	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
 		logger.Info("Stack declares one or more secrets, creating stack level Azure Key Vault")
-		a.keyVault, err = createKeyVault(ctx, a.resourceGroup, a.clientConfig.TenantId, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
+		a.KeyVault, err = createKeyVault(ctx, a.ResourceGroup, a.ClientConfig.TenantId, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "keyvault create")
 		}
@@ -250,19 +250,19 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// This means we need to create a storage account for each stack, before buckets can be created.
 	if hasBuckets || hasKvStores || hasQueues {
 		logger.Info("Stack declares bucket(s), key/value store(s) or queue(s), creating stack level Azure Storage Account")
-		a.storageAccount, err = createStorageAccount(ctx, a.resourceGroup, tags.Tags(a.stackId, ctx.Stack(), commonresources.Stack))
+		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "storage account create")
 		}
 	}
 
-	a.containerEnv, err = a.newContainerEnv(ctx, a.stackId, map[string]string{})
+	a.ContainerEnv, err = a.newContainerEnv(ctx, a.StackId, map[string]string{})
 	if err != nil {
 		return err
 	}
 
 	// Greedily create all the roles for consistency. Could be reduced to required roles only in future.
-	a.roles, err = CreateRoles(ctx, a.stackId, a.clientConfig.SubscriptionId, a.resourceGroup.Name)
+	a.Roles, err = CreateRoles(ctx, a.StackId, a.ClientConfig.SubscriptionId, a.ResourceGroup.Name)
 	if err != nil {
 		return err
 	}
@@ -278,20 +278,20 @@ func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOu
 	outputs := []interface{}{}
 
 	// Add APIs outputs
-	if len(a.apis) > 0 {
+	if len(a.Apis) > 0 {
 		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
-		for apiName, api := range a.apis {
+		for apiName, api := range a.Apis {
 			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiManagementService.GatewayUrl))
 		}
 	}
 
 	// Add HTTP Proxy outputs
-	if len(a.httpProxies) > 0 {
+	if len(a.HttpProxies) > 0 {
 		if len(outputs) > 0 {
 			outputs = append(outputs, "\n")
 		}
 		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
-		for proxyName, proxy := range a.httpProxies {
+		for proxyName, proxy := range a.HttpProxies {
 			outputs = append(outputs, pulumi.Sprintf("%s: %s", proxyName, proxy.ApiManagementService.GatewayUrl))
 		}
 	}
@@ -318,13 +318,13 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
 
 	return &NitricAzurePulumiProvider{
-		apis:           map[string]ApiResources{},
-		httpProxies:    map[string]ApiResources{},
-		buckets:        make(map[string]*storage.BlobContainer),
-		queues:         make(map[string]*storage.Queue),
-		containerApps:  map[string]*ContainerApp{},
-		topics:         map[string]*eventgrid.Topic{},
-		principals:     principalsMap,
-		keyValueStores: map[string]*storage.Table{},
+		Apis:           map[string]ApiResources{},
+		HttpProxies:    map[string]ApiResources{},
+		Buckets:        make(map[string]*storage.BlobContainer),
+		Queues:         make(map[string]*storage.Queue),
+		ContainerApps:  map[string]*ContainerApp{},
+		Topics:         map[string]*eventgrid.Topic{},
+		Principals:     principalsMap,
+		KeyValueStores: map[string]*storage.Table{},
 	}
 }
