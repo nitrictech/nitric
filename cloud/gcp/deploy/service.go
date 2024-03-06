@@ -23,8 +23,8 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
-	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
@@ -45,7 +45,7 @@ type NitricCloudRunService struct {
 	EventToken     pulumi.StringOutput
 }
 
-func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service, runtime provider.RuntimeProvider) error {
+func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &NitricCloudRunService{
@@ -178,10 +178,10 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		})
 	}
 
-	for k, v := range config.Env {
+	for k, v := range config.Env() {
 		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String(k),
-			Value: pulumi.String(v),
+			Value: v,
 		})
 	}
 

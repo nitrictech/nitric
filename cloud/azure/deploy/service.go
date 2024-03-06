@@ -24,6 +24,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -37,7 +38,6 @@ import (
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
@@ -148,7 +148,7 @@ var RoleDefinitions = map[string]string{
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *deploymentspb.Service, runtime provider.RuntimeProvider) error {
+func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &ContainerApp{
@@ -273,10 +273,10 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		// },
 	}
 
-	for k, v := range service.Env {
+	for k, v := range service.Env() {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
-			Value: pulumi.String(v),
+			Value: v,
 		})
 	}
 

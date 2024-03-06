@@ -25,10 +25,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
-	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
@@ -42,7 +42,7 @@ func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId st
 	}, pulumi.Parent(parent))
 }
 
-func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *deploymentspb.Service, runtime provider.RuntimeProvider) (*image.Image, error) {
+func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) (*image.Image, error) {
 	if config.GetImage() == nil {
 		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
 	}
@@ -71,7 +71,7 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
 }
 
-func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service, runtime provider.RuntimeProvider) error {
+func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	// Create the ECR repository to push the image to
@@ -201,8 +201,8 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		"MIN_WORKERS":            pulumi.String(fmt.Sprint(config.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": pulumi.String(fmt.Sprint(3000)),
 	}
-	for k, v := range config.Env {
-		envVars[k] = pulumi.String(v)
+	for k, v := range config.Env() {
+		envVars[k] = v
 	}
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
