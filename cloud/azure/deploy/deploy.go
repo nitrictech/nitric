@@ -24,10 +24,10 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	commonresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/core/pkg/logger"
-	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
@@ -53,7 +53,7 @@ type NitricAzurePulumiProvider struct {
 	ProjectName   string
 	StackName     string
 	FullStackName string
-	resources     []*deploymentspb.Resource
+	resources     []*pulumix.NitricPulumiResource[any]
 
 	AzureConfig *AzureConfig
 	Region      string
@@ -183,9 +183,9 @@ func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, t
 	return storageAccount, nil
 }
 
-func hasResourceType(resources []*deploymentspb.Resource, resourceType resourcespb.ResourceType) bool {
+func hasResourceType(resources []*pulumix.NitricPulumiResource[any], resourceType resourcespb.ResourceType) bool {
 	for _, r := range resources {
-		if r.GetId().GetType() == resourceType {
+		if r.Id.GetType() == resourceType {
 			return true
 		}
 	}
@@ -193,7 +193,7 @@ func hasResourceType(resources []*deploymentspb.Resource, resourceType resources
 	return false
 }
 
-func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*deploymentspb.Resource) error {
+func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*pulumix.NitricPulumiResource[any]) error {
 	a.resources = nitricResources
 
 	// make our random stackId

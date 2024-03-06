@@ -80,7 +80,7 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 		}
 
 		// Pre-deployment Hook, used for validation, extension, spec modification, etc.
-		err = nitricProvider.Pre(ctx, req.Spec.Resources)
+		err = nitricProvider.Pre(ctx, pulumiResources)
 		if err != nil {
 			return err
 		}

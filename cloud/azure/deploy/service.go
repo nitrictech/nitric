@@ -38,6 +38,7 @@ import (
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
@@ -288,11 +289,13 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 
 	//	If this instance contains a schedule set the minimum instances to 1
 	// schedules rely on the Dapr Runtime to trigger the function, without a running instance the Dapr Runtime will not execute, so the schedule won't trigger.
-	_, schedulesFound := lo.Find(p.resources, func(item *deploy.Resource) bool {
-		if item.GetSchedule() == nil {
-			return false
+	_, schedulesFound := lo.Find(p.resources, func(item *pulumix.NitricPulumiResource[any]) bool {
+		switch t := item.Config.(type) {
+		case *deploymentspb.Schedule:
+			return t.Target.GetService() == name
 		}
-		return item.GetSchedule().Target.GetService() == name
+
+		return false
 	})
 
 	minReplicas := serviceConfig.ContainerApps.MinReplicas
