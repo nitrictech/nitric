@@ -259,7 +259,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		})
 
 		err := retry.Do(func() error {
-			_, err := a.lambdaClient.Invoke(&lambda.InvokeInput{
+			_, err := a.LambdaClient.Invoke(&lambda.InvokeInput{
 				FunctionName: aws.String(arn),
 				Payload:      payload,
 			})
