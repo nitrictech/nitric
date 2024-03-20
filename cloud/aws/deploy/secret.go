@@ -82,7 +82,7 @@ func (a *NitricAwsPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 	}
 
 	if importArn != "" {
-		secret, err = tagSecret(ctx, importArn, name, awsTags, a.resourceTaggingClient)
+		secret, err = tagSecret(ctx, name, importArn, awsTags, a.resourceTaggingClient)
 	} else {
 		secret, err = createSecret(ctx, name, awsTags)
 	}
