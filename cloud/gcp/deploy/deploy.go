@@ -17,18 +17,22 @@
 package deploy
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	_ "embed"
 
+	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
+	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/firestore"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
@@ -37,6 +41,7 @@ import (
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iamcredentials/v1"
@@ -235,6 +240,19 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 		return errors.WithMessage(err, "base customRole")
 	}
 
+	// Check if a key value store exists, if so get/create a (default) firestore database
+	kvStoreExists := lo.SomeBy(resources, func(res *deploymentspb.Resource) bool {
+		_, ok := res.Config.(*deploymentspb.Resource_KeyValueStore)
+		return ok
+	})
+
+	if kvStoreExists {
+		err := createFirestoreDatabase(ctx, *project.ProjectId, a.region)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -341,4 +359,36 @@ func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 		queueSubscriptions: make(map[string]*pubsub.Subscription),
 		secrets:            make(map[string]*secretmanager.Secret),
 	}
+}
+
+func createFirestoreDatabase(ctx *pulumi.Context, projectId string, location string) error {
+	fsAdminClient, err := apiv1.NewFirestoreAdminClient(context.TODO())
+	if err != nil {
+		return err
+	}
+
+	defaultDb, _ := fsAdminClient.GetDatabase(context.TODO(), &adminpb.GetDatabaseRequest{
+		Name: fmt.Sprintf("projects/%s/databases/(default)", projectId),
+	})
+
+	defaultFirestoreId := pulumi.ID("(default)")
+
+	if defaultDb != nil {
+		_, err = firestore.GetDatabase(ctx, "default", defaultFirestoreId, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = firestore.NewDatabase(ctx, "default", &firestore.DatabaseArgs{
+			Name:                     defaultFirestoreId,
+			AppEngineIntegrationMode: pulumi.String("DISABLED"),
+			LocationId:               pulumi.String(location),
+			Type:                     pulumi.String("FIRESTORE_NATIVE"),
+		}, pulumi.RetainOnDelete(true))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
