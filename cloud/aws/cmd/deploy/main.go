@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/nitrictech/nitric/cloud/aws/deploy"
+	"github.com/nitrictech/nitric/cloud/aws/deploy/runtime"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 )
 
@@ -25,7 +26,7 @@ import (
 func main() {
 	awsStack := deploy.NewNitricAwsProvider()
 
-	providerServer := provider.NewPulumiProviderServer(awsStack)
+	providerServer := provider.NewPulumiProviderServer(awsStack, runtime.NitricAwsRuntime)
 
 	providerServer.Start()
 }

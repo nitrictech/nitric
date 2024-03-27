@@ -59,7 +59,7 @@ type resourceScope struct {
 func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Resource) (*resourceScope, error) {
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Topic:
-		topic, ok := p.topics[resource.Id.Name]
+		topic, ok := p.Topics[resource.Id.Name]
 		if !ok {
 			return nil, fmt.Errorf("topic %s not found", resource.Id.Name)
 		}
@@ -67,13 +67,13 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.EventGrid/topics/%s",
-				p.clientConfig.SubscriptionId,
-				p.resourceGroup.Name,
+				p.ClientConfig.SubscriptionId,
+				p.ResourceGroup.Name,
 				topic.Name,
 			),
 		}, nil
 	case resourcespb.ResourceType_KeyValueStore:
-		kv, ok := p.keyValueStores[resource.Id.Name]
+		kv, ok := p.KeyValueStores[resource.Id.Name]
 		if !ok {
 			return nil, fmt.Errorf("key value store %s not found", resource.Id.Name)
 		}
@@ -81,14 +81,14 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
-				p.clientConfig.SubscriptionId,
-				p.resourceGroup.Name,
-				p.storageAccount.Name,
+				p.ClientConfig.SubscriptionId,
+				p.ResourceGroup.Name,
+				p.StorageAccount.Name,
 				kv.Name,
 			),
 		}, nil
 	case resourcespb.ResourceType_Bucket:
-		bucket, ok := p.buckets[resource.Id.Name]
+		bucket, ok := p.Buckets[resource.Id.Name]
 		if !ok {
 			return nil, fmt.Errorf("bucket %s not found", resource.Id.Name)
 		}
@@ -102,14 +102,14 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",
-				p.clientConfig.SubscriptionId,
-				p.resourceGroup.Name,
-				p.storageAccount.Name,
+				p.ClientConfig.SubscriptionId,
+				p.ResourceGroup.Name,
+				p.StorageAccount.Name,
 				bucket.Name,
 			),
 		}, nil
 	case resourcespb.ResourceType_Queue:
-		queue, ok := p.queues[resource.Id.Name]
+		queue, ok := p.Queues[resource.Id.Name]
 		if !ok {
 			return nil, fmt.Errorf("queue %s not found", resource.Id.Name)
 		}
@@ -117,23 +117,23 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
-				p.clientConfig.SubscriptionId,
-				p.resourceGroup.Name,
-				p.storageAccount.Name,
+				p.ClientConfig.SubscriptionId,
+				p.ResourceGroup.Name,
+				p.StorageAccount.Name,
 				queue.Name,
 			),
 		}, nil
 	case resourcespb.ResourceType_Secret:
-		if p.keyVault == nil {
+		if p.KeyVault == nil {
 			return nil, fmt.Errorf("secret %s not found", resource.Id.Name)
 		}
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
-				p.clientConfig.SubscriptionId,
-				p.resourceGroup.Name,
-				p.keyVault.Name,
+				p.ClientConfig.SubscriptionId,
+				p.ResourceGroup.Name,
+				p.KeyVault.Name,
 				resource.Id.Name,
 			),
 			// condition: pulumi.Sprintf("@Resource[Microsoft.KeyVault/vaults/secrets].name equals %s'", resource.Name),
@@ -149,12 +149,12 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 	for _, resource := range policy.Resources {
 		for _, principal := range policy.Principals {
 			// The roles we need to assign
-			roles := actionsToAzureRoleDefinitions(p.roles.RoleDefinitions, policy.Actions)
+			roles := actionsToAzureRoleDefinitions(p.Roles.RoleDefinitions, policy.Actions)
 			if len(roles) == 0 {
-				return fmt.Errorf("policy contained not assignable actions %+v, %+v", policy, p.roles.RoleDefinitions)
+				return fmt.Errorf("policy contained not assignable actions %+v, %+v", policy, p.Roles.RoleDefinitions)
 			}
 
-			sp, ok := p.principals[principal.Id.Type][principal.Id.Name]
+			sp, ok := p.Principals[principal.Id.Type][principal.Id.Name]
 			if !ok {
 				return fmt.Errorf("principal %s of type %s not found", principal.Id.Name, principal.Id.Type)
 			}

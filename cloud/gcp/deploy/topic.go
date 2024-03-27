@@ -36,18 +36,18 @@ func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	p.topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Topic)),
+	p.Topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
+		Labels: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Topic)),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}
 
 	for _, sub := range config.Subscriptions {
-		targetService := p.cloudRunServices[sub.GetService()]
+		targetService := p.CloudRunServices[sub.GetService()]
 
 		_, err := pubsub.NewSubscription(ctx, GetSubName(targetService.Name, name), &pubsub.SubscriptionArgs{
-			Topic:              p.topics[name].Name, // The GCP topic name
+			Topic:              p.Topics[name].Name, // The GCP topic name
 			AckDeadlineSeconds: pulumi.Int(300),
 			RetryPolicy: pubsub.SubscriptionRetryPolicyArgs{
 				MinimumBackoff: pulumi.String("15s"),

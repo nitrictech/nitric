@@ -35,9 +35,9 @@ import (
 func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Http) error {
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	resourceLabels := common.Tags(p.stackId, name, resources.HttpProxy)
+	resourceLabels := common.Tags(p.StackId, name, resources.HttpProxy)
 
-	targetService := p.cloudRunServices[config.Target.GetService()]
+	targetService := p.CloudRunServices[config.Target.GetService()]
 
 	// normalise the name to match the required format
 	// ^projects/([a-z0-9-]+)/locations/([a-z0-9-]+)(/([a-z]+)/([a-z0-9-.]+))+$
@@ -70,7 +70,7 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 
 	// Deploy the config
 	apiConfig, err := apigateway.NewApiConfig(ctx, normalizedName+"-config", &apigateway.ApiConfigArgs{
-		Project:     pulumi.String(p.config.ProjectId),
+		Project:     pulumi.String(p.GcpConfig.ProjectId),
 		Api:         api.ApiId,
 		DisplayName: pulumi.String(normalizedName + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{
@@ -94,10 +94,10 @@ func (p *NitricGcpPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	}
 
 	// Deploy the gateway
-	p.httpProxies[name], err = apigateway.NewGateway(ctx, normalizedName+"-gateway", &apigateway.GatewayArgs{
+	p.HttpProxies[name], err = apigateway.NewGateway(ctx, normalizedName+"-gateway", &apigateway.GatewayArgs{
 		DisplayName: pulumi.String(normalizedName + "-gateway"),
 		GatewayId:   pulumi.String(normalizedName + "-gateway"),
-		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, apiConfig.ApiConfigId),
+		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.GcpConfig.ProjectId, api.ApiId, apiConfig.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {

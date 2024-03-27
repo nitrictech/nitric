@@ -29,13 +29,13 @@ func (a *NitricAwsPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resou
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	queue, err := sqs.NewQueue(ctx, name, &sqs.QueueArgs{
-		Tags: pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Queue)),
+		Tags: pulumi.ToStringMap(common.Tags(a.StackId, name, resources.Queue)),
 	}, opts...)
 	if err != nil {
 		return err
 	}
 
-	a.queues[name] = queue
+	a.Queues[name] = queue
 
 	return nil
 }

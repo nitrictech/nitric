@@ -72,7 +72,7 @@ type nameArnPair struct {
 func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	nameArnPairs := make([]interface{}, 0, len(a.lambdas))
+	nameArnPairs := make([]interface{}, 0, len(a.Lambdas))
 
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
@@ -114,7 +114,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
 				if targetMap, isMap := v.(map[string]any); isMap {
 					serviceName := targetMap["name"].(string)
-					nitricServiceTargets[serviceName] = a.lambdas[serviceName]
+					nitricServiceTargets[serviceName] = a.Lambdas[serviceName]
 				}
 			}
 		}
@@ -133,7 +133,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}))
 	}
 
-	apiGatewayTags := tags.Tags(a.stackId, name, resources.API)
+	apiGatewayTags := tags.Tags(a.StackId, name, resources.API)
 
 	doc := pulumi.All(nameArnPairs...).ApplyT(func(pairs []interface{}) (string, error) {
 		naps := make(map[string]string)
@@ -175,7 +175,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return string(b), nil
 	}).(pulumi.StringOutput)
 
-	a.apis[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
+	a.Apis[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body: doc,
 		// Name fixed to title in the spec, if these mismatch the name will change on the second deployment.
 		Name:           pulumi.String(openapiDoc.Info.Title),
@@ -190,7 +190,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	apiStage, err := apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
-		ApiId:      a.apis[name].ID(),
+		ApiId:      a.Apis[name].ID(),
 		// Tags:       pulumi.ToStringMap(common.Tags(args.StackID, name+"DefaultStage", resources.API)),
 	}, opts...)
 	if err != nil {
@@ -203,23 +203,23 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			Function:  fun.Name,
 			Action:    pulumi.String("lambda:InvokeFunction"),
 			Principal: pulumi.String("apigateway.amazonaws.com"),
-			SourceArn: pulumi.Sprintf("%s/*/*/*", a.apis[name].ExecutionArn),
+			SourceArn: pulumi.Sprintf("%s/*/*/*", a.Apis[name].ExecutionArn),
 		}, opts...)
 		if err != nil {
 			return err
 		}
 	}
 
-	endPoint := a.apis[name].ApiEndpoint.ApplyT(func(ep string) string {
+	endPoint := a.Apis[name].ApiEndpoint.ApplyT(func(ep string) string {
 		return ep
 	}).(pulumi.StringInput)
 
-	if a.config.Apis[name] != nil {
+	if a.AwsConfig.Apis[name] != nil {
 		// For each specified domain name
-		for _, domainName := range a.config.Apis[name].Domains {
+		for _, domainName := range a.AwsConfig.Apis[name].Domains {
 			_, err := newDomainName(ctx, name, domainNameArgs{
 				domainName: domainName,
-				api:        a.apis[name],
+				api:        a.Apis[name],
 				stage:      apiStage,
 			})
 			if err != nil {

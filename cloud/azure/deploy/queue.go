@@ -10,9 +10,9 @@ func (a *NitricAzurePulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Res
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	a.queues[name], err = storage.NewQueue(ctx, ResourceName(ctx, name, StorageQueueRT), &storage.QueueArgs{
-		AccountName:       a.storageAccount.Name,
-		ResourceGroupName: a.resourceGroup.Name,
+	a.Queues[name], err = storage.NewQueue(ctx, ResourceName(ctx, name, StorageQueueRT), &storage.QueueArgs{
+		AccountName:       a.StorageAccount.Name,
+		ResourceGroupName: a.ResourceGroup.Name,
 	}, opts...)
 
 	return err

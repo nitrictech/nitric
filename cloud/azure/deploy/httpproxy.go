@@ -69,16 +69,16 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	managedIdentities := p.containerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
+	managedIdentities := p.ContainerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
 		return apimanagement.UserIdentityPropertiesMap{
 			id: nil,
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
 	mgmtService, err := apimanagement.NewApiManagementService(ctx, ResourceName(ctx, name, ApiManagementProxyRT), &apimanagement.ApiManagementServiceArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		PublisherEmail:    pulumi.String(p.config.AdminEmail),
-		PublisherName:     pulumi.String(p.config.Org),
+		ResourceGroupName: p.ResourceGroup.Name,
+		PublisherEmail:    pulumi.String(p.AzureConfig.AdminEmail),
+		PublisherName:     pulumi.String(p.AzureConfig.Org),
 		Sku: apimanagement.ApiManagementServiceSkuPropertiesArgs{
 			Name:     pulumi.String("Consumption"),
 			Capacity: pulumi.Int(0),
@@ -87,7 +87,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.HttpProxy)),
+		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.HttpProxy)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 		ApiId:                apiId,
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),
-		ResourceGroupName:    p.resourceGroup.Name,
+		ResourceGroupName:    p.ResourceGroup.Name,
 		SubscriptionRequired: pulumi.Bool(false),
 		ServiceName:          mgmtService.Name,
 		Value:                pulumi.String(string(b)),
@@ -117,23 +117,23 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 		return err
 	}
 
-	p.httpProxies[name] = ApiResources{
+	p.HttpProxies[name] = ApiResources{
 		Api:                  proxyApi,
 		ApiManagementService: mgmtService,
 	}
 
-	targetContainerApp := p.containerApps[http.GetTarget().GetService()]
+	targetContainerApp := p.ContainerApps[http.GetTarget().GetService()]
 
 	for _, path := range spec.Paths {
 		for _, op := range path.Operations() {
 			_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
-				ResourceGroupName: p.resourceGroup.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
 				ApiId:             apiId,
 				ServiceName:       mgmtService.Name,
 				OperationId:       pulumi.String(op.OperationID),
 				PolicyId:          pulumi.String("policy"),
 				Format:            pulumi.String("xml"),
-				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, p.containerEnv.ManagedUser.ClientId, p.containerEnv.ManagedUser.ClientId),
+				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, p.ContainerEnv.ManagedUser.ClientId, p.ContainerEnv.ManagedUser.ClientId),
 			}, pulumi.Parent(proxyApi), pulumi.DependsOn([]pulumi.Resource{proxyApi}))
 			if err != nil {
 				return errors.WithMessage(err, "NewApiOperationPolicy proxy")

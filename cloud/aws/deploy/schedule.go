@@ -60,7 +60,7 @@ func (a *NitricAwsPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 		return err
 	}
 
-	target, ok := a.lambdas[config.Target.GetService()]
+	target, ok := a.Lambdas[config.Target.GetService()]
 	if !ok {
 		return fmt.Errorf("unable to find target lambda: %s", config.Target.GetService())
 	}
@@ -76,7 +76,7 @@ func (a *NitricAwsPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 	// Create a new eventbridge schedule
 	_, err = scheduler.NewSchedule(ctx, name, &scheduler.ScheduleArgs{
 		ScheduleExpression:         pulumi.String(awsScheduleExpression),
-		ScheduleExpressionTimezone: pulumi.String(a.config.ScheduleTimezone),
+		ScheduleExpressionTimezone: pulumi.String(a.AwsConfig.ScheduleTimezone),
 		FlexibleTimeWindow: &scheduler.ScheduleFlexibleTimeWindowArgs{
 			Mode: pulumi.String("OFF"),
 		},

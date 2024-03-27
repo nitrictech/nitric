@@ -42,7 +42,7 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	target := p.containerApps[config.GetTarget().GetService()]
+	target := p.ContainerApps[config.GetTarget().GetService()]
 
 	normalizedName := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	cronExpression := ""
@@ -73,8 +73,8 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 	}
 
 	_, err = app.NewDaprComponent(ctx, normalizedName, &app.DaprComponentArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		EnvironmentName:   p.containerEnv.ManagedEnv.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
+		EnvironmentName:   p.ContainerEnv.ManagedEnv.Name,
 		ComponentName:     pulumi.String(normalizedName),
 		ComponentType:     pulumi.String("bindings.cron"),
 		Version:           pulumi.String("v1"),

@@ -97,7 +97,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}
 
 	// Get service targets for IAM binding
-	services := p.cloudRunServices
+	services := p.CloudRunServices
 
 	for _, pi := range v2doc.Paths {
 		for _, m := range []string{http.MethodGet, http.MethodPatch, http.MethodDelete, http.MethodPost, http.MethodPut} {
@@ -110,11 +110,11 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 				return fmt.Errorf("found operation missing nitric target property: %+v", pi.GetOperation(m).Extensions)
 			}
 
-			if _, ok := p.cloudRunServices[name]; !ok {
-				return fmt.Errorf("unable to find target service %s in %+v", name, p.cloudRunServices)
+			if _, ok := p.CloudRunServices[name]; !ok {
+				return fmt.Errorf("unable to find target service %s in %+v", name, p.CloudRunServices)
 			}
 
-			services[name] = p.cloudRunServices[name]
+			services[name] = p.CloudRunServices[name]
 
 			break
 		}
@@ -171,7 +171,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return base64.StdEncoding.EncodeToString(b), nil
 	}).(pulumi.StringOutput)
 
-	resourceLabels := common.Tags(p.stackId, name, resources.API)
+	resourceLabels := common.Tags(p.StackId, name, resources.API)
 
 	api, err := apigateway.NewApi(ctx, name, &apigateway.ApiArgs{
 		ApiId:  pulumi.String(name),
@@ -205,7 +205,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 	// Deploy the config
 	config, err := apigateway.NewApiConfig(ctx, name+"-config", &apigateway.ApiConfigArgs{
-		Project:     pulumi.String(p.config.ProjectId),
+		Project:     pulumi.String(p.GcpConfig.ProjectId),
 		Api:         api.ApiId,
 		DisplayName: pulumi.String(name + "-config"),
 		OpenapiDocuments: apigateway.ApiConfigOpenapiDocumentArray{
@@ -229,10 +229,10 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}
 
 	// Deploy the gateway
-	p.apiGateways[name], err = apigateway.NewGateway(ctx, name+"-gateway", &apigateway.GatewayArgs{
+	p.ApiGateways[name], err = apigateway.NewGateway(ctx, name+"-gateway", &apigateway.GatewayArgs{
 		DisplayName: pulumi.String(name + "-gateway"),
 		GatewayId:   pulumi.String(name + "-gateway"),
-		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.config.ProjectId, api.ApiId, config.ApiConfigId),
+		ApiConfig:   pulumi.Sprintf("projects/%s/locations/global/apis/%s/configs/%s", p.GcpConfig.ProjectId, api.ApiId, config.ApiConfigId),
 		Labels:      pulumi.ToStringMap(resourceLabels),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {

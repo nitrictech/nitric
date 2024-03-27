@@ -35,14 +35,14 @@ func (p *NitricGcpPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	secId := pulumi.Sprintf("%s-%s", p.stackName, name)
+	secId := pulumi.Sprintf("%s-%s", p.StackName, name)
 
-	p.secrets[name], err = secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
+	p.Secrets[name], err = secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
 		Replication: secretmanager.SecretReplicationArgs{
 			Automatic: pulumi.Bool(true),
 		},
 		SecretId: secId,
-		Labels:   pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Secret)),
+		Labels:   pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Secret)),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err

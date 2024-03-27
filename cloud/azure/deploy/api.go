@@ -87,16 +87,16 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		return nil
 	}
 
-	managedIdentities := p.containerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
+	managedIdentities := p.ContainerEnv.ManagedUser.ID().ToStringOutput().ApplyT(func(id string) apimanagement.UserIdentityPropertiesMapOutput {
 		return apimanagement.UserIdentityPropertiesMap{
 			id: nil,
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
 	mgmtService, err := apimanagement.NewApiManagementService(ctx, ResourceName(ctx, name, ApiManagementServiceRT), &apimanagement.ApiManagementServiceArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		PublisherEmail:    pulumi.String(p.config.AdminEmail),
-		PublisherName:     pulumi.String(p.config.Org),
+		ResourceGroupName: p.ResourceGroup.Name,
+		PublisherEmail:    pulumi.String(p.AzureConfig.AdminEmail),
+		PublisherName:     pulumi.String(p.AzureConfig.Org),
 		Sku: apimanagement.ApiManagementServiceSkuPropertiesArgs{
 			Name:     pulumi.String("Consumption"),
 			Capacity: pulumi.Int(0),
@@ -105,7 +105,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.API)),
+		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.API)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		ApiId:                pulumi.String(name),
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),
-		ResourceGroupName:    p.resourceGroup.Name,
+		ResourceGroupName:    p.ResourceGroup.Name,
 		SubscriptionRequired: pulumi.Bool(false),
 		ServiceName:          mgmtService.Name,
 		// No need to transform the original spec, the mapping occurs as part of the operation policies below
@@ -137,7 +137,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	p.apis[name] = ApiResources{
+	p.Apis[name] = ApiResources{
 		Api:                  api,
 		ApiManagementService: mgmtService,
 	}
@@ -201,7 +201,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 					return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
 				}
 
-				app, ok := p.containerApps[target]
+				app, ok := p.ContainerApps[target]
 				if !ok {
 					return fmt.Errorf("Unable to find container app for service: %s", target)
 				}
@@ -216,13 +216,13 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 				_ = ctx.Log.Info("op policy "+op.OperationID+" , name "+name, &pulumi.LogArgs{Ephemeral: true})
 
 				_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
-					ResourceGroupName: p.resourceGroup.Name,
+					ResourceGroupName: p.ResourceGroup.Name,
 					ApiId:             apiId,
 					ServiceName:       mgmtService.Name,
 					OperationId:       pulumi.String(op.OperationID),
 					PolicyId:          pulumi.String("policy"),
 					Format:            pulumi.String("xml"),
-					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, p.containerEnv.ManagedUser.ClientId, p.containerEnv.ManagedUser.ClientId),
+					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, p.ContainerEnv.ManagedUser.ClientId, p.ContainerEnv.ManagedUser.ClientId),
 				}, pulumi.Parent(api))
 				if err != nil {
 					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)

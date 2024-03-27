@@ -24,9 +24,9 @@ func (p *NitricAzurePulumiProvider) KeyValueStore(ctx *pulumi.Context, parent pu
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	p.keyValueStores[name], err = storage.NewTable(ctx, name, &storage.TableArgs{
-		AccountName:       p.storageAccount.Name,
-		ResourceGroupName: p.resourceGroup.Name,
+	p.KeyValueStores[name], err = storage.NewTable(ctx, name, &storage.TableArgs{
+		AccountName:       p.StorageAccount.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
 		TableName:         pulumi.String(name),
 	}, opts...)
 
