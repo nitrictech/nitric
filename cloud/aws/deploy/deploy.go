@@ -134,7 +134,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(8),
-		Keepers: pulumi.ToMap(map[string]interface{}{
+		Keepers: pulumi.ToStringMap(map[string]string{
 			"stack-name": ctx.Stack(),
 		}),
 	})
