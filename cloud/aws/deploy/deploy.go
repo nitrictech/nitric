@@ -30,12 +30,14 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
@@ -167,7 +169,19 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 		return err
 	}
 
-	return nil
+	// Create AWS Resource groups with our tags
+	_, err = resourcegroups.NewGroup(ctx, "stack-resource-group", &resourcegroups.GroupArgs{
+		Name:        pulumi.String(a.fullStackName),
+		Description: pulumi.Sprintf("All deployed resources for the %s nitric stack", a.fullStackName),
+		ResourceQuery: &resourcegroups.GroupResourceQueryArgs{
+			Query: pulumi.Sprintf(`{
+				"ResourceTypeFilters":["AWS::AllSupported"],
+				"TagFilters":[{"Key":"%s"}]
+			}`, tags.GetResourceNameKey(a.stackId)),
+		},
+	})
+
+	return err
 }
 
 func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
