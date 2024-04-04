@@ -29,6 +29,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
@@ -234,13 +235,13 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	}
 
 	// Check if a key value store exists, if so get/create a (default) firestore database
-	kvStoreExists := lo.SomeBy(resources, func(res *deploymentspb.Resource) bool {
+	kvStoreExists := lo.SomeBy(resources, func(res *pulumix.NitricPulumiResource[any]) bool {
 		_, ok := res.Config.(*deploymentspb.Resource_KeyValueStore)
 		return ok
 	})
 
 	if kvStoreExists {
-		err := createFirestoreDatabase(ctx, *project.ProjectId, a.region)
+		err := createFirestoreDatabase(ctx, *project.ProjectId, a.Region)
 		if err != nil {
 			return err
 		}
