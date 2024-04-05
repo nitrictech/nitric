@@ -51,13 +51,10 @@ import (
 )
 
 type NitricGcpPulumiProvider struct {
-	StackId       string
-	ProjectName   string
-	StackName     string
-	FullStackName string
+	*deploy.CommonStackDetails
 
+	StackId   string
 	GcpConfig *GcpConfig
-	Region    string
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
@@ -100,38 +97,15 @@ func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.Reso
 func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error {
 	var err error
 
-	region, ok := attributes["region"].(string)
-	if !ok {
-		return fmt.Errorf("Missing region attribute")
+	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
-
-	a.Region = region
 
 	a.GcpConfig, err = ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
-
-	var isString bool
-
-	iProject, hasProject := attributes["project"]
-	a.ProjectName, isString = iProject.(string)
-	if !hasProject || !isString || a.ProjectName == "" {
-		// need a valid project name
-		return fmt.Errorf("project is not set or invalid")
-	}
-
-	iStack, hasStack := attributes["stack"]
-	a.StackName, isString = iStack.(string)
-	if !hasStack || !isString || a.StackName == "" {
-		// need a valid stack name
-		return fmt.Errorf("stack is not set or invalid")
-	}
-
-	// Backwards compatible stack name
-	// The existing providers in the CLI
-	// Use the combined project and stack name
-	a.FullStackName = fmt.Sprintf("%s-%s", a.ProjectName, a.StackName)
 
 	return nil
 }
