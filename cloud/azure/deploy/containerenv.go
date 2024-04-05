@@ -64,8 +64,8 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 	}
 
 	res.ManagedUser, err = managedidentity.NewUserAssignedIdentity(ctx, "managed-identity", &managedidentity.UserAssignedIdentityArgs{
-		Location:          p.resourceGroup.Location,
-		ResourceGroupName: p.resourceGroup.Name,
+		Location:          p.ResourceGroup.Location,
+		ResourceGroupName: p.ResourceGroup.Name,
 		ResourceName:      pulumi.String("managed-identity"),
 	}, pulumi.Parent(res))
 	if err != nil {
@@ -74,25 +74,25 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 
 	env := app.EnvironmentVarArray{}
 
-	if p.storageAccount != nil {
+	if p.StorageAccount != nil {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_NAME"),
-			Value: p.storageAccount.Name,
+			Value: p.StorageAccount.Name,
 		})
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT"),
-			Value: p.storageAccount.PrimaryEndpoints.Blob(),
+			Value: p.StorageAccount.PrimaryEndpoints.Blob(),
 		})
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT"),
-			Value: p.storageAccount.PrimaryEndpoints.Queue(),
+			Value: p.StorageAccount.PrimaryEndpoints.Queue(),
 		})
 	}
 
-	if p.keyVault != nil {
+	if p.KeyVault != nil {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String("KVAULT_NAME"),
-			Value: p.keyVault.Name,
+			Value: p.KeyVault.Name,
 		})
 	}
 
@@ -111,8 +111,8 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 	res.Env = env
 
 	res.Registry, err = containerregistry.NewRegistry(ctx, ResourceName(ctx, name, RegistryRT), &containerregistry.RegistryArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		Location:          p.resourceGroup.Location,
+		ResourceGroupName: p.ResourceGroup.Name,
+		Location:          p.ResourceGroup.Location,
 		AdminUserEnabled:  pulumi.BoolPtr(true),
 		Sku: containerregistry.SkuArgs{
 			Name: pulumi.String("Basic"),
@@ -123,8 +123,8 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 	}
 
 	aw, err := operationalinsights.NewWorkspace(ctx, ResourceName(ctx, name, AnalyticsWorkspaceRT), &operationalinsights.WorkspaceArgs{
-		Location:          p.resourceGroup.Location,
-		ResourceGroupName: p.resourceGroup.Name,
+		Location:          p.ResourceGroup.Location,
+		ResourceGroupName: p.ResourceGroup.Name,
 		Sku: &operationalinsights.WorkspaceSkuArgs{
 			Name: pulumi.String("PerGB2018"),
 		},
@@ -135,13 +135,13 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 	}
 
 	sharedKeys := operationalinsights.GetSharedKeysOutput(ctx, operationalinsights.GetSharedKeysOutputArgs{
-		ResourceGroupName: p.resourceGroup.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
 		WorkspaceName:     aw.Name,
 	})
 
 	res.ManagedEnv, err = app.NewManagedEnvironment(ctx, ResourceName(ctx, name, KubeRT), &app.ManagedEnvironmentArgs{
-		Location:          p.resourceGroup.Location,
-		ResourceGroupName: p.resourceGroup.Name,
+		Location:          p.ResourceGroup.Location,
+		ResourceGroupName: p.ResourceGroup.Name,
 		AppLogsConfiguration: app.AppLogsConfigurationArgs{
 			Destination: pulumi.String("log-analytics"),
 			LogAnalyticsConfiguration: app.LogAnalyticsConfigurationArgs{
@@ -149,13 +149,13 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, ctx.Stack()+"Kube", resources.Service)),
+		Tags: pulumi.ToStringMap(common.Tags(p.StackId, ctx.Stack()+"Kube", resources.Service)),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}
 
-	creds := pulumi.All(p.resourceGroup.Name, res.Registry.Name).ApplyT(func(args []interface{}) (*containerregistry.ListRegistryCredentialsResult, error) {
+	creds := pulumi.All(p.ResourceGroup.Name, res.Registry.Name).ApplyT(func(args []interface{}) (*containerregistry.ListRegistryCredentialsResult, error) {
 		rgName := args[0].(string)
 		regName := args[1].(string)
 

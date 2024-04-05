@@ -33,10 +33,10 @@ func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	resourceLabels := common.Tags(p.stackId, name, resources.Bucket)
+	resourceLabels := common.Tags(p.StackId, name, resources.Bucket)
 
-	p.buckets[name], err = storage.NewBucket(ctx, name, &storage.BucketArgs{
-		Location: pulumi.String(p.region),
+	p.Buckets[name], err = storage.NewBucket(ctx, name, &storage.BucketArgs{
+		Location: pulumi.String(p.Region),
 		Labels:   pulumi.ToStringMap(resourceLabels),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
@@ -63,18 +63,18 @@ func (p *NitricGcpPulumiProvider) newCloudStorageNotification(ctx *pulumi.Contex
 	}
 
 	topic, err := pubsub.NewTopic(ctx, name+"-topic", &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Bucket)),
+		Labels: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Bucket)),
 	}, opts...)
 	if err != nil {
 		return err
 	}
 
-	targetService, ok := p.cloudRunServices[listener.GetService()]
+	targetService, ok := p.CloudRunServices[listener.GetService()]
 	if !ok {
 		return fmt.Errorf("unable to find target service for bucket listener: %s", listener.GetService())
 	}
 
-	targetBucket, ok := p.buckets[bucketName]
+	targetBucket, ok := p.Buckets[bucketName]
 	if !ok {
 		return fmt.Errorf("unable to find target bucket for bucket listener: %s", bucketName)
 	}

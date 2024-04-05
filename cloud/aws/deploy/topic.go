@@ -67,13 +67,13 @@ func createSubscription(ctx *pulumi.Context, parent pulumi.Resource, name string
 func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error {
 	var err error
 
-	a.topics[name] = &topic{}
+	a.Topics[name] = &topic{}
 
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	// create the SNS topic
-	a.topics[name].sns, err = sns.NewTopic(ctx, name, &sns.TopicArgs{
-		Tags: pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Topic)),
+	a.Topics[name].sns, err = sns.NewTopic(ctx, name, &sns.TopicArgs{
+		Tags: pulumi.ToStringMap(common.Tags(a.StackId, name, resources.Topic)),
 	}, opts...)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 		return errors.WithMessage(err, "topic delay controller role")
 	}
 
-	policy := a.topics[name].sns.Arn.ApplyT(func(arn string) (string, error) {
+	policy := a.Topics[name].sns.Arn.ApplyT(func(arn string) (string, error) {
 		rp, err := json.Marshal(map[string]interface{}{
 			"Version": "2012-10-17",
 			"Statement": []map[string]interface{}{
@@ -129,7 +129,7 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 		return errors.WithMessage(err, "topic delay controller role policy")
 	}
 
-	sfnDef := a.topics[name].sns.Arn.ApplyT(func(arn string) (string, error) {
+	sfnDef := a.Topics[name].sns.Arn.ApplyT(func(arn string) (string, error) {
 		def, err := json.Marshal(map[string]interface{}{
 			"Comment": "",
 			"StartAt": "Wait",
@@ -156,10 +156,10 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 
 	// Deploy a delay manager using AWS step functions
 	// This will enable runtime delaying of event
-	a.topics[name].sfn, err = sfn.NewStateMachine(ctx, name, &sfn.StateMachineArgs{
+	a.Topics[name].sfn, err = sfn.NewStateMachine(ctx, name, &sfn.StateMachineArgs{
 		RoleArn: sfnRole.Arn,
 		// Apply the same name as the topic to the state machine
-		Tags:       pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Topic)),
+		Tags:       pulumi.ToStringMap(common.Tags(a.StackId, name, resources.Topic)),
 		Definition: sfnDef,
 	}, opts...)
 	if err != nil {
@@ -167,12 +167,12 @@ func (a *NitricAwsPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resou
 	}
 
 	for _, sub := range config.Subscriptions {
-		targetLambda, ok := a.lambdas[sub.GetService()]
+		targetLambda, ok := a.Lambdas[sub.GetService()]
 		if !ok {
 			return fmt.Errorf("unable to find lambda %s for subscription", sub.GetService())
 		}
 
-		err := createSubscription(ctx, parent, name, a.topics[name].sns, targetLambda)
+		err := createSubscription(ctx, parent, name, a.Topics[name].sns, targetLambda)
 		if err != nil {
 			return err
 		}

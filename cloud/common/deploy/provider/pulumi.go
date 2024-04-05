@@ -35,17 +35,36 @@ import (
 
 type PulumiProviderServer struct {
 	provider NitricPulumiProvider
+	runtime  RuntimeProvider
 }
 
-func NewPulumiProviderServer(provider NitricPulumiProvider) *PulumiProviderServer {
+func NewPulumiProviderServer(provider NitricPulumiProvider, runtime RuntimeProvider) *PulumiProviderServer {
 	return &PulumiProviderServer{
 		provider: provider,
+		runtime:  runtime,
 	}
 }
 
 const resultCtxKey = "nitric:stack:result"
 
-func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider) func(*pulumi.Context) error {
+func nitricResourceToPulumiResource(res *deploymentspb.Resource) *pulumix.NitricPulumiResource[any] {
+	switch t := res.Config.(type) {
+	case *deploymentspb.Resource_Service:
+		return &pulumix.NitricPulumiResource[any]{
+			Id: res.Id,
+			Config: &pulumix.NitricPulumiServiceConfig{
+				Service: t.Service,
+			},
+		}
+	default:
+		return &pulumix.NitricPulumiResource[any]{
+			Id:     res.Id,
+			Config: res.Config,
+		}
+	}
+}
+
+func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider, runtime RuntimeProvider) func(*pulumi.Context) error {
 	return func(ctx *pulumi.Context) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -54,21 +73,27 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 			}
 		}()
 
+		// Need to convert the Nitric resources to Pulumi resources, this will allow us to extend their configurations with pulumi inputs/outputs
+		pulumiResources := make([]*pulumix.NitricPulumiResource[any], 0, len(req.Spec.Resources))
+		for _, res := range nitricProvider.Order(req.Spec.Resources) {
+			pulumiResources = append(pulumiResources, nitricResourceToPulumiResource(res))
+		}
+
 		// Pre-deployment Hook, used for validation, extension, spec modification, etc.
-		err = nitricProvider.Pre(ctx, req.Spec.Resources)
+		err = nitricProvider.Pre(ctx, pulumiResources)
 		if err != nil {
 			return err
 		}
 
-		for _, res := range nitricProvider.Order(req.Spec.Resources) {
+		for _, res := range pulumiResources {
 			parent, err := pulumix.ParentResourceFromResourceId(ctx, res.Id)
 			if err != nil {
 				return err
 			}
 
 			switch t := res.Config.(type) {
-			case *deploymentspb.Resource_Service:
-				err = nitricProvider.Service(ctx, parent, res.Id.Name, t.Service)
+			case *pulumix.NitricPulumiServiceConfig:
+				err = nitricProvider.Service(ctx, parent, res.Id.Name, t, runtime)
 			case *deploymentspb.Resource_Secret:
 				err = nitricProvider.Secret(ctx, parent, res.Id.Name, t.Secret)
 			case *deploymentspb.Resource_Topic:
@@ -181,7 +206,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider)
+	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider, s.runtime)
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
 	if err != nil {

@@ -28,6 +28,7 @@ import (
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
@@ -50,37 +51,27 @@ import (
 )
 
 type NitricGcpPulumiProvider struct {
-	stackId       string
-	projectName   string
-	stackName     string
-	fullStackName string
+	*deploy.CommonStackDetails
 
-	config *GcpConfig
-	region string
+	StackId   string
+	GcpConfig *GcpConfig
 
-	delayQueue      *cloudtasks.Queue
-	authToken       *oauth2.Token
-	baseComputeRole *projects.IAMCustomRole
+	DelayQueue      *cloudtasks.Queue
+	AuthToken       *oauth2.Token
+	BaseComputeRole *projects.IAMCustomRole
 
-	project            *Project
-	apiGateways        map[string]*apigateway.Gateway
-	httpProxies        map[string]*apigateway.Gateway
-	cloudRunServices   map[string]*NitricCloudRunService
-	buckets            map[string]*storage.Bucket
-	topics             map[string]*pubsub.Topic
-	queues             map[string]*pubsub.Topic
-	queueSubscriptions map[string]*pubsub.Subscription
-	secrets            map[string]*secretmanager.Secret
+	Project            *Project
+	ApiGateways        map[string]*apigateway.Gateway
+	HttpProxies        map[string]*apigateway.Gateway
+	CloudRunServices   map[string]*NitricCloudRunService
+	Buckets            map[string]*storage.Bucket
+	Topics             map[string]*pubsub.Topic
+	Queues             map[string]*pubsub.Topic
+	QueueSubscriptions map[string]*pubsub.Subscription
+	Secrets            map[string]*secretmanager.Secret
 
 	provider.NitricDefaultOrder
 }
-
-// Embeds the runtime directly into the deploytime binary
-// This way the versions will always match as they're always built and versioned together (as a single artifact)
-// This should also help with docker build speeds as the runtime has already been "downloaded"
-//
-//go:embed runtime-gcp
-var runtime []byte
 
 var _ provider.NitricPulumiProvider = (*NitricGcpPulumiProvider)(nil)
 
@@ -88,8 +79,8 @@ const pulumiGcpVersion = "6.67.0"
 
 func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
-		"gcp:region":     auto.ConfigValue{Value: a.region},
-		"gcp:project":    auto.ConfigValue{Value: a.config.ProjectId},
+		"gcp:region":     auto.ConfigValue{Value: a.Region},
+		"gcp:project":    auto.ConfigValue{Value: a.GcpConfig.ProjectId},
 		"gcp:version":    auto.ConfigValue{Value: pulumiGcpVersion},
 		"docker:version": auto.ConfigValue{Value: deploy.PulumiDockerVersion},
 	}, nil
@@ -97,7 +88,7 @@ func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 
 func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.ResourceOption) []pulumi.ResourceOption {
 	defaultOptions := []pulumi.ResourceOption{
-		pulumi.DependsOn([]pulumi.Resource{a.project}),
+		pulumi.DependsOn([]pulumi.Resource{a.Project}),
 	}
 
 	return append(defaultOptions, opts...)
@@ -106,38 +97,15 @@ func (a *NitricGcpPulumiProvider) WithDefaultResourceOptions(opts ...pulumi.Reso
 func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error {
 	var err error
 
-	region, ok := attributes["region"].(string)
-	if !ok {
-		return fmt.Errorf("Missing region attribute")
+	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	a.region = region
-
-	a.config, err = ConfigFromAttributes(attributes)
+	a.GcpConfig, err = ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
-
-	var isString bool
-
-	iProject, hasProject := attributes["project"]
-	a.projectName, isString = iProject.(string)
-	if !hasProject || !isString || a.projectName == "" {
-		// need a valid project name
-		return fmt.Errorf("project is not set or invalid")
-	}
-
-	iStack, hasStack := attributes["stack"]
-	a.stackName, isString = iStack.(string)
-	if !hasStack || !isString || a.stackName == "" {
-		// need a valid stack name
-		return fmt.Errorf("stack is not set or invalid")
-	}
-
-	// Backwards compatible stack name
-	// The existing providers in the CLI
-	// Use the combined project and stack name
-	a.fullStackName = fmt.Sprintf("%s-%s", a.projectName, a.stackName)
 
 	return nil
 }
@@ -170,7 +138,7 @@ var baseComputePermissions []string = []string{
 	"monitoring.timeSeries.create",
 }
 
-func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error {
+func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.NitricPulumiResource[any]) error {
 	// make our random stackId
 	stackRandId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-stack-name", ctx.Stack()), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
@@ -190,49 +158,49 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 		return id
 	})
 
-	a.stackId = <-stackIdChan
+	a.StackId = <-stackIdChan
 
 	project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
-		ProjectId: &a.config.ProjectId,
+		ProjectId: &a.GcpConfig.ProjectId,
 	}, nil)
 	if err != nil {
 		return err
 	}
 
-	a.project, err = NewProject(ctx, "project", &ProjectArgs{
-		ProjectId:     a.config.ProjectId,
+	a.Project, err = NewProject(ctx, "project", &ProjectArgs{
+		ProjectId:     a.GcpConfig.ProjectId,
 		ProjectNumber: project.Number,
 	})
 	if err != nil {
 		return err
 	}
 
-	a.delayQueue, err = cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
-		Location: pulumi.String(a.region),
+	a.DelayQueue, err = cloudtasks.NewQueue(ctx, "delay-queue", &cloudtasks.QueueArgs{
+		Location: pulumi.String(a.Region),
 	})
 	if err != nil {
 		return err
 	}
 
 	// Deploy all services
-	a.authToken, err = getGCPToken(ctx)
+	a.AuthToken, err = getGCPToken(ctx)
 	if err != nil {
 		return err
 	}
 
-	baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", a.fullStackName), &random.RandomStringArgs{
+	baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", a.FullStackName), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(8),
 		Keepers: pulumi.ToMap(map[string]interface{}{
-			"stack-name": a.fullStackName,
+			"stack-name": a.FullStackName,
 		}),
 	})
 	if err != nil {
 		return errors.WithMessage(err, "base customRole id")
 	}
 
-	a.baseComputeRole, err = projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
-		Title:       pulumi.String(a.fullStackName + "-functions-base-role"),
+	a.BaseComputeRole, err = projects.NewIAMCustomRole(ctx, "base-role", &projects.IAMCustomRoleArgs{
+		Title:       pulumi.String(a.FullStackName + "-functions-base-role"),
 		Permissions: pulumi.ToStringArray(baseComputePermissions),
 		RoleId:      baseCustomRoleId.ID(),
 	})
@@ -241,13 +209,13 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*deployme
 	}
 
 	// Check if a key value store exists, if so get/create a (default) firestore database
-	kvStoreExists := lo.SomeBy(resources, func(res *deploymentspb.Resource) bool {
+	kvStoreExists := lo.SomeBy(resources, func(res *pulumix.NitricPulumiResource[any]) bool {
 		_, ok := res.Config.(*deploymentspb.Resource_KeyValueStore)
 		return ok
 	})
 
 	if kvStoreExists {
-		err := createFirestoreDatabase(ctx, *project.ProjectId, a.region)
+		err := createFirestoreDatabase(ctx, *project.ProjectId, a.Region)
 		if err != nil {
 			return err
 		}
@@ -314,20 +282,20 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 	outputs := []interface{}{}
 
 	// Add APIs outputs
-	if len(a.apiGateways) > 0 {
+	if len(a.ApiGateways) > 0 {
 		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
-		for apiName, api := range a.apiGateways {
+		for apiName, api := range a.ApiGateways {
 			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", apiName, api.DefaultHostname))
 		}
 	}
 
 	// Add HTTP Proxy outputs
-	if len(a.httpProxies) > 0 {
+	if len(a.HttpProxies) > 0 {
 		if len(outputs) > 0 {
 			outputs = append(outputs, "\n")
 		}
 		outputs = append(outputs, pulumi.Sprintf("HTTP Proxies:\n──────────────"))
-		for proxyName, proxy := range a.httpProxies {
+		for proxyName, proxy := range a.HttpProxies {
 			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", proxyName, proxy.DefaultHostname))
 		}
 	}
@@ -350,14 +318,14 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		httpProxies:        make(map[string]*apigateway.Gateway),
-		apiGateways:        make(map[string]*apigateway.Gateway),
-		cloudRunServices:   make(map[string]*NitricCloudRunService),
-		buckets:            make(map[string]*storage.Bucket),
-		topics:             make(map[string]*pubsub.Topic),
-		queues:             make(map[string]*pubsub.Topic),
-		queueSubscriptions: make(map[string]*pubsub.Subscription),
-		secrets:            make(map[string]*secretmanager.Secret),
+		HttpProxies:        make(map[string]*apigateway.Gateway),
+		ApiGateways:        make(map[string]*apigateway.Gateway),
+		CloudRunServices:   make(map[string]*NitricCloudRunService),
+		Buckets:            make(map[string]*storage.Bucket),
+		Topics:             make(map[string]*pubsub.Topic),
+		Queues:             make(map[string]*pubsub.Topic),
+		QueueSubscriptions: make(map[string]*pubsub.Subscription),
+		Secrets:            make(map[string]*secretmanager.Secret),
 	}
 }
 

@@ -23,6 +23,8 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventgrid/eventgrid"
@@ -147,7 +149,7 @@ var RoleDefinitions = map[string]string{
 	"TagContributor": "4a9ae827-6dc8-4573-8ac7-8239d42aa03f",
 }
 
-func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *deploymentspb.Service) error {
+func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	res := &ContainerApp{
@@ -159,15 +161,15 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		return err
 	}
 
-	repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", p.containerEnv.Registry.LoginServer, p.projectName, name, "azure")
+	repositoryUrl := pulumi.Sprintf("%s/%s-%s-%s", p.ContainerEnv.Registry.LoginServer, p.ProjectName, name, "azure")
 
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   service.GetImage().Uri,
 		RepositoryUrl: repositoryUrl,
-		Username:      p.containerEnv.RegistryUser.Elem(),
-		Password:      p.containerEnv.RegistryPass.Elem(),
-		Server:        p.containerEnv.Registry.LoginServer,
-		Runtime:       runtime,
+		Username:      p.ContainerEnv.RegistryUser.Elem(),
+		Password:      p.ContainerEnv.RegistryPass.Elem(),
+		Server:        p.ContainerEnv.Registry.LoginServer,
+		Runtime:       runtime(),
 	}, opts...)
 	if err != nil {
 		return err
@@ -177,7 +179,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		service.Type = "default"
 	}
 
-	serviceConfig := p.config.Config[service.Type]
+	serviceConfig := p.AzureConfig.Config[service.Type]
 
 	if serviceConfig.ContainerApps == nil {
 		return fmt.Errorf("invalid container app config type: %s", service.Type)
@@ -201,10 +203,10 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	if err != nil {
 		return err
 	}
-	p.principals[resourcespb.ResourceType_Service][name] = principal
+	p.Principals[resourcespb.ResourceType_Service][name] = principal
 	res.Sp = principal
 
-	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", p.clientConfig.SubscriptionId, p.resourceGroup.Name)
+	scope := pulumi.Sprintf("subscriptions/%s/resourceGroups/%s", p.ClientConfig.SubscriptionId, p.ResourceGroup.Name)
 
 	// Assign roles to the new SP
 	for defName, id := range RoleDefinitions {
@@ -213,7 +215,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		_, err = authorization.NewRoleAssignment(ctx, ResourceName(ctx, name+defName, AssignmentRT), &authorization.RoleAssignmentArgs{
 			PrincipalId:      res.Sp.ServicePrincipalId,
 			PrincipalType:    pulumi.StringPtr("ServicePrincipal"),
-			RoleDefinitionId: pulumi.Sprintf("/subscriptions/%s/providers/Microsoft.Authorization/roleDefinitions/%s", p.clientConfig.SubscriptionId, id),
+			RoleDefinitionId: pulumi.Sprintf("/subscriptions/%s/providers/Microsoft.Authorization/roleDefinitions/%s", p.ClientConfig.SubscriptionId, id),
 			Scope:            scope,
 		}, pulumi.Parent(res))
 		if err != nil {
@@ -232,7 +234,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String(resource.NITRIC_STACK_ID),
-			Value: pulumi.String(p.stackId),
+			Value: pulumi.String(p.StackId),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
@@ -240,11 +242,11 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_SUBSCRIPTION_ID"),
-			Value: pulumi.String(p.clientConfig.SubscriptionId),
+			Value: pulumi.String(p.ClientConfig.SubscriptionId),
 		},
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("AZURE_RESOURCE_GROUP"),
-			Value: p.resourceGroup.Name,
+			Value: p.ResourceGroup.Name,
 		},
 		app.EnvironmentVarArgs{
 			Name:      pulumi.String("AZURE_CLIENT_ID"),
@@ -272,14 +274,14 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		// },
 	}
 
-	for k, v := range service.Env {
+	for k, v := range service.Env() {
 		env = append(env, app.EnvironmentVarArgs{
 			Name:  pulumi.String(k),
-			Value: pulumi.String(v),
+			Value: v,
 		})
 	}
 
-	env = append(env, p.containerEnv.Env...)
+	env = append(env, p.ContainerEnv.Env...)
 
 	// if len(args.Env) > 0 {
 	// 	env = append(env, args.Env...)
@@ -287,11 +289,13 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 
 	//	If this instance contains a schedule set the minimum instances to 1
 	// schedules rely on the Dapr Runtime to trigger the function, without a running instance the Dapr Runtime will not execute, so the schedule won't trigger.
-	_, schedulesFound := lo.Find(p.resources, func(item *deploy.Resource) bool {
-		if item.GetSchedule() == nil {
-			return false
+	_, schedulesFound := lo.Find(p.resources, func(item *pulumix.NitricPulumiResource[any]) bool {
+		switch t := item.Config.(type) {
+		case *deploymentspb.Schedule:
+			return t.Target.GetService() == name
 		}
-		return item.GetSchedule().Target.GetService() == name
+
+		return false
 	})
 
 	minReplicas := serviceConfig.ContainerApps.MinReplicas
@@ -302,9 +306,9 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	appName := ResourceName(ctx, name, ContainerAppRT)
 
 	res.App, err = app.NewContainerApp(ctx, appName, &app.ContainerAppArgs{
-		ResourceGroupName:    p.resourceGroup.Name,
-		Location:             p.resourceGroup.Location,
-		ManagedEnvironmentId: p.containerEnv.ManagedEnv.ID(),
+		ResourceGroupName:    p.ResourceGroup.Name,
+		Location:             p.ResourceGroup.Location,
+		ManagedEnvironmentId: p.ContainerEnv.ManagedEnv.ID(),
 		Configuration: app.ConfigurationArgs{
 			ActiveRevisionsMode: pulumi.String("Single"),
 			Ingress: app.IngressArgs{
@@ -313,8 +317,8 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 			},
 			Registries: app.RegistryCredentialsArray{
 				app.RegistryCredentialsArgs{
-					Server:            p.containerEnv.Registry.LoginServer,
-					Username:          p.containerEnv.RegistryUser,
+					Server:            p.ContainerEnv.Registry.LoginServer,
+					Username:          p.ContainerEnv.RegistryUser,
 					PasswordSecretRef: pulumi.String("pwd"),
 				},
 			},
@@ -327,7 +331,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 			Secrets: app.SecretArray{
 				app.SecretArgs{
 					Name:  pulumi.String("pwd"),
-					Value: p.containerEnv.RegistryPass,
+					Value: p.ContainerEnv.RegistryPass,
 				},
 				app.SecretArgs{
 					Name:  pulumi.String("client-id"),
@@ -343,7 +347,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.stackId, name, resources.Service)),
+		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Service)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
 				MaxReplicas: pulumi.Int(serviceConfig.ContainerApps.MaxReplicas),
@@ -383,14 +387,14 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 					OpenIdIssuer:            pulumi.Sprintf("https://sts.windows.net/%s/v2.0", res.Sp.TenantID),
 				},
 				Validation: &app.AzureActiveDirectoryValidationArgs{
-					AllowedAudiences: pulumi.StringArray{p.containerEnv.ManagedUser.ClientId},
+					AllowedAudiences: pulumi.StringArray{p.ContainerEnv.ManagedUser.ClientId},
 				},
 			},
 		},
 		Platform: &app.AuthPlatformArgs{
 			Enabled: pulumi.Bool(true),
 		},
-		ResourceGroupName: p.resourceGroup.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
 	}, pulumi.Parent(res.App))
 	if err != nil {
 		return err
@@ -401,7 +405,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		"containerApp": res.App,
 	})
 
-	p.containerApps[name] = res
+	p.ContainerApps[name] = res
 
 	return err
 }

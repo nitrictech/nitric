@@ -71,18 +71,18 @@ func createSecret(ctx *pulumi.Context, name string, tags map[string]string) (*se
 
 // Secret - Implements deployments of Nitric Secrets using AWS Secrets Manager
 func (a *NitricAwsPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Secret) error {
-	awsTags := common.Tags(a.stackId, name, resources.Secret)
+	awsTags := common.Tags(a.StackId, name, resources.Secret)
 
 	var err error
 	var secret *secretsmanager.Secret
 
 	importArn := ""
-	if a.config.Import.Secrets != nil {
-		importArn = a.config.Import.Secrets[name]
+	if a.AwsConfig.Import.Secrets != nil {
+		importArn = a.AwsConfig.Import.Secrets[name]
 	}
 
 	if importArn != "" {
-		secret, err = tagSecret(ctx, name, importArn, awsTags, a.resourceTaggingClient)
+		secret, err = tagSecret(ctx, name, importArn, awsTags, a.ResourceTaggingClient)
 	} else {
 		secret, err = createSecret(ctx, name, awsTags)
 	}
@@ -91,7 +91,7 @@ func (a *NitricAwsPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 		return err
 	}
 
-	a.secrets[name] = secret
+	a.Secrets[name] = secret
 
 	return nil
 }

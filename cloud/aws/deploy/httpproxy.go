@@ -30,9 +30,9 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	targetLambda := a.lambdas[http.Target.GetService()]
+	targetLambda := a.Lambdas[http.Target.GetService()]
 
-	httpProxyGatewayTags := common.Tags(a.stackId, name, resources.HttpProxy)
+	httpProxyGatewayTags := common.Tags(a.StackId, name, resources.HttpProxy)
 
 	doc := targetLambda.InvokeArn.ApplyT(func(invokeArn string) (string, error) {
 		spec := newApiSpec(name, invokeArn, httpProxyGatewayTags)
@@ -45,7 +45,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 		return string(b), nil
 	}).(pulumi.StringOutput)
 
-	a.httpProxies[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
+	a.HttpProxies[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:           doc,
 		ProtocolType:   pulumi.String("HTTP"),
 		Tags:           pulumi.ToStringMap(httpProxyGatewayTags),
@@ -58,7 +58,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 	_, err = apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
-		ApiId:      a.httpProxies[name].ID(),
+		ApiId:      a.HttpProxies[name].ID(),
 	}, opts...)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (a *NitricAwsPulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resour
 		Function:  targetLambda.Name,
 		Action:    pulumi.String("lambda:InvokeFunction"),
 		Principal: pulumi.String("apigateway.amazonaws.com"),
-		SourceArn: pulumi.Sprintf("%s/*/*/*", a.httpProxies[name].ExecutionArn),
+		SourceArn: pulumi.Sprintf("%s/*/*/*", a.HttpProxies[name].ExecutionArn),
 	}, opts...)
 	if err != nil {
 		return err

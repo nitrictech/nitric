@@ -17,9 +17,9 @@ package deploy
 import "fmt"
 
 type CommonStackDetails struct {
-	Project       string
+	ProjectName   string
 	FullStackName string
-	Stack         string
+	StackName     string
 	Region        string
 }
 
@@ -51,9 +51,9 @@ func CommonStackDetailsFromAttributes(attributes map[string]interface{}) (*Commo
 	fullStackName := fmt.Sprintf("%s-%s", project, stack)
 
 	return &CommonStackDetails{
-		Project:       project,
+		ProjectName:   project,
 		FullStackName: fullStackName,
 		Region:        region,
-		Stack:         stack,
+		StackName:     stack,
 	}, nil
 }

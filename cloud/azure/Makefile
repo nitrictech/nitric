@@ -8,21 +8,21 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime-azure
+	@touch deploy/runtime/runtime-azure
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime-azure
+	@rm deploy/runtime/runtime-azure
 
 runtimebin:
 	@echo Building Azure Runtime Server
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-azure -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-azure deploy/runtime-azure
+	@cp bin/runtime-azure deploy/runtime/runtime-azure
 
 deploybin: predeploybin
 	@echo Building Azure Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime-azure
+	@rm deploy/runtime/runtime-azure
 
 .PHONY: install
 install: deploybin
@@ -39,15 +39,15 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime-azure
+	@touch deploy/runtime/runtime-azure
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime-azure
+	@rm deploy/runtime/runtime-azure
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime-azure
+	@touch deploy/runtime/runtime-azure
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime-azure
+	@rm deploy/runtime/runtime-azure
 
 test: generate-mocks
 	@echo Running unit tests

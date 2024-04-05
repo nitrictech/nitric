@@ -43,12 +43,12 @@ type AzureEventGridTopicArgs struct {
 func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Context, parent pulumi.Resource, topicName string, config *deploymentspb.SubscriptionTarget) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	target, ok := p.containerApps[config.GetService()]
+	target, ok := p.ContainerApps[config.GetService()]
 	if !ok {
 		return fmt.Errorf("Unable to find container app for service: %s", config.GetService())
 	}
 
-	topic, ok := p.topics[topicName]
+	topic, ok := p.Topics[topicName]
 	if !ok {
 		return fmt.Errorf("Unable to find topic: %s", topicName)
 	}
@@ -82,10 +82,10 @@ func (p *NitricAzurePulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Res
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	p.topics[name], err = eventgrid.NewTopic(ctx, ResourceName(ctx, name, EventGridRT), &eventgrid.TopicArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		Location:          p.resourceGroup.Location,
-		Tags:              pulumi.ToStringMap(tags.Tags(p.stackId, name, nitricresources.Topic)),
+	p.Topics[name], err = eventgrid.NewTopic(ctx, ResourceName(ctx, name, EventGridRT), &eventgrid.TopicArgs{
+		ResourceGroupName: p.ResourceGroup.Name,
+		Location:          p.ResourceGroup.Location,
+		Tags:              pulumi.ToStringMap(tags.Tags(p.StackId, name, nitricresources.Topic)),
 	}, opts...)
 	if err != nil {
 		return err

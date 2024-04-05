@@ -15,6 +15,7 @@
 package provider
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
@@ -26,7 +27,7 @@ type NitricPulumiProvider interface {
 	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
 	Init(attributes map[string]interface{}) error
 	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
-	Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error
+	Pre(ctx *pulumi.Context, resources []*pulumix.NitricPulumiResource[any]) error
 	// Config - Return the Pulumi ConfigMap for the provider
 	Config() (auto.ConfigMap, error)
 
@@ -42,7 +43,7 @@ type NitricPulumiProvider interface {
 	// Bucket - Deploy a Storage Bucket
 	Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error
 	// Service - Deploy an service (Service)
-	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
+	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtimeProvider RuntimeProvider) error
 	// Topic - Deploy a Pub/Sub Topic
 	Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error
 	// Queue - Deploy a Queue

@@ -42,12 +42,12 @@ func removeWildcard(prefixFilter string) string {
 }
 
 func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Context, parent pulumi.Resource, bucketName string, config *deploymentspb.BucketListener) error {
-	target, ok := p.containerApps[config.GetService()]
+	target, ok := p.ContainerApps[config.GetService()]
 	if !ok {
 		return fmt.Errorf("target container app %s not found", config.GetService())
 	}
 
-	bucket, ok := p.buckets[bucketName]
+	bucket, ok := p.Buckets[bucketName]
 	if !ok {
 		return fmt.Errorf("target bucket %s not found", bucketName)
 	}
@@ -60,7 +60,7 @@ func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Conte
 	}
 
 	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, bucketName+target.Name, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
-		Scope: p.storageAccount.ID(),
+		Scope: p.StorageAccount.ID(),
 		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
 			Url: pulumi.Sprintf("%s/%s/x-nitric-notification/bucket/%s", hostUrl, target.EventToken, bucketName),
 			// Only send one event per batch to avoid a single failure nacking multiple events.
@@ -88,9 +88,9 @@ func (p *NitricAzurePulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Re
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	p.buckets[name], err = storage.NewBlobContainer(ctx, ResourceName(ctx, name, StorageContainerRT), &storage.BlobContainerArgs{
-		ResourceGroupName: p.resourceGroup.Name,
-		AccountName:       p.storageAccount.Name,
+	p.Buckets[name], err = storage.NewBlobContainer(ctx, ResourceName(ctx, name, StorageContainerRT), &storage.BlobContainerArgs{
+		ResourceGroupName: p.ResourceGroup.Name,
+		AccountName:       p.StorageAccount.Name,
 	}, opts...)
 	if err != nil {
 		return err

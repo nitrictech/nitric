@@ -70,12 +70,12 @@ func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 		return err
 	}
 
-	targetService := p.cloudRunServices[config.Target.GetService()]
+	targetService := p.CloudRunServices[config.Target.GetService()]
 
 	payload := base64.StdEncoding.EncodeToString(eventJSON)
 
 	_, err = cloudscheduler.NewJob(ctx, name, &cloudscheduler.JobArgs{
-		TimeZone: pulumi.String(p.config.ScheduleTimezone),
+		TimeZone: pulumi.String(p.GcpConfig.ScheduleTimezone),
 		HttpTarget: &cloudscheduler.JobHttpTargetArgs{
 			Uri: pulumi.Sprintf("%s/x-nitric-schedule/%s?token=%s", targetService.Url, name, targetService.EventToken),
 			OidcToken: &cloudscheduler.JobHttpTargetOidcTokenArgs{

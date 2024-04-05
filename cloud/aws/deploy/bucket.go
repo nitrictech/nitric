@@ -108,28 +108,28 @@ func (a *NitricAwsPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	bucket, err := s3.NewBucket(ctx, name, &s3.BucketArgs{
-		Tags: pulumi.ToStringMap(common.Tags(a.stackId, name, resources.Bucket)),
+		Tags: pulumi.ToStringMap(common.Tags(a.StackId, name, resources.Bucket)),
 	}, opts...)
 	if err != nil {
 		return err
 	}
 
-	a.buckets[name] = bucket
+	a.Buckets[name] = bucket
 
 	if len(config.Listeners) > 0 {
 		notificationName := fmt.Sprintf("notification-%s", name)
 		notification, err := createNotification(ctx, notificationName, &S3NotificationArgs{
-			StackID:   a.stackId,
-			Location:  a.region,
+			StackID:   a.StackId,
+			Location:  a.Region,
 			Bucket:    bucket,
-			Lambdas:   a.lambdas,
+			Lambdas:   a.Lambdas,
 			Listeners: config.Listeners,
 		}, opts...)
 		if err != nil {
 			return err
 		}
 
-		a.bucketNotifications[name] = notification
+		a.BucketNotifications[name] = notification
 	}
 
 	return nil

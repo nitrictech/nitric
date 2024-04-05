@@ -159,7 +159,7 @@ func actionsToGcpActions(actions []v1.Action) []string {
 func (a *NitricGcpPulumiProvider) serviceAccountForPrincipal(resource *deploymentspb.Resource) (*serviceaccount.Account, error) {
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Service:
-		if f, ok := a.cloudRunServices[resource.Id.Name]; ok {
+		if f, ok := a.CloudRunServices[resource.Id.Name]; ok {
 			return f.ServiceAccount, nil
 		}
 	default:
@@ -190,7 +190,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 
 			switch resource.Id.Type {
 			case v1.ResourceType_Bucket:
-				b := p.buckets[resource.Id.Name]
+				b := p.Buckets[resource.Id.Name]
 
 				_, err = gcpstorage.NewBucketIAMMember(ctx, memberName, &gcpstorage.BucketIAMMemberArgs{
 					Bucket: b.Name,
@@ -211,14 +211,14 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 
 				_, err = projects.NewIAMMember(ctx, memberName, &projects.IAMMemberArgs{
 					Member:  memberId,
-					Project: pulumi.String(p.config.ProjectId),
+					Project: pulumi.String(p.GcpConfig.ProjectId),
 					Role:    collRole.Name,
 				}, opts...)
 				if err != nil {
 					return err
 				}
 			case v1.ResourceType_Topic:
-				t := p.topics[resource.Id.Name]
+				t := p.Topics[resource.Id.Name]
 
 				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
 					Topic:  t.Name,
@@ -229,7 +229,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 					return err
 				}
 			case v1.ResourceType_Queue:
-				q := p.queues[resource.Id.Name]
+				q := p.Queues[resource.Id.Name]
 
 				_, err = pubsub.NewTopicIAMMember(ctx, memberName, &pubsub.TopicIAMMemberArgs{
 					Topic:  q.Name,
@@ -250,7 +250,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 				}
 
 				if needSubConsume {
-					subscription := p.queueSubscriptions[resource.Id.Name]
+					subscription := p.QueueSubscriptions[resource.Id.Name]
 					subRolePolicy, err := NewCustomRole(ctx, name+"subscription", []string{"pubsub.subscriptions.consume"}, opts...)
 					if err != nil {
 						return err
@@ -266,7 +266,7 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 					}
 				}
 			case v1.ResourceType_Secret:
-				s := p.secrets[resource.Id.Name]
+				s := p.Secrets[resource.Id.Name]
 
 				_, err = secretmanager.NewSecretIamMember(ctx, memberName, &secretmanager.SecretIamMemberArgs{
 					SecretId: s.SecretId,
