@@ -28,7 +28,7 @@ type GcpConfigItem struct {
 }
 
 type GcpImports struct {
-	// A map of nitric names to ARNs
+	// A map of nitric names to GCP Secret Manager names
 	Secrets map[string]string
 }
 

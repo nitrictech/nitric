@@ -34,7 +34,7 @@ type SecretManagerSecret struct {
 	Secret *secretmanager.Secret
 }
 
-// tagSecret - tags an existing secret in AWS and adds it to the stack.
+// tagSecret - tags an existing secret in GCP and adds it to the stack.
 func tagSecret(ctx *pulumi.Context, name string, projectId string, secretId string, tags map[string]string, client *gcpsecretmanager.Client, opts []pulumi.ResourceOption) (*secretmanager.Secret, error) {
 	secretLookup, err := secretmanager.LookupSecret(ctx, &secretmanager.LookupSecretArgs{
 		Project:  &projectId,
@@ -71,7 +71,7 @@ func tagSecret(ctx *pulumi.Context, name string, projectId string, secretId stri
 	return sec, nil
 }
 
-// createSecret - creates a new secret in AWS, using the provided name and tags.
+// createSecret - creates a new secret in GCP Secret Manager, using the provided name and tags.
 func createSecret(ctx *pulumi.Context, name string, stackName string, tags map[string]string, opts []pulumi.ResourceOption) (*secretmanager.Secret, error) {
 	secId := pulumi.Sprintf("%s-%s", stackName, name)
 	sec, err := secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
