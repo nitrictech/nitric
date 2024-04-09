@@ -27,6 +27,11 @@ type GcpConfigItem struct {
 	Telemetry int
 }
 
+type GcpImports struct {
+	// A map of nitric names to ARNs
+	Secrets map[string]string
+}
+
 type GcpCloudRunConfig struct {
 	Memory       int
 	Timeout      int
@@ -37,6 +42,7 @@ type GcpCloudRunConfig struct {
 
 type GcpConfig struct {
 	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
+	Import                                GcpImports
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
 	ProjectId                             string `mapstructure:"gcp-project-id"`
 	Refresh                               bool

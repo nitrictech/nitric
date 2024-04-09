@@ -26,6 +26,7 @@ import (
 
 	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
+	gcpsecretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
@@ -59,6 +60,8 @@ type NitricGcpPulumiProvider struct {
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
 	BaseComputeRole *projects.IAMCustomRole
+
+	SecretManagerClient *gcpsecretmanager.Client
 
 	Project            *Project
 	ApiGateways        map[string]*apigateway.Gateway
@@ -105,6 +108,11 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 	a.GcpConfig, err = ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
+	}
+
+	a.SecretManagerClient, err = gcpsecretmanager.NewClient(context.Background())
+	if err != nil {
+		return err
 	}
 
 	return nil
