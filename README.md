@@ -37,6 +37,7 @@ If you would like to know more about our future plans or what we are currently w
   <a href="https://github.com/nitrictech/go-sdk"><img src="https://skillicons.dev/icons?i=go"/></a>
   <a href="https://github.com/nitrictech/dotnet-sdk"><img src="https://skillicons.dev/icons?i=cs"/></a>
   <a href="https://github.com/nitrictech/jvm-sdk"><img src="https://skillicons.dev/icons?i=java"/></a>
+  <a href="https://github.com/nitrictech/dart-sdk"><img src="https://skillicons.dev/icons?i=dart"/></a>
 </p>
 
 ## Supported Clouds
