@@ -1,0 +1,26 @@
+syntax = "proto3";
+package nitric.proto.sql.v1;
+
+//protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/sql/v1;sqlpb";
+option java_package = "io.nitric.proto.sql.v1";
+option java_multiple_files = true;
+option java_outer_classname = "SqlService";
+option php_namespace = "Nitric\\Proto\\Sql\\V1";
+option csharp_namespace = "Nitric.Proto.Sql.v1";
+
+// The Nitric Secret Service
+service Sql {
+  // Retrieve the connection string for a given database
+  rpc ConnectionString (SqlConnectionStringRequest) returns (SqlConnectionStringResponse);
+}
+
+message SqlConnectionStringRequest {
+  // The name of the database to retrieve the connection string for
+  string database_name = 1;
+}
+
+message SqlConnectionStringResponse {
+  // The connection string for the database
+  string connection_string = 1;
+}
