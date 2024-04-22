@@ -257,6 +257,11 @@ message Schedule {
   }
 }
 
+message SqlDatabase {
+  // Service name to environment variable name mapping
+  map<string, string> service_env_variable_name = 1;
+}
+
 message ScheduleEvery {
   // rate string e.g. '5 minutes'. Value frequencies are 'minutes', 'hours', 'days'.
   string rate = 1;
