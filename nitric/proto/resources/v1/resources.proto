@@ -75,8 +75,6 @@ message KeyValueStoreResource {
 message SecretResource {
 }
 message SqlDatabaseResource {
-  // The environment variable to bind the database connection string to
-  string env_variable_name = 1;
 }
 
 message ApiOpenIdConnectionDefinition {

@@ -258,8 +258,6 @@ message Schedule {
 }
 
 message SqlDatabase {
-  // Service name to environment variable name mapping
-  map<string, string> service_env_variable_name = 1;
 }
 
 message ScheduleEvery {
@@ -287,6 +285,7 @@ message Resource {
     Websocket websocket = 18;
     Http http = 19;
     Queue queue = 20;
+    SqlDatabase sql_database = 21;
   }
 }
 
