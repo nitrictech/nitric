@@ -25,5 +25,10 @@ import (
 
 // Sqldatabase - Implements PostgresSql database deployments use AWS Aurora
 func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
+
+	// Run CREATE DATABASE queries against this cluster for each of the databases we want to deploy here
+	// We will run with a IF NOT EXISTS clause to ensure we don't overwrite existing databases
+	// a.DatabaseCluster
+
 	return fmt.Errorf("Sql databases are unimplemented in the nitric AWS provider")
 }

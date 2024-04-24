@@ -32,11 +32,14 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	pulumiAws "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
@@ -44,6 +47,7 @@ import (
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -54,6 +58,7 @@ type NitricAwsPulumiProvider struct {
 	StackId   string
 	AwsConfig *AwsConfig
 
+	DatabaseCluster     *rds.Cluster
 	EcrAuthToken        *ecr.GetAuthorizationTokenResult
 	Lambdas             map[string]*lambda.Function
 	LambdaRoles         map[string]*iam.Role
@@ -146,6 +151,49 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			}`, tags.GetResourceNameKey(a.StackId)),
 		},
 	})
+
+	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
+	})
+	// Create a shared database cluster if we have more than one database
+	if len(databases) > 0 {
+		// deploy a VPC and security groups for this database cluster
+
+		availabilityZones, err := pulumiAws.GetAvailabilityZones(ctx, &pulumiAws.GetAvailabilityZonesArgs{})
+		if err != nil {
+			return err
+		}
+
+		clusterAvailabilityZones := pulumi.StringArray{}
+
+		for _, az := range availabilityZones.Names {
+			clusterAvailabilityZones = append(clusterAvailabilityZones, pulumi.String(az))
+		}
+
+		// generate a db cluster master username
+		dbMasterUsername, err := random.NewRandomString(ctx, "db-master-username", &random.RandomStringArgs{})
+
+		// generate a db cluster random password
+		dbMasterPassword, err := random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+			Length: pulumi.Int(16),
+		})
+
+		a.DatabaseCluster, err = rds.NewCluster(ctx, "postgresql", &rds.ClusterArgs{
+			Engine: pulumi.String(rds.EngineTypeAuroraPostgresql),
+			// TODO: limit number of availability zones
+			AvailabilityZones:     clusterAvailabilityZones,
+			DatabaseName:          pulumi.String("default"),
+			MasterUsername:        dbMasterUsername.Result,
+			MasterPassword:        dbMasterPassword.Result,
+			BackupRetentionPeriod: pulumi.Int(5),
+			EngineMode:            pulumi.String("serverless"),
+			// TODO: Validate timezones used here
+			PreferredBackupWindow: pulumi.String("07:00-09:00"),
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return err
 }
