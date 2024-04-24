@@ -92,6 +92,8 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 			}
 
 			switch t := res.Config.(type) {
+			case *deploymentspb.SqlDatabase:
+				err = nitricProvider.SqlDatabase(ctx, parent, res.Id.Name, t)
 			case *pulumix.NitricPulumiServiceConfig:
 				err = nitricProvider.Service(ctx, parent, res.Id.Name, t, runtime)
 			case *deploymentspb.Resource_Secret:
