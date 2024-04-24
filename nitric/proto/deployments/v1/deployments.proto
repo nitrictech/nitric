@@ -261,7 +261,7 @@ message SqlDatabase {
   oneof migrations {
     // The URI of a docker image to use to execute the migrations for this database
     string image_uri = 1;
-  } 
+  }
 }
 
 message ScheduleEvery {
