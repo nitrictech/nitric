@@ -207,11 +207,23 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
 	if typeConfig.Lambda.Vpc != nil {
+		if a.Vpc != nil {
+			return fmt.Errorf("this stack has configuration that requires its own VPC configuration and cannot accept custom lambda VPC configurations")
+		}
+
 		vpcConfig = &awslambda.FunctionVpcConfigArgs{
 			SubnetIds:        pulumi.ToStringArray(typeConfig.Lambda.Vpc.SubnetIds),
 			SecurityGroupIds: pulumi.ToStringArray(typeConfig.Lambda.Vpc.SecurityGroupIds),
 		}
+	} else if a.Vpc != nil {
+		vpcConfig = &awslambda.FunctionVpcConfigArgs{
+			SubnetIds:        a.Vpc.PrivateSubnetIds,
+			SecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			// VpcId:            a.Vpc.VpcId,
+		}
+	}
 
+	if vpcConfig != nil {
 		// Create a policy attachment for VPC access
 		_, err = iam.NewRolePolicyAttachment(ctx, name+"VPCAccessExecutionRole", &iam.RolePolicyAttachmentArgs{
 			PolicyArn: iam.ManagedPolicyAWSLambdaVPCAccessExecutionRole,

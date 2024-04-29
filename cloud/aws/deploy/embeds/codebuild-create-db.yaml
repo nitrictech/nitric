@@ -1,0 +1,11 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo "Installing psql"
+      - sudo yum -y update
+      - sudo yum -y install postgresql
+  build:
+    commands:
+      - echo "Creating database ${DB_NAME}"
+      - psql -h ${DB_CLUSTER_ENDPOINT} -U ${DB_MASTER_USERNAME} -d nitric -c "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
