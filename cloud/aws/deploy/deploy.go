@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	_ "embed"
@@ -171,6 +172,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		if err != nil {
 			return err
 		}
+		// Ensure AZ order is deterministic
+		slices.Sort(availabilityZones.Names)
 
 		// TODO: Make configurable
 		azCount := 2
