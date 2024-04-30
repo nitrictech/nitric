@@ -172,9 +172,14 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
+		// TODO: Make configurable
+		azCount := 1
+
+		selectedAzs := availabilityZones.Names[0:azCount]
+
 		clusterAvailabilityZones := pulumi.StringArray{}
 
-		for _, az := range availabilityZones.Names {
+		for _, az := range selectedAzs {
 			clusterAvailabilityZones = append(clusterAvailabilityZones, pulumi.String(az))
 		}
 
@@ -188,7 +193,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 
 		a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", &ec2.VpcArgs{
-			EnableDnsHostnames: pulumi.Bool(true),
+			EnableDnsHostnames:    pulumi.Bool(true),
+			AvailabilityZoneNames: selectedAzs,
 		})
 		if err != nil {
 			return err
@@ -196,17 +202,17 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		a.VpcSecurityGroup, err = awsec2.NewSecurityGroup(ctx, "nitric-db-sg", &awsec2.SecurityGroupArgs{
 			VpcId: a.Vpc.VpcId,
+			// Allow only incoming postgres SQL connections
 			Ingress: awsec2.SecurityGroupIngressArray{
 				&awsec2.SecurityGroupIngressArgs{
-					FromPort: pulumi.Int(443),
-					ToPort:   pulumi.Int(443),
+					FromPort: pulumi.Int(5432),
+					ToPort:   pulumi.Int(5432),
 					Protocol: pulumi.String("tcp"),
 					Self:     pulumi.Bool(true),
-					// CidrBlocks: pulumi.StringArray{
-					// 	pulumi.String("0.0.0.0/0"),
-					// },
 				},
 			},
+			// Allow all outgoing traffic
+			// TODO: Harden this
 			Egress: awsec2.SecurityGroupEgressArray{
 				&awsec2.SecurityGroupEgressArgs{
 					FromPort: pulumi.Int(0),
@@ -257,6 +263,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			InstanceClass:     pulumi.String("db.serverless"),
 			Engine:            a.DatabaseCluster.Engine,
 			EngineVersion:     a.DatabaseCluster.EngineVersion,
+			DbSubnetGroupName: a.DatabaseCluster.DbSubnetGroupName,
 		})
 		if err != nil {
 			return err
