@@ -187,7 +187,9 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
-		a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", nil)
+		a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", &ec2.VpcArgs{
+			EnableDnsHostnames: pulumi.Bool(true),
+		})
 		if err != nil {
 			return err
 		}
@@ -228,22 +230,33 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 
 		a.DatabaseCluster, err = rds.NewCluster(ctx, "postgresql", &rds.ClusterArgs{
-			Engine: pulumi.String(rds.EngineTypeAuroraPostgresql),
+			Engine:        pulumi.String(rds.EngineTypeAuroraPostgresql),
+			EngineVersion: pulumi.String("13.14"),
 			// TODO: limit number of availability zones
 			AvailabilityZones: clusterAvailabilityZones,
 			DatabaseName:      pulumi.String("nitric"),
 			MasterUsername:    pulumi.String("nitric"),
 			MasterPassword:    dbMasterPassword.Result,
-			EngineMode:        pulumi.String("serverless"),
-			ScalingConfiguration: &rds.ClusterScalingConfigurationArgs{
-				MaxCapacity: pulumi.Int(2),
-				MinCapacity: pulumi.Int(2),
+			EngineMode:        pulumi.String(rds.EngineModeProvisioned),
+			Serverlessv2ScalingConfiguration: &rds.ClusterServerlessv2ScalingConfigurationArgs{
+				MaxCapacity: pulumi.Float64(1),
+				MinCapacity: pulumi.Float64(0.5),
 			},
 			// TODO: Validate timezones used here
-			PreferredBackupWindow: pulumi.String("07:00-09:00"),
-			VpcSecurityGroupIds:   pulumi.StringArray{a.VpcSecurityGroup.ID()},
-			DbSubnetGroupName:     dbSubnetGroup.Name,
-			SkipFinalSnapshot:     pulumi.Bool(true),
+			// PreferredBackupWindow: pulumi.String("07:00-09:00"),
+			VpcSecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			DbSubnetGroupName:   dbSubnetGroup.Name,
+			SkipFinalSnapshot:   pulumi.Bool(true),
+		})
+		if err != nil {
+			return err
+		}
+
+		dbInstance, err := rds.NewClusterInstance(ctx, "example", &rds.ClusterInstanceArgs{
+			ClusterIdentifier: a.DatabaseCluster.ID(),
+			InstanceClass:     pulumi.String("db.serverless"),
+			Engine:            a.DatabaseCluster.Engine,
+			EngineVersion:     a.DatabaseCluster.EngineVersion,
 		})
 		if err != nil {
 			return err
@@ -319,7 +332,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			},
 			Environment: &codebuild.ProjectEnvironmentArgs{
 				ComputeType: pulumi.String("BUILD_GENERAL1_SMALL"),
-				Image:       pulumi.String("aws/codebuild/standard:4.0"),
+				Image:       pulumi.String("aws/codebuild/amazonlinux2-x86_64-standard:4.0"),
 				Type:        pulumi.String("LINUX_CONTAINER"),
 				EnvironmentVariables: codebuild.ProjectEnvironmentEnvironmentVariableArray{
 					&codebuild.ProjectEnvironmentEnvironmentVariableArgs{
@@ -346,7 +359,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 				Subnets:          a.Vpc.PrivateSubnetIds,
 				VpcId:            a.Vpc.VpcId,
 			},
-		})
+			// Don't deploy the build until after the database cluster is completely ready
+		}, pulumi.DependsOn([]pulumi.Resource{a.DatabaseCluster, dbInstance}))
 		if err != nil {
 			return err
 		}
