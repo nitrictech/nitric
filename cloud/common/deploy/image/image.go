@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
@@ -197,6 +196,16 @@ func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
 		return "", "", fmt.Errorf("blank sourceImage provided")
 	}
 
+	cmdStr, imageId, err := CommandFromImageInspect(sourceImage)
+	if err != nil {
+		return "", "", err
+	}
+
+	return fmt.Sprintf(wrapper, cmdStr), imageId, nil
+}
+
+// Gets the command from the source image and returns as a comma separated string
+func CommandFromImageInspect(sourceImage string) (string, string, error) {
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return "", "", err
@@ -207,16 +216,6 @@ func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
 		return "", "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
 	}
 
-	cmdStr, err := commandFromImageInspect(imageInspect)
-	if err != nil {
-		return "", "", err
-	}
-
-	return fmt.Sprintf(wrapper, cmdStr), imageInspect.ID, nil
-}
-
-// Gets the command from the source image and returns as a comma separated string
-func commandFromImageInspect(imageInspect types.ImageInspect) (string, error) {
 	// Get the original command of the source image
 	// and inject it into the wrapper image
 	cmd := append(imageInspect.Config.Entrypoint, imageInspect.Config.Cmd...)
@@ -227,5 +226,5 @@ func commandFromImageInspect(imageInspect types.ImageInspect) (string, error) {
 		cmdStr = append(cmdStr, "\""+c+"\"")
 	}
 
-	return strings.Join(cmdStr, ","), nil
+	return strings.Join(cmdStr, ","), imageInspect.ID, nil
 }

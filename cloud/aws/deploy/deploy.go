@@ -66,7 +66,11 @@ type NitricAwsPulumiProvider struct {
 	Vpc              *ec2.Vpc
 	VpcSecurityGroup *awsec2.SecurityGroup
 	// A codebuild job for creating the requested databases for a single database cluster
+	DbMasterPassword      *random.RandomPassword
 	CreateDatabaseProject *codebuild.Project
+	CodeBuildRole         *iam.Role
+	// A map of unique image keys to database migration codebuild projects
+	DatabaseMigrationJobs map[string]*codebuild.Project
 	DatabaseCluster       *rds.Cluster
 	EcrAuthToken          *ecr.GetAuthorizationTokenResult
 	Lambdas               map[string]*lambda.Function
@@ -187,7 +191,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 
 		// generate a db cluster random password
-		dbMasterPassword, err := random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+		a.DbMasterPassword, err = random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
 			Length:          pulumi.Int(16),
 			OverrideSpecial: pulumi.String("!#$%^&*()"),
 		})
@@ -245,7 +249,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			AvailabilityZones: clusterAvailabilityZones,
 			DatabaseName:      pulumi.String("nitric"),
 			MasterUsername:    pulumi.String("nitric"),
-			MasterPassword:    dbMasterPassword.Result,
+			MasterPassword:    a.DbMasterPassword.Result,
 			EngineMode:        pulumi.String(rds.EngineModeProvisioned),
 			Serverlessv2ScalingConfiguration: &rds.ClusterServerlessv2ScalingConfigurationArgs{
 				MaxCapacity: pulumi.Float64(1),
@@ -272,7 +276,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
-		role, err := iam.NewRole(ctx, "codeBuildRole", &iam.RoleArgs{
+		a.CodeBuildRole, err = iam.NewRole(ctx, "codeBuildRole", &iam.RoleArgs{
 			AssumeRolePolicy: pulumi.String(`{
 				"Version": "2012-10-17",
 				"Statement": [
@@ -300,7 +304,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		for name, policy := range codebuildManagedPolicies {
 			_, err = iam.NewRolePolicyAttachment(ctx, name+"PolicyAttachment", &iam.RolePolicyAttachmentArgs{
-				Role:      role.Name,
+				Role:      a.CodeBuildRole.Name,
 				PolicyArn: policy,
 			})
 			if err != nil {
@@ -310,7 +314,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		// Attach the AWSCodeBuildDeveloperAccess policy to the role
 		_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildPolicyAttachment", &iam.RolePolicyAttachmentArgs{
-			Role:      role.Name,
+			Role:      a.CodeBuildRole.Name,
 			PolicyArn: iam.ManagedPolicyAWSCodeBuildAdminAccess,
 		})
 		if err != nil {
@@ -319,7 +323,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		// Attach the VPC access policy to the role
 		_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildRdsPolicyAttachment", &iam.RolePolicyAttachmentArgs{
-			Role:      role.Name,
+			Role:      a.CodeBuildRole.Name,
 			PolicyArn: iam.ManagedPolicyAmazonRDSFullAccess,
 		})
 		if err != nil {
@@ -328,7 +332,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		// Attach the VPC access policy to the role
 		_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildEc2PolicyAttachment", &iam.RolePolicyAttachmentArgs{
-			Role:      role.Name,
+			Role:      a.CodeBuildRole.Name,
 			PolicyArn: iam.ManagedPolicyAmazonEC2FullAccess,
 		})
 		if err != nil {
@@ -355,11 +359,11 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 					},
 					&codebuild.ProjectEnvironmentEnvironmentVariableArgs{
 						Name:  pulumi.String("DB_MASTER_PASSWORD"),
-						Value: dbMasterPassword.Result,
+						Value: a.DbMasterPassword.Result,
 					},
 				},
 			},
-			ServiceRole: role.Arn,
+			ServiceRole: a.CodeBuildRole.Arn,
 			Source: &codebuild.ProjectSourceArgs{
 				Type:      pulumi.String("NO_SOURCE"),
 				Buildspec: embeds.GetCodeBuildCreateDatabaseConfig(),

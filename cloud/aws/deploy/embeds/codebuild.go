@@ -23,6 +23,13 @@ import (
 //go:embed codebuild-create-db.yaml
 var codebuild_CreateDatabaseTemplate string
 
+//go:embed codebuild-migrate-db.yaml
+var codebuild_MigrateDatabaseTemplate string
+
 func GetCodeBuildCreateDatabaseConfig() pulumi.StringInput {
 	return pulumi.String(codebuild_CreateDatabaseTemplate)
+}
+
+func GetCodeBuildMigrateDatabaseConfig(cmd string) pulumi.StringInput {
+	return pulumi.Sprintf(codebuild_MigrateDatabaseTemplate, cmd)
 }
