@@ -173,7 +173,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 
 		// TODO: Make configurable
-		azCount := 1
+		azCount := 2
 
 		selectedAzs := availabilityZones.Names[0:azCount]
 
