@@ -33,5 +33,5 @@ Debian
 make gcp-docker-debian
 ```
 
-> __Note:__ Seperate distributions required between glibc/musl as dynamic linker is used for golang plugin support
+> __Note:__ Separate distributions required between glibc/musl as dynamic linker is used for golang plugin support
 

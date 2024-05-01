@@ -1,6 +1,6 @@
 # Configuring the Membrane
 
-In most cases these will already be set as environment variables withing a nitric templates Dockerfile. This documentation is targeted at developers building their own nitric application templates and those who require the membrane to be run on a bare-metal server.
+In most cases these will already be set as environment variables within a nitric templates Dockerfile. This documentation is targeted at developers building their own nitric application templates and those who require the membrane to be run on a bare-metal server.
 
 ## Options
 

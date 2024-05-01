@@ -147,7 +147,7 @@ var _ = Describe("Http", func() {
 			})
 		})
 
-		When("From a subcription with a NitricEvent", func() {
+		When("From a subscription with a NitricEvent", func() {
 			content, _ := structpb.NewStruct(map[string]interface{}{
 				"Test": "Test",
 			})

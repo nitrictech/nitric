@@ -88,7 +88,7 @@ type ResourceDeploymentStatus int32
 const (
 	// The action hasn't started, usually due to a dependency
 	ResourceDeploymentStatus_PENDING ResourceDeploymentStatus = 0
-	// The action in currently in-flight, e.g. waiting for cloud provder to provision a resource
+	// The action in currently in-flight, e.g. waiting for cloud provider to provision a resource
 	ResourceDeploymentStatus_IN_PROGRESS ResourceDeploymentStatus = 1
 	// The action has been applied successfully
 	ResourceDeploymentStatus_SUCCESS ResourceDeploymentStatus = 2

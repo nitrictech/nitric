@@ -63,7 +63,7 @@ enum ResourceDeploymentAction {
 enum ResourceDeploymentStatus {
   // The action hasn't started, usually due to a dependency
   PENDING = 0;
-  // The action in currently in-flight, e.g. waiting for cloud provder to provision a resource
+  // The action in currently in-flight, e.g. waiting for cloud provider to provision a resource
   IN_PROGRESS = 1;
   // The action has been applied successfully
   SUCCESS = 2;
