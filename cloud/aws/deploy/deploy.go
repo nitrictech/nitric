@@ -38,6 +38,7 @@ import (
 	pulumiAws "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
+	pulumiEc2 "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ec2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
@@ -202,6 +203,23 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", &ec2.VpcArgs{
 			EnableDnsHostnames:    pulumi.Bool(true),
 			AvailabilityZoneNames: selectedAzs,
+			NatGateways: &ec2.NatGatewayConfigurationArgs{
+				Strategy: ec2.NatGatewayStrategyNone,
+			},
+			// SubnetSpecs: []ec2.SubnetSpecArgs{
+			// 	{
+			// 		Type:     ec2.SubnetTypePrivate,
+			// 		CidrMask: aws.Int(24),
+			// 	},
+			// 	{
+			// 		Type:     ec2.SubnetTypePrivate,
+			// 		CidrMask: aws.Int(24),
+			// 	},
+			// 	// // Creating the first private subnet
+			// 	// { type: "private", cidrBlock: "10.0.2.0/24" },
+			// 	// // Creating the second private subnet
+			// 	// { type: "private", cidrBlock: "10.0.3.0/24" },
+			// },
 		})
 		if err != nil {
 			return err
@@ -230,6 +248,19 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 					},
 				},
 			},
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = pulumiEc2.NewVpcEndpoint(ctx, "cloudwatchLogsEndpoint", &pulumiEc2.VpcEndpointArgs{
+			AutoAccept:        pulumi.Bool(true),
+			ServiceName:       pulumi.String(fmt.Sprintf("com.amazonaws.%s.logs", a.Region)),
+			VpcId:             a.Vpc.VpcId,
+			VpcEndpointType:   pulumi.String("Interface"),
+			SecurityGroupIds:  pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			SubnetIds:         a.Vpc.PrivateSubnetIds,
+			PrivateDnsEnabled: pulumi.Bool(true),
 		})
 		if err != nil {
 			return err
@@ -300,6 +331,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			"rdsAdmin":       iam.ManagedPolicyAmazonRDSFullAccess,
 			"ec2Admin":       iam.ManagedPolicyAmazonEC2FullAccess,
 			"cloudWatchLogs": iam.ManagedPolicyCloudWatchLogsFullAccess,
+			"ecrReadonly":    iam.ManagedPolicyAmazonEC2ContainerRegistryReadOnly,
 		}
 
 		for name, policy := range codebuildManagedPolicies {
@@ -438,16 +470,17 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 	return &NitricAwsPulumiProvider{
-		Lambdas:             make(map[string]*lambda.Function),
-		LambdaRoles:         make(map[string]*iam.Role),
-		Apis:                make(map[string]*apigatewayv2.Api),
-		HttpProxies:         make(map[string]*apigatewayv2.Api),
-		Secrets:             make(map[string]*secretsmanager.Secret),
-		Buckets:             make(map[string]*s3.Bucket),
-		BucketNotifications: make(map[string]*s3.BucketNotification),
-		Websockets:          make(map[string]*apigatewayv2.Api),
-		Topics:              make(map[string]*topic),
-		Queues:              make(map[string]*sqs.Queue),
-		KeyValueStores:      make(map[string]*dynamodb.Table),
+		Lambdas:               make(map[string]*lambda.Function),
+		LambdaRoles:           make(map[string]*iam.Role),
+		Apis:                  make(map[string]*apigatewayv2.Api),
+		HttpProxies:           make(map[string]*apigatewayv2.Api),
+		Secrets:               make(map[string]*secretsmanager.Secret),
+		Buckets:               make(map[string]*s3.Bucket),
+		BucketNotifications:   make(map[string]*s3.BucketNotification),
+		Websockets:            make(map[string]*apigatewayv2.Api),
+		Topics:                make(map[string]*topic),
+		Queues:                make(map[string]*sqs.Queue),
+		KeyValueStores:        make(map[string]*dynamodb.Table),
+		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
 	}
 }

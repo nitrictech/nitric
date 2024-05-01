@@ -31,7 +31,6 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
-	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -80,23 +79,17 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return err
 		}
 
-		cmd, _, err := image.CommandFromImageInspect(config.GetImageUri())
+		cmd, _, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
 		if err != nil {
 			return err
 		}
 
-		// Push the migration image to ECR using pulumi
-		_, err = docker.NewTag(ctx, name, &docker.TagArgs{
-			SourceImage: pulumi.String(config.GetImageUri()),
-			TargetImage: repo.RepositoryUrl,
-		})
-		if err != nil {
-			return err
-		}
-
-		// push to the ECR repository
-		image, err := docker.NewRegistryImage(ctx, name, &docker.RegistryImageArgs{
-			Name: repo.RepositoryUrl,
+		image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
+			RepositoryUrl: repo.RepositoryUrl,
+			SourceImage:   config.GetImageUri(),
+			Server:        pulumi.String(a.EcrAuthToken.ProxyEndpoint),
+			Username:      pulumi.String(a.EcrAuthToken.UserName),
+			Password:      pulumi.String(a.EcrAuthToken.Password),
 		})
 		if err != nil {
 			return err
@@ -109,14 +102,15 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 				Type: pulumi.String("NO_ARTIFACTS"),
 			},
 			Environment: &codebuild.ProjectEnvironmentArgs{
-				ComputeType: pulumi.String("BUILD_GENERAL1_SMALL"),
-				Image:       image.Name,
-				Type:        pulumi.String("LINUX_CONTAINER"),
+				ComputeType:              pulumi.String("BUILD_GENERAL1_SMALL"),
+				Image:                    image.URI(),
+				ImagePullCredentialsType: pulumi.String("SERVICE_ROLE"),
+				Type:                     pulumi.String("LINUX_CONTAINER"),
 			},
 			ServiceRole: a.CodeBuildRole.Arn,
 			Source: &codebuild.ProjectSourceArgs{
 				Type:      pulumi.String("NO_SOURCE"),
-				Buildspec: embeds.GetCodeBuildMigrateDatabaseConfig(cmd),
+				Buildspec: embeds.GetCodeBuildMigrateDatabaseConfig(fmt.Sprintf("'%s'", cmd)),
 			},
 			VpcConfig: &codebuild.ProjectVpcConfigArgs{
 				SecurityGroupIds: a.DatabaseCluster.VpcSecurityGroupIds,
@@ -160,11 +154,18 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			ProjectName: aws.String(migrateDatabaseJob),
 			EnvironmentVariablesOverride: []*awscodebuild.EnvironmentVariable{
 				{
+					Name:  aws.String("DB_NAME"),
+					Value: aws.String(name),
+				},
+				{
 					Name:  aws.String("DB_URL"),
 					Value: aws.String(databaseUrl),
 				},
 			},
 		})
+		if err != nil {
+			return false, err
+		}
 
 		err = retry.Do(checkBuildStatus(client, *out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15))
 		if err != nil {

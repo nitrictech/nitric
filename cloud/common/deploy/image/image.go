@@ -44,6 +44,14 @@ type ImageArgs struct {
 	Telemetry     *telemetry.TelemetryConfigArgs
 }
 
+type LocalImageArgs struct {
+	SourceImage   string
+	RepositoryUrl pulumi.StringInput
+	Server        pulumi.StringInput
+	Username      pulumi.StringInput
+	Password      pulumi.StringInput
+}
+
 type Image struct {
 	pulumi.ResourceState
 
@@ -61,7 +69,68 @@ var (
 	imageWrapper string
 	//go:embed wrapper-telemetry.dockerfile
 	telemetryImageWrapper string
+	//go:embed dummy.dockerfile
+	dummyImageWrapper string
 )
+
+func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
+	res := &Image{Name: name}
+
+	err := ctx.RegisterComponentResource("nitriccommon:LocalImage", name, res, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	buildContext := fmt.Sprintf("%s/build-local-%s", os.TempDir(), name)
+	err = os.MkdirAll(buildContext, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+
+	dockerfilePath := filepath.Clean(path.Join(buildContext, "Dockerfile"))
+	if !strings.HasPrefix(dockerfilePath, os.TempDir()) {
+		return nil, fmt.Errorf("unsafe dockerfile location")
+	}
+	dockerfile, err := os.Create(dockerfilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = dockerfile.Write([]byte(dummyImageWrapper))
+	if err != nil {
+		return nil, err
+	}
+	err = dockerfile.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+		ImageName: args.RepositoryUrl,
+		Build: docker.DockerBuildArgs{
+			Context:    pulumi.String(buildContext),
+			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
+			Args: pulumi.StringMap{
+				"SOURCE_IMAGE": pulumi.String(args.SourceImage),
+			},
+			Platform: pulumi.String("linux/amd64"),
+		},
+		Registry: docker.RegistryArgs{
+			Server:   args.Server,
+			Username: args.Username,
+			Password: args.Password,
+		},
+		SkipPush: pulumi.Bool(false),
+	}, pulumi.Parent(res))
+	if err != nil {
+		return nil, err
+	}
+
+	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
+		"name":     pulumi.String(res.Name),
+		"imageUri": res.DockerImage.ImageName,
+	})
+}
 
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
@@ -196,7 +265,7 @@ func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
 		return "", "", fmt.Errorf("blank sourceImage provided")
 	}
 
-	cmdStr, imageId, err := CommandFromImageInspect(sourceImage)
+	cmdStr, imageId, err := CommandFromImageInspect(sourceImage, ",")
 	if err != nil {
 		return "", "", err
 	}
@@ -205,7 +274,7 @@ func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
 }
 
 // Gets the command from the source image and returns as a comma separated string
-func CommandFromImageInspect(sourceImage string) (string, string, error) {
+func CommandFromImageInspect(sourceImage string, delimeter string) (string, string, error) {
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return "", "", err
@@ -226,5 +295,5 @@ func CommandFromImageInspect(sourceImage string) (string, string, error) {
 		cmdStr = append(cmdStr, "\""+c+"\"")
 	}
 
-	return strings.Join(cmdStr, ","), imageInspect.ID, nil
+	return strings.Join(cmdStr, delimeter), imageInspect.ID, nil
 }

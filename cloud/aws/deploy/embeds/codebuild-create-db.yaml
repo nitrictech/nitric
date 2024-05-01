@@ -1,10 +1,5 @@
 version: 0.2
 phases:
-  install:
-    commands:
-      - echo "Installing psql"
-      - sudo yum -y update
-      - sudo yum -y install postgresql
   build:
     commands:
       - echo "Creating database ${DB_NAME}"
