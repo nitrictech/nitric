@@ -65,7 +65,7 @@ func ValidateRawConfigKeys(attributes map[string]interface{}, knownKeys []string
 	return nil
 }
 
-// ConfigFromAttributes - Merges given attributes into a useable config, all types are updated with the provided default config item
+// ConfigFromAttributes - Merges given attributes into a usable config, all types are updated with the provided default config item
 func ConfigFromAttributes[T AbstractItem](attributes map[string]interface{}, defaultItem T) (*AbstractConfig[T], error) {
 	config := new(AbstractConfig[T])
 

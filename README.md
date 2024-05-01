@@ -20,7 +20,7 @@
 
 Apps built with Nitric can be deployed to AWS, Azure or Google Cloud all from the same code base so you can focus on your products, not your cloud provider.
 
-Nitric makes it easy to architect cloud applications directly in application code, building scalable & secure applications with least priviledge security out of the box.
+Nitric makes it easy to architect cloud applications directly in application code, building scalable & secure applications with least privilege security out of the box.
 
 <p align="center">
   <img alt="Nitric Diagram" src="docs/assets/diagram.svg">
