@@ -38,7 +38,6 @@ import (
 	pulumiAws "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
-	pulumiEc2 "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ec2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
@@ -193,8 +192,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		// generate a db cluster random password
 		a.DbMasterPassword, err = random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
-			Length:          pulumi.Int(16),
-			OverrideSpecial: pulumi.String("!#$%^&*()"),
+			Length:  pulumi.Int(16),
+			Special: pulumi.Bool(false),
 		})
 		if err != nil {
 			return err
@@ -203,8 +202,11 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", &ec2.VpcArgs{
 			EnableDnsHostnames:    pulumi.Bool(true),
 			AvailabilityZoneNames: selectedAzs,
+			// These are quite expensive to run with (~$1.5/day/gateway)
+			// with database compute on top of that
+			// Replace with a VPC Endpoint if possible
 			NatGateways: &ec2.NatGatewayConfigurationArgs{
-				Strategy: ec2.NatGatewayStrategyNone,
+				Strategy: ec2.NatGatewayStrategySingle,
 			},
 			// SubnetSpecs: []ec2.SubnetSpecArgs{
 			// 	{
@@ -253,18 +255,32 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
-		_, err = pulumiEc2.NewVpcEndpoint(ctx, "cloudwatchLogsEndpoint", &pulumiEc2.VpcEndpointArgs{
-			AutoAccept:        pulumi.Bool(true),
-			ServiceName:       pulumi.String(fmt.Sprintf("com.amazonaws.%s.logs", a.Region)),
-			VpcId:             a.Vpc.VpcId,
-			VpcEndpointType:   pulumi.String("Interface"),
-			SecurityGroupIds:  pulumi.StringArray{a.VpcSecurityGroup.ID()},
-			SubnetIds:         a.Vpc.PrivateSubnetIds,
-			PrivateDnsEnabled: pulumi.Bool(true),
-		})
-		if err != nil {
-			return err
-		}
+		// TODO: Look at implementing a VPC endpoint rather than NAT Gateways to save cost
+		// _, err = pulumiEc2.NewVpcEndpoint(ctx, "cloudwatchLogsEndpoint", &pulumiEc2.VpcEndpointArgs{
+		// 	AutoAccept:        pulumi.Bool(true),
+		// 	ServiceName:       pulumi.String(fmt.Sprintf("com.amazonaws.%s.logs", a.Region)),
+		// 	VpcId:             a.Vpc.VpcId,
+		// 	VpcEndpointType:   pulumi.String("Interface"),
+		// 	SecurityGroupIds:  pulumi.StringArray{a.VpcSecurityGroup.ID()},
+		// 	SubnetIds:         a.Vpc.PrivateSubnetIds,
+		// 	PrivateDnsEnabled: pulumi.Bool(true),
+		// 	Policy: pulumi.String(`{
+		// 		"Statement": [
+		// 		  {
+		// 			"Sid": "Logs access",
+		// 			"Principal": "*",
+		// 			"Action": [
+		// 			  "logs:*",
+		// 			],
+		// 			"Effect": "Allow",
+		// 			"Resource": "*"
+		// 		  }
+		// 		]
+		// 	  }`),
+		// })
+		// if err != nil {
+		// 	return err
+		// }
 
 		dbSubnetGroup, err := rds.NewSubnetGroup(ctx, "dbsubnetgroup", &rds.SubnetGroupArgs{
 			SubnetIds: a.Vpc.PrivateSubnetIds,
@@ -370,6 +386,13 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		if err != nil {
 			return err
 		}
+
+		// allVpcSubnetIds := pulumi.All(a.Vpc.PrivateSubnetIds, a.Vpc.PublicSubnetIds).ApplyT(
+		// 	func(args []interface{}) []string {
+		// 		privateSubnetIds := args[0].([]string)
+		// 		publicSubnetIds := args[1].([]string)
+		// 		return slices.Concat(privateSubnetIds, publicSubnetIds)
+		// 	}).(pulumi.StringArrayOutput)
 
 		// Use a codebuild project to create the databases within the cluster
 		a.CreateDatabaseProject, err = codebuild.NewProject(ctx, "create-nitric-databases", &codebuild.ProjectArgs{

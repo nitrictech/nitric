@@ -154,7 +154,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			ProjectName: aws.String(migrateDatabaseJob),
 			EnvironmentVariablesOverride: []*awscodebuild.EnvironmentVariable{
 				{
-					Name:  aws.String("DB_NAME"),
+					Name:  aws.String("NITRIC_DB_NAME"),
 					Value: aws.String(name),
 				},
 				{
