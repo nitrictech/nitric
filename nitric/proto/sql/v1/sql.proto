@@ -9,7 +9,7 @@ option java_outer_classname = "SqlService";
 option php_namespace = "Nitric\\Proto\\Sql\\V1";
 option csharp_namespace = "Nitric.Proto.Sql.v1";
 
-// The Nitric Secret Service
+// The Nitric SQL Service
 service Sql {
   // Retrieve the connection string for a given database
   rpc ConnectionString (SqlConnectionStringRequest) returns (SqlConnectionStringResponse);

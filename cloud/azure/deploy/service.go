@@ -264,14 +264,13 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 			Name:  pulumi.String("TOLERATE_MISSING_SERVICES"),
 			Value: pulumi.String("true"),
 		},
-		// app.EnvironmentVarArgs{
-		// 	Name:  pulumi.String("MONGODB_CONNECTION_STRING"),
-		// 	Value: args.MongoDatabaseConnectionString,
-		// },
-		// app.EnvironmentVarArgs{
-		// 	Name:  pulumi.String("MONGODB_DATABASE"),
-		// 	Value: args.MongoDatabaseName,
-		// },
+	}
+
+	if p.DatabaseServer != nil {
+		env = append(env, app.EnvironmentVarArgs{
+			Name:  pulumi.String("NITRIC_DATABASE_BASE_URL"),
+			Value: p.DatabaseServer.FullyQualifiedDomainName,
+		})
 	}
 
 	for k, v := range service.Env() {

@@ -20,10 +20,34 @@ import (
 	"fmt"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
+	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// TODO
+func createAzureContainerRepository(ctx *pulumi.Context, name string, region string) (*containerregistry.Registry, error) {
+	acr, err := containerregistry.NewRegistry(ctx, name, &containerregistry.RegistryArgs{
+		Location: pulumi.String(region),
+	})
+}
+
 func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	return fmt.Errorf("Sql databases are unimplemented in the nitric Azure provider")
+	var err error
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+
+	db, err := dbforpostgresql.NewDatabase(ctx, name, &dbforpostgresql.DatabaseArgs{
+		DatabaseName:      pulumi.String(name),
+		ResourceGroupName: a.ResourceGroup.Name,
+		ServerName:        a.DatabaseServer.Name,
+		Charset:           pulumi.String("utf8"),
+		Collation:         pulumi.String("en_US.utf8"),
+	}, opts...)
+	if err != nil {
+		return errors.WithMessage(err, fmt.Sprintf("unable to create nitric database %s: failed to create Azure SQL Database", name))
+	}
+
+	a.SqlDatabases[name] = db
+
+	return nil
 }

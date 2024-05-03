@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
+	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
@@ -77,6 +78,9 @@ type NitricAzurePulumiProvider struct {
 
 	KeyValueStores map[string]*storage.Table
 
+	SqlDatabases   map[string]*dbforpostgresql.Database
+	DatabaseServer *dbforpostgresql.Server
+
 	Roles *Roles
 	provider.NitricDefaultOrder
 }
@@ -84,7 +88,7 @@ type NitricAzurePulumiProvider struct {
 var _ provider.NitricPulumiProvider = (*NitricAzurePulumiProvider)(nil)
 
 const (
-	pulumiAzureNativeVersion = "1.95.0"
+	pulumiAzureNativeVersion = "2.39.0"
 	pulumiAzureVersion       = "5.52.0"
 )
 
@@ -158,6 +162,56 @@ func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, t
 	return storageAccount, nil
 }
 
+func createDatabaseServer(ctx *pulumi.Context, group *resources.ResourceGroup, tags map[string]string) (*dbforpostgresql.Server, error) {
+	dbServerName := ResourceName(ctx, "", StorageAccountRT)
+
+	// generate a db master username
+	dbMasterUsername, err := random.NewRandomString(ctx, "db-master-username", &random.RandomStringArgs{
+		Special: pulumi.Bool(false),
+		Length:  pulumi.Int(8),
+		Upper:   pulumi.Bool(false),
+		Number:  pulumi.Bool(false),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "creating master username")
+	}
+
+	// generate a db random password
+	dbMasterPassword, err := random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+		Length: pulumi.Int(16),
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "creating master password")
+	}
+
+	databaseServer, err := dbforpostgresql.NewServer(ctx, dbServerName, &dbforpostgresql.ServerArgs{
+		ResourceGroupName:          group.Name,
+		Location:                   group.Location,
+		AdministratorLogin:         dbMasterUsername.Result,
+		AdministratorLoginPassword: dbMasterPassword.Result,
+		CreateMode:                 pulumi.String(dbforpostgresql.CreateModeDefault),
+		AvailabilityZone:           pulumi.String("1"),
+		Version:                    pulumi.String(dbforpostgresql.ServerVersion_14),
+		Network:                    &dbforpostgresql.NetworkArgs{},
+		Sku: &dbforpostgresql.SkuArgs{
+			Name: pulumi.String("Standard_B1ms"),
+			Tier: pulumi.String(dbforpostgresql.SkuTierBurstable),
+		},
+		HighAvailability: &dbforpostgresql.HighAvailabilityArgs{
+			Mode: pulumi.String(dbforpostgresql.HighAvailabilityModeDisabled),
+		},
+		Storage: &dbforpostgresql.StorageArgs{
+			StorageSizeGB: pulumi.Int(32),
+		},
+		Tags: pulumi.ToStringMap(tags),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return databaseServer, nil
+}
+
 func hasResourceType(resources []*pulumix.NitricPulumiResource[any], resourceType resourcespb.ResourceType) bool {
 	for _, r := range resources {
 		if r.Id.GetType() == resourceType {
@@ -203,6 +257,14 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	})
 	if err != nil {
 		return errors.WithMessage(err, "resource group create")
+	}
+
+	if hasResourceType(nitricResources, resourcespb.ResourceType_SqlDatabase) {
+		logger.Info("Stack declares one or more databases, creating stack level PostgreSQL Database Server")
+		a.DatabaseServer, err = createDatabaseServer(ctx, a.ResourceGroup, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
+		if err != nil {
+			return errors.WithMessage(err, "create azure sql flexible server")
+		}
 	}
 
 	// Create a key vault if secrets are required.
@@ -281,7 +343,7 @@ func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOu
 	}).(pulumi.StringOutput)
 
 	if !ok {
-		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+		return pulumi.StringOutput{}, fmt.Errorf("failed to generate pulumi output")
 	}
 
 	return output, nil
@@ -293,13 +355,14 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
 
 	return &NitricAzurePulumiProvider{
-		Apis:           map[string]ApiResources{},
-		HttpProxies:    map[string]ApiResources{},
+		Apis:           make(map[string]ApiResources),
+		HttpProxies:    make(map[string]ApiResources),
 		Buckets:        make(map[string]*storage.BlobContainer),
 		Queues:         make(map[string]*storage.Queue),
-		ContainerApps:  map[string]*ContainerApp{},
-		Topics:         map[string]*eventgrid.Topic{},
+		ContainerApps:  make(map[string]*ContainerApp),
+		Topics:         make(map[string]*eventgrid.Topic),
+		SqlDatabases:   make(map[string]*dbforpostgresql.Database),
 		Principals:     principalsMap,
-		KeyValueStores: map[string]*storage.Table{},
+		KeyValueStores: make(map[string]*storage.Table),
 	}
 }
