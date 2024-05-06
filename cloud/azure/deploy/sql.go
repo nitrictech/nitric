@@ -21,16 +21,15 @@ import (
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func createAzureContainerRepository(ctx *pulumi.Context, name string, region string) (*containerregistry.Registry, error) {
-	acr, err := containerregistry.NewRegistry(ctx, name, &containerregistry.RegistryArgs{
-		Location: pulumi.String(region),
-	})
-}
+// func createAzureContainerRepository(ctx *pulumi.Context, name string, region string) (*containerregistry.Registry, error) {
+// 	acr, err := containerregistry.NewRegistry(ctx, name, &containerregistry.RegistryArgs{
+// 		Location: pulumi.String(region),
+// 	})
+// }
 
 func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
 	var err error
