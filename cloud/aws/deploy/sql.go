@@ -125,7 +125,12 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 	dbUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "nitric", a.DbMasterPassword.Result, a.DatabaseCluster.Endpoint, "5432", name)
 
-	pulumi.All(a.CreateDatabaseProject.Name, a.DatabaseMigrationJobs[config.GetImageUri()].Name, dbUrl).ApplyT(func(args []interface{}) (bool, error) {
+	databaseMigrationJobName := pulumi.String("").ToStringOutput()
+	if config.GetImageUri() != "" && a.DatabaseMigrationJobs[config.GetImageUri()] != nil {
+		databaseMigrationJobName = a.DatabaseMigrationJobs[config.GetImageUri()].Name
+	}
+
+	pulumi.All(a.CreateDatabaseProject.Name, databaseMigrationJobName, dbUrl).ApplyT(func(args []interface{}) (bool, error) {
 		createDatabaseProject := args[0].(string)
 		migrateDatabaseJob := args[1].(string)
 		databaseUrl := args[2].(string)
@@ -149,27 +154,29 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return false, err
 		}
 
-		// Run the database migration step
-		out, err = client.StartBuild(&awscodebuild.StartBuildInput{
-			ProjectName: aws.String(migrateDatabaseJob),
-			EnvironmentVariablesOverride: []*awscodebuild.EnvironmentVariable{
-				{
-					Name:  aws.String("NITRIC_DB_NAME"),
-					Value: aws.String(name),
+		// Run the database migration step if the migration job exists
+		if migrateDatabaseJob != "" {
+			out, err = client.StartBuild(&awscodebuild.StartBuildInput{
+				ProjectName: aws.String(migrateDatabaseJob),
+				EnvironmentVariablesOverride: []*awscodebuild.EnvironmentVariable{
+					{
+						Name:  aws.String("NITRIC_DB_NAME"),
+						Value: aws.String(name),
+					},
+					{
+						Name:  aws.String("DB_URL"),
+						Value: aws.String(databaseUrl),
+					},
 				},
-				{
-					Name:  aws.String("DB_URL"),
-					Value: aws.String(databaseUrl),
-				},
-			},
-		})
-		if err != nil {
-			return false, err
-		}
+			})
+			if err != nil {
+				return false, err
+			}
 
-		err = retry.Do(checkBuildStatus(client, *out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15))
-		if err != nil {
-			return false, err
+			err = retry.Do(checkBuildStatus(client, *out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15))
+			if err != nil {
+				return false, err
+			}
 		}
 
 		return true, nil
