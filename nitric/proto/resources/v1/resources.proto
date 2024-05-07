@@ -74,7 +74,17 @@ message KeyValueStoreResource {
 }
 message SecretResource {
 }
+
+message SqlDatabaseMigrations {
+  oneof migrations {
+    // The path to this databases SQL migrations
+    // Valid values are file://relative/path/to/migrations as a directory or dockerfile://path/to/migrations.dockerfile to hint at a docker image build
+    string migrations_path = 1;
+  }
+}
+
 message SqlDatabaseResource {
+  SqlDatabaseMigrations migrations = 1;
 }
 
 message ApiOpenIdConnectionDefinition {
