@@ -3,6 +3,7 @@ package deploy
 import (
 	"slices"
 
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	pulumiAws "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 	awsec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
@@ -34,6 +35,7 @@ func (a *NitricAwsPulumiProvider) vpc(ctx *pulumi.Context) error {
 			// not be able to access external resources
 			Strategy: ec2.NatGatewayStrategySingle,
 		},
+		Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "vpc", "Vpc")),
 	})
 	if err != nil {
 		return err
@@ -62,6 +64,7 @@ func (a *NitricAwsPulumiProvider) vpc(ctx *pulumi.Context) error {
 				},
 			},
 		},
+		Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "vpc-database-security-group", "VpcSecurityGroup")),
 	})
 	if err != nil {
 		return err

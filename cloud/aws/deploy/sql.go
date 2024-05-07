@@ -75,6 +75,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 
 	dbSubnetGroup, err := rds.NewSubnetGroup(ctx, "dbsubnetgroup", &rds.SubnetGroupArgs{
 		SubnetIds: a.Vpc.PrivateSubnetIds,
+		Tags:      pulumi.ToStringMap(tags.Tags(a.StackId, "database-subnet-group", "database-subnet-group")),
 	})
 	if err != nil {
 		return err
@@ -96,6 +97,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 		VpcSecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
 		DbSubnetGroupName:   dbSubnetGroup.Name,
 		SkipFinalSnapshot:   pulumi.Bool(true),
+		Tags:                pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster", "DatabaseCluster")),
 	})
 	if err != nil {
 		return err
@@ -107,6 +109,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 		Engine:            a.DatabaseCluster.Engine,
 		EngineVersion:     a.DatabaseCluster.EngineVersion,
 		DbSubnetGroupName: a.DatabaseCluster.DbSubnetGroupName,
+		Tags:              pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster-instance", "DatabaseInstance")),
 	})
 	if err != nil {
 		return err
@@ -176,13 +179,6 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 		return err
 	}
 
-	// allVpcSubnetIds := pulumi.All(a.Vpc.PrivateSubnetIds, a.Vpc.PublicSubnetIds).ApplyT(
-	// 	func(args []interface{}) []string {
-	// 		privateSubnetIds := args[0].([]string)
-	// 		publicSubnetIds := args[1].([]string)
-	// 		return slices.Concat(privateSubnetIds, publicSubnetIds)
-	// 	}).(pulumi.StringArrayOutput)
-
 	// Use a codebuild project to create the databases within the cluster
 	a.CreateDatabaseProject, err = codebuild.NewProject(ctx, "create-nitric-databases", &codebuild.ProjectArgs{
 		Artifacts: &codebuild.ProjectArtifactsArgs{
@@ -217,7 +213,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 			Subnets:          a.Vpc.PrivateSubnetIds,
 			VpcId:            a.Vpc.VpcId,
 		},
-		// Don't deploy the build until after the database cluster is completely ready
+		Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "database-migration-job", "Job")),
 	}, pulumi.DependsOn([]pulumi.Resource{a.DatabaseCluster, dbInstance}))
 	if err != nil {
 		return err

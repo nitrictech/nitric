@@ -70,6 +70,7 @@ type NitricAwsPulumiProvider struct {
 	// A map of unique image keys to database migration codebuild projects
 	DatabaseMigrationJobs map[string]*codebuild.Project
 	DatabaseCluster       *rds.Cluster
+	RdsPrxoy              *rds.Proxy
 	EcrAuthToken          *ecr.GetAuthorizationTokenResult
 	Lambdas               map[string]*lambda.Function
 	LambdaRoles           map[string]*iam.Role
