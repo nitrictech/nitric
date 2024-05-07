@@ -79,6 +79,7 @@ message SqlDatabaseMigrations {
   oneof migrations {
     // The path to this databases SQL migrations
     // Valid values are file://relative/path/to/migrations as a directory or dockerfile://path/to/migrations.dockerfile to hint at a docker image build
+    // Paths should be relative to the root of the application (nitric.yaml file location)
     string migrations_path = 1;
   }
 }
