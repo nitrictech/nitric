@@ -30,7 +30,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
+	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -57,6 +60,170 @@ func checkBuildStatus(client *awscodebuild.CodeBuild, buildId string) func() err
 		fmt.Printf("Waiting for codebuild job %s to finish\n", buildId)
 		return fmt.Errorf("build %s still in progress", buildId)
 	}
+}
+
+func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
+	var err error
+
+	a.DbMasterPassword, err = random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+		Length:  pulumi.Int(16),
+		Special: pulumi.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	dbSubnetGroup, err := rds.NewSubnetGroup(ctx, "dbsubnetgroup", &rds.SubnetGroupArgs{
+		SubnetIds: a.Vpc.PrivateSubnetIds,
+	})
+	if err != nil {
+		return err
+	}
+
+	a.DatabaseCluster, err = rds.NewCluster(ctx, "postgresql", &rds.ClusterArgs{
+		Engine:        pulumi.String(rds.EngineTypeAuroraPostgresql),
+		EngineVersion: pulumi.String("13.14"),
+		// TODO: limit number of availability zones
+		AvailabilityZones: pulumi.ToStringArray(a.VpcAzs),
+		DatabaseName:      pulumi.String("nitric"),
+		MasterUsername:    pulumi.String("nitric"),
+		MasterPassword:    a.DbMasterPassword.Result,
+		EngineMode:        pulumi.String(rds.EngineModeProvisioned),
+		Serverlessv2ScalingConfiguration: &rds.ClusterServerlessv2ScalingConfigurationArgs{
+			MaxCapacity: pulumi.Float64(1),
+			MinCapacity: pulumi.Float64(0.5),
+		},
+		VpcSecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+		DbSubnetGroupName:   dbSubnetGroup.Name,
+		SkipFinalSnapshot:   pulumi.Bool(true),
+	})
+	if err != nil {
+		return err
+	}
+
+	dbInstance, err := rds.NewClusterInstance(ctx, "example", &rds.ClusterInstanceArgs{
+		ClusterIdentifier: a.DatabaseCluster.ID(),
+		InstanceClass:     pulumi.String("db.serverless"),
+		Engine:            a.DatabaseCluster.Engine,
+		EngineVersion:     a.DatabaseCluster.EngineVersion,
+		DbSubnetGroupName: a.DatabaseCluster.DbSubnetGroupName,
+	})
+	if err != nil {
+		return err
+	}
+
+	a.CodeBuildRole, err = iam.NewRole(ctx, "codeBuildRole", &iam.RoleArgs{
+		AssumeRolePolicy: pulumi.String(`{
+			"Version": "2012-10-17",
+			"Statement": [
+				{
+					"Action": "sts:AssumeRole",
+					"Principal": {
+						"Service": "codebuild.amazonaws.com"
+					},
+					"Effect": "Allow",
+					"Sid": ""
+				}
+			]
+		}`),
+	})
+	if err != nil {
+		return err
+	}
+
+	codebuildManagedPolicies := map[string]iam.ManagedPolicy{
+		"codeBuildAdmin": iam.ManagedPolicyAWSCodeBuildAdminAccess,
+		"rdsAdmin":       iam.ManagedPolicyAmazonRDSFullAccess,
+		"ec2Admin":       iam.ManagedPolicyAmazonEC2FullAccess,
+		"cloudWatchLogs": iam.ManagedPolicyCloudWatchLogsFullAccess,
+		"ecrReadonly":    iam.ManagedPolicyAmazonEC2ContainerRegistryReadOnly,
+	}
+
+	for name, policy := range codebuildManagedPolicies {
+		_, err = iam.NewRolePolicyAttachment(ctx, name+"PolicyAttachment", &iam.RolePolicyAttachmentArgs{
+			Role:      a.CodeBuildRole.Name,
+			PolicyArn: policy,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Attach the AWSCodeBuildDeveloperAccess policy to the role
+	_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildPolicyAttachment", &iam.RolePolicyAttachmentArgs{
+		Role:      a.CodeBuildRole.Name,
+		PolicyArn: iam.ManagedPolicyAWSCodeBuildAdminAccess,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Attach the VPC access policy to the role
+	_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildRdsPolicyAttachment", &iam.RolePolicyAttachmentArgs{
+		Role:      a.CodeBuildRole.Name,
+		PolicyArn: iam.ManagedPolicyAmazonRDSFullAccess,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Attach the VPC access policy to the role
+	_, err = iam.NewRolePolicyAttachment(ctx, "codeBuildEc2PolicyAttachment", &iam.RolePolicyAttachmentArgs{
+		Role:      a.CodeBuildRole.Name,
+		PolicyArn: iam.ManagedPolicyAmazonEC2FullAccess,
+	})
+	if err != nil {
+		return err
+	}
+
+	// allVpcSubnetIds := pulumi.All(a.Vpc.PrivateSubnetIds, a.Vpc.PublicSubnetIds).ApplyT(
+	// 	func(args []interface{}) []string {
+	// 		privateSubnetIds := args[0].([]string)
+	// 		publicSubnetIds := args[1].([]string)
+	// 		return slices.Concat(privateSubnetIds, publicSubnetIds)
+	// 	}).(pulumi.StringArrayOutput)
+
+	// Use a codebuild project to create the databases within the cluster
+	a.CreateDatabaseProject, err = codebuild.NewProject(ctx, "create-nitric-databases", &codebuild.ProjectArgs{
+		Artifacts: &codebuild.ProjectArtifactsArgs{
+			Type: pulumi.String("NO_ARTIFACTS"),
+		},
+		Environment: &codebuild.ProjectEnvironmentArgs{
+			ComputeType: pulumi.String("BUILD_GENERAL1_SMALL"),
+			Image:       pulumi.String("aws/codebuild/amazonlinux2-x86_64-standard:4.0"),
+			Type:        pulumi.String("LINUX_CONTAINER"),
+			EnvironmentVariables: codebuild.ProjectEnvironmentEnvironmentVariableArray{
+				&codebuild.ProjectEnvironmentEnvironmentVariableArgs{
+					Name:  pulumi.String("DB_CLUSTER_ENDPOINT"),
+					Value: a.DatabaseCluster.Endpoint,
+				},
+				&codebuild.ProjectEnvironmentEnvironmentVariableArgs{
+					Name:  pulumi.String("DB_MASTER_USERNAME"),
+					Value: pulumi.String("nitric"),
+				},
+				&codebuild.ProjectEnvironmentEnvironmentVariableArgs{
+					Name:  pulumi.String("DB_MASTER_PASSWORD"),
+					Value: a.DbMasterPassword.Result,
+				},
+			},
+		},
+		ServiceRole: a.CodeBuildRole.Arn,
+		Source: &codebuild.ProjectSourceArgs{
+			Type:      pulumi.String("NO_SOURCE"),
+			Buildspec: embeds.GetCodeBuildCreateDatabaseConfig(),
+		},
+		VpcConfig: &codebuild.ProjectVpcConfigArgs{
+			SecurityGroupIds: a.DatabaseCluster.VpcSecurityGroupIds,
+			Subnets:          a.Vpc.PrivateSubnetIds,
+			VpcId:            a.Vpc.VpcId,
+		},
+		// Don't deploy the build until after the database cluster is completely ready
+	}, pulumi.DependsOn([]pulumi.Resource{a.DatabaseCluster, dbInstance}))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Sqldatabase - Implements PostgresSql database deployments use AWS Aurora
@@ -181,35 +348,6 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 		return true, nil
 	})
-
-	// Run the database creation step
-	// a.CreateDatabaseProject.Name.ApplyT(func(projectName string) (bool, error) {
-	// 	fmt.Printf("Starting database creation build %s\n", name)
-	// 	out, err := client.StartBuild(&awscodebuild.StartBuildInput{
-	// 		ProjectName: aws.String(projectName),
-	// 		EnvironmentVariablesOverride: []*awscodebuild.EnvironmentVariable{
-	// 			{
-	// 				Name:  aws.String("DB_NAME"),
-	// 				Value: aws.String(name),
-	// 			},
-	// 		},
-	// 	})
-	// 	if err != nil {
-	// 		return false, err
-	// 	}
-
-	// 	var finalErr error
-	// 	err = retry.Do(checkBuildStatus(client, out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15))
-	// 	if err != nil {
-	// 		return false, err
-	// 	}
-
-	// 	if finalErr != nil {
-	// 		return false, finalErr
-	// 	}
-
-	// 	return true, nil
-	// })
 
 	return nil
 }
