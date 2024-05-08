@@ -2,10 +2,14 @@ package provider
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/common/deploy/env"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -141,4 +145,23 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	// }
 
 	return app, nil
+}
+
+func (s *TerraformProviderServer) Start() {
+	port := env.PORT.String()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		logger.Fatalf("error listening on port %s %v", port, err)
+	}
+
+	srv := grpc.NewServer()
+
+	deploymentspb.RegisterDeploymentServer(srv, s)
+
+	fmt.Printf("Deployment server started on %s\n", lis.Addr().String())
+	err = srv.Serve(lis)
+	if err != nil {
+		logger.Fatalf("error serving requests %v", err)
+	}
 }
