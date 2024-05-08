@@ -78,8 +78,8 @@ func (s *TerraformProviderServer) Down(req *deploymentspb.DeploymentDownRequest,
 	return status.Error(codes.Unimplemented, "Down not implemented for Terraform providers, please run terraform destroy against your stack state")
 }
 
-func NewTerraformProviderServer(provider NitricPulumiProvider, runtime RuntimeProvider) *PulumiProviderServer {
-	return &PulumiProviderServer{
+func NewTerraformProviderServer(provider NitricTerraformProvider, runtime RuntimeProvider) *TerraformProviderServer {
+	return &TerraformProviderServer{
 		provider: provider,
 		runtime:  runtime,
 	}
