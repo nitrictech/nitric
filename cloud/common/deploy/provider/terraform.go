@@ -22,7 +22,6 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,9 +31,7 @@ type NitricTerraformProvider interface {
 	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
 	Init(attributes map[string]interface{}) error
 	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
-	Pre(stack cdktf.TerraformStack) error
-	// Config - Return the Pulumi ConfigMap for the provider
-	Config() (auto.ConfigMap, error)
+	Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error
 
 	// Order - Return the order that resources should be deployed in.
 	// The order of resources is important as some resources depend on others.
@@ -112,13 +109,14 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	stack := cdktf.NewTerraformStack(app, &fullStackName)
 
 	// The code that defines your stack goes here
+	resources := nitricProvider.Order(req.Spec.Resources)
 
-	err = nitricProvider.Pre(stack)
+	err = nitricProvider.Pre(stack, resources)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, res := range req.Spec.Resources {
+	for _, res := range resources {
 		switch t := res.Config.(type) {
 		case *deploymentspb.Resource_Service:
 			err = nitricProvider.Service(stack, res.Id.Name, t.Service, runtime)

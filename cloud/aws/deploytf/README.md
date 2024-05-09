@@ -1,0 +1,1 @@
+# Nitric AWS Terraform Provider
