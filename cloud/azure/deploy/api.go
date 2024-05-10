@@ -24,7 +24,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
-	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -222,7 +222,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 					OperationId:       pulumi.String(op.OperationID),
 					PolicyId:          pulumi.String("policy"),
 					Format:            pulumi.String("xml"),
-					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, p.ContainerEnv.ManagedUser.ClientId, p.ContainerEnv.ManagedUser.ClientId),
+					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId),
 				}, pulumi.Parent(api))
 				if err != nil {
 					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
