@@ -30,7 +30,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
-	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v20201201"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -84,7 +84,7 @@ type NitricAzurePulumiProvider struct {
 var _ provider.NitricPulumiProvider = (*NitricAzurePulumiProvider)(nil)
 
 const (
-	pulumiAzureNativeVersion = "1.95.0"
+	pulumiAzureNativeVersion = "2.40.0"
 	pulumiAzureVersion       = "5.52.0"
 )
 
