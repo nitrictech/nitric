@@ -265,24 +265,30 @@ func wrapDockerImage(wrapper, sourceImage string) (string, string, error) {
 		return "", "", fmt.Errorf("blank sourceImage provided")
 	}
 
-	cmdStr, imageId, err := CommandFromImageInspect(sourceImage, ",")
+	inspectResult, err := CommandFromImageInspect(sourceImage, ",")
 	if err != nil {
 		return "", "", err
 	}
 
-	return fmt.Sprintf(wrapper, cmdStr), imageId, nil
+	return fmt.Sprintf(wrapper, inspectResult.Cmd), inspectResult.ID, nil
+}
+
+type ImageInspect struct {
+	ID      string
+	Cmd     string
+	WorkDir string
 }
 
 // Gets the command from the source image and returns as a comma separated string
-func CommandFromImageInspect(sourceImage string, delimeter string) (string, string, error) {
+func CommandFromImageInspect(sourceImage string, delimeter string) (*ImageInspect, error) {
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	imageInspect, _, err := client.ImageInspectWithRaw(context.Background(), sourceImage)
 	if err != nil {
-		return "", "", errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
+		return nil, errors.WithMessage(err, fmt.Sprintf("could not inspect image: %s", sourceImage))
 	}
 
 	// Get the original command of the source image
@@ -295,5 +301,9 @@ func CommandFromImageInspect(sourceImage string, delimeter string) (string, stri
 		cmdStr = append(cmdStr, "\""+c+"\"")
 	}
 
-	return strings.Join(cmdStr, delimeter), imageInspect.ID, nil
+	return &ImageInspect{
+		ID:      imageInspect.ID,
+		Cmd:     strings.Join(cmdStr, delimeter),
+		WorkDir: imageInspect.Config.WorkingDir,
+	}, nil
 }

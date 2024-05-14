@@ -30,6 +30,6 @@ func GetCodeBuildCreateDatabaseConfig() pulumi.StringInput {
 	return pulumi.String(codebuild_CreateDatabaseTemplate)
 }
 
-func GetCodeBuildMigrateDatabaseConfig(cmd string) pulumi.StringInput {
-	return pulumi.Sprintf(codebuild_MigrateDatabaseTemplate, cmd)
+func GetCodeBuildMigrateDatabaseConfig(workdir string, cmd string) pulumi.StringInput {
+	return pulumi.Sprintf(codebuild_MigrateDatabaseTemplate, workdir, cmd)
 }

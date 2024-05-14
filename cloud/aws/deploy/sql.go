@@ -35,6 +35,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func checkBuildStatus(client *awscodebuild.CodeBuild, buildId string) func() error {
@@ -98,7 +99,9 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 		DbSubnetGroupName:   dbSubnetGroup.Name,
 		SkipFinalSnapshot:   pulumi.Bool(true),
 		Tags:                pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster", "DatabaseCluster")),
-	})
+		// NOTE: Workaround for https://github.com/pulumi/pulumi-aws/issues/2426
+		// Aurora instances don't support StorageType so we need to ignore changes otherwise we'll get unsolicited replacements
+	}, pulumi.IgnoreChanges([]string{"storageType"}))
 	if err != nil {
 		return err
 	}
@@ -242,7 +245,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return err
 		}
 
-		cmd, _, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
 		if err != nil {
 			return err
 		}
@@ -273,7 +276,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			ServiceRole: a.CodeBuildRole.Arn,
 			Source: &codebuild.ProjectSourceArgs{
 				Type:      pulumi.String("NO_SOURCE"),
-				Buildspec: embeds.GetCodeBuildMigrateDatabaseConfig(fmt.Sprintf("'%s'", cmd)),
+				Buildspec: embeds.GetCodeBuildMigrateDatabaseConfig(lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/"), fmt.Sprintf("'%s'", inspect.Cmd)),
 			},
 			VpcConfig: &codebuild.ProjectVpcConfigArgs{
 				SecurityGroupIds: a.DatabaseCluster.VpcSecurityGroupIds,
