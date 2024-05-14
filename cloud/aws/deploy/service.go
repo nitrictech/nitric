@@ -230,6 +230,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		ImageUri:    image.URI(),
 		MemorySize:  pulumi.IntPtr(typeConfig.Lambda.Memory),
 		Timeout:     pulumi.IntPtr(typeConfig.Lambda.Timeout),
+		Publish:     pulumi.BoolPtr(true),
 		PackageType: pulumi.String("Image"),
 		Role:        a.LambdaRoles[name].Arn,
 		Tags:        pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Service)),
@@ -242,11 +243,11 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	if typeConfig.Lambda.ProvisionedConcurreny > 0 {
-		_, err := awslambda.NewProvisionedConcurrencyConfig(ctx, name, &awslambda.ProvisionedConcurrencyConfigArgs{
+		_, err = awslambda.NewProvisionedConcurrencyConfig(ctx, name, &awslambda.ProvisionedConcurrencyConfigArgs{
 			FunctionName:                    a.Lambdas[name].Arn,
 			ProvisionedConcurrentExecutions: pulumi.Int(typeConfig.Lambda.ProvisionedConcurreny),
-			Qualifier:                       a.Lambdas[name].Name,
-		})
+			Qualifier:                       a.Lambdas[name].Version,
+		}, pulumi.DependsOn([]pulumi.Resource{a.Lambdas[name]}))
 		if err != nil {
 			return err
 		}
