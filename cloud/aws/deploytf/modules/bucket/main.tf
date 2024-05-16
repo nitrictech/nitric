@@ -16,5 +16,6 @@ resource "aws_s3_bucket" "bucket" {
 
   tags = {
     "x-nitric-${var.stack_id}-name" = var.bucket_name
+    "x-nitric-${var.stack_id}-type" = "bucket"
   }
 }

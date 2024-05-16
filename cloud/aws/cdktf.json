@@ -13,6 +13,10 @@
     {
       "name": "stack",
       "source": "./deploytf/modules/stack"
+    },
+    {
+      "name": "topic",
+      "source": "./deploytf/modules/topic"
     }
   ],
   "context": {}

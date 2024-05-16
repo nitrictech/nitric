@@ -13,7 +13,7 @@ func (n *NitricAwsTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		StackId:    n.Stack.StackIdOutput(),
 	})
 
-	// TODO: Deploy bucket subscriptions
+	// TODO: Deploy bucket notifications
 
 	return nil
 }
