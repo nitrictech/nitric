@@ -7,6 +7,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -20,6 +21,7 @@ type NitricAwsTerraformProvider struct {
 
 	AwsConfig *common.AwsConfig
 	Buckets   map[string]bucket.Bucket
+	Topics    map[string]topic.Topic
 	Services  map[string]service.Service
 	provider.NitricDefaultOrder
 }

@@ -8,16 +8,18 @@ import (
 )
 
 func (a *NitricAwsTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
-	lambdaSubscriberArns := []string{}
+	lambdaSubscriberArns := []*string{}
 
 	for _, subscriber := range config.Subscriptions {
 		// subscriber.GetService()
+		lambdaService := a.Services[subscriber.GetService()]
+		lambdaSubscriberArns = append(lambdaSubscriberArns, lambdaService.LambdaArnOutput())
 	}
 
-	topic.NewTopic(stack, &name, &topic.TopicConfig{
+	a.Topics[name] = topic.NewTopic(stack, &name, &topic.TopicConfig{
 		StackId:           a.Stack.StackIdOutput(),
 		TopicName:         jsii.String(name),
-		LambdaSubscribers: jsii.Strings(lambdaSubscriberArns...),
+		LambdaSubscribers: &lambdaSubscriberArns,
 	})
 
 	return nil
