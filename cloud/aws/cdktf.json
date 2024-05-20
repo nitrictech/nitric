@@ -17,6 +17,10 @@
     {
       "name": "topic",
       "source": "./deploytf/modules/topic"
+    },
+    {
+      "name": "service",
+      "source": "./deploytf/modules/service"
     }
   ],
   "context": {}

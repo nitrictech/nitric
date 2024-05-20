@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -19,6 +20,7 @@ type NitricAwsTerraformProvider struct {
 
 	AwsConfig *common.AwsConfig
 	Buckets   map[string]bucket.Bucket
+	Services  map[string]service.Service
 	provider.NitricDefaultOrder
 }
 
@@ -55,6 +57,7 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 
 func NewNitricAwsProvider() *NitricAwsTerraformProvider {
 	return &NitricAwsTerraformProvider{
-		Buckets: make(map[string]bucket.Bucket),
+		Buckets:  make(map[string]bucket.Bucket),
+		Services: make(map[string]service.Service),
 	}
 }
