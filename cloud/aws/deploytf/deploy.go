@@ -2,11 +2,11 @@ package deploytf
 
 import (
 	"github.com/aws/jsii-runtime-go"
-	"github.com/docker/docker/libcontainerd/queue"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
