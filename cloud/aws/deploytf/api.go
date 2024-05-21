@@ -106,8 +106,6 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		targetArns = append(targetArns, v.InvokeArnOutput())
 	}
 
-	// apiGatewayTags := tags.Tags(*n.Stack.StackIdOutput(), name, resources.API)
-
 	for k, p := range openapiDoc.Paths {
 		p.Get = awsOperation(p.Get, nameArnPairs)
 		p.Post = awsOperation(p.Post, nameArnPairs)

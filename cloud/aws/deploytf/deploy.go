@@ -6,6 +6,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
@@ -24,6 +25,7 @@ type NitricAwsTerraformProvider struct {
 	Apis      map[string]api.Api
 	Buckets   map[string]bucket.Bucket
 	Topics    map[string]topic.Topic
+	Schedules map[string]schedule.Schedule
 	Services  map[string]service.Service
 	provider.NitricDefaultOrder
 }

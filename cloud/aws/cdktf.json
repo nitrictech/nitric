@@ -25,6 +25,10 @@
     {
       "name": "api",
       "source": "./deploytf/modules/api"
+    },
+    {
+      "name": "schedule",
+      "source": "./deploytf/modules/schedule"
     }
   ],
   "context": {}
