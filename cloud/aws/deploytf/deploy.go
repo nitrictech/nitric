@@ -8,6 +8,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
@@ -28,6 +29,7 @@ type NitricAwsTerraformProvider struct {
 	Topics    map[string]topic.Topic
 	Schedules map[string]schedule.Schedule
 	Services  map[string]service.Service
+	Secrets   map[string]secret.Secret
 	Queues    map[string]queue.Queue
 	provider.NitricDefaultOrder
 }

@@ -33,6 +33,10 @@
     {
       "name": "queue",
       "source": "./deploytf/modules/queue"
+    },
+    {
+      "name": "secret",
+      "source": "./deploytf/modules/secret"
     }
   ],
   "context": {}
