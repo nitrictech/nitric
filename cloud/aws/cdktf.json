@@ -29,6 +29,10 @@
     {
       "name": "schedule",
       "source": "./deploytf/modules/schedule"
+    },
+    {
+      "name": "queue",
+      "source": "./deploytf/modules/queue"
     }
   ],
   "context": {}

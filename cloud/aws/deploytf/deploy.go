@@ -2,6 +2,7 @@ package deploytf
 
 import (
 	"github.com/aws/jsii-runtime-go"
+	"github.com/docker/docker/libcontainerd/queue"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
@@ -27,6 +28,7 @@ type NitricAwsTerraformProvider struct {
 	Topics    map[string]topic.Topic
 	Schedules map[string]schedule.Schedule
 	Services  map[string]service.Service
+	Queues    map[string]queue.Queue
 	provider.NitricDefaultOrder
 }
 
