@@ -21,6 +21,10 @@
     {
       "name": "service",
       "source": "./deploytf/modules/service"
+    },
+    {
+      "name": "api",
+      "source": "./deploytf/modules/api"
     }
   ],
   "context": {}

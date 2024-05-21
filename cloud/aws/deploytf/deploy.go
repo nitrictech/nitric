@@ -4,6 +4,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
@@ -20,6 +21,7 @@ type NitricAwsTerraformProvider struct {
 	Stack tfstack.Stack
 
 	AwsConfig *common.AwsConfig
+	Apis      map[string]api.Api
 	Buckets   map[string]bucket.Bucket
 	Topics    map[string]topic.Topic
 	Services  map[string]service.Service
