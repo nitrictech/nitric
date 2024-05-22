@@ -40,8 +40,8 @@ type NitricTerraformProvider interface {
 	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
 	Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error
 
-	// CdkTfContext - Return a map of key value pairs to be added to the CDKTF context
-	CdkTfModules() (fs.FS, error)
+	// CdkTfModules - Return the relative parent directory (root golang packed) and embedded modules directory
+	CdkTfModules() (string, fs.FS, error)
 
 	// Order - Return the order that resources should be deployed in.
 	// The order of resources is important as some resources depend on others.
@@ -115,17 +115,26 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 	fullStackName := fmt.Sprintf("%s-%s", projectName, stackName)
 
-	modules, err := nitricProvider.CdkTfModules()
+	parentDir, modules, err := nitricProvider.CdkTfModules()
 	if err != nil {
 		return err
 	}
 
-	tmpModulesDir, err := os.MkdirTemp("./.nitric", "nitric-tf-modules-*")
+	// modules dir
+	modulesDir := filepath.Join(parentDir)
+
+	// Only proceed if the modules directory does not already exist
+	_, err = os.Stat(modulesDir)
+	if err == nil || !os.IsNotExist(err) {
+		return fmt.Errorf("modules directory already exists: %s", modulesDir)
+	}
+
+	err = os.MkdirAll(modulesDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	// cleanup the modules when we're done
-	// defer os.RemoveAll(tmpModulesDir)
+	defer os.RemoveAll(modulesDir)
 
 	err = fs.WalkDir(modules, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -139,7 +148,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			}
 			defer data.Close()
 
-			out, err := os.Create(filepath.Join(tmpModulesDir, path))
+			out, err := os.Create(filepath.Join(modulesDir, path))
 			if err != nil {
 				return err
 			}
@@ -149,7 +158,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			return err
 		}
 
-		return os.MkdirAll(filepath.Join(tmpModulesDir, path), 0755)
+		return os.MkdirAll(filepath.Join(modulesDir, path), 0755)
 	})
 	if err != nil {
 		return err
@@ -157,7 +166,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	}
 
 	appCtx := map[string]interface{}{
-		"cdktfRelativeModules": []string{tmpModulesDir},
+		"cdktfRelativeModules": []string{filepath.Join(modulesDir, "modules")},
 	}
 
 	app := cdktf.NewApp(&cdktf.AppConfig{

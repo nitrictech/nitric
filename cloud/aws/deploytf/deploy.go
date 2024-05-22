@@ -60,8 +60,8 @@ func (a *NitricAwsTerraformProvider) Init(attributes map[string]interface{}) err
 //go:embed modules/**/*
 var modules embed.FS
 
-func (a *NitricAwsTerraformProvider) CdkTfModules() (fs.FS, error) {
-	return modules, nil
+func (a *NitricAwsTerraformProvider) CdkTfModules() (string, fs.FS, error) {
+	return "deploytf", modules, nil
 }
 
 func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
