@@ -93,7 +93,7 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 		return err
 	}
 
-	tarBuildContext, err := archive.TarWithOptions(buildContext, nil)
+	tarBuildContext, err := archive.TarWithOptions(buildContext, &archive.TarOptions{})
 	if err != nil {
 		return err
 	}
@@ -116,4 +116,6 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 	}
 
 	defer response.Body.Close()
+
+	return nil
 }

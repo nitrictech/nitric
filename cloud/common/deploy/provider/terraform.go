@@ -16,8 +16,15 @@ package provider
 
 import (
 	"fmt"
+	"io"
+	"io/fs"
 	"net"
+	"os"
+	"path/filepath"
 
+	goruntime "runtime"
+
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
@@ -32,6 +39,9 @@ type NitricTerraformProvider interface {
 	Init(attributes map[string]interface{}) error
 	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
 	Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error
+
+	// CdkTfContext - Return a map of key value pairs to be added to the CDKTF context
+	CdkTfModules() (fs.FS, error)
 
 	// Order - Return the order that resources should be deployed in.
 	// The order of resources is important as some resources depend on others.
@@ -74,15 +84,7 @@ type TerraformProviderServer struct {
 }
 
 func (s *TerraformProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
-	app, err := createTerraformStackForNitricProvider(req, s.provider, s.runtime)
-	if err != nil {
-		return err
-	}
-
-	// Sythesize the Terraform stack
-	app.Synth()
-
-	return nil
+	return createTerraformStackForNitricProvider(req, s.provider, s.runtime)
 }
 
 func (s *TerraformProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
@@ -96,15 +98,78 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 	}
 }
 
-func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricTerraformProvider, runtime RuntimeProvider) (cdktf.App, error) {
+func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricTerraformProvider, runtime RuntimeProvider) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			b := make([]byte, 2048) // adjust buffer size to be larger than expected stack
+			n := goruntime.Stack(b, false)
+			s := string(b[:n])
+			err = fmt.Errorf("panic: %v [%s]", r, s)
+		}
+	}()
+
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	fullStackName := fmt.Sprintf("%s-%s", projectName, stackName)
 
-	app := cdktf.NewApp(nil)
+	modules, err := nitricProvider.CdkTfModules()
+	if err != nil {
+		return err
+	}
+
+	tmpModulesDir, err := os.MkdirTemp("./.nitric", "nitric-tf-modules-*")
+	if err != nil {
+		return err
+	}
+	// cleanup the modules when we're done
+	// defer os.RemoveAll(tmpModulesDir)
+
+	err = fs.WalkDir(modules, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			data, err := modules.Open(path)
+			if err != nil {
+				return err
+			}
+			defer data.Close()
+
+			out, err := os.Create(filepath.Join(tmpModulesDir, path))
+			if err != nil {
+				return err
+			}
+			defer out.Close()
+
+			_, err = io.Copy(out, data)
+			return err
+		}
+
+		return os.MkdirAll(filepath.Join(tmpModulesDir, path), 0755)
+	})
+	if err != nil {
+		return err
+
+	}
+
+	appCtx := map[string]interface{}{
+		"cdktfRelativeModules": []string{tmpModulesDir},
+	}
+
+	app := cdktf.NewApp(&cdktf.AppConfig{
+		HclOutput: jsii.Bool(true),
+		Outdir:    jsii.String("output"),
+		Context:   &appCtx,
+	})
+
+	err = nitricProvider.Init(req.Attributes.AsMap())
+	if err != nil {
+		return err
+	}
 
 	stack := cdktf.NewTerraformStack(app, &fullStackName)
 
@@ -113,7 +178,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 	err = nitricProvider.Pre(stack, resources)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, res := range resources {
@@ -142,21 +207,24 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			err = nitricProvider.KeyValueStore(stack, res.Id.Name, t.KeyValueStore)
 		}
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	err = nitricProvider.Post(stack)
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	app.ToString()
 
 	// result, err := nitricProvider.Result(ctx)
 	// if err != nil {
 	// 	return nil, err
 	// }
+	app.Synth()
 
-	return app, nil
+	return nil
 }
 
 func (s *TerraformProviderServer) Start() {

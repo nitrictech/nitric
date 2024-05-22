@@ -1,8 +1,6 @@
 package deploytf
 
 import (
-	"fmt"
-
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
@@ -37,5 +35,5 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		Environment: &jsiiEnv,
 	})
 
-	return fmt.Errorf("nitric AWS terraform provider does not support Service deployment")
+	return nil
 }

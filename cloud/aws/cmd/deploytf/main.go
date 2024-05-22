@@ -24,6 +24,8 @@ import (
 
 // Start the deployment server
 func main() {
+	// os.Setenv("JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION", "true")
+	// os.Setenv("SYNTH_HCL_OUTPUT", "true")
 	awsStack := deploytf.NewNitricAwsProvider()
 
 	providerServer := provider.NewTerraformProviderServer(awsStack, runtime.NitricAwsRuntime)

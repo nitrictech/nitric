@@ -1,6 +1,9 @@
 package deploytf
 
 import (
+	"embed"
+	"io/fs"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
@@ -52,6 +55,15 @@ func (a *NitricAwsTerraformProvider) Init(attributes map[string]interface{}) err
 	return nil
 }
 
+// embed the modules directory here
+//
+//go:embed modules/**/*
+var modules embed.FS
+
+func (a *NitricAwsTerraformProvider) CdkTfModules() (fs.FS, error) {
+	return modules, nil
+}
+
 func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
 
@@ -67,7 +79,12 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 
 func NewNitricAwsProvider() *NitricAwsTerraformProvider {
 	return &NitricAwsTerraformProvider{
-		Buckets:  make(map[string]bucket.Bucket),
-		Services: make(map[string]service.Service),
+		Apis:      make(map[string]api.Api),
+		Buckets:   make(map[string]bucket.Bucket),
+		Services:  make(map[string]service.Service),
+		Topics:    make(map[string]topic.Topic),
+		Schedules: make(map[string]schedule.Schedule),
+		Secrets:   make(map[string]secret.Secret),
+		Queues:    make(map[string]queue.Queue),
 	}
 }
