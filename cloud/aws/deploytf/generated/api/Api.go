@@ -11,7 +11,7 @@ import (
 
 // Defines an Api based on a Terraform module.
 //
-// Source at ./deploytf/modules/api
+// Source at ./.nitric/modules/api
 type Api interface {
 	cdktf.TerraformModule
 	// Experimental.

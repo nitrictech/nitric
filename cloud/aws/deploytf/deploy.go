@@ -57,7 +57,7 @@ func (a *NitricAwsTerraformProvider) Init(attributes map[string]interface{}) err
 
 // embed the modules directory here
 //
-//go:embed modules/**/*
+//go:embed .nitric/modules/**/*
 var modules embed.FS
 
 func (a *NitricAwsTerraformProvider) CdkTfModules() (string, fs.FS, error) {

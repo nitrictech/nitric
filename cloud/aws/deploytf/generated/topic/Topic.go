@@ -11,7 +11,7 @@ import (
 
 // Defines an Topic based on a Terraform module.
 //
-// Source at ./deploytf/modules/topic
+// Source at ./.nitric/modules/topic
 type Topic interface {
 	cdktf.TerraformModule
 	BucketArnOutput() *string

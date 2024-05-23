@@ -11,7 +11,7 @@ import (
 
 // Defines an Schedule based on a Terraform module.
 //
-// Source at ./deploytf/modules/schedule
+// Source at ./.nitric/modules/schedule
 type Schedule interface {
 	cdktf.TerraformModule
 	// Experimental.

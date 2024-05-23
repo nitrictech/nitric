@@ -11,7 +11,7 @@ import (
 
 // Defines an Bucket based on a Terraform module.
 //
-// Source at ./deploytf/modules/bucket
+// Source at ./.nitric/modules/bucket
 type Bucket interface {
 	cdktf.TerraformModule
 	BucketArnOutput() *string

@@ -11,7 +11,7 @@ import (
 
 // Defines an Secret based on a Terraform module.
 //
-// Source at ./deploytf/modules/secret
+// Source at ./.nitric/modules/secret
 type Secret interface {
 	cdktf.TerraformModule
 	// Experimental.

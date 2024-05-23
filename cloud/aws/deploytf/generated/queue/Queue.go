@@ -11,7 +11,7 @@ import (
 
 // Defines an Queue based on a Terraform module.
 //
-// Source at ./deploytf/modules/queue
+// Source at ./.nitric/modules/queue
 type Queue interface {
 	cdktf.TerraformModule
 	// Experimental.

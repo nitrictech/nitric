@@ -11,7 +11,7 @@ import (
 
 // Defines an Stack based on a Terraform module.
 //
-// Source at ./deploytf/modules/stack
+// Source at ./.nitric/modules/stack
 type Stack interface {
 	cdktf.TerraformModule
 	// Experimental.

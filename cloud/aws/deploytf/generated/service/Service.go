@@ -11,7 +11,7 @@ import (
 
 // Defines an Service based on a Terraform module.
 //
-// Source at ./deploytf/modules/service
+// Source at ./.nitric/modules/service
 type Service interface {
 	cdktf.TerraformModule
 	// Experimental.
