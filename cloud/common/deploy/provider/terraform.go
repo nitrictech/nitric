@@ -123,12 +123,6 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	// modules dir
 	modulesDir := filepath.Join(parentDir)
 
-	// Only proceed if the modules directory does not already exist
-	_, err = os.Stat(modulesDir)
-	if err == nil || !os.IsNotExist(err) {
-		return fmt.Errorf("modules directory already exists: %s", modulesDir)
-	}
-
 	err = os.MkdirAll(modulesDir, os.ModePerm)
 	if err != nil {
 		return err
@@ -148,7 +142,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			}
 			defer data.Close()
 
-			out, err := os.Create(filepath.Join(modulesDir, path))
+			out, err := os.Create(filepath.Join(path))
 			if err != nil {
 				return err
 			}
@@ -158,15 +152,14 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			return err
 		}
 
-		return os.MkdirAll(filepath.Join(modulesDir, path), 0755)
+		return os.MkdirAll(filepath.Join(path), 0755)
 	})
 	if err != nil {
 		return err
-
 	}
 
 	appCtx := map[string]interface{}{
-		"cdktfRelativeModules": []string{filepath.Join(modulesDir, "modules")},
+		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
 	}
 
 	app := cdktf.NewApp(&cdktf.AppConfig{
