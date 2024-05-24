@@ -48,7 +48,7 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetTargetLambdaArnsParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Api) validateSetTargetLambdaFunctionsParameters(val *map[string]*string) error {
 	return nil
 }
 

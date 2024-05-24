@@ -26,6 +26,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "interpolationForOutput", GoMethod: "InterpolationForOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "invokeArnOutput", GoGetter: "InvokeArnOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "lambdaArnOutput", GoGetter: "LambdaArnOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "lambdaFunctionNameOutput", GoGetter: "LambdaFunctionNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "node", GoGetter: "Node"},
 			_jsii_.MemberMethod{JsiiMethod: "overrideLogicalId", GoMethod: "OverrideLogicalId"},
 			_jsii_.MemberProperty{JsiiProperty: "providers", GoGetter: "Providers"},

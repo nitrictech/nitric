@@ -49,8 +49,8 @@ type Api interface {
 	SetSpec(val *string)
 	StackId() *string
 	SetStackId(val *string)
-	TargetLambdaArns() *map[string]*string
-	SetTargetLambdaArns(val *map[string]*string)
+	TargetLambdaFunctions() *map[string]*string
+	SetTargetLambdaFunctions(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -244,11 +244,11 @@ func (j *jsiiProxy_Api) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) TargetLambdaArns() *map[string]*string {
+func (j *jsiiProxy_Api) TargetLambdaFunctions() *map[string]*string {
 	var returns *map[string]*string
 	_jsii_.Get(
 		j,
-		"targetLambdaArns",
+		"targetLambdaFunctions",
 		&returns,
 	)
 	return returns
@@ -352,13 +352,13 @@ func (j *jsiiProxy_Api)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetTargetLambdaArns(val *map[string]*string) {
-	if err := j.validateSetTargetLambdaArnsParameters(val); err != nil {
+func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
+	if err := j.validateSetTargetLambdaFunctionsParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"targetLambdaArns",
+		"targetLambdaFunctions",
 		val,
 	)
 }

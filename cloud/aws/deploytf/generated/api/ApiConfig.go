@@ -21,7 +21,7 @@ type ApiConfig struct {
 	Spec *string `field:"required" json:"spec" yaml:"spec"`
 	// The ID of the stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The ARNs of the target lambda functions The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
-	TargetLambdaArns *map[string]*string `field:"required" json:"targetLambdaArns" yaml:"targetLambdaArns"`
+	// The names of the target lambda functions The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	TargetLambdaFunctions *map[string]*string `field:"required" json:"targetLambdaFunctions" yaml:"targetLambdaFunctions"`
 }
 

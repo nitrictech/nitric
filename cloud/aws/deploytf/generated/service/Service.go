@@ -36,6 +36,7 @@ type Service interface {
 	SetImage(val *string)
 	InvokeArnOutput() *string
 	LambdaArnOutput() *string
+	LambdaFunctionNameOutput() *string
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -177,6 +178,16 @@ func (j *jsiiProxy_Service) LambdaArnOutput() *string {
 	_jsii_.Get(
 		j,
 		"lambdaArnOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) LambdaFunctionNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"lambdaFunctionNameOutput",
 		&returns,
 	)
 	return returns

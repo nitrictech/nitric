@@ -4,6 +4,7 @@ resource "aws_apigatewayv2_api" "api_gateway" {
   body = var.spec
   tags = {
     "x-nitric-${var.stack_id}-name" = var.name,
+    "x-nitric-${var.stack_id}-type" = "api",
   }
 }
 
@@ -15,12 +16,12 @@ resource "aws_apigatewayv2_stage" "stage" {
 
 # deploy lambda permissions for execution
 resource "aws_lambda_permission" "apigw_lambda" {
-  for_each = var.target_lambda_arns
+  for_each      = var.target_lambda_functions
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = each.value
   principal     = "apigateway.amazonaws.com"
-  source_arn    = aws_apigatewayv2_api.api_gateway.execution_arn
+  source_arn    = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/*/*"
 }
 
 # look up existing certificate for domains

@@ -13,8 +13,8 @@ variable "spec" {
   type = string
 }
 
-variable "target_lambda_arns" {
-  description = "The ARNs of the target lambda functions"
+variable "target_lambda_functions" {
+  description = "The names of the target lambda functions"
   type = map(string)
 }
 

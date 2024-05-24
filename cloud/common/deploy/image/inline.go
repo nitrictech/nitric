@@ -19,6 +19,7 @@ package image
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -99,6 +100,9 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 	}
 
 	client, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return err
+	}
 
 	buildArgs := map[string]*string{
 		"BASE_IMAGE":    &args.SourceImage,
@@ -116,6 +120,11 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 	}
 
 	defer response.Body.Close()
+
+	_, err = io.Copy(os.Stdout, response.Body)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

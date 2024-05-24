@@ -53,7 +53,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	// nameArnPairs := make([]interface{}, 0, len(n.Services))
 	nameArnPairs := map[string]*string{}
-	targetArns := map[string]*string{}
+	targetNames := map[string]*string{}
 
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
@@ -104,7 +104,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	// collect name arn pairs for output iteration
 	for k, v := range nitricServiceTargets {
 		nameArnPairs[k] = v.InvokeArnOutput()
-		targetArns[k] = v.InvokeArnOutput()
+		targetNames[k] = v.LambdaFunctionNameOutput()
 	}
 
 	for k, p := range openapiDoc.Paths {
@@ -117,6 +117,14 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		openapiDoc.Paths[k] = p
 	}
 
+	openapiDoc.Tags = []*openapi3.Tag{{
+		Name:       fmt.Sprintf("x-nitric-%s-name", *n.Stack.StackIdOutput()),
+		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": name},
+	}, {
+		Name:       fmt.Sprintf("x-nitric-%s-type", *n.Stack.StackIdOutput()),
+		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": "api"},
+	}}
+
 	b, err := json.Marshal(openapiDoc)
 	if err != nil {
 		return err
@@ -128,11 +136,11 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
-		Name:             jsii.String(name),
-		Spec:             jsii.String(string(b)),
-		TargetLambdaArns: &targetArns,
-		Domains:          jsii.Strings(domains...),
-		StackId:          n.Stack.StackIdOutput(),
+		Name:                  jsii.String(name),
+		Spec:                  jsii.String(string(b)),
+		TargetLambdaFunctions: &targetNames,
+		Domains:               jsii.Strings(domains...),
+		StackId:               n.Stack.StackIdOutput(),
 	})
 
 	return nil
