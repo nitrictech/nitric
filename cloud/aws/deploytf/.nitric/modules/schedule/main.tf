@@ -30,7 +30,7 @@ resource "aws_iam_policy" "policy" {
 }
 
 # Create an AWS eventbridge schedule
-resource "aws_scheduler_schedule" "example" {
+resource "aws_scheduler_schedule" "schedule" {
   name = var.schedule_name
 
   flexible_time_window {
