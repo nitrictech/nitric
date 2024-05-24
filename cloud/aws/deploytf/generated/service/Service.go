@@ -50,6 +50,8 @@ type Service interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StackId() *string
+	SetStackId(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -263,6 +265,16 @@ func (j *jsiiProxy_Service) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) StackId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackId",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -346,6 +358,17 @@ func (j *jsiiProxy_Service)SetServiceName(val *string) {
 	_jsii_.Set(
 		j,
 		"serviceName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackId",
 		val,
 	)
 }

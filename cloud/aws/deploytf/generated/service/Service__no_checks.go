@@ -44,6 +44,10 @@ func (j *jsiiProxy_Service) validateSetServiceNameParameters(val *string) error 
 	return nil
 }
 
+func (j *jsiiProxy_Service) validateSetStackIdParameters(val *string) error {
+	return nil
+}
+
 func validateNewServiceParameters(scope constructs.Construct, id *string, config *ServiceConfig) error {
 	return nil
 }

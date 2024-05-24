@@ -88,7 +88,7 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
 
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
-  function_name = var.service_name
+  function_name = "${var.service_name}-${var.stack_id}"
   role          = aws_iam_role.role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}:latest"
   package_type  = "Image"
@@ -99,4 +99,9 @@ resource "aws_lambda_function" "function" {
   }
 
   depends_on = [docker_registry_image.push]
+
+  tags = {
+    "x-nitric-${var.stack_id}-name" = var.service_name,
+    "x-nitric-${var.stack_id}-type" = "service",
+  }
 }

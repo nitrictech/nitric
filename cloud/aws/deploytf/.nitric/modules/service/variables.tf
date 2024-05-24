@@ -13,3 +13,8 @@ variable "environment" {
     type = map(string)
     description = "Environment variables to set on the lambda function"
 }
+
+variable "stack_id" {
+  description = "The ID of the Nitric stack"
+  type        = string
+}

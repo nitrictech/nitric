@@ -117,6 +117,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		openapiDoc.Paths[k] = p
 	}
 
+	// TODO: Use common tags method and ensure it works with pointer templating
 	openapiDoc.Tags = []*openapi3.Tag{{
 		Name:       fmt.Sprintf("x-nitric-%s-name", *n.Stack.StackIdOutput()),
 		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": name},

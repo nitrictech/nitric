@@ -35,11 +35,9 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 
 	a.Services[name] = service.NewService(stack, jsii.String(name), &service.ServiceConfig{
 		ServiceName: jsii.String(name),
-		// TODO: Match to target image property above
-		Image: jsii.String(name),
-
-		// Convert env to pointer type
+		Image:       jsii.String(name),
 		Environment: &jsiiEnv,
+		StackId:     a.Stack.StackIdOutput(),
 	})
 
 	return nil
