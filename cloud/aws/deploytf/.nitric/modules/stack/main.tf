@@ -2,7 +2,6 @@ resource "random_string" "id" {
   length  = 8
   special = false
   upper   = false
-  number  = false
 }
 
 resource "aws_resourcegroups_group" "group" {

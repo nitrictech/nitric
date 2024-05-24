@@ -30,17 +30,18 @@ deploybin: predeploybin
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
 	@rm deploy/runtime/runtime-aws
 
-deploybintf: predeploybin
+deploybintf: generate-terraform predeploybin
 	@echo Building AWS Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-awstf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 	@rm deploytf/runtime/runtime-aws
 
 .PHONY: install
 install: deploybin deploybintf
-	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
 	@rm -f ${HOME}/.nitric/providers/nitric/aws-0.0.1
+	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
+	@echo installing aws terraform deployment server to ${HOME}/.nitric/providers/nitric/awstf-0.0.1
 	@cp bin/deploy-awstf ${HOME}/.nitric/providers/nitric/awstf-0.0.1
 
 

@@ -53,7 +53,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	// nameArnPairs := make([]interface{}, 0, len(n.Services))
 	nameArnPairs := map[string]*string{}
-	targetArns := []*string{}
+	targetArns := map[string]*string{}
 
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
@@ -104,7 +104,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	// collect name arn pairs for output iteration
 	for k, v := range nitricServiceTargets {
 		nameArnPairs[k] = v.InvokeArnOutput()
-		targetArns = append(targetArns, v.InvokeArnOutput())
+		targetArns[k] = v.InvokeArnOutput()
 	}
 
 	for k, p := range openapiDoc.Paths {

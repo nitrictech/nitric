@@ -1,9 +1,9 @@
 output "lambda_arn" { 
-  value = aws_lambda_function.lambda.arn 
+  value = aws_lambda_function.function.arn 
 }
 
 output "invoke_arn" {
-  value = aws_lambda_function.lambda.invoke_arn
+  value = aws_lambda_function.function.invoke_arn
 }
 
 output "role_arn" {

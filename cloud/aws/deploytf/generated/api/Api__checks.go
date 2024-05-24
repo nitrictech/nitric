@@ -122,7 +122,7 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetTargetLambdaArnsParameters(val *[]*string) error {
+func (j *jsiiProxy_Api) validateSetTargetLambdaArnsParameters(val *map[string]*string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

@@ -15,10 +15,10 @@ variable "spec" {
 
 variable "target_lambda_arns" {
   description = "The ARNs of the target lambda functions"
-  type = list(string)
+  type = map(string)
 }
 
 variable "domains" {
   description = "The domains to associate with the API Gateway"
-  type = list(string)
+  type = set(string)
 }

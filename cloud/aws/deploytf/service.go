@@ -1,6 +1,8 @@
 package deploytf
 
 import (
+	"fmt"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
@@ -21,7 +23,12 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		return err
 	}
 
-	jsiiEnv := map[string]*string{}
+	jsiiEnv := map[string]*string{
+		"NITRIC_STACK_ID":        a.Stack.StackIdOutput(),
+		"NITRIC_ENVIRONMENT":     jsii.String("cloud"),
+		"MIN_WORKERS":            jsii.String(fmt.Sprint(config.Workers)),
+		"NITRIC_HTTP_PROXY_PORT": jsii.String(fmt.Sprint(3000)),
+	}
 	for k, v := range config.GetEnv() {
 		jsiiEnv[k] = jsii.String(v)
 	}

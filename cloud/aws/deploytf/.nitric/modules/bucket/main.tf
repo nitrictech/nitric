@@ -12,7 +12,6 @@ resource "random_id" "bucket_id" {
 # AWS S3 bucket
 resource "aws_s3_bucket" "bucket" {
   bucket = "${var.bucket_name}-${random_id.bucket_id.hex}"
-  acl    = "private"
 
   tags = {
     "x-nitric-${var.stack_id}-name" = var.bucket_name

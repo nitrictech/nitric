@@ -1,21 +1,30 @@
-
-# Create an ECR repository
-resource "aws_ecr_repository" "foo" {
-  name                 = var.service_name
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "3.0.2"
+    }
+  }
 }
 
+# Create an ECR repository
+resource "aws_ecr_repository" "repo" {
+  name = var.service_name
+}
+
+
 # Tag the provided docker image with the ECR repository url
-resource "docker_image" "tag" {
+resource "docker_tag" "tag" {
   source_image = var.image
   target_image = aws_ecr_repository.repo.repository_url
 }
 
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
-  name          = docker_image.tag.name
-  repository    = aws_ecr_repository.repo.repository_url
-  tag           = docker_image.tag.tag
-  build_context = docker_image.tag.build_context
+  name          = aws_ecr_repository.repo.repository_url
+  triggers = {
+    source_image_id = docker_tag.tag.source_image_id
+  }
 }
 
 # Create a role for the lambda function
@@ -39,7 +48,8 @@ resource "aws_iam_role" "role" {
 resource "aws_lambda_function" "function" {
   function_name = var.service_name
   role          = aws_iam_role.role.arn
-  image_uri     = docker_registry_image.push.image_url
+  image_uri     = aws_ecr_repository.repo.repository_url
+  package_type  = "Image"
   environment {
     variables = var.environment
   }

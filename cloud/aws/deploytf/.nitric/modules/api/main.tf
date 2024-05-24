@@ -34,7 +34,7 @@ resource "aws_apigatewayv2_domain_name" "domain" {
   for_each = var.domains
   domain_name = each.value
   domain_name_configuration {
-    certificate_arn = aws_acm_certificate.cert[each.key].arn
+    certificate_arn = data.aws_acm_certificate.cert[each.key].arn
     endpoint_type = "REGIONAL"
     security_policy = "TLS_1_2"
   }

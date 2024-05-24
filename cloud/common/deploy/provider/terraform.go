@@ -128,6 +128,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		return err
 	}
 	// cleanup the modules when we're done
+	// NOTE: Its importent to ensure that the modules are written to a temporary directory like .nitric
 	defer os.RemoveAll(modulesDir)
 
 	err = fs.WalkDir(modules, ".", func(path string, d fs.DirEntry, err error) error {
@@ -162,13 +163,26 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
 	}
 
+	attributesMap := req.Attributes.AsMap()
+	outdir, ok := attributesMap["outdir"].(string)
+	if !ok {
+		outdir = "cdktf.out"
+	}
+
+	// TODO: This setting currently doesn't work
+	// actually needs an env variable to be set, but output is broken
+	hcl, ok := attributesMap["hcl"].(bool)
+	if !ok {
+		hcl = false
+	}
+
 	app := cdktf.NewApp(&cdktf.AppConfig{
-		HclOutput: jsii.Bool(true),
-		Outdir:    jsii.String("output"),
+		HclOutput: jsii.Bool(hcl),
+		Outdir:    jsii.String(outdir),
 		Context:   &appCtx,
 	})
 
-	err = nitricProvider.Init(req.Attributes.AsMap())
+	err = nitricProvider.Init(attributesMap)
 	if err != nil {
 		return err
 	}
