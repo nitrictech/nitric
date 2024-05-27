@@ -18,6 +18,7 @@ package env
 var (
 	MAX_WORKERS     = GetEnv("MAX_WORKERS", "300")
 	MIN_WORKERS     = GetEnv("MIN_WORKERS", "1")
+	WORKER_TIMEOUT  = GetEnv("WORKER_TIMEOUT", "10")
 	SERVICE_ADDRESS = GetEnv("SERVICE_ADDRESS", "127.0.0.1:50051")
 	LOG_LEVEL       = GetEnv("LOG_LEVEL", "INFO")
 )

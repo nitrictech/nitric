@@ -296,8 +296,11 @@ func New(options *MembraneOptions) (*Membrane, error) {
 		return nil, err
 	}
 
+	workerTimeout, err := env.WORKER_TIMEOUT.Int()
 	if options.ChildTimeoutSeconds < 1 {
-		options.ChildTimeoutSeconds = 10
+		options.ChildTimeoutSeconds = workerTimeout
+	} else if err != nil {
+		return nil, err
 	}
 
 	if options.GatewayPlugin == nil {
