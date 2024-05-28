@@ -40,6 +40,10 @@ func (j *jsiiProxy_Schedule) validateSetScheduleNameParameters(val *string) erro
 	return nil
 }
 
+func (j *jsiiProxy_Schedule) validateSetScheduleTimezoneParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Schedule) validateSetStackIdParameters(val *string) error {
 	return nil
 }

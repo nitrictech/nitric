@@ -40,6 +40,8 @@ type Schedule interface {
 	SetScheduleExpression(val *string)
 	ScheduleName() *string
 	SetScheduleName(val *string)
+	ScheduleTimezone() *string
+	SetScheduleTimezone(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -191,6 +193,16 @@ func (j *jsiiProxy_Schedule) ScheduleName() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Schedule) ScheduleTimezone() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"scheduleTimezone",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Schedule) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -303,6 +315,17 @@ func (j *jsiiProxy_Schedule)SetScheduleName(val *string) {
 	_jsii_.Set(
 		j,
 		"scheduleName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Schedule)SetScheduleTimezone(val *string) {
+	if err := j.validateSetScheduleTimezoneParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"scheduleTimezone",
 		val,
 	)
 }

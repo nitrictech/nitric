@@ -17,6 +17,8 @@ type ScheduleConfig struct {
 	ScheduleExpression *string `field:"required" json:"scheduleExpression" yaml:"scheduleExpression"`
 	// The name of the schedule.
 	ScheduleName *string `field:"required" json:"scheduleName" yaml:"scheduleName"`
+	// The timezone for the schedule.
+	ScheduleTimezone *string `field:"required" json:"scheduleTimezone" yaml:"scheduleTimezone"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The ARN of the target lambda function.

@@ -29,6 +29,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "resetOverrideLogicalId", GoMethod: "ResetOverrideLogicalId"},
 			_jsii_.MemberProperty{JsiiProperty: "scheduleExpression", GoGetter: "ScheduleExpression"},
 			_jsii_.MemberProperty{JsiiProperty: "scheduleName", GoGetter: "ScheduleName"},
+			_jsii_.MemberProperty{JsiiProperty: "scheduleTimezone", GoGetter: "ScheduleTimezone"},
 			_jsii_.MemberProperty{JsiiProperty: "skipAssetCreationFromLocalModules", GoGetter: "SkipAssetCreationFromLocalModules"},
 			_jsii_.MemberProperty{JsiiProperty: "source", GoGetter: "Source"},
 			_jsii_.MemberProperty{JsiiProperty: "stackId", GoGetter: "StackId"},

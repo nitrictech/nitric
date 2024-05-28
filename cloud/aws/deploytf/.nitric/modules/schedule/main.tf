@@ -37,6 +37,8 @@ resource "aws_scheduler_schedule" "schedule" {
     mode = "OFF"
   }
 
+  schedule_expression_timezone = var.schedule_timezone
+
   schedule_expression = "rate(1 hours)"
 
   target {

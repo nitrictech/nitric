@@ -37,6 +37,7 @@ func (a *NitricAwsTerraformProvider) Schedule(stack cdktf.TerraformStack, name s
 	a.Schedules[name] = schedule.NewSchedule(stack, jsii.String(name), &schedule.ScheduleConfig{
 		ScheduleName:       jsii.String(name),
 		ScheduleExpression: jsii.String(awsScheduleExpression),
+		ScheduleTimezone:   jsii.String(a.AwsConfig.ScheduleTimezone),
 		TargetLambdaArn:    svc.LambdaArnOutput(),
 		StackId:            a.Stack.StackIdOutput(),
 	})
