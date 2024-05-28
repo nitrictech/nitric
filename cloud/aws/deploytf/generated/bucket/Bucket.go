@@ -35,6 +35,8 @@ type Bucket interface {
 	FriendlyUniqueId() *string
 	// The tree node.
 	Node() constructs.Node
+	NotificationTargets() interface{}
+	SetNotificationTargets(val interface{})
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -168,6 +170,16 @@ func (j *jsiiProxy_Bucket) Node() constructs.Node {
 	return returns
 }
 
+func (j *jsiiProxy_Bucket) NotificationTargets() interface{} {
+	var returns interface{}
+	_jsii_.Get(
+		j,
+		"notificationTargets",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Bucket) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
@@ -279,6 +291,17 @@ func (j *jsiiProxy_Bucket)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Bucket)SetNotificationTargets(val interface{}) {
+	if err := j.validateSetNotificationTargetsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"notificationTargets",
 		val,
 	)
 }

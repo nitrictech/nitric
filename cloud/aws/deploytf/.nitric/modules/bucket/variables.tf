@@ -7,3 +7,12 @@ variable "stack_id" {
   description = "The ID of the Nitric stack"
   type        = string
 }
+
+variable "notification_targets" {
+  description = "The notification target configurations"
+  type        = map(object({
+    arn = string
+    prefix = string
+    events = list(string)
+  }))
+}

@@ -17,6 +17,8 @@ type BucketConfig struct {
 	//
 	// This must be globally unique.
 	BucketName *string `field:"required" json:"bucketName" yaml:"bucketName"`
+	// The notification target configurations.
+	NotificationTargets interface{} `field:"required" json:"notificationTargets" yaml:"notificationTargets"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 }

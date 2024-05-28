@@ -18,3 +18,27 @@ resource "aws_s3_bucket" "bucket" {
     "x-nitric-${var.stack_id}-type" = "bucket"
   }
 }
+
+# Deploy bucket lambda invocation permissions
+resource "aws_lambda_permission" "allow_bucket" {
+  for_each = var.notification_targets
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.bucket.arn
+}
+
+# Deploy lambda notifications
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.bucket.id
+
+  // make dynamic blocks for lambda function
+  dynamic "lambda_function" {
+    for_each = var.notification_targets
+    content {
+      lambda_function_arn = lambda_function.value.arn
+      events              = lambda_function.value.events
+      filter_prefix       = lambda_function.value.prefix
+    }
+  }
+}
