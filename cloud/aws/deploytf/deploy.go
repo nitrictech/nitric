@@ -84,7 +84,15 @@ func (a *NitricAwsTerraformProvider) CdkTfModules() (string, fs.FS, error) {
 }
 
 func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
+	tfRegion := cdktf.NewTerraformVariable(stack, jsii.String("region"), &cdktf.TerraformVariableConfig{
+		Type:        jsii.String("string"),
+		Default:     jsii.String(a.Region),
+		Description: jsii.String("The AWS region to deploy resources to"),
+	})
+
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		Region: tfRegion.StringValue(),
+	})
 
 	return nil
 }
