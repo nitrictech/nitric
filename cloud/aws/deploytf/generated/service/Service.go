@@ -44,6 +44,7 @@ type Service interface {
 	// Experimental.
 	RawOverrides() interface{}
 	RoleArnOutput() *string
+	RoleNameOutput() *string
 	ServiceName() *string
 	SetServiceName(val *string)
 	// Experimental.
@@ -230,6 +231,16 @@ func (j *jsiiProxy_Service) RoleArnOutput() *string {
 	_jsii_.Get(
 		j,
 		"roleArnOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) RoleNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"roleNameOutput",
 		&returns,
 	)
 	return returns

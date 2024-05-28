@@ -15,8 +15,8 @@ type PolicyConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// actions to allow.
 	Actions *[]*string `field:"required" json:"actions" yaml:"actions"`
-	// principals (roles) to apply the policies to.
-	Principals *[]*string `field:"required" json:"principals" yaml:"principals"`
+	// principals (roles) to apply the policies to The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	Principals *map[string]*string `field:"required" json:"principals" yaml:"principals"`
 	// resources to apply the policies to.
 	Resources *[]*string `field:"required" json:"resources" yaml:"resources"`
 }

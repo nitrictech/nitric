@@ -92,7 +92,7 @@ func (a *NitricAwsTerraformProvider) arnForResource(resource *deploymentspb.Reso
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Bucket:
 		if b, ok := a.Buckets[resource.Id.Name]; ok {
-			return []*string{b.BucketArnOutput(), jsii.String(fmt.Sprintf("%s/*", b.BucketArnOutput()))}, nil
+			return []*string{b.BucketArnOutput(), jsii.String(fmt.Sprintf("%s/*", *b.BucketArnOutput()))}, nil
 		}
 	case resourcespb.ResourceType_Topic:
 		if t, ok := a.Topics[resource.Id.Name]; ok {
@@ -126,7 +126,7 @@ func (a *NitricAwsTerraformProvider) roleForPrincipal(resource *deploymentspb.Re
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Service:
 		if f, ok := a.Services[resource.Id.Name]; ok {
-			return f.RoleArnOutput(), nil
+			return f.RoleNameOutput(), nil
 		}
 	default:
 		return nil, fmt.Errorf("could not find role for principal: %+v", resource)
@@ -153,15 +153,16 @@ func (a *NitricAwsTerraformProvider) Policy(stack cdktf.TerraformStack, name str
 
 	// Get principal roles
 	// We're collecting roles here to ensure all defined principals are valid before proceeding
-	principalRoles := make([]*string, 0)
+	principalRoles := map[string]*string{}
 
 	for _, princ := range config.Principals {
 		if role, err := a.roleForPrincipal(princ); err == nil {
+			nameType := fmt.Sprintf("%s:%s", princ.Id.Name, princ.Id.Type)
 			if princ.Id.Type != resourcespb.ResourceType_Service {
 				return fmt.Errorf("invalid principal type: %s. Only services can be principals", princ.Id.Type)
 			}
 
-			principalRoles = append(principalRoles, role)
+			principalRoles[nameType] = role
 		} else {
 			return err
 		}

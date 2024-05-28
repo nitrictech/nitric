@@ -33,6 +33,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "rawOverrides", GoGetter: "RawOverrides"},
 			_jsii_.MemberMethod{JsiiMethod: "resetOverrideLogicalId", GoMethod: "ResetOverrideLogicalId"},
 			_jsii_.MemberProperty{JsiiProperty: "roleArnOutput", GoGetter: "RoleArnOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "roleNameOutput", GoGetter: "RoleNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "serviceName", GoGetter: "ServiceName"},
 			_jsii_.MemberProperty{JsiiProperty: "skipAssetCreationFromLocalModules", GoGetter: "SkipAssetCreationFromLocalModules"},
 			_jsii_.MemberProperty{JsiiProperty: "source", GoGetter: "Source"},

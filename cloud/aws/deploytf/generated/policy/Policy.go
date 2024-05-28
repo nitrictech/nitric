@@ -34,8 +34,8 @@ type Policy interface {
 	FriendlyUniqueId() *string
 	// The tree node.
 	Node() constructs.Node
-	Principals() *[]*string
-	SetPrincipals(val *[]*string)
+	Principals() *map[string]*string
+	SetPrincipals(val *map[string]*string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -159,8 +159,8 @@ func (j *jsiiProxy_Policy) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Policy) Principals() *[]*string {
-	var returns *[]*string
+func (j *jsiiProxy_Policy) Principals() *map[string]*string {
+	var returns *map[string]*string
 	_jsii_.Get(
 		j,
 		"principals",
@@ -284,7 +284,7 @@ func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetPrincipals(val *[]*string) {
+func (j *jsiiProxy_Policy)SetPrincipals(val *map[string]*string) {
 	if err := j.validateSetPrincipalsParameters(val); err != nil {
 		panic(err)
 	}
