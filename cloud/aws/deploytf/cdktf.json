@@ -37,6 +37,18 @@
     {
       "name": "secret",
       "source": "./.nitric/modules/secret"
+    },
+    {
+      "name": "keyvalue",
+      "source": "./.nitric/modules/keyvalue"
+    },
+    {
+      "name": "websocket",
+      "source": "./.nitric/modules/websocket"
+    },
+    {
+      "name": "policy",
+      "source": "./.nitric/modules/policy"
     }
   ],
   "context": {}

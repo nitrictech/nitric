@@ -1,18 +1,18 @@
-package topic
+package keyvalue
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic/internal"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue/internal"
 )
 
-// Defines an Topic based on a Terraform module.
+// Defines an Keyvalue based on a Terraform module.
 //
-// Source at ./.nitric/modules/topic
-type Topic interface {
+// Source at ./.nitric/modules/keyvalue
+type Keyvalue interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
@@ -30,24 +30,21 @@ type Topic interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	LambdaSubscribers() *[]*string
-	SetLambdaSubscribers(val *[]*string)
+	KvArnOutput() *string
+	KvstoreName() *string
+	SetKvstoreName(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	SfnArnOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	TopicArnOutput() *string
-	TopicName() *string
-	SetTopicName(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -76,12 +73,12 @@ type Topic interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Topic
-type jsiiProxy_Topic struct {
+// The jsii proxy struct for Keyvalue
+type jsiiProxy_Keyvalue struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Topic) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_Keyvalue) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -91,7 +88,7 @@ func (j *jsiiProxy_Topic) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_Keyvalue) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -101,7 +98,7 @@ func (j *jsiiProxy_Topic) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) DependsOn() *[]*string {
+func (j *jsiiProxy_Keyvalue) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -111,7 +108,7 @@ func (j *jsiiProxy_Topic) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_Keyvalue) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -121,7 +118,7 @@ func (j *jsiiProxy_Topic) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Fqn() *string {
+func (j *jsiiProxy_Keyvalue) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -131,7 +128,7 @@ func (j *jsiiProxy_Topic) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
+func (j *jsiiProxy_Keyvalue) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -141,17 +138,27 @@ func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) LambdaSubscribers() *[]*string {
-	var returns *[]*string
+func (j *jsiiProxy_Keyvalue) KvArnOutput() *string {
+	var returns *string
 	_jsii_.Get(
 		j,
-		"lambdaSubscribers",
+		"kvArnOutput",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Node() constructs.Node {
+func (j *jsiiProxy_Keyvalue) KvstoreName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kvstoreName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Keyvalue) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -161,7 +168,7 @@ func (j *jsiiProxy_Topic) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Providers() *[]interface{} {
+func (j *jsiiProxy_Keyvalue) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -171,7 +178,7 @@ func (j *jsiiProxy_Topic) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) RawOverrides() interface{} {
+func (j *jsiiProxy_Keyvalue) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -181,17 +188,7 @@ func (j *jsiiProxy_Topic) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) SfnArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"sfnArnOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_Keyvalue) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -201,7 +198,7 @@ func (j *jsiiProxy_Topic) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Source() *string {
+func (j *jsiiProxy_Keyvalue) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -211,7 +208,7 @@ func (j *jsiiProxy_Topic) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) StackId() *string {
+func (j *jsiiProxy_Keyvalue) StackId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -221,27 +218,7 @@ func (j *jsiiProxy_Topic) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) TopicArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"topicArnOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) TopicName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"topicName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) Version() *string {
+func (j *jsiiProxy_Keyvalue) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -252,16 +229,16 @@ func (j *jsiiProxy_Topic) Version() *string {
 }
 
 
-func NewTopic(scope constructs.Construct, id *string, config *TopicConfig) Topic {
+func NewKeyvalue(scope constructs.Construct, id *string, config *KeyvalueConfig) Keyvalue {
 	_init_.Initialize()
 
-	if err := validateNewTopicParameters(scope, id, config); err != nil {
+	if err := validateNewKeyvalueParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Topic{}
+	j := jsiiProxy_Keyvalue{}
 
 	_jsii_.Create(
-		"topic.Topic",
+		"keyvalue.Keyvalue",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -269,17 +246,17 @@ func NewTopic(scope constructs.Construct, id *string, config *TopicConfig) Topic
 	return &j
 }
 
-func NewTopic_Override(t Topic, scope constructs.Construct, id *string, config *TopicConfig) {
+func NewKeyvalue_Override(k Keyvalue, scope constructs.Construct, id *string, config *KeyvalueConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"topic.Topic",
+		"keyvalue.Keyvalue",
 		[]interface{}{scope, id, config},
-		t,
+		k,
 	)
 }
 
-func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Keyvalue)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -287,7 +264,7 @@ func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Keyvalue)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -295,35 +272,24 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *[]*string) {
-	if err := j.validateSetLambdaSubscribersParameters(val); err != nil {
+func (j *jsiiProxy_Keyvalue)SetKvstoreName(val *string) {
+	if err := j.validateSetKvstoreNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"lambdaSubscribers",
+		"kvstoreName",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Topic)SetStackId(val *string) {
+func (j *jsiiProxy_Keyvalue)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
 		"stackId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Topic)SetTopicName(val *string) {
-	if err := j.validateSetTopicNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"topicName",
 		val,
 	)
 }
@@ -345,16 +311,16 @@ func (j *jsiiProxy_Topic)SetTopicName(val *string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Topic_IsConstruct(x interface{}) *bool {
+func Keyvalue_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateTopic_IsConstructParameters(x); err != nil {
+	if err := validateKeyvalue_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"topic.Topic",
+		"keyvalue.Keyvalue",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -364,16 +330,16 @@ func Topic_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Topic_IsTerraformElement(x interface{}) *bool {
+func Keyvalue_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateTopic_IsTerraformElementParameters(x); err != nil {
+	if err := validateKeyvalue_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"topic.Topic",
+		"keyvalue.Keyvalue",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -382,36 +348,36 @@ func Topic_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) AddOverride(path *string, value interface{}) {
-	if err := t.validateAddOverrideParameters(path, value); err != nil {
+func (k *jsiiProxy_Keyvalue) AddOverride(path *string, value interface{}) {
+	if err := k.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		k,
 		"addOverride",
 		[]interface{}{path, value},
 	)
 }
 
-func (t *jsiiProxy_Topic) AddProvider(provider interface{}) {
-	if err := t.validateAddProviderParameters(provider); err != nil {
+func (k *jsiiProxy_Keyvalue) AddProvider(provider interface{}) {
+	if err := k.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		k,
 		"addProvider",
 		[]interface{}{provider},
 	)
 }
 
-func (t *jsiiProxy_Topic) GetString(output *string) *string {
-	if err := t.validateGetStringParameters(output); err != nil {
+func (k *jsiiProxy_Keyvalue) GetString(output *string) *string {
+	if err := k.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
 	var returns *string
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"getString",
 		[]interface{}{output},
 		&returns,
@@ -420,14 +386,14 @@ func (t *jsiiProxy_Topic) GetString(output *string) *string {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
-	if err := t.validateInterpolationForOutputParameters(moduleOutput); err != nil {
+func (k *jsiiProxy_Keyvalue) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+	if err := k.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
 	var returns cdktf.IResolvable
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"interpolationForOutput",
 		[]interface{}{moduleOutput},
 		&returns,
@@ -436,30 +402,30 @@ func (t *jsiiProxy_Topic) InterpolationForOutput(moduleOutput *string) cdktf.IRe
 	return returns
 }
 
-func (t *jsiiProxy_Topic) OverrideLogicalId(newLogicalId *string) {
-	if err := t.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
+func (k *jsiiProxy_Keyvalue) OverrideLogicalId(newLogicalId *string) {
+	if err := k.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		k,
 		"overrideLogicalId",
 		[]interface{}{newLogicalId},
 	)
 }
 
-func (t *jsiiProxy_Topic) ResetOverrideLogicalId() {
+func (k *jsiiProxy_Keyvalue) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
-		t,
+		k,
 		"resetOverrideLogicalId",
 		nil, // no parameters
 	)
 }
 
-func (t *jsiiProxy_Topic) SynthesizeAttributes() *map[string]interface{} {
+func (k *jsiiProxy_Keyvalue) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"synthesizeAttributes",
 		nil, // no parameters
 		&returns,
@@ -468,11 +434,11 @@ func (t *jsiiProxy_Topic) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) SynthesizeHclAttributes() *map[string]interface{} {
+func (k *jsiiProxy_Keyvalue) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"synthesizeHclAttributes",
 		nil, // no parameters
 		&returns,
@@ -481,11 +447,11 @@ func (t *jsiiProxy_Topic) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToHclTerraform() interface{} {
+func (k *jsiiProxy_Keyvalue) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"toHclTerraform",
 		nil, // no parameters
 		&returns,
@@ -494,11 +460,11 @@ func (t *jsiiProxy_Topic) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToMetadata() interface{} {
+func (k *jsiiProxy_Keyvalue) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"toMetadata",
 		nil, // no parameters
 		&returns,
@@ -507,11 +473,11 @@ func (t *jsiiProxy_Topic) ToMetadata() interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToString() *string {
+func (k *jsiiProxy_Keyvalue) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"toString",
 		nil, // no parameters
 		&returns,
@@ -520,11 +486,11 @@ func (t *jsiiProxy_Topic) ToString() *string {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToTerraform() interface{} {
+func (k *jsiiProxy_Keyvalue) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		k,
 		"toTerraform",
 		nil, // no parameters
 		&returns,

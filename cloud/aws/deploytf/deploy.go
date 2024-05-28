@@ -9,12 +9,14 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/websocket"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -26,14 +28,17 @@ type NitricAwsTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
 
-	AwsConfig *common.AwsConfig
-	Apis      map[string]api.Api
-	Buckets   map[string]bucket.Bucket
-	Topics    map[string]topic.Topic
-	Schedules map[string]schedule.Schedule
-	Services  map[string]service.Service
-	Secrets   map[string]secret.Secret
-	Queues    map[string]queue.Queue
+	AwsConfig      *common.AwsConfig
+	Apis           map[string]api.Api
+	Buckets        map[string]bucket.Bucket
+	Topics         map[string]topic.Topic
+	Schedules      map[string]schedule.Schedule
+	Services       map[string]service.Service
+	Secrets        map[string]secret.Secret
+	Queues         map[string]queue.Queue
+	KeyValueStores map[string]keyvalue.Keyvalue
+	Websockets     map[string]websocket.Websocket
+
 	provider.NitricDefaultOrder
 }
 
@@ -79,12 +84,14 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 
 func NewNitricAwsProvider() *NitricAwsTerraformProvider {
 	return &NitricAwsTerraformProvider{
-		Apis:      make(map[string]api.Api),
-		Buckets:   make(map[string]bucket.Bucket),
-		Services:  make(map[string]service.Service),
-		Topics:    make(map[string]topic.Topic),
-		Schedules: make(map[string]schedule.Schedule),
-		Secrets:   make(map[string]secret.Secret),
-		Queues:    make(map[string]queue.Queue),
+		Apis:           make(map[string]api.Api),
+		Buckets:        make(map[string]bucket.Bucket),
+		Services:       make(map[string]service.Service),
+		Topics:         make(map[string]topic.Topic),
+		Schedules:      make(map[string]schedule.Schedule),
+		Secrets:        make(map[string]secret.Secret),
+		Queues:         make(map[string]queue.Queue),
+		KeyValueStores: make(map[string]keyvalue.Keyvalue),
+		Websockets:     make(map[string]websocket.Websocket),
 	}
 }

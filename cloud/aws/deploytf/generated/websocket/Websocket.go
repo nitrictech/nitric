@@ -1,18 +1,18 @@
-package topic
+package websocket
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/websocket/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic/internal"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/websocket/internal"
 )
 
-// Defines an Topic based on a Terraform module.
+// Defines an Websocket based on a Terraform module.
 //
-// Source at ./.nitric/modules/topic
-type Topic interface {
+// Source at ./.nitric/modules/websocket
+type Websocket interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
@@ -30,26 +30,30 @@ type Topic interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	LambdaSubscribers() *[]*string
-	SetLambdaSubscribers(val *[]*string)
+	LambdaConnectTarget() *string
+	SetLambdaConnectTarget(val *string)
+	LambdaDisconnectTarget() *string
+	SetLambdaDisconnectTarget(val *string)
+	LambdaMessageTarget() *string
+	SetLambdaMessageTarget(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	SfnArnOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	TopicArnOutput() *string
-	TopicName() *string
-	SetTopicName(val *string)
 	// Experimental.
 	Version() *string
+	WebsocketArnOutput() *string
+	WebsocketExecArnOutput() *string
+	WebsocketName() *string
+	SetWebsocketName(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -76,12 +80,12 @@ type Topic interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Topic
-type jsiiProxy_Topic struct {
+// The jsii proxy struct for Websocket
+type jsiiProxy_Websocket struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Topic) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_Websocket) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -91,7 +95,7 @@ func (j *jsiiProxy_Topic) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_Websocket) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -101,7 +105,7 @@ func (j *jsiiProxy_Topic) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) DependsOn() *[]*string {
+func (j *jsiiProxy_Websocket) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -111,7 +115,7 @@ func (j *jsiiProxy_Topic) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_Websocket) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -121,7 +125,7 @@ func (j *jsiiProxy_Topic) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Fqn() *string {
+func (j *jsiiProxy_Websocket) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -131,7 +135,7 @@ func (j *jsiiProxy_Topic) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
+func (j *jsiiProxy_Websocket) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -141,17 +145,37 @@ func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) LambdaSubscribers() *[]*string {
-	var returns *[]*string
+func (j *jsiiProxy_Websocket) LambdaConnectTarget() *string {
+	var returns *string
 	_jsii_.Get(
 		j,
-		"lambdaSubscribers",
+		"lambdaConnectTarget",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Node() constructs.Node {
+func (j *jsiiProxy_Websocket) LambdaDisconnectTarget() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"lambdaDisconnectTarget",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Websocket) LambdaMessageTarget() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"lambdaMessageTarget",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Websocket) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -161,7 +185,7 @@ func (j *jsiiProxy_Topic) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Providers() *[]interface{} {
+func (j *jsiiProxy_Websocket) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -171,7 +195,7 @@ func (j *jsiiProxy_Topic) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) RawOverrides() interface{} {
+func (j *jsiiProxy_Websocket) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -181,17 +205,7 @@ func (j *jsiiProxy_Topic) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) SfnArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"sfnArnOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_Websocket) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -201,7 +215,7 @@ func (j *jsiiProxy_Topic) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) Source() *string {
+func (j *jsiiProxy_Websocket) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -211,7 +225,7 @@ func (j *jsiiProxy_Topic) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) StackId() *string {
+func (j *jsiiProxy_Websocket) StackId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -221,27 +235,7 @@ func (j *jsiiProxy_Topic) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) TopicArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"topicArnOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) TopicName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"topicName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) Version() *string {
+func (j *jsiiProxy_Websocket) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -251,17 +245,47 @@ func (j *jsiiProxy_Topic) Version() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Websocket) WebsocketArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websocketArnOutput",
+		&returns,
+	)
+	return returns
+}
 
-func NewTopic(scope constructs.Construct, id *string, config *TopicConfig) Topic {
+func (j *jsiiProxy_Websocket) WebsocketExecArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websocketExecArnOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Websocket) WebsocketName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websocketName",
+		&returns,
+	)
+	return returns
+}
+
+
+func NewWebsocket(scope constructs.Construct, id *string, config *WebsocketConfig) Websocket {
 	_init_.Initialize()
 
-	if err := validateNewTopicParameters(scope, id, config); err != nil {
+	if err := validateNewWebsocketParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Topic{}
+	j := jsiiProxy_Websocket{}
 
 	_jsii_.Create(
-		"topic.Topic",
+		"websocket.Websocket",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -269,17 +293,17 @@ func NewTopic(scope constructs.Construct, id *string, config *TopicConfig) Topic
 	return &j
 }
 
-func NewTopic_Override(t Topic, scope constructs.Construct, id *string, config *TopicConfig) {
+func NewWebsocket_Override(w Websocket, scope constructs.Construct, id *string, config *WebsocketConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"topic.Topic",
+		"websocket.Websocket",
 		[]interface{}{scope, id, config},
-		t,
+		w,
 	)
 }
 
-func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Websocket)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -287,7 +311,7 @@ func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Websocket)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -295,18 +319,40 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *[]*string) {
-	if err := j.validateSetLambdaSubscribersParameters(val); err != nil {
+func (j *jsiiProxy_Websocket)SetLambdaConnectTarget(val *string) {
+	if err := j.validateSetLambdaConnectTargetParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"lambdaSubscribers",
+		"lambdaConnectTarget",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Topic)SetStackId(val *string) {
+func (j *jsiiProxy_Websocket)SetLambdaDisconnectTarget(val *string) {
+	if err := j.validateSetLambdaDisconnectTargetParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"lambdaDisconnectTarget",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Websocket)SetLambdaMessageTarget(val *string) {
+	if err := j.validateSetLambdaMessageTargetParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"lambdaMessageTarget",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Websocket)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -317,13 +363,13 @@ func (j *jsiiProxy_Topic)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetTopicName(val *string) {
-	if err := j.validateSetTopicNameParameters(val); err != nil {
+func (j *jsiiProxy_Websocket)SetWebsocketName(val *string) {
+	if err := j.validateSetWebsocketNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"topicName",
+		"websocketName",
 		val,
 	)
 }
@@ -345,16 +391,16 @@ func (j *jsiiProxy_Topic)SetTopicName(val *string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Topic_IsConstruct(x interface{}) *bool {
+func Websocket_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateTopic_IsConstructParameters(x); err != nil {
+	if err := validateWebsocket_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"topic.Topic",
+		"websocket.Websocket",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -364,16 +410,16 @@ func Topic_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Topic_IsTerraformElement(x interface{}) *bool {
+func Websocket_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateTopic_IsTerraformElementParameters(x); err != nil {
+	if err := validateWebsocket_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"topic.Topic",
+		"websocket.Websocket",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -382,36 +428,36 @@ func Topic_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) AddOverride(path *string, value interface{}) {
-	if err := t.validateAddOverrideParameters(path, value); err != nil {
+func (w *jsiiProxy_Websocket) AddOverride(path *string, value interface{}) {
+	if err := w.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		w,
 		"addOverride",
 		[]interface{}{path, value},
 	)
 }
 
-func (t *jsiiProxy_Topic) AddProvider(provider interface{}) {
-	if err := t.validateAddProviderParameters(provider); err != nil {
+func (w *jsiiProxy_Websocket) AddProvider(provider interface{}) {
+	if err := w.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		w,
 		"addProvider",
 		[]interface{}{provider},
 	)
 }
 
-func (t *jsiiProxy_Topic) GetString(output *string) *string {
-	if err := t.validateGetStringParameters(output); err != nil {
+func (w *jsiiProxy_Websocket) GetString(output *string) *string {
+	if err := w.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
 	var returns *string
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"getString",
 		[]interface{}{output},
 		&returns,
@@ -420,14 +466,14 @@ func (t *jsiiProxy_Topic) GetString(output *string) *string {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
-	if err := t.validateInterpolationForOutputParameters(moduleOutput); err != nil {
+func (w *jsiiProxy_Websocket) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+	if err := w.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
 	var returns cdktf.IResolvable
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"interpolationForOutput",
 		[]interface{}{moduleOutput},
 		&returns,
@@ -436,30 +482,30 @@ func (t *jsiiProxy_Topic) InterpolationForOutput(moduleOutput *string) cdktf.IRe
 	return returns
 }
 
-func (t *jsiiProxy_Topic) OverrideLogicalId(newLogicalId *string) {
-	if err := t.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
+func (w *jsiiProxy_Websocket) OverrideLogicalId(newLogicalId *string) {
+	if err := w.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		t,
+		w,
 		"overrideLogicalId",
 		[]interface{}{newLogicalId},
 	)
 }
 
-func (t *jsiiProxy_Topic) ResetOverrideLogicalId() {
+func (w *jsiiProxy_Websocket) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
-		t,
+		w,
 		"resetOverrideLogicalId",
 		nil, // no parameters
 	)
 }
 
-func (t *jsiiProxy_Topic) SynthesizeAttributes() *map[string]interface{} {
+func (w *jsiiProxy_Websocket) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"synthesizeAttributes",
 		nil, // no parameters
 		&returns,
@@ -468,11 +514,11 @@ func (t *jsiiProxy_Topic) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) SynthesizeHclAttributes() *map[string]interface{} {
+func (w *jsiiProxy_Websocket) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"synthesizeHclAttributes",
 		nil, // no parameters
 		&returns,
@@ -481,11 +527,11 @@ func (t *jsiiProxy_Topic) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToHclTerraform() interface{} {
+func (w *jsiiProxy_Websocket) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"toHclTerraform",
 		nil, // no parameters
 		&returns,
@@ -494,11 +540,11 @@ func (t *jsiiProxy_Topic) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToMetadata() interface{} {
+func (w *jsiiProxy_Websocket) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"toMetadata",
 		nil, // no parameters
 		&returns,
@@ -507,11 +553,11 @@ func (t *jsiiProxy_Topic) ToMetadata() interface{} {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToString() *string {
+func (w *jsiiProxy_Websocket) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"toString",
 		nil, // no parameters
 		&returns,
@@ -520,11 +566,11 @@ func (t *jsiiProxy_Topic) ToString() *string {
 	return returns
 }
 
-func (t *jsiiProxy_Topic) ToTerraform() interface{} {
+func (w *jsiiProxy_Websocket) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		t,
+		w,
 		"toTerraform",
 		nil, // no parameters
 		&returns,
