@@ -21,5 +21,9 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The amount of memory to allocate to the lambda function 128.
+	Memory *float64 `field:"optional" json:"memory" yaml:"memory"`
+	// The timeout for the lambda function 10.
+	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
 }
 

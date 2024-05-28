@@ -23,6 +23,15 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		return err
 	}
 
+	if config.Type == "" {
+		config.Type = "default"
+	}
+
+	typeConfig, hasConfig := a.AwsConfig.Config[config.Type]
+	if !hasConfig {
+		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.AwsConfig)
+	}
+
 	jsiiEnv := map[string]*string{
 		"NITRIC_STACK_ID":        a.Stack.StackIdOutput(),
 		"NITRIC_ENVIRONMENT":     jsii.String("cloud"),
@@ -38,6 +47,8 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		Image:       jsii.String(name),
 		Environment: &jsiiEnv,
 		StackId:     a.Stack.StackIdOutput(),
+		Memory:      jsii.Number(typeConfig.Lambda.Memory),
+		Timeout:     jsii.Number(typeConfig.Lambda.Timeout),
 	})
 
 	return nil

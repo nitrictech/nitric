@@ -1,8 +1,6 @@
 package deploytf
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/aws/jsii-runtime-go"
@@ -13,12 +11,12 @@ import (
 	"github.com/samber/lo"
 )
 
-func md5Hash(b []byte) string {
-	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
-	hasher.Write(b)
+// func md5Hash(b []byte) string {
+// 	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
+// 	hasher.Write(b)
 
-	return hex.EncodeToString(hasher.Sum(nil))
-}
+// 	return hex.EncodeToString(hasher.Sum(nil))
+// }
 
 var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]string{
 	resourcespb.Action_BucketFileList: {

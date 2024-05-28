@@ -37,6 +37,8 @@ type Service interface {
 	InvokeArnOutput() *string
 	LambdaArnOutput() *string
 	LambdaFunctionNameOutput() *string
+	Memory() *float64
+	SetMemory(val *float64)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -53,6 +55,8 @@ type Service interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
+	Timeout() *float64
+	SetTimeout(val *float64)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -196,6 +200,16 @@ func (j *jsiiProxy_Service) LambdaFunctionNameOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) Memory() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"memory",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
@@ -286,6 +300,16 @@ func (j *jsiiProxy_Service) StackId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) Timeout() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"timeout",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -362,6 +386,14 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	)
 }
 
+func (j *jsiiProxy_Service)SetMemory(val *float64) {
+	_jsii_.Set(
+		j,
+		"memory",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Service)SetServiceName(val *string) {
 	if err := j.validateSetServiceNameParameters(val); err != nil {
 		panic(err)
@@ -380,6 +412,14 @@ func (j *jsiiProxy_Service)SetStackId(val *string) {
 	_jsii_.Set(
 		j,
 		"stackId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetTimeout(val *float64) {
+	_jsii_.Set(
+		j,
+		"timeout",
 		val,
 	)
 }
