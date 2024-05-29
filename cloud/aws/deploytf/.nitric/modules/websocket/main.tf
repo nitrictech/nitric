@@ -72,4 +72,9 @@ resource "aws_lambda_permission" "websocket-disconnect" {
   source_arn    = aws_apigatewayv2_api.websocket.execution_arn
 }
 
-
+# create a stage for the api gateway
+resource "aws_apigatewayv2_stage" "stage" {
+  api_id      = aws_apigatewayv2_api.websocket.id
+  name        = "ws"
+  auto_deploy = true
+}
