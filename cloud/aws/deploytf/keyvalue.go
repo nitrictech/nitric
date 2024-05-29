@@ -23,7 +23,7 @@ import (
 
 // // KeyValueStore - Deploy a Key Value tioStore
 func (a *NitricAwsTerraformProvider) KeyValueStore(stack cdktf.TerraformStack, name string, config *deploymentspb.KeyValueStore) error {
-	a.KeyValueStores[name] = keyvalue.NewKeyvalue(stack, jsii.String(name), &keyvalue.KeyvalueConfig{
+	a.KeyValueStores[name] = keyvalue.NewKeyvalue(stack, jsii.Sprintf("%s_kvstore", name), &keyvalue.KeyvalueConfig{
 		KvstoreName: jsii.String(name),
 		StackId:     a.Stack.StackIdOutput(),
 	})

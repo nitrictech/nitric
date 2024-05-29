@@ -145,7 +145,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		domains = n.AwsConfig.Apis[name].Domains
 	}
 
-	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
+	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("%s_api", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
 		Spec:                  jsii.String(string(b)),
 		TargetLambdaFunctions: &targetNames,

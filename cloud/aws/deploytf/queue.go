@@ -23,7 +23,7 @@ import (
 
 // // Queue - Deploy a Queue
 func (a *NitricAwsTerraformProvider) Queue(stack cdktf.TerraformStack, name string, config *deploymentspb.Queue) error {
-	a.Queues[name] = queue.NewQueue(stack, jsii.String(name), &queue.QueueConfig{
+	a.Queues[name] = queue.NewQueue(stack, jsii.Sprintf("%s_queue", name), &queue.QueueConfig{
 		QueueName: jsii.String(name),
 		StackId:   a.Stack.StackIdOutput(),
 	})

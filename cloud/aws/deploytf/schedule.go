@@ -48,7 +48,7 @@ func (a *NitricAwsTerraformProvider) Schedule(stack cdktf.TerraformStack, name s
 		return fmt.Errorf("service not found: %s", config.Target.GetService())
 	}
 
-	a.Schedules[name] = schedule.NewSchedule(stack, jsii.String(name), &schedule.ScheduleConfig{
+	a.Schedules[name] = schedule.NewSchedule(stack, jsii.Sprintf("%s_schedule", name), &schedule.ScheduleConfig{
 		ScheduleName:       jsii.String(name),
 		ScheduleExpression: jsii.String(awsScheduleExpression),
 		ScheduleTimezone:   jsii.String(a.AwsConfig.ScheduleTimezone),
