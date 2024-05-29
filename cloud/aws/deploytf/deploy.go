@@ -19,7 +19,7 @@ import (
 	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
-	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v10/provider"
+	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v19/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
