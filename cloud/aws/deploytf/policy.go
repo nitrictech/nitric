@@ -179,8 +179,7 @@ func (a *NitricAwsTerraformProvider) Policy(stack cdktf.TerraformStack, name str
 		}
 	}
 
-	policy.NewPolicy(stack, jsii.String(name), &policy.PolicyConfig{
-		// Name:   jsii.String(name),
+	policy.NewPolicy(stack, jsii.String(fmt.Sprintf("policy_%s", name)), &policy.PolicyConfig{
 		Actions:    jsii.Strings(actions...),
 		Resources:  &targetArns,
 		Principals: &principalRoles,
