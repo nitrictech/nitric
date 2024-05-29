@@ -15,8 +15,6 @@
 package deploytf
 
 import (
-	"fmt"
-
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue"
@@ -30,5 +28,5 @@ func (a *NitricAwsTerraformProvider) KeyValueStore(stack cdktf.TerraformStack, n
 		StackId:     a.Stack.StackIdOutput(),
 	})
 
-	return fmt.Errorf("nitric AWS terraform provider does not support KeyValueStore deployment")
+	return nil
 }
