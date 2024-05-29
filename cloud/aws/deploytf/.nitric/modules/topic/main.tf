@@ -11,7 +11,7 @@ resource "random_id" "topic_id" {
 
 # AWS SNS Topic
 resource "aws_sns_topic" "topic" {
-  name = "${var.topic_name}-${random_id.bucket_id.hex}"
+  name = "${var.topic_name}-${random_id.topic_id.hex}"
 
   tags = {
     "x-nitric-${var.stack_id}-name" = var.topic_name
