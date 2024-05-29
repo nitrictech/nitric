@@ -13,7 +13,6 @@ resource "aws_ecr_repository" "repo" {
 }
 
 data "aws_ecr_authorization_token" "ecr_auth" {
-  depends_on = [aws_ecr_repository.repo]
 }
 
 provider "docker" {
