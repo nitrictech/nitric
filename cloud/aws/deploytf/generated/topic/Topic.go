@@ -30,8 +30,8 @@ type Topic interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	LambdaSubscribers() *[]*string
-	SetLambdaSubscribers(val *[]*string)
+	LambdaSubscribers() *map[string]*string
+	SetLambdaSubscribers(val *map[string]*string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -141,8 +141,8 @@ func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) LambdaSubscribers() *[]*string {
-	var returns *[]*string
+func (j *jsiiProxy_Topic) LambdaSubscribers() *map[string]*string {
+	var returns *map[string]*string
 	_jsii_.Get(
 		j,
 		"lambdaSubscribers",
@@ -295,7 +295,7 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *[]*string) {
+func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *map[string]*string) {
 	if err := j.validateSetLambdaSubscribersParameters(val); err != nil {
 		panic(err)
 	}

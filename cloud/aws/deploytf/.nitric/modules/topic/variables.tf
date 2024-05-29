@@ -10,5 +10,5 @@ variable "stack_id" {
 
 variable "lambda_subscribers" {
   description = "A list of lambda ARNs to subscribe to the topic"
-  type        = list(string)
+  type        = map(string)
 }
