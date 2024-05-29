@@ -25,7 +25,7 @@ resource "aws_sns_topic_subscription" "subscription" {
 
   topic_arn = aws_sns_topic.topic.arn
   protocol  = "lambda"
-  endpoint  = each.value.lambda_arn
+  endpoint  = each.value
 }
 
 resource "aws_lambda_permission" "sns" {
@@ -56,8 +56,8 @@ resource "aws_iam_role" "sns_publish_role" {
 }
 
 # Attach the policy to the role inline
-resource "aws_iam_role_policy" "test_policy" {
-  role = aws_iam_role.test_role.id
+resource "aws_iam_role_policy" "publish_policy" {
+  role = aws_iam_role.sns_publish_role.id
 
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.

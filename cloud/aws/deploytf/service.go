@@ -56,7 +56,7 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		jsiiEnv[k] = jsii.String(v)
 	}
 
-	a.Services[name] = service.NewService(stack, jsii.Sprintf("%s_service", name), &service.ServiceConfig{
+	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
 		ServiceName: jsii.String(name),
 		Image:       jsii.String(name),
 		Environment: &jsiiEnv,

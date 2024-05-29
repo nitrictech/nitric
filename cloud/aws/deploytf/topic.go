@@ -30,7 +30,7 @@ func (a *NitricAwsTerraformProvider) Topic(stack cdktf.TerraformStack, name stri
 		lambdaSubscriberArns[subscriber.GetService()] = lambdaService.LambdaArnOutput()
 	}
 
-	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("%s_topic", name), &topic.TopicConfig{
+	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("topic_%s", name), &topic.TopicConfig{
 		StackId:           a.Stack.StackIdOutput(),
 		TopicName:         jsii.String(name),
 		LambdaSubscribers: &lambdaSubscriberArns,

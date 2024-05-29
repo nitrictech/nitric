@@ -50,7 +50,7 @@ func (n *NitricAwsTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
-	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("%s_bucket", name), &bucket.BucketConfig{
+	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,

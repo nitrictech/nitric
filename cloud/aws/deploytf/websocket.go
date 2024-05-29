@@ -26,7 +26,7 @@ func (a *NitricAwsTerraformProvider) Websocket(stack cdktf.TerraformStack, name 
 	messageTarget := a.Services[config.MessageTarget.GetService()]
 	disconnectTarget := a.Services[config.DisconnectTarget.GetService()]
 
-	a.Websockets[name] = websocket.NewWebsocket(stack, jsii.Sprintf("%s_websocket", name), &websocket.WebsocketConfig{
+	a.Websockets[name] = websocket.NewWebsocket(stack, jsii.Sprintf("websocket_%s", name), &websocket.WebsocketConfig{
 		StackId:                a.Stack.StackIdOutput(),
 		WebsocketName:          jsii.String(name),
 		LambdaConnectTarget:    connectTarget.LambdaArnOutput(),
