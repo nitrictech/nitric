@@ -52,7 +52,6 @@ resource "aws_apigatewayv2_route" "disconnect" {
 
 # Create execution lambda permissions for the websocket
 resource "aws_lambda_permission" "websocket-message" {
-  statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_message_target
   principal     = "apigateway.amazonaws.com"
@@ -60,7 +59,6 @@ resource "aws_lambda_permission" "websocket-message" {
 }
 
 resource "aws_lambda_permission" "websocket-connect" {
-  statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_connect_target
   principal     = "apigateway.amazonaws.com"
@@ -68,7 +66,6 @@ resource "aws_lambda_permission" "websocket-connect" {
 }
 
 resource "aws_lambda_permission" "websocket-disconnect" {
-  statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_disconnect_target
   principal     = "apigateway.amazonaws.com"

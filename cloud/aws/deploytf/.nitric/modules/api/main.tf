@@ -17,7 +17,6 @@ resource "aws_apigatewayv2_stage" "stage" {
 # deploy lambda permissions for execution
 resource "aws_lambda_permission" "apigw_lambda" {
   for_each      = var.target_lambda_functions
-  statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = each.value
   principal     = "apigateway.amazonaws.com"

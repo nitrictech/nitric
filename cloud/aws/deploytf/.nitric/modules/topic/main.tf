@@ -31,7 +31,6 @@ resource "aws_sns_topic_subscription" "subscription" {
 resource "aws_lambda_permission" "sns" {
   for_each = var.lambda_subscribers
 
-  statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
   function_name = each.value
   principal     = "sns.amazonaws.com"

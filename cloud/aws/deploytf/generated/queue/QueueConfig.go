@@ -13,9 +13,7 @@ type QueueConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// The name of the bucket.
-	//
-	// This must be globally unique.
+	// The name of the queue.
 	QueueName *string `field:"required" json:"queueName" yaml:"queueName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
