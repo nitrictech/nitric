@@ -35,7 +35,7 @@ resource "aws_scheduler_schedule" "schedule" {
 
   schedule_expression_timezone = var.schedule_timezone
 
-  schedule_expression = "rate(1 hours)"
+  schedule_expression = var.schedule_expression
 
   target {
     arn      = var.target_lambda_arn
