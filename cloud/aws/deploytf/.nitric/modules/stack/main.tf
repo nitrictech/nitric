@@ -4,11 +4,6 @@ resource "random_string" "id" {
   upper   = false
 }
 
-// Create a new AWS provider
-provider "aws" {
-  region = var.region
-}
-
 resource "aws_resourcegroups_group" "group" {
   name = "nitric-resource-group-${random_string.id.result}"
 

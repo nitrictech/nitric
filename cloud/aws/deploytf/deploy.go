@@ -19,6 +19,7 @@ import (
 	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
+	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v10/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
@@ -90,9 +91,11 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		Description: jsii.String("The AWS region to deploy resources to"),
 	})
 
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+	awsprovider.NewAwsProvider(stack, jsii.String("aws"), &awsprovider.AwsProviderConfig{
 		Region: tfRegion.StringValue(),
 	})
+
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
 
 	return nil
 }
