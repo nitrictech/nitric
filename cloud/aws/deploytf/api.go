@@ -24,7 +24,6 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	"github.com/samber/lo"
 )
 
 func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Operation {
@@ -141,9 +140,9 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		return err
 	}
 
-	domains := lo.Ternary(n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil, n.AwsConfig.Apis[name].Domains, nil)
-	if domains == nil {
-		domains = []string{}
+	domains := []string{}
+	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
+		domains = n.AwsConfig.Apis[name].Domains
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
