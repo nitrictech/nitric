@@ -121,7 +121,7 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 
 	defer response.Body.Close()
 
-	_, err = io.Copy(os.Stdout, response.Body)
+	_, err = io.Copy(io.Discard, response.Body)
 	if err != nil {
 		return err
 	}
