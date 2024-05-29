@@ -39,9 +39,9 @@ import (
 )
 
 type nameUrlPair struct {
-	name      string
-	invokeUrl string
-	timeout   int
+	name           string
+	invokeUrl      string
+	timeoutSeconds int
 }
 
 func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, apiConfig *deploymentspb.Api) error {
@@ -141,9 +141,9 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			}
 
 			return nameUrlPair{
-				name:      name,
-				invokeUrl: url,
-				timeout:   timeout,
+				name:           name,
+				invokeUrl:      url,
+				timeoutSeconds: timeout,
 			}, nil
 		}))
 	}
@@ -158,7 +158,7 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		for _, p := range pairs {
 			if pair, ok := p.(nameUrlPair); ok {
 				naps[pair.name] = pair.invokeUrl
-				timeouts[pair.name] = pair.timeout
+				timeouts[pair.name] = pair.timeoutSeconds
 			} else {
 				return "", fmt.Errorf("failed to resolve Cloud Run container URL for api %s, invalid name URL pair value %T %v, %s", name, p, p, help.BugInNitricHelpText())
 			}
