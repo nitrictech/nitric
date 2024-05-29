@@ -36,8 +36,6 @@ type Stack interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	Region() *string
-	SetRegion(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -166,16 +164,6 @@ func (j *jsiiProxy_Stack) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Stack) Region() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"region",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Stack) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -256,17 +244,6 @@ func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Stack)SetRegion(val *string) {
-	if err := j.validateSetRegionParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"region",
 		val,
 	)
 }

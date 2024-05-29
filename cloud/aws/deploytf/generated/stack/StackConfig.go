@@ -13,7 +13,5 @@ type StackConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// The AWS region to deploy the stack.
-	Region *string `field:"required" json:"region" yaml:"region"`
 }
 
