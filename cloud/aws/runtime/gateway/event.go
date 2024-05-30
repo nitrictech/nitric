@@ -66,7 +66,7 @@ func (e *Event) Type() eventType {
 	// check if this event type contains valid data
 	if e.APIGatewayWebsocketProxyRequest.RequestContext.ConnectionID != "" {
 		return websocketEvent
-	} else if e.APIGatewayV2HTTPRequest.RouteKey != "" {
+	} else if e.APIGatewayV2HTTPRequest.RouteKey != "" || e.APIGatewayV2HTTPRequest.RequestContext.APIID != "" {
 		return httpEvent
 	} else if e.Check {
 		return healthcheck
