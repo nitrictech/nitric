@@ -1,8 +1,9 @@
 run:
   timeout: "5m"
+  skip-dirs:
+    - deploytf/generated
   skip-files:
-  - tools/tools.go
-  - deploytf/generated/*/*.go
+    - tools/tools.go
   go: 1.18
 
 linters:

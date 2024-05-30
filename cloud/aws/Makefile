@@ -52,7 +52,7 @@ license-check: runtimebin
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	@touch deploy/runtime/runtime-aws
 	$(GOLANGCI_LINT) run --fix
 	@rm deploy/runtime/runtime-aws

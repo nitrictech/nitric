@@ -39,7 +39,6 @@ func eventsForBlobEventType(blobEventType storagepb.BlobEventType) []string {
 
 // Bucket - Deploy a Storage Bucket
 func (n *NitricAwsTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
-
 	notificationTargets := map[string]interface{}{}
 
 	for _, target := range config.Listeners {
