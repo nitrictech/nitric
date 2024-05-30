@@ -14,7 +14,8 @@ resource "aws_iam_role" "role" {
   })
 }
 
-resource "aws_iam_policy" "policy" {
+resource "aws_iam_role_policy" "role_policy" {
+  role = aws_iam_role.role.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [

@@ -55,21 +55,21 @@ resource "aws_lambda_permission" "websocket-message" {
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_message_target
   principal     = "apigateway.amazonaws.com"
-  source_arn    = aws_apigatewayv2_api.websocket.execution_arn
+  source_arn    = "${aws_apigatewayv2_api.websocket.execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "websocket-connect" {
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_connect_target
   principal     = "apigateway.amazonaws.com"
-  source_arn    = aws_apigatewayv2_api.websocket.execution_arn
+  source_arn    = "${aws_apigatewayv2_api.websocket.execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "websocket-disconnect" {
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_disconnect_target
   principal     = "apigateway.amazonaws.com"
-  source_arn    = aws_apigatewayv2_api.websocket.execution_arn
+  source_arn    = "${aws_apigatewayv2_api.websocket.execution_arn}/*/*"
 }
 
 # create a stage for the api gateway
