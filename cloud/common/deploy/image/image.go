@@ -83,8 +83,8 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 	}
 
 	buildContext := fmt.Sprintf("%s/build-%s", os.TempDir(), name)
-	//#nosec G301 - Patch to remove exec perms
-	err = os.MkdirAll(buildContext, os.ModePerm)
+	// Set Read/Write/Execute permissions for owner and group in compliance with https://securego.io/docs/rules/g301.html
+	err = os.MkdirAll(buildContext, 0o750)
 	if err != nil {
 		return nil, err
 	}
