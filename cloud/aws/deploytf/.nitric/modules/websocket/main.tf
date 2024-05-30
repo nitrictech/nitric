@@ -3,6 +3,7 @@
 resource "aws_apigatewayv2_api" "websocket" {
   name          = var.websocket_name
   protocol_type = "WEBSOCKET"
+  route_selection_expression = "$request.body.action"
   tags = {
     "x-nitric-${var.stack_id}-name" = var.websocket_name
     "x-nitric-${var.stack_id}-type" = "websocket"
@@ -77,4 +78,9 @@ resource "aws_apigatewayv2_stage" "stage" {
   api_id      = aws_apigatewayv2_api.websocket.id
   name        = "ws"
   auto_deploy = true
+
+  tags = {
+    "x-nitric-${var.stack_id}-name" = "${var.websocket_name}DefaultStage"
+    "x-nitric-${var.stack_id}-type" = "websocket"
+  }
 }
