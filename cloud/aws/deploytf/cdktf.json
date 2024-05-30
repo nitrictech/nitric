@@ -51,8 +51,8 @@
       "source": "./.nitric/modules/policy"
     },
     {
-      "name": "http",
-      "source": "./.nitric/modules/http"
+      "name": "http_proxy",
+      "source": "./.nitric/modules/http_proxy"
     }
   ],
   "context": {}

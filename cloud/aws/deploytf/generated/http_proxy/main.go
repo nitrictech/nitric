@@ -1,5 +1,5 @@
-// http
-package http
+// http_proxy
+package http_proxy
 
 import (
 	"reflect"
@@ -9,8 +9,8 @@ import (
 
 func init() {
 	_jsii_.RegisterClass(
-		"http.Http",
-		reflect.TypeOf((*Http)(nil)).Elem(),
+		"http_proxy.HttpProxy",
+		reflect.TypeOf((*HttpProxy)(nil)).Elem(),
 		[]_jsii_.Member{
 			_jsii_.MemberMethod{JsiiMethod: "addOverride", GoMethod: "AddOverride"},
 			_jsii_.MemberMethod{JsiiMethod: "addProvider", GoMethod: "AddProvider"},
@@ -41,13 +41,13 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "version", GoGetter: "Version"},
 		},
 		func() interface{} {
-			j := jsiiProxy_Http{}
+			j := jsiiProxy_HttpProxy{}
 			_jsii_.InitJsiiProxy(&j.Type__cdktfTerraformModule)
 			return &j
 		},
 	)
 	_jsii_.RegisterStruct(
-		"http.HttpConfig",
-		reflect.TypeOf((*HttpConfig)(nil)).Elem(),
+		"http_proxy.HttpProxyConfig",
+		reflect.TypeOf((*HttpProxyConfig)(nil)).Elem(),
 	)
 }

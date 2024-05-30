@@ -17,12 +17,12 @@ package deploytf
 import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/http"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/http_proxy"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (a *NitricAwsTerraformProvider) Http(stack cdktf.TerraformStack, name string, config *deploymentspb.Http) error {
-	http.NewHttp(stack, jsii.Sprintf("http_%s", name), &http.HttpConfig{
+	http_proxy.NewHttpProxy(stack, jsii.Sprintf("http_%s", name), &http_proxy.HttpProxyConfig{
 		StackId:              a.Stack.StackIdOutput(),
 		Name:                 jsii.String(name),
 		TargetLambdaFunction: a.Services[config.Target.GetService()].LambdaArnOutput(),

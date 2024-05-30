@@ -1,10 +1,10 @@
-package http
+package http_proxy
 
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
 
-type HttpConfig struct {
+type HttpProxyConfig struct {
 	// Experimental.
 	DependsOn *[]cdktf.ITerraformDependable `field:"optional" json:"dependsOn" yaml:"dependsOn"`
 	// Experimental.

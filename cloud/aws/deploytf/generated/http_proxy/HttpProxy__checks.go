@@ -1,6 +1,6 @@
 //go:build !no_runtime_type_checking
 
-package http
+package http_proxy
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
 
-func (h *jsiiProxy_Http) validateAddOverrideParameters(path *string, value interface{}) error {
+func (h *jsiiProxy_HttpProxy) validateAddOverrideParameters(path *string, value interface{}) error {
 	if path == nil {
 		return fmt.Errorf("parameter path is required, but nil was provided")
 	}
@@ -23,7 +23,7 @@ func (h *jsiiProxy_Http) validateAddOverrideParameters(path *string, value inter
 	return nil
 }
 
-func (h *jsiiProxy_Http) validateAddProviderParameters(provider interface{}) error {
+func (h *jsiiProxy_HttpProxy) validateAddProviderParameters(provider interface{}) error {
 	if provider == nil {
 		return fmt.Errorf("parameter provider is required, but nil was provided")
 	}
@@ -50,7 +50,7 @@ func (h *jsiiProxy_Http) validateAddProviderParameters(provider interface{}) err
 	return nil
 }
 
-func (h *jsiiProxy_Http) validateGetStringParameters(output *string) error {
+func (h *jsiiProxy_HttpProxy) validateGetStringParameters(output *string) error {
 	if output == nil {
 		return fmt.Errorf("parameter output is required, but nil was provided")
 	}
@@ -58,7 +58,7 @@ func (h *jsiiProxy_Http) validateGetStringParameters(output *string) error {
 	return nil
 }
 
-func (h *jsiiProxy_Http) validateInterpolationForOutputParameters(moduleOutput *string) error {
+func (h *jsiiProxy_HttpProxy) validateInterpolationForOutputParameters(moduleOutput *string) error {
 	if moduleOutput == nil {
 		return fmt.Errorf("parameter moduleOutput is required, but nil was provided")
 	}
@@ -66,7 +66,7 @@ func (h *jsiiProxy_Http) validateInterpolationForOutputParameters(moduleOutput *
 	return nil
 }
 
-func (h *jsiiProxy_Http) validateOverrideLogicalIdParameters(newLogicalId *string) error {
+func (h *jsiiProxy_HttpProxy) validateOverrideLogicalIdParameters(newLogicalId *string) error {
 	if newLogicalId == nil {
 		return fmt.Errorf("parameter newLogicalId is required, but nil was provided")
 	}
@@ -74,7 +74,7 @@ func (h *jsiiProxy_Http) validateOverrideLogicalIdParameters(newLogicalId *strin
 	return nil
 }
 
-func validateHttp_IsConstructParameters(x interface{}) error {
+func validateHttpProxy_IsConstructParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -82,7 +82,7 @@ func validateHttp_IsConstructParameters(x interface{}) error {
 	return nil
 }
 
-func validateHttp_IsTerraformElementParameters(x interface{}) error {
+func validateHttpProxy_IsTerraformElementParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -90,7 +90,7 @@ func validateHttp_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Http) validateSetNameParameters(val *string) error {
+func (j *jsiiProxy_HttpProxy) validateSetNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -98,7 +98,7 @@ func (j *jsiiProxy_Http) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Http) validateSetStackIdParameters(val *string) error {
+func (j *jsiiProxy_HttpProxy) validateSetStackIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -106,7 +106,7 @@ func (j *jsiiProxy_Http) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Http) validateSetTargetLambdaFunctionParameters(val *string) error {
+func (j *jsiiProxy_HttpProxy) validateSetTargetLambdaFunctionParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -114,7 +114,7 @@ func (j *jsiiProxy_Http) validateSetTargetLambdaFunctionParameters(val *string) 
 	return nil
 }
 
-func validateNewHttpParameters(scope constructs.Construct, id *string, config *HttpConfig) error {
+func validateNewHttpProxyParameters(scope constructs.Construct, id *string, config *HttpProxyConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")
 	}
