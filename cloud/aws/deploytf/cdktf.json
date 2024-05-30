@@ -49,6 +49,10 @@
     {
       "name": "policy",
       "source": "./.nitric/modules/policy"
+    },
+    {
+      "name": "http",
+      "source": "./.nitric/modules/http"
     }
   ],
   "context": {}
