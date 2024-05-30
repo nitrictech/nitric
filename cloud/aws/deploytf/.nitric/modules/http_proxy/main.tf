@@ -7,10 +7,12 @@ resource "aws_apigatewayv2_api" "api_gateway" {
   }
 }
 
-resource "aws_apigatewayv2_integration" "proxy_integration"{
-  api_id           = aws_apigatewayv2_api.api_gateway.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = var.target_lambda_function
+resource "aws_apigatewayv2_integration" "proxy_integration" {
+  api_id                    = aws_apigatewayv2_api.api_gateway.id
+  integration_type          = "AWS_PROXY"
+  integration_uri           = var.target_lambda_function
+  integration_method        = "POST"
+  payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "example" {
@@ -21,8 +23,8 @@ resource "aws_apigatewayv2_route" "example" {
 }
 
 resource "aws_apigatewayv2_stage" "stage" {
-  api_id = aws_apigatewayv2_api.api_gateway.id
-  name   = "$default"
+  api_id      = aws_apigatewayv2_api.api_gateway.id
+  name        = "$default"
   auto_deploy = true
 }
 
