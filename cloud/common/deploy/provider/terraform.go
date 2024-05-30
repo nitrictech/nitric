@@ -161,6 +161,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 	appCtx := map[string]interface{}{
 		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
+		// Ensure static output
+		"cdktfStaticModuleAssetHash": "nitric_modules",
 	}
 
 	attributesMap := req.Attributes.AsMap()
