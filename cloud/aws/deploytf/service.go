@@ -26,7 +26,7 @@ import (
 )
 
 func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name string, config *deploymentspb.Service, runtimeProvider provider.RuntimeProvider) error {
-	err := image.BuildWrappedImage(&image.BuildWrappedImageArgs{
+	imageId, err := image.BuildWrappedImage(&image.BuildWrappedImageArgs{
 		ServiceName: name,
 		SourceImage: config.GetImage().Uri,
 		// TODO: Use correct image uri
@@ -58,7 +58,7 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 
 	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
 		ServiceName: jsii.String(name),
-		Image:       jsii.String(name),
+		Image:       jsii.String(imageId),
 		Environment: &jsiiEnv,
 		StackId:     a.Stack.StackIdOutput(),
 		Memory:      jsii.Number(typeConfig.Lambda.Memory),

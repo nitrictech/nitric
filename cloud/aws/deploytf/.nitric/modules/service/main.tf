@@ -89,7 +89,7 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
 resource "aws_lambda_function" "function" {
   function_name = "${var.service_name}-${var.stack_id}"
   role          = aws_iam_role.role.arn
-  image_uri     = "${aws_ecr_repository.repo.repository_url}:latest"
+  image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
   # TODO: Make configurable
   timeout = 30

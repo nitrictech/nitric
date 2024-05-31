@@ -40,68 +40,68 @@ type BuildWrappedImageArgs struct {
 var runtimeFileName = "runtime"
 
 // Build a wrapped image on the current machine inline
-func BuildWrappedImage(args *BuildWrappedImageArgs) error {
+func BuildWrappedImage(args *BuildWrappedImageArgs) (string, error) {
 	imageWrapper, err := getWrapperDockerfile(nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	dockerfileContent, sourceImageID, err := wrapDockerImage(imageWrapper.Dockerfile, args.SourceImage)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	buildContext := fmt.Sprintf("%s/build-%s", os.TempDir(), args.ServiceName)
 	err = os.MkdirAll(buildContext, os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Address: https://securego.io/docs/rules/g304.html
 	dockerfilePath := filepath.Clean(path.Join(buildContext, "Dockerfile"))
 	if !strings.HasPrefix(dockerfilePath, os.TempDir()) {
-		return fmt.Errorf("unsafe dockerfile location")
+		return "", fmt.Errorf("unsafe dockerfile location")
 	}
 	dockerfile, err := os.Create(dockerfilePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = dockerfile.Write([]byte(dockerfileContent))
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = dockerfile.Close()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	runtimefilePath := filepath.Clean(path.Join(buildContext, runtimeFileName))
 	if !strings.HasPrefix(dockerfilePath, os.TempDir()) {
-		return fmt.Errorf("unsafe runtime location")
+		return "", fmt.Errorf("unsafe runtime location")
 	}
 	runtimefile, err := os.Create(runtimefilePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = runtimefile.Write(args.Runtime)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = runtimefile.Close()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	tarBuildContext, err := archive.TarWithOptions(buildContext, &archive.TarOptions{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	buildArgs := map[string]*string{
@@ -116,15 +116,21 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) error {
 		Dockerfile: "Dockerfile",
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer response.Body.Close()
 
 	_, err = io.Copy(io.Discard, response.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	// Return the target image ID
+	inspect, _, err := client.ImageInspectWithRaw(context.Background(), args.TargetImage)
+	if err != nil {
+		return "", err
+	}
+
+	return inspect.ID, nil
 }
