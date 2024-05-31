@@ -42,6 +42,8 @@ resource "aws_apigatewayv2_route" "connect" {
   api_id    = aws_apigatewayv2_api.websocket.id
   route_key = "$connect"
   target    = "integrations/${aws_apigatewayv2_integration.connect.id}"
+  # Chain routes to prevent Concurrent edit conflict exceptions
+  depends_on = [ aws_apigatewayv2_route.default ]
 }
 
 # Create the disconnect route for the websocket
@@ -49,6 +51,8 @@ resource "aws_apigatewayv2_route" "disconnect" {
   api_id    = aws_apigatewayv2_api.websocket.id
   route_key = "$disconnect"
   target    = "integrations/${aws_apigatewayv2_integration.disconnect.id}"
+  # Chain routes to prevent Concurrent edit conflict exceptions
+  depends_on = [ aws_apigatewayv2_route.connect ]
 }
 
 # Create execution lambda permissions for the websocket
