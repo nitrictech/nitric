@@ -52,7 +52,7 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) (string, error) {
 	}
 
 	buildContext := fmt.Sprintf("%s/build-%s", os.TempDir(), args.ServiceName)
-	err = os.MkdirAll(buildContext, os.ModePerm)
+	err = os.MkdirAll(buildContext, 0o750)
 	if err != nil {
 		return "", err
 	}

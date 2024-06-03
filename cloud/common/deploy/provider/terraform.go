@@ -131,7 +131,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	// modules dir
 	modulesDir := filepath.Join(parentDir)
 
-	err = os.MkdirAll(modulesDir, os.ModePerm)
+	err = os.MkdirAll(modulesDir, 0o750)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			}
 			defer data.Close()
 
-			out, err := os.Create(filepath.Join(path))
+			//#nosec G304 -- path unpacking known modules embedded fs
+			out, err := os.Create(path)
 			if err != nil {
 				return err
 			}
@@ -161,7 +162,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			return err
 		}
 
-		return os.MkdirAll(filepath.Join(path), 0o755)
+		return os.MkdirAll(path, 0o750)
 	})
 	if err != nil {
 		return err
