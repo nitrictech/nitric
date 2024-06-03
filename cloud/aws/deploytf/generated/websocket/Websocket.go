@@ -275,7 +275,6 @@ func (j *jsiiProxy_Websocket) WebsocketName() *string {
 	return returns
 }
 
-
 func NewWebsocket(scope constructs.Construct, id *string, config *WebsocketConfig) Websocket {
 	_init_.Initialize()
 
@@ -303,7 +302,7 @@ func NewWebsocket_Override(w Websocket, scope constructs.Construct, id *string, 
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Websocket) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -311,7 +310,7 @@ func (j *jsiiProxy_Websocket)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Websocket) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -319,7 +318,7 @@ func (j *jsiiProxy_Websocket)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetLambdaConnectTarget(val *string) {
+func (j *jsiiProxy_Websocket) SetLambdaConnectTarget(val *string) {
 	if err := j.validateSetLambdaConnectTargetParameters(val); err != nil {
 		panic(err)
 	}
@@ -330,7 +329,7 @@ func (j *jsiiProxy_Websocket)SetLambdaConnectTarget(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetLambdaDisconnectTarget(val *string) {
+func (j *jsiiProxy_Websocket) SetLambdaDisconnectTarget(val *string) {
 	if err := j.validateSetLambdaDisconnectTargetParameters(val); err != nil {
 		panic(err)
 	}
@@ -341,7 +340,7 @@ func (j *jsiiProxy_Websocket)SetLambdaDisconnectTarget(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetLambdaMessageTarget(val *string) {
+func (j *jsiiProxy_Websocket) SetLambdaMessageTarget(val *string) {
 	if err := j.validateSetLambdaMessageTargetParameters(val); err != nil {
 		panic(err)
 	}
@@ -352,7 +351,7 @@ func (j *jsiiProxy_Websocket)SetLambdaMessageTarget(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetStackId(val *string) {
+func (j *jsiiProxy_Websocket) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -363,7 +362,7 @@ func (j *jsiiProxy_Websocket)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Websocket)SetWebsocketName(val *string) {
+func (j *jsiiProxy_Websocket) SetWebsocketName(val *string) {
 	if err := j.validateSetWebsocketNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -578,4 +577,3 @@ func (w *jsiiProxy_Websocket) ToTerraform() interface{} {
 
 	return returns
 }
-

@@ -148,4 +148,3 @@ func validateNewWebsocketParameters(scope constructs.Construct, id *string, conf
 
 	return nil
 }
-
