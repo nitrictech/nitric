@@ -58,7 +58,7 @@ fmt:
 	@rm deploy/runtime/runtime-aws
 
 lint:
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	@touch deploy/runtime/runtime-aws
 	$(GOLANGCI_LINT) run
 	@rm deploy/runtime/runtime-aws
