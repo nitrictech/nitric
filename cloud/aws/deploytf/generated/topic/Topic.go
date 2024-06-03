@@ -251,7 +251,6 @@ func (j *jsiiProxy_Topic) Version() *string {
 	return returns
 }
 
-
 func NewTopic(scope constructs.Construct, id *string, config *TopicConfig) Topic {
 	_init_.Initialize()
 
@@ -279,7 +278,7 @@ func NewTopic_Override(t Topic, scope constructs.Construct, id *string, config *
 	)
 }
 
-func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Topic) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -287,7 +286,7 @@ func (j *jsiiProxy_Topic)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Topic) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -295,7 +294,7 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *map[string]*string) {
+func (j *jsiiProxy_Topic) SetLambdaSubscribers(val *map[string]*string) {
 	if err := j.validateSetLambdaSubscribersParameters(val); err != nil {
 		panic(err)
 	}
@@ -306,7 +305,7 @@ func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *map[string]*string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetStackId(val *string) {
+func (j *jsiiProxy_Topic) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -317,7 +316,7 @@ func (j *jsiiProxy_Topic)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetTopicName(val *string) {
+func (j *jsiiProxy_Topic) SetTopicName(val *string) {
 	if err := j.validateSetTopicNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -532,4 +531,3 @@ func (t *jsiiProxy_Topic) ToTerraform() interface{} {
 
 	return returns
 }
-
