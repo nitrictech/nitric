@@ -17,8 +17,8 @@
 package main
 
 import (
+	"github.com/nitrictech/nitric/cloud/aws/common/runtime"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/runtime"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 )
 

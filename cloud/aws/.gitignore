@@ -1,3 +1,4 @@
 dist/
 deploy/runtime-aws
 deploytf/runtime/runtime-aws
+common/runtime/runtime-aws

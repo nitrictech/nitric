@@ -8,9 +8,9 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime/runtime-aws
+	@touch common/runtime/runtime-aws
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 # We only build a linux amd64 binary here to be packaged for cloud runtimes with docker
@@ -22,18 +22,15 @@ runtimebin:
 
 .PHONY: predeploybin
 predeploybin: runtimebin
-	@cp bin/runtime-aws deploy/runtime/runtime-aws
-	@cp bin/runtime-aws deploytf/runtime/runtime-aws
+	@cp bin/runtime-aws common/runtime/runtime-aws
 
 deploybin: predeploybin
 	@echo Building AWS Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime/runtime-aws
 
 deploybintf: generate-terraform predeploybin
 	@echo Building AWS Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-awstf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
-	@rm deploytf/runtime/runtime-aws
 
 .PHONY: install
 install: deploybin deploybintf
@@ -53,15 +50,15 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-aws
+	@touch common/runtime/runtime-aws
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 lint:
 	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-aws
+	@touch common/runtime/runtime-aws
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 test: generate-mocks
 	@echo Running unit tests
