@@ -84,10 +84,18 @@ type TerraformProviderServer struct {
 }
 
 func (s *TerraformProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
+	if beta, err := env.BETA_PROVIDERS.Bool(); err != nil || !beta {
+		return status.Error(codes.FailedPrecondition, "Nitric terraform providers are currently in beta, please add beta-providers to the preview field of your nitric.yaml to enable")
+	}
+
 	return createTerraformStackForNitricProvider(req, s.provider, s.runtime)
 }
 
 func (s *TerraformProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
+	if beta, err := env.BETA_PROVIDERS.Bool(); err != nil || !beta {
+		return status.Error(codes.FailedPrecondition, "Nitric terraform providers are currently in beta, please add beta-providers to the preview field of your nitric.yaml to enable")
+	}
+
 	return status.Error(codes.Unimplemented, "Down not implemented for Terraform providers, please run terraform destroy against your stack state")
 }
 
