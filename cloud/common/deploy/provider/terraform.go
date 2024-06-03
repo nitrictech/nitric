@@ -161,7 +161,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			return err
 		}
 
-		return os.MkdirAll(filepath.Join(path), 0755)
+		return os.MkdirAll(filepath.Join(path), 0o755)
 	})
 	if err != nil {
 		return err
