@@ -16,6 +16,7 @@ package embeds
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -39,4 +40,8 @@ var schedule_InputTemplate string
 
 func GetScheduleInputDocument(scheduleName pulumi.StringInput) pulumi.StringOutput {
 	return pulumi.Sprintf(schedule_InputTemplate, scheduleName)
+}
+
+func GetScheduleInputDocumentString(scheduleName string) string {
+	return fmt.Sprintf(schedule_InputTemplate, scheduleName)
 }

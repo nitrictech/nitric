@@ -8,31 +8,39 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime/runtime-aws
+	@touch common/runtime/runtime-aws
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 # We only build a linux amd64 binary here to be packaged for cloud runtimes with docker
 # More binaries can be distributed in future if required
+.PHONY: runtimebin
 runtimebin:
 	@echo Building AWS Runtime Server
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
+.PHONY: predeploybin
 predeploybin: runtimebin
-	@cp bin/runtime-aws deploy/runtime/runtime-aws
+	@cp bin/runtime-aws common/runtime/runtime-aws
 
 deploybin: predeploybin
 	@echo Building AWS Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-aws -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime/runtime-aws
+
+deploybintf: generate-terraform predeploybin
+	@echo Building AWS Terraform Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-awstf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
 .PHONY: install
-install: deploybin
-	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
+install: deploybin deploybintf
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
 	@rm -f ${HOME}/.nitric/providers/nitric/aws-0.0.1
+	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
+	@echo installing aws terraform deployment server to ${HOME}/.nitric/providers/nitric/awstf-0.0.1
+	@cp bin/deploy-awstf ${HOME}/.nitric/providers/nitric/awstf-0.0.1
+
 
 license-check: runtimebin
 	@echo Checking AWS Membrane OSS Licenses
@@ -41,16 +49,16 @@ license-check: runtimebin
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-aws
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch common/runtime/runtime-aws
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 lint:
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-aws
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@touch common/runtime/runtime-aws
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime/runtime-aws
+	@rm common/runtime/runtime-aws
 
 test: generate-mocks
 	@echo Running unit tests
@@ -80,5 +88,8 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceProvider > mocks/provider/aws.go
+
+generate-terraform:
+	@cd deploytf && cdktf get
 
 generate-sources: generate-mocks

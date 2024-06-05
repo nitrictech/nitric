@@ -7,12 +7,23 @@ before:
     - go work sync
     - make predeploybin
 builds:
-  - env:
-      # - GOWORK=on
+  - id: aws 
+    env:
       - CGO_ENABLED=0
-    id: aws
     binary: aws
     main: ./cmd/deploy
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+  - id: awstf
+    env:
+      - CGO_ENABLED=0 
+    binary: aws
+    main: ./cmd/deploytf
     goos:
       - linux
       - windows
@@ -27,6 +38,19 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ tolower .Arch }}{{ end }}
+    builds:
+      - aws
+    format_overrides:
+      - goos: windows
+        format: zip
+  - name_template: >-
+      {{ .ProjectName }}tf_
+      {{- tolower .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ tolower .Arch }}{{ end }}
+    builds:
+      - awstf
     format_overrides:
       - goos: windows
         format: zip
