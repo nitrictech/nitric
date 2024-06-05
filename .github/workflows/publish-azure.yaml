@@ -39,5 +39,6 @@ jobs:
           version: latest
           args: release --clean
           workdir: cloud/azure
+          version: '~> v1'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
