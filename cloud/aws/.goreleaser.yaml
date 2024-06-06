@@ -49,6 +49,7 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ tolower .Arch }}{{ end }}
+    id: awstf
     builds:
       - awstf
     format_overrides:
