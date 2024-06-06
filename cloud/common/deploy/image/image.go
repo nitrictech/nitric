@@ -82,7 +82,7 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 	}
 
 	buildContext := fmt.Sprintf("%s/build-local-%s", os.TempDir(), name)
-	err = os.MkdirAll(buildContext, os.ModePerm)
+	err = os.MkdirAll(buildContext, 0o750)
 	if err != nil {
 		return nil, err
 	}
