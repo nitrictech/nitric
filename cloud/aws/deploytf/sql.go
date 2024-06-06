@@ -18,23 +18,31 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	sql "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/sql"
+	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
 
-	sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
-		DbName:             jsii.String(name),
-		ImageUri:           jsii.String(config.GetImageUri()),
-		RdsClusterEndpoint: n.Rds.ClusterEndpointOutput(),
-		RdsClusterUsername: n.Rds.ClusterUsernameOutput(),
-		RdsClusterPassword: n.Rds.ClusterPasswordOutput(),
-		SubnetIds:          n.Vpc.SubnetIdsOutput(),
-		SecurityGroupIds:   []*string{n.Rds.SecurityGroupIdOutput()},
-		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
-	})
+	// Inspect the provided migration image and get its command and working directory
+	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+	if err != nil {
+		return err
+	}
 
-	n.Rds.
+	sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+		DbName:                    jsii.String(name),
+		ImageUri:                  jsii.String(config.GetImageUri()),
+		RdsClusterEndpoint:        n.Rds.ClusterEndpointOutput(),
+		RdsClusterUsername:        n.Rds.ClusterUsernameOutput(),
+		RdsClusterPassword:        n.Rds.ClusterPasswordOutput(),
+		SubnetIds:                 cdktf.Token_AsList(n.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{}),
+		SecurityGroupIds:          &[]*string{n.Rds.SecurityGroupIdOutput()},
+		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
+		MigrateCommand:            jsii.String(inspect.Cmd),
+		WorkDir:                   jsii.String(inspect.WorkDir),
+		VpcId:                     n.Vpc.VpcIdOutput(),
+	})
 
 	return nil
 }
