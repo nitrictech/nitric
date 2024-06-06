@@ -15,7 +15,6 @@
 package deploy
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -33,15 +32,11 @@ func (a *NitricAwsPulumiProvider) vpc(ctx *pulumi.Context) error {
 	// Ensure AZ order is deterministic
 	slices.Sort(availabilityZones.Names)
 
-	fmt.Println("using availability zones: ", availabilityZones.Names)
-
 	// TODO: Make configurable
 	// Minimum of 3 AZs required for consistent cluster deployments
 	azCount := 3
 
 	a.VpcAzs = availabilityZones.Names[0:azCount]
-
-	fmt.Println("set availability zones: ", a.VpcAzs)
 
 	a.Vpc, err = ec2.NewVpc(ctx, "nitric-vpc", &ec2.VpcArgs{
 		EnableDnsHostnames:    pulumi.Bool(true),
