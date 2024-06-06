@@ -94,7 +94,7 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) (string, error) {
 		return "", err
 	}
 
-	tarBuildContext, err := archive.TarWithOptions(buildContext, &archive.TarOptions{})
+	tarBuildContext, err := archive.TarWithOptions(filepath.Clean(buildContext), &archive.TarOptions{})
 	if err != nil {
 		return "", err
 	}
