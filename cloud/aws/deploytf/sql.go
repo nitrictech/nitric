@@ -15,12 +15,26 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	sql "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/sql"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	return fmt.Errorf("the AWS Terraform provider does not support SQL databases yet")
+
+	sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+		DbName:             jsii.String(name),
+		ImageUri:           jsii.String(config.GetImageUri()),
+		RdsClusterEndpoint: n.Rds.ClusterEndpointOutput(),
+		RdsClusterUsername: n.Rds.ClusterUsernameOutput(),
+		RdsClusterPassword: n.Rds.ClusterPasswordOutput(),
+		SubnetIds:          n.Vpc.SubnetIdsOutput(),
+		SecurityGroupIds:   []*string{n.Rds.SecurityGroupIdOutput()},
+		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
+	})
+
+	n.Rds.
+
+	return nil
 }

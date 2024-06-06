@@ -1,0 +1,97 @@
+# Create a new random password for the RDS cluster
+resource "random_password" "rds_password" {
+  length  = 16
+  special = true
+}
+
+# Create a subnet group for the RDS instance
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  subnet_ids = var.private_subnet_ids
+}
+
+# Create a security group for the RDS instance
+resource "aws_security_group" "rds_security_group" {
+  vpc_id = var.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    self = true
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+}
+
+# Create an RDS cluster with serverless v2
+resource "aws_rds_cluster" "rds_cluster" {
+  cluster_identifier      = "nitric-rds-cluster"
+  engine                  = "aurora-postgresql"
+  engine_mode             = "serverless"
+  engine_version          = "13.14"
+  database_name           = "nitric"
+  master_username         = "nitric"
+  master_password         = random_password.rds_password.result
+  db_subnet_group_name    = aws_db_subnet_group.rds_subnet_group.id
+  vpc_security_group_ids  = [aws_security_group.rds_security_group.id]
+  skip_final_snapshot     = true
+  deletion_protection     = false
+  serverlessv2_scaling_configuration {
+    max_capacity = var.max_capacity
+    min_capacity = var.min_capacity
+  }
+}
+
+# Create a rds cluster instance
+resource "aws_rds_cluster_instance" "rds_cluster_instance" {
+  cluster_identifier = aws_rds_cluster.rds_cluster.id
+  instance_class     = "db.serverless"
+  engine             = aws_rds_cluster.rds_cluster.engine
+  engine_version     = aws_rds_cluster.rds_cluster.engine_version
+  db_subnet_group_name = aws_rds_cluster.rds_cluster.db_subnet_group_name
+}
+
+# Create an AWS Codebuild job to create a database on the RDS cluster
+resource "aws_codebuild_project" "create_database" {
+  name          = "nitric-create-database"
+  description   = "Create the database on the RDS cluster"
+  build_timeout = 60
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "NO_ARTIFACTS"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:5.0"
+    type                        = "LINUX_CONTAINER"
+  }
+
+  source {
+    type            = "NO_SOURCE"
+    buildspec       = jsonencode({
+        version = "0.2",
+        phases = {
+            install = {
+            commands = [
+                "echo 'Installing psql'",
+                "apt-get update",
+                "apt-get install -y postgresql-client"
+            ]
+            },
+            build = {
+            commands = [
+                "echo 'Creating database $DB_NAME'",
+                "psql -h ${aws_rds_cluster.rds_cluster.endpoint} -U ${aws_rds_cluster.rds_cluster.master_username} -d ${aws_rds_cluster.rds_cluster.database_name} -c 'CREATE DATABASE $DB_NAME'"
+            ]
+            }
+        }
+    })
+  }
+}
