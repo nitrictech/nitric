@@ -31,7 +31,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrunv2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -39,9 +39,8 @@ import (
 )
 
 type nameUrlPair struct {
-	name           string
-	invokeUrl      string
-	timeoutSeconds int
+	name      string
+	invokeUrl string
 }
 
 func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, apiConfig *deploymentspb.Api) error {
@@ -125,25 +124,17 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 	// collect name arn pairs for output iteration
 	for k, v := range services {
-		nameUrlPairs = append(nameUrlPairs, pulumi.All(k, v.Url, v.Service.Template.Spec().TimeoutSeconds()).ApplyT(func(args []interface{}) (nameUrlPair, error) {
+		nameUrlPairs = append(nameUrlPairs, pulumi.All(k, v.Url).ApplyT(func(args []interface{}) (nameUrlPair, error) {
 			name, nameOk := args[0].(string)
 			url, urlOk := args[1].(string)
-			timeoutPtr, timeoutOk := args[2].(*int)
-
-			timeout := 15
-
-			if timeoutOk && timeoutPtr != nil {
-				timeout = *timeoutPtr
-			}
 
 			if !nameOk || !urlOk {
 				return nameUrlPair{}, fmt.Errorf("invalid data %T %v", args, args)
 			}
 
 			return nameUrlPair{
-				name:           name,
-				invokeUrl:      url,
-				timeoutSeconds: timeout,
+				name:      name,
+				invokeUrl: url,
 			}, nil
 		}))
 	}
@@ -153,24 +144,22 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	// Replace Nitric API Extensions with google api gateway extensions
 	doc := pulumi.All(nameUrlPairs...).ApplyT(func(pairs []interface{}) (string, error) {
 		naps := make(map[string]string)
-		timeouts := make(map[string]int)
 
 		for _, p := range pairs {
 			if pair, ok := p.(nameUrlPair); ok {
 				naps[pair.name] = pair.invokeUrl
-				timeouts[pair.name] = pair.timeoutSeconds
 			} else {
 				return "", fmt.Errorf("failed to resolve Cloud Run container URL for api %s, invalid name URL pair value %T %v, %s", name, p, p, help.BugInNitricHelpText())
 			}
 		}
 
 		for k, p := range v2doc.Paths {
-			p.Get = gcpOperation(name, p.Get, naps, timeouts)
-			p.Post = gcpOperation(name, p.Post, naps, timeouts)
-			p.Patch = gcpOperation(name, p.Patch, naps, timeouts)
-			p.Put = gcpOperation(name, p.Put, naps, timeouts)
-			p.Delete = gcpOperation(name, p.Delete, naps, timeouts)
-			p.Options = gcpOperation(name, p.Options, naps, timeouts)
+			p.Get = gcpOperation(name, p.Get, naps)
+			p.Post = gcpOperation(name, p.Post, naps)
+			p.Patch = gcpOperation(name, p.Patch, naps)
+			p.Put = gcpOperation(name, p.Put, naps)
+			p.Delete = gcpOperation(name, p.Delete, naps)
+			p.Options = gcpOperation(name, p.Options, naps)
 			v2doc.Paths[k] = p
 		}
 
@@ -203,8 +192,8 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	for _, serv := range services {
 		iamName := fmt.Sprintf("%s-%s-binding", name, serv.Name)
 
-		_, err = cloudrun.NewIamMember(ctx, iamName, &cloudrun.IamMemberArgs{
-			Service:  serv.Service.Name,
+		_, err = cloudrunv2.NewServiceIamMember(ctx, iamName, &cloudrunv2.ServiceIamMemberArgs{
+			Name:     serv.Service.Name,
 			Location: serv.Service.Location,
 			Member:   pulumi.Sprintf("serviceAccount:%s", svcAcct.ServiceAccount.Email),
 			Role:     pulumi.String("roles/run.invoker"),
@@ -274,7 +263,7 @@ func keepOperation(opExt map[string]interface{}) (string, bool) {
 	return name, true
 }
 
-func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]string, timeouts map[string]int) *openapi2.Operation {
+func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]string) *openapi2.Operation {
 	if op == nil {
 		return nil
 	}
@@ -306,11 +295,10 @@ func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]string
 		}
 	}
 
-	op.Extensions["x-google-backend"] = map[string]any{
+	op.Extensions["x-google-backend"] = map[string]string{
 		// Append the name of the target origin api gateway to the target address
 		"address":          fmt.Sprintf("%s/x-nitric-api/%s", urls[name], apiName),
 		"path_translation": "APPEND_PATH_TO_ADDRESS",
-		"deadline":         timeouts[name],
 	}
 
 	return op
