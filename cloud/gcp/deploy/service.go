@@ -25,7 +25,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrunv2"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -37,7 +37,7 @@ import (
 // NitricCloudRunService - A wrapper that encapsulates all important information about a cloud run service deployed by nitric
 type NitricCloudRunService struct {
 	Name           string
-	Service        *cloudrun.Service
+	Service        *cloudrunv2.Service
 	ServiceAccount *serviceaccount.Account
 	Url            pulumi.StringInput
 	Invoker        *serviceaccount.Account
@@ -128,84 +128,117 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return errors.WithMessage(err, "service account self membership "+name)
 	}
 
-	env := cloudrun.ServiceTemplateSpecContainerEnvArray{
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+	env := cloudrunv2.ServiceTemplateContainerEnvArray{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_ENVIRONMENT"),
 			Value: pulumi.String("cloud"),
 		},
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("MIN_WORKERS"),
 			Value: pulumi.String(fmt.Sprintf("%d", config.Workers)),
 		},
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_STACK_ID"),
 			Value: pulumi.String(p.StackId),
 		},
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),
 			Value: sa.ServiceAccount.Email,
 		},
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("GCP_REGION"),
 			Value: pulumi.String(p.Region),
 		},
-		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("NITRIC_HTTP_PROXY_PORT"),
 			Value: pulumi.String(fmt.Sprint(3000)),
 		},
 	}
 
-	env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
+	env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
 		Name:  pulumi.String("EVENT_TOKEN"),
 		Value: res.EventToken,
 	})
 
 	if p.DelayQueue != nil {
-		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("DELAY_QUEUE_NAME"),
-			Value: pulumi.Sprintf("projects/%s/locations/%s/queues/%s", p.DelayQueue.Project, p.DelayQueue.Location, p.DelayQueue.Name),
+			Value: pulumi.Sprintf("projects/%s/locations/%s queues/%s", p.DelayQueue.Project, p.DelayQueue.Location, p.DelayQueue.Name),
+		})
+	}
+
+	if p.masterDb != nil {
+		env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
+			Name:  pulumi.String("NITRIC_DATABASE_BASE_URL"),
+			Value: pulumi.Sprintf("postgresql://postgres:%s@%s:5432", p.dbMasterPassword.Result, p.masterDb.PrivateIpAddress),
 		})
 	}
 
 	for k, v := range config.Env() {
-		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
+		env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String(k),
 			Value: v,
 		})
 	}
 
-	res.Service, err = cloudrun.NewService(ctx, gcpServiceName, &cloudrun.ServiceArgs{
-		AutogenerateRevisionName: pulumi.BoolPtr(true),
-		Location:                 pulumi.String(p.Region),
-		Project:                  pulumi.String(p.GcpConfig.ProjectId),
-		Template: cloudrun.ServiceTemplateArgs{
-			Metadata: cloudrun.ServiceTemplateMetadataArgs{
-				Annotations: pulumi.StringMap{
-					"autoscaling.knative.dev/minScale": pulumi.Sprintf("%d", unitConfig.CloudRun.MinInstances),
-					"autoscaling.knative.dev/maxScale": pulumi.Sprintf("%d", unitConfig.CloudRun.MaxInstances),
-				},
-			},
-			Spec: cloudrun.ServiceTemplateSpecArgs{
-				ServiceAccountName:   sa.ServiceAccount.Email,
-				ContainerConcurrency: pulumi.Int(unitConfig.CloudRun.Concurrency),
-				TimeoutSeconds:       pulumi.Int(unitConfig.CloudRun.Timeout),
-				Containers: cloudrun.ServiceTemplateSpecContainerArray{
-					cloudrun.ServiceTemplateSpecContainerArgs{
-						Envs:  env,
-						Image: image.URI(),
-						Ports: cloudrun.ServiceTemplateSpecContainerPortArray{
-							cloudrun.ServiceTemplateSpecContainerPortArgs{
-								ContainerPort: pulumi.Int(9001),
-							},
-						},
-						Resources: cloudrun.ServiceTemplateSpecContainerResourcesArgs{
-							Limits: pulumi.StringMap{
-								"cpu":    pulumi.Sprintf("%2f", unitConfig.CloudRun.Cpus),
-								"memory": pulumi.Sprintf("%dMi", unitConfig.CloudRun.Memory),
-							},
-						},
+	serviceTemplate := cloudrunv2.ServiceTemplateArgs{
+		ServiceAccount:                sa.ServiceAccount.Email,
+		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.Concurrency),
+		Scaling: &cloudrunv2.ServiceTemplateScalingArgs{
+			MinInstanceCount: pulumi.Int(unitConfig.CloudRun.MinInstances),
+			MaxInstanceCount: pulumi.Int(unitConfig.CloudRun.MaxInstances),
+		},
+		Timeout: pulumi.Sprintf("%ds", unitConfig.CloudRun.Timeout),
+		Containers: cloudrunv2.ServiceTemplateContainerArray{
+			cloudrunv2.ServiceTemplateContainerArgs{
+				Envs:  env,
+				Image: image.URI(),
+				Ports: cloudrunv2.ServiceTemplateContainerPortArray{
+					cloudrunv2.ServiceTemplateContainerPortArgs{
+						ContainerPort: pulumi.Int(9001),
 					},
 				},
+				Resources: cloudrunv2.ServiceTemplateContainerResourcesArgs{
+					Limits: pulumi.StringMap{
+						"cpu":    pulumi.Sprintf("%2f", unitConfig.CloudRun.Cpus),
+						"memory": pulumi.Sprintf("%dMi", unitConfig.CloudRun.Memory),
+					},
+				},
+			},
+		},
+	}
+
+	// Add vpc egress if there is a sql database
+	if p.masterDb != nil {
+		serviceTemplate.VpcAccess = &cloudrunv2.ServiceTemplateVpcAccessArgs{
+			Egress: pulumi.String("PRIVATE_RANGES_ONLY"),
+			NetworkInterfaces: &cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArray{
+				&cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArgs{
+					Network:    p.privateNetwork.ID(),
+					Subnetwork: p.privateSubnet.ID(),
+				},
+			},
+		}
+
+		dependsOn := []pulumi.Resource{p.privateNetwork, p.privateSubnet}
+		for _, db := range p.DatabaseMigrationBuild {
+			dependsOn = append(dependsOn, db)
+		}
+
+		opts = append(opts, pulumi.DependsOn(dependsOn))
+
+		serviceTemplate.Annotations = pulumi.ToStringMapOutput(map[string]pulumi.StringOutput{"run.googleapis.com/cloudsql-instances": p.masterDb.ConnectionName})
+	}
+
+	res.Service, err = cloudrunv2.NewService(ctx, gcpServiceName, &cloudrunv2.ServiceArgs{
+		Location: pulumi.String(p.Region),
+		Project:  pulumi.String(p.GcpConfig.ProjectId),
+		Template: serviceTemplate,
+		Ingress:  pulumi.String("INGRESS_TRAFFIC_ALL"),
+		Traffics: cloudrunv2.ServiceTrafficArray{
+			&cloudrunv2.ServiceTrafficArgs{
+				Percent: pulumi.Int(100),
+				Type:    pulumi.String("TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"),
 			},
 		},
 	}, p.WithDefaultResourceOptions(opts...)...)
@@ -222,23 +255,17 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	res.Invoker = svcAcct.ServiceAccount
 
-	_, err = cloudrun.NewIamMember(ctx, gcpServiceName+"-invoker", &cloudrun.IamMemberArgs{
+	_, err = cloudrunv2.NewServiceIamMember(ctx, gcpServiceName+"-invoker", &cloudrunv2.ServiceIamMemberArgs{
 		Member:   pulumi.Sprintf("serviceAccount:%s", res.Invoker.Email),
 		Role:     pulumi.String("roles/run.invoker"),
-		Service:  res.Service.Name,
+		Name:     res.Service.Name,
 		Location: res.Service.Location,
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return errors.WithMessage(err, "iam member "+name)
 	}
 
-	res.Url = res.Service.Statuses.ApplyT(func(ss []cloudrun.ServiceStatus) (string, error) {
-		if len(ss) == 0 {
-			return "", errors.New("serviceStatus is empty")
-		}
-
-		return *ss[0].Url, nil
-	}).(pulumi.StringInput)
+	res.Url = res.Service.Uri
 
 	p.CloudRunServices[name] = res
 

@@ -17,6 +17,8 @@
 package common
 
 import (
+	"strings"
+
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
@@ -25,6 +27,10 @@ import (
 type GcpConfigItem struct {
 	CloudRun  *GcpCloudRunConfig `mapstructure:",omitempty"`
 	Telemetry int
+}
+
+type GcpDatabaseConfig struct {
+	DeletionPolicy string `mapstructure:"deletion-policy"`
 }
 
 type GcpImports struct {
@@ -48,6 +54,7 @@ type GcpApiConfig struct {
 type GcpConfig struct {
 	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
 	Apis                                  map[string]*GcpApiConfig
+	Databases                             map[string]*GcpDatabaseConfig `mapstructure:"databases"`
 	Import                                GcpImports
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
 	ProjectId                             string `mapstructure:"gcp-project-id"`
@@ -65,6 +72,10 @@ var defaultCloudRunConfig = &GcpCloudRunConfig{
 
 var defaultGcpConfigItem = GcpConfigItem{
 	Telemetry: 0,
+}
+
+var defaultSqlDatabaseItem = &GcpDatabaseConfig{
+	DeletionPolicy: "DELETE",
 }
 
 // Return GcpConfig from stack attributes
@@ -115,6 +126,22 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error)
 		}
 
 		gcpConfig.Config[configName] = configVal
+	}
+
+	for databaseName, configVal := range gcpConfig.Databases {
+		// Add defaults to database config
+		err := mergo.Merge(configVal, defaultSqlDatabaseItem)
+		if err != nil {
+			return nil, err
+		}
+
+		if strings.ToLower(configVal.DeletionPolicy) != "abandon" && strings.ToLower(configVal.DeletionPolicy) != "delete" {
+			configVal.DeletionPolicy = "DELETE"
+		}
+
+		configVal.DeletionPolicy = strings.ToUpper(configVal.DeletionPolicy)
+
+		gcpConfig.Databases[databaseName] = configVal
 	}
 
 	return gcpConfig, nil

@@ -35,14 +35,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
+	workerpool "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudbuild"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/compute"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/firestore"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/organizations"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/secretmanager"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/servicenetworking"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceusage"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
+	"github.com/pulumi/pulumi-std/sdk/go/std"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
@@ -59,6 +65,8 @@ type NitricGcpPulumiProvider struct {
 	StackId   string
 	GcpConfig *common.GcpConfig
 
+	DockerProvider *docker.Provider
+
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
 	BaseComputeRole *projects.IAMCustomRole
@@ -66,22 +74,29 @@ type NitricGcpPulumiProvider struct {
 
 	SecretManagerClient *gcpsecretmanager.Client
 
-	Project            *Project
-	ApiGateways        map[string]*apigateway.Gateway
-	HttpProxies        map[string]*apigateway.Gateway
-	CloudRunServices   map[string]*NitricCloudRunService
-	Buckets            map[string]*storage.Bucket
-	Topics             map[string]*pubsub.Topic
-	Queues             map[string]*pubsub.Topic
-	QueueSubscriptions map[string]*pubsub.Subscription
-	Secrets            map[string]*secretmanager.Secret
+	Project                *Project
+	ApiGateways            map[string]*apigateway.Gateway
+	HttpProxies            map[string]*apigateway.Gateway
+	CloudRunServices       map[string]*NitricCloudRunService
+	Buckets                map[string]*storage.Bucket
+	Topics                 map[string]*pubsub.Topic
+	Queues                 map[string]*pubsub.Topic
+	QueueSubscriptions     map[string]*pubsub.Subscription
+	Secrets                map[string]*secretmanager.Secret
+	DatabaseMigrationBuild map[string]*CloudBuild
+
+	masterDb             *sql.DatabaseInstance
+	dbMasterPassword     *random.RandomPassword
+	cloudBuildWorkerPool *workerpool.WorkerPool
+	privateNetwork       *compute.Network
+	privateSubnet        *compute.Subnetwork
 
 	provider.NitricDefaultOrder
 }
 
 var _ provider.NitricPulumiProvider = (*NitricGcpPulumiProvider)(nil)
 
-const pulumiGcpVersion = "6.67.0"
+const pulumiGcpVersion = "6.67.1"
 
 func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
@@ -199,6 +214,24 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return err
 	}
 
+	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
+		RegistryAuth: &docker.ProviderRegistryAuthArray{
+			docker.ProviderRegistryAuthArgs{
+				Address:  pulumi.String("https://gcr.io"),
+				Username: pulumi.String("oauth2accesstoken"),
+				Password: pulumi.String(a.AuthToken.AccessToken),
+			},
+			docker.ProviderRegistryAuthArgs{
+				Address:  pulumi.Sprintf("%s-docker.pkg.dev", a.Region),
+				Username: pulumi.String("oauth2accesstoken"),
+				Password: pulumi.String(a.AuthToken.AccessToken),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
 	baseCustomRoleId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-base-role", a.FullStackName), &random.RandomStringArgs{
 		Special: pulumi.Bool(false),
 		Length:  pulumi.Int(8),
@@ -227,6 +260,19 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 	if kvStoreExists {
 		err := createFirestoreDatabase(ctx, *project.ProjectId, a.Region)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Check if a sql database exists, if so get/create a nitric cloud sql database
+	databaseExists := lo.SomeBy(resources, func(res *pulumix.NitricPulumiResource[any]) bool {
+		_, ok := res.Config.(*deploymentspb.Resource_SqlDatabase)
+		return ok
+	})
+
+	if databaseExists {
+		err := a.createCloudSQLDatabase(ctx)
 		if err != nil {
 			return err
 		}
@@ -339,7 +385,7 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 	}).(pulumi.StringOutput)
 
 	if !ok {
-		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+		return pulumi.StringOutput{}, fmt.Errorf("failed to generate pulumi output")
 	}
 
 	return output, nil
@@ -347,14 +393,15 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		HttpProxies:        make(map[string]*apigateway.Gateway),
-		ApiGateways:        make(map[string]*apigateway.Gateway),
-		CloudRunServices:   make(map[string]*NitricCloudRunService),
-		Buckets:            make(map[string]*storage.Bucket),
-		Topics:             make(map[string]*pubsub.Topic),
-		Queues:             make(map[string]*pubsub.Topic),
-		QueueSubscriptions: make(map[string]*pubsub.Subscription),
-		Secrets:            make(map[string]*secretmanager.Secret),
+		HttpProxies:            make(map[string]*apigateway.Gateway),
+		ApiGateways:            make(map[string]*apigateway.Gateway),
+		CloudRunServices:       make(map[string]*NitricCloudRunService),
+		Buckets:                make(map[string]*storage.Bucket),
+		Topics:                 make(map[string]*pubsub.Topic),
+		Queues:                 make(map[string]*pubsub.Topic),
+		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
+		Secrets:                make(map[string]*secretmanager.Secret),
+		DatabaseMigrationBuild: make(map[string]*CloudBuild),
 	}
 }
 
@@ -385,6 +432,147 @@ func createFirestoreDatabase(ctx *pulumi.Context, projectId string, location str
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) error {
+	_, err := projects.NewService(ctx, "servicenetworking.googleapis.com-enabled", &projects.ServiceArgs{
+		DisableDependentServices: pulumi.Bool(true),
+		DisableOnDestroy:         pulumi.Bool(false),
+		Project:                  pulumi.String(a.GcpConfig.ProjectId),
+		Service:                  pulumi.String("servicenetworking.googleapis.com"),
+	})
+	if err != nil {
+		return err
+	}
+
+	a.privateNetwork, err = compute.NewNetwork(ctx, "nitric-db-private-network", &compute.NetworkArgs{
+		Name:                  pulumi.String("nitric-db-private-network"),
+		Project:               pulumi.String(a.GcpConfig.ProjectId),
+		AutoCreateSubnetworks: pulumi.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	a.privateSubnet, err = compute.NewSubnetwork(ctx, "nitric-db-subnetwork", &compute.SubnetworkArgs{
+		Name:        pulumi.String("nitric-db-subnetwork"),
+		IpCidrRange: pulumi.String("10.0.0.0/26"),
+		Region:      pulumi.String(a.Region),
+		Project:     pulumi.String(a.GcpConfig.ProjectId),
+		Network:     a.privateNetwork.ID(),
+		Purpose:     pulumi.String("PRIVATE"),
+		SecondaryIpRanges: compute.SubnetworkSecondaryIpRangeArray{
+			&compute.SubnetworkSecondaryIpRangeArgs{
+				RangeName:   pulumi.String("nitric-db-subnetwork-secondary-range"),
+				IpCidrRange: pulumi.String("192.168.10.0/24"),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	privateIpRange, err := compute.NewGlobalAddress(ctx, "nitric-db-ip-range", &compute.GlobalAddressArgs{
+		Name:         pulumi.String("nitric-db-ip-range"),
+		Project:      pulumi.String(a.GcpConfig.ProjectId),
+		Purpose:      pulumi.String("VPC_PEERING"),
+		AddressType:  pulumi.String("INTERNAL"),
+		PrefixLength: pulumi.Int(16),
+		Network:      a.privateNetwork.ID(),
+	}, pulumi.DependsOn([]pulumi.Resource{a.privateSubnet}))
+	if err != nil {
+		return err
+	}
+
+	privateVpcConnection, err := servicenetworking.NewConnection(ctx, "nitric-db-private-vpc-connection", &servicenetworking.ConnectionArgs{
+		Network: a.privateNetwork.ID(),
+		Service: pulumi.String("servicenetworking.googleapis.com"),
+		ReservedPeeringRanges: pulumi.StringArray{
+			privateIpRange.Name,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	metricUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
+		Input: "cloudbuild.googleapis.com/private_pools",
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	regionUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
+		Input: "/project/region",
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	workerPoolQuota, err := serviceusage.NewConsumerQuotaOverride(ctx, "worker-pool-quota", &serviceusage.ConsumerQuotaOverrideArgs{
+		Project:       pulumi.String(a.GcpConfig.ProjectId),
+		Service:       pulumi.String("cloudbuild.googleapis.com"),
+		Metric:        pulumi.String(metricUrlEncode.Result),
+		Limit:         pulumi.String(regionUrlEncode.Result),
+		OverrideValue: pulumi.String("1"),
+		Force:         pulumi.Bool(true),
+		Dimensions: pulumi.StringMap{
+			"region": pulumi.String(a.Region),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	a.cloudBuildWorkerPool, err = workerpool.NewWorkerPool(ctx, "cloud-build-worker-pool", &workerpool.WorkerPoolArgs{
+		Name:     pulumi.String("cloud-build-worker-pool"),
+		Location: pulumi.String(a.Region),
+		WorkerConfig: &workerpool.WorkerPoolWorkerConfigArgs{
+			DiskSizeGb:  pulumi.Int(100),
+			MachineType: pulumi.String("e2-medium"),
+		},
+		NetworkConfig: &workerpool.WorkerPoolNetworkConfigArgs{
+			PeeredNetwork:        a.privateNetwork.ID(),
+			PeeredNetworkIpRange: pulumi.String("/29"),
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{privateVpcConnection, workerPoolQuota}))
+	if err != nil {
+		return err
+	}
+
+	// generate a db cluster random password
+	a.dbMasterPassword, err = random.NewRandomPassword(ctx, "nitric-db-master-password", &random.RandomPasswordArgs{
+		Length:  pulumi.Int(16),
+		Special: pulumi.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	dbName := fmt.Sprintf("nitric-%s", a.StackId)
+
+	a.masterDb, err = sql.NewDatabaseInstance(ctx, dbName, &sql.DatabaseInstanceArgs{
+		Name:            pulumi.String(dbName),
+		DatabaseVersion: pulumi.String("POSTGRES_13"),
+		InstanceType:    pulumi.String("CLOUD_SQL_INSTANCE"),
+		Region:          pulumi.String(a.Region),
+		Settings: &sql.DatabaseInstanceSettingsArgs{
+			Tier: pulumi.String("db-f1-micro"),
+			IpConfiguration: &sql.DatabaseInstanceSettingsIpConfigurationArgs{
+				Ipv4Enabled:                             pulumi.Bool(false),
+				PrivateNetwork:                          a.privateNetwork.ID(),
+				EnablePrivatePathForGoogleCloudServices: pulumi.Bool(true),
+			},
+			ConnectorEnforcement: pulumi.String("NOT_REQUIRED"),
+		},
+		RootPassword:       a.dbMasterPassword.Result,
+		DeletionProtection: pulumi.Bool(false),
+	}, pulumi.DependsOn([]pulumi.Resource{privateVpcConnection, a.privateSubnet}))
+	if err != nil {
+		return err
 	}
 
 	return nil

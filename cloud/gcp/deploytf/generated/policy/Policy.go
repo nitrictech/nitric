@@ -253,7 +253,6 @@ func (j *jsiiProxy_Policy) Version() *string {
 	return returns
 }
 
-
 func NewPolicy(scope constructs.Construct, id *string, config *PolicyConfig) Policy {
 	_init_.Initialize()
 
@@ -281,7 +280,7 @@ func NewPolicy_Override(p Policy, scope constructs.Construct, id *string, config
 	)
 }
 
-func (j *jsiiProxy_Policy)SetActions(val *[]*string) {
+func (j *jsiiProxy_Policy) SetActions(val *[]*string) {
 	if err := j.validateSetActionsParameters(val); err != nil {
 		panic(err)
 	}
@@ -292,7 +291,7 @@ func (j *jsiiProxy_Policy)SetActions(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Policy) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -300,7 +299,7 @@ func (j *jsiiProxy_Policy)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Policy) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -308,7 +307,7 @@ func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetIamRoles(val interface{}) {
+func (j *jsiiProxy_Policy) SetIamRoles(val interface{}) {
 	if err := j.validateSetIamRolesParameters(val); err != nil {
 		panic(err)
 	}
@@ -319,7 +318,7 @@ func (j *jsiiProxy_Policy)SetIamRoles(val interface{}) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetResourceName(val *string) {
+func (j *jsiiProxy_Policy) SetResourceName(val *string) {
 	if err := j.validateSetResourceNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -330,7 +329,7 @@ func (j *jsiiProxy_Policy)SetResourceName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetResourceType(val *string) {
+func (j *jsiiProxy_Policy) SetResourceType(val *string) {
 	if err := j.validateSetResourceTypeParameters(val); err != nil {
 		panic(err)
 	}
@@ -341,7 +340,7 @@ func (j *jsiiProxy_Policy)SetResourceType(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetServiceAccountEmail(val *string) {
+func (j *jsiiProxy_Policy) SetServiceAccountEmail(val *string) {
 	if err := j.validateSetServiceAccountEmailParameters(val); err != nil {
 		panic(err)
 	}
@@ -556,4 +555,3 @@ func (p *jsiiProxy_Policy) ToTerraform() interface{} {
 
 	return returns
 }
-

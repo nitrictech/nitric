@@ -25,4 +25,3 @@ type BucketConfig struct {
 	// STANDARD.
 	StorageClass *string `field:"optional" json:"storageClass" yaml:"storageClass"`
 }
-

@@ -75,9 +75,6 @@ func tagSecret(ctx *pulumi.Context, name string, projectId string, secretId stri
 func createSecret(ctx *pulumi.Context, name string, stackName string, tags map[string]string, opts []pulumi.ResourceOption) (*secretmanager.Secret, error) {
 	secId := pulumi.Sprintf("%s-%s", stackName, name)
 	sec, err := secretmanager.NewSecret(ctx, name, &secretmanager.SecretArgs{
-		Replication: secretmanager.SecretReplicationArgs{
-			Automatic: pulumi.Bool(true),
-		},
 		SecretId: secId,
 		Labels:   pulumi.ToStringMap(tags),
 	}, opts...)

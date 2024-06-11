@@ -26,4 +26,3 @@ type ScheduleConfig struct {
 	// The URL of the target service.
 	TargetServiceUrl *string `field:"required" json:"targetServiceUrl" yaml:"targetServiceUrl"`
 }
-
