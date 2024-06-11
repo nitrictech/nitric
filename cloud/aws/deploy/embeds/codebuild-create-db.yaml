@@ -4,4 +4,4 @@ phases:
     commands:
       - echo "Creating database ${DB_NAME}"
       - export PGPASSWORD=${DB_MASTER_PASSWORD}
-      - psql -h ${DB_CLUSTER_ENDPOINT} -U ${DB_MASTER_USERNAME} -d nitric -c "CREATE DATABASE ${DB_NAME}" || echo "database ${DB_NAME} already exists"
+      - psql -h ${DB_CLUSTER_ENDPOINT} -U ${DB_MASTER_USERNAME} -d nitric -c "CREATE DATABASE \"${DB_NAME}\"" || echo "database ${DB_NAME} already exists"
