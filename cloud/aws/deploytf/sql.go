@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resources
+package deploytf
 
-type ResourceType string
+import (
+	"fmt"
 
-const (
-	API         ResourceType = "api"
-	Bucket      ResourceType = "bucket"
-	Collection  ResourceType = "collection"
-	Service     ResourceType = "service"
-	HttpProxy   ResourceType = "http-proxy"
-	Policy      ResourceType = "policy"
-	Queue       ResourceType = "queue"
-	Schedule    ResourceType = "schedule"
-	Secret      ResourceType = "secret"
-	Stack       ResourceType = "stack"
-	Topic       ResourceType = "topic"
-	Websocket   ResourceType = "websocket"
-	SqlDatabase ResourceType = "sql-database"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
+
+func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
+	return fmt.Errorf("the AWS Terraform provider does not support SQL databases yet")
+}

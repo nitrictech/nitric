@@ -257,6 +257,13 @@ message Schedule {
   }
 }
 
+message SqlDatabase {
+  oneof migrations {
+    // The URI of a docker image to use to execute the migrations for this database
+    string image_uri = 1;
+  }
+}
+
 message ScheduleEvery {
   // rate string e.g. '5 minutes'. Value frequencies are 'minutes', 'hours', 'days'.
   string rate = 1;
@@ -282,6 +289,7 @@ message Resource {
     Websocket websocket = 18;
     Http http = 19;
     Queue queue = 20;
+    SqlDatabase sql_database = 21;
   }
 }
 

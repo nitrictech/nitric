@@ -70,12 +70,11 @@ type NitricTerraformProvider interface {
 	Policy(stack cdktf.TerraformStack, name string, config *deploymentspb.Policy) error
 	// KeyValueStore - Deploy a Key Value Store
 	KeyValueStore(stack cdktf.TerraformStack, name string, config *deploymentspb.KeyValueStore) error
+	// SqlDatabase - Deploy a SQL Database
+	SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(stack cdktf.TerraformStack) error
-
-	// Result - Last method to be called, return the result of the deployment to be printed to stdout
-	// Result(stack cdktf.TerraformStack) (string, error)
 }
 
 type TerraformProviderServer struct {
@@ -232,6 +231,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			err = nitricProvider.Http(stack, res.Id.Name, t.Http)
 		case *deploymentspb.Resource_KeyValueStore:
 			err = nitricProvider.KeyValueStore(stack, res.Id.Name, t.KeyValueStore)
+		case *deploymentspb.Resource_SqlDatabase:
+			err = nitricProvider.SqlDatabase(stack, res.Id.Name, t.SqlDatabase)
 		}
 		if err != nil {
 			return err

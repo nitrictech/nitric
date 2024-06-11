@@ -58,6 +58,8 @@ type NitricPulumiProvider interface {
 	Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error
 	// KeyValueStore - Deploy a Key Value Store
 	KeyValueStore(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.KeyValueStore) error
+	// SqlDatabase - Deploy a SQL Database
+	SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(ctx *pulumi.Context) error
@@ -80,6 +82,7 @@ func just(all []*deploymentspb.Resource, only resourcespb.ResourceType) []*deplo
 // e.g. topics may need to know about services in order to setup subscriptions.
 func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploymentspb.Resource {
 	typeOrder := []resourcespb.ResourceType{
+		resourcespb.ResourceType_SqlDatabase,
 		resourcespb.ResourceType_Service,
 		resourcespb.ResourceType_Secret,
 		resourcespb.ResourceType_Queue,

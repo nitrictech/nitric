@@ -205,13 +205,31 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		envVars[k] = v
 	}
 
+	if a.DatabaseCluster != nil {
+		// Include the base database cluster URI for the runtime to resolve databases based on their name
+		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
+			a.DatabaseCluster.Endpoint, "5432")
+	}
+
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
 	if typeConfig.Lambda.Vpc != nil {
+		if a.Vpc != nil {
+			return fmt.Errorf("this stack has configuration that requires its own VPC configuration and cannot accept custom lambda VPC configurations")
+		}
+
 		vpcConfig = &awslambda.FunctionVpcConfigArgs{
 			SubnetIds:        pulumi.ToStringArray(typeConfig.Lambda.Vpc.SubnetIds),
 			SecurityGroupIds: pulumi.ToStringArray(typeConfig.Lambda.Vpc.SecurityGroupIds),
 		}
+	} else if a.Vpc != nil {
+		vpcConfig = &awslambda.FunctionVpcConfigArgs{
+			SubnetIds:        a.Vpc.PrivateSubnetIds,
+			SecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			// VpcId:            a.Vpc.VpcId,
+		}
+	}
 
+	if vpcConfig != nil {
 		// Create a policy attachment for VPC access
 		_, err = iam.NewRolePolicyAttachment(ctx, name+"VPCAccessExecutionRole", &iam.RolePolicyAttachmentArgs{
 			PolicyArn: iam.ManagedPolicyAWSLambdaVPCAccessExecutionRole,

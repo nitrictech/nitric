@@ -32,18 +32,24 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
+	awsec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
+	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -54,18 +60,29 @@ type NitricAwsPulumiProvider struct {
 	StackId   string
 	AwsConfig *AwsConfig
 
-	EcrAuthToken        *ecr.GetAuthorizationTokenResult
-	Lambdas             map[string]*lambda.Function
-	LambdaRoles         map[string]*iam.Role
-	HttpProxies         map[string]*apigatewayv2.Api
-	Apis                map[string]*apigatewayv2.Api
-	Secrets             map[string]*secretsmanager.Secret
-	Buckets             map[string]*s3.Bucket
-	BucketNotifications map[string]*s3.BucketNotification
-	Topics              map[string]*topic
-	Queues              map[string]*sqs.Queue
-	Websockets          map[string]*apigatewayv2.Api
-	KeyValueStores      map[string]*dynamodb.Table
+	Vpc              *ec2.Vpc
+	VpcAzs           []string
+	VpcSecurityGroup *awsec2.SecurityGroup
+	// A codebuild job for creating the requested databases for a single database cluster
+	DbMasterPassword      *random.RandomPassword
+	CreateDatabaseProject *codebuild.Project
+	CodeBuildRole         *iam.Role
+	// A map of unique image keys to database migration codebuild projects
+	DatabaseMigrationJobs map[string]*codebuild.Project
+	DatabaseCluster       *rds.Cluster
+	RdsPrxoy              *rds.Proxy
+	EcrAuthToken          *ecr.GetAuthorizationTokenResult
+	Lambdas               map[string]*lambda.Function
+	LambdaRoles           map[string]*iam.Role
+	HttpProxies           map[string]*apigatewayv2.Api
+	Apis                  map[string]*apigatewayv2.Api
+	Secrets               map[string]*secretsmanager.Secret
+	Buckets               map[string]*s3.Bucket
+	BucketNotifications   map[string]*s3.BucketNotification
+	Topics                map[string]*topic
+	Queues                map[string]*sqs.Queue
+	Websockets            map[string]*apigatewayv2.Api
+	KeyValueStores        map[string]*dynamodb.Table
 
 	provider.NitricDefaultOrder
 
@@ -147,6 +164,24 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		},
 	})
 
+	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
+	})
+	// Create a shared database cluster if we have more than one database
+	if len(databases) > 0 {
+		// deploy a VPC and security groups for this database cluster
+		err := a.vpc(ctx)
+		if err != nil {
+			return err
+		}
+
+		// deploy the RDS cluster
+		err = a.rds(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 
@@ -197,7 +232,7 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 	}).(pulumi.StringOutput)
 
 	if !ok {
-		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+		return pulumi.StringOutput{}, fmt.Errorf("failed to generate pulumi output")
 	}
 
 	return output, nil
@@ -205,16 +240,17 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 	return &NitricAwsPulumiProvider{
-		Lambdas:             make(map[string]*lambda.Function),
-		LambdaRoles:         make(map[string]*iam.Role),
-		Apis:                make(map[string]*apigatewayv2.Api),
-		HttpProxies:         make(map[string]*apigatewayv2.Api),
-		Secrets:             make(map[string]*secretsmanager.Secret),
-		Buckets:             make(map[string]*s3.Bucket),
-		BucketNotifications: make(map[string]*s3.BucketNotification),
-		Websockets:          make(map[string]*apigatewayv2.Api),
-		Topics:              make(map[string]*topic),
-		Queues:              make(map[string]*sqs.Queue),
-		KeyValueStores:      make(map[string]*dynamodb.Table),
+		Lambdas:               make(map[string]*lambda.Function),
+		LambdaRoles:           make(map[string]*iam.Role),
+		Apis:                  make(map[string]*apigatewayv2.Api),
+		HttpProxies:           make(map[string]*apigatewayv2.Api),
+		Secrets:               make(map[string]*secretsmanager.Secret),
+		Buckets:               make(map[string]*s3.Bucket),
+		BucketNotifications:   make(map[string]*s3.BucketNotification),
+		Websockets:            make(map[string]*apigatewayv2.Api),
+		Topics:                make(map[string]*topic),
+		Queues:                make(map[string]*sqs.Queue),
+		KeyValueStores:        make(map[string]*dynamodb.Table),
+		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
 	}
 }

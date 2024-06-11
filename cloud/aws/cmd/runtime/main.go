@@ -26,6 +26,7 @@ import (
 	sqs_service "github.com/nitrictech/nitric/cloud/aws/runtime/queue"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
+	sql_service "github.com/nitrictech/nitric/cloud/aws/runtime/sql"
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
 	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
@@ -67,6 +68,7 @@ func main() {
 	membraneOpts.ResourcesPlugin = provider
 	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
 	membraneOpts.QueuesPlugin, _ = sqs_service.New(provider)
+	membraneOpts.SqlPlugin = sql_service.NewRdsSqlService()
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {
