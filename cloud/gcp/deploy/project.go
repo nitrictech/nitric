@@ -56,6 +56,10 @@ var requiredServices = []string{
 	"cloudtasks.googleapis.com",
 	// Enable monitoring API
 	"monitoring.googleapis.com",
+	// Enable Cloud SQL API
+	"sql-component.googleapis.com",
+	// Enable Cloud Build API
+	"cloudbuild.googleapis.com",
 }
 
 // Creates a new GCP Project
