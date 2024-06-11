@@ -16,6 +16,8 @@ type Sql interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CodebuildRoleArn() *string
+	SetCodebuildRoleArn(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	CreateDatabaseProjectName() *string
@@ -100,6 +102,16 @@ func (j *jsiiProxy_Sql) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Sql) CodebuildRoleArn() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"codebuildRoleArn",
 		&returns,
 	)
 	return returns
@@ -350,6 +362,17 @@ func NewSql_Override(s Sql, scope constructs.Construct, id *string, config *SqlC
 		"sql.Sql",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Sql)SetCodebuildRoleArn(val *string) {
+	if err := j.validateSetCodebuildRoleArnParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"codebuildRoleArn",
+		val,
 	)
 }
 

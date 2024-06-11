@@ -87,7 +87,7 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
 
 # Attach vpc access execution role if subnets are provided
 resource "aws_iam_role_policy_attachment" "vpc-access" {
-  for_each = length(var.subnet_ids) > 0 ? [1] : []
+  count = length(var.subnet_ids) > 0 ? 1 : 0
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
@@ -105,7 +105,7 @@ resource "aws_lambda_function" "function" {
   }
 
   dynamic "vpc_config" {
-    for_each = length(var.subnet_ids) > 0 ? [1] : []
+    for_each = length(var.subnet_ids) > 0 ? ["1"] : []
     content {
       subnet_ids         = var.subnet_ids
       security_group_ids = var.security_group_ids

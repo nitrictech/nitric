@@ -15,6 +15,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "addOverride", GoMethod: "AddOverride"},
 			_jsii_.MemberMethod{JsiiMethod: "addProvider", GoMethod: "AddProvider"},
 			_jsii_.MemberProperty{JsiiProperty: "cdktfStack", GoGetter: "CdktfStack"},
+			_jsii_.MemberProperty{JsiiProperty: "codebuildRoleArn", GoGetter: "CodebuildRoleArn"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "createDatabaseProjectName", GoGetter: "CreateDatabaseProjectName"},
 			_jsii_.MemberProperty{JsiiProperty: "dbName", GoGetter: "DbName"},

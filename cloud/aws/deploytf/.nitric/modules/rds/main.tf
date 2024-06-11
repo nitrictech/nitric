@@ -28,6 +28,41 @@ resource "aws_security_group" "rds_security_group" {
   }
 }
 
+#  Create a role for the codebuild job
+resource "aws_iam_role" "codebuild_role" {
+  name = "nitric-codebuild-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "codebuild.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Attach managed policies to the codebuild role
+locals {
+  codebuildManagedPolicies = {
+    "codeBuildAdmin"   = "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+    "rdsAdmin"         = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+    "ec2Admin"         = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+    "cloudWatchLogs"   = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+    "ecrReadonly"      = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "codebuild_managed_policies" {
+  for_each = local.codebuildManagedPolicies
+
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = each.value
+}
+
 # Create an RDS cluster with serverless v2
 resource "aws_rds_cluster" "rds_cluster" {
   cluster_identifier      = "nitric-rds-cluster"

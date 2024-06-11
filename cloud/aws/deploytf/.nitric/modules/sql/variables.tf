@@ -43,6 +43,11 @@ variable "work_dir" {
   type        = string
 }
 
+variable "codebuild_role_arn" {
+  description = "The arn of the codebuild role"
+  type        = string
+}
+
 variable "migrate_command" {
   description = "The command to run to migrate the database"
   type        = string

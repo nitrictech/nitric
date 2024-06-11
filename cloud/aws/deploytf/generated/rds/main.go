@@ -18,6 +18,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "clusterEndpointOutput", GoGetter: "ClusterEndpointOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "clusterPasswordOutput", GoGetter: "ClusterPasswordOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "clusterUsernameOutput", GoGetter: "ClusterUsernameOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "codebuildRoleArnOutput", GoGetter: "CodebuildRoleArnOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "createDatabaseProjectNameOutput", GoGetter: "CreateDatabaseProjectNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},

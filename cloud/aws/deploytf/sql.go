@@ -42,6 +42,7 @@ func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, nam
 		MigrateCommand:            jsii.String(inspect.Cmd),
 		WorkDir:                   jsii.String(inspect.WorkDir),
 		VpcId:                     n.Vpc.VpcIdOutput(),
+		CodebuildRoleArn:          n.Rds.CodebuildRoleArnOutput(),
 	})
 
 	return nil

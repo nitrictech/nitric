@@ -13,6 +13,8 @@ type SqlConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The arn of the codebuild role.
+	CodebuildRoleArn *string `field:"required" json:"codebuildRoleArn" yaml:"codebuildRoleArn"`
 	// The name of the create database codebuild project.
 	CreateDatabaseProjectName *string `field:"required" json:"createDatabaseProjectName" yaml:"createDatabaseProjectName"`
 	// The name of the database to create.

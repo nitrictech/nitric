@@ -1,6 +1,3 @@
-
-
-
 # tag the local image uri
 terraform {
   required_providers {
@@ -31,12 +28,12 @@ provider "docker" {
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
   source_image = var.image_uri
-  target_image = aws_ecr_repository.repo.repository_url
+  target_image = aws_ecr_repository.migrate_database.repository_url
 }
 
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
-  name = aws_ecr_repository.repo.repository_url
+  name = aws_ecr_repository.migrate_database.repository_url
   triggers = {
     source_image_id = docker_tag.tag.source_image_id
   }
@@ -50,7 +47,7 @@ locals {
 resource "aws_codebuild_project" "migrate_database" {
   name         = "nitric-migrate-database-${var.db_name}"
   description  = "Migrate the database on the RDS cluster"
-  service_role = aws_iam_role.codebuild_role.arn
+  service_role = var.codebuild_role_arn
 
   artifacts {
     type = "NO_ARTIFACTS"
@@ -58,7 +55,7 @@ resource "aws_codebuild_project" "migrate_database" {
 
   environment {
     compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
+    image        = "${aws_ecr_repository.migrate_database.repository_url}@${docker_registry_image.push.sha256_digest}"
     type         = "LINUX_CONTAINER"
     environment_variable {
       name  = "DB_NAME"

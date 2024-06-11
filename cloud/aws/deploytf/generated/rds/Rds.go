@@ -19,6 +19,7 @@ type Rds interface {
 	ClusterEndpointOutput() *string
 	ClusterPasswordOutput() *string
 	ClusterUsernameOutput() *string
+	CodebuildRoleArnOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	CreateDatabaseProjectNameOutput() *string
@@ -121,6 +122,16 @@ func (j *jsiiProxy_Rds) ClusterUsernameOutput() *string {
 	_jsii_.Get(
 		j,
 		"clusterUsernameOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Rds) CodebuildRoleArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"codebuildRoleArnOutput",
 		&returns,
 	)
 	return returns
