@@ -15,14 +15,6 @@ resource "aws_ecr_repository" "repo" {
 data "aws_ecr_authorization_token" "ecr_auth" {
 }
 
-provider "docker" {
-  registry_auth {
-    address  = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
-    username = data.aws_ecr_authorization_token.ecr_auth.user_name
-    password = data.aws_ecr_authorization_token.ecr_auth.password
-  }
-}
-
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
   source_image = var.image

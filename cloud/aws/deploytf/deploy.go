@@ -19,7 +19,9 @@ import (
 	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
+	ecrauth "github.com/cdktf/cdktf-provider-aws-go/aws/v19/dataawsecrauthorizationtoken"
 	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v19/provider"
+	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
@@ -100,6 +102,17 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 
 	awsprovider.NewAwsProvider(stack, jsii.String("aws"), &awsprovider.AwsProviderConfig{
 		Region: tfRegion.StringValue(),
+	})
+
+	ecrAuthConfig := ecrauth.NewDataAwsEcrAuthorizationToken(stack, jsii.String("ecr_auth"), &ecrauth.DataAwsEcrAuthorizationTokenConfig{})
+	dockerprovider.NewDockerProvider(stack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+		RegistryAuth: &[]*map[string]interface{}{
+			&map[string]interface{}{
+				"address":  ecrAuthConfig.ProxyEndpoint(),
+				"username": ecrAuthConfig.UserName(),
+				"password": ecrAuthConfig.Password(),
+			},
+		},
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})

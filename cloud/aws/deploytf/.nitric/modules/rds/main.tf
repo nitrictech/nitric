@@ -110,7 +110,7 @@ resource "aws_codebuild_project" "create_database" {
 
   vpc_config {
     subnets            = var.private_subnet_ids
-    security_group_ids = [aws_security_group.rds_security_group.id]
+    security_group_ids = aws_rds_cluster.rds_cluster.vpc_security_group_ids
     vpc_id             = var.vpc_id
   }
 

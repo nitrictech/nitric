@@ -1,4 +1,3 @@
-# tag the local image uri
 terraform {
   required_providers {
     docker = {
@@ -12,17 +11,6 @@ terraform {
 # If there is a migration image uri tag it and push it to ECR
 resource "aws_ecr_repository" "migrate_database" {
   name = "nitric-migrate-database-${var.db_name}"
-}
-
-data "aws_ecr_authorization_token" "ecr_auth" {
-}
-
-provider "docker" {
-  registry_auth {
-    address  = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
-    username = data.aws_ecr_authorization_token.ecr_auth.user_name
-    password = data.aws_ecr_authorization_token.ecr_auth.password
-  }
 }
 
 # Tag the provided docker image with the ECR repository url
