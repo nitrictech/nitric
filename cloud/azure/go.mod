@@ -1,6 +1,8 @@
 module github.com/nitrictech/nitric/cloud/azure
 
-go 1.21
+go 1.21.3
+
+toolchain go1.21.4
 
 require (
 	github.com/Azure/azure-sdk-for-go v67.1.0+incompatible
@@ -23,28 +25,32 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-00010101000000-000000000000
 	github.com/nitrictech/nitric/core v0.0.0-20240514060310-15c1b165e761
+	github.com/nitrictech/nitric/test v0.0.0-20240611083659-34f0571203c2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.1
 	github.com/pkg/errors v0.9.1
 	github.com/pulumi/pulumi-aws/sdk/v5 v5.35.0
-	github.com/pulumi/pulumi-azure-native-sdk/apimanagement v1.92.0
+	github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2 v2.44.0
 	github.com/pulumi/pulumi-azure-native-sdk/app v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0
+	github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2 v2.44.0
 	github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0
+	github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2 v2.39.0
 	github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.101.0
 	github.com/pulumi/pulumi-azure-native-sdk/keyvault v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/managedidentity v1.92.0
+	github.com/pulumi/pulumi-azure-native-sdk/network/v2 v2.44.0
 	github.com/pulumi/pulumi-azure-native-sdk/operationalinsights v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
 	github.com/pulumi/pulumi-azure/sdk/v4 v4.42.0
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.33.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
-	github.com/pulumi/pulumi/sdk/v3 v3.112.0
+	github.com/pulumi/pulumi/sdk/v3 v3.118.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
 	github.com/valyala/fasthttp v1.45.0
-	google.golang.org/grpc v1.62.1
+	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 )
 
@@ -78,7 +84,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alecthomas/go-check-sumtype v0.1.4 // indirect
@@ -139,7 +145,7 @@ require (
 	github.com/go-critic/go-critic v0.11.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
-	github.com/go-git/go-git/v5 v5.11.0 // indirect
+	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -262,6 +268,7 @@ require (
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.6.2 // indirect
 	github.com/pulumi/pulumi-azure-native-sdk v1.101.0 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.44.0 // indirect
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.0 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
@@ -279,13 +286,13 @@ require (
 	github.com/sashamelentyev/usestdlibvars v1.24.0 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
 	github.com/securego/gosec/v2 v2.18.2 // indirect
-	github.com/sergi/go-diff v1.3.1 // indirect
+	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shazow/go-diff v0.0.0-20160112020656-b6b7b6733b8c // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sivchari/containedctx v1.0.3 // indirect
 	github.com/sivchari/nosnakecase v1.7.0 // indirect
 	github.com/sivchari/tenv v1.7.1 // indirect
-	github.com/skeema/knownhosts v1.2.1 // indirect
+	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/sonatard/noctx v0.0.2 // indirect
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect

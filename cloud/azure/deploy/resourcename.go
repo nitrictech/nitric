@@ -82,6 +82,8 @@ var (
 	ApiManagementProxyRT   = ResourceType{Abbreviation: "httpproxy-mgmt", MaxLen: 80, AllowHyphen: true, AllowUpperCase: true, UseName: true}
 	// Alphanumerics and hyphens, Start with letter and end with alphanumeric.
 	ApiOperationPolicyRT = ResourceType{Abbreviation: "api-op-pol", MaxLen: 80, AllowUpperCase: true, AllowHyphen: true, UseName: true}
+	// Lowercase letters and numbers.
+	DatabaseServerRT = ResourceType{Abbreviation: "pg-svr", MaxLen: 24}
 )
 
 // cleanNameSegment removes all non-alphanumeric characters from a string.

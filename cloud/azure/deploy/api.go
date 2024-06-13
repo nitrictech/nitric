@@ -24,7 +24,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
-	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -123,7 +123,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 
 	api, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.String(displayName),
-		Protocols:            apimanagement.ProtocolArray{"https"},
+		Protocols:            pulumi.StringArray{pulumi.String("https")},
 		ApiId:                pulumi.String(name),
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),

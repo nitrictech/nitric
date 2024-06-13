@@ -30,10 +30,12 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pkg/errors"
-	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
+	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
+	"github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -76,6 +78,10 @@ type NitricAzurePulumiProvider struct {
 	Topics        map[string]*eventgrid.Topic
 
 	KeyValueStores map[string]*storage.Table
+
+	SqlDatabases   map[string]*dbforpostgresql.Database
+	DatabaseServer *dbforpostgresql.Server
+	VirtualNetwork *network.VirtualNetwork
 
 	Roles *Roles
 	provider.NitricDefaultOrder
@@ -158,6 +164,102 @@ func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, t
 	return storageAccount, nil
 }
 
+func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, tags map[string]string) error {
+	var err error
+
+	virtualNetworkName := "db-virtual-network"
+	a.VirtualNetwork, err = network.NewVirtualNetwork(ctx, virtualNetworkName, &network.VirtualNetworkArgs{
+		AddressSpace: &network.AddressSpaceArgs{
+			AddressPrefixes: pulumi.StringArray{
+				pulumi.String("10.0.0.0/16"),
+			},
+		},
+		FlowTimeoutInMinutes: pulumi.Int(10),
+		Location:             pulumi.String(a.Region),
+		ResourceGroupName:    a.ResourceGroup.Name,
+		VirtualNetworkName:   pulumi.String(virtualNetworkName),
+	})
+	if err != nil {
+		return errors.WithMessage(err, "creating virtual network")
+	}
+
+	dbSubnet, err := network.NewSubnet(ctx, "db-subnet", &network.SubnetArgs{
+		AddressPrefix:      pulumi.String("10.0.0.0/18"),
+		ResourceGroupName:  a.ResourceGroup.Name,
+		SubnetName:         pulumi.String("db-subnet"),
+		VirtualNetworkName: a.VirtualNetwork.Name,
+		Delegations: network.DelegationArray{
+			network.DelegationArgs{
+				Name:        pulumi.String("db-delegation"),
+				ServiceName: pulumi.String("Microsoft.DBforPostgreSQL/flexibleServers"),
+			},
+		},
+	})
+	if err != nil {
+		return errors.WithMessage(err, "creating subnet")
+	}
+
+	privateDns, err := network.NewPrivateZone(ctx, "db-private-dns", &network.PrivateZoneArgs{
+		ResourceGroupName: a.ResourceGroup.Name,
+		PrivateZoneName:   pulumi.String("db-private-dns.postgres.database.azure.com"),
+		Location:          pulumi.String("global"),
+	})
+	if err != nil {
+		return errors.WithMessage(err, "creating private dns zone")
+	}
+
+	dbServerName := ResourceName(ctx, "", DatabaseServerRT)
+
+	// generate a db master username
+	dbMasterUsername, err := random.NewRandomString(ctx, "db-master-username", &random.RandomStringArgs{
+		Special: pulumi.Bool(false),
+		Length:  pulumi.Int(8),
+		Upper:   pulumi.Bool(false),
+		Number:  pulumi.Bool(false),
+	})
+	if err != nil {
+		return errors.WithMessage(err, "creating master username")
+	}
+
+	// generate a db random password
+	dbMasterPassword, err := random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+		Length: pulumi.Int(16),
+	})
+	if err != nil {
+		return errors.WithMessage(err, "creating master password")
+	}
+
+	a.DatabaseServer, err = dbforpostgresql.NewServer(ctx, dbServerName, &dbforpostgresql.ServerArgs{
+		ResourceGroupName:          a.ResourceGroup.Name,
+		Location:                   a.ResourceGroup.Location,
+		AdministratorLogin:         dbMasterUsername.Result,
+		AdministratorLoginPassword: dbMasterPassword.Result,
+		CreateMode:                 pulumi.String(dbforpostgresql.CreateModeDefault),
+		AvailabilityZone:           pulumi.String("1"),
+		Version:                    pulumi.String(dbforpostgresql.ServerVersion_14),
+		Network: &dbforpostgresql.NetworkArgs{
+			DelegatedSubnetResourceId:   dbSubnet.ID(),
+			PrivateDnsZoneArmResourceId: privateDns.ID(),
+		},
+		Sku: &dbforpostgresql.SkuArgs{
+			Name: pulumi.String("Standard_B1ms"),
+			Tier: pulumi.String(dbforpostgresql.SkuTierBurstable),
+		},
+		HighAvailability: &dbforpostgresql.HighAvailabilityArgs{
+			Mode: pulumi.String(dbforpostgresql.HighAvailabilityModeDisabled),
+		},
+		Storage: &dbforpostgresql.StorageArgs{
+			StorageSizeGB: pulumi.Int(32),
+		},
+		Tags: pulumi.ToStringMap(tags),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func hasResourceType(resources []*pulumix.NitricPulumiResource[any], resourceType resourcespb.ResourceType) bool {
 	for _, r := range resources {
 		if r.Id.GetType() == resourceType {
@@ -203,6 +305,14 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	})
 	if err != nil {
 		return errors.WithMessage(err, "resource group create")
+	}
+
+	if hasResourceType(nitricResources, resourcespb.ResourceType_SqlDatabase) {
+		logger.Info("Stack declares one or more databases, creating stack level PostgreSQL Database Server")
+		err := a.createDatabaseServer(ctx, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
+		if err != nil {
+			return errors.WithMessage(err, "create azure sql flexible server")
+		}
 	}
 
 	// Create a key vault if secrets are required.
@@ -281,7 +391,7 @@ func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOu
 	}).(pulumi.StringOutput)
 
 	if !ok {
-		return pulumi.StringOutput{}, fmt.Errorf("Failed to generate pulumi output")
+		return pulumi.StringOutput{}, fmt.Errorf("failed to generate pulumi output")
 	}
 
 	return output, nil
@@ -293,13 +403,14 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
 
 	return &NitricAzurePulumiProvider{
-		Apis:           map[string]ApiResources{},
-		HttpProxies:    map[string]ApiResources{},
+		Apis:           make(map[string]ApiResources),
+		HttpProxies:    make(map[string]ApiResources),
 		Buckets:        make(map[string]*storage.BlobContainer),
 		Queues:         make(map[string]*storage.Queue),
-		ContainerApps:  map[string]*ContainerApp{},
-		Topics:         map[string]*eventgrid.Topic{},
+		ContainerApps:  make(map[string]*ContainerApp),
+		Topics:         make(map[string]*eventgrid.Topic),
+		SqlDatabases:   make(map[string]*dbforpostgresql.Database),
 		Principals:     principalsMap,
-		KeyValueStores: map[string]*storage.Table{},
+		KeyValueStores: make(map[string]*storage.Table),
 	}
 }
