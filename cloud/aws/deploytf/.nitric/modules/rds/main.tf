@@ -1,7 +1,7 @@
 # Create a new random password for the RDS cluster
 resource "random_password" "rds_password" {
   length  = 16
-  special = true
+  special = false
 }
 
 # Create a subnet group for the RDS instance
@@ -67,7 +67,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_managed_policies" {
 resource "aws_rds_cluster" "rds_cluster" {
   cluster_identifier      = "nitric-rds-cluster"
   engine                  = "aurora-postgresql"
-  engine_mode             = "serverless"
+  engine_mode             = "provisioned"
   engine_version          = "13.14"
   database_name           = "nitric"
   master_username         = "nitric"
@@ -104,8 +104,14 @@ resource "aws_codebuild_project" "create_database" {
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:5.0"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     type                        = "LINUX_CONTAINER"
+  }
+
+  vpc_config {
+    subnets            = var.private_subnet_ids
+    security_group_ids = [aws_security_group.rds_security_group.id]
+    vpc_id             = var.vpc_id
   }
 
   source {
@@ -113,13 +119,6 @@ resource "aws_codebuild_project" "create_database" {
     buildspec       = jsonencode({
         version = "0.2",
         phases = {
-            install = {
-            commands = [
-                "echo 'Installing psql'",
-                "apt-get update",
-                "apt-get install -y postgresql-client"
-            ]
-            },
             build = {
             commands = [
                 "echo 'Creating database $DB_NAME'",

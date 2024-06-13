@@ -16,6 +16,8 @@ type Vpc interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CidrBlock() *string
+	SetCidrBlock(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
@@ -32,9 +34,13 @@ type Vpc interface {
 	FriendlyUniqueId() *string
 	// The tree node.
 	Node() constructs.Node
+	PrivateSubnetCidrs() *[]*string
+	SetPrivateSubnetCidrs(val *[]*string)
 	PrivateSubnetIdsOutput() *string
 	// Experimental.
 	Providers() *[]interface{}
+	PublicSubnetCidrs() *[]*string
+	SetPublicSubnetCidrs(val *[]*string)
 	PublicSubnetIdsOutput() *string
 	// Experimental.
 	RawOverrides() interface{}
@@ -81,6 +87,16 @@ func (j *jsiiProxy_Vpc) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Vpc) CidrBlock() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cidrBlock",
 		&returns,
 	)
 	return returns
@@ -146,6 +162,16 @@ func (j *jsiiProxy_Vpc) Node() constructs.Node {
 	return returns
 }
 
+func (j *jsiiProxy_Vpc) PrivateSubnetCidrs() *[]*string {
+	var returns *[]*string
+	_jsii_.Get(
+		j,
+		"privateSubnetCidrs",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Vpc) PrivateSubnetIdsOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -161,6 +187,16 @@ func (j *jsiiProxy_Vpc) Providers() *[]interface{} {
 	_jsii_.Get(
 		j,
 		"providers",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Vpc) PublicSubnetCidrs() *[]*string {
+	var returns *[]*string
+	_jsii_.Get(
+		j,
+		"publicSubnetCidrs",
 		&returns,
 	)
 	return returns
@@ -254,6 +290,14 @@ func NewVpc_Override(v Vpc, scope constructs.Construct, id *string, config *VpcC
 	)
 }
 
+func (j *jsiiProxy_Vpc)SetCidrBlock(val *string) {
+	_jsii_.Set(
+		j,
+		"cidrBlock",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Vpc)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
@@ -266,6 +310,22 @@ func (j *jsiiProxy_Vpc)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Vpc)SetPrivateSubnetCidrs(val *[]*string) {
+	_jsii_.Set(
+		j,
+		"privateSubnetCidrs",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Vpc)SetPublicSubnetCidrs(val *[]*string) {
+	_jsii_.Set(
+		j,
+		"publicSubnetCidrs",
 		val,
 	)
 }
