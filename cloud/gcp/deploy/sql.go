@@ -123,7 +123,10 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}
 
-			client.Close()
+			err = client.Close()
+			if err != nil {
+				return "", err
+			}
 
 			return build.Name(), nil
 		}).(pulumi.StringOutput)
