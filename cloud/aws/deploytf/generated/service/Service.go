@@ -344,7 +344,6 @@ func (j *jsiiProxy_Service) Version() *string {
 	return returns
 }
 
-
 func NewService(scope constructs.Construct, id *string, config *ServiceConfig) Service {
 	_init_.Initialize()
 
@@ -372,7 +371,7 @@ func NewService_Override(s Service, scope constructs.Construct, id *string, conf
 	)
 }
 
-func (j *jsiiProxy_Service)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Service) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -380,7 +379,7 @@ func (j *jsiiProxy_Service)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetEnvironment(val *map[string]*string) {
+func (j *jsiiProxy_Service) SetEnvironment(val *map[string]*string) {
 	if err := j.validateSetEnvironmentParameters(val); err != nil {
 		panic(err)
 	}
@@ -391,7 +390,7 @@ func (j *jsiiProxy_Service)SetEnvironment(val *map[string]*string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Service) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -399,7 +398,7 @@ func (j *jsiiProxy_Service)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetImage(val *string) {
+func (j *jsiiProxy_Service) SetImage(val *string) {
 	if err := j.validateSetImageParameters(val); err != nil {
 		panic(err)
 	}
@@ -410,7 +409,7 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetMemory(val *float64) {
+func (j *jsiiProxy_Service) SetMemory(val *float64) {
 	_jsii_.Set(
 		j,
 		"memory",
@@ -418,7 +417,7 @@ func (j *jsiiProxy_Service)SetMemory(val *float64) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetSecurityGroupIds(val *[]*string) {
+func (j *jsiiProxy_Service) SetSecurityGroupIds(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"securityGroupIds",
@@ -426,7 +425,7 @@ func (j *jsiiProxy_Service)SetSecurityGroupIds(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetServiceName(val *string) {
+func (j *jsiiProxy_Service) SetServiceName(val *string) {
 	if err := j.validateSetServiceNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -437,7 +436,7 @@ func (j *jsiiProxy_Service)SetServiceName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetStackId(val *string) {
+func (j *jsiiProxy_Service) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -448,7 +447,7 @@ func (j *jsiiProxy_Service)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetSubnetIds(val *[]*string) {
+func (j *jsiiProxy_Service) SetSubnetIds(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"subnetIds",
@@ -456,7 +455,7 @@ func (j *jsiiProxy_Service)SetSubnetIds(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetTimeout(val *float64) {
+func (j *jsiiProxy_Service) SetTimeout(val *float64) {
 	_jsii_.Set(
 		j,
 		"timeout",
@@ -668,4 +667,3 @@ func (s *jsiiProxy_Service) ToTerraform() interface{} {
 
 	return returns
 }
-

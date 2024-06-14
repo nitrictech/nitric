@@ -124,4 +124,3 @@ func validateNewKeyvalueParameters(scope constructs.Construct, id *string, confi
 
 	return nil
 }
-

@@ -24,4 +24,3 @@ type WebsocketConfig struct {
 	// The name of the websocket.
 	WebsocketName *string `field:"required" json:"websocketName" yaml:"websocketName"`
 }
-

@@ -38,4 +38,3 @@ type SqlConfig struct {
 	// The working directory for the codebuild project.
 	WorkDir *string `field:"required" json:"workDir" yaml:"workDir"`
 }
-

@@ -107,7 +107,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	ecrAuthConfig := ecrauth.NewDataAwsEcrAuthorizationToken(stack, jsii.String("ecr_auth"), &ecrauth.DataAwsEcrAuthorizationTokenConfig{})
 	dockerprovider.NewDockerProvider(stack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
 		RegistryAuth: &[]*map[string]interface{}{
-			&map[string]interface{}{
+			{
 				"address":  ecrAuthConfig.ProxyEndpoint(),
 				"username": ecrAuthConfig.UserName(),
 				"password": ecrAuthConfig.Password(),

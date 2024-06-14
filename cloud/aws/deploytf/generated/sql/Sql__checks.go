@@ -204,4 +204,3 @@ func validateNewSqlParameters(scope constructs.Construct, id *string, config *Sq
 
 	return nil
 }
-

@@ -24,7 +24,6 @@ import (
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-
 	// Inspect the provided migration image and get its command and working directory
 	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
 	if err != nil {
