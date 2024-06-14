@@ -19,6 +19,8 @@ type RdsConfig struct {
 	MinCapacity *float64 `field:"required" json:"minCapacity" yaml:"minCapacity"`
 	// private subnets to assign to the RDS cluster.
 	PrivateSubnetIds *[]*string `field:"required" json:"privateSubnetIds" yaml:"privateSubnetIds"`
+	// The nitric stack ID.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// the VPC to assign to the RDS cluster.
 	VpcId *string `field:"required" json:"vpcId" yaml:"vpcId"`
 }

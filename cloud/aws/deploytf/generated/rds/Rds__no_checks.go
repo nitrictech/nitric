@@ -44,6 +44,10 @@ func (j *jsiiProxy_Rds) validateSetPrivateSubnetIdsParameters(val *[]*string) er
 	return nil
 }
 
+func (j *jsiiProxy_Rds) validateSetStackIdParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Rds) validateSetVpcIdParameters(val *string) error {
 	return nil
 }

@@ -14,17 +14,17 @@ resource "aws_security_group" "rds_security_group" {
   vpc_id = var.vpc_id
 
   ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    self = true
+    from_port = 5432
+    to_port   = 5432
+    protocol  = "tcp"
+    self      = true
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -48,11 +48,11 @@ resource "aws_iam_role" "codebuild_role" {
 # Attach managed policies to the codebuild role
 locals {
   codebuildManagedPolicies = {
-    "codeBuildAdmin"   = "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
-    "rdsAdmin"         = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
-    "ec2Admin"         = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-    "cloudWatchLogs"   = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-    "ecrReadonly"      = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+    "codeBuildAdmin" = "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+    "rdsAdmin"       = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+    "ec2Admin"       = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+    "cloudWatchLogs" = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+    "ecrReadonly"    = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   }
 }
 
@@ -65,17 +65,17 @@ resource "aws_iam_role_policy_attachment" "codebuild_managed_policies" {
 
 # Create an RDS cluster with serverless v2
 resource "aws_rds_cluster" "rds_cluster" {
-  cluster_identifier      = "nitric-rds-cluster"
-  engine                  = "aurora-postgresql"
-  engine_mode             = "provisioned"
-  engine_version          = "13.14"
-  database_name           = "nitric"
-  master_username         = "nitric"
-  master_password         = random_password.rds_password.result
-  db_subnet_group_name    = aws_db_subnet_group.rds_subnet_group.id
-  vpc_security_group_ids  = [aws_security_group.rds_security_group.id]
-  skip_final_snapshot     = true
-  deletion_protection     = false
+  cluster_identifier     = "nitric-rds-cluster"
+  engine                 = "aurora-postgresql"
+  engine_mode            = "provisioned"
+  engine_version         = "13.14"
+  database_name          = "nitric"
+  master_username        = "nitric"
+  master_password        = random_password.rds_password.result
+  db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.id
+  vpc_security_group_ids = [aws_security_group.rds_security_group.id]
+  skip_final_snapshot    = true
+  deletion_protection    = false
   serverlessv2_scaling_configuration {
     max_capacity = var.max_capacity
     min_capacity = var.min_capacity
@@ -84,12 +84,14 @@ resource "aws_rds_cluster" "rds_cluster" {
 
 # Create a rds cluster instance
 resource "aws_rds_cluster_instance" "rds_cluster_instance" {
-  cluster_identifier = aws_rds_cluster.rds_cluster.id
-  instance_class     = "db.serverless"
-  engine             = aws_rds_cluster.rds_cluster.engine
-  engine_version     = aws_rds_cluster.rds_cluster.engine_version
+  cluster_identifier   = aws_rds_cluster.rds_cluster.id
+  instance_class       = "db.serverless"
+  engine               = aws_rds_cluster.rds_cluster.engine
+  engine_version       = aws_rds_cluster.rds_cluster.engine_version
   db_subnet_group_name = aws_rds_cluster.rds_cluster.db_subnet_group_name
 }
+
+
 
 # Create an AWS Codebuild job to create a database on the RDS cluster
 resource "aws_codebuild_project" "create_database" {
@@ -102,11 +104,19 @@ resource "aws_codebuild_project" "create_database" {
     type = "NO_ARTIFACTS"
   }
 
+
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-    type                        = "LINUX_CONTAINER"
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image        = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    type         = "LINUX_CONTAINER"
+
+    environment_variable {
+      name = "DB_PASSWORD"
+      value = random_password.rds_password.result
+      type = "PLAINTEXT"
+    }
   }
+
 
   vpc_config {
     subnets            = var.private_subnet_ids
@@ -115,17 +125,20 @@ resource "aws_codebuild_project" "create_database" {
   }
 
   source {
-    type            = "NO_SOURCE"
-    buildspec       = jsonencode({
-        version = "0.2",
-        phases = {
-            build = {
-            commands = [
-                "echo 'Creating database $DB_NAME'",
-                "psql -h ${aws_rds_cluster.rds_cluster.endpoint} -U ${aws_rds_cluster.rds_cluster.master_username} -d ${aws_rds_cluster.rds_cluster.database_name} -c 'CREATE DATABASE $DB_NAME'"
-            ]
-            }
+    type = "NO_SOURCE"
+    buildspec = jsonencode({
+      version = "0.2",
+      phases = {
+        build = {
+          commands = [
+            "echo 'Creating database $DB_NAME'",
+            # FIXME: Store the password in a secret manager
+            "export PGPASSWORD=$${DB_PASSWORD}",
+            # "CREATE DATABASE ${DB_NAME}" || echo "database ${DB_NAME} already exists"
+            "psql -h ${aws_rds_cluster.rds_cluster.endpoint} -U ${aws_rds_cluster.rds_cluster.master_username} -d ${aws_rds_cluster.rds_cluster.database_name} -c \"CREATE DATABASE $${DB_NAME}\" || echo \"database $${DB_NAME} already exists\""
+          ]
         }
+      }
     })
   }
 }

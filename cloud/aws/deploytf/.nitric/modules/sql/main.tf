@@ -82,7 +82,7 @@ resource "aws_codebuild_project" "migrate_database" {
 resource "null_resource" "execute_create_database" {
   provisioner "local-exec" {
     command = <<EOF
-      BUILD_ID=$(aws codebuild start-build --project-name ${var.create_database_project_name} --query 'build.id' --output text)
+      BUILD_ID=$(aws codebuild start-build --project-name ${var.create_database_project_name} --environment-variables "name=DB_NAME,value=${var.db_name}" --query 'build.id' --output text)
       STATUS="IN_PROGRESS"
       while [[ $STATUS == "IN_PROGRESS" ]]; do
         sleep 5

@@ -114,6 +114,14 @@ func (j *jsiiProxy_Rds) validateSetPrivateSubnetIdsParameters(val *[]*string) er
 	return nil
 }
 
+func (j *jsiiProxy_Rds) validateSetStackIdParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Rds) validateSetVpcIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")

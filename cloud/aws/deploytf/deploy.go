@@ -127,6 +127,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 			MinCapacity:      jsii.Number(0.5),
 			MaxCapacity:      jsii.Number(1),
 			VpcId:            a.Vpc.VpcIdOutput(),
+			StackId:          a.Stack.StackIdOutput(),
 			PrivateSubnetIds: cdktf.Token_AsList(a.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{}),
 		})
 	}
