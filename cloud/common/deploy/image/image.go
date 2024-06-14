@@ -46,6 +46,7 @@ type ImageArgs struct {
 
 type LocalImageArgs struct {
 	SourceImage   string
+	SourceImageID string
 	RepositoryUrl pulumi.StringInput
 	Server        pulumi.StringInput
 	Username      pulumi.StringInput
@@ -111,7 +112,8 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 			Context:    pulumi.String(buildContext),
 			Dockerfile: pulumi.String(path.Join(buildContext, "Dockerfile")),
 			Args: pulumi.StringMap{
-				"SOURCE_IMAGE": pulumi.String(args.SourceImage),
+				"SOURCE_IMAGE":    pulumi.String(args.SourceImage),
+				"SOURCE_IMAGE_ID": pulumi.String(args.SourceImageID),
 			},
 			Platform: pulumi.String("linux/amd64"),
 		},
