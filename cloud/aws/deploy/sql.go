@@ -253,6 +253,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
 			RepositoryUrl: repo.RepositoryUrl,
 			SourceImage:   config.GetImageUri(),
+			SourceImageID: inspect.ID,
 			Server:        pulumi.String(a.EcrAuthToken.ProxyEndpoint),
 			Username:      pulumi.String(a.EcrAuthToken.UserName),
 			Password:      pulumi.String(a.EcrAuthToken.Password),
