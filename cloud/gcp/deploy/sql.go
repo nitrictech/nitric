@@ -115,12 +115,12 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 				},
 			})
 			if err != nil {
-				return "", fmt.Errorf("error creating build for db %s: %v", name, err)
+				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}
 
 			err = checkBuildStatus(context.TODO(), build)
 			if err != nil {
-				return "", fmt.Errorf("error creating build for db %s: %v", name, err)
+				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}
 
 			client.Close()
