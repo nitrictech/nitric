@@ -42,9 +42,10 @@ resource "aws_codebuild_project" "migrate_database" {
   }
 
   environment {
-    compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "${aws_ecr_repository.migrate_database.repository_url}@${docker_registry_image.push.sha256_digest}"
-    type         = "LINUX_CONTAINER"
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "${aws_ecr_repository.migrate_database.repository_url}@${docker_registry_image.push.sha256_digest}"
+    image_pull_credentials_type = "SERVICE_ROLE"
+    type                        = "LINUX_CONTAINER"
     environment_variable {
       name  = "DB_NAME"
       value = var.db_name
@@ -113,5 +114,5 @@ resource "null_resource" "execute_migrate_database" {
     EOF
   }
   # Create the database first   
-  depends_on = [null_resource.execute_create_database]
+  depends_on = [docker_registry_image.push, aws_codebuild_project.migrate_database, null_resource.execute_create_database]
 }

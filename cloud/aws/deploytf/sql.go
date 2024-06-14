@@ -20,6 +20,7 @@ import (
 	sql "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/sql"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/samber/lo"
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
@@ -40,7 +41,7 @@ func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, nam
 		SecurityGroupIds:          &[]*string{n.Rds.SecurityGroupIdOutput()},
 		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
 		MigrateCommand:            jsii.String(inspect.Cmd),
-		WorkDir:                   jsii.String(inspect.WorkDir),
+		WorkDir:                   jsii.String(lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/")),
 		VpcId:                     n.Vpc.VpcIdOutput(),
 		CodebuildRoleArn:          n.Rds.CodebuildRoleArnOutput(),
 		DependsOn:                 &[]cdktf.ITerraformDependable{n.Rds},
