@@ -239,7 +239,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 	a.SqlDatabases[name] = &RdsDatabase{
 		Name: name,
 	}
-	err := ctx.RegisterComponentResource("nitric:cloud:aws:SqlDatabase", name, a.SqlDatabases[name], pulumi.Parent(parent))
+	err := ctx.RegisterComponentResource("nitricaws:SqlDatabase", name, a.SqlDatabases[name], pulumi.Parent(parent))
 	if err != nil {
 		return err
 	}
