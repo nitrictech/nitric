@@ -96,6 +96,9 @@ resource "null_resource" "execute_create_database" {
       fi
     EOF
   }
+  triggers = {
+    image_id = docker_registry_image.push.id
+  }
 }
 
 # Execute the codebuild job using the aws-cli and wait for it to complete
@@ -114,6 +117,9 @@ resource "null_resource" "execute_migrate_database" {
         exit 1
       fi
     EOF
+  }
+  triggers = {
+    image_id = docker_registry_image.push.id
   }
   # Create the database first   
   depends_on = [docker_registry_image.push, aws_codebuild_project.migrate_database, null_resource.execute_create_database]
