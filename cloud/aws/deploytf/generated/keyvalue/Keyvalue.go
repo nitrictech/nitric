@@ -228,7 +228,6 @@ func (j *jsiiProxy_Keyvalue) Version() *string {
 	return returns
 }
 
-
 func NewKeyvalue(scope constructs.Construct, id *string, config *KeyvalueConfig) Keyvalue {
 	_init_.Initialize()
 
@@ -256,7 +255,7 @@ func NewKeyvalue_Override(k Keyvalue, scope constructs.Construct, id *string, co
 	)
 }
 
-func (j *jsiiProxy_Keyvalue)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Keyvalue) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -264,7 +263,7 @@ func (j *jsiiProxy_Keyvalue)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Keyvalue)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Keyvalue) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -272,7 +271,7 @@ func (j *jsiiProxy_Keyvalue)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Keyvalue)SetKvstoreName(val *string) {
+func (j *jsiiProxy_Keyvalue) SetKvstoreName(val *string) {
 	if err := j.validateSetKvstoreNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -283,7 +282,7 @@ func (j *jsiiProxy_Keyvalue)SetKvstoreName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Keyvalue)SetStackId(val *string) {
+func (j *jsiiProxy_Keyvalue) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -498,4 +497,3 @@ func (k *jsiiProxy_Keyvalue) ToTerraform() interface{} {
 
 	return returns
 }
-

@@ -204,7 +204,6 @@ func (j *jsiiProxy_Stack) Version() *string {
 	return returns
 }
 
-
 func NewStack(scope constructs.Construct, id *string, config *StackConfig) Stack {
 	_init_.Initialize()
 
@@ -232,7 +231,7 @@ func NewStack_Override(s Stack, scope constructs.Construct, id *string, config *
 	)
 }
 
-func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Stack) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -240,7 +239,7 @@ func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Stack) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -452,4 +451,3 @@ func (s *jsiiProxy_Stack) ToTerraform() interface{} {
 
 	return returns
 }
-

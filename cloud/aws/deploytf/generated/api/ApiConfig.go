@@ -24,4 +24,3 @@ type ApiConfig struct {
 	// The names of the target lambda functions The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	TargetLambdaFunctions *map[string]*string `field:"required" json:"targetLambdaFunctions" yaml:"targetLambdaFunctions"`
 }
-
