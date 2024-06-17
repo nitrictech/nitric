@@ -19,9 +19,9 @@ type ScheduleConfig struct {
 	ScheduleName *string `field:"required" json:"scheduleName" yaml:"scheduleName"`
 	// The timezone for the schedule.
 	ScheduleTimezone *string `field:"required" json:"scheduleTimezone" yaml:"scheduleTimezone"`
-	// The ID of the Nitric stack.
-	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The ARN of the target lambda function.
-	TargetLambdaArn *string `field:"required" json:"targetLambdaArn" yaml:"targetLambdaArn"`
+	// The token to authenticate with the target service.
+	ServiceToken *string `field:"required" json:"serviceToken" yaml:"serviceToken"`
+	// The URL of the target service.
+	TargetServiceUrl *string `field:"required" json:"targetServiceUrl" yaml:"targetServiceUrl"`
 }
 

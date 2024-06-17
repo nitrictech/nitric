@@ -25,10 +25,11 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	Testing *string `field:"required" json:"testing" yaml:"testing"`
-	// The amount of memory to allocate to the lambda function 128.
-	Memory *float64 `field:"optional" json:"memory" yaml:"memory"`
-	// The timeout for the lambda function 10.
-	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
+	// The number of concurrent requests the CloudRun service can handle 80.
+	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
+	// The amount of memory to allocate to the CloudRun service in MB 512.
+	MemoryMb *float64 `field:"optional" json:"memoryMb" yaml:"memoryMb"`
+	// The timeout for the CloudRun service in seconds 10.
+	TimeoutSeconds *float64 `field:"optional" json:"timeoutSeconds" yaml:"timeoutSeconds"`
 }
 

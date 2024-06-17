@@ -42,14 +42,14 @@ type Schedule interface {
 	SetScheduleName(val *string)
 	ScheduleTimezone() *string
 	SetScheduleTimezone(val *string)
+	ServiceToken() *string
+	SetServiceToken(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackId() *string
-	SetStackId(val *string)
-	TargetLambdaArn() *string
-	SetTargetLambdaArn(val *string)
+	TargetServiceUrl() *string
+	SetTargetServiceUrl(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -203,6 +203,16 @@ func (j *jsiiProxy_Schedule) ScheduleTimezone() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Schedule) ServiceToken() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"serviceToken",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Schedule) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -223,21 +233,11 @@ func (j *jsiiProxy_Schedule) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Schedule) StackId() *string {
+func (j *jsiiProxy_Schedule) TargetServiceUrl() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"stackId",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Schedule) TargetLambdaArn() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"targetLambdaArn",
+		"targetServiceUrl",
 		&returns,
 	)
 	return returns
@@ -330,24 +330,24 @@ func (j *jsiiProxy_Schedule)SetScheduleTimezone(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetStackId(val *string) {
-	if err := j.validateSetStackIdParameters(val); err != nil {
+func (j *jsiiProxy_Schedule)SetServiceToken(val *string) {
+	if err := j.validateSetServiceTokenParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"stackId",
+		"serviceToken",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetTargetLambdaArn(val *string) {
-	if err := j.validateSetTargetLambdaArnParameters(val); err != nil {
+func (j *jsiiProxy_Schedule)SetTargetServiceUrl(val *string) {
+	if err := j.validateSetTargetServiceUrlParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"targetLambdaArn",
+		"targetServiceUrl",
 		val,
 	)
 }

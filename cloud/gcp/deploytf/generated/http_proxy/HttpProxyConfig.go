@@ -13,11 +13,15 @@ type HttpProxyConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The email of the service account that will invoke the API.
+	InvokerEmail *string `field:"required" json:"invokerEmail" yaml:"invokerEmail"`
 	// The name of the API Gateway.
 	Name *string `field:"required" json:"name" yaml:"name"`
+	// The GCP project ID.
+	ProjectId *string `field:"required" json:"projectId" yaml:"projectId"`
 	// The ID of the stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The name or arn of the target lambda functin.
-	TargetLambdaFunction *string `field:"required" json:"targetLambdaFunction" yaml:"targetLambdaFunction"`
+	// The URL of the service being proxied.
+	TargetServiceUrl *string `field:"required" json:"targetServiceUrl" yaml:"targetServiceUrl"`
 }
 

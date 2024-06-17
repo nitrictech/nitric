@@ -98,7 +98,7 @@ func (j *jsiiProxy_Policy) validateSetActionsParameters(val *[]*string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Policy) validateSetPrincipalsParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Policy) validateSetProjectIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -106,7 +106,23 @@ func (j *jsiiProxy_Policy) validateSetPrincipalsParameters(val *map[string]*stri
 	return nil
 }
 
-func (j *jsiiProxy_Policy) validateSetResourcesParameters(val *[]*string) error {
+func (j *jsiiProxy_Policy) validateSetResourceNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Policy) validateSetResourceTypeParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Policy) validateSetServiceAccountEmailParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

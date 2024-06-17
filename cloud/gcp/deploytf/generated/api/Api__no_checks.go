@@ -32,7 +32,7 @@ func validateApi_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetDomainsParameters(val *[]*string) error {
+func (j *jsiiProxy_Api) validateSetInvokerEmailParameters(val *string) error {
 	return nil
 }
 
@@ -40,7 +40,11 @@ func (j *jsiiProxy_Api) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetSpecParameters(val *string) error {
+func (j *jsiiProxy_Api) validateSetOpenapiSpecParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Api) validateSetProjectIdParameters(val *string) error {
 	return nil
 }
 
@@ -48,7 +52,7 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetTargetLambdaFunctionsParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Api) validateSetTargetServicesParameters(val interface{}) error {
 	return nil
 }
 

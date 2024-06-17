@@ -1,4 +1,3 @@
-
 # Generate a random id for the bucket
 resource "random_id" "bucket_id" {
   byte_length = 8
@@ -49,8 +48,7 @@ resource "google_pubsub_subscription" "bucket_notification_subscription" {
     maximum_backoff = "600s"
   }
   
-  # filter = "attributes.eventType = ${each.value.events}"
-  # FIXME: make more better smol brain filter here...
+  # FIXME: improve this filter
   filter = join(" OR ", "attributes.eventType = ${each.value.events}")
 
   push_config {

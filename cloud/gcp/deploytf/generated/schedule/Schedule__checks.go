@@ -114,7 +114,7 @@ func (j *jsiiProxy_Schedule) validateSetScheduleTimezoneParameters(val *string) 
 	return nil
 }
 
-func (j *jsiiProxy_Schedule) validateSetStackIdParameters(val *string) error {
+func (j *jsiiProxy_Schedule) validateSetServiceTokenParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -122,7 +122,7 @@ func (j *jsiiProxy_Schedule) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Schedule) validateSetTargetLambdaArnParameters(val *string) error {
+func (j *jsiiProxy_Schedule) validateSetTargetServiceUrlParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

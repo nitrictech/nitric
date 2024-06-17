@@ -13,15 +13,17 @@ type ApiConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// The domains to associate with the API Gateway.
-	Domains *[]*string `field:"required" json:"domains" yaml:"domains"`
+	// The email of the service account that will invoke the API.
+	InvokerEmail *string `field:"required" json:"invokerEmail" yaml:"invokerEmail"`
 	// The name of the API Gateway.
 	Name *string `field:"required" json:"name" yaml:"name"`
-	// Open API spec.
-	Spec *string `field:"required" json:"spec" yaml:"spec"`
+	// The OpenAPI spec as a JSON string.
+	OpenapiSpec *string `field:"required" json:"openapiSpec" yaml:"openapiSpec"`
+	// The GCP project ID.
+	ProjectId *string `field:"required" json:"projectId" yaml:"projectId"`
 	// The ID of the stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The names of the target lambda functions The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
-	TargetLambdaFunctions *map[string]*string `field:"required" json:"targetLambdaFunctions" yaml:"targetLambdaFunctions"`
+	// The list of target services.
+	TargetServices interface{} `field:"required" json:"targetServices" yaml:"targetServices"`
 }
 

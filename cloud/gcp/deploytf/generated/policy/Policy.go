@@ -34,14 +34,18 @@ type Policy interface {
 	FriendlyUniqueId() *string
 	// The tree node.
 	Node() constructs.Node
-	Principals() *map[string]*string
-	SetPrincipals(val *map[string]*string)
+	ProjectId() *string
+	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	Resources() *[]*string
-	SetResources(val *[]*string)
+	ResourceName() *string
+	SetResourceName(val *string)
+	ResourceType() *string
+	SetResourceType(val *string)
+	ServiceAccountEmail() *string
+	SetServiceAccountEmail(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -159,11 +163,11 @@ func (j *jsiiProxy_Policy) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Policy) Principals() *map[string]*string {
-	var returns *map[string]*string
+func (j *jsiiProxy_Policy) ProjectId() *string {
+	var returns *string
 	_jsii_.Get(
 		j,
-		"principals",
+		"projectId",
 		&returns,
 	)
 	return returns
@@ -189,11 +193,31 @@ func (j *jsiiProxy_Policy) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Policy) Resources() *[]*string {
-	var returns *[]*string
+func (j *jsiiProxy_Policy) ResourceName() *string {
+	var returns *string
 	_jsii_.Get(
 		j,
-		"resources",
+		"resourceName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Policy) ResourceType() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"resourceType",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Policy) ServiceAccountEmail() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"serviceAccountEmail",
 		&returns,
 	)
 	return returns
@@ -284,24 +308,46 @@ func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetPrincipals(val *map[string]*string) {
-	if err := j.validateSetPrincipalsParameters(val); err != nil {
+func (j *jsiiProxy_Policy)SetProjectId(val *string) {
+	if err := j.validateSetProjectIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"principals",
+		"projectId",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Policy)SetResources(val *[]*string) {
-	if err := j.validateSetResourcesParameters(val); err != nil {
+func (j *jsiiProxy_Policy)SetResourceName(val *string) {
+	if err := j.validateSetResourceNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"resources",
+		"resourceName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Policy)SetResourceType(val *string) {
+	if err := j.validateSetResourceTypeParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"resourceType",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Policy)SetServiceAccountEmail(val *string) {
+	if err := j.validateSetServiceAccountEmailParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"serviceAccountEmail",
 		val,
 	)
 }

@@ -22,8 +22,6 @@ type Api interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	Domains() *[]*string
-	SetDomains(val *[]*string)
 	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
@@ -33,10 +31,16 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	InvokerEmail() *string
+	SetInvokerEmail(val *string)
 	Name() *string
 	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
+	OpenapiSpec() *string
+	SetOpenapiSpec(val *string)
+	ProjectId() *string
+	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -45,12 +49,10 @@ type Api interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	Spec() *string
-	SetSpec(val *string)
 	StackId() *string
 	SetStackId(val *string)
-	TargetLambdaFunctions() *map[string]*string
-	SetTargetLambdaFunctions(val *map[string]*string)
+	TargetServices() interface{}
+	SetTargetServices(val interface{})
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -114,16 +116,6 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Domains() *[]*string {
-	var returns *[]*string
-	_jsii_.Get(
-		j,
-		"domains",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Api) EndpointOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -164,6 +156,16 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Api) InvokerEmail() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"invokerEmail",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Api) Name() *string {
 	var returns *string
 	_jsii_.Get(
@@ -179,6 +181,26 @@ func (j *jsiiProxy_Api) Node() constructs.Node {
 	_jsii_.Get(
 		j,
 		"node",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) OpenapiSpec() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"openapiSpec",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) ProjectId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"projectId",
 		&returns,
 	)
 	return returns
@@ -224,16 +246,6 @@ func (j *jsiiProxy_Api) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Spec() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"spec",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Api) StackId() *string {
 	var returns *string
 	_jsii_.Get(
@@ -244,11 +256,11 @@ func (j *jsiiProxy_Api) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) TargetLambdaFunctions() *map[string]*string {
-	var returns *map[string]*string
+func (j *jsiiProxy_Api) TargetServices() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"targetLambdaFunctions",
+		"targetServices",
 		&returns,
 	)
 	return returns
@@ -300,21 +312,21 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetDomains(val *[]*string) {
-	if err := j.validateSetDomainsParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"domains",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Api)SetInvokerEmail(val *string) {
+	if err := j.validateSetInvokerEmailParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"invokerEmail",
 		val,
 	)
 }
@@ -330,13 +342,24 @@ func (j *jsiiProxy_Api)SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetSpec(val *string) {
-	if err := j.validateSetSpecParameters(val); err != nil {
+func (j *jsiiProxy_Api)SetOpenapiSpec(val *string) {
+	if err := j.validateSetOpenapiSpecParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"spec",
+		"openapiSpec",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Api)SetProjectId(val *string) {
+	if err := j.validateSetProjectIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"projectId",
 		val,
 	)
 }
@@ -352,13 +375,13 @@ func (j *jsiiProxy_Api)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
-	if err := j.validateSetTargetLambdaFunctionsParameters(val); err != nil {
+func (j *jsiiProxy_Api)SetTargetServices(val interface{}) {
+	if err := j.validateSetTargetServicesParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"targetLambdaFunctions",
+		"targetServices",
 		val,
 	)
 }

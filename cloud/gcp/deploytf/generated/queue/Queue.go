@@ -34,7 +34,6 @@ type Queue interface {
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
-	QueueArnOutput() *string
 	QueueName() *string
 	SetQueueName(val *string)
 	// Experimental.
@@ -153,16 +152,6 @@ func (j *jsiiProxy_Queue) Providers() *[]interface{} {
 	_jsii_.Get(
 		j,
 		"providers",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Queue) QueueArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"queueArnOutput",
 		&returns,
 	)
 	return returns

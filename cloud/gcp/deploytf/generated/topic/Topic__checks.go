@@ -90,7 +90,7 @@ func validateTopic_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Topic) validateSetLambdaSubscribersParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Topic) validateSetStackIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -98,7 +98,7 @@ func (j *jsiiProxy_Topic) validateSetLambdaSubscribersParameters(val *map[string
 	return nil
 }
 
-func (j *jsiiProxy_Topic) validateSetStackIdParameters(val *string) error {
+func (j *jsiiProxy_Topic) validateSetSubscriberServicesParameters(val interface{}) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

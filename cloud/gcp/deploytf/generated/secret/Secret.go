@@ -36,7 +36,6 @@ type Secret interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	SecretArnOutput() *string
 	SecretName() *string
 	SetSecretName(val *string)
 	// Experimental.
@@ -45,6 +44,8 @@ type Secret interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
+	StackName() *string
+	SetStackName(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -168,16 +169,6 @@ func (j *jsiiProxy_Secret) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Secret) SecretArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"secretArnOutput",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Secret) SecretName() *string {
 	var returns *string
 	_jsii_.Get(
@@ -213,6 +204,16 @@ func (j *jsiiProxy_Secret) StackId() *string {
 	_jsii_.Get(
 		j,
 		"stackId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Secret) StackName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackName",
 		&returns,
 	)
 	return returns
@@ -290,6 +291,17 @@ func (j *jsiiProxy_Secret)SetStackId(val *string) {
 	_jsii_.Set(
 		j,
 		"stackId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Secret)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackName",
 		val,
 	)
 }

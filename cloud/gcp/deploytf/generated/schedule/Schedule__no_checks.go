@@ -44,11 +44,11 @@ func (j *jsiiProxy_Schedule) validateSetScheduleTimezoneParameters(val *string) 
 	return nil
 }
 
-func (j *jsiiProxy_Schedule) validateSetStackIdParameters(val *string) error {
+func (j *jsiiProxy_Schedule) validateSetServiceTokenParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Schedule) validateSetTargetLambdaArnParameters(val *string) error {
+func (j *jsiiProxy_Schedule) validateSetTargetServiceUrlParameters(val *string) error {
 	return nil
 }
 

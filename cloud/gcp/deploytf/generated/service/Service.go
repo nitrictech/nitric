@@ -18,6 +18,8 @@ type Service interface {
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
+	ContainerConcurrency() *float64
+	SetContainerConcurrency(val *float64)
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
@@ -35,8 +37,8 @@ type Service interface {
 	Image() *string
 	SetImage(val *string)
 	InvokerServiceAccountEmailOutput() *string
-	Memory() *float64
-	SetMemory(val *float64)
+	MemoryMb() *float64
+	SetMemoryMb(val *float64)
 	// The tree node.
 	Node() constructs.Node
 	ProjectId() *string
@@ -57,10 +59,8 @@ type Service interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	Testing() *string
-	SetTesting(val *string)
-	Timeout() *float64
-	SetTimeout(val *float64)
+	TimeoutSeconds() *float64
+	SetTimeoutSeconds(val *float64)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -109,6 +109,16 @@ func (j *jsiiProxy_Service) ConstructNodeMetadata() *map[string]interface{} {
 	_jsii_.Get(
 		j,
 		"constructNodeMetadata",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) ContainerConcurrency() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"containerConcurrency",
 		&returns,
 	)
 	return returns
@@ -184,11 +194,11 @@ func (j *jsiiProxy_Service) InvokerServiceAccountEmailOutput() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Service) Memory() *float64 {
+func (j *jsiiProxy_Service) MemoryMb() *float64 {
 	var returns *float64
 	_jsii_.Get(
 		j,
-		"memory",
+		"memoryMb",
 		&returns,
 	)
 	return returns
@@ -304,21 +314,11 @@ func (j *jsiiProxy_Service) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Service) Testing() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"testing",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Service) Timeout() *float64 {
+func (j *jsiiProxy_Service) TimeoutSeconds() *float64 {
 	var returns *float64
 	_jsii_.Get(
 		j,
-		"timeout",
+		"timeoutSeconds",
 		&returns,
 	)
 	return returns
@@ -362,6 +362,14 @@ func NewService_Override(s Service, scope constructs.Construct, id *string, conf
 	)
 }
 
+func (j *jsiiProxy_Service)SetContainerConcurrency(val *float64) {
+	_jsii_.Set(
+		j,
+		"containerConcurrency",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Service)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
@@ -400,10 +408,10 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetMemory(val *float64) {
+func (j *jsiiProxy_Service)SetMemoryMb(val *float64) {
 	_jsii_.Set(
 		j,
-		"memory",
+		"memoryMb",
 		val,
 	)
 }
@@ -452,21 +460,10 @@ func (j *jsiiProxy_Service)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Service)SetTesting(val *string) {
-	if err := j.validateSetTestingParameters(val); err != nil {
-		panic(err)
-	}
+func (j *jsiiProxy_Service)SetTimeoutSeconds(val *float64) {
 	_jsii_.Set(
 		j,
-		"testing",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Service)SetTimeout(val *float64) {
-	_jsii_.Set(
-		j,
-		"timeout",
+		"timeoutSeconds",
 		val,
 	)
 }

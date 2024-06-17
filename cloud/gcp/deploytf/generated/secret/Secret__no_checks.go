@@ -40,6 +40,10 @@ func (j *jsiiProxy_Secret) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Secret) validateSetStackNameParameters(val *string) error {
+	return nil
+}
+
 func validateNewSecretParameters(scope constructs.Construct, id *string, config *SecretConfig) error {
 	return nil
 }

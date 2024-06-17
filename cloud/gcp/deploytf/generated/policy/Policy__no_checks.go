@@ -36,11 +36,19 @@ func (j *jsiiProxy_Policy) validateSetActionsParameters(val *[]*string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Policy) validateSetPrincipalsParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Policy) validateSetProjectIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Policy) validateSetResourcesParameters(val *[]*string) error {
+func (j *jsiiProxy_Policy) validateSetResourceNameParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Policy) validateSetResourceTypeParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Policy) validateSetServiceAccountEmailParameters(val *string) error {
 	return nil
 }
 

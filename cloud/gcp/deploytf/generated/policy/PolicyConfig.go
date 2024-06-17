@@ -13,11 +13,15 @@ type PolicyConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// actions to allow.
+	// The actions to apply to the policy.
 	Actions *[]*string `field:"required" json:"actions" yaml:"actions"`
-	// principals (roles) to apply the policies to The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
-	Principals *map[string]*string `field:"required" json:"principals" yaml:"principals"`
-	// resources to apply the policies to.
-	Resources *[]*string `field:"required" json:"resources" yaml:"resources"`
+	// The google project id.
+	ProjectId *string `field:"required" json:"projectId" yaml:"projectId"`
+	// The name of the resource.
+	ResourceName *string `field:"required" json:"resourceName" yaml:"resourceName"`
+	// The type of the resource (Bucket, Secret, KeyValueStore, Queue).
+	ResourceType *string `field:"required" json:"resourceType" yaml:"resourceType"`
+	// The service account to apply the policy to.
+	ServiceAccountEmail *string `field:"required" json:"serviceAccountEmail" yaml:"serviceAccountEmail"`
 }
 

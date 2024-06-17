@@ -13,10 +13,10 @@ type TopicConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// A list of lambda ARNs to subscribe to the topic The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
-	LambdaSubscribers *map[string]*string `field:"required" json:"lambdaSubscribers" yaml:"lambdaSubscribers"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The services to create subscriptions for.
+	SubscriberServices interface{} `field:"required" json:"subscriberServices" yaml:"subscriberServices"`
 	// The name of the bucket.
 	//
 	// This must be globally unique.

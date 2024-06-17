@@ -30,10 +30,14 @@ type HttpProxy interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	InvokerEmail() *string
+	SetInvokerEmail(val *string)
 	Name() *string
 	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
+	ProjectId() *string
+	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -44,8 +48,8 @@ type HttpProxy interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	TargetLambdaFunction() *string
-	SetTargetLambdaFunction(val *string)
+	TargetServiceUrl() *string
+	SetTargetServiceUrl(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -139,6 +143,16 @@ func (j *jsiiProxy_HttpProxy) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_HttpProxy) InvokerEmail() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"invokerEmail",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_HttpProxy) Name() *string {
 	var returns *string
 	_jsii_.Get(
@@ -154,6 +168,16 @@ func (j *jsiiProxy_HttpProxy) Node() constructs.Node {
 	_jsii_.Get(
 		j,
 		"node",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_HttpProxy) ProjectId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"projectId",
 		&returns,
 	)
 	return returns
@@ -209,11 +233,11 @@ func (j *jsiiProxy_HttpProxy) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_HttpProxy) TargetLambdaFunction() *string {
+func (j *jsiiProxy_HttpProxy) TargetServiceUrl() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"targetLambdaFunction",
+		"targetServiceUrl",
 		&returns,
 	)
 	return returns
@@ -273,6 +297,17 @@ func (j *jsiiProxy_HttpProxy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
+func (j *jsiiProxy_HttpProxy)SetInvokerEmail(val *string) {
+	if err := j.validateSetInvokerEmailParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"invokerEmail",
+		val,
+	)
+}
+
 func (j *jsiiProxy_HttpProxy)SetName(val *string) {
 	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
@@ -280,6 +315,17 @@ func (j *jsiiProxy_HttpProxy)SetName(val *string) {
 	_jsii_.Set(
 		j,
 		"name",
+		val,
+	)
+}
+
+func (j *jsiiProxy_HttpProxy)SetProjectId(val *string) {
+	if err := j.validateSetProjectIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"projectId",
 		val,
 	)
 }
@@ -295,13 +341,13 @@ func (j *jsiiProxy_HttpProxy)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetTargetLambdaFunction(val *string) {
-	if err := j.validateSetTargetLambdaFunctionParameters(val); err != nil {
+func (j *jsiiProxy_HttpProxy)SetTargetServiceUrl(val *string) {
+	if err := j.validateSetTargetServiceUrlParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"targetLambdaFunction",
+		"targetServiceUrl",
 		val,
 	)
 }

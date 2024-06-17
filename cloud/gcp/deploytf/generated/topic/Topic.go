@@ -30,24 +30,23 @@ type Topic interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	LambdaSubscribers() *map[string]*string
-	SetLambdaSubscribers(val *map[string]*string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	SfnArnOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	TopicArnOutput() *string
+	SubscriberServices() interface{}
+	SetSubscriberServices(val interface{})
 	TopicName() *string
 	SetTopicName(val *string)
+	TopicNameOutput() *string
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -141,16 +140,6 @@ func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) LambdaSubscribers() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"lambdaSubscribers",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Topic) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
@@ -176,16 +165,6 @@ func (j *jsiiProxy_Topic) RawOverrides() interface{} {
 	_jsii_.Get(
 		j,
 		"rawOverrides",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Topic) SfnArnOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"sfnArnOutput",
 		&returns,
 	)
 	return returns
@@ -221,11 +200,11 @@ func (j *jsiiProxy_Topic) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) TopicArnOutput() *string {
-	var returns *string
+func (j *jsiiProxy_Topic) SubscriberServices() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"topicArnOutput",
+		"subscriberServices",
 		&returns,
 	)
 	return returns
@@ -236,6 +215,16 @@ func (j *jsiiProxy_Topic) TopicName() *string {
 	_jsii_.Get(
 		j,
 		"topicName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Topic) TopicNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"topicNameOutput",
 		&returns,
 	)
 	return returns
@@ -295,17 +284,6 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Topic)SetLambdaSubscribers(val *map[string]*string) {
-	if err := j.validateSetLambdaSubscribersParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"lambdaSubscribers",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Topic)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
@@ -313,6 +291,17 @@ func (j *jsiiProxy_Topic)SetStackId(val *string) {
 	_jsii_.Set(
 		j,
 		"stackId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Topic)SetSubscriberServices(val interface{}) {
+	if err := j.validateSetSubscriberServicesParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"subscriberServices",
 		val,
 	)
 }

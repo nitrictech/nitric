@@ -11,10 +11,6 @@
       "source": "./.nitric/modules/bucket"
     },
     {
-      "name": "stack",
-      "source": "./.nitric/modules/stack"
-    },
-    {
       "name": "topic",
       "source": "./.nitric/modules/topic"
     },
@@ -37,14 +33,6 @@
     {
       "name": "secret",
       "source": "./.nitric/modules/secret"
-    },
-    {
-      "name": "keyvalue",
-      "source": "./.nitric/modules/keyvalue"
-    },
-    {
-      "name": "websocket",
-      "source": "./.nitric/modules/websocket"
     },
     {
       "name": "policy",
