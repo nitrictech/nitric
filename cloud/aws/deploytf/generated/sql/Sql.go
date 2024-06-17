@@ -16,6 +16,8 @@ type Sql interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CodebuildRegion() *string
+	SetCodebuildRegion(val *string)
 	CodebuildRoleArn() *string
 	SetCodebuildRoleArn(val *string)
 	// Experimental.
@@ -102,6 +104,16 @@ func (j *jsiiProxy_Sql) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Sql) CodebuildRegion() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"codebuildRegion",
 		&returns,
 	)
 	return returns
@@ -361,6 +373,17 @@ func NewSql_Override(s Sql, scope constructs.Construct, id *string, config *SqlC
 		"sql.Sql",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Sql) SetCodebuildRegion(val *string) {
+	if err := j.validateSetCodebuildRegionParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"codebuildRegion",
+		val,
 	)
 }
 
