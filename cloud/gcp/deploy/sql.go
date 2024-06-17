@@ -49,9 +49,15 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 	imageUriSplit := strings.Split(config.GetImageUri(), "/")
 	imageName := imageUriSplit[len(imageUriSplit)-1]
 
+	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+	if err != nil {
+		return err
+	}
+
 	image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
 		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", a.GcpConfig.ProjectId, imageName),
 		SourceImage:   config.GetImageUri(),
+		SourceImageID: inspect.ID,
 		Username:      pulumi.String("oauth2accesstoken"),
 		Password:      pulumi.String(a.AuthToken.AccessToken),
 		Server:        pulumi.String("https://gcr.io"),
