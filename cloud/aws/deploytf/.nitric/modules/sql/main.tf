@@ -82,12 +82,13 @@ resource "aws_codebuild_project" "migrate_database" {
 # Execute the create database codebuild job and wait for it to complete
 resource "null_resource" "execute_create_database" {
   provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
     command = <<EOF
-      BUILD_ID=$(aws codebuild start-build --project-name ${var.create_database_project_name} --environment-variables "name=DB_NAME,value=${var.db_name}" --query 'build.id' --output text)
+      BUILD_ID=$(aws codebuild start-build --project-name ${var.create_database_project_name} --region ${var.codebuild_region}  --environment-variables "name=DB_NAME,value=${var.db_name}" --query 'build.id' --output text)
       STATUS="IN_PROGRESS"
       while [[ $STATUS == "IN_PROGRESS" ]]; do
         sleep 5
-        STATUS=$(aws codebuild batch-get-builds --ids $BUILD_ID | jq -r '.builds[0].buildStatus')
+        STATUS=$(aws codebuild batch-get-builds --region ${var.codebuild_region} --ids $BUILD_ID | jq -r '.builds[0].buildStatus')
       done
       if [[ $STATUS != "SUCCEEDED" ]]; then
         echo "Build failed with status $STATUS"
@@ -100,12 +101,13 @@ resource "null_resource" "execute_create_database" {
 # Execute the codebuild job using the aws-cli and wait for it to complete
 resource "null_resource" "execute_migrate_database" {
   provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
     command = <<EOF
-      BUILD_ID=$(aws codebuild start-build --project-name ${aws_codebuild_project.migrate_database.name} --query 'build.id' --output text)
+      BUILD_ID=$(aws codebuild start-build --project-name ${aws_codebuild_project.migrate_database.name} --region ${var.codebuild_region} --query 'build.id' --output text)
       STATUS="IN_PROGRESS"
       while [[ $STATUS == "IN_PROGRESS" ]]; do
         sleep 5
-        STATUS=$(aws codebuild batch-get-builds --ids $BUILD_ID | jq -r '.builds[0].buildStatus')
+        STATUS=$(aws codebuild batch-get-builds --region ${var.codebuild_region} --ids $BUILD_ID | jq -r '.builds[0].buildStatus')
       done
       if [[ $STATUS != "SUCCEEDED" ]]; then
         echo "Build failed with status $STATUS"

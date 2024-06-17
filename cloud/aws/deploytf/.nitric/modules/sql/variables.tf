@@ -48,6 +48,11 @@ variable "codebuild_role_arn" {
   type        = string
 }
 
+variable "codebuild_region" {
+  description = "The region of the codebuild project"
+  type        = string
+}
+
 variable "migrate_command" {
   description = "The command to run to migrate the database"
   type        = string
