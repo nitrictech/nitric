@@ -231,7 +231,7 @@ type RdsDatabase struct {
 
 	Name string
 
-	Migrated pulumi.Output
+	Migrated pulumi.BoolOutput
 }
 
 // Sqldatabase - Implements PostgresSql database deployments use AWS Aurora
@@ -364,7 +364,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		}
 
 		return true, nil
-	})
+	}).(pulumi.BoolOutput)
 
 	err = ctx.RegisterResourceOutputs(a.SqlDatabases[name], pulumi.Map{
 		"migrated": a.SqlDatabases[name].Migrated,

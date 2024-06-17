@@ -33,6 +33,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId string, name string) (*ecr.Repository, error) {
@@ -209,6 +210,22 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		// Include the base database cluster URI for the runtime to resolve databases based on their name
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
 			a.DatabaseCluster.Endpoint, "5432")
+
+		sqlDatasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
+			return item.Migrated
+		})
+
+		databasesMigrated := pulumi.All(sqlDatasesMigrated...).ApplyT(func(migrated []bool) bool {
+			for _, m := range migrated {
+				if !m {
+					return false
+				}
+			}
+
+			return true
+		})
+
+		envVars["DATABASES_MIGRATED"] = pulumi.Sprintf("%t", databasesMigrated)
 	}
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
