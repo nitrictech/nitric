@@ -32,6 +32,10 @@ func validateSql_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Sql) validateSetCodebuildRegionParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Sql) validateSetCodebuildRoleArnParameters(val *string) error {
 	return nil
 }

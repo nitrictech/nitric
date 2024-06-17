@@ -43,6 +43,7 @@ func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, nam
 		WorkDir:                   jsii.String(lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/")),
 		VpcId:                     n.Vpc.VpcIdOutput(),
 		CodebuildRoleArn:          n.Rds.CodebuildRoleArnOutput(),
+		CodebuildRegion:           &n.Region,
 		DependsOn:                 &[]cdktf.ITerraformDependable{n.Rds},
 	})
 

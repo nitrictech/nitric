@@ -24,3 +24,4 @@ type ScheduleConfig struct {
 	// The ARN of the target lambda function.
 	TargetLambdaArn *string `field:"required" json:"targetLambdaArn" yaml:"targetLambdaArn"`
 }
+
