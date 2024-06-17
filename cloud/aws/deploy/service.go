@@ -211,11 +211,11 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
 			a.DatabaseCluster.Endpoint, "5432")
 
-		sqlDatasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
+		sqlDatabasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
 			return item.Migrated
 		})
 
-		databasesMigrated := pulumi.All(sqlDatasesMigrated...).ApplyT(func(migrated []interface{}) bool {
+		databasesMigrated := pulumi.All(sqlDatabasesMigrated...).ApplyT(func(migrated []interface{}) bool {
 			for _, m := range migrated {
 				if b, ok := m.(bool); !ok || !b {
 					return false
