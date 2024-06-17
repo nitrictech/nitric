@@ -215,9 +215,9 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			return item.Migrated
 		})
 
-		databasesMigrated := pulumi.All(sqlDatasesMigrated...).ApplyT(func(migrated []bool) bool {
+		databasesMigrated := pulumi.All(sqlDatasesMigrated...).ApplyT(func(migrated []interface{}) bool {
 			for _, m := range migrated {
-				if !m {
+				if b, ok := m.(bool); !ok || !b {
 					return false
 				}
 			}
