@@ -30,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
+	"github.com/nitrictech/nitric/cloud/gcp/common"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
@@ -55,7 +56,7 @@ type NitricGcpPulumiProvider struct {
 	*deploy.CommonStackDetails
 
 	StackId   string
-	GcpConfig *GcpConfig
+	GcpConfig *common.GcpConfig
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token

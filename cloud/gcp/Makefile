@@ -74,3 +74,6 @@ generate-mocks:
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_secret SecretManagerClient,SecretIterator > mocks/gcp_secret/mock.go
 
 generate-sources: generate-mocks
+
+generate-terraform:
+	@cd deploytf && cdktf get
