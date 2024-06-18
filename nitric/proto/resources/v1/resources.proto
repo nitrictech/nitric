@@ -5,7 +5,7 @@ package nitric.proto.resources.v1;
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/resources/v1;resourcespb";
 option java_package = "io.nitric.proto.resources.v1";
 option java_multiple_files = true;
-option java_outer_classname = "Resources";
+option java_outer_classname = "ResourcesService";
 option php_namespace = "Nitric\\Proto\\Resources\\V1";
 option csharp_namespace = "Nitric.Proto.Resources.v1";
 

@@ -5,7 +5,7 @@ package nitric.proto.apis.v1;
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/apis/v1;apispb";
 option java_package = "io.nitric.proto.apis.v1";
 option java_multiple_files = true;
-option java_outer_classname = "Apis";
+option java_outer_classname = "ApisService";
 option php_namespace = "Nitric\\Proto\\Apis\\V1";
 option csharp_namespace = "Nitric.Proto.Apis.v1";
 

@@ -10,7 +10,7 @@ import "nitric/proto/storage/v1/storage.proto";
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1;deploymentspb";
 option java_package = "io.nitric.proto.deployments.v1";
 option java_multiple_files = true;
-option java_outer_classname = "Deployments";
+option java_outer_classname = "DeploymentsService";
 option php_namespace = "Nitric\\Proto\\Deployments\\V1";
 option csharp_namespace = "Nitric.Proto.Deployments.v1";
 
