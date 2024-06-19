@@ -25,8 +25,7 @@ import (
 )
 
 // SQLDatabaseService - Nitric Secret Service implementation for SQL Database
-type PostgresSqlService struct {
-}
+type PostgresSqlService struct{}
 
 var _ sqlpb.SqlServer = &PostgresSqlService{}
 
