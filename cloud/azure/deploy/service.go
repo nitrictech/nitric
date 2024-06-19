@@ -268,8 +268,9 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 
 	if p.DatabaseServer != nil {
 		env = append(env, app.EnvironmentVarArgs{
-			Name:  pulumi.String("NITRIC_DATABASE_BASE_URL"),
-			Value: p.DatabaseServer.FullyQualifiedDomainName,
+			Name: pulumi.String("NITRIC_DATABASE_BASE_URL"),
+			Value: pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", p.DbMasterPassword.Result,
+				p.DatabaseServer.FullyQualifiedDomainName, "5432"),
 		})
 	}
 
@@ -285,6 +286,11 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	// if len(args.Env) > 0 {
 	// 	env = append(env, args.Env...)
 	// }
+
+	resOpts := []pulumi.ResourceOption{pulumi.Parent(res)}
+	for _, db := range p.SqlMigrations {
+		resOpts = append(resOpts, pulumi.DependsOn([]pulumi.Resource{db}))
+	}
 
 	//	If this instance contains a schedule set the minimum instances to 1
 	// schedules rely on the Dapr Runtime to trigger the function, without a running instance the Dapr Runtime will not execute, so the schedule won't trigger.
@@ -364,7 +370,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 				},
 			},
 		},
-	}, pulumi.Parent(res))
+	}, resOpts...)
 	if err != nil {
 		return err
 	}

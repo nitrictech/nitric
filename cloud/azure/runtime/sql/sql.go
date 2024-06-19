@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sql
+package postgresql
 
 import (
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	sqlpb "github.com/nitrictech/nitric/core/pkg/proto/sql/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,16 +42,7 @@ func (s *PostgresSqlService) ConnectionString(ctx context.Context, req *sqlpb.Sq
 	}, nil
 }
 
-// New - Creates a new Nitric secret service with Azure Key Vault Provider
+// New - Creates a new Nitric SQL service with Azure PostgreSQL Provider
 func New() (*PostgresSqlService, error) {
-	vaultName := env.KVAULT_NAME.String()
-	if len(vaultName) == 0 {
-		return nil, fmt.Errorf("KVAULT_NAME not configured")
-	}
-
 	return &PostgresSqlService{}, nil
-}
-
-func NewWithClient() *PostgresSqlService {
-	return &PostgresSqlService{}
 }

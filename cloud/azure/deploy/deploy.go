@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
+	"github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
@@ -79,9 +80,10 @@ type NitricAzurePulumiProvider struct {
 
 	KeyValueStores map[string]*storage.Table
 
-	SqlDatabases   map[string]*dbforpostgresql.Database
-	DatabaseServer *dbforpostgresql.Server
-	VirtualNetwork *network.VirtualNetwork
+	SqlMigrations    map[string]*containerinstance.ContainerGroup
+	DatabaseServer   *dbforpostgresql.Server
+	DbMasterPassword *random.RandomPassword
+	VirtualNetwork   *network.VirtualNetwork
 
 	Roles *Roles
 	provider.NitricDefaultOrder
@@ -208,22 +210,26 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 		return errors.WithMessage(err, "creating private dns zone")
 	}
 
-	dbServerName := ResourceName(ctx, "", DatabaseServerRT)
-
-	// generate a db master username
-	dbMasterUsername, err := random.NewRandomString(ctx, "db-master-username", &random.RandomStringArgs{
-		Special: pulumi.Bool(false),
-		Length:  pulumi.Int(8),
-		Upper:   pulumi.Bool(false),
-		Number:  pulumi.Bool(false),
+	_, err = network.NewVirtualNetworkLink(ctx, "db-private-dns-link", &network.VirtualNetworkLinkArgs{
+		Location:            pulumi.String("global"),
+		PrivateZoneName:     privateDns.Name,
+		RegistrationEnabled: pulumi.Bool(false),
+		ResourceGroupName:   a.ResourceGroup.Name,
+		VirtualNetwork: &network.SubResourceArgs{
+			Id: a.VirtualNetwork.ID(),
+		},
+		VirtualNetworkLinkName: pulumi.String("db-private-dns-link"),
 	})
 	if err != nil {
-		return errors.WithMessage(err, "creating master username")
+		return err
 	}
 
+	dbServerName := ResourceName(ctx, "", DatabaseServerRT)
+
 	// generate a db random password
-	dbMasterPassword, err := random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
-		Length: pulumi.Int(16),
+	a.DbMasterPassword, err = random.NewRandomPassword(ctx, "db-master-password", &random.RandomPasswordArgs{
+		Length:  pulumi.Int(16),
+		Special: pulumi.Bool(false),
 	})
 	if err != nil {
 		return errors.WithMessage(err, "creating master password")
@@ -232,8 +238,8 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 	a.DatabaseServer, err = dbforpostgresql.NewServer(ctx, dbServerName, &dbforpostgresql.ServerArgs{
 		ResourceGroupName:          a.ResourceGroup.Name,
 		Location:                   a.ResourceGroup.Location,
-		AdministratorLogin:         dbMasterUsername.Result,
-		AdministratorLoginPassword: dbMasterPassword.Result,
+		AdministratorLogin:         pulumi.String("nitric"),
+		AdministratorLoginPassword: a.DbMasterPassword.Result,
 		CreateMode:                 pulumi.String(dbforpostgresql.CreateModeDefault),
 		AvailabilityZone:           pulumi.String("1"),
 		Version:                    pulumi.String(dbforpostgresql.ServerVersion_14),
@@ -409,7 +415,7 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 		Queues:         make(map[string]*storage.Queue),
 		ContainerApps:  make(map[string]*ContainerApp),
 		Topics:         make(map[string]*eventgrid.Topic),
-		SqlDatabases:   make(map[string]*dbforpostgresql.Database),
+		SqlMigrations:  make(map[string]*containerinstance.ContainerGroup),
 		Principals:     principalsMap,
 		KeyValueStores: make(map[string]*storage.Table),
 	}

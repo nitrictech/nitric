@@ -18,7 +18,6 @@ package deploy
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -30,10 +29,9 @@ import (
 )
 
 func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	db, err := dbforpostgresql.NewDatabase(ctx, name, &dbforpostgresql.DatabaseArgs{
+	_, err := dbforpostgresql.NewDatabase(ctx, name, &dbforpostgresql.DatabaseArgs{
 		DatabaseName:      pulumi.String(name),
 		ResourceGroupName: a.ResourceGroup.Name,
 		ServerName:        a.DatabaseServer.Name,
@@ -44,16 +42,17 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 		return errors.WithMessage(err, fmt.Sprintf("unable to create nitric database %s: failed to create Azure SQL Database", name))
 	}
 
-	a.SqlDatabases[name] = db
-
 	if config.GetImageUri() != "" {
-		imageUriSplit := strings.Split(config.GetImageUri(), "/")
-		imageName := imageUriSplit[len(imageUriSplit)-1]
+		repositoryUrl := pulumi.Sprintf("%s/%s", a.ContainerEnv.Registry.LoginServer, config.GetImageUri())
 
-		repositoryUrl := pulumi.Sprintf("%s/%s", a.ContainerEnv.Registry.LoginServer, imageName)
+		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+		if err != nil {
+			return err
+		}
 
 		image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
 			SourceImage:   config.GetImageUri(),
+			SourceImageID: inspect.ID,
 			RepositoryUrl: repositoryUrl,
 			Username:      a.ContainerEnv.RegistryUser.Elem(),
 			Password:      a.ContainerEnv.RegistryPass.Elem(),
@@ -81,16 +80,28 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 
 		containerGroupName := fmt.Sprintf("%s-migration-group", name)
 
-		_, err = containerinstance.NewContainerGroup(ctx, containerGroupName, &containerinstance.ContainerGroupArgs{
+		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "nitric", a.DbMasterPassword.Result, a.DatabaseServer.FullyQualifiedDomainName, "5432", name)
+
+		a.SqlMigrations[name], err = containerinstance.NewContainerGroup(ctx, containerGroupName, &containerinstance.ContainerGroupArgs{
 			ContainerGroupName: pulumi.String(containerGroupName),
 			Containers: containerinstance.ContainerArray{
 				&containerinstance.ContainerArgs{
-					Image: image.URI(),
+					Image: pulumi.Sprintf("%s/%s-migrations:latest", a.ContainerEnv.Registry.LoginServer, image.Name),
 					Name:  pulumi.Sprintf("%s-migration", name),
 					Resources: &containerinstance.ResourceRequirementsArgs{
 						Requests: &containerinstance.ResourceRequestsArgs{
 							Cpu:        pulumi.Float64(1),
 							MemoryInGB: pulumi.Float64(1),
+						},
+					},
+					EnvironmentVariables: containerinstance.EnvironmentVariableArray{
+						containerinstance.EnvironmentVariableArgs{
+							Name:        pulumi.String("DB_URL"),
+							SecureValue: databaseUrl,
+						},
+						containerinstance.EnvironmentVariableArgs{
+							Name:  pulumi.String("NITRIC_DB_NAME"),
+							Value: pulumi.String(name),
 						},
 					},
 				},
@@ -103,7 +114,14 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			SubnetIds: &containerinstance.ContainerGroupSubnetIdArray{
 				containerinstance.ContainerGroupSubnetIdArgs{
 					Id:   containerGroupSubnet.ID(),
-					Name: a.VirtualNetwork.Name,
+					Name: containerGroupSubnet.Name,
+				},
+			},
+			ImageRegistryCredentials: &containerinstance.ImageRegistryCredentialArray{
+				&containerinstance.ImageRegistryCredentialArgs{
+					Username: a.ContainerEnv.RegistryUser.Elem(),
+					Password: a.ContainerEnv.RegistryPass.Elem(),
+					Server:   a.ContainerEnv.Registry.LoginServer,
 				},
 			},
 		})

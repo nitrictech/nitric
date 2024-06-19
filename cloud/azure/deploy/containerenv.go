@@ -167,7 +167,6 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 
 		managementArgs.VnetConfiguration = &app.VnetConfigurationArgs{
 			InfrastructureSubnetId: infraSubnet.ID(),
-			Internal:               pulumi.Bool(true),
 		}
 	}
 
