@@ -152,7 +152,7 @@ resource "google_cloud_run_service_iam_member" "invoker" {
 
 resource "google_project_iam_member" "project_member" {
   project = var.project_id
-  member  = "serviceAccount:${google_service_account.invoker_service_account.email}"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
   # p.BaseComputeRole.Name,
   role = var.base_compute_role
 }
