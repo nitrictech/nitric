@@ -13,39 +13,45 @@ runtimebin:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-gcp -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-gcp deploy/runtime/runtime-gcp
+	@cp bin/runtime-gcp common/runtime/runtime-gcp
 
 sec:
-	@touch deploy/runtime/runtime-gcp
+	@touch common/runtime/runtime-gcp
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime/runtime-gcp
+	@rm common/runtime/runtime-gcp
 
 # There appears to be an old namespace conflict with the protobuf definitions
 deploybin: predeploybin
 	@echo Building GCP Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-gcp -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime/runtime-gcp
+
+
+deploybintf: generate-terraform predeploybin
+	@echo Building AWS Terraform Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-gcptf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
 .PHONY: install
-install: deploybin
+install: deploybin deploybintf
 	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+	@echo installing gcptf deployment server to ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
 	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+	@cp bin/deploy-gcptf ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-gcp
+	@touch common/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime/runtime-gcp
+	@rm common/runtime/runtime-gcp
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-gcp
+	@touch common/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime/runtime-gcp
+	@rm common/runtime/runtime-gcp
 
 license-check: runtimebin
 	@echo Checking GCP Membrane OSS Licenses

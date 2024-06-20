@@ -124,6 +124,7 @@ require (
 	github.com/catenacyber/perfsprint v0.6.0 // indirect
 	github.com/ccojocar/zxcvbn-go v1.0.1 // indirect
 	github.com/cdktf/cdktf-provider-google-go/google/v13 v13.22.0 // indirect
+	github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13 v13.16.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.16.1 // indirect

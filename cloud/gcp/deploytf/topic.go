@@ -17,23 +17,42 @@ package deploytf
 import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/topic"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
+type SubscriberService struct {
+	Name                string
+	Url                 string
+	ServiceAccountEmail string
+	EventToken          string
+}
+
 func (a *NitricGcpTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
-	lambdaSubscriberArns := map[string]*string{}
+	serviceEndpoints := map[string]*string{}
 
 	for _, subscriber := range config.Subscriptions {
-		// subscriber.GetService()
-		lambdaService := a.Services[subscriber.GetService()]
-		lambdaSubscriberArns[subscriber.GetService()] = lambdaService.LambdaArnOutput()
+		subscriberSvc := a.Services[subscriber.GetService()]
+		serviceEndpoints[subscriber.GetService()] = subscriberSvc.ServiceEndpointOutput()
+	}
+
+	subscriberInput := map[string]*SubscriberService{}
+
+	for _, subscriber := range config.Subscriptions {
+		subscriberSvc := a.Services[subscriber.GetService()]
+
+		subscriberInput[subscriber.GetService()] = &SubscriberService{
+			Name:                subscriber.GetService(),
+			Url:                 *serviceEndpoints[subscriber.GetService()],
+			ServiceAccountEmail: *subscriberSvc.ServiceAccountEmailOutput(),
+			EventToken:          *subscriberSvc.EventTokenOutput(),
+		}
 	}
 
 	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("topic_%s", name), &topic.TopicConfig{
-		StackId:           a.Stack.StackIdOutput(),
-		TopicName:         jsii.String(name),
-		LambdaSubscribers: &lambdaSubscriberArns,
+		StackId:            a.Stack.StackIdOutput(),
+		TopicName:          jsii.String(name),
+		SubscriberServices: subscriberInput,
 	})
 
 	return nil

@@ -47,3 +47,8 @@ variable "region" {
     description = "The region the service is being deployed to"
     type        = string
 }
+
+variable "base_compute_role" {
+    description = "The base compute role to use for the service"
+    type        = string
+}

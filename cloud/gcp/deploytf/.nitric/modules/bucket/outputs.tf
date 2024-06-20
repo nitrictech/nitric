@@ -1,5 +1,5 @@
-output "bucket_name" {
-  description = "The location of the bucket"
+output "name" {
+  description = "The name of the deployed bucket"
   value       = google_storage_bucket.bucket.name
 }
 

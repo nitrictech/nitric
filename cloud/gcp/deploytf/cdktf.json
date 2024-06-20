@@ -41,6 +41,10 @@
     {
       "name": "http_proxy",
       "source": "./.nitric/modules/http_proxy"
+    },
+    {
+      "name": "stack",
+      "source": "./.nitric/modules/stack"
     }
   ],
   "context": {}

@@ -40,10 +40,6 @@ func (j *jsiiProxy_HttpProxy) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_HttpProxy) validateSetProjectIdParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_HttpProxy) validateSetStackIdParameters(val *string) error {
 	return nil
 }

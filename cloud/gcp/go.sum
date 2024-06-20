@@ -190,6 +190,8 @@ github.com/ccojocar/zxcvbn-go v1.0.1 h1:+sxrANSCj6CdadkcMnvde/GWU1vZiiXRbqYSCalV
 github.com/ccojocar/zxcvbn-go v1.0.1/go.mod h1:g1qkXtUSvHP8lhHp5GrSmTz6uWALGRMQdw6Qnz/hi60=
 github.com/cdktf/cdktf-provider-google-go/google/v13 v13.22.0 h1:R0Zgg6oAqxW0t6SUWX75qYV01nrxSIVl9sHRT7kRyEU=
 github.com/cdktf/cdktf-provider-google-go/google/v13 v13.22.0/go.mod h1:0lMdjDdlAucOy5rwwIY2MT8E+XVyONpNuWIwh4MO12I=
+github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13 v13.16.0 h1:NN6wabflngx4y0D9ZnsqFap/ZAzQi5i56lFIh5ijB9o=
+github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13 v13.16.0/go.mod h1:BCy/reh6qLlzE/T5IOgwfYjDyWk1ZZr1Q/kipj6r28I=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=

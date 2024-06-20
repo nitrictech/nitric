@@ -21,7 +21,7 @@ resource "google_api_gateway_api_config" "api_config" {
 
   gateway_config {
     backend_config {
-      google_service_account = var.invoker_email
+      google_service_account = google_service_account.service_account.email
     }
   }
   
@@ -44,16 +44,13 @@ resource "google_api_gateway_gateway" "gateway" {
 
 resource "google_service_account" "service_account" {
   provider = google-beta
-  name     = "${var.name}-api-invoker"
   account_id = "${var.name}-api"
 }
 
 resource "google_cloud_run_service_iam_member" "member" {
   for_each = var.target_services
   
-  location = each.value.location
-  project = each.value.project
-  service = each.value.name
+  service = each.value
   role = "roles/run.invoker"
   member = "serviceAccount:${google_service_account.service_account.email}"
 }

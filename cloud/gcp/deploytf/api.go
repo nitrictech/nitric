@@ -15,57 +15,51 @@
 package deploytf
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/aws/jsii-runtime-go"
+	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
+	"github.com/nitrictech/nitric/cloud/common/deploy/utils"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/api"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/service"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
-func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Operation {
-	if op == nil {
-		return nil
+type nameUrlPair struct {
+	name           string
+	invokeUrl      *string
+	timeoutSeconds *float64
+}
+
+func keepOperation(opExt map[string]interface{}) (string, bool) {
+	if opExt == nil {
+		return "", false
 	}
 
 	name := ""
 
-	if v, ok := op.Extensions["x-nitric-target"]; ok {
-		targetMap, isMap := v.(map[string]any)
+	if v, ok := opExt["x-nitric-target"]; ok {
+		targetMap, isMap := v.(map[string]interface{})
 		if isMap {
-			name = targetMap["name"].(string)
+			name, _ = targetMap["name"].(string)
 		}
 	}
 
 	if name == "" {
-		return nil
+		return "", false
 	}
 
-	if _, ok := funcs[name]; !ok {
-		return nil
-	}
-
-	arn := funcs[name]
-
-	op.Extensions["x-amazon-apigateway-integration"] = map[string]string{
-		"type":                 "aws_proxy",
-		"httpMethod":           "POST",
-		"payloadFormatVersion": "2.0",
-		"uri":                  *arn,
-	}
-
-	return op
+	return name, true
 }
 
 func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string, config *deploymentspb.Api) error {
-	nameArnPairs := map[string]*string{}
-	targetNames := map[string]*string{}
-
 	if config.GetOpenapi() == "" {
-		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
+		return fmt.Errorf("gcp provider can only deploy OpenAPI specs")
 	}
 
 	openapiDoc := &openapi3.T{}
@@ -74,84 +68,163 @@ func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		return fmt.Errorf("invalid document supplied for api: %s", name)
 	}
 
-	// augment open api spec with AWS specific security extensions
-	if openapiDoc.Components.SecuritySchemes != nil {
-		// Start translating to AWS centric security schemes
-		for _, scheme := range openapiDoc.Components.SecuritySchemes {
-			// implement OpenIDConnect security
-			if scheme.Value.Type == "openIdConnect" {
-				// We need to extract audience values as well
-				// lets use an extension to store these with the document
-				audiences := scheme.Value.Extensions["x-nitric-audiences"]
+	// augment document with security definitions
+	for sn, sd := range openapiDoc.Components.SecuritySchemes {
+		if sd.Value.Type == "openIdConnect" {
+			// We need to extract audience values from the extensions
+			// the extension is type of []interface and cannot be converted to []string directly
+			audiences, err := utils.GetAudiencesFromExtension(sd.Value.Extensions)
+			if err != nil {
+				return err
+			}
 
-				// Augment extensions with aws specific extensions
-				scheme.Value.Extensions["x-amazon-apigateway-authorizer"] = map[string]interface{}{
-					"type": "jwt",
-					"jwtConfiguration": map[string]interface{}{
-						"audience": audiences,
+			oidConf, err := utils.GetOpenIdConnectConfig(sd.Value.OpenIdConnectUrl)
+			if err != nil {
+				return err
+			}
+
+			openapiDoc.Components.SecuritySchemes[sn] = &openapi3.SecuritySchemeRef{
+				Value: &openapi3.SecurityScheme{
+					Type: "oauth2",
+					Flows: &openapi3.OAuthFlows{
+						Implicit: &openapi3.OAuthFlow{
+							AuthorizationURL: oidConf.AuthEndpoint,
+						},
 					},
-					"identitySource": "$request.header.Authorization",
-				}
-			} else {
-				return fmt.Errorf("unsupported security definition supplied")
+					Extensions: map[string]interface{}{
+						"x-google-issuer":    oidConf.Issuer,
+						"x-google-jwks_uri":  oidConf.JwksUri,
+						"x-google-audiences": strings.Join(audiences, ","),
+					},
+				},
 			}
+		} else {
+			return fmt.Errorf("unsupported security definition supplied")
 		}
 	}
 
-	nitricServiceTargets := map[string]service.Service{}
-	for _, p := range openapiDoc.Paths {
-		for _, op := range p.Operations() {
-			if v, ok := op.Extensions["x-nitric-target"]; ok {
-				if targetMap, isMap := v.(map[string]any); isMap {
-					serviceName := targetMap["name"].(string)
-					nitricServiceTargets[serviceName] = n.Services[serviceName]
-				}
-			}
-		}
-	}
-
-	// collect name arn pairs for output iteration
-	for k, v := range nitricServiceTargets {
-		nameArnPairs[k] = v.InvokeArnOutput()
-		targetNames[k] = v.LambdaFunctionNameOutput()
-	}
-
-	for k, p := range openapiDoc.Paths {
-		p.Get = awsOperation(p.Get, nameArnPairs)
-		p.Post = awsOperation(p.Post, nameArnPairs)
-		p.Patch = awsOperation(p.Patch, nameArnPairs)
-		p.Put = awsOperation(p.Put, nameArnPairs)
-		p.Delete = awsOperation(p.Delete, nameArnPairs)
-		p.Options = awsOperation(p.Options, nameArnPairs)
-		openapiDoc.Paths[k] = p
-	}
-
-	// TODO: Use common tags method and ensure it works with pointer templating
-	openapiDoc.Tags = []*openapi3.Tag{{
-		Name:       fmt.Sprintf("x-nitric-%s-name", *n.Stack.StackIdOutput()),
-		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": name},
-	}, {
-		Name:       fmt.Sprintf("x-nitric-%s-type", *n.Stack.StackIdOutput()),
-		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": "api"},
-	}}
-
-	b, err := json.Marshal(openapiDoc)
+	v2doc, err := openapi2conv.FromV3(openapiDoc)
 	if err != nil {
 		return err
 	}
 
-	domains := []string{}
-	if n.GcpConfig != nil && n.GcpConfig.Apis != nil && n.GcpConfig.Apis[name] != nil {
-		domains = n.GcpConfig.Apis[name].Domains
+	// Get service targets for IAM binding
+	services := map[string]service.Service{}
+
+	for _, pi := range v2doc.Paths {
+		for _, m := range []string{http.MethodGet, http.MethodPatch, http.MethodDelete, http.MethodPost, http.MethodPut} {
+			if pi.GetOperation(m) == nil {
+				continue
+			}
+
+			name, ok := keepOperation(pi.GetOperation(m).Extensions)
+			if !ok {
+				return fmt.Errorf("found operation missing nitric target property: %+v", pi.GetOperation(m).Extensions)
+			}
+
+			if _, ok := n.Services[name]; !ok {
+				return fmt.Errorf("unable to find target service %s in %+v", name, n.Services)
+			}
+
+			services[name] = n.Services[name]
+
+			break
+		}
+	}
+
+	nameUrlPairs := make([]nameUrlPair, 0, len(services))
+
+	// collect name arn pairs for output iteration
+	for k, v := range services {
+		nameUrlPairs = append(nameUrlPairs, nameUrlPair{
+			name:           k,
+			invokeUrl:      v.ServiceEndpointOutput(),
+			timeoutSeconds: v.TimeoutSeconds(),
+		})
+	}
+
+	naps := make(map[string]*string)
+	timeouts := make(map[string]*float64)
+
+	for _, p := range nameUrlPairs {
+		naps[p.name] = p.invokeUrl
+		timeouts[p.name] = p.timeoutSeconds
+	}
+
+	for k, p := range v2doc.Paths {
+		p.Get = gcpOperation(name, p.Get, naps, timeouts)
+		p.Post = gcpOperation(name, p.Post, naps, timeouts)
+		p.Patch = gcpOperation(name, p.Patch, naps, timeouts)
+		p.Put = gcpOperation(name, p.Put, naps, timeouts)
+		p.Delete = gcpOperation(name, p.Delete, naps, timeouts)
+		p.Options = gcpOperation(name, p.Options, naps, timeouts)
+		v2doc.Paths[k] = p
+	}
+
+	b, err := v2doc.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	serviceNames := map[string]*string{}
+	for k, v := range services {
+		serviceNames[k] = v.ServiceNameOutput()
+	}
+
+	dependableServices := []cdktf.ITerraformDependable{}
+	for _, v := range services {
+		dependableServices = append(dependableServices, v)
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
-		Name:                  jsii.String(name),
-		Spec:                  jsii.String(string(b)),
-		TargetLambdaFunctions: &targetNames,
-		Domains:               jsii.Strings(domains...),
-		StackId:               n.Stack.StackIdOutput(),
+		Name:           jsii.String(name),
+		OpenapiSpec:    jsii.String(string(b)),
+		TargetServices: &serviceNames,
+		StackId:        n.Stack.StackIdOutput(),
+		DependsOn:      &dependableServices,
 	})
 
 	return nil
+}
+
+func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]*string, timeouts map[string]*float64) *openapi2.Operation {
+	if op == nil {
+		return nil
+	}
+
+	name, ok := keepOperation(op.Extensions)
+	if !ok {
+		return nil
+	}
+
+	if _, ok := urls[name]; !ok {
+		return nil
+	}
+
+	if s, ok := op.Extensions["x-nitric-security"]; ok {
+		secName, isString := s.(string)
+
+		if isString {
+			op.Security = &openapi2.SecurityRequirements{
+				{
+					secName: {},
+				},
+			}
+		}
+	}
+
+	for i, r := range op.Responses {
+		if r.Description == "" {
+			op.Responses[i].Description = name
+		}
+	}
+
+	op.Extensions["x-google-backend"] = map[string]any{
+		// Append the name of the target origin api gateway to the target address
+		"address":          fmt.Sprintf("%s/x-nitric-api/%s", *urls[name], apiName),
+		"path_translation": "APPEND_PATH_TO_ADDRESS",
+		"deadline":         timeouts[name],
+	}
+
+	return op
 }

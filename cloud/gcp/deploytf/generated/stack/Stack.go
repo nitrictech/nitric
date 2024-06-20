@@ -14,6 +14,7 @@ import (
 // Source at ./.nitric/modules/stack
 type Stack interface {
 	cdktf.TerraformModule
+	BaseComputeRoleOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
@@ -30,6 +31,7 @@ type Stack interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IamRolesOutput() *string
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -41,6 +43,8 @@ type Stack interface {
 	// Experimental.
 	Source() *string
 	StackIdOutput() *string
+	StackName() *string
+	SetStackName(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -72,6 +76,16 @@ type Stack interface {
 // The jsii proxy struct for Stack
 type jsiiProxy_Stack struct {
 	internal.Type__cdktfTerraformModule
+}
+
+func (j *jsiiProxy_Stack) BaseComputeRoleOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"baseComputeRoleOutput",
+		&returns,
+	)
+	return returns
 }
 
 func (j *jsiiProxy_Stack) CdktfStack() cdktf.TerraformStack {
@@ -129,6 +143,16 @@ func (j *jsiiProxy_Stack) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) IamRolesOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"iamRolesOutput",
 		&returns,
 	)
 	return returns
@@ -194,6 +218,16 @@ func (j *jsiiProxy_Stack) StackIdOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) StackName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -244,6 +278,17 @@ func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackName",
 		val,
 	)
 }

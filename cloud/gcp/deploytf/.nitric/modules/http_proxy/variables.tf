@@ -13,11 +13,6 @@ variable "target_service_url" {
   type = string
 }
 
-variable "project_id" {
-  description = "The GCP project ID"
-  type = string
-}
-
 variable "invoker_email" {
   description = "The email of the service account that will invoke the API"
   type = string

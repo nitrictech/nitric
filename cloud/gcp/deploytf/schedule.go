@@ -16,29 +16,40 @@ package deploytf
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploy"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/schedule"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // // Schedule - Deploy a Schedule
 func (a *NitricGcpTerraformProvider) Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error {
-	var err error
+	cronExpression := ""
 
-	awsScheduleExpression := ""
-	switch config.Cadence.(type) {
+	switch t := config.Cadence.(type) {
 	case *deploymentspb.Schedule_Cron:
-		// handle cron
-		awsScheduleExpression, err = deploy.ConvertToAWS(config.GetCron().Expression)
-		if err != nil {
-			return err
-		}
+		cronExpression = t.Cron.Expression
 	case *deploymentspb.Schedule_Every:
-		// handle rate
-		awsScheduleExpression = fmt.Sprintf("rate(%s)", config.GetEvery().Rate)
+		parts := strings.Split(strings.TrimSpace(t.Every.Rate), " ")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid schedule rate: %s", t.Every.Rate)
+		}
+
+		initialRate, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return fmt.Errorf("invalid schedule rate, must start with an integer")
+		}
+
+		// Google App Engine cron syntax only support hours, minutes and seconds. Convert days to hours
+		if strings.HasPrefix(parts[1], "day") {
+			parts[0] = fmt.Sprintf("%d", initialRate*24)
+			parts[1] = "hours"
+		}
+
+		cronExpression = fmt.Sprintf("every %s %s", parts[0], parts[1])
 	default:
 		return fmt.Errorf("unknown schedule type, must be one of: cron, every")
 	}
@@ -50,10 +61,10 @@ func (a *NitricGcpTerraformProvider) Schedule(stack cdktf.TerraformStack, name s
 
 	a.Schedules[name] = schedule.NewSchedule(stack, jsii.Sprintf("schedule_%s", name), &schedule.ScheduleConfig{
 		ScheduleName:       jsii.String(name),
-		ScheduleExpression: jsii.String(awsScheduleExpression),
+		ScheduleExpression: jsii.String(cronExpression),
 		ScheduleTimezone:   jsii.String(a.GcpConfig.ScheduleTimezone),
-		TargetLambdaArn:    svc.LambdaArnOutput(),
-		StackId:            a.Stack.StackIdOutput(),
+		TargetServiceUrl:   svc.ServiceEndpointOutput(),
+		ServiceToken:       svc.EventTokenOutput(),
 	})
 
 	return nil

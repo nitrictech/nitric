@@ -30,6 +30,7 @@ type Secret interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	NameOutput() *string
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -134,6 +135,16 @@ func (j *jsiiProxy_Secret) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Secret) NameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"nameOutput",
 		&returns,
 	)
 	return returns

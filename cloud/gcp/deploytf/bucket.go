@@ -43,7 +43,7 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 
 	for _, target := range config.Listeners {
 		notificationTargets[target.GetService()] = map[string]interface{}{
-			"url":    n.Services[target.GetService()].LambdaArnOutput(),
+			"url":    n.Services[target.GetService()].ServiceEndpointOutput(),
 			"prefix": jsii.String(target.Config.KeyPrefixFilter),
 			"events": jsii.Strings(eventsForBlobEventType(target.Config.BlobEventType)...),
 		}

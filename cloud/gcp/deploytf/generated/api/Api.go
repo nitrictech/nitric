@@ -31,16 +31,12 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	InvokerEmail() *string
-	SetInvokerEmail(val *string)
 	Name() *string
 	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
 	OpenapiSpec() *string
 	SetOpenapiSpec(val *string)
-	ProjectId() *string
-	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -51,8 +47,8 @@ type Api interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	TargetServices() interface{}
-	SetTargetServices(val interface{})
+	TargetServices() *map[string]*string
+	SetTargetServices(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -156,16 +152,6 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) InvokerEmail() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"invokerEmail",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Api) Name() *string {
 	var returns *string
 	_jsii_.Get(
@@ -191,16 +177,6 @@ func (j *jsiiProxy_Api) OpenapiSpec() *string {
 	_jsii_.Get(
 		j,
 		"openapiSpec",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) ProjectId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"projectId",
 		&returns,
 	)
 	return returns
@@ -256,8 +232,8 @@ func (j *jsiiProxy_Api) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) TargetServices() interface{} {
-	var returns interface{}
+func (j *jsiiProxy_Api) TargetServices() *map[string]*string {
+	var returns *map[string]*string
 	_jsii_.Get(
 		j,
 		"targetServices",
@@ -320,17 +296,6 @@ func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetInvokerEmail(val *string) {
-	if err := j.validateSetInvokerEmailParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"invokerEmail",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Api)SetName(val *string) {
 	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
@@ -353,17 +318,6 @@ func (j *jsiiProxy_Api)SetOpenapiSpec(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetProjectId(val *string) {
-	if err := j.validateSetProjectIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"projectId",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Api)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
@@ -375,7 +329,7 @@ func (j *jsiiProxy_Api)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetTargetServices(val interface{}) {
+func (j *jsiiProxy_Api)SetTargetServices(val *map[string]*string) {
 	if err := j.validateSetTargetServicesParameters(val); err != nil {
 		panic(err)
 	}

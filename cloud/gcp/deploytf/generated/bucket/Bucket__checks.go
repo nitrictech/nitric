@@ -90,14 +90,6 @@ func validateBucket_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetBucketLocationParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetBucketNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
@@ -107,14 +99,6 @@ func (j *jsiiProxy_Bucket) validateSetBucketNameParameters(val *string) error {
 }
 
 func (j *jsiiProxy_Bucket) validateSetNotificationTargetsParameters(val interface{}) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Bucket) validateSetProjectIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

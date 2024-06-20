@@ -106,7 +106,7 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	a.GcpConfig, err = ConfigFromAttributes(attributes)
+	a.GcpConfig, err = common.ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}

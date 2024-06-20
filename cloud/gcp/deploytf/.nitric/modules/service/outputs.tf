@@ -3,9 +3,17 @@ output "service_endpoint" {
 }
 
 output "service_account_email" {
-  value = google_service_account.service_account.service_account_email
+  value = google_service_account.service_account.email
 }
 
 output "invoker_service_account_email" {
-  value = google_service_account.invoker_service_account.service_account_email
+  value = google_service_account.invoker_service_account.email
+}
+
+output "event_token" {
+  value = random_password.password.result
+}
+
+output "service_name" {
+  value = google_cloud_run_service.service.name
 }

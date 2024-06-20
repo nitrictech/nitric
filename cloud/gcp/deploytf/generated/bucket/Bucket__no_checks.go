@@ -32,19 +32,11 @@ func validateBucket_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetBucketLocationParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetBucketNameParameters(val *string) error {
 	return nil
 }
 
 func (j *jsiiProxy_Bucket) validateSetNotificationTargetsParameters(val interface{}) error {
-	return nil
-}
-
-func (j *jsiiProxy_Bucket) validateSetProjectIdParameters(val *string) error {
 	return nil
 }
 

@@ -19,9 +19,9 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/service"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
@@ -57,13 +57,39 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 	}
 
 	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
-		ServiceName: jsii.String(name),
-		Image:       jsii.String(imageId),
-		Environment: &jsiiEnv,
-		StackId:     a.Stack.StackIdOutput(),
-		Memory:      jsii.Number(typeConfig.CloudRun.Memory),
-		Timeout:     jsii.Number(typeConfig.CloudRun.Timeout),
+		ProjectId:       jsii.String(a.GcpConfig.ProjectId),
+		Region:          jsii.String(a.Region),
+		ServiceName:     jsii.String(name[:min(len(name), 63)]),
+		Image:           jsii.String(imageId),
+		Environment:     &jsiiEnv,
+		StackId:         a.Stack.StackIdOutput(),
+		MemoryMb:        jsii.Number(typeConfig.CloudRun.Memory),
+		TimeoutSeconds:  jsii.Number(typeConfig.CloudRun.Timeout),
+		BaseComputeRole: a.Stack.BaseComputeRoleOutput(),
 	})
 
 	return nil
 }
+
+// func normalizeServiceName(name string) string {
+// 	name = strings.ToLower(name)
+
+// 	// Replace all non-alphanumeric characters with `-`
+// 	replace := regexp.MustCompile("[^a-zA-Z0-9]")
+// 	name = replace.ReplaceAllString(name, "-")
+
+// 	// Replace all multiple `-` with single `-`
+// 	replace = regexp.MustCompile("-+")
+// 	name = replace.ReplaceAllString(name, "-")
+
+// 	// Replace all leading and trailing `-` with empty string
+// 	replace = regexp.MustCompile("^-|-$")
+// 	name = replace.ReplaceAllString(name, "")
+
+// 	// Truncate the name to 63 characters
+// 	if len(name) > 23 {
+// 		name = name[:23]
+// 	}
+
+// 	return name
+// }

@@ -36,8 +36,6 @@ type HttpProxy interface {
 	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
-	ProjectId() *string
-	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -168,16 +166,6 @@ func (j *jsiiProxy_HttpProxy) Node() constructs.Node {
 	_jsii_.Get(
 		j,
 		"node",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_HttpProxy) ProjectId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"projectId",
 		&returns,
 	)
 	return returns
@@ -315,17 +303,6 @@ func (j *jsiiProxy_HttpProxy)SetName(val *string) {
 	_jsii_.Set(
 		j,
 		"name",
-		val,
-	)
-}
-
-func (j *jsiiProxy_HttpProxy)SetProjectId(val *string) {
-	if err := j.validateSetProjectIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"projectId",
 		val,
 	)
 }

@@ -98,7 +98,7 @@ func (j *jsiiProxy_Policy) validateSetActionsParameters(val *[]*string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Policy) validateSetProjectIdParameters(val *string) error {
+func (j *jsiiProxy_Policy) validateSetIamRolesParameters(val interface{}) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

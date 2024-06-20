@@ -15,8 +15,8 @@ type PolicyConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The actions to apply to the policy.
 	Actions *[]*string `field:"required" json:"actions" yaml:"actions"`
-	// The google project id.
-	ProjectId *string `field:"required" json:"projectId" yaml:"projectId"`
+	// The IAM roles available to the policy.
+	IamRoles interface{} `field:"required" json:"iamRoles" yaml:"iamRoles"`
 	// The name of the resource.
 	ResourceName *string `field:"required" json:"resourceName" yaml:"resourceName"`
 	// The type of the resource (Bucket, Secret, KeyValueStore, Queue).

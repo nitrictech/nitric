@@ -13,5 +13,7 @@ type StackConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The name of the nitric stack.
+	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 }
 

@@ -14,6 +14,8 @@ import (
 // Source at ./.nitric/modules/service
 type Service interface {
 	cdktf.TerraformModule
+	BaseComputeRole() *string
+	SetBaseComputeRole(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
@@ -26,6 +28,7 @@ type Service interface {
 	SetDependsOn(val *[]*string)
 	Environment() *map[string]*string
 	SetEnvironment(val *map[string]*string)
+	EventTokenOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -53,6 +56,7 @@ type Service interface {
 	ServiceEndpointOutput() *string
 	ServiceName() *string
 	SetServiceName(val *string)
+	ServiceNameOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -92,6 +96,16 @@ type Service interface {
 // The jsii proxy struct for Service
 type jsiiProxy_Service struct {
 	internal.Type__cdktfTerraformModule
+}
+
+func (j *jsiiProxy_Service) BaseComputeRole() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"baseComputeRole",
+		&returns,
+	)
+	return returns
 }
 
 func (j *jsiiProxy_Service) CdktfStack() cdktf.TerraformStack {
@@ -139,6 +153,16 @@ func (j *jsiiProxy_Service) Environment() *map[string]*string {
 	_jsii_.Get(
 		j,
 		"environment",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) EventTokenOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"eventTokenOutput",
 		&returns,
 	)
 	return returns
@@ -284,6 +308,16 @@ func (j *jsiiProxy_Service) ServiceName() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) ServiceNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"serviceNameOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -359,6 +393,17 @@ func NewService_Override(s Service, scope constructs.Construct, id *string, conf
 		"service.Service",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Service)SetBaseComputeRole(val *string) {
+	if err := j.validateSetBaseComputeRoleParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"baseComputeRole",
+		val,
 	)
 }
 

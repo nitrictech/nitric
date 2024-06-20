@@ -1,3 +1,3 @@
 output "endpoint" {
-  value = aws_apigatewayv2_api.api_gateway.api_endpoint
+  value = "https://${google_api_gateway_gateway.gateway.default_hostname}"
 }

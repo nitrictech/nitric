@@ -32,10 +32,10 @@ type Policy interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IamRoles() interface{}
+	SetIamRoles(val interface{})
 	// The tree node.
 	Node() constructs.Node
-	ProjectId() *string
-	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -153,21 +153,21 @@ func (j *jsiiProxy_Policy) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Policy) Node() constructs.Node {
-	var returns constructs.Node
+func (j *jsiiProxy_Policy) IamRoles() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"node",
+		"iamRoles",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Policy) ProjectId() *string {
-	var returns *string
+func (j *jsiiProxy_Policy) Node() constructs.Node {
+	var returns constructs.Node
 	_jsii_.Get(
 		j,
-		"projectId",
+		"node",
 		&returns,
 	)
 	return returns
@@ -308,13 +308,13 @@ func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Policy)SetProjectId(val *string) {
-	if err := j.validateSetProjectIdParameters(val); err != nil {
+func (j *jsiiProxy_Policy)SetIamRoles(val interface{}) {
+	if err := j.validateSetIamRolesParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"projectId",
+		"iamRoles",
 		val,
 	)
 }

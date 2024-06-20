@@ -14,12 +14,9 @@ import (
 // Source at ./.nitric/modules/bucket
 type Bucket interface {
 	cdktf.TerraformModule
-	BucketLocation() *string
-	SetBucketLocation(val *string)
 	BucketLocationOutput() *string
 	BucketName() *string
 	SetBucketName(val *string)
-	BucketNameOutput() *string
 	BucketStorageClassOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
@@ -37,12 +34,11 @@ type Bucket interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	NameOutput() *string
 	// The tree node.
 	Node() constructs.Node
 	NotificationTargets() interface{}
 	SetNotificationTargets(val interface{})
-	ProjectId() *string
-	SetProjectId(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -88,16 +84,6 @@ type jsiiProxy_Bucket struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Bucket) BucketLocation() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"bucketLocation",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Bucket) BucketLocationOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -113,16 +99,6 @@ func (j *jsiiProxy_Bucket) BucketName() *string {
 	_jsii_.Get(
 		j,
 		"bucketName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Bucket) BucketNameOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"bucketNameOutput",
 		&returns,
 	)
 	return returns
@@ -198,6 +174,16 @@ func (j *jsiiProxy_Bucket) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Bucket) NameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"nameOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Bucket) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
@@ -213,16 +199,6 @@ func (j *jsiiProxy_Bucket) NotificationTargets() interface{} {
 	_jsii_.Get(
 		j,
 		"notificationTargets",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Bucket) ProjectId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"projectId",
 		&returns,
 	)
 	return returns
@@ -326,17 +302,6 @@ func NewBucket_Override(b Bucket, scope constructs.Construct, id *string, config
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetBucketLocation(val *string) {
-	if err := j.validateSetBucketLocationParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"bucketLocation",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Bucket)SetBucketName(val *string) {
 	if err := j.validateSetBucketNameParameters(val); err != nil {
 		panic(err)
@@ -371,17 +336,6 @@ func (j *jsiiProxy_Bucket)SetNotificationTargets(val interface{}) {
 	_jsii_.Set(
 		j,
 		"notificationTargets",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Bucket)SetProjectId(val *string) {
-	if err := j.validateSetProjectIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"projectId",
 		val,
 	)
 }

@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v13/provider"
+	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -92,10 +93,18 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	})
 
 	gcpprovider.NewGoogleProvider(stack, jsii.String("gcp"), &gcpprovider.GoogleProviderConfig{
-		Region: tfRegion.StringValue(),
+		Region:  tfRegion.StringValue(),
+		Project: jsii.String(a.GcpConfig.ProjectId),
 	})
 
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
+	gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
+		Region:  tfRegion.StringValue(),
+		Project: jsii.String(a.GcpConfig.ProjectId),
+	})
+
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		StackName: jsii.String(a.StackName),
+	})
 
 	return nil
 }
