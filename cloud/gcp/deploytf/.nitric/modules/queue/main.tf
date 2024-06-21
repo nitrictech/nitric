@@ -16,4 +16,9 @@ resource "google_pubsub_subscription" "queue_subscription" {
     # TODO: this is blank in the Pulumi provider - verify this is still correct
     ttl = ""
   }
+
+  labels = {
+    "x-nitric-${var.stack_id}-name" = var.queue_name
+    "x-nitric-${var.stack_id}-type" = "queue"
+  }
 }
