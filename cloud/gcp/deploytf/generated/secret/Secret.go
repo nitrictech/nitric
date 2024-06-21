@@ -45,8 +45,6 @@ type Secret interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
-	StackName() *string
-	SetStackName(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -220,16 +218,6 @@ func (j *jsiiProxy_Secret) StackId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Secret) StackName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackName",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Secret) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -302,17 +290,6 @@ func (j *jsiiProxy_Secret)SetStackId(val *string) {
 	_jsii_.Set(
 		j,
 		"stackId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Secret)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"stackName",
 		val,
 	)
 }

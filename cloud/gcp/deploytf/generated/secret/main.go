@@ -32,7 +32,6 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "skipAssetCreationFromLocalModules", GoGetter: "SkipAssetCreationFromLocalModules"},
 			_jsii_.MemberProperty{JsiiProperty: "source", GoGetter: "Source"},
 			_jsii_.MemberProperty{JsiiProperty: "stackId", GoGetter: "StackId"},
-			_jsii_.MemberProperty{JsiiProperty: "stackName", GoGetter: "StackName"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeAttributes", GoMethod: "SynthesizeAttributes"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeHclAttributes", GoMethod: "SynthesizeHclAttributes"},
 			_jsii_.MemberMethod{JsiiMethod: "toHclTerraform", GoMethod: "ToHclTerraform"},
