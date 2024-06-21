@@ -22,7 +22,7 @@ resource "google_pubsub_subscription" "topic_subscriptions" {
   push_config {
     push_endpoint = "${var.subscriber_services[count.index].url}/x-nitric-topic/${var.topic_name}?token=${var.subscriber_services[count.index].event_token}"
     oidc_token {
-      service_account_email = var.subscriber_services[count.index].service_account_email
+      service_account_email = var.subscriber_services[count.index].invoker_service_account_email
     }
   }
 

@@ -13,7 +13,7 @@ variable "subscriber_services" {
   type = list(object({
     name                  = string
     url                   = string
-    service_account_email = string
+    invoker_service_account_email = string
     event_token           = string
   }))
 }

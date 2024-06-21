@@ -11,7 +11,7 @@ output "invoker_service_account_email" {
 }
 
 output "event_token" {
-  value = random_password.password.result
+  value = random_password.event_token.result
 }
 
 output "service_name" {

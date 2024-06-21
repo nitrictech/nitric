@@ -49,9 +49,9 @@ resource "google_service_account" "service_account" {
 }
 
 # Create a random password for events that will target this service
-resource "random_password" "password" {
+resource "random_password" "event_token" {
   length  = 32
-  special = true
+  special = false
   keepers = {
     "name" = var.service_name
   }
@@ -79,7 +79,7 @@ resource "google_cloud_run_service" "service" {
       containers {
         env {
           name  = "EVENT_TOKEN"
-          value = random_password.password.result
+          value = random_password.event_token.result
         }
         env {
           name  = "SERVICE_ACCOUNT_EMAIL"
