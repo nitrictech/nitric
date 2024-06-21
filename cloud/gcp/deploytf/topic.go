@@ -22,10 +22,11 @@ import (
 )
 
 type SubscriberService struct {
-	Name                string
-	Url                 string
-	ServiceAccountEmail string
-	EventToken          string
+	// Explicit JSON names required for JSII serialization
+	Name                string `json:"name"`
+	Url                 string `json:"url"`
+	ServiceAccountEmail string `json:"service_account_email"`
+	EventToken          string `json:"event_token"`
 }
 
 func (a *NitricGcpTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
@@ -36,17 +37,17 @@ func (a *NitricGcpTerraformProvider) Topic(stack cdktf.TerraformStack, name stri
 		serviceEndpoints[subscriber.GetService()] = subscriberSvc.ServiceEndpointOutput()
 	}
 
-	subscriberInput := map[string]*SubscriberService{}
+	subscriberInput := []*SubscriberService{}
 
 	for _, subscriber := range config.Subscriptions {
 		subscriberSvc := a.Services[subscriber.GetService()]
 
-		subscriberInput[subscriber.GetService()] = &SubscriberService{
+		subscriberInput = append(subscriberInput, &SubscriberService{
 			Name:                subscriber.GetService(),
 			Url:                 *serviceEndpoints[subscriber.GetService()],
 			ServiceAccountEmail: *subscriberSvc.ServiceAccountEmailOutput(),
 			EventToken:          *subscriberSvc.EventTokenOutput(),
-		}
+		})
 	}
 
 	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("topic_%s", name), &topic.TopicConfig{
