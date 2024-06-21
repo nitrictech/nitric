@@ -19,6 +19,8 @@ import (
 	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
+	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
+	"github.com/cdktf/cdktf-provider-google-go/google/v13/datagoogleclientconfig"
 	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v13/provider"
 	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
@@ -100,6 +102,20 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
 		Region:  tfRegion.StringValue(),
 		Project: jsii.String(a.GcpConfig.ProjectId),
+	})
+
+	googleConf := datagoogleclientconfig.NewDataGoogleClientConfig(stack, jsii.String("gcp_client_config"), &datagoogleclientconfig.DataGoogleClientConfigConfig{})
+
+	var registryAuths []dockerprovider.DockerProviderRegistryAuth = []dockerprovider.DockerProviderRegistryAuth{
+		dockerprovider.DockerProviderRegistryAuth{
+			Address:  jsii.String("https://gcr.io"),
+			Username: jsii.String("oauth2accesstoken"),
+			Password: googleConf.AccessToken(),
+		},
+	}
+
+	dockerprovider.NewDockerProvider(stack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+		RegistryAuth: registryAuths,
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{

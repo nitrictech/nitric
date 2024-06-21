@@ -2,7 +2,6 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "3.0.2"
     }
   }
 }
@@ -10,17 +9,6 @@ terraform {
 # Create a GCR repository for the service image
 data "google_container_registry_repository" "repo" {
   project = var.project_id
-}
-
-data "google_client_config" "gcp_config" {
-}
-
-provider "docker" {
-  registry_auth {
-    address  = "https://gcr.io"
-    username = "oauth2accesstoken"
-    password = data.google_client_config.gcp_config.access_token
-  }
 }
 
 locals {
