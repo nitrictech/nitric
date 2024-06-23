@@ -25,6 +25,7 @@ func (a *NitricGcpTerraformProvider) Http(stack cdktf.TerraformStack, name strin
 	http_proxy.NewHttpProxy(stack, jsii.Sprintf("http_%s", name), &http_proxy.HttpProxyConfig{
 		StackId:          a.Stack.StackIdOutput(),
 		Name:             jsii.String(name),
+		InvokerEmail:     a.Services[config.Target.GetService()].InvokerServiceAccountEmailOutput(),
 		TargetServiceUrl: a.Services[config.Target.GetService()].ServiceEndpointOutput(),
 	})
 

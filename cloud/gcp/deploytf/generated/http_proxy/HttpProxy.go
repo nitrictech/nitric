@@ -1,3 +1,17 @@
+// Copyright 2021 Nitric Technologies Pty Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package http_proxy
 
 import (
@@ -241,7 +255,6 @@ func (j *jsiiProxy_HttpProxy) Version() *string {
 	return returns
 }
 
-
 func NewHttpProxy(scope constructs.Construct, id *string, config *HttpProxyConfig) HttpProxy {
 	_init_.Initialize()
 
@@ -269,7 +282,7 @@ func NewHttpProxy_Override(h HttpProxy, scope constructs.Construct, id *string, 
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_HttpProxy) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -277,7 +290,7 @@ func (j *jsiiProxy_HttpProxy)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_HttpProxy) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -285,7 +298,7 @@ func (j *jsiiProxy_HttpProxy)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetInvokerEmail(val *string) {
+func (j *jsiiProxy_HttpProxy) SetInvokerEmail(val *string) {
 	if err := j.validateSetInvokerEmailParameters(val); err != nil {
 		panic(err)
 	}
@@ -296,7 +309,7 @@ func (j *jsiiProxy_HttpProxy)SetInvokerEmail(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetName(val *string) {
+func (j *jsiiProxy_HttpProxy) SetName(val *string) {
 	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -307,7 +320,7 @@ func (j *jsiiProxy_HttpProxy)SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetStackId(val *string) {
+func (j *jsiiProxy_HttpProxy) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -318,7 +331,7 @@ func (j *jsiiProxy_HttpProxy)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy)SetTargetServiceUrl(val *string) {
+func (j *jsiiProxy_HttpProxy) SetTargetServiceUrl(val *string) {
 	if err := j.validateSetTargetServiceUrlParameters(val); err != nil {
 		panic(err)
 	}
@@ -533,4 +546,3 @@ func (h *jsiiProxy_HttpProxy) ToTerraform() interface{} {
 
 	return returns
 }
-

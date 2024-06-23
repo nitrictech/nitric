@@ -107,7 +107,7 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	googleConf := datagoogleclientconfig.NewDataGoogleClientConfig(stack, jsii.String("gcp_client_config"), &datagoogleclientconfig.DataGoogleClientConfigConfig{})
 
 	var registryAuths []dockerprovider.DockerProviderRegistryAuth = []dockerprovider.DockerProviderRegistryAuth{
-		dockerprovider.DockerProviderRegistryAuth{
+		{
 			Address:  jsii.String("https://gcr.io"),
 			Username: jsii.String("oauth2accesstoken"),
 			Password: googleConf.AccessToken(),
