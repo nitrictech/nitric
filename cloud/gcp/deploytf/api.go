@@ -181,7 +181,7 @@ func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		OpenapiSpec:    jsii.String(string(b)),
 		TargetServices: &serviceNames,
 		StackId:        n.Stack.StackIdOutput(),
-		DependsOn:      &dependableServices,
+		// DependsOn:      &dependableServices,
 	})
 
 	return nil
