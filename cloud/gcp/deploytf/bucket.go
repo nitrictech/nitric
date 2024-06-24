@@ -48,10 +48,10 @@ type NotifiedService struct {
 
 // Bucket - Deploy a Storage Bucket
 func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
-	notificationTargets := map[string]interface{}{}
+	notificationTargets := map[string]*NotifiedService{}
 
 	for _, target := range config.Listeners {
-		notificationTargets[target.GetService()] = NotifiedService{
+		notificationTargets[target.GetService()] = &NotifiedService{
 			Name:                       target.GetService(),
 			Url:                        *n.Services[target.GetService()].ServiceEndpointOutput(),
 			InvokerServiceAccountEmail: *n.Services[target.GetService()].InvokerServiceAccountEmailOutput(),
