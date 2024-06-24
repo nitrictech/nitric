@@ -32,5 +32,6 @@ variable "iam_roles" {
     queue_enqueue     = string
     secret_access     = string
     secret_put        = string
+    topic_publish     = string
   })
 }
