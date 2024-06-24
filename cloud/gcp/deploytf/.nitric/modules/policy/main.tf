@@ -10,11 +10,11 @@ locals {
 }
 
 # Apply the IAM policy to the resource
-resource "google_pubsub_iam_member" "topic_iam_member_publish" {
+resource "google_pubsub_topic_iam_member" "topic_iam_member_publish" {
   count  = local.is_topic && contains(var.actions, "TopicPublish") ? 1 : 0
-  bucket = var.resource_name
   role   = var.iam_roles.topic_publish
   member = "serviceAccount:${var.service_account_email}"
+  topic = var.resource_name
 }
 
 # Apply the IAM policy to the resource
@@ -74,7 +74,7 @@ resource "google_project_iam_member" "kv_iam_member_write" {
   member = "serviceAccount:${var.service_account_email}"
 }
 
-resource "google_pubsub_iam_member" "queue_iam_member_dequeue" {
+resource "google_pubsub_topic_iam_member" "queue_iam_member_dequeue" {
   project = data.google_project.project.project_id
   count  = local.is_queue && contains(var.actions, "QueueDequeue") ? 1 : 0
   role    = var.iam_roles.queue_dequeue
@@ -82,7 +82,7 @@ resource "google_pubsub_iam_member" "queue_iam_member_dequeue" {
   topic = var.resource_name
 }
 
-resource "google_pubsub_iam_member" "queue_iam_member_enqueue" {
+resource "google_pubsub_topic_iam_member" "queue_iam_member_enqueue" {
   project = data.google_project.project.project_id
   count  = local.is_queue && contains(var.actions, "QueueEnqueue") ? 1 : 0
   role    = var.iam_roles.queue_enqueue
