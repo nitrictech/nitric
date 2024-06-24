@@ -43,6 +43,7 @@ type NotifiedService struct {
 	Url                        string   `json:"url"`
 	InvokerServiceAccountEmail string   `json:"invoker_service_account_email"`
 	EventToken                 string   `json:"event_token"`
+	Prefix                     string   `json:"prefix"`
 	Events                     []string `json:"events"`
 }
 
@@ -57,6 +58,7 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 			InvokerServiceAccountEmail: *n.Services[target.GetService()].InvokerServiceAccountEmailOutput(),
 			EventToken:                 *n.Services[target.GetService()].EventTokenOutput(),
 			Events:                     eventsForBlobEventType(target.Config.BlobEventType),
+			Prefix:                     target.Config.KeyPrefixFilter,
 		}
 	}
 
