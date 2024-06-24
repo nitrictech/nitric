@@ -38,6 +38,14 @@ resource "google_project_iam_custom_role" "bucket_reader_role" {
   permissions = ["storage.objects.get", "storage.objects.list"]
 }
 
+# Permissions required to publish to a topic
+resource "google_project_iam_custom_role" "topic_publisher_role" {
+  role_id     = "NitricTopicPublisher_${random_id.role_id.hex}"
+  title       = "Nitric Topic Publisher"
+  description = "Custom role that only allows publishing to a topic"
+  permissions = ["pubsub.topics.publish"]
+}
+
 # Permissions required to write to a bucket
 resource "google_project_iam_custom_role" "bucket_writer_role" {
   role_id     = "NitricBucketWriter_${random_id.role_id.hex}"
@@ -128,18 +136,20 @@ resource "google_project_iam_custom_role" "kv_writer_role" {
 resource "google_project_iam_custom_role" "queue_enqueue_role" {
   role_id     = "QueueEnqueue_${random_id.role_id.hex}"  
   title       = "Queue Enqueue"
-  permissions = ["pubsub.topics.get",
+  permissions = [
+    "pubsub.topics.get",
 		"pubsub.topics.publish",
-    ]
+  ]
 }
 
 # Permissions required to dequeue from a queue
 resource "google_project_iam_custom_role" "queue_dequeue_role" {
   role_id     = "QueueDequeue_${random_id.role_id.hex}"  
   title       = "Queue Dequeue"
-  permissions = ["pubsub.topics.get",
+  permissions = [
+    "pubsub.topics.get",
 		"pubsub.topics.attachSubscription",
 		"pubsub.snapshots.seek",
 		"pubsub.subscriptions.consume",
-    ]
+  ]
 }

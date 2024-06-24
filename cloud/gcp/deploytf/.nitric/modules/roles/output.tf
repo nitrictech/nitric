@@ -8,6 +8,11 @@ output "bucket_read" {
   description = "The role ID for the Nitric bucket read role"
 }
 
+output "topic_publish" {
+  value = google_project_iam_custom_role.bucket_reader_role.id
+  description = "The role ID for the Nitric bucket read role"
+}
+
 output "bucket_write" {
   value = google_project_iam_custom_role.bucket_writer_role.id
   description = "The role ID for the Nitric bucket write role"
