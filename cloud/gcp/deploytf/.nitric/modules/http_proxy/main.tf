@@ -41,7 +41,7 @@ resource "google_api_gateway_api_config" "api_config" {
 
 resource "google_api_gateway_gateway" "gateway" {
   provider     = google-beta
-  gateway_id   = "${var.name}-gateway"
+  gateway_id   = "${replace(var.name, "_", "-")}-gateway"
   api_config   = google_api_gateway_api_config.api_config.id
 
   labels = {
