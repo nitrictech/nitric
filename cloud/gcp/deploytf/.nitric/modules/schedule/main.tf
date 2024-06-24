@@ -14,5 +14,8 @@ resource "google_cloud_scheduler_job" "schedule" {
       // TODO: is this correct, it matches the Pulumi GCP provider, but not the AWS one.
       "schedule": var.schedule_name
     }))
+    oidc_token {
+      service_account_email = var.target_service_invoker_email
+    }
   }
 }

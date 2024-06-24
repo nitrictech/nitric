@@ -62,6 +62,10 @@ func (j *jsiiProxy_Schedule) validateSetServiceTokenParameters(val *string) erro
 	return nil
 }
 
+func (j *jsiiProxy_Schedule) validateSetTargetServiceInvokerEmailParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Schedule) validateSetTargetServiceUrlParameters(val *string) error {
 	return nil
 }

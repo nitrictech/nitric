@@ -8,6 +8,11 @@ variable "target_service_url" {
   type        = string
 }
 
+variable "target_service_invoker_email" {
+  description = "The email of the target service invoker"
+  type        = string
+}
+
 variable "service_token" {
   description = "The token to authenticate with the target service"
   type        = string

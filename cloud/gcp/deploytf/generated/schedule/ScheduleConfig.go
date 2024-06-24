@@ -35,6 +35,8 @@ type ScheduleConfig struct {
 	ScheduleTimezone *string `field:"required" json:"scheduleTimezone" yaml:"scheduleTimezone"`
 	// The token to authenticate with the target service.
 	ServiceToken *string `field:"required" json:"serviceToken" yaml:"serviceToken"`
+	// The email of the target service invoker.
+	TargetServiceInvokerEmail *string `field:"required" json:"targetServiceInvokerEmail" yaml:"targetServiceInvokerEmail"`
 	// The URL of the target service.
 	TargetServiceUrl *string `field:"required" json:"targetServiceUrl" yaml:"targetServiceUrl"`
 }

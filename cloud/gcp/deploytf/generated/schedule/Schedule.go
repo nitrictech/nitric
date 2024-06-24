@@ -62,6 +62,8 @@ type Schedule interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	TargetServiceInvokerEmail() *string
+	SetTargetServiceInvokerEmail(val *string)
 	TargetServiceUrl() *string
 	SetTargetServiceUrl(val *string)
 	// Experimental.
@@ -247,6 +249,16 @@ func (j *jsiiProxy_Schedule) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Schedule) TargetServiceInvokerEmail() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"targetServiceInvokerEmail",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Schedule) TargetServiceUrl() *string {
 	var returns *string
 	_jsii_.Get(
@@ -350,6 +362,17 @@ func (j *jsiiProxy_Schedule) SetServiceToken(val *string) {
 	_jsii_.Set(
 		j,
 		"serviceToken",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Schedule) SetTargetServiceInvokerEmail(val *string) {
+	if err := j.validateSetTargetServiceInvokerEmailParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"targetServiceInvokerEmail",
 		val,
 	)
 }

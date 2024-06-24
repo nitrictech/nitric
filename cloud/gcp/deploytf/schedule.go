@@ -60,11 +60,12 @@ func (a *NitricGcpTerraformProvider) Schedule(stack cdktf.TerraformStack, name s
 	}
 
 	a.Schedules[name] = schedule.NewSchedule(stack, jsii.Sprintf("schedule_%s", name), &schedule.ScheduleConfig{
-		ScheduleName:       jsii.String(name),
-		ScheduleExpression: jsii.String(cronExpression),
-		ScheduleTimezone:   jsii.String(a.GcpConfig.ScheduleTimezone),
-		TargetServiceUrl:   svc.ServiceEndpointOutput(),
-		ServiceToken:       svc.EventTokenOutput(),
+		ScheduleName:              jsii.String(name),
+		ScheduleExpression:        jsii.String(cronExpression),
+		ScheduleTimezone:          jsii.String(a.GcpConfig.ScheduleTimezone),
+		TargetServiceUrl:          svc.ServiceEndpointOutput(),
+		TargetServiceInvokerEmail: svc.InvokerServiceAccountEmailOutput(),
+		ServiceToken:              svc.EventTokenOutput(),
 	})
 
 	return nil
