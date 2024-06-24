@@ -26,15 +26,24 @@ func eventsForBlobEventType(blobEventType storagepb.BlobEventType) []string {
 	switch blobEventType {
 	case storagepb.BlobEventType_Created:
 		return []string{
-			"s3:ObjectCreated:*",
+			"OBJECT_FINALIZE",
 		}
 	case storagepb.BlobEventType_Deleted:
 		return []string{
-			"s3:ObjectRemoved:*",
+			"OBJECT_DELETE",
 		}
 	default:
 		return []string{}
 	}
+}
+
+type NotifiedService struct {
+	// Explicit JSON names required for JSII serialization
+	Name                       string   `json:"name"`
+	Url                        string   `json:"url"`
+	InvokerServiceAccountEmail string   `json:"invoker_service_account_email"`
+	EventToken                 string   `json:"event_token"`
+	Events                     []string `json:"events"`
 }
 
 // Bucket - Deploy a Storage Bucket
@@ -42,10 +51,12 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 	notificationTargets := map[string]interface{}{}
 
 	for _, target := range config.Listeners {
-		notificationTargets[target.GetService()] = map[string]interface{}{
-			"url":    n.Services[target.GetService()].ServiceEndpointOutput(),
-			"prefix": jsii.String(target.Config.KeyPrefixFilter),
-			"events": jsii.Strings(eventsForBlobEventType(target.Config.BlobEventType)...),
+		notificationTargets[target.GetService()] = NotifiedService{
+			Name:                       target.GetService(),
+			Url:                        *n.Services[target.GetService()].ServiceEndpointOutput(),
+			InvokerServiceAccountEmail: *n.Services[target.GetService()].InvokerServiceAccountEmailOutput(),
+			EventToken:                 *n.Services[target.GetService()].EventTokenOutput(),
+			Events:                     eventsForBlobEventType(target.Config.BlobEventType),
 		}
 	}
 

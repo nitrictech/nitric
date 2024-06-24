@@ -13,6 +13,7 @@ variable "notification_targets" {
   type        = map(object({
     url = string
     event_token = string
+    invoker_service_account_email = string
     prefix = string
     events = list(string)
   }))

@@ -58,9 +58,9 @@ resource "google_pubsub_subscription" "bucket_notification_subscription" {
   filter = join(" OR ",  formatlist("attributes.eventType = %s", each.value.events))
 
   push_config {
-    push_endpoint = each.value.url
+    push_endpoint = "${each.value.url}/x-nitric-notification/bucket/${var.bucket_name}?token=${each.value.event_token}"
     oidc_token {
-      service_account_email = each.value.event_token
+      service_account_email = each.value.invoker_service_account_email
     }
   }
 
