@@ -3,7 +3,7 @@ GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache/
 else
 GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
-GOLANGCI_LINT ?= go run github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
 
 binaries: deploybin
 
@@ -32,12 +32,12 @@ deploybintf: generate-terraform predeploybin
 
 .PHONY: install
 install: deploybin deploybintf
-	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1.exe
-	@echo installing gcptf deployment server to ${HOME}/.nitric/providers/nitric/gcptf-0.0.1.exe
+	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+	@echo installing gcptf deployment server to ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
-	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1.exe
-	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1.exe
-	@cp bin/deploy-gcptf ${HOME}/.nitric/providers/nitric/gcptf-0.0.1.exe
+	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
+	@cp bin/deploy-gcptf ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
