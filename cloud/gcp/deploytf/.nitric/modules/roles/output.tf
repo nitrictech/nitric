@@ -9,8 +9,8 @@ output "bucket_read" {
 }
 
 output "topic_publish" {
-  value = google_project_iam_custom_role.bucket_reader_role.id
-  description = "The role ID for the Nitric bucket read role"
+  value = google_project_iam_custom_role.topic_publisher_role.id
+  description = "The role ID for the Nitric topic publish role"
 }
 
 output "bucket_write" {
