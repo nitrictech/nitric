@@ -67,7 +67,7 @@ resource "google_pubsub_subscription" "bucket_notification_subscription" {
   }
 
   # FIXME: improve this filter
-  filter = join(" OR ",  formatlist("attributes.eventType = %s", each.value.events))
+  filter = join(" OR ",  formatlist("attributes.eventType = \"%s\"", each.value.events))
 
   push_config {
     push_endpoint = "${each.value.url}/x-nitric-notification/bucket/${var.bucket_name}?token=${each.value.event_token}"
