@@ -33,13 +33,25 @@ resource "google_pubsub_topic" "bucket_notification_topic" {
   name  = "${var.bucket_name}-${random_id.bucket_id.hex}"
 }
 
+
+# Create a topic Iam binding for the storage notification topic
+resource "google_pubsub_topic_iam_binding" "bucket_notification_topic_iam_binding" {
+  count = local.has_notification_targets
+  topic = google_pubsub_topic.bucket_notification_topic[0].id
+  role  = "roles/pubsub.publisher"
+  members = [
+    "serviceAccount:${data.google_storage_project_service_account.storage_service_account.email_address}"
+  ]
+}
+
 # Create a gcs storage notification that publishes events to the topic
 resource "google_storage_notification" "bucket_notification" {
   count          = length(google_pubsub_topic.bucket_notification_topic) > 0 ? 1 : 0
   bucket         = google_storage_bucket.bucket.name
-  topic          = google_pubsub_topic.bucket_notification_topic[0].name
+  topic          = google_pubsub_topic.bucket_notification_topic[0].id
   event_types    = ["OBJECT_FINALIZE", "OBJECT_DELETE"]
   payload_format = "JSON_API_V1"
+  depends_on = [ google_pubsub_topic_iam_binding.bucket_notification_topic_iam_binding ]
 }
 
 # For each notification target create a pubsub subscription
@@ -72,12 +84,3 @@ resource "google_pubsub_subscription" "bucket_notification_subscription" {
 data "google_storage_project_service_account" "storage_service_account" {
 }
 
-# Create a topic Iam binding for the storage notification topic
-resource "google_pubsub_topic_iam_binding" "bucket_notification_topic_iam_binding" {
-  count = local.has_notification_targets
-  topic = google_pubsub_topic.bucket_notification_topic[0].name
-  role  = "roles/pubsub.publisher"
-  members = [
-    "serviceAccount:${data.google_storage_project_service_account.storage_service_account.email_address}"
-  ]
-}

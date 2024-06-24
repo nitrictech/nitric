@@ -1,12 +1,10 @@
 {
-  "openapi": "3.0.1",
+  "swagger": "2.0",
   "info": {
     "title": "${name}",
     "version": "v1"
   },
-  "components": {
-    "securitySchemes": {}
-  },
+  "securityDefinitions": {},
   "paths": {
     "/**": {
       "get": {

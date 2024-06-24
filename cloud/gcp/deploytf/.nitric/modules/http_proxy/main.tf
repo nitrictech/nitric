@@ -1,7 +1,7 @@
 
 resource "google_api_gateway_api" "proxy_api" {
   provider = google-beta
-  api_id   = var.name
+  api_id   = replace(var.name, "_", "-")
   labels = {
     "x-nitric-${var.stack_id}-name" = var.name
     "x-nitric-${var.stack_id}-type" = "http-proxy"
@@ -19,7 +19,7 @@ data "template_file" "openapi_spec" {
 resource "google_api_gateway_api_config" "api_config" {
   provider      = google-beta
   api           = google_api_gateway_api.proxy_api.api_id
-  api_config_id = "${var.name}-config"
+  api_config_id = "${replace(var.name, "_", "-")}-config"
 
   openapi_documents {
     document {

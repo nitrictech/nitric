@@ -92,7 +92,7 @@ locals {
 }
 
 resource "google_project_iam_custom_role" "base_role" {
-  role_id      = "${random_id.stack_id.id}_svc_base_role"
-  title        = "${random_id.stack_id.id} service base role"
+  role_id      = "${replace(random_id.stack_id.hex, "-", "_")}_svc_base_role"
+  title        = "${random_id.stack_id.hex} service base role"
   permissions = local.base_compute_permissions
 }
