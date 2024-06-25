@@ -46,12 +46,17 @@ resource "google_pubsub_topic_iam_binding" "bucket_notification_topic_iam_bindin
 
 # Create a gcs storage notification that publishes events to the topic
 resource "google_storage_notification" "bucket_notification" {
-  count          = length(google_pubsub_topic.bucket_notification_topic) > 0 ? 1 : 0
-  bucket         = google_storage_bucket.bucket.name
-  topic          = google_pubsub_topic.bucket_notification_topic[0].id
-  event_types    = ["OBJECT_FINALIZE", "OBJECT_DELETE"]
-  payload_format = "JSON_API_V1"
-  depends_on = [ google_pubsub_topic_iam_binding.bucket_notification_topic_iam_binding ]
+  for_each           = var.notification_targets
+  bucket             = google_storage_bucket.bucket.name
+  topic              = google_pubsub_topic.bucket_notification_topic[0].id
+  event_types        = each.value.events
+  payload_format     = "JSON_API_V1"
+  object_name_prefix = each.value.prefix
+  custom_attributes = {
+    # The target is the notification target name
+    "target" = each.value.name
+  }
+  depends_on         = [google_pubsub_topic_iam_binding.bucket_notification_topic_iam_binding]
 }
 
 # For each notification target create a pubsub subscription
@@ -66,8 +71,8 @@ resource "google_pubsub_subscription" "bucket_notification_subscription" {
     maximum_backoff = "600s"
   }
 
-  # FIXME: improve this filter
-  filter = join(" OR ",  formatlist("attributes.eventType = \"%s\"", each.value.events))
+  # Filter will only allow messages that match the target attribute for itself
+  filter = "attributes.target = \"${each.value.name}\""
 
   push_config {
     push_endpoint = "${each.value.url}/x-nitric-notification/bucket/${var.bucket_name}?token=${each.value.event_token}"

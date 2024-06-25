@@ -11,6 +11,7 @@ variable "stack_id" {
 variable "notification_targets" {
   description = "The notification target configurations"
   type        = map(object({
+    name = string
     url = string
     event_token = string
     invoker_service_account_email = string
