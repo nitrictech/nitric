@@ -140,4 +140,3 @@ func validateNewApiParameters(scope constructs.Construct, id *string, config *Ap
 
 	return nil
 }
-

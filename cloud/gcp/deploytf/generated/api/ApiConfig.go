@@ -22,4 +22,3 @@ type ApiConfig struct {
 	// The map of target service names The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	TargetServices *map[string]*string `field:"required" json:"targetServices" yaml:"targetServices"`
 }
-
