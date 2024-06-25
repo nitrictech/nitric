@@ -42,13 +42,13 @@ install: deploybin deploybintf
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
-	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	@touch common/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run --fix
 	@rm common/runtime/runtime-gcp
 
 lint:
-	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
+	@go run github.com/google/addlicense -ignore "./deploytf/generated/**" -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
 	@touch common/runtime/runtime-gcp
 	$(GOLANGCI_LINT) run
 	@rm common/runtime/runtime-gcp
