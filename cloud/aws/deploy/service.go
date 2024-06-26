@@ -33,6 +33,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId string, name string) (*ecr.Repository, error) {
@@ -209,6 +210,22 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		// Include the base database cluster URI for the runtime to resolve databases based on their name
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
 			a.DatabaseCluster.Endpoint, "5432")
+
+		sqlDatabasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
+			return item.Migrated
+		})
+
+		databasesMigrated := pulumi.All(sqlDatabasesMigrated...).ApplyT(func(migrated []interface{}) bool {
+			for _, m := range migrated {
+				if b, ok := m.(bool); !ok || !b {
+					return false
+				}
+			}
+
+			return true
+		})
+
+		envVars["DATABASES_MIGRATED"] = pulumi.Sprintf("%t", databasesMigrated)
 	}
 
 	var vpcConfig *awslambda.FunctionVpcConfigArgs = nil
@@ -240,6 +257,12 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		}
 	}
 
+	dependsOn := []pulumi.ResourceOption{pulumi.DependsOn([]pulumi.Resource{image})}
+	// Add Sql database migration dependencies
+	for _, db := range a.SqlDatabases {
+		dependsOn = append(dependsOn, pulumi.DependsOn([]pulumi.Resource{db}))
+	}
+
 	a.Lambdas[name], err = awslambda.NewFunction(ctx, name, &awslambda.FunctionArgs{
 		// Use repository to generate the URI, instead of the image, using the image results in errors when the same project is torn down and redeployed.
 		// This appears to be because the local image ends up with multiple repositories and the wrong one is selected.
@@ -255,7 +278,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		VpcConfig:   vpcConfig,
 		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
 		// since we only rely on the repository to determine the ImageUri, the image must be added as a dependency to avoid a race.
-	}, append([]pulumi.ResourceOption{pulumi.DependsOn([]pulumi.Resource{image})}, opts...)...)
+	}, append(dependsOn, opts...)...)
 	if err != nil {
 		return err
 	}

@@ -60,6 +60,8 @@ type NitricAwsPulumiProvider struct {
 	StackId   string
 	AwsConfig *AwsConfig
 
+	SqlDatabases map[string]*RdsDatabase
+
 	Vpc              *ec2.Vpc
 	VpcAzs           []string
 	VpcSecurityGroup *awsec2.SecurityGroup
@@ -252,5 +254,6 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		Queues:                make(map[string]*sqs.Queue),
 		KeyValueStores:        make(map[string]*dynamodb.Table),
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
+		SqlDatabases:          make(map[string]*RdsDatabase),
 	}
 }

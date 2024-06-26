@@ -225,8 +225,25 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 	return nil
 }
 
+// A customer SQL database pulumi resource
+type RdsDatabase struct {
+	pulumi.ResourceState
+
+	Name string
+
+	Migrated pulumi.BoolOutput
+}
+
 // Sqldatabase - Implements PostgresSql database deployments use AWS Aurora
 func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
+	a.SqlDatabases[name] = &RdsDatabase{
+		Name: name,
+	}
+	err := ctx.RegisterComponentResource("nitricaws:SqlDatabase", name, a.SqlDatabases[name], pulumi.Parent(parent))
+	if err != nil {
+		return err
+	}
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(a.Region), // replace with your AWS region
 	})
@@ -297,7 +314,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		databaseMigrationJobName = a.DatabaseMigrationJobs[config.GetImageUri()].Name
 	}
 
-	pulumi.All(a.CreateDatabaseProject.Name, databaseMigrationJobName, dbUrl).ApplyT(func(args []interface{}) (bool, error) {
+	a.SqlDatabases[name].Migrated = pulumi.All(a.CreateDatabaseProject.Name, databaseMigrationJobName, dbUrl).ApplyT(func(args []interface{}) (bool, error) {
 		createDatabaseProject := args[0].(string)
 		migrateDatabaseJob := args[1].(string)
 		databaseUrl := args[2].(string)
@@ -347,7 +364,14 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		}
 
 		return true, nil
+	}).(pulumi.BoolOutput)
+
+	err = ctx.RegisterResourceOutputs(a.SqlDatabases[name], pulumi.Map{
+		"migrated": a.SqlDatabases[name].Migrated,
 	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
