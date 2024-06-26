@@ -73,7 +73,7 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 					ServiceName: pulumi.String("Microsoft.ContainerInstance/containerGroups"),
 				},
 			},
-		})
+		}, opts...)
 		if err != nil {
 			return errors.WithMessage(err, "creating container group subnet")
 		}
@@ -124,7 +124,7 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 					Server:   a.ContainerEnv.Registry.LoginServer,
 				},
 			},
-		})
+		}, opts...)
 		if err != nil {
 			return err
 		}
