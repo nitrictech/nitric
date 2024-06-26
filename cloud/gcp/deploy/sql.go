@@ -31,6 +31,12 @@ import (
 	"google.golang.org/api/option"
 )
 
+type CloudBuild struct {
+	pulumi.Resource
+
+	ID pulumi.StringOutput
+}
+
 func checkBuildStatus(ctx context.Context, build *cloudbuild.CreateBuildOperation) error {
 	_, err := build.Wait(ctx)
 	if build.Done() && err != nil {
@@ -137,7 +143,17 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return build.Name(), nil
 		}).(pulumi.StringOutput)
 
-		a.DatabaseMigrationBuild[name] = &buildId
+		res := &CloudBuild{
+			ID: buildId,
+		}
+		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res)
+		if err != nil {
+			return err
+		}
+
+		a.DatabaseMigrationBuild[name] = &CloudBuild{
+			ID: buildId,
+		}
 	}
 
 	return nil

@@ -230,7 +230,12 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			},
 		}
 
-		opts = append(opts, pulumi.DependsOn([]pulumi.Resource{p.privateNetwork, p.privateSubnet}))
+		dependsOn := []pulumi.Resource{p.privateNetwork, p.privateSubnet}
+		for _, db := range p.DatabaseMigrationBuild {
+			dependsOn = append(dependsOn, db)
+		}
+
+		opts = append(opts, pulumi.DependsOn(dependsOn))
 
 		serviceTemplate.Annotations = pulumi.ToStringMapOutput(map[string]pulumi.StringOutput{"run.googleapis.com/cloudsql-instances": p.masterDb.ConnectionName})
 	}
