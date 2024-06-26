@@ -210,13 +210,11 @@ func (g *gcpMiddleware) handleBucketNotification(opts *gateway.GatewayStartOpts)
 				},
 			})
 			if err != nil {
-				fmt.Println("Error handling event", err)
 				ctx.Error(fmt.Sprintf("Error handling event %v", err), 500)
 				return
 			}
 
 			if !resp.GetBlobEventResponse().Success {
-				fmt.Println("Got unsuccessful response")
 				ctx.Error("Error handling event", 500)
 				return
 			}
