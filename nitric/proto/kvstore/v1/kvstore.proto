@@ -8,7 +8,7 @@ import "google/protobuf/struct.proto";
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1;kvstorepb";
 option java_package = "io.nitric.proto.kvstore.v1";
 option java_multiple_files = true;
-option java_outer_classname = "KvStore";
+option java_outer_classname = "KvStoreService";
 option php_namespace = "Nitric\\Proto\\KvStore\\V1";
 option csharp_namespace = "Nitric.Proto.KvStore.v1";
 
