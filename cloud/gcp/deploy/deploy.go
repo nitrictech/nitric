@@ -79,7 +79,7 @@ type NitricGcpPulumiProvider struct {
 	Queues                 map[string]*pubsub.Topic
 	QueueSubscriptions     map[string]*pubsub.Subscription
 	Secrets                map[string]*secretmanager.Secret
-	DatabaseMigrationBuild map[string]*pulumi.StringOutput
+	DatabaseMigrationBuild map[string]*CloudBuild
 
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
@@ -361,7 +361,7 @@ func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 		Queues:                 make(map[string]*pubsub.Topic),
 		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
 		Secrets:                make(map[string]*secretmanager.Secret),
-		DatabaseMigrationBuild: make(map[string]*pulumi.StringOutput),
+		DatabaseMigrationBuild: make(map[string]*CloudBuild),
 	}
 }
 
@@ -397,7 +397,7 @@ func createFirestoreDatabase(ctx *pulumi.Context, projectId string, location str
 	return nil
 }
 
-func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) error {
+func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context, project Project) error {
 	_, err := projects.NewService(ctx, "servicenetworking.googleapis.com-enabled", &projects.ServiceArgs{
 		DisableDependentServices: pulumi.Bool(true),
 		DisableOnDestroy:         pulumi.Bool(false),
