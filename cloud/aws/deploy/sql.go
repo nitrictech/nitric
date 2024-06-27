@@ -268,7 +268,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return err
 		}
 
-		_, err = docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
+		newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
 			SourceImage: pulumi.String(inspect.ID),
 			TargetImage: repo.RepositoryUrl,
 		}, pulumi.Parent(parent))
@@ -281,7 +281,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			Triggers: pulumi.Map{
 				"imageSha": pulumi.String(inspect.ID),
 			},
-		}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider))
+		}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
 		if err != nil {
 			return err
 		}
@@ -380,6 +380,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		return err
 	}
 
+	// if the result isn't exported the error will be ignored, causing failed migrations to be missed
 	ctx.Export(name+"migrationsRun", a.SqlDatabases[name].Migrated)
 
 	return nil

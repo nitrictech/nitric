@@ -252,8 +252,6 @@ func (j *jsiiProxy_Schedule) Version() *string {
 	)
 	return returns
 }
-
-
 func NewSchedule(scope constructs.Construct, id *string, config *ScheduleConfig) Schedule {
 	_init_.Initialize()
 
@@ -281,7 +279,7 @@ func NewSchedule_Override(s Schedule, scope constructs.Construct, id *string, co
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Schedule) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -289,7 +287,7 @@ func (j *jsiiProxy_Schedule)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Schedule) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -297,7 +295,7 @@ func (j *jsiiProxy_Schedule)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetScheduleExpression(val *string) {
+func (j *jsiiProxy_Schedule) SetScheduleExpression(val *string) {
 	if err := j.validateSetScheduleExpressionParameters(val); err != nil {
 		panic(err)
 	}
@@ -308,7 +306,7 @@ func (j *jsiiProxy_Schedule)SetScheduleExpression(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetScheduleName(val *string) {
+func (j *jsiiProxy_Schedule) SetScheduleName(val *string) {
 	if err := j.validateSetScheduleNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -319,7 +317,7 @@ func (j *jsiiProxy_Schedule)SetScheduleName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetScheduleTimezone(val *string) {
+func (j *jsiiProxy_Schedule) SetScheduleTimezone(val *string) {
 	if err := j.validateSetScheduleTimezoneParameters(val); err != nil {
 		panic(err)
 	}
@@ -330,7 +328,7 @@ func (j *jsiiProxy_Schedule)SetScheduleTimezone(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetStackId(val *string) {
+func (j *jsiiProxy_Schedule) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -341,7 +339,7 @@ func (j *jsiiProxy_Schedule)SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Schedule)SetTargetLambdaArn(val *string) {
+func (j *jsiiProxy_Schedule) SetTargetLambdaArn(val *string) {
 	if err := j.validateSetTargetLambdaArnParameters(val); err != nil {
 		panic(err)
 	}
@@ -556,4 +554,3 @@ func (s *jsiiProxy_Schedule) ToTerraform() interface{} {
 
 	return returns
 }
-
