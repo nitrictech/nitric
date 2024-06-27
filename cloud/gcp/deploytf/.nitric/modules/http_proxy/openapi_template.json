@@ -1,0 +1,84 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "${name}",
+    "version": "v1"
+  },
+  "securityDefinitions": {},
+  "paths": {
+    "/**": {
+      "get": {
+        "operationId": "get",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      },
+      "post": {
+        "operationId": "post",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      },
+      "patch": {
+        "operationId": "patch",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      },
+      "put": {
+        "operationId": "put",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      },
+      "delete": {
+        "operationId": "delete",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      },
+      "options": {
+        "operationId": "options",
+        "responses": {
+          "default": {
+            "description": "default description"
+          }
+        },
+        "x-google-backend": {
+          "address": "${target_service_url}",
+          "path_translation": "APPEND_PATH_TO_ADDRESS"
+        }
+      }
+    }
+  }
+}

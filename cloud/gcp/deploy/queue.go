@@ -27,20 +27,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// type PubSubTopic struct {
-// 	pulumi.ResourceState
-
-// 	Name         string
-// 	PubSub       *pubsub.Topic
-// 	Subscription *pubsub.Subscription
-// }
-
-// type PubSubTopicArgs struct {
-// 	Location string
-// 	StackID  string
-// 	Queue    *v1.Queue
-// }
-
 func (p *NitricGcpPulumiProvider) Queue(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Queue) error {
 	var err error
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))

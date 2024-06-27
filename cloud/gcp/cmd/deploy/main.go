@@ -18,8 +18,8 @@ package main
 
 import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/gcp/common/runtime"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy"
-	"github.com/nitrictech/nitric/cloud/gcp/deploy/runtime"
 )
 
 // Start the deployment server

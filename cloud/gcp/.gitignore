@@ -1,2 +1,4 @@
 deploy/runtime-gcp
 dist/
+
+common/runtime/runtime-gcp

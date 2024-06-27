@@ -142,12 +142,12 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 func stackAndProjectFromAttributes(attributesMap map[string]interface{}) (string, string, error) {
 	projectName, ok := attributesMap["project"].(string)
 	if !ok {
-		return "", "", fmt.Errorf("")
+		return "", "", fmt.Errorf("project not found in attributes")
 	}
 
 	stackName, ok := attributesMap["stack"].(string)
 	if !ok {
-		return "", "", fmt.Errorf("")
+		return "", "", fmt.Errorf("stack not found in attributes")
 	}
 
 	return projectName, stackName, nil

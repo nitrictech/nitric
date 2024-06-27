@@ -250,9 +250,6 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return errors.WithMessage(err, "api gateway")
 	}
 
-	// url := res.Gateway.DefaultHostname.ApplyT(func(hn string) string { return "https://" + hn })
-	// ctx.Export("api:"+name, url)
-
 	return nil
 }
 

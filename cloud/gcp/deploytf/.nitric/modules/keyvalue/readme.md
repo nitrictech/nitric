@@ -1,0 +1,1 @@
+KeyValue stores are created at runtime in GCP, so no Terraform module is required.

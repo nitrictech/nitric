@@ -7,12 +7,23 @@ before:
     - go work sync
     - make predeploybin
 builds:
-  - env:
-      # - GOWORK=on
+  - id: gcp
+    env:
       - CGO_ENABLED=0
-    id: gcp
     binary: gcp
     main: ./cmd/deploy
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+  - id: gcptf
+    env:
+      - CGO_ENABLED=0
+    binary: gcp
+    main: ./cmd/deploytf
     goos:
       - linux
       - windows
@@ -26,6 +37,20 @@ archives:
       {{- tolower .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ tolower .Arch }}{{ end }}
+    builds:
+      - gcp
+    format_overrides:
+      - goos: windows
+        format: zip
+  - name_template: >-
+      {{ .ProjectName }}tf_
+      {{- tolower .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ tolower .Arch }}{{ end }}
+    id: gcptf
+    builds:
+      - gcptf
     format_overrides:
       - goos: windows
         format: zip

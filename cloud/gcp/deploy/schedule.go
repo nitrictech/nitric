@@ -28,11 +28,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-type ScheduleEvent struct {
-	PayloadType string                 `yaml:"payloadType"`
-	Payload     map[string]interface{} `yaml:"payload,omitempty"`
-}
-
 func (p *NitricGcpPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Schedule) error {
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
