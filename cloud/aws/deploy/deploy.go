@@ -46,6 +46,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
 	awsec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -62,6 +63,7 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
+	DockerProvider   *docker.Provider
 	Vpc              *ec2.Vpc
 	VpcAzs           []string
 	VpcSecurityGroup *awsec2.SecurityGroup
@@ -150,6 +152,19 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	a.LambdaClient = lambdaClient.New(sess, &aws.Config{Region: aws.String(a.Region)})
 
 	a.EcrAuthToken, err = ecr.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenArgs{})
+	if err != nil {
+		return err
+	}
+
+	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
+		RegistryAuth: &docker.ProviderRegistryAuthArray{
+			docker.ProviderRegistryAuthArgs{
+				Address:  pulumi.String(a.EcrAuthToken.ProxyEndpoint),
+				Username: pulumi.String(a.EcrAuthToken.UserName),
+				Password: pulumi.String(a.EcrAuthToken.Password),
+			},
+		},
+	})
 	if err != nil {
 		return err
 	}
