@@ -33,6 +33,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
@@ -51,7 +52,7 @@ func checkBuildStatus(client *awscodebuild.CodeBuild, buildId string) func() err
 
 		status := aws.StringValue(resp.Builds[0].BuildStatus)
 		if status != awscodebuild.StatusTypeInProgress {
-			if status == awscodebuild.StatusTypeFailed {
+			if status != awscodebuild.StatusTypeSucceeded {
 				return retry.Unrecoverable(fmt.Errorf("codebuild job %s failed", buildId))
 			}
 
@@ -267,14 +268,20 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			return err
 		}
 
-		image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
-			RepositoryUrl: repo.RepositoryUrl,
-			SourceImage:   config.GetImageUri(),
-			SourceImageID: inspect.ID,
-			Server:        pulumi.String(a.EcrAuthToken.ProxyEndpoint),
-			Username:      pulumi.String(a.EcrAuthToken.UserName),
-			Password:      pulumi.String(a.EcrAuthToken.Password),
-		})
+		_, err = docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
+			SourceImage: pulumi.String(inspect.ID),
+			TargetImage: repo.RepositoryUrl,
+		}, pulumi.Parent(parent))
+		if err != nil {
+			return err
+		}
+
+		image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
+			Name: repo.RepositoryUrl,
+			Triggers: pulumi.Map{
+				"imageSha": pulumi.String(inspect.ID),
+			},
+		}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider))
 		if err != nil {
 			return err
 		}
@@ -287,7 +294,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			},
 			Environment: &codebuild.ProjectEnvironmentArgs{
 				ComputeType:              pulumi.String("BUILD_GENERAL1_SMALL"),
-				Image:                    image.URI(),
+				Image:                    pulumi.Sprintf("%s@%s", repo.RepositoryUrl, image.Sha256Digest),
 				ImagePullCredentialsType: pulumi.String("SERVICE_ROLE"),
 				Type:                     pulumi.String("LINUX_CONTAINER"),
 			},
@@ -357,9 +364,9 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 				return false, err
 			}
 
-			err = retry.Do(checkBuildStatus(client, *out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15))
+			err = retry.Do(checkBuildStatus(client, *out.Build.Id), retry.Attempts(10), retry.Delay(time.Second*15), retry.LastErrorOnly(true))
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("database migrations failed for %s: %s", name, err.Error())
 			}
 		}
 
@@ -372,6 +379,8 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 	if err != nil {
 		return err
 	}
+
+	ctx.Export(name+"migrationsRun", a.SqlDatabases[name].Migrated)
 
 	return nil
 }
