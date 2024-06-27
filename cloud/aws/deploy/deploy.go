@@ -34,6 +34,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
@@ -67,6 +68,10 @@ type NitricAwsPulumiProvider struct {
 	Vpc              *ec2.Vpc
 	VpcAzs           []string
 	VpcSecurityGroup *awsec2.SecurityGroup
+
+	ComputeEnvironment *batch.ComputeEnvironment
+	JobQueue           *batch.JobQueue
+
 	// A codebuild job for creating the requested databases for a single database cluster
 	DbMasterPassword      *random.RandomPassword
 	CreateDatabaseProject *codebuild.Project
@@ -180,6 +185,35 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			}`, tags.GetResourceNameKey(a.StackId)),
 		},
 	})
+
+	jobs := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_Job
+	})
+
+	if len(jobs) > 0 {
+		// TODO: Possibly use a shared stack compute environment?
+		a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{
+			ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
+			ComputeResources: &batch.ComputeEnvironmentComputeResourcesArgs{
+				// AllocationStrategy: pulumi.String("BEST_FIT"),
+				// MinVcpus:           pulumi.Int(0),
+				MaxVcpus: pulumi.Int(256),
+				// TODO Determine EC2 configuration
+				// Ec2Configuration:   &batch.ComputeEnvironmentComputeResourcesEc2ConfigurationArgs{},
+			},
+		})
+		if err != nil {
+			return err
+		}
+		// TODO: Possibly use a shared stack job queue?
+		a.JobQueue, err = batch.NewJobQueue(ctx, "job-queue", &batch.JobQueueArgs{
+			ComputeEnvironments: pulumi.StringArray{
+				a.ComputeEnvironment.Arn,
+			},
+			// TODO: Set tags for job definition discovery
+			Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "job-queue", "job-queue")),
+		})
+	}
 
 	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
