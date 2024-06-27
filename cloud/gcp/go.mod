@@ -1,6 +1,6 @@
 module github.com/nitrictech/nitric/cloud/gcp
 
-go 1.21.3
+go 1.21.5
 
 toolchain go1.22.0
 
@@ -32,6 +32,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.1
 	github.com/pkg/errors v0.9.1
+	github.com/pulumi/pulumi-std/sdk v1.6.2
 	github.com/pulumi/pulumi/sdk/v3 v3.112.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
@@ -118,8 +119,6 @@ require (
 	github.com/ashanbrown/forbidigo v1.6.0 // indirect
 	github.com/ashanbrown/makezero v1.1.1 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
-	github.com/aws/constructs-go/constructs/v10 v10.3.0 // indirect
-	github.com/aws/jsii-runtime-go v1.98.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bkielbasa/cyclop v1.2.1 // indirect
@@ -202,7 +201,6 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.17.0 // indirect
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.7 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jgautheron/goconst v1.7.0 // indirect

@@ -397,7 +397,7 @@ func createFirestoreDatabase(ctx *pulumi.Context, projectId string, location str
 	return nil
 }
 
-func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context, project Project) error {
+func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) error {
 	_, err := projects.NewService(ctx, "servicenetworking.googleapis.com-enabled", &projects.ServiceArgs{
 		DisableDependentServices: pulumi.Bool(true),
 		DisableOnDestroy:         pulumi.Bool(false),
