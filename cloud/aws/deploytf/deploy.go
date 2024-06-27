@@ -19,22 +19,28 @@ import (
 	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
+	ecrauth "github.com/cdktf/cdktf-provider-aws-go/aws/v19/dataawsecrauthorizationtoken"
 	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v19/provider"
+	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/queue"
+	rds "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/rds"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/schedule"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/secret"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
+	vpc "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/vpc"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/websocket"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -42,6 +48,9 @@ import (
 type NitricAwsTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
+
+	Vpc vpc.Vpc
+	Rds rds.Rds
 
 	AwsConfig      *common.AwsConfig
 	Apis           map[string]api.Api
@@ -95,7 +104,33 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		Region: tfRegion.StringValue(),
 	})
 
+	ecrAuthConfig := ecrauth.NewDataAwsEcrAuthorizationToken(stack, jsii.String("ecr_auth"), &ecrauth.DataAwsEcrAuthorizationTokenConfig{})
+	dockerprovider.NewDockerProvider(stack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+		RegistryAuth: &[]*map[string]interface{}{
+			{
+				"address":  ecrAuthConfig.ProxyEndpoint(),
+				"username": ecrAuthConfig.UserName(),
+				"password": ecrAuthConfig.Password(),
+			},
+		},
+	})
+
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
+
+	databases := lo.Filter(resources, func(item *deploymentspb.Resource, idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
+	})
+	// Create a shared database cluster if we have more than one database
+	if len(databases) > 0 {
+		a.Vpc = vpc.NewVpc(stack, jsii.String("vpc"), &vpc.VpcConfig{})
+		a.Rds = rds.NewRds(stack, jsii.String("rds"), &rds.RdsConfig{
+			MinCapacity:      jsii.Number(0.5),
+			MaxCapacity:      jsii.Number(1),
+			VpcId:            a.Vpc.VpcIdOutput(),
+			StackId:          a.Stack.StackIdOutput(),
+			PrivateSubnetIds: cdktf.Token_AsList(a.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{}),
+		})
+	}
 
 	return nil
 }

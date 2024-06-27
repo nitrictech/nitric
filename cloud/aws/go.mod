@@ -23,6 +23,7 @@ require (
 	github.com/aws/jsii-runtime-go v1.98.0
 	github.com/aws/smithy-go v1.20.1
 	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.20.1
+	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
 	github.com/getkin/kin-openapi v0.113.0
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.56.1
@@ -32,7 +33,7 @@ require (
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20240527032744-811df854d69d
-	github.com/nitrictech/nitric/core v0.0.0-20240527032744-811df854d69d
+	github.com/nitrictech/nitric/core v0.0.0-20240611083659-34f0571203c2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.1
 	github.com/pkg/errors v0.9.1

@@ -53,6 +53,18 @@
     {
       "name": "http_proxy",
       "source": "./.nitric/modules/http_proxy"
+    },
+    {
+      "name": "vpc",
+      "source": "./.nitric/modules/vpc"
+    },
+    {
+      "name": "rds",
+      "source": "./.nitric/modules/rds"
+    },
+    {
+      "name": "sql",
+      "source": "./.nitric/modules/sql"
     }
   ],
   "context": {}

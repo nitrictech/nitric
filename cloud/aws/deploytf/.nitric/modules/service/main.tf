@@ -15,14 +15,6 @@ resource "aws_ecr_repository" "repo" {
 data "aws_ecr_authorization_token" "ecr_auth" {
 }
 
-provider "docker" {
-  registry_auth {
-    address  = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
-    username = data.aws_ecr_authorization_token.ecr_auth.user_name
-    password = data.aws_ecr_authorization_token.ecr_auth.password
-  }
-}
-
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
   source_image = var.image
@@ -85,6 +77,13 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Attach vpc access execution role if subnets are provided
+resource "aws_iam_role_policy_attachment" "vpc-access" {
+  count = length(var.subnet_ids) > 0 ? 1 : 0
+  role       = aws_iam_role.role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
   function_name = "${var.service_name}-${var.stack_id}"
@@ -95,6 +94,14 @@ resource "aws_lambda_function" "function" {
   timeout = 30
   environment {
     variables = var.environment
+  }
+
+  dynamic "vpc_config" {
+    for_each = length(var.subnet_ids) > 0 ? ["1"] : []
+    content {
+      subnet_ids         = var.subnet_ids
+      security_group_ids = var.security_group_ids
+    }
   }
 
   depends_on = [docker_registry_image.push]

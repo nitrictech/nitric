@@ -264,6 +264,7 @@ func (j *jsiiProxy_Api) Version() *string {
 	return returns
 }
 
+
 func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
 	_init_.Initialize()
 
@@ -291,7 +292,7 @@ func NewApi_Override(a Api, scope constructs.Construct, id *string, config *ApiC
 	)
 }
 
-func (j *jsiiProxy_Api) SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -299,7 +300,7 @@ func (j *jsiiProxy_Api) SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetDomains(val *[]*string) {
+func (j *jsiiProxy_Api)SetDomains(val *[]*string) {
 	if err := j.validateSetDomainsParameters(val); err != nil {
 		panic(err)
 	}
@@ -310,7 +311,7 @@ func (j *jsiiProxy_Api) SetDomains(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -318,7 +319,7 @@ func (j *jsiiProxy_Api) SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetName(val *string) {
+func (j *jsiiProxy_Api)SetName(val *string) {
 	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -329,7 +330,7 @@ func (j *jsiiProxy_Api) SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetSpec(val *string) {
+func (j *jsiiProxy_Api)SetSpec(val *string) {
 	if err := j.validateSetSpecParameters(val); err != nil {
 		panic(err)
 	}
@@ -340,7 +341,7 @@ func (j *jsiiProxy_Api) SetSpec(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetStackId(val *string) {
+func (j *jsiiProxy_Api)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -351,7 +352,7 @@ func (j *jsiiProxy_Api) SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api) SetTargetLambdaFunctions(val *map[string]*string) {
+func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
 	if err := j.validateSetTargetLambdaFunctionsParameters(val); err != nil {
 		panic(err)
 	}
@@ -566,3 +567,4 @@ func (a *jsiiProxy_Api) ToTerraform() interface{} {
 
 	return returns
 }
+

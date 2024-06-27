@@ -20,3 +20,4 @@ type PolicyConfig struct {
 	// resources to apply the policies to.
 	Resources *[]*string `field:"required" json:"resources" yaml:"resources"`
 }
+
