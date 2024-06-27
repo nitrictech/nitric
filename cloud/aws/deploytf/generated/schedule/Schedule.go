@@ -252,6 +252,7 @@ func (j *jsiiProxy_Schedule) Version() *string {
 	)
 	return returns
 }
+
 func NewSchedule(scope constructs.Construct, id *string, config *ScheduleConfig) Schedule {
 	_init_.Initialize()
 
