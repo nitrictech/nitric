@@ -15,12 +15,37 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	sql "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/sql"
+	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/samber/lo"
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	return fmt.Errorf("the AWS Terraform provider does not support SQL databases yet")
+	// Inspect the provided migration image and get its command and working directory
+	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+	if err != nil {
+		return err
+	}
+
+	sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+		DbName:                    jsii.String(name),
+		ImageUri:                  jsii.String(inspect.ID),
+		RdsClusterEndpoint:        n.Rds.ClusterEndpointOutput(),
+		RdsClusterUsername:        n.Rds.ClusterUsernameOutput(),
+		RdsClusterPassword:        n.Rds.ClusterPasswordOutput(),
+		SubnetIds:                 cdktf.Token_AsList(n.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{}),
+		SecurityGroupIds:          &[]*string{n.Rds.SecurityGroupIdOutput()},
+		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
+		MigrateCommand:            jsii.String(inspect.Cmd),
+		WorkDir:                   jsii.String(lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/")),
+		VpcId:                     n.Vpc.VpcIdOutput(),
+		CodebuildRoleArn:          n.Rds.CodebuildRoleArnOutput(),
+		CodebuildRegion:           &n.Region,
+		DependsOn:                 &[]cdktf.ITerraformDependable{n.Rds},
+	})
+
+	return nil
 }

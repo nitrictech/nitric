@@ -47,6 +47,8 @@ type Service interface {
 	RawOverrides() interface{}
 	RoleArnOutput() *string
 	RoleNameOutput() *string
+	SecurityGroupIds() *[]*string
+	SetSecurityGroupIds(val *[]*string)
 	ServiceName() *string
 	SetServiceName(val *string)
 	// Experimental.
@@ -55,6 +57,8 @@ type Service interface {
 	Source() *string
 	StackId() *string
 	SetStackId(val *string)
+	SubnetIds() *[]*string
+	SetSubnetIds(val *[]*string)
 	Timeout() *float64
 	SetTimeout(val *float64)
 	// Experimental.
@@ -260,6 +264,16 @@ func (j *jsiiProxy_Service) RoleNameOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) SecurityGroupIds() *[]*string {
+	var returns *[]*string
+	_jsii_.Get(
+		j,
+		"securityGroupIds",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) ServiceName() *string {
 	var returns *string
 	_jsii_.Get(
@@ -295,6 +309,16 @@ func (j *jsiiProxy_Service) StackId() *string {
 	_jsii_.Get(
 		j,
 		"stackId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) SubnetIds() *[]*string {
+	var returns *[]*string
+	_jsii_.Get(
+		j,
+		"subnetIds",
 		&returns,
 	)
 	return returns
@@ -393,6 +417,14 @@ func (j *jsiiProxy_Service) SetMemory(val *float64) {
 	)
 }
 
+func (j *jsiiProxy_Service) SetSecurityGroupIds(val *[]*string) {
+	_jsii_.Set(
+		j,
+		"securityGroupIds",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Service) SetServiceName(val *string) {
 	if err := j.validateSetServiceNameParameters(val); err != nil {
 		panic(err)
@@ -411,6 +443,14 @@ func (j *jsiiProxy_Service) SetStackId(val *string) {
 	_jsii_.Set(
 		j,
 		"stackId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service) SetSubnetIds(val *[]*string) {
+	_jsii_.Set(
+		j,
+		"subnetIds",
 		val,
 	)
 }

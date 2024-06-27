@@ -23,6 +23,10 @@ type ServiceConfig struct {
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The amount of memory to allocate to the lambda function 128.
 	Memory *float64 `field:"optional" json:"memory" yaml:"memory"`
+	// The security group ids to use for the aws lambda function.
+	SecurityGroupIds *[]*string `field:"optional" json:"securityGroupIds" yaml:"securityGroupIds"`
+	// The subnet ids to use for the aws lambda function.
+	SubnetIds *[]*string `field:"optional" json:"subnetIds" yaml:"subnetIds"`
 	// The timeout for the lambda function 10.
 	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
 }

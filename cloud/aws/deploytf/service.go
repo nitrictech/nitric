@@ -52,18 +52,32 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		"MIN_WORKERS":            jsii.String(fmt.Sprint(config.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": jsii.String(fmt.Sprint(3000)),
 	}
+
+	// TODO: Only apply to requesting services
+	if a.Rds != nil {
+		jsiiEnv["NITRIC_DATABASE_BASE_URL"] = jsii.Sprintf("postgres://%s:%s@%s:%s", *a.Rds.ClusterUsernameOutput(), *a.Rds.ClusterPasswordOutput(),
+			*a.Rds.ClusterEndpointOutput(), "5432")
+	}
+
 	for k, v := range config.GetEnv() {
 		jsiiEnv[k] = jsii.String(v)
 	}
 
-	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
+	serviceConfig := &service.ServiceConfig{
 		ServiceName: jsii.String(name),
 		Image:       jsii.String(imageId),
 		Environment: &jsiiEnv,
 		StackId:     a.Stack.StackIdOutput(),
 		Memory:      jsii.Number(typeConfig.Lambda.Memory),
 		Timeout:     jsii.Number(typeConfig.Lambda.Timeout),
-	})
+	}
+
+	if a.Vpc != nil && a.Rds != nil {
+		serviceConfig.SecurityGroupIds = &[]*string{(a.Rds.SecurityGroupIdOutput())}
+		serviceConfig.SubnetIds = cdktf.Token_AsList(a.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{})
+	}
+
+	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), serviceConfig)
 
 	return nil
 }
