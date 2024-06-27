@@ -105,4 +105,3 @@ func validateNewVpcParameters(scope constructs.Construct, id *string, config *Vp
 
 	return nil
 }
-
