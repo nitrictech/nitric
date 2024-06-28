@@ -85,6 +85,10 @@ type NitricAzurePulumiProvider struct {
 	DbMasterPassword *random.RandomPassword
 	VirtualNetwork   *network.VirtualNetwork
 
+	DatabaseSubnet       *network.Subnet
+	InfrastructureSubnet *network.Subnet
+	ContainerGroupSubnet *network.Subnet
+
 	Roles *Roles
 	provider.NitricDefaultOrder
 }
@@ -185,7 +189,7 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 		return errors.WithMessage(err, "creating virtual network")
 	}
 
-	dbSubnet, err := network.NewSubnet(ctx, "db-subnet", &network.SubnetArgs{
+	a.DatabaseSubnet, err = network.NewSubnet(ctx, "db-subnet", &network.SubnetArgs{
 		AddressPrefix:      pulumi.String("10.0.0.0/18"),
 		ResourceGroupName:  a.ResourceGroup.Name,
 		SubnetName:         pulumi.String("db-subnet"),
@@ -198,7 +202,33 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 		},
 	})
 	if err != nil {
-		return errors.WithMessage(err, "creating subnet")
+		return errors.WithMessage(err, "creating database subnet")
+	}
+
+	a.InfrastructureSubnet, err = network.NewSubnet(ctx, "infrastructure-subnet", &network.SubnetArgs{
+		AddressPrefix:      pulumi.String("10.0.64.0/18"),
+		ResourceGroupName:  a.ResourceGroup.Name,
+		SubnetName:         pulumi.String("infrastructure-subnet"),
+		VirtualNetworkName: a.VirtualNetwork.Name,
+	}, pulumi.DependsOn([]pulumi.Resource{a.DatabaseSubnet}))
+	if err != nil {
+		return errors.WithMessage(err, "creating infrastructure subnet")
+	}
+
+	a.ContainerGroupSubnet, err = network.NewSubnet(ctx, "container-group-subnet", &network.SubnetArgs{
+		AddressPrefix:      pulumi.String("10.0.192.0/18"),
+		ResourceGroupName:  a.ResourceGroup.Name,
+		SubnetName:         pulumi.String("container-group-subnet"),
+		VirtualNetworkName: a.VirtualNetwork.Name,
+		Delegations: network.DelegationArray{
+			network.DelegationArgs{
+				Name:        pulumi.String("container-instance-delegation"),
+				ServiceName: pulumi.String("Microsoft.ContainerInstance/containerGroups"),
+			},
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{a.InfrastructureSubnet}))
+	if err != nil {
+		return errors.WithMessage(err, "creating container group subnet")
 	}
 
 	privateDns, err := network.NewPrivateZone(ctx, "db-private-dns", &network.PrivateZoneArgs{
@@ -244,7 +274,7 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 		AvailabilityZone:           pulumi.String("1"),
 		Version:                    pulumi.String(dbforpostgresql.ServerVersion_14),
 		Network: &dbforpostgresql.NetworkArgs{
-			DelegatedSubnetResourceId:   dbSubnet.ID(),
+			DelegatedSubnetResourceId:   a.DatabaseSubnet.ID(),
 			PrivateDnsZoneArmResourceId: privateDns.ID(),
 		},
 		Sku: &dbforpostgresql.SkuArgs{

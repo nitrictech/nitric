@@ -24,7 +24,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
-	"github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -62,22 +61,6 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			return err
 		}
 
-		containerGroupSubnet, err := network.NewSubnet(ctx, "container-group-subnet", &network.SubnetArgs{
-			AddressPrefix:      pulumi.String("10.0.192.0/18"),
-			ResourceGroupName:  a.ResourceGroup.Name,
-			SubnetName:         pulumi.String("container-group-subnet"),
-			VirtualNetworkName: a.VirtualNetwork.Name,
-			Delegations: network.DelegationArray{
-				network.DelegationArgs{
-					Name:        pulumi.String("container-instance-delegation"),
-					ServiceName: pulumi.String("Microsoft.ContainerInstance/containerGroups"),
-				},
-			},
-		}, opts...)
-		if err != nil {
-			return errors.WithMessage(err, "creating container group subnet")
-		}
-
 		containerGroupName := fmt.Sprintf("%s-migration-group", name)
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "nitric", a.DbMasterPassword.Result, a.DatabaseServer.FullyQualifiedDomainName, "5432", name)
@@ -113,8 +96,8 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			Sku:               pulumi.String(containerinstance.ContainerGroupSkuStandard),
 			SubnetIds: &containerinstance.ContainerGroupSubnetIdArray{
 				containerinstance.ContainerGroupSubnetIdArgs{
-					Id:   containerGroupSubnet.ID(),
-					Name: containerGroupSubnet.Name,
+					Id:   a.ContainerGroupSubnet.ID(),
+					Name: a.ContainerGroupSubnet.Name,
 				},
 			},
 			ImageRegistryCredentials: &containerinstance.ImageRegistryCredentialArray{

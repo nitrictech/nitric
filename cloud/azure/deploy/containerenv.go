@@ -20,12 +20,10 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
-	"github.com/pkg/errors"
 
 	app "github.com/pulumi/pulumi-azure-native-sdk/app"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
-	"github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/operationalinsights"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
@@ -154,19 +152,9 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 		Tags: pulumi.ToStringMap(common.Tags(p.StackId, ctx.Stack()+"Kube", resources.Service)),
 	}
 
-	if p.VirtualNetwork != nil {
-		infraSubnet, err := network.NewSubnet(ctx, "infrastructure-subnet", &network.SubnetArgs{
-			AddressPrefix:      pulumi.String("10.0.64.0/18"),
-			ResourceGroupName:  p.ResourceGroup.Name,
-			SubnetName:         pulumi.String("infrastructure-subnet"),
-			VirtualNetworkName: p.VirtualNetwork.Name,
-		})
-		if err != nil {
-			return nil, errors.WithMessage(err, "creating infrastructure subnet")
-		}
-
+	if p.InfrastructureSubnet != nil {
 		managementArgs.VnetConfiguration = &app.VnetConfigurationArgs{
-			InfrastructureSubnetId: infraSubnet.ID(),
+			InfrastructureSubnetId: p.InfrastructureSubnet.ID(),
 		}
 	}
 
