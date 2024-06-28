@@ -240,7 +240,7 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 		return errors.WithMessage(err, "creating private dns zone")
 	}
 
-	_, err = network.NewVirtualNetworkLink(ctx, "db-private-dns-link", &network.VirtualNetworkLinkArgs{
+	vnetLink, err := network.NewVirtualNetworkLink(ctx, "db-private-dns-link", &network.VirtualNetworkLinkArgs{
 		Location:            pulumi.String("global"),
 		PrivateZoneName:     privateDns.Name,
 		RegistrationEnabled: pulumi.Bool(false),
@@ -288,7 +288,7 @@ func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, ta
 			StorageSizeGB: pulumi.Int(32),
 		},
 		Tags: pulumi.ToStringMap(tags),
-	})
+	}, pulumi.DependsOn([]pulumi.Resource{a.DatabaseSubnet, privateDns, vnetLink}))
 	if err != nil {
 		return err
 	}

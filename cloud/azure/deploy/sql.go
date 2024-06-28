@@ -28,7 +28,7 @@ import (
 )
 
 func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.DatabaseServer})}
 
 	_, err := dbforpostgresql.NewDatabase(ctx, name, &dbforpostgresql.DatabaseArgs{
 		DatabaseName:      pulumi.String(name),
