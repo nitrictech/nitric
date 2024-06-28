@@ -190,31 +190,6 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return item.Id.Type == resourcespb.ResourceType_Job
 	})
 
-	if len(jobs) > 0 {
-		// TODO: Possibly use a shared stack compute environment?
-		a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{
-			ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
-			ComputeResources: &batch.ComputeEnvironmentComputeResourcesArgs{
-				// AllocationStrategy: pulumi.String("BEST_FIT"),
-				// MinVcpus:           pulumi.Int(0),
-				MaxVcpus: pulumi.Int(256),
-				// TODO Determine EC2 configuration
-				// Ec2Configuration:   &batch.ComputeEnvironmentComputeResourcesEc2ConfigurationArgs{},
-			},
-		})
-		if err != nil {
-			return err
-		}
-		// TODO: Possibly use a shared stack job queue?
-		a.JobQueue, err = batch.NewJobQueue(ctx, "job-queue", &batch.JobQueueArgs{
-			ComputeEnvironments: pulumi.StringArray{
-				a.ComputeEnvironment.Arn,
-			},
-			// TODO: Set tags for job definition discovery
-			Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "job-queue", "job-queue")),
-		})
-	}
-
 	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
 	})
@@ -231,6 +206,47 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		if err != nil {
 			return err
 		}
+	}
+
+	if len(jobs) > 0 {
+		computeResourceOptions := &batch.ComputeEnvironmentComputeResourcesArgs{
+			// AllocationStrategy: pulumi.String("BEST_FIT"),
+			// MinVcpus:           pulumi.Int(0),
+			MaxVcpus: pulumi.Int(8),
+			// TODO Determine EC2 configuration
+
+			// TODO: Make launchable instance types configurable from stack configuration
+			InstanceTypes: pulumi.StringArray{
+				// Small long running instances
+				pulumi.String("t2.micro"),
+				// Allow GPU capable instances
+				pulumi.String("g3s.xlarge"),
+			},
+		}
+
+		// Connect into the stacks VPC if one was created
+		// if a.Vpc != nil {
+		// 	computeResourceOptions.Subnets = pulumi.StringArray{
+		// 		a.Vpc.PrivateSubnetIds...
+		// 	}
+		// }
+
+		// TODO: Possibly use a shared stack compute environment?
+		a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{
+			ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
+			ComputeResources:       computeResourceOptions,
+		})
+		if err != nil {
+			return err
+		}
+		// TODO: Possibly use a shared stack job queue?
+		a.JobQueue, err = batch.NewJobQueue(ctx, "job-queue", &batch.JobQueueArgs{
+			ComputeEnvironments: pulumi.StringArray{
+				a.ComputeEnvironment.Arn,
+			},
+			// TODO: Set tags for job definition discovery
+			Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "job-queue", "job-queue")),
+		})
 	}
 
 	return err
