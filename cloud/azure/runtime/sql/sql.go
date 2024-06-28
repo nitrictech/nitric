@@ -37,7 +37,7 @@ func (s *PostgresSqlService) ConnectionString(ctx context.Context, req *sqlpb.Sq
 	}
 
 	return &sqlpb.SqlConnectionStringResponse{
-		ConnectionString: fmt.Sprintf("%s/%s", baseUrl, req.DatabaseName),
+		ConnectionString: fmt.Sprintf("%s/%s?sslmode=require", baseUrl, req.DatabaseName),
 	}, nil
 }
 
