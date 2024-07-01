@@ -144,6 +144,10 @@ func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resou
 		if f, ok := a.LambdaRoles[resource.Id.Name]; ok {
 			return f, nil
 		}
+	case resourcespb.ResourceType_Batch:
+		if f, ok := a.BatchRoles[resource.Id.Name]; ok {
+			return f, nil
+		}
 	default:
 		return nil, fmt.Errorf("could not find role for principal: %+v", resource)
 	}

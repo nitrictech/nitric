@@ -71,6 +71,7 @@ type NitricAwsPulumiProvider struct {
 
 	ComputeEnvironment *batch.ComputeEnvironment
 	JobQueue           *batch.JobQueue
+	BatchExecutionRole *iam.Role
 
 	// A codebuild job for creating the requested databases for a single database cluster
 	DbMasterPassword      *random.RandomPassword
@@ -83,6 +84,7 @@ type NitricAwsPulumiProvider struct {
 	EcrAuthToken          *ecr.GetAuthorizationTokenResult
 	Lambdas               map[string]*lambda.Function
 	LambdaRoles           map[string]*iam.Role
+	BatchRoles            map[string]*iam.Role
 	HttpProxies           map[string]*apigatewayv2.Api
 	Apis                  map[string]*apigatewayv2.Api
 	Secrets               map[string]*secretsmanager.Secret
@@ -187,7 +189,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	})
 
 	jobs := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
-		return item.Id.Type == resourcespb.ResourceType_Job
+		return item.Id.Type == resourcespb.ResourceType_Batch
 	})
 
 	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
@@ -209,6 +211,90 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	}
 
 	if len(jobs) > 0 {
+		var subnets pulumi.StringArrayOutput
+		var vpcId pulumi.StringOutput
+
+		if a.Vpc != nil {
+			subnets = a.Vpc.PrivateSubnetIds
+			vpcId = a.Vpc.VpcId
+		} else {
+			vpc, err := ec2.NewDefaultVpc(ctx, "default-vpc", nil)
+			if err != nil {
+				return fmt.Errorf("could not resolve default VPC")
+			}
+			subnets = vpc.PublicSubnetIds
+			vpcId = vpc.VpcId
+		}
+
+		batchSecurityGroup, err := awsec2.NewSecurityGroup(ctx, "VpcSecurityGroup", &awsec2.SecurityGroupArgs{
+			VpcId: vpcId,
+			Egress: awsec2.SecurityGroupEgressArray{
+				awsec2.SecurityGroupEgressArgs{
+					Protocol:   pulumi.String("-1"),
+					FromPort:   pulumi.Int(0),
+					ToPort:     pulumi.Int(0),
+					CidrBlocks: pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				},
+			},
+			Ingress: awsec2.SecurityGroupIngressArray{},
+		})
+		if err != nil {
+			return err
+		}
+
+		a.BatchExecutionRole, err = iam.NewRole(ctx, "BatchExecutionRole", &iam.RoleArgs{
+			AssumeRolePolicy: pulumi.String(`{
+				"Version": "2012-10-17",
+				"Statement": [
+					{
+						"Action": "sts:AssumeRole",
+						"Principal": {
+							"Service": "batch.amazonaws.com"
+						},
+						"Effect": "Allow",
+						"Sid": ""
+					}
+				]
+			}`),
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = iam.NewRolePolicy(ctx, "BatchExecutionRolePolicy", &iam.RolePolicyArgs{
+			Role: a.BatchExecutionRole.ID(),
+			Policy: pulumi.String(`{
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
+							"ecr:GetAuthorizationToken",
+                            "ecr:BatchCheckLayerAvailability",
+                            "ecr:GetDownloadUrlForLayer",
+                            "ecr:BatchGetImage",
+                            "ecr:DescribeRepositories",
+                            "ecr:ListImages"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }`),
+		})
+		if err != nil {
+			return err
+		}
+
+		instanceProfile, err := iam.NewInstanceProfile(ctx, "BatchInstanceProfile", &iam.InstanceProfileArgs{
+			Role: a.BatchExecutionRole.Name,
+		})
+		if err != nil {
+			return err
+		}
+
 		computeResourceOptions := &batch.ComputeEnvironmentComputeResourcesArgs{
 			// AllocationStrategy: pulumi.String("BEST_FIT"),
 			// MinVcpus:           pulumi.Int(0),
@@ -218,26 +304,24 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			// TODO: Make launchable instance types configurable from stack configuration
 			InstanceTypes: pulumi.StringArray{
 				// Small long running instances
-				pulumi.String("t2.micro"),
+				pulumi.String("optimal"),
 				// Allow GPU capable instances
 				pulumi.String("g3s.xlarge"),
 			},
+			Type:             pulumi.String("EC2"),
+			Subnets:          subnets,
+			SecurityGroupIds: pulumi.StringArray{batchSecurityGroup.ID()},
+			InstanceRole:     instanceProfile.Arn,
 		}
-
-		// Connect into the stacks VPC if one was created
-		// if a.Vpc != nil {
-		// 	computeResourceOptions.Subnets = pulumi.StringArray{
-		// 		a.Vpc.PrivateSubnetIds...
-		// 	}
-		// }
 
 		// TODO: Possibly use a shared stack compute environment?
 		a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{
 			ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
 			ComputeResources:       computeResourceOptions,
+			Type:                   pulumi.String("MANAGED"),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating compute environment: %w", err)
 		}
 		// TODO: Possibly use a shared stack job queue?
 		a.JobQueue, err = batch.NewJobQueue(ctx, "job-queue", &batch.JobQueueArgs{
@@ -247,6 +331,9 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			// TODO: Set tags for job definition discovery
 			Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "job-queue", "job-queue")),
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return err
@@ -307,6 +394,7 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 	return &NitricAwsPulumiProvider{
+		BatchRoles:            make(map[string]*iam.Role),
 		Lambdas:               make(map[string]*lambda.Function),
 		LambdaRoles:           make(map[string]*iam.Role),
 		Apis:                  make(map[string]*apigatewayv2.Api),

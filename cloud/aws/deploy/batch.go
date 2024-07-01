@@ -25,11 +25,12 @@ import (
 
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 )
 
 type ResourceRequirement struct {
-	Type  string  `json:"type"`
-	Value float64 `json:"value"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 type EnvironmentVariable struct {
@@ -48,11 +49,13 @@ type JobDefinitionContainerProperties struct {
 }
 
 func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+
 	// Tag the image
 	repo, err := ecr.NewRepository(ctx, name, &ecr.RepositoryArgs{
 		ForceDelete: pulumi.BoolPtr(true),
 		Tags:        pulumi.ToStringMap(tags.Tags(p.StackId, name, "batch")),
-	}, pulumi.Parent(parent))
+	}, opts...)
 	if err != nil {
 		return err
 	}
@@ -65,7 +68,7 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 	newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
 		SourceImage: pulumi.String(inspect.ID),
 		TargetImage: repo.RepositoryUrl,
-	}, pulumi.Parent(parent))
+	}, opts...)
 	if err != nil {
 		return err
 	}
@@ -80,6 +83,25 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
+	p.BatchRoles[name], err = iam.NewRole(ctx, "BatchJobRole", &iam.RoleArgs{
+		AssumeRolePolicy: pulumi.String(`{
+			"Version": "2012-10-17",
+			"Statement": [
+				{
+					"Action": "sts:AssumeRole",
+					"Principal": {
+						"Service": "ecs-tasks.amazonaws.com"
+					},
+					"Effect": "Allow",
+					"Sid": ""
+				}
+			]
+		}`),
+	}, opts...)
+	if err != nil {
+		return err
+	}
+
 	// create a job role for the task definition
 	// jobRole, err := iam.NewRole(ctx, name+"-job-role", &iam.RoleArgs{})
 
@@ -90,8 +112,10 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 
 	for _, job := range config.Jobs {
 		jobName := job
-		containerProperties := pulumi.All(image.Name).ApplyT(func(args []interface{}) (string, error) {
+		containerProperties := pulumi.All(image.Name, p.BatchExecutionRole.Arn, p.BatchRoles[name].Arn).ApplyT(func(args []interface{}) (string, error) {
 			imageName := args[0].(string)
+			batchRoleArn := args[1].(string)
+			jobRoleArn := args[2].(string)
 
 			jobDefinitionContainerProperties := JobDefinitionContainerProperties{
 				Image: imageName,
@@ -101,11 +125,11 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 					// Or template parameters that can be set at runtime
 					{
 						Type:  "MEMORY",
-						Value: 512,
+						Value: "512",
 					},
 					{
 						Type:  "VCPU",
-						Value: 0.25,
+						Value: "0.25",
 					},
 				},
 				Environment: []EnvironmentVariable{
@@ -114,9 +138,8 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 						Value: jobName,
 					},
 				},
-				// TODO Configure roles
-				JobRoleArn:       "",
-				ExecutionRoleArn: "",
+				JobRoleArn:       jobRoleArn,
+				ExecutionRoleArn: batchRoleArn,
 			}
 
 			containerPropertiesJson, err := json.Marshal(jobDefinitionContainerProperties)
@@ -128,13 +151,13 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		}).(pulumi.StringOutput)
 
 		_, err = batch.NewJobDefinition(ctx, name, &batch.JobDefinitionArgs{
-			// Name:
+			Name:                pulumi.Sprintf("%s-job-%s", p.StackId, job),
 			ContainerProperties: containerProperties,
 
 			// TODO: Set tags for job definition discovery
 			Type: pulumi.String("container"),
 			Tags: pulumi.ToStringMap(tags.Tags(p.StackId, job, "job")),
-		})
+		}, opts...)
 	}
 
 	return err

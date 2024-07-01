@@ -115,7 +115,6 @@ func launchBatch(jobName string) {
 	)
 
 	err = membrane.Run()
-
 	if err != nil {
 		log.Fatalf("error executing nitric job %s: %s", jobName, err)
 	}

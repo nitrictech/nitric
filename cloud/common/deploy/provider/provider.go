@@ -85,6 +85,7 @@ func just(all []*deploymentspb.Resource, only resourcespb.ResourceType) []*deplo
 func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploymentspb.Resource {
 	typeOrder := []resourcespb.ResourceType{
 		resourcespb.ResourceType_SqlDatabase,
+		resourcespb.ResourceType_Batch,
 		resourcespb.ResourceType_Service,
 		resourcespb.ResourceType_Secret,
 		resourcespb.ResourceType_Queue,
