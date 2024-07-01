@@ -84,46 +84,58 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 	// jobRole, err := iam.NewRole(ctx, name+"-job-role", &iam.RoleArgs{})
 
 	// Create a new Iam Role for the job
-	containerProperties := pulumi.All(image.Name).ApplyT(func(args []interface{}) (string, error) {
-		imageName := args[0].(string)
 
-		jobDefinitionContainerProperties := JobDefinitionContainerProperties{
-			Image: imageName,
-			// Command:          []string{""},
-			ResourceRequirements: []ResourceRequirement{
-				// TODO: Make these configurable options
-				// Or template parameters that can be set at runtime
-				{
-					Type:  "MEMORY",
-					Value: 512,
+	// Deploy one job for each job that a batch handles
+	// The job that it executes is defined by the job name provided in its env variables
+
+	for _, job := range config.Jobs {
+		jobName := job
+		containerProperties := pulumi.All(image.Name).ApplyT(func(args []interface{}) (string, error) {
+			imageName := args[0].(string)
+
+			jobDefinitionContainerProperties := JobDefinitionContainerProperties{
+				Image: imageName,
+				// Command:          []string{""},
+				ResourceRequirements: []ResourceRequirement{
+					// TODO: Make these configurable options
+					// Or template parameters that can be set at runtime
+					{
+						Type:  "MEMORY",
+						Value: 512,
+					},
+					{
+						Type:  "VCPU",
+						Value: 0.25,
+					},
 				},
-				{
-					Type:  "VCPU",
-					Value: 0.25,
+				Environment: []EnvironmentVariable{
+					{
+						Name:  "NITRIC_JOB_NAME",
+						Value: jobName,
+					},
 				},
-			},
-			// TODO Configure roles
-			JobRoleArn:       "",
-			ExecutionRoleArn: "",
-		}
+				// TODO Configure roles
+				JobRoleArn:       "",
+				ExecutionRoleArn: "",
+			}
 
-		containerPropertiesJson, err := json.Marshal(jobDefinitionContainerProperties)
-		if err != nil {
-			return "", err
-		}
+			containerPropertiesJson, err := json.Marshal(jobDefinitionContainerProperties)
+			if err != nil {
+				return "", err
+			}
 
-		return string(containerPropertiesJson), nil
-	}).(pulumi.StringOutput)
+			return string(containerPropertiesJson), nil
+		}).(pulumi.StringOutput)
 
-	//
-	_, err = batch.NewJobDefinition(ctx, name, &batch.JobDefinitionArgs{
-		// Name:
-		ContainerProperties: containerProperties,
+		_, err = batch.NewJobDefinition(ctx, name, &batch.JobDefinitionArgs{
+			// Name:
+			ContainerProperties: containerProperties,
 
-		// TODO: Set tags for job definition discovery
-		Type: pulumi.String("container"),
-		Tags: pulumi.ToStringMap(tags.Tags(p.StackId, name, "job")),
-	})
+			// TODO: Set tags for job definition discovery
+			Type: pulumi.String("container"),
+			Tags: pulumi.ToStringMap(tags.Tags(p.StackId, job, "job")),
+		})
+	}
 
 	return err
 }
