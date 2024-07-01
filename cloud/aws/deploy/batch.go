@@ -102,6 +102,7 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 					Value: 0.25,
 				},
 			},
+			// TODO Configure roles
 			JobRoleArn:       "",
 			ExecutionRoleArn: "",
 		}

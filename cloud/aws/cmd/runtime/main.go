@@ -15,8 +15,10 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
@@ -30,12 +32,14 @@ import (
 	s3_service "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
 	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
+	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/membrane/job"
 )
 
-func main() {
+func launchService() {
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
@@ -89,4 +93,39 @@ func main() {
 	}
 
 	m.Stop()
+}
+
+func launchBatch(jobName string) {
+	provider, err := resource.New()
+	if err != nil {
+		logger.Fatalf("could not create aws provider: %v", err)
+		return
+	}
+
+	queueService, _ := sqs_service.New(provider)
+	topicService, _ := sns_service.New(provider)
+	storageService, _ := s3_service.New(provider)
+
+	// launch a job membrane
+	membrane := job.NewJobMembrane(
+		strings.Join(os.Args[1:], " "),
+		job.WithQueueServer(queueService),
+		job.WithTopicServer(topicService),
+		job.WithStorageServer(storageService),
+	)
+
+	err = membrane.Run()
+
+	if err != nil {
+		log.Fatalf("error executing nitric job %s: %s", jobName, err)
+	}
+}
+
+func main() {
+	jobName := commonenv.NITRIC_JOB_NAME.String()
+	if jobName != "" {
+		launchBatch(jobName)
+	} else {
+		launchService()
+	}
 }
