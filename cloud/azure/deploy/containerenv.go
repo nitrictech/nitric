@@ -139,7 +139,7 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 		WorkspaceName:     aw.Name,
 	})
 
-	res.ManagedEnv, err = app.NewManagedEnvironment(ctx, ResourceName(ctx, name, KubeRT), &app.ManagedEnvironmentArgs{
+	managementArgs := &app.ManagedEnvironmentArgs{
 		Location:          p.ResourceGroup.Location,
 		ResourceGroupName: p.ResourceGroup.Name,
 		AppLogsConfiguration: app.AppLogsConfigurationArgs{
@@ -150,7 +150,15 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 			},
 		},
 		Tags: pulumi.ToStringMap(common.Tags(p.StackId, ctx.Stack()+"Kube", resources.Service)),
-	}, pulumi.Parent(res))
+	}
+
+	if p.InfrastructureSubnet != nil {
+		managementArgs.VnetConfiguration = &app.VnetConfigurationArgs{
+			InfrastructureSubnetId: p.InfrastructureSubnet.ID(),
+		}
+	}
+
+	res.ManagedEnv, err = app.NewManagedEnvironment(ctx, ResourceName(ctx, name, KubeRT), managementArgs, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
 	}

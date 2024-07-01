@@ -21,7 +21,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
-	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement"
+	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
@@ -104,7 +104,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 
 	proxyApi, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiHttpProxyRT), &apimanagement.ApiArgs{
 		DisplayName:          pulumi.Sprintf("%s-api", name),
-		Protocols:            apimanagement.ProtocolArray{"https"},
+		Protocols:            pulumi.StringArray{pulumi.String("https")},
 		ApiId:                apiId,
 		Format:               pulumi.String("openapi+json"),
 		Path:                 pulumi.String("/"),

@@ -22,6 +22,7 @@ import (
 
 	"github.com/nitrictech/nitric/cloud/azure/runtime/api"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
+	postgresql "github.com/nitrictech/nitric/cloud/azure/runtime/sql"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 
 	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
@@ -76,6 +77,11 @@ func main() {
 	membraneOpts.SecretManagerPlugin, err = key_vault.New()
 	if err != nil {
 		logger.Errorf("Failed to load secret plugin: %s", err.Error())
+	}
+
+	membraneOpts.SqlPlugin, err = postgresql.New()
+	if err != nil {
+		logger.Errorf("Failed to load sql plugin: %s", err.Error())
 	}
 
 	membraneOpts.ResourcesPlugin = provider
