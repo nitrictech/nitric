@@ -125,11 +125,11 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 					// Or template parameters that can be set at runtime
 					{
 						Type:  "MEMORY",
-						Value: "512",
+						Value: "2048",
 					},
 					{
 						Type:  "VCPU",
-						Value: "0.25",
+						Value: "1",
 					},
 				},
 				Environment: []EnvironmentVariable{

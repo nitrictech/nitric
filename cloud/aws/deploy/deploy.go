@@ -277,7 +277,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
                             "ecr:GetDownloadUrlForLayer",
                             "ecr:BatchGetImage",
                             "ecr:DescribeRepositories",
-                            "ecr:ListImages"
+                            "ecr:ListImages",
+							"batch:SubmitJob"
                         ],
                         "Resource": "*"
                     }
@@ -328,6 +329,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			ComputeEnvironments: pulumi.StringArray{
 				a.ComputeEnvironment.Arn,
 			},
+			State:    pulumi.String("ENABLED"),
+			Priority: pulumi.Int(1),
 			// TODO: Set tags for job definition discovery
 			Tags: pulumi.ToStringMap(tags.Tags(a.StackId, "job-queue", "job-queue")),
 		})

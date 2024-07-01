@@ -22,6 +22,7 @@ import (
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/batch"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
 	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/keyvalue"
@@ -73,6 +74,7 @@ func launchService() {
 	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
 	membraneOpts.QueuesPlugin, _ = sqs_service.New(provider)
 	membraneOpts.SqlPlugin = sql_service.NewRdsSqlService()
+	membraneOpts.BatchPlugin, _ = batch.New()
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

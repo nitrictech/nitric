@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	awsbatch "github.com/aws/aws-sdk-go-v2/service/batch"
 	"github.com/google/uuid"
 	"github.com/nitrictech/nitric/cloud/aws/common"
@@ -45,6 +46,8 @@ func (a *AwsBatchService) CreateJob(ctx context.Context, request *batchpb.Create
 
 	jobName := uuid.New()
 
+	fmt.Printf("Submitting job to AWS Batch for JD: %s onto: %s \n", jobDefinitionName, a.jobQueueArn)
+
 	_, err = a.client.SubmitJob(ctx, &awsbatch.SubmitJobInput{
 		JobDefinition: aws.String(jobDefinitionName),
 		// Generate a unique name for the job
@@ -54,6 +57,8 @@ func (a *AwsBatchService) CreateJob(ctx context.Context, request *batchpb.Create
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Job submitted to AWS Batch")
 
 	return &batchpb.CreateJobResponse{}, nil
 }
@@ -66,10 +71,18 @@ func New() (*AwsBatchService, error) {
 		return nil, status.Error(codes.InvalidArgument, "JOB_QUEUE_ARN not set")
 	}
 
+	awsRegion := env.AWS_REGION.String()
+
+	// Create a new AWS session
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if sessionError != nil {
+		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
+	}
+
 	return &AwsBatchService{
 		// TODO: Configure client
 		stackId:     stackId,
-		client:      awsbatch.New(awsbatch.Options{}),
+		client:      awsbatch.NewFromConfig(cfg),
 		jobQueueArn: jobQueueArn,
 	}, nil
 }

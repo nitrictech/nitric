@@ -206,6 +206,10 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		envVars[k] = v
 	}
 
+	if a.JobQueue != nil {
+		envVars["NITRIC_JOB_QUEUE_ARN"] = a.JobQueue.Arn
+	}
+
 	if a.DatabaseCluster != nil {
 		// Include the base database cluster URI for the runtime to resolve databases based on their name
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
