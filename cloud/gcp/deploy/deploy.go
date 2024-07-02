@@ -33,6 +33,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/common"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
 	workerpool "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudbuild"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
@@ -63,6 +64,8 @@ type NitricGcpPulumiProvider struct {
 
 	StackId   string
 	GcpConfig *common.GcpConfig
+
+	DockerProvider *docker.Provider
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
@@ -206,6 +209,19 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 	// Deploy all services
 	a.AuthToken, err = getGCPToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
+		RegistryAuth: &docker.ProviderRegistryAuthArray{
+			docker.ProviderRegistryAuthArgs{
+				Address:  pulumi.String("https://gcr.io"),
+				Username: pulumi.String("oauth2accesstoken"),
+				Password: pulumi.String(a.AuthToken.AccessToken),
+			},
+		},
+	})
 	if err != nil {
 		return err
 	}
