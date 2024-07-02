@@ -20,14 +20,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	cloudbuild "cloud.google.com/go/cloudbuild/apiv1/v2"
 	"cloud.google.com/go/cloudbuild/apiv1/v2/cloudbuildpb"
+	"github.com/avast/retry-go"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
@@ -148,9 +151,27 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}
 
-			err = checkBuildStatus(clientContext, build)
+			err = retry.Do(func() error {
+				metadata, err := build.Metadata()
+				if err != nil {
+					return retry.Unrecoverable(err)
+				}
+
+				if metadata.Build.Status == cloudbuildpb.Build_SUCCESS {
+					return nil
+				} else if lo.Contains([]cloudbuildpb.Build_Status{
+					cloudbuildpb.Build_PENDING,
+					cloudbuildpb.Build_WORKING,
+					cloudbuildpb.Build_QUEUED,
+					cloudbuildpb.Build_STATUS_UNKNOWN,
+				}, metadata.Build.Status) {
+					return fmt.Errorf("build still in progress with status: %s", metadata.Build.Status)
+				} else {
+					return retry.Unrecoverable(fmt.Errorf("build failed with status: %s", metadata.Build.Status))
+				}
+			}, retry.Attempts(10), retry.Delay(10*time.Second))
 			if err != nil {
-				return "", fmt.Errorf("error checking build for db %s: %w", name, err)
+				return "", err
 			}
 
 			return build.Name(), nil
