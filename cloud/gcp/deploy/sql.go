@@ -36,7 +36,7 @@ import (
 )
 
 type CloudBuild struct {
-	pulumi.Resource
+	pulumi.ResourceState
 
 	ID pulumi.StringOutput
 }
@@ -181,7 +181,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			ID: buildId,
 		}
 
-		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res)
+		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res, pulumi.Parent(parent))
 		if err != nil {
 			return err
 		}
