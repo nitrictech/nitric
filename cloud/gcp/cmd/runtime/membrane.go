@@ -27,6 +27,7 @@ import (
 	pubsub_queue_service "github.com/nitrictech/nitric/cloud/gcp/runtime/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	secret_manager_secret_service "github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
+	sql_service "github.com/nitrictech/nitric/cloud/gcp/runtime/sql"
 	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
 	pubsub_service "github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
 	"github.com/nitrictech/nitric/core/pkg/logger"
@@ -76,6 +77,8 @@ func main() {
 	if err != nil {
 		logger.Errorf("Failed to load gateway plugin: %s", err.Error())
 	}
+
+	membraneOpts.SqlPlugin = sql_service.New()
 
 	membraneOpts.ResourcesPlugin = provider
 

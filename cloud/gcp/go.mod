@@ -1,11 +1,12 @@
 module github.com/nitrictech/nitric/cloud/gcp
 
-go 1.21.3
+go 1.21.5
 
 toolchain go1.22.0
 
 require (
 	cloud.google.com/go/apigateway v1.6.6
+	cloud.google.com/go/cloudbuild v1.16.0
 	cloud.google.com/go/cloudtasks v1.12.7
 	cloud.google.com/go/firestore v1.15.0
 	cloud.google.com/go/pubsub v1.37.0
@@ -31,6 +32,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.1
 	github.com/pkg/errors v0.9.1
+	github.com/pulumi/pulumi-std/sdk v1.6.2
 	github.com/pulumi/pulumi/sdk/v3 v3.112.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
@@ -71,7 +73,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pkg/term v1.1.0 // indirect
-	github.com/pulumi/pulumi-gcp/sdk/v6 v6.55.0
+	github.com/pulumi/pulumi-gcp/sdk/v6 v6.67.1
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
