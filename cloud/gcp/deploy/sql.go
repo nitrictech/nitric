@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/cloudbuild/apiv1/v2/cloudbuildpb"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"golang.org/x/oauth2/google"
@@ -39,6 +40,7 @@ type CloudBuild struct {
 
 func checkBuildStatus(ctx context.Context, build *cloudbuild.CreateBuildOperation) error {
 	_, err := build.Wait(ctx)
+
 	if build.Done() && err != nil {
 		return fmt.Errorf("cloudbuild job %s failed", build.Name())
 	}
@@ -47,11 +49,13 @@ func checkBuildStatus(ctx context.Context, build *cloudbuild.CreateBuildOperatio
 		return nil
 	}
 
+	if err != nil {
+		return fmt.Errorf("polling failed for %s: %s", build.Name(), err.Error())
+	}
 	return fmt.Errorf("polling failed for %s", build.Name())
 }
 
 func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	// Get the image name:tag from the uri
 	imageUriSplit := strings.Split(config.GetImageUri(), "/")
 	imageName := imageUriSplit[len(imageUriSplit)-1]
 
@@ -60,14 +64,22 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		return err
 	}
 
-	image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
-		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", a.GcpConfig.ProjectId, imageName),
-		SourceImage:   config.GetImageUri(),
-		SourceImageID: inspect.ID,
-		Username:      pulumi.String("oauth2accesstoken"),
-		Password:      pulumi.String(a.AuthToken.AccessToken),
-		Server:        pulumi.String("https://gcr.io"),
-	})
+	repoUrl := pulumi.Sprintf("gcr.io/%s/%s", a.GcpConfig.ProjectId, imageName)
+
+	newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
+		SourceImage: pulumi.String(inspect.ID),
+		TargetImage: repoUrl,
+	}, pulumi.Parent(parent))
+	if err != nil {
+		return err
+	}
+
+	image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
+		Name: repoUrl,
+		Triggers: pulumi.Map{
+			"imageSha": pulumi.String(inspect.ID),
+		},
+	}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
 	if err != nil {
 		return err
 	}
@@ -79,32 +91,37 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		Project:        pulumi.String(a.GcpConfig.ProjectId),
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
 	if err != nil {
+
 		return err
 	}
 
 	if a.DatabaseMigrationBuild[name] == nil && config.GetImageUri() != "" {
-		creds, err := google.FindDefaultCredentials(ctx.Context())
-		if err != nil {
-			return err
-		}
 
-		client, err := cloudbuild.NewClient(ctx.Context(), option.WithCredentials(creds), option.WithQuotaProject(a.GcpConfig.ProjectId))
-		if err != nil {
-			return err
-		}
+		clientContext := context.TODO()
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "postgres", a.dbMasterPassword.Result, a.masterDb.PrivateIpAddress, "5432", name)
 
-		buildId := pulumi.All(databaseUrl, a.cloudBuildWorkerPool.ID().ToStringOutput(), image.URI()).ApplyT(func(args []interface{}) (string, error) {
+		buildId := pulumi.All(databaseUrl, a.cloudBuildWorkerPool.ID().ToStringOutput(), image.Name, a.masterDb.ToDatabaseInstanceOutput()).ApplyT(func(args []interface{}) (string, error) {
+			creds, err := google.FindDefaultCredentials(clientContext)
+			if err != nil {
+				return "", err
+			}
+
+			client, err := cloudbuild.NewClient(clientContext, option.WithCredentials(creds), option.WithQuotaProject(a.GcpConfig.ProjectId))
+			if err != nil {
+				return "", err
+			}
+
+			defer client.Close()
+
 			url := args[0].(string)
 			workerPoolId := args[1].(string)
 			imageUri := args[2].(string)
 
-			build, err := client.CreateBuild(ctx.Context(), &cloudbuildpb.CreateBuildRequest{
+			build, err := client.CreateBuild(clientContext, &cloudbuildpb.CreateBuildRequest{
 				Parent:    fmt.Sprintf("projects/%s/locations/%s", a.GcpConfig.ProjectId, a.Region),
 				ProjectId: a.GcpConfig.ProjectId,
 				Build: &cloudbuildpb.Build{
-					Name: imageUri,
 					Substitutions: map[string]string{
 						"_DATABASE_NAME": name,
 						"_DATABASE_URL":  url,
@@ -126,18 +143,14 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 					},
 				},
 			})
+
 			if err != nil {
 				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}
 
-			err = checkBuildStatus(context.TODO(), build)
+			err = checkBuildStatus(clientContext, build)
 			if err != nil {
-				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
-			}
-
-			err = client.Close()
-			if err != nil {
-				return "", err
+				return "", fmt.Errorf("error checking build for db %s: %w", name, err)
 			}
 
 			return build.Name(), nil
@@ -146,14 +159,23 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		res := &CloudBuild{
 			ID: buildId,
 		}
+
 		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res)
 		if err != nil {
 			return err
 		}
 
-		a.DatabaseMigrationBuild[name] = &CloudBuild{
-			ID: buildId,
+		res.ID = buildId
+
+		err = ctx.RegisterResourceOutputs(res, pulumi.Map{
+			"ID": buildId,
+		})
+		if err != nil {
+			return err
 		}
+
+		ctx.Export(fmt.Sprintf("migration-%s-build-id", name), buildId)
+		a.DatabaseMigrationBuild[name] = res
 	}
 
 	return nil
