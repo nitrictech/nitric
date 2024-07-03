@@ -18,7 +18,10 @@ package deploy
 
 import (
 	"fmt"
+	"regexp"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -103,13 +106,96 @@ func createNotification(ctx *pulumi.Context, name string, args *S3NotificationAr
 	return notification, nil
 }
 
+// extractBucketName - extracts the bucket name from an S3 ARN.
+func extractBucketName(arn string) (string, error) {
+	var s3ArnRegex = regexp.MustCompile(`(?i)^arn:aws:s3:::([^/]+)`)
+
+	matches := s3ArnRegex.FindStringSubmatch(arn)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("invalid S3 bucket ARN: %s", arn)
+	}
+
+	bucketName := matches[1]
+
+	if bucketName == "" {
+		return "", fmt.Errorf("invalid S3 bucket ARN: bucket name could not be extracted from %s", arn)
+	}
+
+	return bucketName, nil
+}
+
+// importBucket - tags an existing bucket in AWS and adds it to the stack.
+func importBucket(ctx *pulumi.Context, name string, importIdentifier string, opts []pulumi.ResourceOption, tags map[string]string, tagClient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI) (*s3.Bucket, error) {
+
+	// Allow bucket names or ARNs as import identifiers
+	bucketName, err := extractBucketName(importIdentifier)
+	if err != nil {
+		bucketName = importIdentifier
+	}
+
+	bucketLookup, err := s3.LookupBucket(ctx, &s3.LookupBucketArgs{
+		Bucket: bucketName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to lookup imported S3 bucket %s: %w", bucketName, err)
+	}
+
+	_, err = tagClient.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+		ResourceARNList: aws.StringSlice([]string{bucketLookup.Arn}),
+		Tags:            aws.StringMap(tags),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to tag imported S3 bucket %s: %w", bucketName, err)
+	}
+
+	// nitric didn't create this resource, so it shouldn't delete it either.
+	allOpts := append(opts, pulumi.RetainOnDelete(true))
+
+	bucket, err := s3.GetBucket(
+		ctx,
+		name,
+		pulumi.ID(bucketLookup.Id),
+		nil,
+		allOpts...,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to import S3 bucket %s: %w", bucketName, err)
+	}
+
+	return bucket, nil
+}
+
+// createBucket - creates a new S3 bucket in AWS and tags it.
+func createBucket(ctx *pulumi.Context, name string, opts []pulumi.ResourceOption, tags map[string]string) (*s3.Bucket, error) {
+	bucket, err := s3.NewBucket(ctx, name, &s3.BucketArgs{
+		Tags: pulumi.ToStringMap(tags),
+	}, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return bucket, nil
+}
+
 // Bucket - Implements deployments of Nitric Buckets using AWS S3
 func (a *NitricAwsPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+	tags := common.Tags(a.StackId, name, resources.Bucket)
 
-	bucket, err := s3.NewBucket(ctx, name, &s3.BucketArgs{
-		Tags: pulumi.ToStringMap(common.Tags(a.StackId, name, resources.Bucket)),
-	}, opts...)
+	var err error
+	var bucket *s3.Bucket
+
+	importArn := ""
+	if a.AwsConfig.Import.Buckets != nil {
+		importArn = a.AwsConfig.Import.Buckets[name]
+	}
+
+	if importArn != "" {
+		bucket, err = importBucket(ctx, name, importArn, opts, tags, a.ResourceTaggingClient)
+	} else {
+		bucket, err = createBucket(ctx, name, opts, tags)
+	}
+
 	if err != nil {
 		return err
 	}
