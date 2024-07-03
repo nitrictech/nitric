@@ -71,7 +71,6 @@ type NitricAwsPulumiProvider struct {
 
 	ComputeEnvironment *batch.ComputeEnvironment
 	JobQueue           *batch.JobQueue
-	BatchExecutionRole *iam.Role
 
 	// A codebuild job for creating the requested databases for a single database cluster
 	DbMasterPassword      *random.RandomPassword
@@ -242,7 +241,33 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
-		a.BatchExecutionRole, err = iam.NewRole(ctx, "BatchExecutionRole", &iam.RoleArgs{
+		ecsInstanceRole, err := iam.NewRole(ctx, "EcsInstanceRole", &iam.RoleArgs{
+			AssumeRolePolicy: pulumi.String(`{
+				"Version": "2012-10-17",
+				"Statement": [
+					{
+						"Effect": "Allow",
+						"Principal": {
+							"Service": "ec2.amazonaws.com"
+						},
+						"Action": "sts:AssumeRole"
+					}
+				]
+			}`),
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = iam.NewRolePolicyAttachment(ctx, "EcsInstanceRolePolicyAttachment", &iam.RolePolicyAttachmentArgs{
+			Role:      ecsInstanceRole.Name,
+			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"),
+		})
+		if err != nil {
+			return err
+		}
+
+		batchServiceRole, err := iam.NewRole(ctx, "BatchExecutionRole", &iam.RoleArgs{
 			AssumeRolePolicy: pulumi.String(`{
 				"Version": "2012-10-17",
 				"Statement": [
@@ -261,36 +286,16 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			return err
 		}
 
-		_, err = iam.NewRolePolicy(ctx, "BatchExecutionRolePolicy", &iam.RolePolicyArgs{
-			Role: a.BatchExecutionRole.ID(),
-			Policy: pulumi.String(`{
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "logs:CreateLogGroup",
-                            "logs:CreateLogStream",
-                            "logs:PutLogEvents",
-							"ecr:GetAuthorizationToken",
-                            "ecr:BatchCheckLayerAvailability",
-                            "ecr:GetDownloadUrlForLayer",
-                            "ecr:BatchGetImage",
-                            "ecr:DescribeRepositories",
-                            "ecr:ListImages",
-							"batch:SubmitJob"
-                        ],
-                        "Resource": "*"
-                    }
-                ]
-            }`),
+		_, err = iam.NewRolePolicyAttachment(ctx, "BatchExecutionRoleAttachment", &iam.RolePolicyAttachmentArgs{
+			Role:      batchServiceRole.Name,
+			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"),
 		})
 		if err != nil {
 			return err
 		}
 
 		instanceProfile, err := iam.NewInstanceProfile(ctx, "BatchInstanceProfile", &iam.InstanceProfileArgs{
-			Role: a.BatchExecutionRole.Name,
+			Role: ecsInstanceRole.Name,
 		})
 		if err != nil {
 			return err
@@ -300,6 +305,8 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			// AllocationStrategy: pulumi.String("BEST_FIT"),
 			// MinVcpus:           pulumi.Int(0),
 			MaxVcpus: pulumi.Int(8),
+			// We want to
+			DesiredVcpus: pulumi.Int(0),
 			// TODO Determine EC2 configuration
 
 			// TODO: Make launchable instance types configurable from stack configuration
@@ -320,6 +327,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
 			ComputeResources:       computeResourceOptions,
 			Type:                   pulumi.String("MANAGED"),
+			ServiceRole:            batchServiceRole.Arn,
 		})
 		if err != nil {
 			return fmt.Errorf("error creating compute environment: %w", err)

@@ -1,12 +1,16 @@
 package job
 
 import (
+	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	secretspb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 	sqlpb "github.com/nitrictech/nitric/core/pkg/proto/sql/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -21,11 +25,12 @@ type JobMembrane struct {
 	cmd string
 
 	// Runtime plugins (for reading/writing to cloud services)
-	topicServer   topicspb.TopicsServer
-	storageServer storagepb.StorageServer
-	queueServer   queuespb.QueuesServer
-	secretServer  secretspb.SecretManagerServer
-	sqlServer     sqlpb.SqlServer
+	topicServer     topicspb.TopicsServer
+	storageServer   storagepb.StorageServer
+	queueServer     queuespb.QueuesServer
+	secretServer    secretspb.SecretManagerServer
+	sqlServer       sqlpb.SqlServer
+	resourcesServer resourcespb.ResourcesServer
 }
 
 func (j *JobMembrane) Run() error {
@@ -37,20 +42,40 @@ func (j *JobMembrane) Run() error {
 	queuespb.RegisterQueuesServer(grpcServer, j.queueServer)
 	secretspb.RegisterSecretManagerServer(grpcServer, j.secretServer)
 	sqlpb.RegisterSqlServer(grpcServer, j.sqlServer)
+	resourcespb.RegisterResourcesServer(grpcServer, j.resourcesServer)
 
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", "127.0.0.1:50051")
 	if err != nil {
 		return err
 	}
 
 	// Start the grpc services
-	go grpcServer.Serve(lis)
+	go func() {
+		fmt.Printf("Starting nitric gRPC server on %s\n", lis.Addr().String())
+		err := grpcServer.Serve(lis)
+		if err != nil {
+			log.Fatalf("Failed to start gRPC server: %v", err)
+		}
+	}()
 
-	defer grpcServer.GracefulStop()
+	defer func() {
+		grpcServer.GracefulStop()
+		lis.Close()
+	}()
+
+	// Give the grpc server time to start up
+	// TODO: Replace this with logic for waiting until the port is active
+	fmt.Printf("Waiting for gRPC server to start\n")
+	time.Sleep(1 * time.Second)
+
+	fmt.Printf("Running command: %s\n", j.cmd)
 
 	// Run the command and wait for it to exit
 	cmdParts := strings.Split(j.cmd, " ")
 	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	// copy the current environment variables
 	cmd.Env = os.Environ()
@@ -60,12 +85,13 @@ func (j *JobMembrane) Run() error {
 
 func NewJobMembrane(cmd string, options ...JobMembraneOption) *JobMembrane {
 	membrane := &JobMembrane{
-		cmd:           cmd,
-		topicServer:   topicspb.UnimplementedTopicsServer{},
-		storageServer: storagepb.UnimplementedStorageServer{},
-		queueServer:   queuespb.UnimplementedQueuesServer{},
-		secretServer:  secretspb.UnimplementedSecretManagerServer{},
-		sqlServer:     sqlpb.UnimplementedSqlServer{},
+		cmd:             cmd,
+		topicServer:     topicspb.UnimplementedTopicsServer{},
+		storageServer:   storagepb.UnimplementedStorageServer{},
+		queueServer:     queuespb.UnimplementedQueuesServer{},
+		secretServer:    secretspb.UnimplementedSecretManagerServer{},
+		sqlServer:       sqlpb.UnimplementedSqlServer{},
+		resourcesServer: resourcespb.UnimplementedResourcesServer{},
 	}
 
 	for _, option := range options {

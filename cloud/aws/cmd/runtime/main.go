@@ -114,6 +114,7 @@ func launchBatch(jobName string) {
 		job.WithQueueServer(queueService),
 		job.WithTopicServer(topicService),
 		job.WithStorageServer(storageService),
+		job.WithResourcesServer(provider),
 	)
 
 	err = membrane.Run()

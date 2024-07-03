@@ -157,6 +157,9 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		"s3:ListAllMyBuckets",
 		"tag:GetResources",
 		"apigateway:GET",
+		// Allow batch job submission
+		// TODO: Limit this to batches available within the nitric stack
+		"batch:SubmitJob",
 	}
 
 	// This is a tag key unique to this instance of the deployed stack.

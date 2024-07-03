@@ -74,7 +74,7 @@ func New() (*AwsBatchService, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	// Create a new AWS session
-	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion), config.WithClientLogMode(aws.LogRetries|aws.LogResponse|aws.LogRequest))
 	if sessionError != nil {
 		return nil, fmt.Errorf("error creating new AWS session %w", sessionError)
 	}

@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
@@ -48,7 +48,7 @@ type JobDefinitionContainerProperties struct {
 	Environment          []EnvironmentVariable `json:"environment"`
 }
 
-func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch) error {
+func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch, runtime provider.RuntimeProvider) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	// Tag the image
@@ -60,25 +60,14 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	inspect, err := image.CommandFromImageInspect(config.GetImage().Uri, " ")
-	if err != nil {
-		return err
-	}
-
-	newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
-		SourceImage: pulumi.String(inspect.ID),
-		TargetImage: repo.RepositoryUrl,
-	}, opts...)
-	if err != nil {
-		return err
-	}
-
-	image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
-		Name: repo.RepositoryUrl,
-		Triggers: pulumi.Map{
-			"imageSha": pulumi.String(inspect.ID),
-		},
-	}, pulumi.Parent(parent), pulumi.Provider(p.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
+	wrappedImage, err := image.NewImage(ctx, name, &image.ImageArgs{
+		SourceImage:   config.GetImage().GetUri(),
+		RepositoryUrl: repo.RepositoryUrl,
+		Server:        pulumi.String(p.EcrAuthToken.ProxyEndpoint),
+		Username:      pulumi.String(p.EcrAuthToken.UserName),
+		Password:      pulumi.String(p.EcrAuthToken.Password),
+		Runtime:       runtime(),
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
 	if err != nil {
 		return err
 	}
@@ -102,8 +91,50 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	// create a job role for the task definition
-	// jobRole, err := iam.NewRole(ctx, name+"-job-role", &iam.RoleArgs{})
+	listActions := []string{
+		// TODO: test that all resources still work without these permissions
+		"sns:ListTopics",
+		"sqs:ListQueues",
+		"dynamodb:ListTables",
+		"s3:ListAllMyBuckets",
+		"tag:GetResources",
+		"apigateway:GET",
+		// Allow batch job submission
+		// TODO: Limit this to batches available within the nitric stack
+		"batch:SubmitJob",
+	}
+
+	// This is a tag key unique to this instance of the deployed stack.
+	// Any resource with this unique tag will inherently be scoped to this stack.
+	// This is used to scope the permissions of the lambda to only resources created by this stack.
+	// stackScopedNameKey := tags.GetResourceNameKey(a.stackId)
+
+	// Add resource list permissions
+	// Currently the membrane will use list operations
+	tmpJSON, err := json.Marshal(map[string]interface{}{
+		"Version": "2012-10-17",
+		"Statement": []map[string]interface{}{
+			{
+				"Action":   append(listActions),
+				"Effect":   "Allow",
+				"Resource": "*",
+				// "Condition": map[string]map[string]string{
+				// 	// Only apply this to resources who have a resource name key that matches this stack
+				// 	"Null": {
+				// 		fmt.Sprintf("aws:ResourceTag/%s", stackScopedNameKey): "false",
+				// 	},
+				// },
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = iam.NewRolePolicy(ctx, name+"ListAccess", &iam.RolePolicyArgs{
+		Role:   p.BatchRoles[name].ID(),
+		Policy: pulumi.String(tmpJSON),
+	}, opts...)
 
 	// Create a new Iam Role for the job
 
@@ -112,10 +143,9 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 
 	for _, job := range config.Jobs {
 		jobName := job
-		containerProperties := pulumi.All(image.Name, p.BatchExecutionRole.Arn, p.BatchRoles[name].Arn).ApplyT(func(args []interface{}) (string, error) {
+		containerProperties := pulumi.All(wrappedImage.URI(), p.BatchRoles[name].Arn).ApplyT(func(args []interface{}) (string, error) {
 			imageName := args[0].(string)
-			batchRoleArn := args[1].(string)
-			jobRoleArn := args[2].(string)
+			jobRoleArn := args[1].(string)
 
 			jobDefinitionContainerProperties := JobDefinitionContainerProperties{
 				Image: imageName,
@@ -137,9 +167,17 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 						Name:  "NITRIC_JOB_NAME",
 						Value: jobName,
 					},
+					{
+						Name:  "NITRIC_STACK_ID",
+						Value: p.StackId,
+					},
+					{
+						Name:  "AWS_REGION",
+						Value: p.Region,
+					},
 				},
-				JobRoleArn:       jobRoleArn,
-				ExecutionRoleArn: batchRoleArn,
+				JobRoleArn: jobRoleArn,
+				// ExecutionRoleArn: batchRoleArn,
 			}
 
 			containerPropertiesJson, err := json.Marshal(jobDefinitionContainerProperties)

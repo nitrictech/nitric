@@ -61,7 +61,7 @@ type NitricPulumiProvider interface {
 	// SqlDatabase - Deploy a SQL Database
 	SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error
 	// Job - Deploy a Job
-	Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch) error
+	Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch, runtime RuntimeProvider) error
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(ctx *pulumi.Context) error

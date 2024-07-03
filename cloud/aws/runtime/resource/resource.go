@@ -252,12 +252,17 @@ func (a *AwsResourceService) GetResources(ctx context.Context, typ AwsResource) 
 		}
 	}
 
+	fmt.Printf("Have stack ID %s\n", a.stackID)
+	fmt.Printf("Have resources %+v\n", a.cache)
+
 	return a.cache[typ], nil
 }
 
 func New() (*AwsResourceService, error) {
 	awsRegion := env.AWS_REGION.String()
 	stackID := commonenv.NITRIC_STACK_ID.String()
+
+	fmt.Printf("Have region %s\n", awsRegion)
 
 	cfg, sessionError := config.LoadDefaultConfig(
 		context.TODO(),

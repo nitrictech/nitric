@@ -178,10 +178,11 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 
 	for _, princ := range config.Principals {
 		if role, err := a.roleForPrincipal(princ); err == nil {
-			if princ.Id.Type != resourcespb.ResourceType_Service {
-				return fmt.Errorf("invalid principal type: %s. Only services can be principals", princ.Id.Type)
-			}
+			// if princ.Id.Type != resourcespb.ResourceType_Service {
+			// 	return fmt.Errorf("invalid principal type: %s. Only services can be principals", princ.Id.Type)
+			// }
 
+			// TODO: Add another key for the type of principal
 			principalRoles[princ.Id.Name] = role
 		} else {
 			return err

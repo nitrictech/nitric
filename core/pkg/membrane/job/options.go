@@ -2,6 +2,7 @@ package job
 
 import (
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	secretspb "github.com/nitrictech/nitric/core/pkg/proto/secrets/v1"
 	sqlpb "github.com/nitrictech/nitric/core/pkg/proto/sql/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -37,5 +38,11 @@ func WithSecretsServer(srv secretspb.SecretManagerServer) JobMembraneOption {
 func WithSqlServer(srv sqlpb.SqlServer) JobMembraneOption {
 	return func(o *JobMembrane) {
 		o.sqlServer = srv
+	}
+}
+
+func WithResourcesServer(srv resourcespb.ResourcesServer) JobMembraneOption {
+	return func(o *JobMembrane) {
+		o.resourcesServer = srv
 	}
 }
