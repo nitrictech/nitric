@@ -144,6 +144,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	a.StackId = <-stackIdChan
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(a.Region)},
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 
