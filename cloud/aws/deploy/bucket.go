@@ -108,7 +108,7 @@ func createNotification(ctx *pulumi.Context, name string, args *S3NotificationAr
 
 // extractBucketName - extracts the bucket name from an S3 ARN.
 func extractBucketName(arn string) (string, error) {
-	var s3ArnRegex = regexp.MustCompile(`(?i)^arn:aws:s3:::([^/]+)`)
+	s3ArnRegex := regexp.MustCompile(`(?i)^arn:aws:s3:::([^/]+)`)
 
 	matches := s3ArnRegex.FindStringSubmatch(arn)
 	if len(matches) < 2 {
@@ -126,7 +126,6 @@ func extractBucketName(arn string) (string, error) {
 
 // importBucket - tags an existing bucket in AWS and adds it to the stack.
 func importBucket(ctx *pulumi.Context, name string, importIdentifier string, opts []pulumi.ResourceOption, tags map[string]string, tagClient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI) (*s3.Bucket, error) {
-
 	// Allow bucket names or ARNs as import identifiers
 	bucketName, err := extractBucketName(importIdentifier)
 	if err != nil {
