@@ -41,23 +41,6 @@ type CloudBuild struct {
 	ID pulumi.StringOutput
 }
 
-func checkBuildStatus(ctx context.Context, build *cloudbuild.CreateBuildOperation) error {
-	_, err := build.Wait(ctx)
-
-	if build.Done() && err != nil {
-		return fmt.Errorf("cloudbuild job %s failed", build.Name())
-	}
-
-	if build.Done() && err == nil {
-		return nil
-	}
-
-	if err != nil {
-		return fmt.Errorf("polling failed for %s: %s", build.Name(), err.Error())
-	}
-	return fmt.Errorf("polling failed for %s", build.Name())
-}
-
 func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
 	imageUriSplit := strings.Split(config.GetImageUri(), "/")
 	imageName := imageUriSplit[len(imageUriSplit)-1]
