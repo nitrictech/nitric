@@ -26,8 +26,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// tagSecret - tags an existing secret in AWS and adds it to the stack.
-func tagSecret(ctx *pulumi.Context, name string, importArn string, tags map[string]string, client *resourcegroupstaggingapi.ResourceGroupsTaggingAPI) (*secretsmanager.Secret, error) {
+// importSecret - tags an existing secret in AWS and adds it to the stack.
+func importSecret(ctx *pulumi.Context, name string, importArn string, tags map[string]string, tagClient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI) (*secretsmanager.Secret, error) {
 	secretLookup, err := secretsmanager.LookupSecret(ctx, &secretsmanager.LookupSecretArgs{
 		Arn: aws.String(importArn),
 	})
@@ -35,7 +35,7 @@ func tagSecret(ctx *pulumi.Context, name string, importArn string, tags map[stri
 		return nil, err
 	}
 
-	_, err = client.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
+	_, err = tagClient.TagResources(&resourcegroupstaggingapi.TagResourcesInput{
 		ResourceARNList: aws.StringSlice([]string{secretLookup.Arn}),
 		Tags:            aws.StringMap(tags),
 	})
@@ -82,7 +82,7 @@ func (a *NitricAwsPulumiProvider) Secret(ctx *pulumi.Context, parent pulumi.Reso
 	}
 
 	if importArn != "" {
-		secret, err = tagSecret(ctx, name, importArn, awsTags, a.ResourceTaggingClient)
+		secret, err = importSecret(ctx, name, importArn, awsTags, a.ResourceTaggingClient)
 	} else {
 		secret, err = createSecret(ctx, name, awsTags)
 	}
