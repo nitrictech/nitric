@@ -44,7 +44,7 @@ func (j *JobMembrane) Run() error {
 	sqlpb.RegisterSqlServer(grpcServer, j.sqlServer)
 	resourcespb.RegisterResourcesServer(grpcServer, j.resourcesServer)
 
-	lis, err := net.Listen("tcp", "127.0.0.1:50051")
+	lis, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,11 @@ func (j *JobMembrane) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	cmdEnv := append([]string{}, os.Environ()...)
+
+	cmdEnv = append(cmdEnv, fmt.Sprintf("SERVICE_ADDRESS=%s", lis.Addr().String()))
 	// copy the current environment variables
-	cmd.Env = os.Environ()
+	cmd.Env = cmdEnv
 
 	return cmd.Run()
 }
