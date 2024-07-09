@@ -31,6 +31,12 @@ type AwsImports struct {
 	Secrets map[string]string
 }
 
+type BatchComputeEnvConfig struct {
+	MinCpus       int      `mapstructure:"min-cpus"`
+	MaxCpus       int      `mapstructure:"max-cpus"`
+	InstanceTypes []string `mapstructure:"instance-types"`
+}
+
 type AwsJobsConfig struct {
 	Cpus   int
 	Memory int
@@ -42,6 +48,7 @@ type AwsConfig struct {
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*ApiConfig
+	BatchComputeEnvConfig                 *BatchComputeEnvConfig `mapstructure:"batch-compute-env,omitempty"`
 	Jobs                                  map[string]*AwsJobsConfig
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
@@ -73,6 +80,12 @@ var defaultJobConfig = &AwsJobsConfig{
 	Memory: 512,
 	Cpus:   1,
 	Gpus:   0,
+}
+
+var defaultBatchComputeEnvConfig = &BatchComputeEnvConfig{
+	MinCpus:       0,
+	MaxCpus:       32,
+	InstanceTypes: []string{"optimal"},
 }
 
 var defaultAwsConfigItem = AwsConfigItem{
@@ -130,6 +143,16 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 		}
 
 		awsConfig.Config[configName] = configVal
+	}
+
+	if awsConfig.BatchComputeEnvConfig == nil {
+		awsConfig.BatchComputeEnvConfig = defaultBatchComputeEnvConfig
+	}
+
+	// merge in default values
+	err = mergo.Merge(awsConfig.BatchComputeEnvConfig, defaultBatchComputeEnvConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	// Default job config

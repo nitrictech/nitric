@@ -303,19 +303,14 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 
 		computeResourceOptions := &batch.ComputeEnvironmentComputeResourcesArgs{
 			// AllocationStrategy: pulumi.String("BEST_FIT"),
-			// MinVcpus:           pulumi.Int(0),
-			MaxVcpus: pulumi.Int(32),
+			MinVcpus: pulumi.Int(a.AwsConfig.BatchComputeEnvConfig.MinCpus),
+			MaxVcpus: pulumi.Int(a.AwsConfig.BatchComputeEnvConfig.MaxCpus),
 			// We want to
 			DesiredVcpus: pulumi.Int(0),
 			// TODO Determine EC2 configuration
 
 			// TODO: Make launchable instance types configurable from stack configuration
-			InstanceTypes: pulumi.StringArray{
-				// Small long running instances
-				pulumi.String("optimal"),
-				// Allow GPU capable instances
-				pulumi.String("g3s.xlarge"),
-			},
+			InstanceTypes:    pulumi.ToStringArray(a.AwsConfig.BatchComputeEnvConfig.InstanceTypes),
 			Type:             pulumi.String("EC2"),
 			Subnets:          subnets,
 			SecurityGroupIds: pulumi.StringArray{batchSecurityGroup.ID()},

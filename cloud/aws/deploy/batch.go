@@ -168,10 +168,6 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 						Type:  "VCPU",
 						Value: fmt.Sprintf("%d", jobConfig.Cpus),
 					},
-					{
-						Type:  "GPU",
-						Value: fmt.Sprintf("%d", jobConfig.Gpus),
-					},
 				},
 				Environment: []EnvironmentVariable{
 					{
@@ -189,6 +185,13 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 				},
 				JobRoleArn: jobRoleArn,
 				// ExecutionRoleArn: batchRoleArn,
+			}
+
+			if jobConfig.Gpus > 0 {
+				jobDefinitionContainerProperties.ResourceRequirements = append(jobDefinitionContainerProperties.ResourceRequirements, ResourceRequirement{
+					Type:  "GPU",
+					Value: fmt.Sprintf("%d", jobConfig.Gpus),
+				})
 			}
 
 			containerPropertiesJson, err := json.Marshal(jobDefinitionContainerProperties)
