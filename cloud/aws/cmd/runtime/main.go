@@ -18,7 +18,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
@@ -110,7 +109,8 @@ func launchBatch(jobName string) {
 
 	// launch a job membrane
 	membrane := job.NewJobMembrane(
-		strings.Join(os.Args[1:], " "),
+		// trim the first arg as that contains the runtime binary invocation
+		os.Args[1:],
 		job.WithQueueServer(queueService),
 		job.WithTopicServer(topicService),
 		job.WithStorageServer(storageService),
