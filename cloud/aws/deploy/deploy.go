@@ -60,7 +60,7 @@ type NitricAwsPulumiProvider struct {
 	*deploy.CommonStackDetails
 
 	StackId   string
-	AwsConfig *AwsConfig
+	AwsConfig *common.AwsConfig
 
 	SqlDatabases map[string]*RdsDatabase
 
@@ -120,7 +120,7 @@ func (a *NitricAwsPulumiProvider) Init(attributes map[string]interface{}) error 
 		return status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	a.AwsConfig, err = ConfigFromAttributes(attributes)
+	a.AwsConfig, err = common.ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
@@ -304,7 +304,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		computeResourceOptions := &batch.ComputeEnvironmentComputeResourcesArgs{
 			// AllocationStrategy: pulumi.String("BEST_FIT"),
 			// MinVcpus:           pulumi.Int(0),
-			MaxVcpus: pulumi.Int(8),
+			MaxVcpus: pulumi.Int(32),
 			// We want to
 			DesiredVcpus: pulumi.Int(0),
 			// TODO Determine EC2 configuration

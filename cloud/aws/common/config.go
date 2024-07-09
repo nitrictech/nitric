@@ -31,11 +31,18 @@ type AwsImports struct {
 	Secrets map[string]string
 }
 
+type AwsJobsConfig struct {
+	Cpus   int
+	Memory int
+	Gpus   int
+}
+
 type AwsConfig struct {
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*ApiConfig
+	Jobs                                  map[string]*AwsJobsConfig
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -60,6 +67,12 @@ var defaultLambdaConfig = &AwsLambdaConfig{
 	Memory:                128,
 	Timeout:               15,
 	ProvisionedConcurreny: 0,
+}
+
+var defaultJobConfig = &AwsJobsConfig{
+	Memory: 512,
+	Cpus:   1,
+	Gpus:   0,
 }
 
 var defaultAwsConfigItem = AwsConfigItem{
@@ -117,6 +130,25 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 		}
 
 		awsConfig.Config[configName] = configVal
+	}
+
+	// Default job config
+	if awsConfig.Jobs == nil {
+		awsConfig.Jobs = map[string]*AwsJobsConfig{}
+	}
+
+	if _, hasDefault := awsConfig.Jobs["default"]; !hasDefault {
+		awsConfig.Jobs["default"] = defaultJobConfig
+	}
+
+	for configName, configVal := range awsConfig.Jobs {
+		// Add omitted values from default configs where needed.
+		err := mergo.Merge(configVal, defaultJobConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		awsConfig.Jobs[configName] = configVal
 	}
 
 	return awsConfig, nil

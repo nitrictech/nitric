@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
@@ -22,7 +21,7 @@ import (
 // Created as a sepearate membrane type to avoid overloading the service membrane
 type JobMembrane struct {
 	// The Command that will be executed to run the job
-	cmd string
+	cmd []string
 
 	// Runtime plugins (for reading/writing to cloud services)
 	topicServer     topicspb.TopicsServer
@@ -68,11 +67,10 @@ func (j *JobMembrane) Run() error {
 	fmt.Printf("Waiting for gRPC server to start\n")
 	time.Sleep(1 * time.Second)
 
-	fmt.Printf("Running command: %s\n", j.cmd)
+	fmt.Printf("Running command: %+v\n", j.cmd)
 
 	// Run the command and wait for it to exit
-	cmdParts := strings.Split(j.cmd, " ")
-	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
+	cmd := exec.Command(j.cmd[0], j.cmd[1:]...)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -83,10 +81,12 @@ func (j *JobMembrane) Run() error {
 	// copy the current environment variables
 	cmd.Env = cmdEnv
 
+	fmt.Printf("Running with env variables: %+v\n", cmd.Env)
+
 	return cmd.Run()
 }
 
-func NewJobMembrane(cmd string, options ...JobMembraneOption) *JobMembrane {
+func NewJobMembrane(cmd []string, options ...JobMembraneOption) *JobMembrane {
 	membrane := &JobMembrane{
 		cmd:             cmd,
 		topicServer:     topicspb.UnimplementedTopicsServer{},

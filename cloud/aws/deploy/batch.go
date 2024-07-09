@@ -16,6 +16,7 @@ package deploy
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -142,6 +143,12 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 	// The job that it executes is defined by the job name provided in its env variables
 
 	for _, job := range config.Jobs {
+		// get the stack config for the job
+		jobConfig, ok := p.AwsConfig.Jobs[job]
+		if !ok {
+			jobConfig = p.AwsConfig.Jobs["default"]
+		}
+
 		jobName := job
 		containerProperties := pulumi.All(wrappedImage.URI(), p.BatchRoles[name].Arn).ApplyT(func(args []interface{}) (string, error) {
 			imageName := args[0].(string)
@@ -155,11 +162,15 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 					// Or template parameters that can be set at runtime
 					{
 						Type:  "MEMORY",
-						Value: "2048",
+						Value: fmt.Sprintf("%d", jobConfig.Memory),
 					},
 					{
 						Type:  "VCPU",
-						Value: "1",
+						Value: fmt.Sprintf("%d", jobConfig.Cpus),
+					},
+					{
+						Type:  "GPU",
+						Value: fmt.Sprintf("%d", jobConfig.Gpus),
 					},
 				},
 				Environment: []EnvironmentVariable{
