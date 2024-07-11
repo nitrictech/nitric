@@ -77,7 +77,6 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		Project:        pulumi.String(a.GcpConfig.ProjectId),
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
 	if err != nil {
-
 		return err
 	}
 

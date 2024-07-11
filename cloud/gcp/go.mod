@@ -13,6 +13,7 @@ require (
 	cloud.google.com/go/secretmanager v1.12.0
 	cloud.google.com/go/storage v1.39.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator v0.34.2
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/constructs-go/constructs/v10 v10.3.0
 	github.com/aws/jsii-runtime-go v1.99.0
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
@@ -32,6 +33,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.1
 	github.com/pkg/errors v0.9.1
+	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
 	github.com/pulumi/pulumi-std/sdk v1.6.2
 	github.com/pulumi/pulumi/sdk/v3 v3.112.0
 	github.com/samber/lo v1.38.1
@@ -93,8 +95,7 @@ require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
 	4d63.com/gochecknoglobals v0.2.1 // indirect
 	cloud.google.com/go v0.112.2 // indirect
-	cloud.google.com/go/compute v1.25.1 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.4.0 // indirect
 	cloud.google.com/go/iam v1.1.7 // indirect
 	cloud.google.com/go/longrunning v0.5.6 // indirect
 	dario.cat/mergo v1.0.0 // indirect
@@ -262,7 +263,6 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.6.2 // indirect
-	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.0 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
 	github.com/quasilyte/regex/syntax v0.0.0-20210819130434-b3f0c404a727 // indirect
