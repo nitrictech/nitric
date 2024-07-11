@@ -81,7 +81,6 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 	}
 
 	if a.DatabaseMigrationBuild[name] == nil && config.GetImageUri() != "" {
-
 		clientContext := context.TODO()
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "postgres", a.dbMasterPassword.Result, a.masterDb.PrivateIpAddress, "5432", name)
@@ -128,7 +127,6 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 					},
 				},
 			})
-
 			if err != nil {
 				return "", fmt.Errorf("error creating build for db %s: %w", name, err)
 			}

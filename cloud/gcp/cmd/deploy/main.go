@@ -41,7 +41,7 @@ func main() {
 // Handles and augments potential deployment errors that occur
 func handleGcpErrors(err error) error {
 	if strings.Contains(err.Error(), "unable to get digest: Bad credentials: 401 Unauthorized") {
-		return fmt.Errorf("%vcould not push image to artifact registry, ensure you have the roles/artifactregistry.admin permission", err)
+		return fmt.Errorf("%wcould not push image to artifact registry, ensure you have the roles/artifactregistry.admin permission", err)
 	}
 
 	return err
