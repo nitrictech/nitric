@@ -262,6 +262,7 @@ func (j *jsiiProxy_Vpc) VpcIdOutput() *string {
 	return returns
 }
 
+
 func NewVpc(scope constructs.Construct, id *string, config *VpcConfig) Vpc {
 	_init_.Initialize()
 
@@ -289,7 +290,7 @@ func NewVpc_Override(v Vpc, scope constructs.Construct, id *string, config *VpcC
 	)
 }
 
-func (j *jsiiProxy_Vpc) SetCidrBlock(val *string) {
+func (j *jsiiProxy_Vpc)SetCidrBlock(val *string) {
 	_jsii_.Set(
 		j,
 		"cidrBlock",
@@ -297,7 +298,7 @@ func (j *jsiiProxy_Vpc) SetCidrBlock(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Vpc) SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Vpc)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -305,7 +306,7 @@ func (j *jsiiProxy_Vpc) SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Vpc) SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Vpc)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -313,7 +314,7 @@ func (j *jsiiProxy_Vpc) SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Vpc) SetPrivateSubnetCidrs(val *[]*string) {
+func (j *jsiiProxy_Vpc)SetPrivateSubnetCidrs(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"privateSubnetCidrs",
@@ -321,7 +322,7 @@ func (j *jsiiProxy_Vpc) SetPrivateSubnetCidrs(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Vpc) SetPublicSubnetCidrs(val *[]*string) {
+func (j *jsiiProxy_Vpc)SetPublicSubnetCidrs(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"publicSubnetCidrs",
@@ -533,3 +534,4 @@ func (v *jsiiProxy_Vpc) ToTerraform() interface{} {
 
 	return returns
 }
+

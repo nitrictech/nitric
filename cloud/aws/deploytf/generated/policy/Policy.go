@@ -229,6 +229,7 @@ func (j *jsiiProxy_Policy) Version() *string {
 	return returns
 }
 
+
 func NewPolicy(scope constructs.Construct, id *string, config *PolicyConfig) Policy {
 	_init_.Initialize()
 
@@ -256,7 +257,7 @@ func NewPolicy_Override(p Policy, scope constructs.Construct, id *string, config
 	)
 }
 
-func (j *jsiiProxy_Policy) SetActions(val *[]*string) {
+func (j *jsiiProxy_Policy)SetActions(val *[]*string) {
 	if err := j.validateSetActionsParameters(val); err != nil {
 		panic(err)
 	}
@@ -267,7 +268,7 @@ func (j *jsiiProxy_Policy) SetActions(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Policy) SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Policy)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -275,7 +276,7 @@ func (j *jsiiProxy_Policy) SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Policy) SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Policy)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -283,7 +284,7 @@ func (j *jsiiProxy_Policy) SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Policy) SetPrincipals(val *map[string]*string) {
+func (j *jsiiProxy_Policy)SetPrincipals(val *map[string]*string) {
 	if err := j.validateSetPrincipalsParameters(val); err != nil {
 		panic(err)
 	}
@@ -294,7 +295,7 @@ func (j *jsiiProxy_Policy) SetPrincipals(val *map[string]*string) {
 	)
 }
 
-func (j *jsiiProxy_Policy) SetResources(val *[]*string) {
+func (j *jsiiProxy_Policy)SetResources(val *[]*string) {
 	if err := j.validateSetResourcesParameters(val); err != nil {
 		panic(err)
 	}
@@ -509,3 +510,4 @@ func (p *jsiiProxy_Policy) ToTerraform() interface{} {
 
 	return returns
 }
+

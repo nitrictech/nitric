@@ -20,3 +20,4 @@ type VpcConfig struct {
 	// Public Subnet CIDR values 10.0.1.0/24 10.0.2.0/24 10.0.3.0/24.
 	PublicSubnetCidrs *[]*string `field:"optional" json:"publicSubnetCidrs" yaml:"publicSubnetCidrs"`
 }
+
