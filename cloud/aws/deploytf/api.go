@@ -17,6 +17,8 @@ package deploytf
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -48,13 +50,11 @@ func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Op
 		return nil
 	}
 
-	arn := funcs[name]
-
 	op.Extensions["x-amazon-apigateway-integration"] = map[string]string{
 		"type":                 "aws_proxy",
 		"httpMethod":           "POST",
 		"payloadFormatVersion": "2.0",
-		"uri":                  *arn,
+		"uri":                  fmt.Sprintf("${%s}", name),
 	}
 
 	return op
@@ -128,17 +128,39 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	// TODO: Use common tags method and ensure it works with pointer templating
 	openapiDoc.Tags = []*openapi3.Tag{{
-		Name:       fmt.Sprintf("x-nitric-%s-name", *n.Stack.StackIdOutput()),
+		Name:       "x-nitric-${stack_id}-name",
 		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": name},
 	}, {
-		Name:       fmt.Sprintf("x-nitric-%s-type", *n.Stack.StackIdOutput()),
+		Name:       "x-nitric-${stack_id}-type",
 		Extensions: map[string]interface{}{"x-amazon-apigateway-tag-value": "api"},
 	}}
 
-	b, err := json.Marshal(openapiDoc)
+	b, err := json.MarshalIndent(openapiDoc, "", "  ")
 	if err != nil {
 		return err
 	}
+
+	absPath, err := filepath.Abs(fmt.Sprintf("./.nitric/%s.spec.json", name))
+	if err != nil {
+		return err
+	}
+
+	// Write out the spec to the .nitric tmp directory
+	err = os.WriteFile(absPath, b, 0o600)
+	if err != nil {
+		return err
+	}
+
+	// Create a terraform asset that references the spec file
+	asset := cdktf.NewTerraformAsset(stack, jsii.Sprintf("api_%s_spec", name), &cdktf.TerraformAssetConfig{
+		Path:      jsii.String(absPath),
+		AssetHash: jsii.String("nitric-api-spec"),
+		Type:      cdktf.AssetType_FILE,
+	})
+
+	nameArnPairs["stack_id"] = n.Stack.StackIdOutput()
+
+	templateFile := cdktf.Fn_Templatefile(asset.Path(), nameArnPairs)
 
 	domains := []string{}
 	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
@@ -147,7 +169,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
-		Spec:                  jsii.String(string(b)),
+		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
 		Domains:               jsii.Strings(domains...),
 		StackId:               n.Stack.StackIdOutput(),
