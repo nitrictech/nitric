@@ -132,6 +132,11 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			}
 
 			err = retry.Do(func() error {
+				_, err := build.Poll(context.TODO())
+				if err != nil {
+					return retry.Unrecoverable(err)
+				}
+
 				metadata, err := build.Metadata()
 				if err != nil {
 					return retry.Unrecoverable(err)
