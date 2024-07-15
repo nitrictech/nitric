@@ -349,7 +349,6 @@ func (j *jsiiProxy_Sql) WorkDir() *string {
 	return returns
 }
 
-
 func NewSql(scope constructs.Construct, id *string, config *SqlConfig) Sql {
 	_init_.Initialize()
 
@@ -377,7 +376,7 @@ func NewSql_Override(s Sql, scope constructs.Construct, id *string, config *SqlC
 	)
 }
 
-func (j *jsiiProxy_Sql)SetCodebuildRegion(val *string) {
+func (j *jsiiProxy_Sql) SetCodebuildRegion(val *string) {
 	if err := j.validateSetCodebuildRegionParameters(val); err != nil {
 		panic(err)
 	}
@@ -388,7 +387,7 @@ func (j *jsiiProxy_Sql)SetCodebuildRegion(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetCodebuildRoleArn(val *string) {
+func (j *jsiiProxy_Sql) SetCodebuildRoleArn(val *string) {
 	if err := j.validateSetCodebuildRoleArnParameters(val); err != nil {
 		panic(err)
 	}
@@ -399,7 +398,7 @@ func (j *jsiiProxy_Sql)SetCodebuildRoleArn(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetCreateDatabaseProjectName(val *string) {
+func (j *jsiiProxy_Sql) SetCreateDatabaseProjectName(val *string) {
 	if err := j.validateSetCreateDatabaseProjectNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -410,7 +409,7 @@ func (j *jsiiProxy_Sql)SetCreateDatabaseProjectName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetDbName(val *string) {
+func (j *jsiiProxy_Sql) SetDbName(val *string) {
 	if err := j.validateSetDbNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -421,7 +420,7 @@ func (j *jsiiProxy_Sql)SetDbName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Sql) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -429,7 +428,7 @@ func (j *jsiiProxy_Sql)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Sql) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -437,7 +436,7 @@ func (j *jsiiProxy_Sql)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetImageUri(val *string) {
+func (j *jsiiProxy_Sql) SetImageUri(val *string) {
 	if err := j.validateSetImageUriParameters(val); err != nil {
 		panic(err)
 	}
@@ -448,7 +447,7 @@ func (j *jsiiProxy_Sql)SetImageUri(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetMigrateCommand(val *string) {
+func (j *jsiiProxy_Sql) SetMigrateCommand(val *string) {
 	if err := j.validateSetMigrateCommandParameters(val); err != nil {
 		panic(err)
 	}
@@ -459,7 +458,7 @@ func (j *jsiiProxy_Sql)SetMigrateCommand(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetRdsClusterEndpoint(val *string) {
+func (j *jsiiProxy_Sql) SetRdsClusterEndpoint(val *string) {
 	if err := j.validateSetRdsClusterEndpointParameters(val); err != nil {
 		panic(err)
 	}
@@ -470,7 +469,7 @@ func (j *jsiiProxy_Sql)SetRdsClusterEndpoint(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetRdsClusterPassword(val *string) {
+func (j *jsiiProxy_Sql) SetRdsClusterPassword(val *string) {
 	if err := j.validateSetRdsClusterPasswordParameters(val); err != nil {
 		panic(err)
 	}
@@ -481,7 +480,7 @@ func (j *jsiiProxy_Sql)SetRdsClusterPassword(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetRdsClusterUsername(val *string) {
+func (j *jsiiProxy_Sql) SetRdsClusterUsername(val *string) {
 	if err := j.validateSetRdsClusterUsernameParameters(val); err != nil {
 		panic(err)
 	}
@@ -492,7 +491,7 @@ func (j *jsiiProxy_Sql)SetRdsClusterUsername(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetSecurityGroupIds(val *[]*string) {
+func (j *jsiiProxy_Sql) SetSecurityGroupIds(val *[]*string) {
 	if err := j.validateSetSecurityGroupIdsParameters(val); err != nil {
 		panic(err)
 	}
@@ -503,7 +502,7 @@ func (j *jsiiProxy_Sql)SetSecurityGroupIds(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetSubnetIds(val *[]*string) {
+func (j *jsiiProxy_Sql) SetSubnetIds(val *[]*string) {
 	if err := j.validateSetSubnetIdsParameters(val); err != nil {
 		panic(err)
 	}
@@ -514,7 +513,7 @@ func (j *jsiiProxy_Sql)SetSubnetIds(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetVpcId(val *string) {
+func (j *jsiiProxy_Sql) SetVpcId(val *string) {
 	if err := j.validateSetVpcIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -525,7 +524,7 @@ func (j *jsiiProxy_Sql)SetVpcId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetWorkDir(val *string) {
+func (j *jsiiProxy_Sql) SetWorkDir(val *string) {
 	if err := j.validateSetWorkDirParameters(val); err != nil {
 		panic(err)
 	}
@@ -740,4 +739,3 @@ func (s *jsiiProxy_Sql) ToTerraform() interface{} {
 
 	return returns
 }
-

@@ -105,4 +105,3 @@ func validateNewStackParameters(scope constructs.Construct, id *string, config *
 
 	return nil
 }
-

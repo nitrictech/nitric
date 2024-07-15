@@ -148,4 +148,3 @@ func validateNewRdsParameters(scope constructs.Construct, id *string, config *Rd
 
 	return nil
 }
-

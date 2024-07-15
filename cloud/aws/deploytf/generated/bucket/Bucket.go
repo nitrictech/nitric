@@ -240,7 +240,6 @@ func (j *jsiiProxy_Bucket) Version() *string {
 	return returns
 }
 
-
 func NewBucket(scope constructs.Construct, id *string, config *BucketConfig) Bucket {
 	_init_.Initialize()
 
@@ -268,7 +267,7 @@ func NewBucket_Override(b Bucket, scope constructs.Construct, id *string, config
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetBucketName(val *string) {
+func (j *jsiiProxy_Bucket) SetBucketName(val *string) {
 	if err := j.validateSetBucketNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -279,7 +278,7 @@ func (j *jsiiProxy_Bucket)SetBucketName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Bucket) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -287,7 +286,7 @@ func (j *jsiiProxy_Bucket)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Bucket) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -295,7 +294,7 @@ func (j *jsiiProxy_Bucket)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetNotificationTargets(val interface{}) {
+func (j *jsiiProxy_Bucket) SetNotificationTargets(val interface{}) {
 	if err := j.validateSetNotificationTargetsParameters(val); err != nil {
 		panic(err)
 	}
@@ -306,7 +305,7 @@ func (j *jsiiProxy_Bucket)SetNotificationTargets(val interface{}) {
 	)
 }
 
-func (j *jsiiProxy_Bucket)SetStackId(val *string) {
+func (j *jsiiProxy_Bucket) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -521,4 +520,3 @@ func (b *jsiiProxy_Bucket) ToTerraform() interface{} {
 
 	return returns
 }
-

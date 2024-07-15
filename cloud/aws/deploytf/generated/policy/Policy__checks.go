@@ -132,4 +132,3 @@ func validateNewPolicyParameters(scope constructs.Construct, id *string, config 
 
 	return nil
 }
-
