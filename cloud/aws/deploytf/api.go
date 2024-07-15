@@ -168,8 +168,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
-		Name: jsii.String(name),
-		// Spec:                  jsii.String(string(b)),
+		Name:                  jsii.String(name),
 		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
 		Domains:               jsii.Strings(domains...),
