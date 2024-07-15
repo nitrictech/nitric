@@ -146,7 +146,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	}
 
 	// Write out the spec to the .nitric tmp directory
-	err = os.WriteFile(absPath, b, 0o644)
+	err = os.WriteFile(absPath, b, 0o600)
 	if err != nil {
 		return err
 	}
