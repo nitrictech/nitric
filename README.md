@@ -25,7 +25,7 @@
 - Common resources like [databases](https://nitric.io/docs/sql), [queues/topics](https://nitric.io/docs/messaging), [APIs](https://nitric.io/docs/apis), [key-value](https://nitric.io/docs/keyvalue), [buckets](https://nitric.io/docs/storage) and more
 - [Change services, IaC tools or cloud providers](https://nitric.io/docs/reference/providers) without changing code
 
-We also knows abstraction should mean building on existing layers, not hiding them. Nitric includes powerful escape hatches for when things get custom.
+We also know abstraction should mean building on existing layers, not hiding them. Nitric includes powerful escape hatches for when things get custom.
 
 ## Supported Languages
 
