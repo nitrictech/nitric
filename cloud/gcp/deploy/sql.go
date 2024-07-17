@@ -28,6 +28,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/artifactregistry"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
@@ -50,18 +51,27 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		return err
 	}
 
-	repoUrl := pulumi.Sprintf("gcr.io/%s/%s", a.GcpConfig.ProjectId, imageName)
+	repo, err := artifactregistry.NewRepository(ctx, fmt.Sprintf("%s-migration-repo", name), &artifactregistry.RepositoryArgs{
+		Location:     pulumi.String(a.Region),
+		RepositoryId: pulumi.Sprintf("%s-migration-repo", name),
+		Format:       pulumi.String("DOCKER"),
+	})
+	if err != nil {
+		return err
+	}
+
+	imageUrl := pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", a.Region, a.GcpConfig.ProjectId, repo.Name, imageName)
 
 	newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
 		SourceImage: pulumi.String(inspect.ID),
-		TargetImage: repoUrl,
+		TargetImage: imageUrl,
 	}, pulumi.Parent(parent))
 	if err != nil {
 		return err
 	}
 
 	image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
-		Name: repoUrl,
+		Name: imageUrl,
 		Triggers: pulumi.Map{
 			"imageSha": pulumi.String(inspect.ID),
 		},
@@ -134,7 +144,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			err = retry.Do(func() error {
 				_, err := build.Poll(context.TODO())
 				if err != nil {
-					return retry.Unrecoverable(err)
+					return err
 				}
 
 				metadata, err := build.Metadata()

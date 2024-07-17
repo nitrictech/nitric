@@ -220,6 +220,11 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 				Username: pulumi.String("oauth2accesstoken"),
 				Password: pulumi.String(a.AuthToken.AccessToken),
 			},
+			docker.ProviderRegistryAuthArgs{
+				Address:  pulumi.Sprintf("%s-docker.pkg.dev", a.Region),
+				Username: pulumi.String("oauth2accesstoken"),
+				Password: pulumi.String(a.AuthToken.AccessToken),
+			},
 		},
 	})
 	if err != nil {

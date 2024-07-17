@@ -17,9 +17,6 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/gcp/common/runtime"
 	"github.com/nitrictech/nitric/cloud/gcp/deploy"
@@ -32,17 +29,7 @@ func main() {
 	providerServer := provider.NewPulumiProviderServer(
 		gcpStack,
 		runtime.NitricGcpRuntime,
-		provider.WithErrorHandler(handleGcpErrors),
 	)
 
 	providerServer.Start()
-}
-
-// Handles and augments potential deployment errors that occur
-func handleGcpErrors(err error) error {
-	if strings.Contains(err.Error(), "unable to get digest: Bad credentials: 401 Unauthorized") {
-		return fmt.Errorf("%wcould not push image to artifact registry, ensure you have the roles/artifactregistry.admin permission", err)
-	}
-
-	return err
 }
