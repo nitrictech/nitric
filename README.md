@@ -66,7 +66,7 @@ main.post("/notes/:title", async (ctx) => {
 });
 ```
 
-This is the only code needed to deploy a working application to any cloud provider you choose, using [`nitric up`](https://nitric.io/docs/getting-started/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/reference/providers/pulumi), [Terraform](https://nitric.io/docs/reference/providers/terraform) or [any other automation tools](https://nitric.io/docs/reference/providers/custom/building-custom-provider) you choose.
+This is the only code needed to deploy a working application to any cloud provider using [`nitric up`](https://nitric.io/docs/getting-started/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/reference/providers/pulumi), [Terraform](https://nitric.io/docs/reference/providers/terraform) or [any other automation tools](https://nitric.io/docs/reference/providers/custom/building-custom-provider) of your choice.
 
 ## Documentation
 
