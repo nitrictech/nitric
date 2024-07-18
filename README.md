@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h3 align="center">The cloud aware application framework</h3>
+<h3 align="center">build cloud aware applications</h3>
 
 <p align="center">
   <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?style=for-the-badge">
@@ -16,17 +16,16 @@
 
 ## About Nitric
 
-[Nitric](https://nitric.io) is a framework for rapid development of cloud-native and serverless applications. Define your apps in terms of the resources they need, then write the code for serverless function based APIs, event subscribers and scheduled jobs.
+[Nitric](https://nitric.io) is a multi-language framework, with concise inline infrastructure from code. Modern applications should be robust, productive and a joy to build. Nitric solves common problems building for modern platforms:
 
-Apps built with Nitric can be deployed to AWS, Azure or Google Cloud all from the same code base so you can focus on your products, not your cloud provider.
+- [Easy infrastructure](https://nitric.io/docs/concepts/introduction#infrastructure-from-code-if-c) from code
+- Build for [any host without coupling](https://nitric.io/docs/reference/providers)
+- [Run locally](https://nitric.io/docs/getting-started/local-dashboard)
+- [IAM for humans](https://nitric.io/docs/concepts/access-control)
+- Common resources like [databases](https://nitric.io/docs/sql), [queues/topics](https://nitric.io/docs/messaging), [APIs](https://nitric.io/docs/apis), [key-value](https://nitric.io/docs/keyvalue), [buckets](https://nitric.io/docs/storage) and more
+- [Change services, IaC tools or cloud providers](https://nitric.io/docs/reference/providers) without changing code
 
-Nitric makes it easy to architect cloud applications directly in application code, building scalable & secure applications with least privilege security out of the box.
-
-<p align="center">
-  <img alt="Nitric Diagram" src="docs/assets/diagram.svg">
-</p>
-
-If you would like to know more about our future plans or what we are currently working on, you can look at the [Nitric Roadmap](https://github.com/orgs/nitrictech/projects/4).
+We also know abstraction should mean building on existing layers, not hiding them. Nitric includes powerful escape hatches for when things get custom.
 
 ## Supported Languages
 
@@ -50,18 +49,39 @@ If you would like to know more about our future plans or what we are currently w
 
 > These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
 
+## Example
+
+Creating an API, a bucket with access permissions and writing files to that bucket via a serverless function.
+
+```javascript
+// JavaScript Example
+import { api, bucket } from "@nitric/sdk";
+
+const main = api("main");
+const notes = bucket("notes").allow("read", "write");
+
+main.post("/notes/:title", async (ctx) => {
+  const { title } = ctx.req.params;
+  await notes.file(title).write(ctx.req.text());
+});
+```
+
+This is the only code needed to deploy a working application to any cloud provider using [`nitric up`](https://nitric.io/docs/getting-started/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/reference/providers/pulumi), [Terraform](https://nitric.io/docs/reference/providers/terraform) or [any other automation tools](https://nitric.io/docs/reference/providers/custom/building-custom-provider) of your choice.
+
 ## Documentation
 
-The full documentation is available at [nitric.io/docs](https://nitric.io/docs).
-
-The Nitric Framework is open source and encourages [code contributions](https://nitric.io/docs/contributions).
+Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), including concepts, reference documentation for various languages and many tutorials/guides.
 
 ## Get in touch
 
 - Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
 
-- Join us on [Discord](https://discord.gg/Webemece5C)
+- Join us on [Discord](https://nitric.io/chat)
 
 - Find us on [Twitter](https://twitter.com/nitric_io)
 
 - Send us an [email](mailto:maintainers@nitric.io)
+
+## Contributing
+
+We greatly appreciate contributions, consider starting with the [contributions guide](./CONTRIBUTING.md) and a chat on [Discord](https://nitric.io/chat) or [GitHub](https://github.com/nitrictech/nitric/discussions).
