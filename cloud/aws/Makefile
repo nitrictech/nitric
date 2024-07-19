@@ -34,12 +34,20 @@ deploybintf: generate-terraform predeploybin
 
 .PHONY: install
 install: deploybin deploybintf
-	@mkdir -p ${HOME}/.nitric/providers/nitric/
-	@rm -f ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
-	@cp bin/deploy-aws ${HOME}/.nitric/providers/nitric/aws-0.0.1
-	@echo installing aws terraform deployment server to ${HOME}/.nitric/providers/nitric/awstf-0.0.1
-	@cp bin/deploy-awstf ${HOME}/.nitric/providers/nitric/awstf-0.0.1
+	@echo installing awstf deployment server to ${HOME}/.nitric/providers/nitric/awstf-0.0.1
+	@mkdir -p ${HOME}/.nitric/providers/nitric/
+	@if [ "$(OS)" == "Windows_NT" ]; then \
+		rm -f "${HOME}/.nitric/providers/nitric/aws-0.0.1.exe"; \
+		rm -f "${HOME}/.nitric/providers/nitric/awstf-0.0.1.exe"; \
+		cp bin/deploy-aws "${HOME}/.nitric/providers/nitric/aws-0.0.1.exe"; \
+		cp bin/deploy-awstf "${HOME}/.nitric/providers/nitric/awstf-0.0.1.exe"; \
+	else \
+		rm -f "${HOME}/.nitric/providers/nitric/aws-0.0.1"; \
+		rm -f "${HOME}/.nitric/providers/nitric/awstf-0.0.1"; \
+		cp bin/deploy-aws "${HOME}/.nitric/providers/nitric/aws-0.0.1"; \
+		cp bin/deploy-awstf "${HOME}/.nitric/providers/nitric/awstf-0.0.1"; \
+	fi
 
 
 license-check: runtimebin

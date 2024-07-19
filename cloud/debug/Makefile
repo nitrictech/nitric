@@ -14,7 +14,13 @@ build:
 install: build
 	@echo installing debug deployment server to ${HOME}/.nitric/providers/debug/spec-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/debug/
-	@cp bin/deploy-debug ${HOME}/.nitric/providers/debug/spec-0.0.1
+	@if [ "$(OS)" == "Windows_NT" ]; then \
+		rm -f "${HOME}/.nitric/providers/debug/spec-0.0.1.exe"; \
+		cp bin/deploy-debug "${HOME}/.nitric/providers/debug/spec-0.0.1.exe"; \
+	else \
+		rm -f "${HOME}/.nitric/providers/debug/spec-0.0.1"; \
+		cp bin/deploy-debug "${HOME}/.nitric/providers/debug/spec-0.0.1"; \
+	fi
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 

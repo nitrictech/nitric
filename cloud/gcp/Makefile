@@ -35,9 +35,17 @@ install: deploybin deploybintf
 	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@echo installing gcptf deployment server to ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
-	@rm -f ${HOME}/.nitric/providers/nitric/gcp-0.0.1
-	@cp bin/deploy-gcp ${HOME}/.nitric/providers/nitric/gcp-0.0.1
-	@cp bin/deploy-gcptf ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
+	@if [ "$(OS)" == "Windows_NT" ]; then \
+		rm -f "${HOME}/.nitric/providers/nitric/gcp-0.0.1.exe"; \
+		rm -f "${HOME}/.nitric/providers/nitric/gcptf-0.0.1.exe"; \
+		cp bin/deploy-gcp "${HOME}/.nitric/providers/nitric/gcp-0.0.1.exe"; \
+		cp bin/deploy-gcptf "${HOME}/.nitric/providers/nitric/gcptf-0.0.1.exe"; \
+	else \
+		rm -f "${HOME}/.nitric/providers/nitric/gcp-0.0.1"; \
+		rm -f "${HOME}/.nitric/providers/nitric/gcptf-0.0.1"; \
+		cp bin/deploy-gcp "${HOME}/.nitric/providers/nitric/gcp-0.0.1"; \
+		cp bin/deploy-gcptf "${HOME}/.nitric/providers/nitric/gcptf-0.0.1"; \
+	fi
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
