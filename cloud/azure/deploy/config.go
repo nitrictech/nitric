@@ -34,10 +34,16 @@ type AzureContainerAppsConfig struct {
 	MaxReplicas int `mapstructure:"max-replicas"`
 }
 
+type AzImports struct {
+	// An existing resource group to deploy into
+	ResourceGroup string `mapstructure:"resource-group"`
+}
+
 type AzureConfig struct {
 	Refresh                                 bool
-	Org                                     string `mapstructure:"org"`
-	AdminEmail                              string `mapstructure:"adminemail"`
+	Org                                     string    `mapstructure:"org"`
+	AdminEmail                              string    `mapstructure:"adminemail"`
+	Imports                                 AzImports `mapstructure:"imports"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 

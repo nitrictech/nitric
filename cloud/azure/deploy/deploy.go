@@ -335,10 +335,15 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
-	a.ResourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
-		Location: pulumi.String(a.Region),
-		Tags:     pulumi.ToStringMap(tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack)),
-	})
+	if a.AzureConfig.Imports.ResourceGroup != "" {
+		a.ResourceGroup, err = resources.GetResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), pulumi.ID(a.AzureConfig.Imports.ResourceGroup), nil, pulumi.RetainOnDelete(true))
+	} else {
+		a.ResourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
+			Location: pulumi.String(a.Region),
+			Tags:     pulumi.ToStringMap(tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack)),
+		})
+	}
+
 	if err != nil {
 		return errors.WithMessage(err, "resource group create")
 	}
