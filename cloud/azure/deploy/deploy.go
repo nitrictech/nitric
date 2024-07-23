@@ -336,7 +336,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	}
 
 	if a.AzureConfig.ResourceGroup != "" {
-		rgId := fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", a.ClientConfig.SubscriptionId, a.AzureConfig.Imports.ResourceGroup)
+		rgId := fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", a.ClientConfig.SubscriptionId, a.AzureConfig.ResourceGroup)
 		a.ResourceGroup, err = resources.GetResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), pulumi.ID(rgId), nil, pulumi.RetainOnDelete(true))
 	} else {
 		a.ResourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
