@@ -66,7 +66,7 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 	res.ManagedUser, err = managedidentity.NewUserAssignedIdentity(ctx, "managed-identity", &managedidentity.UserAssignedIdentityArgs{
 		Location:          p.ResourceGroup.Location,
 		ResourceGroupName: p.ResourceGroup.Name,
-		ResourceName:      pulumi.String("managed-identity"),
+		ResourceName:      pulumi.Sprintf("managed-identity-%s", p.StackId),
 	}, pulumi.Parent(res))
 	if err != nil {
 		return nil, err
