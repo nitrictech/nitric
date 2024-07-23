@@ -36,6 +36,7 @@ type AzureContainerAppsConfig struct {
 
 type AzureConfig struct {
 	Refresh                                 bool
+	ResourceGroup                           string `mapstructure:"resource-group"`
 	Org                                     string `mapstructure:"org"`
 	AdminEmail                              string `mapstructure:"adminemail"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
