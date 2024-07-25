@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os/exec"
 	"runtime/debug"
 	"strings"
 
@@ -31,6 +32,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PulumiProviderServer struct {
@@ -194,8 +197,58 @@ func parsePulumiError(err error) error {
 	return pe
 }
 
+func checkPulumiAvailable() error {
+	_, err := exec.LookPath("pulumi")
+	if err != nil {
+		return fmt.Errorf("pulumi is required to use this provider, please install pulumi and try again")
+	}
+
+	return nil
+}
+
+func checkDockerAvailable() error {
+	cmd := exec.Command("docker", "info")
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("docker is required to use this provider, please install docker and try again")
+	}
+
+	return nil
+}
+
+func checkDependencies() error {
+	errs := []error{}
+
+	err := checkPulumiAvailable()
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	err = checkDockerAvailable()
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		errMsg := "The following dependencies are missing:"
+		for _, e := range errs {
+			errMsg += fmt.Sprintf("\n - %s", e.Error())
+		}
+
+		// combine the errors in a list
+		return fmt.Errorf(errMsg)
+	}
+
+	return nil
+}
+
 // Up - automatically called by the Nitric CLI via the `up` command
 func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
+	// Verify if dependencies are available
+	if err := checkDependencies(); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
 	if err != nil {
 		return err
@@ -284,6 +337,11 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 // Down - automatically called by the Nitric CLI via the `down` command
 func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
+	// Verify if dependencies are available
+	if err := checkDependencies(); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
 	if err != nil {
 		return err
