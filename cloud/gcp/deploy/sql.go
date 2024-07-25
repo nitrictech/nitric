@@ -31,7 +31,6 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/artifactregistry"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/samber/lo"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
@@ -95,7 +94,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "postgres", a.dbMasterPassword.Result, a.masterDb.PrivateIpAddress, "5432", name)
 
-		buildId := pulumi.All(databaseUrl, a.cloudBuildWorkerPool.ID().ToStringOutput(), image.Name, a.masterDb.ToDatabaseInstanceOutput()).ApplyT(func(args []interface{}) (string, error) {
+		buildId := pulumi.All(databaseUrl, a.cloudBuildWorkerPool.ID().ToStringOutput(), image.Name).ApplyT(func(args []interface{}) (string, error) {
 			creds, err := google.FindDefaultCredentials(clientContext)
 			if err != nil {
 				return "", err
@@ -142,28 +141,36 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			}
 
 			err = retry.Do(func() error {
-				_, err := build.Poll(context.TODO())
-				if err != nil {
-					return err
-				}
-
 				metadata, err := build.Metadata()
 				if err != nil {
-					return retry.Unrecoverable(err)
+					return retry.Unrecoverable(fmt.Errorf("failed to retrieve metadata: %w", err))
 				}
 
-				if metadata.Build.Status == cloudbuildpb.Build_SUCCESS {
-					return nil
-				} else if lo.Contains([]cloudbuildpb.Build_Status{
-					cloudbuildpb.Build_PENDING,
-					cloudbuildpb.Build_WORKING,
-					cloudbuildpb.Build_QUEUED,
-					cloudbuildpb.Build_STATUS_UNKNOWN,
-				}, metadata.Build.Status) {
-					return fmt.Errorf("build still in progress with status: %s", metadata.Build.Status)
-				} else {
-					return retry.Unrecoverable(fmt.Errorf("build failed with status: %s", metadata.Build.Status))
+				if metadata == nil {
+					return fmt.Errorf("unable to retrieve metadata")
 				}
+
+				currBuild, err := client.GetBuild(clientContext, &cloudbuildpb.GetBuildRequest{
+					Id:        metadata.Build.Id,
+					Name:      fmt.Sprintf("projects/%s/locations/%s/builds/%s", a.GcpConfig.ProjectId, a.Region, metadata.Build.Id),
+					ProjectId: a.GcpConfig.ProjectId,
+				})
+				if err != nil {
+					if strings.Contains(err.Error(), "not found") {
+						return fmt.Errorf("build operation not found: %w", err)
+					}
+					return fmt.Errorf("failed to poll build: %w", err)
+				}
+
+				if currBuild.Status == cloudbuildpb.Build_PENDING || currBuild.Status == cloudbuildpb.Build_WORKING || currBuild.Status == cloudbuildpb.Build_QUEUED {
+					return fmt.Errorf("build still in progress with status: %s", currBuild.Status)
+				}
+
+				if currBuild.Status == cloudbuildpb.Build_SUCCESS {
+					return nil
+				}
+
+				return retry.Unrecoverable(fmt.Errorf("build failed with status: %s", currBuild.Status))
 			}, retry.Attempts(10), retry.Delay(10*time.Second))
 			if err != nil {
 				return "", err
@@ -176,7 +183,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			ID: buildId,
 		}
 
-		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res, pulumi.Parent(parent))
+		err = ctx.RegisterComponentResource("nitricgcp:cloudbuild:Build", name, res, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
 		if err != nil {
 			return err
 		}

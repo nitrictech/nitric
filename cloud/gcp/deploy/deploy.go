@@ -438,6 +438,24 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		return err
 	}
 
+	a.privateSubnet, err = compute.NewSubnetwork(ctx, "nitric-db-subnetwork", &compute.SubnetworkArgs{
+		Name:        pulumi.String("nitric-db-subnetwork"),
+		IpCidrRange: pulumi.String("10.0.0.0/26"),
+		Region:      pulumi.String(a.Region),
+		Project:     pulumi.String(a.GcpConfig.ProjectId),
+		Network:     a.privateNetwork.ID(),
+		Purpose:     pulumi.String("PRIVATE"),
+		SecondaryIpRanges: compute.SubnetworkSecondaryIpRangeArray{
+			&compute.SubnetworkSecondaryIpRangeArgs{
+				RangeName:   pulumi.String("nitric-db-subnetwork-secondary-range"),
+				IpCidrRange: pulumi.String("192.168.10.0/24"),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
 	privateIpRange, err := compute.NewGlobalAddress(ctx, "nitric-db-ip-range", &compute.GlobalAddressArgs{
 		Name:         pulumi.String("nitric-db-ip-range"),
 		Project:      pulumi.String(a.GcpConfig.ProjectId),
@@ -445,24 +463,7 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		AddressType:  pulumi.String("INTERNAL"),
 		PrefixLength: pulumi.Int(16),
 		Network:      a.privateNetwork.ID(),
-	})
-	if err != nil {
-		return err
-	}
-
-	a.privateSubnet, err = compute.NewSubnetwork(ctx, "nitric-db-subnetwork", &compute.SubnetworkArgs{
-		Name:        pulumi.String("nitric-db-subnetwork"),
-		IpCidrRange: pulumi.String("10.2.0.0/24"),
-		Region:      pulumi.String(a.Region),
-		Project:     pulumi.String(a.GcpConfig.ProjectId),
-		Network:     a.privateNetwork.ID(),
-		SecondaryIpRanges: compute.SubnetworkSecondaryIpRangeArray{
-			&compute.SubnetworkSecondaryIpRangeArgs{
-				RangeName:   pulumi.String("nitric-db-subnetwork-secondary-range"),
-				IpCidrRange: pulumi.String("192.168.10.0/24"),
-			},
-		},
-	}, pulumi.DependsOn([]pulumi.Resource{privateIpRange}))
+	}, pulumi.DependsOn([]pulumi.Resource{a.privateSubnet}))
 	if err != nil {
 		return err
 	}

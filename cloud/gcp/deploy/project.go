@@ -59,6 +59,8 @@ var requiredServices = []string{
 	"monitoring.googleapis.com",
 	// Enable Cloud SQL API
 	"sql-component.googleapis.com",
+	// Enable VPC Access API
+	"vpcaccess.googleapis.com",
 	// Enable Cloud Build API
 	"cloudbuild.googleapis.com",
 }
