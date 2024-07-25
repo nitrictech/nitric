@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os/exec"
 	"runtime/debug"
 	"strings"
 
@@ -195,50 +194,6 @@ func parsePulumiError(err error) error {
 	}
 
 	return pe
-}
-
-type DependencyCheck func() error
-
-func checkPulumiAvailable() error {
-	_, err := exec.LookPath("pulumi")
-	if err != nil {
-		return fmt.Errorf("pulumi is required to use this provider, please install pulumi and try again")
-	}
-
-	return nil
-}
-
-func checkDockerAvailable() error {
-	cmd := exec.Command("docker", "info")
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("docker is required to use this provider, please install docker and try again")
-	}
-
-	return nil
-}
-
-func checkDependencies(checks ...DependencyCheck) error {
-	errs := []error{}
-
-	for _, check := range checks {
-		err := check()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	if len(errs) > 0 {
-		errMsg := "The following dependencies are missing:"
-		for _, e := range errs {
-			errMsg += fmt.Sprintf("\n - %s", e.Error())
-		}
-
-		// combine the errors in a list
-		return fmt.Errorf(errMsg)
-	}
-
-	return nil
 }
 
 // Up - automatically called by the Nitric CLI via the `up` command
