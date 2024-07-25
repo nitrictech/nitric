@@ -241,16 +241,13 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
+	options := []optup.Option{optup.EventStreams(pulumiEventsChan)}
+
 	if ok && refresh {
-		logger.Info("refreshing pulumi stack")
-		_, err = autoStack.Refresh(context.TODO())
-		if err != nil {
-			logger.Errorf(err.Error())
-			return err
-		}
+		options = append(options, optup.Refresh())
 	}
 
-	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
+	result, err := autoStack.Up(context.TODO(), options...)
 	if err != nil {
 		// Check for common Pulumi 'autoError' types
 		if auto.IsConcurrentUpdateError(err) {
@@ -332,15 +329,13 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
+	options := []optdestroy.Option{optdestroy.EventStreams(pulumiEventsChan)}
+
 	if ok && refresh {
-		_, err = stack.Refresh(context.TODO())
-		if err != nil {
-			logger.Errorf(err.Error())
-			return err
-		}
+		options = append(options, optdestroy.Refresh())
 	}
 
-	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
+	_, err = stack.Destroy(context.TODO(), options...)
 	if err != nil {
 		logger.Errorf(err.Error())
 		return err
