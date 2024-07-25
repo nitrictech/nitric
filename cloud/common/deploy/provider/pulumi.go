@@ -241,16 +241,13 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
+	options := []optup.Option{optup.EventStreams(pulumiEventsChan)}
+
 	if ok && refresh {
-		logger.Info("refreshing pulumi stack")
-		_, err = autoStack.Refresh(context.TODO())
-		if err != nil {
-			logger.Errorf(err.Error())
-			return err
-		}
+		options = append(options, optup.Refresh())
 	}
 
-	result, err := autoStack.Up(context.TODO(), optup.EventStreams(pulumiEventsChan))
+	result, err := autoStack.Up(context.TODO(), options...)
 	if err != nil {
 		// Check for common Pulumi 'autoError' types
 		if auto.IsConcurrentUpdateError(err) {
@@ -297,12 +294,14 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 	}
 
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
+
+	attributesMap := req.Attributes.AsMap()
 	if err != nil {
 		return err
 	}
 
 	// run down on the stack
-	err = s.provider.Init(req.Attributes.AsMap())
+	err = s.provider.Init(attributesMap)
 	if err != nil {
 		return err
 	}
@@ -328,13 +327,15 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 		return err
 	}
 
-	_, err = stack.Refresh(context.TODO())
-	if err != nil {
-		logger.Errorf(err.Error())
-		return err
+	refresh, ok := attributesMap["refresh"].(bool)
+
+	options := []optdestroy.Option{optdestroy.EventStreams(pulumiEventsChan)}
+
+	if ok && refresh {
+		options = append(options, optdestroy.Refresh())
 	}
 
-	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
+	_, err = stack.Destroy(context.TODO(), options...)
 	if err != nil {
 		logger.Errorf(err.Error())
 		return err
