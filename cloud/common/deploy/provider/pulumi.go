@@ -297,12 +297,14 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 	}
 
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
+
+	attributesMap := req.Attributes.AsMap()
 	if err != nil {
 		return err
 	}
 
 	// run down on the stack
-	err = s.provider.Init(req.Attributes.AsMap())
+	err = s.provider.Init(attributesMap)
 	if err != nil {
 		return err
 	}
@@ -328,10 +330,14 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 		return err
 	}
 
-	_, err = stack.Refresh(context.TODO())
-	if err != nil {
-		logger.Errorf(err.Error())
-		return err
+	refresh, ok := attributesMap["refresh"].(bool)
+
+	if ok && refresh {
+		_, err = stack.Refresh(context.TODO())
+		if err != nil {
+			logger.Errorf(err.Error())
+			return err
+		}
 	}
 
 	_, err = stack.Destroy(context.TODO(), optdestroy.EventStreams(pulumiEventsChan))
