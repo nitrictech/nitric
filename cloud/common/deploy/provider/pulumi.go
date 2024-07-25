@@ -197,6 +197,8 @@ func parsePulumiError(err error) error {
 	return pe
 }
 
+type DependencyCheck func() error
+
 func checkPulumiAvailable() error {
 	_, err := exec.LookPath("pulumi")
 	if err != nil {
@@ -216,17 +218,14 @@ func checkDockerAvailable() error {
 	return nil
 }
 
-func checkDependencies() error {
+func checkDependencies(checks ...DependencyCheck) error {
 	errs := []error{}
 
-	err := checkPulumiAvailable()
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	err = checkDockerAvailable()
-	if err != nil {
-		errs = append(errs, err)
+	for _, check := range checks {
+		err := check()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if len(errs) > 0 {
@@ -245,7 +244,7 @@ func checkDependencies() error {
 // Up - automatically called by the Nitric CLI via the `up` command
 func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
 	// Verify if dependencies are available
-	if err := checkDependencies(); err != nil {
+	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -338,7 +337,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 // Down - automatically called by the Nitric CLI via the `down` command
 func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
 	// Verify if dependencies are available
-	if err := checkDependencies(); err != nil {
+	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
