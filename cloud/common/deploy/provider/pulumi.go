@@ -31,6 +31,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PulumiProviderServer struct {
@@ -196,6 +198,11 @@ func parsePulumiError(err error) error {
 
 // Up - automatically called by the Nitric CLI via the `up` command
 func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
+	// Verify if dependencies are available
+	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
 	if err != nil {
 		return err
@@ -284,6 +291,11 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 // Down - automatically called by the Nitric CLI via the `down` command
 func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
+	// Verify if dependencies are available
+	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
 	if err != nil {
 		return err
