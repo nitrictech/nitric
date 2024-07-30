@@ -103,7 +103,6 @@ resource "google_cloud_run_service" "service" {
         }
         resources {
           limits = {
-            # TODO: enable cpu configuration
             cpu    = "${var.cpus}"
             memory = "${var.memory_mb}Mi"
           }
