@@ -22,6 +22,8 @@ type Service interface {
 	ConstructNodeMetadata() *map[string]interface{}
 	ContainerConcurrency() *float64
 	SetContainerConcurrency(val *float64)
+	Cpus() *float64
+	SetCpus(val *float64)
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
@@ -133,6 +135,16 @@ func (j *jsiiProxy_Service) ContainerConcurrency() *float64 {
 	_jsii_.Get(
 		j,
 		"containerConcurrency",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) Cpus() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"cpus",
 		&returns,
 	)
 	return returns
@@ -410,6 +422,14 @@ func (j *jsiiProxy_Service) SetContainerConcurrency(val *float64) {
 	_jsii_.Set(
 		j,
 		"containerConcurrency",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service) SetCpus(val *float64) {
+	_jsii_.Set(
+		j,
+		"cpus",
 		val,
 	)
 }

@@ -33,6 +33,7 @@ type GcpImports struct {
 }
 
 type GcpCloudRunConfig struct {
+	Cpus         float64
 	Memory       int
 	Timeout      int
 	MinInstances int `mapstructure:"min-instances"`
@@ -49,6 +50,7 @@ type GcpConfig struct {
 }
 
 var defaultCloudRunConfig = &GcpCloudRunConfig{
+	Cpus:         0.25,
 	Memory:       512,
 	Timeout:      300,
 	MinInstances: 0,

@@ -211,6 +211,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 						},
 						Resources: cloudrun.ServiceTemplateSpecContainerResourcesArgs{
 							Limits: pulumi.StringMap{
+								"cpu":    pulumi.Sprintf("%2f", unitConfig.CloudRun.Cpus),
 								"memory": pulumi.Sprintf("%dMi", unitConfig.CloudRun.Memory),
 							},
 						},

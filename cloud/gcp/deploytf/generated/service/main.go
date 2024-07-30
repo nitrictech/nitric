@@ -18,6 +18,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "cdktfStack", GoGetter: "CdktfStack"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "containerConcurrency", GoGetter: "ContainerConcurrency"},
+			_jsii_.MemberProperty{JsiiProperty: "cpus", GoGetter: "Cpus"},
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},
 			_jsii_.MemberProperty{JsiiProperty: "environment", GoGetter: "Environment"},
 			_jsii_.MemberProperty{JsiiProperty: "eventTokenOutput", GoGetter: "EventTokenOutput"},

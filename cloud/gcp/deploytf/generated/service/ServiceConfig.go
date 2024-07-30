@@ -29,6 +29,8 @@ type ServiceConfig struct {
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The number of concurrent requests the CloudRun service can handle 80.
 	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
+	// The amount of cpus to allocate to the CloudRun service 0.25.
+	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
 	// The amount of memory to allocate to the CloudRun service in MB 512.
 	MemoryMb *float64 `field:"optional" json:"memoryMb" yaml:"memoryMb"`
 	// The timeout for the CloudRun service in seconds 10.
