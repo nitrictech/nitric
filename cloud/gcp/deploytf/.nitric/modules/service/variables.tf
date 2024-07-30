@@ -31,6 +31,12 @@ variable "memory_mb" {
     default     = 512
 }
 
+variable "cpus" {
+    description = "The amount of cpus to allocate to the CloudRun service"
+    type        = number
+    default     = 0.25
+}
+
 variable "container_concurrency" {
     description = "The number of concurrent requests the CloudRun service can handle"
     type        = number
