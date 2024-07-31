@@ -5,12 +5,12 @@
 package jsii
 
 import (
-	_ "embed"
+	_          "embed"
 
-	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
+	_jsii_     "github.com/aws/jsii-runtime-go/runtime"
 
 	constructs "github.com/aws/constructs-go/constructs/v10/jsii"
-	cdktf "github.com/hashicorp/terraform-cdk-go/cdktf/jsii"
+	cdktf      "github.com/hashicorp/terraform-cdk-go/cdktf/jsii"
 )
 
 //go:embed http_proxy-0.0.0.tgz

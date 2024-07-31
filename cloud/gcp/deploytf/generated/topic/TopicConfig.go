@@ -22,3 +22,4 @@ type TopicConfig struct {
 	// This must be globally unique.
 	TopicName *string `field:"required" json:"topicName" yaml:"topicName"`
 }
+

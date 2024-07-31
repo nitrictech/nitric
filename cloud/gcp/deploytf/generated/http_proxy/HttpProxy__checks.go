@@ -140,3 +140,4 @@ func validateNewHttpProxyParameters(scope constructs.Construct, id *string, conf
 
 	return nil
 }
+
