@@ -216,6 +216,13 @@ func (a *AwsResourceService) populateCache(ctx context.Context) error {
 							a.cache[typ] = map[string]ResolvedResource{}
 						}
 
+						// Check the value doesn't already exist
+						if _, ok := a.cache[typ][*t.Value]; ok {
+							// Clear the cache to avoid partial data and allow for a retry if a manual fix is applied
+							a.cache = nil
+							return fmt.Errorf("unable to uniquely identify %s resource, multiple resources found with matching name: %s: ARNs: %s, %s", typ, *t.Value, a.cache[typ][*t.Value].ARN, *tm.ResourceARN)
+						}
+
 						a.cache[typ][*t.Value] = ResolvedResource{ARN: *tm.ResourceARN}
 						break
 					}
