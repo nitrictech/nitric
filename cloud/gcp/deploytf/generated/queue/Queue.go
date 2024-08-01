@@ -228,7 +228,6 @@ func (j *jsiiProxy_Queue) Version() *string {
 	return returns
 }
 
-
 func NewQueue(scope constructs.Construct, id *string, config *QueueConfig) Queue {
 	_init_.Initialize()
 
@@ -256,7 +255,7 @@ func NewQueue_Override(q Queue, scope constructs.Construct, id *string, config *
 	)
 }
 
-func (j *jsiiProxy_Queue)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Queue) SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -264,7 +263,7 @@ func (j *jsiiProxy_Queue)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Queue)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Queue) SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -272,7 +271,7 @@ func (j *jsiiProxy_Queue)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Queue)SetQueueName(val *string) {
+func (j *jsiiProxy_Queue) SetQueueName(val *string) {
 	if err := j.validateSetQueueNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -283,7 +282,7 @@ func (j *jsiiProxy_Queue)SetQueueName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Queue)SetStackId(val *string) {
+func (j *jsiiProxy_Queue) SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -498,4 +497,3 @@ func (q *jsiiProxy_Queue) ToTerraform() interface{} {
 
 	return returns
 }
-

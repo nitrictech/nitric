@@ -16,4 +16,3 @@ type StackConfig struct {
 	// The name of the nitric stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 }
-

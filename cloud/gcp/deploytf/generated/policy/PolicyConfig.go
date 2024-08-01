@@ -24,4 +24,3 @@ type PolicyConfig struct {
 	// The service account to apply the policy to.
 	ServiceAccountEmail *string `field:"required" json:"serviceAccountEmail" yaml:"serviceAccountEmail"`
 }
-
