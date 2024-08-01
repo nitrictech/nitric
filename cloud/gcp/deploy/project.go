@@ -44,8 +44,9 @@ var requiredServices = []string{
 	"storage.googleapis.com",
 	// Enable Compute API (Networking/Load Balancing)
 	"compute.googleapis.com",
-	// Enable Container Registry API
+	// Enable Artifact Registry API and Container Registry API
 	"containerregistry.googleapis.com",
+	"artifactregistry.googleapis.com",
 	// Enable firestore API
 	"firestore.googleapis.com",
 	// Enable ApiGateway API
@@ -56,6 +57,12 @@ var requiredServices = []string{
 	"cloudtasks.googleapis.com",
 	// Enable monitoring API
 	"monitoring.googleapis.com",
+	// Enable Cloud SQL API
+	"sql-component.googleapis.com",
+	// Enable VPC Access API
+	"vpcaccess.googleapis.com",
+	// Enable Cloud Build API
+	"cloudbuild.googleapis.com",
 }
 
 // Creates a new GCP Project

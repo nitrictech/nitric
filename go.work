@@ -1,4 +1,6 @@
-go 1.21.3
+go 1.21.5
+
+toolchain go1.21.10
 
 use (
 	./cloud/aws

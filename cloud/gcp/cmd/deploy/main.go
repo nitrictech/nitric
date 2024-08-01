@@ -26,7 +26,10 @@ import (
 func main() {
 	gcpStack := deploy.NewNitricGcpProvider()
 
-	providerServer := provider.NewPulumiProviderServer(gcpStack, runtime.NitricGcpRuntime)
+	providerServer := provider.NewPulumiProviderServer(
+		gcpStack,
+		runtime.NitricGcpRuntime,
+	)
 
 	providerServer.Start()
 }
