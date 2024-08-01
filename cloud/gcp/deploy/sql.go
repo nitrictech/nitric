@@ -42,47 +42,10 @@ type CloudBuild struct {
 }
 
 func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	imageUriSplit := strings.Split(config.GetImageUri(), "/")
-	imageName := imageUriSplit[len(imageUriSplit)-1]
-
-	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
-	if err != nil {
-		return err
-	}
-
-	repo, err := artifactregistry.NewRepository(ctx, fmt.Sprintf("%s-migration-repo", name), &artifactregistry.RepositoryArgs{
-		Location:     pulumi.String(a.Region),
-		RepositoryId: pulumi.Sprintf("%s-migration-repo", name),
-		Format:       pulumi.String("DOCKER"),
-	})
-	if err != nil {
-		return err
-	}
-
-	imageUrl := pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", a.Region, a.GcpConfig.ProjectId, repo.Name, imageName)
-
-	newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
-		SourceImage: pulumi.String(inspect.ID),
-		TargetImage: imageUrl,
-	}, pulumi.Parent(parent))
-	if err != nil {
-		return err
-	}
-
-	image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
-		Name: imageUrl,
-		Triggers: pulumi.Map{
-			"imageSha": pulumi.String(inspect.ID),
-		},
-	}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
-	if err != nil {
-		return err
-	}
-
-	_, err = sql.NewDatabase(ctx, name, &sql.DatabaseArgs{
+	_, err := sql.NewDatabase(ctx, name, &sql.DatabaseArgs{
 		Name:           pulumi.String(name),
 		Instance:       a.masterDb.Name,
-		DeletionPolicy: pulumi.String("DELETE"),
+		DeletionPolicy: pulumi.String(a.GcpConfig.Databases[name].DeletionPolicy),
 		Project:        pulumi.String(a.GcpConfig.ProjectId),
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
 	if err != nil {
@@ -91,6 +54,43 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 	if a.DatabaseMigrationBuild[name] == nil && config.GetImageUri() != "" {
 		clientContext := context.TODO()
+
+		imageUriSplit := strings.Split(config.GetImageUri(), "/")
+		imageName := imageUriSplit[len(imageUriSplit)-1]
+
+		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+		if err != nil {
+			return err
+		}
+
+		repo, err := artifactregistry.NewRepository(ctx, fmt.Sprintf("%s-migration-repo", name), &artifactregistry.RepositoryArgs{
+			Location:     pulumi.String(a.Region),
+			RepositoryId: pulumi.Sprintf("%s-migration-repo", name),
+			Format:       pulumi.String("DOCKER"),
+		})
+		if err != nil {
+			return err
+		}
+
+		imageUrl := pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", a.Region, a.GcpConfig.ProjectId, repo.Name, imageName)
+
+		newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
+			SourceImage: pulumi.String(inspect.ID),
+			TargetImage: imageUrl,
+		}, pulumi.Parent(parent))
+		if err != nil {
+			return err
+		}
+
+		image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
+			Name: imageUrl,
+			Triggers: pulumi.Map{
+				"imageSha": pulumi.String(inspect.ID),
+			},
+		}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
+		if err != nil {
+			return err
+		}
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "postgres", a.dbMasterPassword.Result, a.masterDb.PrivateIpAddress, "5432", name)
 
