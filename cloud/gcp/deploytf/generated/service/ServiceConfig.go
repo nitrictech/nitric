@@ -36,4 +36,3 @@ type ServiceConfig struct {
 	// The timeout for the CloudRun service in seconds 10.
 	TimeoutSeconds *float64 `field:"optional" json:"timeoutSeconds" yaml:"timeoutSeconds"`
 }
-
