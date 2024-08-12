@@ -18,3 +18,4 @@ type QueueConfig struct {
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 }
+

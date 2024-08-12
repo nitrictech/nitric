@@ -50,7 +50,7 @@ type GcpConfig struct {
 }
 
 var defaultCloudRunConfig = &GcpCloudRunConfig{
-	Cpus:         0.25,
+	Cpus:         1,
 	Memory:       512,
 	Timeout:      300,
 	MinInstances: 0,
