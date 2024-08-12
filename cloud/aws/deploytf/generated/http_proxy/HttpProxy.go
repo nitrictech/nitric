@@ -229,6 +229,7 @@ func (j *jsiiProxy_HttpProxy) Version() *string {
 	return returns
 }
 
+
 func NewHttpProxy(scope constructs.Construct, id *string, config *HttpProxyConfig) HttpProxy {
 	_init_.Initialize()
 
@@ -256,7 +257,7 @@ func NewHttpProxy_Override(h HttpProxy, scope constructs.Construct, id *string, 
 	)
 }
 
-func (j *jsiiProxy_HttpProxy) SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_HttpProxy)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -264,7 +265,7 @@ func (j *jsiiProxy_HttpProxy) SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy) SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_HttpProxy)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -272,7 +273,7 @@ func (j *jsiiProxy_HttpProxy) SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy) SetName(val *string) {
+func (j *jsiiProxy_HttpProxy)SetName(val *string) {
 	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
 	}
@@ -283,7 +284,7 @@ func (j *jsiiProxy_HttpProxy) SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy) SetStackId(val *string) {
+func (j *jsiiProxy_HttpProxy)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -294,7 +295,7 @@ func (j *jsiiProxy_HttpProxy) SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_HttpProxy) SetTargetLambdaFunction(val *string) {
+func (j *jsiiProxy_HttpProxy)SetTargetLambdaFunction(val *string) {
 	if err := j.validateSetTargetLambdaFunctionParameters(val); err != nil {
 		panic(err)
 	}
@@ -509,3 +510,4 @@ func (h *jsiiProxy_HttpProxy) ToTerraform() interface{} {
 
 	return returns
 }
+

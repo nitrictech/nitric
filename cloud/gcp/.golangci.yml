@@ -25,11 +25,7 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-dirs:
-    - deploytf/generated
 
 linters-settings:
   govet:
     check-shadowing: false
-  exclude:
-    - "^deploytf/generated/.*"

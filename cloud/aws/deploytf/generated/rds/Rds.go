@@ -318,6 +318,8 @@ func (j *jsiiProxy_Rds) VpcId() *string {
 	)
 	return returns
 }
+
+
 func NewRds(scope constructs.Construct, id *string, config *RdsConfig) Rds {
 	_init_.Initialize()
 
@@ -345,7 +347,7 @@ func NewRds_Override(r Rds, scope constructs.Construct, id *string, config *RdsC
 	)
 }
 
-func (j *jsiiProxy_Rds) SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Rds)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -353,7 +355,7 @@ func (j *jsiiProxy_Rds) SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Rds)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -361,7 +363,7 @@ func (j *jsiiProxy_Rds) SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetMaxCapacity(val *float64) {
+func (j *jsiiProxy_Rds)SetMaxCapacity(val *float64) {
 	if err := j.validateSetMaxCapacityParameters(val); err != nil {
 		panic(err)
 	}
@@ -372,7 +374,7 @@ func (j *jsiiProxy_Rds) SetMaxCapacity(val *float64) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetMinCapacity(val *float64) {
+func (j *jsiiProxy_Rds)SetMinCapacity(val *float64) {
 	if err := j.validateSetMinCapacityParameters(val); err != nil {
 		panic(err)
 	}
@@ -383,7 +385,7 @@ func (j *jsiiProxy_Rds) SetMinCapacity(val *float64) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetPrivateSubnetIds(val *[]*string) {
+func (j *jsiiProxy_Rds)SetPrivateSubnetIds(val *[]*string) {
 	if err := j.validateSetPrivateSubnetIdsParameters(val); err != nil {
 		panic(err)
 	}
@@ -394,7 +396,7 @@ func (j *jsiiProxy_Rds) SetPrivateSubnetIds(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetStackId(val *string) {
+func (j *jsiiProxy_Rds)SetStackId(val *string) {
 	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -405,7 +407,7 @@ func (j *jsiiProxy_Rds) SetStackId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Rds) SetVpcId(val *string) {
+func (j *jsiiProxy_Rds)SetVpcId(val *string) {
 	if err := j.validateSetVpcIdParameters(val); err != nil {
 		panic(err)
 	}
@@ -620,3 +622,4 @@ func (r *jsiiProxy_Rds) ToTerraform() interface{} {
 
 	return returns
 }
+

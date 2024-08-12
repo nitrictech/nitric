@@ -30,3 +30,4 @@ type ServiceConfig struct {
 	// The timeout for the lambda function 10.
 	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
 }
+

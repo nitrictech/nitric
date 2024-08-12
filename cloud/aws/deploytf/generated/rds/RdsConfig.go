@@ -24,3 +24,4 @@ type RdsConfig struct {
 	// the VPC to assign to the RDS cluster.
 	VpcId *string `field:"required" json:"vpcId" yaml:"vpcId"`
 }
+
