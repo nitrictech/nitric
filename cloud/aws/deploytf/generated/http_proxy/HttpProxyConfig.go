@@ -20,3 +20,4 @@ type HttpProxyConfig struct {
 	// The name or arn of the target lambda functin.
 	TargetLambdaFunction *string `field:"required" json:"targetLambdaFunction" yaml:"targetLambdaFunction"`
 }
+

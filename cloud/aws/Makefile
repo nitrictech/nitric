@@ -98,6 +98,6 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceProvider > mocks/provider/aws.go
 
 generate-terraform:
-	@cd deploytf && cdktf get
+	@cd deploytf && npx -y cdktf-cli@0.20.8 get
 
 generate-sources: generate-mocks
