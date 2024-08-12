@@ -237,6 +237,7 @@ func (j *jsiiProxy_Stack) Version() *string {
 	)
 	return returns
 }
+
 func NewStack(scope constructs.Construct, id *string, config *StackConfig) Stack {
 	_init_.Initialize()
 

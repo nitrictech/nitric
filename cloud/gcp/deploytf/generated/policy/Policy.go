@@ -252,6 +252,7 @@ func (j *jsiiProxy_Policy) Version() *string {
 	)
 	return returns
 }
+
 func NewPolicy(scope constructs.Construct, id *string, config *PolicyConfig) Policy {
 	_init_.Initialize()
 
