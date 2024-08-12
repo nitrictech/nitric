@@ -27,7 +27,7 @@ deploybin: predeploybin
 
 
 deploybintf: generate-terraform predeploybin
-	@echo Building AWS Terraform Deployment Server
+	@echo Building GCP Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-gcptf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
 .PHONY: install
@@ -90,4 +90,5 @@ generate-mocks:
 generate-sources: generate-mocks
 
 generate-terraform:
-	@cd deploytf && cdktf get
+	@cd deploytf && npx -y cdktf-cli@0.20.8 get
+	$(GOLANGCI_LINT) run --fix
