@@ -274,7 +274,6 @@ func (j *jsiiProxy_Websocket) WebsocketName() *string {
 	)
 	return returns
 }
-
 func NewWebsocket(scope constructs.Construct, id *string, config *WebsocketConfig) Websocket {
 	_init_.Initialize()
 

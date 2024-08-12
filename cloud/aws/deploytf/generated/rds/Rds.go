@@ -318,7 +318,6 @@ func (j *jsiiProxy_Rds) VpcId() *string {
 	)
 	return returns
 }
-
 func NewRds(scope constructs.Construct, id *string, config *RdsConfig) Rds {
 	_init_.Initialize()
 

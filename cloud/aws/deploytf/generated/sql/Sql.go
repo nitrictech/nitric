@@ -348,7 +348,6 @@ func (j *jsiiProxy_Sql) WorkDir() *string {
 	)
 	return returns
 }
-
 func NewSql(scope constructs.Construct, id *string, config *SqlConfig) Sql {
 	_init_.Initialize()
 

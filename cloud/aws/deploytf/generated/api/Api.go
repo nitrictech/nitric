@@ -263,7 +263,6 @@ func (j *jsiiProxy_Api) Version() *string {
 	)
 	return returns
 }
-
 func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
 	_init_.Initialize()
 
