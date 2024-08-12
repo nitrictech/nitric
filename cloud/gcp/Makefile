@@ -91,4 +91,3 @@ generate-sources: generate-mocks
 
 generate-terraform:
 	@cd deploytf && npx -y cdktf-cli@0.20.8 get
-	$(GOLANGCI_LINT) run --fix

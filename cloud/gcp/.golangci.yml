@@ -1,24 +1,26 @@
 run:
   timeout: "5m"
   skip-files:
-  - tools/tools.go
+    - tools/tools.go
+  skip-dirs:
+    - deploytf/generated
   go: 1.18
 
 linters:
   disable-all: true
   enable:
-  - goimports
-  - gofmt
-  - govet
-  - gofumpt
-  - whitespace
-  # - staticcheck
-  - ineffassign
-  - unused
-  - misspell
-  - unconvert
-  - errcheck
-  - errorlint
+    - goimports
+    - gofmt
+    - govet
+    - gofumpt
+    - whitespace
+    # - staticcheck
+    - ineffassign
+    - unused
+    - misspell
+    - unconvert
+    - errcheck
+    - errorlint
 
 issues:
   max-issues-per-linter: 0
@@ -29,3 +31,5 @@ issues:
 linters-settings:
   govet:
     check-shadowing: false
+  exclude:
+    - "^deploytf/generated/.*"
