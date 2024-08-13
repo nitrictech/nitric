@@ -1,5 +1,5 @@
 variable "bucket_name" {
-  description = "The name of the bucket. This must be globally unique."
+  description = "The name of the bucket"
   type        = string
 }
 
