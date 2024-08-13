@@ -1,5 +1,5 @@
 variable "name" {
-  description = "The name of the API Gateway"
+  description = "The name of the HTTP proxy gateway"
   type = string
 }
 
@@ -9,6 +9,6 @@ variable "stack_id" {
 }
 
 variable "target_lambda_function" {
-  description = "The name or arn of the target lambda functin"
+  description = "The name or arn of the lambda function being proxied"
   type = string
 }

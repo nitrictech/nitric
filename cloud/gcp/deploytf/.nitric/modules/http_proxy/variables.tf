@@ -1,5 +1,5 @@
 variable "name" {
-  description = "The name of the API Gateway"
+  description = "The name of the HTTP proxy gateway"
   type = string
 }
 

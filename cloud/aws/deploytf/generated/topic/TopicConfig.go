@@ -17,9 +17,7 @@ type TopicConfig struct {
 	LambdaSubscribers *map[string]*string `field:"required" json:"lambdaSubscribers" yaml:"lambdaSubscribers"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The name of the bucket.
-	//
-	// This must be globally unique.
+	// The name of the topic.
 	TopicName *string `field:"required" json:"topicName" yaml:"topicName"`
 }
 
