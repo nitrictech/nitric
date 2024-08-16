@@ -17,6 +17,7 @@ package gateway
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -470,30 +471,39 @@ func (s *LambdaGateway) processS3Event(ctx context.Context, storageListeners sto
 	return nil, nil
 }
 
-func (s *LambdaGateway) routeEvent(ctx context.Context, opts *gateway.GatewayStartOpts, evt Event) (interface{}, error) {
-	switch evt.Type() {
+// RouteEvent routes incoming lambda events to the appropriate worker for processing
+func (s *LambdaGateway) RouteEvent(ctx context.Context, opts *gateway.GatewayStartOpts, evt json.RawMessage) (interface{}, error) {
+
+	// Unmarshal the event
+	var event Event
+	err := json.Unmarshal(evt, &event)
+	if err != nil {
+		return nil, NewUnhandledLambdaEventError(fmt.Errorf("error unmarshalling lambda event: %w", err))
+	}
+
+	switch event.Type() {
 	case websocketEvent:
-		return s.handleWebsocketEvent(ctx, opts.WebsocketListenerPlugin, evt.APIGatewayWebsocketProxyRequest)
+		return s.handleWebsocketEvent(ctx, opts.WebsocketListenerPlugin, event.APIGatewayWebsocketProxyRequest)
 	case httpEvent:
-		return s.handleApiEvent(ctx, opts.ApiPlugin, opts.HttpPlugin, evt.APIGatewayV2HTTPRequest)
+		return s.handleApiEvent(ctx, opts.ApiPlugin, opts.HttpPlugin, event.APIGatewayV2HTTPRequest)
 	case healthcheck:
-		return s.handleHealthCheck(ctx, evt.healthCheckEvent)
+		return s.handleHealthCheck(ctx, event.healthCheckEvent)
 	case sns:
-		return s.handleSnsEvents(ctx, opts.TopicsListenerPlugin, evt.Records)
+		return s.handleSnsEvents(ctx, opts.TopicsListenerPlugin, event.Records)
 	case s3:
-		return s.processS3Event(ctx, opts.StorageListenerPlugin, evt.Records)
+		return s.processS3Event(ctx, opts.StorageListenerPlugin, event.Records)
 	case schedule:
-		return s.handleScheduleEvent(ctx, opts.SchedulesPlugin, evt.nitricScheduleEvent)
+		return s.handleScheduleEvent(ctx, opts.SchedulesPlugin, event.nitricScheduleEvent)
 	default:
-		return nil, fmt.Errorf("unhandled lambda event type: %+v", evt)
+		return nil, NewUnhandledLambdaEventError(fmt.Errorf("unhandled lambda event type: %+v", event))
 	}
 }
 
 // Start polling the lambda runtime for events and route the to workers for processing
 func (s *LambdaGateway) Start(opts *gateway.GatewayStartOpts) error {
 	// Begin polling lambda for incoming requests...
-	s.runtime(func(ctx context.Context, evt Event) (interface{}, error) {
-		a, err := s.routeEvent(ctx, opts, evt)
+	s.runtime(func(ctx context.Context, evt json.RawMessage) (interface{}, error) {
+		a, err := s.RouteEvent(ctx, opts, evt)
 
 		tp, ok := otel.GetTracerProvider().(*sdktrace.TracerProvider)
 		if ok {
