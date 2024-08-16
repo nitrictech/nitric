@@ -528,11 +528,11 @@ func (s *LambdaGateway) Stop() error {
 	return nil
 }
 
-func New(provider *resource.AwsResourceService) (gateway.GatewayService, error) {
+func New(provider *resource.AwsResourceService) (*LambdaGateway, error) {
 	return NewWithRuntime(provider, lambda.Start)
 }
 
-func NewWithRuntime(provider resource.AwsResourceProvider, runtime LambdaRuntimeHandler) (gateway.GatewayService, error) {
+func NewWithRuntime(provider resource.AwsResourceProvider, runtime LambdaRuntimeHandler) (*LambdaGateway, error) {
 	return &LambdaGateway{
 		provider: provider,
 		runtime:  runtime,
