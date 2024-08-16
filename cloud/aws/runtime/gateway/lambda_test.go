@@ -32,7 +32,6 @@ import (
 
 	mock_provider "github.com/nitrictech/nitric/cloud/aws/mocks/provider"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
-	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 	mock_apis "github.com/nitrictech/nitric/core/mocks/workers/apis"
@@ -43,13 +42,12 @@ import (
 	coreGateway "github.com/nitrictech/nitric/core/pkg/gateway"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
-	ep "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 )
 
 type MockLambdaRuntime struct {
-	lambda_service.LambdaRuntimeHandler
+	gateway.LambdaRuntimeHandler
 	eventQueue []interface{}
 }
 
@@ -126,7 +124,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
 			Expect(err).To(BeNil())
 
 			// This function will block which means we don't need to wait on processing,
@@ -203,7 +201,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
 			Expect(err).To(BeNil())
 
 			// This function will block which means we don't need to wait on processing,
@@ -271,8 +269,8 @@ var _ = Describe("Lambda", func() {
 				"test": "test",
 			})
 
-			message := ep.TopicMessage{
-				Content: &ep.TopicMessage_StructPayload{
+			message := topicspb.TopicMessage{
+				Content: &topicspb.TopicMessage_StructPayload{
 					StructPayload: content,
 				},
 			}
@@ -297,7 +295,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
 			Expect(err).To(BeNil())
 
 			It("The gateway should translate into a standard NitricRequest", func() {
@@ -370,7 +368,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
 			Expect(err).To(BeNil())
 
 			// This function will block which means we don't need to wait on processing,
@@ -446,7 +444,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := lambda_service.NewWithRuntime(mockProvider, runtime.Start)
+			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
 			Expect(err).To(BeNil())
 
 			// This function will block which means we don't need to wait on processing,
