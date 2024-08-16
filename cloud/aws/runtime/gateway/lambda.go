@@ -67,7 +67,7 @@ func (s *LambdaGateway) getTopicNameForArn(ctx context.Context, topicArn string)
 func (s *LambdaGateway) getBucketNameForArn(ctx context.Context, bucketArn string) (string, error) {
 	buckets, err := s.provider.GetResources(ctx, resource.AwsResource_Bucket)
 	if err != nil {
-		return "", fmt.Errorf("error retrieving topics: %w", err)
+		return "", fmt.Errorf("error retrieving buckets: %w", err)
 	}
 
 	for name, bucket := range buckets {
@@ -76,7 +76,7 @@ func (s *LambdaGateway) getBucketNameForArn(ctx context.Context, bucketArn strin
 		}
 	}
 
-	return "", fmt.Errorf("could not find topic for arn %s", bucketArn)
+	return "", fmt.Errorf("could not find bucket for arn %s", bucketArn)
 }
 
 type LambdaGateway struct {
