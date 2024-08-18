@@ -16,6 +16,7 @@ package server
 
 import (
 	"github.com/nitrictech/nitric/core/pkg/gateway"
+	batchpb "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
 	queuespb "github.com/nitrictech/nitric/core/pkg/proto/queues/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -26,6 +27,7 @@ import (
 	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
 	"github.com/nitrictech/nitric/core/pkg/workers/apis"
 	"github.com/nitrictech/nitric/core/pkg/workers/http"
+	"github.com/nitrictech/nitric/core/pkg/workers/jobs"
 	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
 	"github.com/nitrictech/nitric/core/pkg/workers/storage"
 	"github.com/nitrictech/nitric/core/pkg/workers/topics"
@@ -49,6 +51,12 @@ func WithGatewayPlugin(gw gateway.GatewayService) ServerOption {
 func WithKeyValuePlugin(kv kvstorepb.KvStoreServer) ServerOption {
 	return func(opts *NitricServer) {
 		opts.KeyValuePlugin = kv
+	}
+}
+
+func WithBatchPlugin(bp batchpb.BatchServer) ServerOption {
+	return func(opts *NitricServer) {
+		opts.BatchPlugin = bp
 	}
 }
 
@@ -115,6 +123,12 @@ func WithTopicsListenerPlugin(topics topics.SubscriptionRequestHandler) ServerOp
 func WithStorageListenerPlugin(storage storage.BucketRequestHandler) ServerOption {
 	return func(opts *NitricServer) {
 		opts.StorageListenerPlugin = storage
+	}
+}
+
+func WithJobHandlerPlugin(jobs jobs.JobRequestHandler) ServerOption {
+	return func(opts *NitricServer) {
+		opts.JobHandlerPlugin = jobs
 	}
 }
 
