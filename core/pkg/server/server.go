@@ -30,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
+	batchpb "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
 	keyvaluepb "github.com/nitrictech/nitric/core/pkg/proto/keyvalue/v1"
 	kvstorepb "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
@@ -44,6 +45,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/server/runtime"
 	"github.com/nitrictech/nitric/core/pkg/workers/apis"
 	"github.com/nitrictech/nitric/core/pkg/workers/http"
+	"github.com/nitrictech/nitric/core/pkg/workers/jobs"
 	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
 	"github.com/nitrictech/nitric/core/pkg/workers/storage"
 	"github.com/nitrictech/nitric/core/pkg/workers/topics"
@@ -80,6 +82,7 @@ type NitricServer struct {
 	WebsocketPlugin     websocketspb.WebsocketServer
 	QueuesPlugin        queuespb.QueuesServer
 	SqlPlugin           sqlpb.SqlServer
+	BatchPlugin         batchpb.BatchServer
 
 	// Worker plugins
 	ApiPlugin               apis.ApiRequestHandler
@@ -88,6 +91,7 @@ type NitricServer struct {
 	TopicsListenerPlugin    topics.SubscriptionRequestHandler
 	StorageListenerPlugin   storage.BucketRequestHandler
 	WebsocketListenerPlugin websockets.WebsocketRequestHandler
+	JobHandlerPlugin        jobs.JobRequestHandler
 }
 
 func (s *NitricServer) WorkerCount() int {
@@ -96,7 +100,8 @@ func (s *NitricServer) WorkerCount() int {
 		s.SchedulesPlugin.WorkerCount() +
 		s.TopicsListenerPlugin.WorkerCount() +
 		s.StorageListenerPlugin.WorkerCount() +
-		s.WebsocketListenerPlugin.WorkerCount()
+		s.WebsocketListenerPlugin.WorkerCount() +
+		s.JobHandlerPlugin.WorkerCount()
 }
 
 func (s *NitricServer) waitForMinimumWorkers(timeout int) error {
@@ -188,6 +193,11 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 	}
 	httppb.RegisterHttpServer(s.grpcServer, s.HttpPlugin)
 
+	if s.JobHandlerPlugin == nil {
+		s.JobHandlerPlugin = jobs.New()
+	}
+	batchpb.RegisterJobServer(s.grpcServer, s.JobHandlerPlugin)
+
 	// Load & Register the service plugins
 	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.SecretManagerPlugin)
 	keyvalueServerWithCompat := decorators.KeyValueServerWithCompat(s.KeyValuePlugin)
@@ -201,6 +211,7 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 	websocketspb.RegisterWebsocketServer(s.grpcServer, s.WebsocketPlugin)
 	queuespb.RegisterQueuesServer(s.grpcServer, s.QueuesPlugin)
 	sqlpb.RegisterSqlServer(s.grpcServer, s.SqlPlugin)
+	batchpb.RegisterBatchServer(s.grpcServer, s.BatchPlugin)
 
 	lis, err := net.Listen("tcp", s.ServiceAddress)
 	if err != nil {
@@ -220,7 +231,7 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections
-	if err := s.processManager.StartUserProcess(); err != nil {
+	if err := s.processManager.StartUserProcess(fmt.Sprintf("SERVICE_ADDRESS=%s", lis.Addr().String())); err != nil {
 		return err
 	}
 
@@ -245,6 +256,7 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 			TopicsListenerPlugin:    s.TopicsListenerPlugin,
 			StorageListenerPlugin:   s.StorageListenerPlugin,
 			WebsocketListenerPlugin: s.WebsocketListenerPlugin,
+			JobHandlerPlugin:        s.JobHandlerPlugin,
 		})
 	}(gatewayErrchan)
 

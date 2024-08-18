@@ -19,6 +19,7 @@ import (
 
 	apigateways "github.com/nitrictech/nitric/core/pkg/workers/apis"
 	"github.com/nitrictech/nitric/core/pkg/workers/http"
+	"github.com/nitrictech/nitric/core/pkg/workers/jobs"
 	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
 	"github.com/nitrictech/nitric/core/pkg/workers/storage"
 	"github.com/nitrictech/nitric/core/pkg/workers/topics"
@@ -32,6 +33,7 @@ type GatewayStartOpts struct {
 	TopicsListenerPlugin    topics.SubscriptionRequestHandler
 	StorageListenerPlugin   storage.BucketRequestHandler
 	WebsocketListenerPlugin websockets.WebsocketRequestHandler
+	JobHandlerPlugin        jobs.JobRequestHandler
 }
 
 // GatewayService - The interface for a Nitric Gateway, which acts as provider specific adapter for all incoming requests.

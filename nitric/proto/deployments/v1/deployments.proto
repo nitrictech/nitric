@@ -5,6 +5,7 @@ package nitric.proto.deployments.v1;
 import "google/protobuf/struct.proto";
 import "nitric/proto/resources/v1/resources.proto";
 import "nitric/proto/storage/v1/storage.proto";
+import "nitric/proto/batch/v1/batch.proto";
 
 //protoc plugin options for code generation
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1;deploymentspb";
@@ -161,6 +162,34 @@ message Service {
   map<string, string> env = 14; 
 }
 
+message Job {
+  // The name of the job to create
+  string name = 1;
+
+  // The default resource requirements of the job
+  nitric.proto.batch.v1.JobResourceRequirements requirements = 2;
+}
+
+message Batch {
+  // Source of the service
+  oneof source {
+    // Image URI for this batch service
+    ImageSource image = 1;
+  }
+
+  // A simple type property
+  // describes the requested type of batch that this should be
+  // for this project, a provider can implement how this request is satisfied
+  // in any way
+  string type = 10;
+
+  // Environment variables for this Batch
+  map<string, string> env = 11;
+
+  // Jobs that are defined in this Batch
+  repeated Job jobs = 12;
+}
+
 message Bucket {
   repeated BucketListener listeners = 1;
 }
@@ -290,6 +319,7 @@ message Resource {
     Http http = 19;
     Queue queue = 20;
     SqlDatabase sql_database = 21;
+    Batch batch = 22;
   }
 }
 
