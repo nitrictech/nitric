@@ -1,4 +1,4 @@
-package membrane
+package server
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 )
 
 // Run - Run a runtime server until a signal is received or an error occurs
-func Run(m *Membrane) {
+func Run(m *NitricServer) {
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(term, os.Interrupt, syscall.SIGINT)
@@ -24,8 +24,8 @@ func Run(m *Membrane) {
 	}(errChan)
 
 	select {
-	case membraneError := <-errChan:
-		logger.Errorf("Membrane Error: %v, exiting\n", membraneError)
+	case serverErr := <-errChan:
+		logger.Errorf("Nitric Server Error: %v, exiting\n", serverErr)
 	case sigTerm := <-term:
 		logger.Infof("Received %v, exiting\n", sigTerm)
 	}

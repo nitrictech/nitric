@@ -18,20 +18,20 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	"github.com/nitrictech/nitric/core/pkg/logger"
-	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
 func main() {
-	provider, err := resource.New()
+	resolver, err := resource.New()
 	if err != nil {
-		logger.Fatalf("could not create aws provider: %v", err)
+		logger.Fatalf("could not create aws resource resolver: %v", err)
 		return
 	}
 
-	m, err := runtime.NewAwsRuntimeServer(provider)
+	m, err := runtime.NewAwsRuntimeServer(resolver)
 	if err != nil {
-		logger.Fatalf("There was an error initializing the membrane server: %v", err)
+		logger.Fatalf("there was an error initializing the AWS runtime server: %v", err)
 	}
 
-	membrane.Run(m)
+	server.Run(m)
 }

@@ -4,14 +4,14 @@
 
 ### Requirements
  - Git
- - Nitric Membrane Project
+ - Nitric Project
  - Golang
  - Make
  - Docker
 
 ### Getting Started
 
-### Building Static Membrane Image
+### Building Static Server Image
 From the repository root run
 ```bash
 make aws-docker-static
@@ -19,7 +19,7 @@ make aws-docker-static
 
 ### Building Plugin Images
 
-> __Note:__ Prior to building these plugins, the nitric pluggable membrane image must be built for local development
+> __Note:__ Prior to building these plugins, the nitric pluggable server image must be built for local development
 
 
 Alpine Linux

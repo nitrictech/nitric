@@ -9,10 +9,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
-	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
-func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...membrane.RuntimeServerOption) (*membrane.Membrane, error) {
+func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...server.ServerOption) (*server.NitricServer, error) {
 	secretPlugin, _ := secret.New()
 	keyValuePlugin, _ := keyvalue.New()
 	topicsPlugin, _ := topic.New(resourcesPlugin)
@@ -23,18 +23,18 @@ func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...m
 	gatewayPlugin, _ := gateway.New(resourcesPlugin)
 	apiPlugin := api.NewGcpApiGatewayProvider(resourcesPlugin)
 
-	defaultGcpMembraneOpts := []membrane.RuntimeServerOption{
-		membrane.WithKeyValuePlugin(keyValuePlugin),
-		membrane.WithSecretManagerPlugin(secretPlugin),
-		membrane.WithGatewayPlugin(gatewayPlugin),
-		membrane.WithStoragePlugin(storagePlugin),
-		membrane.WithTopicsPlugin(topicsPlugin),
-		membrane.WithQueuesPlugin(queuesPlugin),
-		membrane.WithApiPlugin(apiPlugin),
+	defaultGcpOpts := []server.ServerOption{
+		server.WithKeyValuePlugin(keyValuePlugin),
+		server.WithSecretManagerPlugin(secretPlugin),
+		server.WithGatewayPlugin(gatewayPlugin),
+		server.WithStoragePlugin(storagePlugin),
+		server.WithTopicsPlugin(topicsPlugin),
+		server.WithQueuesPlugin(queuesPlugin),
+		server.WithApiPlugin(apiPlugin),
 	}
 
 	// append overrides
-	defaultGcpMembraneOpts = append(defaultGcpMembraneOpts, opts...)
+	defaultGcpOpts = append(defaultGcpOpts, opts...)
 
-	return membrane.New(defaultGcpMembraneOpts...)
+	return server.New(defaultGcpOpts...)
 }

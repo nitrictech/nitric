@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package membrane
+package server
 
 import (
 	"errors"
@@ -27,7 +27,6 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/env"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	"github.com/nitrictech/nitric/core/pkg/logger"
-	"github.com/nitrictech/nitric/core/pkg/membrane/resource"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
@@ -41,6 +40,7 @@ import (
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	websocketspb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
+	"github.com/nitrictech/nitric/core/pkg/server/runtime"
 	"github.com/nitrictech/nitric/core/pkg/workers/apis"
 	"github.com/nitrictech/nitric/core/pkg/workers/http"
 	"github.com/nitrictech/nitric/core/pkg/workers/schedules"
@@ -49,7 +49,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/workers/websockets"
 )
 
-type Membrane struct {
+type NitricServer struct {
 	processManager pm.ProcessManager
 	grpcServer     *grpc.Server
 
@@ -89,7 +89,7 @@ type Membrane struct {
 	WebsocketListenerPlugin websockets.WebsocketRequestHandler
 }
 
-func (s *Membrane) WorkerCount() int {
+func (s *NitricServer) WorkerCount() int {
 	return s.ApiPlugin.WorkerCount() +
 		s.HttpPlugin.WorkerCount() +
 		s.SchedulesPlugin.WorkerCount() +
@@ -98,7 +98,7 @@ func (s *Membrane) WorkerCount() int {
 		s.WebsocketListenerPlugin.WorkerCount()
 }
 
-func (s *Membrane) waitForMinimumWorkers(timeout int) error {
+func (s *NitricServer) waitForMinimumWorkers(timeout int) error {
 	waitUntil := time.Now().Add(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(time.Duration(5) * time.Millisecond)
 
@@ -121,16 +121,16 @@ func (s *Membrane) waitForMinimumWorkers(timeout int) error {
 	return nil
 }
 
-type MembraneStartOptions func(m *Membrane)
+type ServerStartOptions func(m *NitricServer)
 
-func WithGrpcServer(s *grpc.Server) MembraneStartOptions {
-	return func(m *Membrane) {
+func WithGrpcServer(s *grpc.Server) ServerStartOptions {
+	return func(m *NitricServer) {
 		m.grpcServer = s
 	}
 }
 
-// Start the membrane
-func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
+// Start the server
+func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 	if err := s.processManager.StartPreProcesses(); err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	case gatewayErr := <-gatewayErrchan:
 		if gatewayErr == nil {
 			// Normal Gateway shutdown
-			// Allowing the membrane to exit
+			// Allowing the server to exit
 			return nil
 		}
 		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
@@ -266,17 +266,17 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	return exitErr
 }
 
-func (s *Membrane) Stop() {
+func (s *NitricServer) Stop() {
 	_ = s.GatewayPlugin.Stop()
 	s.grpcServer.Stop()
 	s.processManager.StopAll()
 }
 
-// Create a new Membrane server
-func New(opts ...RuntimeServerOption) (*Membrane, error) {
-	m := &Membrane{
+// New - Create a new nitric server
+func New(opts ...ServerOption) (*NitricServer, error) {
+	m := &NitricServer{
 		// The resource service is defaulted, because it typically isn't required to be implemented for runtime servers.
-		ResourcesPlugin: &resource.RuntimeResourceService{},
+		ResourcesPlugin: &runtime.RuntimeResourceService{},
 	}
 
 	for _, opt := range opts {

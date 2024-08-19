@@ -18,20 +18,19 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/core/pkg/logger"
-
-	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
 func main() {
 	resourceResolver, err := resource.New()
 	if err != nil {
-		logger.Fatalf("could not create core azure provider: %v", err)
+		logger.Fatalf("could not create core azure resource resolver: %v", err)
 	}
 
 	m, err := runtime.NewAzureRuntimeServer(resourceResolver)
 	if err != nil {
-		logger.Fatalf("There was an error initializing the membrane server: %v", err)
+		logger.Fatalf("There was an error initializing the nitric server: %v", err)
 	}
 
-	membrane.Run(m)
+	server.Run(m)
 }

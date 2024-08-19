@@ -35,7 +35,7 @@ import (
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
-// AzblobStorageService - Nitric membrane storage plugin implementation for Azure Storage
+// AzblobStorageService - Nitric storage plugin implementation for Azure Storage
 type AzblobStorageService struct {
 	client azblob_service_iface.AzblobServiceUrlIface
 }

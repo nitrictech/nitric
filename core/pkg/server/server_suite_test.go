@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package membrane_test
+package server_test
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestMembrane(t *testing.T) {
+func TestNitricServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Membrane Suite")
+	RunSpecs(t, "Nitric Server Suite")
 }

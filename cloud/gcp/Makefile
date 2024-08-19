@@ -62,7 +62,7 @@ lint:
 	@rm common/runtime/runtime-gcp
 
 license-check: runtimebin
-	@echo Checking GCP Membrane OSS Licenses
+	@echo Checking GCP Runtime Server OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-gcp
 
 test: generate-mocks

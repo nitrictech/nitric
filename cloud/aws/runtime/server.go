@@ -11,10 +11,10 @@ import (
 	aws_storage "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
-	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
-func NewAwsRuntimeServer(resolver resource.AwsResourceResolver, opts ...membrane.RuntimeServerOption) (*membrane.Membrane, error) {
+func NewAwsRuntimeServer(resolver resource.AwsResourceResolver, opts ...server.ServerOption) (*server.NitricServer, error) {
 	secretPlugin, _ := secret.New(resolver)
 	keyValuePlugin, _ := keyvalue.New(resolver)
 	topicsPlugin, _ := topic.New(resolver)
@@ -28,20 +28,20 @@ func NewAwsRuntimeServer(resolver resource.AwsResourceResolver, opts ...membrane
 
 	sqlPlugin := sql_service.NewRdsSqlService()
 
-	defaultAwsMembraneOpts := []membrane.RuntimeServerOption{
-		membrane.WithKeyValuePlugin(keyValuePlugin),
-		membrane.WithSecretManagerPlugin(secretPlugin),
-		membrane.WithGatewayPlugin(gatewayPlugin),
-		membrane.WithStoragePlugin(storagePlugin),
-		membrane.WithWebsocketPlugin(websocketPlugin),
-		membrane.WithTopicsPlugin(topicsPlugin),
-		membrane.WithQueuesPlugin(queuesPlugin),
-		membrane.WithApiPlugin(apiPlugin),
-		membrane.WithSqlPlugin(sqlPlugin),
+	defaultAwsOpts := []server.ServerOption{
+		server.WithKeyValuePlugin(keyValuePlugin),
+		server.WithSecretManagerPlugin(secretPlugin),
+		server.WithGatewayPlugin(gatewayPlugin),
+		server.WithStoragePlugin(storagePlugin),
+		server.WithWebsocketPlugin(websocketPlugin),
+		server.WithTopicsPlugin(topicsPlugin),
+		server.WithQueuesPlugin(queuesPlugin),
+		server.WithApiPlugin(apiPlugin),
+		server.WithSqlPlugin(sqlPlugin),
 	}
 
 	// append overrides
-	defaultAwsMembraneOpts = append(defaultAwsMembraneOpts, opts...)
+	defaultAwsOpts = append(defaultAwsOpts, opts...)
 
-	return membrane.New(defaultAwsMembraneOpts...)
+	return server.New(defaultAwsOpts...)
 }

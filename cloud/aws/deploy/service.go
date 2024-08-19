@@ -165,7 +165,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	// stackScopedNameKey := tags.GetResourceNameKey(a.stackId)
 
 	// Add resource list permissions
-	// Currently the membrane will use list operations
+	// Currently the nitric server will use list operations
 	tmpJSON, err = json.Marshal(map[string]interface{}{
 		"Version": "2012-10-17",
 		"Statement": []map[string]interface{}{
