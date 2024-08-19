@@ -145,7 +145,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 	secDef := map[string]securityDefinition{}
 
 	if openapiDoc.Components.SecuritySchemes != nil {
-		// Start translating to AWS centric security schemes
+		// Start translating to Azure centric security schemes
 		for apiName, scheme := range openapiDoc.Components.SecuritySchemes {
 			// implement OpenIDConnect security
 			if scheme.Value.Type == "openIdConnect" {

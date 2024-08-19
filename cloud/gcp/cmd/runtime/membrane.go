@@ -24,13 +24,13 @@ import (
 func main() {
 	resourceResolver, err := resource.New()
 	if err != nil {
-		logger.Fatalf("could not create aws provider: %v", err)
+		logger.Fatalf("could not create gcp resource resolver: %v", err)
 		return
 	}
 
 	m, err := runtime.NewGcpRuntimeServer(resourceResolver)
 	if err != nil {
-		logger.Fatalf("There was an error initializing the nitric server: %v", err)
+		logger.Fatalf("there was an error initializing the nitric server: %v", err)
 	}
 
 	server.Run(m)

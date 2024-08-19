@@ -26,7 +26,6 @@ lint: $(all)
 		$(MAKE) lint -C $$dir || exit 1; \
 	done
 
-.PHONY: test
 test: $(all)
 	for dir in $(all); do \
 		$(MAKE) test -C $$dir || exit 1; \
@@ -46,3 +45,11 @@ generate-sources: $(all)
 	for dir in $(all); do \
 		$(MAKE) generate-sources -C $$dir || exit 1; \
 	done
+
+tidy: $(all)
+	@go work sync
+	for dir in $(all); do \
+		$(MAKE) tidy -C $$dir || exit 1; \
+	done
+
+.PHONY: install-tools binaries sec check fmt lint test test-coverage license-check generate-sources tidy

@@ -30,7 +30,6 @@ deploybintf: generate-terraform predeploybin
 	@echo Building GCP Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-gcptf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
-.PHONY: install
 install: deploybin deploybintf
 	@echo installing gcp deployment server to ${HOME}/.nitric/providers/nitric/gcp-0.0.1
 	@echo installing gcptf deployment server to ${HOME}/.nitric/providers/nitric/gcptf-0.0.1
@@ -91,3 +90,8 @@ generate-sources: generate-mocks
 
 generate-terraform:
 	@cd deploytf && npx -y cdktf-cli@0.20.8 get
+
+tidy:
+	@go mod tidy
+
+.PHONY: binaries runtimebin predeploybin deploybin deploybintf install fmt lint license-check test test-coverage generate-mocks generate-sources generate-terraform tidy

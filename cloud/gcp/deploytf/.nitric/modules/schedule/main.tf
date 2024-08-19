@@ -11,7 +11,6 @@ resource "google_cloud_scheduler_job" "schedule" {
       "Content-Type" = "application/json"
     }
     body = base64encode(jsonencode({
-      // TODO: is this correct, it matches the Pulumi GCP provider, but not the AWS one.
       "schedule": var.schedule_name
     }))
     oidc_token {

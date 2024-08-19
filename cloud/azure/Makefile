@@ -24,7 +24,6 @@ deploybin: predeploybin
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
 	@rm deploy/runtime/runtime-azure
 
-.PHONY: install
 install: deploybin
 	@echo installing azure deployment server to ${HOME}/.nitric/providers/nitric/azure-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
@@ -81,3 +80,8 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 
 generate-sources: generate-mocks
+
+tidy:
+	@go mod tidy
+
+.PHONY: install license-check fmt lint test test-coverage clean-mocks generate-mocks generate-sources tidy

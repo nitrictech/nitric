@@ -21,7 +21,6 @@ import (
 
 	"fmt"
 
-	iam "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
@@ -32,8 +31,7 @@ import (
 type Policy struct {
 	pulumi.ResourceState
 
-	Name         string
-	RolePolicies []*iam.RolePolicy
+	Name string
 }
 
 type PrincipalMap = map[resourcespb.ResourceType]map[string]*ServicePrincipal

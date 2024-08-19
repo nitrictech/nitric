@@ -1,1 +1,1 @@
-# Nitric AWS Terraform Provider
+# Nitric GCP Terraform Provider
