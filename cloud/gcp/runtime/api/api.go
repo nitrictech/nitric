@@ -23,7 +23,7 @@ import (
 )
 
 type GcpApiGatewayProvider struct {
-	provider *resource.GcpResourceService
+	provider resource.GcpResourceResolver
 	*apis.RouteWorkerManager
 }
 
@@ -40,7 +40,7 @@ func (g *GcpApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDeta
 	}, nil
 }
 
-func NewGcpApiGatewayProvider(provider *resource.GcpResourceService) *GcpApiGatewayProvider {
+func NewGcpApiGatewayProvider(provider resource.GcpResourceResolver) *GcpApiGatewayProvider {
 	return &GcpApiGatewayProvider{
 		provider:           provider,
 		RouteWorkerManager: apis.New(),

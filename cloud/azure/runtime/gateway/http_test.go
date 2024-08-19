@@ -58,7 +58,7 @@ var _ = Describe("Http", func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	provider := mock_provider.NewMockAzProvider(ctrl)
+	provider := mock_provider.NewMockAzResourceResolver(ctrl)
 
 	provider.EXPECT().GetResources(gomock.Any(), resource.AzResource_Topic).AnyTimes().Return(map[string]resource.AzGenericResource{
 		"test": {

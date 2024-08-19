@@ -81,7 +81,7 @@ generate-mocks:
 	@mkdir -p mocks/pubsub
 	@mkdir -p mocks/cloudtasks
 	@mkdir -p mocks/provider
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/runtime/resource GcpResourceProvider > mocks/provider/gcp.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/runtime/resource GcpResourceResolver > mocks/provider/gcp.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_storage Reader,Writer,ObjectHandle,BucketHandle,BucketIterator,StorageClient,ObjectIterator > mocks/gcp_storage/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/pubsub PubsubClient,TopicIterator,Topic,PublishResult > mocks/pubsub/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/gcp/ifaces/cloudtasks CloudtasksClient > mocks/cloudtasks/mock.go

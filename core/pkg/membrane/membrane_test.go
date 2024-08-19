@@ -27,32 +27,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var noMinWorkers = 0
-
 var _ = Describe("Membrane", func() {
-	// ctrl := gomock.NewController(GinkgoT())
-	// mockPool := mock_pool.NewMockWorkerPool(ctrl)
-
-	// BeforeSuite(func() {
-	// 	mockPool.EXPECT().WaitForMinimumWorkers(gomock.Any()).AnyTimes().Return(nil)
-	// 	mockPool.EXPECT().Monitor().AnyTimes().Return(nil)
-	// 	mockPool.EXPECT().GetWorkerCount().AnyTimes().Return(1)
-	// 	mockPool.EXPECT().GetMaxWorkers().AnyTimes().Return(100)
-	// 	os.Args = []string{}
-	// })
-
 	Context("Starting the server", func() {
 		When("The Gateway plugin is available and working", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockGateway := mock_gateway.NewMockGatewayService(ctrl)
 
 			os.Args = []string{}
-			membrane, _ := membrane.New(&membrane.MembraneOptions{
-				MinWorkers:              &noMinWorkers,
-				GatewayPlugin:           mockGateway,
-				SuppressLogs:            true,
-				TolerateMissingServices: true,
-			})
+			membrane, _ := membrane.New(
+				membrane.WithMinWorkers(0),
+				membrane.WithGatewayPlugin(mockGateway),
+			)
 
 			It("Should successfully start the membrane", func() {
 				By("starting the gateway plugin")
@@ -68,13 +53,7 @@ var _ = Describe("Membrane", func() {
 			mockGateway.EXPECT().Start(gomock.Any()).AnyTimes().Return(nil)
 			var lis net.Listener
 
-			membrane, _ := membrane.New(&membrane.MembraneOptions{
-				MinWorkers:              &noMinWorkers,
-				GatewayPlugin:           mockGateway,
-				SuppressLogs:            true,
-				TolerateMissingServices: true,
-				ServiceAddress:          "localhost:9005",
-			})
+			membrane, _ := membrane.New(membrane.WithMinWorkers(0), membrane.WithGatewayPlugin(mockGateway), membrane.WithServiceAddress("localhost:9005"))
 
 			BeforeEach(func() {
 				lis, _ = net.Listen("tcp", "localhost:9005")
@@ -104,15 +83,12 @@ var _ = Describe("Membrane", func() {
 				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
 				mockGateway.EXPECT().Start(gomock.Any()).AnyTimes().Return(nil)
 				mockGateway.EXPECT().Stop().AnyTimes().Return(nil)
-				mb, _ = membrane.New(&membrane.MembraneOptions{
-					ChildCommand:            []string{"sleep", "5"},
-					GatewayPlugin:           mockGateway,
-					ServiceAddress:          fmt.Sprintf(":%d", 9001),
-					ChildTimeoutSeconds:     1,
-					TolerateMissingServices: true,
-					SuppressLogs:            true,
-					// Pool:                    mockPool,
-				})
+				mb, _ = membrane.New(
+					membrane.WithChildCommand([]string{"sleep", "5"}),
+					membrane.WithGatewayPlugin(mockGateway),
+					membrane.WithServiceAddress(fmt.Sprintf(":%d", 9001)),
+					membrane.WithChildTimeoutSeconds(1),
+				)
 			})
 
 			AfterEach(func() {
@@ -137,13 +113,10 @@ var _ = Describe("Membrane", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockGateway := mock_gateway.NewMockGatewayService(ctrl)
 
-				mb, _ = membrane.New(&membrane.MembraneOptions{
-					// ChildAddress:            "localhost:808",
-					ChildCommand:            []string{"fakecommand"},
-					GatewayPlugin:           mockGateway,
-					TolerateMissingServices: true,
-					SuppressLogs:            true,
-				})
+				mb, _ = membrane.New(
+					membrane.WithChildCommand([]string{"fakecommand"}),
+					membrane.WithGatewayPlugin(mockGateway),
+				)
 			})
 
 			It("Should return an error", func() {

@@ -33,7 +33,7 @@ import (
 )
 
 type ApiGatewayWebsocketService struct {
-	resolver *resource.AwsResourceService
+	resolver resource.AwsResourceResolver
 	clients  map[string]*apigatewaymanagementapi.Client
 }
 
@@ -129,7 +129,7 @@ func (a *ApiGatewayWebsocketService) CloseConnection(ctx context.Context, req *w
 	return &websocketpb.WebsocketCloseConnectionResponse{}, nil
 }
 
-func NewAwsApiGatewayWebsocket(resolver *resource.AwsResourceService) (*ApiGatewayWebsocketService, error) {
+func NewAwsApiGatewayWebsocket(resolver resource.AwsResourceResolver) (*ApiGatewayWebsocketService, error) {
 	return &ApiGatewayWebsocketService{
 		resolver: resolver,
 		clients:  make(map[string]*apigatewaymanagementapi.Client),

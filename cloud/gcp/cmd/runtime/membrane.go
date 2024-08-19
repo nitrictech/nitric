@@ -15,87 +15,23 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/charmbracelet/log"
-	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
-	cloudrun_plugin "github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
-	firestore_service "github.com/nitrictech/nitric/cloud/gcp/runtime/keyvalue"
-	pubsub_queue_service "github.com/nitrictech/nitric/cloud/gcp/runtime/queue"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
-	secret_manager_secret_service "github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
-	storage_service "github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
-	pubsub_service "github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/membrane"
 )
 
 func main() {
-	// Setup signal interrupt handling for graceful shutdown
-	var err error
-	term := make(chan os.Signal, 1)
-	signal.Notify(term, syscall.SIGTERM, syscall.SIGINT)
-
-	membraneOpts := membrane.DefaultMembraneOptions()
-	provider, err := resource.New()
+	resourceResolver, err := resource.New()
 	if err != nil {
-		logger.Fatalf("Failed create core provider: %s", err.Error())
+		logger.Fatalf("could not create aws provider: %v", err)
+		return
 	}
 
-	membraneOpts.ApiPlugin = api.NewGcpApiGatewayProvider(provider)
-
-	membraneOpts.SecretManagerPlugin, err = secret_manager_secret_service.New()
+	m, err := runtime.NewGcpRuntimeServer(resourceResolver)
 	if err != nil {
-		logger.Errorf("Failed to load secret plugin: %s", err.Error())
+		logger.Fatalf("There was an error initializing the membrane server: %v", err)
 	}
 
-	membraneOpts.KeyValuePlugin, err = firestore_service.New()
-	if err != nil {
-		logger.Errorf("Failed to load document plugin: %s", err.Error())
-	}
-
-	membraneOpts.TopicsPlugin, err = pubsub_service.New(provider)
-	if err != nil {
-		logger.Errorf("Failed to load events plugin: %s", err.Error())
-	}
-
-	membraneOpts.QueuesPlugin, err = pubsub_queue_service.New()
-	if err != nil {
-		logger.Errorf("Failed to load queues plugin: %s", err.Error())
-	}
-
-	membraneOpts.StoragePlugin, err = storage_service.New()
-	if err != nil {
-		logger.Errorf("Failed to load storage plugin: %s", err.Error())
-	}
-
-	membraneOpts.GatewayPlugin, err = cloudrun_plugin.New(provider)
-	if err != nil {
-		logger.Errorf("Failed to load gateway plugin: %s", err.Error())
-	}
-
-	membraneOpts.ResourcesPlugin = provider
-
-	m, err := membrane.New(membraneOpts)
-	if err != nil {
-		log.Fatalf("There was an error initialising the membrane server: %v", err)
-	}
-
-	errChan := make(chan error)
-	// Start the Membrane server
-	go func(chan error) {
-		errChan <- m.Start()
-	}(errChan)
-
-	select {
-	case membraneError := <-errChan:
-		log.Errorf(fmt.Sprintf("Membrane Error: %v, exiting", membraneError))
-	case sigTerm := <-term:
-		log.Errorf(fmt.Sprintf("Received %v, exiting", sigTerm))
-	}
-
-	m.Stop()
+	membrane.Run(m)
 }

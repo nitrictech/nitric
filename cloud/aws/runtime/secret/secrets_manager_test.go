@@ -46,7 +46,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Putting a Secret to an existing secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					resolver: mockProvider,
 					client:   mockSecretClient,
@@ -84,7 +84,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("Putting a secret to a non-existent secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					resolver: mockProvider,
 				}
@@ -150,7 +150,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("AWS SecretsManager.PutSecretValue returns an AWS error", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					resolver: mockProvider,
@@ -183,7 +183,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Putting a secret without permissions", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					resolver: mockProvider,
@@ -223,7 +223,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 		When("Given the Secrets Manager backend is available", func() {
 			When("The secret exists", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
@@ -269,7 +269,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("The secret doesn't exist", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					resolver: mockProvider,
 				}
@@ -297,7 +297,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			When("Getting the latest secret", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
 					resolver: mockProvider,
@@ -377,7 +377,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 			})
 			When("Accessing a secret without permission", func() {
 				ctrl := gomock.NewController(GinkgoT())
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,

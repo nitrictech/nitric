@@ -48,7 +48,7 @@ var _ = Describe("S3", func() {
 
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("Should successfully store the object", func() {
@@ -74,7 +74,7 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 				It("Should fail to store the item", func() {
 					By("the bucket not existing")
@@ -96,7 +96,7 @@ var _ = Describe("S3", func() {
 
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("Should fail to store the object", func() {
@@ -133,7 +133,7 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should successfully retrieve the object", func() {
@@ -169,7 +169,7 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should fail to retrieve the object", func() {
@@ -213,7 +213,7 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should successfully delete the object", func() {
@@ -247,7 +247,7 @@ var _ = Describe("S3", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 					mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-					mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+					mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 					storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 					It("Should fail to delete the object", func() {
@@ -275,7 +275,7 @@ var _ = Describe("S3", func() {
 	When("PreSignUrl", func() {
 		When("The bucket exists", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 			mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 			mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
 			storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
@@ -316,7 +316,7 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				It("should list the files contained in the bucket", func() {
@@ -359,7 +359,7 @@ var _ = Describe("S3", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockStorageClient := mock_s3iface.NewMockS3API(ctrl)
 				mockPSStorageClient := mock_s3iface.NewMockPreSignAPI(ctrl)
-				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+				mockProvider := mock_provider.NewMockAwsResourceResolver(ctrl)
 				storagePlugin, _ := s3_service.NewWithClient(mockProvider, mockStorageClient, mockPSStorageClient)
 
 				When("the file exists", func() {

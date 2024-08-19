@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/env"
 	"github.com/nitrictech/nitric/core/pkg/gateway"
 	"github.com/nitrictech/nitric/core/pkg/logger"
+	"github.com/nitrictech/nitric/core/pkg/membrane/resource"
 	pm "github.com/nitrictech/nitric/core/pkg/process"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	httppb "github.com/nitrictech/nitric/core/pkg/proto/http/v1"
@@ -47,7 +49,11 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/workers/websockets"
 )
 
-type MembraneOptions struct {
+type Membrane struct {
+	processManager pm.ProcessManager
+	grpcServer     *grpc.Server
+
+	// Options
 	ServiceAddress string
 	// The command that will be used to invoke the child process
 	ChildCommand []string
@@ -57,11 +63,13 @@ type MembraneOptions struct {
 	// The total time to wait for the child process to be available in seconds
 	ChildTimeoutSeconds int
 
+	// The minimum number of workers that need to be available
+	MinWorkers int
+
 	// The provider adapter gateway
 	GatewayPlugin gateway.GatewayService
 
-	// The minimum number of workers that need to be available
-	MinWorkers *int
+	ResourcesPlugin resourcespb.ResourcesServer
 
 	// Resource access plugins
 	KeyValuePlugin      kvstorepb.KvStoreServer
@@ -79,34 +87,15 @@ type MembraneOptions struct {
 	TopicsListenerPlugin    topics.SubscriptionRequestHandler
 	StorageListenerPlugin   storage.BucketRequestHandler
 	WebsocketListenerPlugin websockets.WebsocketRequestHandler
-
-	// Server listeners
-
-	ResourcesPlugin resourcespb.ResourcesServer
-
-	SuppressLogs            bool
-	TolerateMissingServices bool
-}
-
-type Membrane struct {
-	processManager pm.ProcessManager
-	options        MembraneOptions
-
-	// Suppress println statements in the membrane server
-	suppressLogs bool
-
-	grpcServer *grpc.Server
-
-	minWorkers int
 }
 
 func (s *Membrane) WorkerCount() int {
-	return s.options.ApiPlugin.WorkerCount() +
-		s.options.HttpPlugin.WorkerCount() +
-		s.options.SchedulesPlugin.WorkerCount() +
-		s.options.TopicsListenerPlugin.WorkerCount() +
-		s.options.StorageListenerPlugin.WorkerCount() +
-		s.options.WebsocketListenerPlugin.WorkerCount()
+	return s.ApiPlugin.WorkerCount() +
+		s.HttpPlugin.WorkerCount() +
+		s.SchedulesPlugin.WorkerCount() +
+		s.TopicsListenerPlugin.WorkerCount() +
+		s.StorageListenerPlugin.WorkerCount() +
+		s.WebsocketListenerPlugin.WorkerCount()
 }
 
 func (s *Membrane) waitForMinimumWorkers(timeout int) error {
@@ -117,7 +106,7 @@ func (s *Membrane) waitForMinimumWorkers(timeout int) error {
 	defer ticker.Stop()
 
 	for {
-		if s.WorkerCount() >= s.minWorkers {
+		if s.WorkerCount() >= s.MinWorkers {
 			break
 		}
 
@@ -125,7 +114,7 @@ func (s *Membrane) waitForMinimumWorkers(timeout int) error {
 		time := <-ticker.C
 
 		if time.After(waitUntil) {
-			return fmt.Errorf("available workers below required minimum of %d, %d available, timed out waiting for more workers", s.minWorkers, s.WorkerCount())
+			return fmt.Errorf("available workers below required minimum of %d, %d available, timed out waiting for more workers", s.MinWorkers, s.WorkerCount())
 		}
 	}
 
@@ -164,52 +153,51 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	}
 
 	// Register the listener servers
-	if s.options.ApiPlugin == nil {
-		s.options.ApiPlugin = apis.New()
+	if s.ApiPlugin == nil {
+		s.ApiPlugin = apis.New()
 	}
-	apispb.RegisterApiServer(s.grpcServer, s.options.ApiPlugin)
+	apispb.RegisterApiServer(s.grpcServer, s.ApiPlugin)
 
-	if s.options.TopicsListenerPlugin == nil {
-		s.options.TopicsListenerPlugin = topics.New()
+	if s.TopicsListenerPlugin == nil {
+		s.TopicsListenerPlugin = topics.New()
 	}
-	topicspb.RegisterSubscriberServer(s.grpcServer, s.options.TopicsListenerPlugin)
+	topicspb.RegisterSubscriberServer(s.grpcServer, s.TopicsListenerPlugin)
 
-	if s.options.StorageListenerPlugin == nil {
-		s.options.StorageListenerPlugin = storage.New()
+	if s.StorageListenerPlugin == nil {
+		s.StorageListenerPlugin = storage.New()
 	}
-	storagepb.RegisterStorageListenerServer(s.grpcServer, s.options.StorageListenerPlugin)
+	storagepb.RegisterStorageListenerServer(s.grpcServer, s.StorageListenerPlugin)
 
-	if s.options.SchedulesPlugin == nil {
-		s.options.SchedulesPlugin = schedules.New()
+	if s.SchedulesPlugin == nil {
+		s.SchedulesPlugin = schedules.New()
 	}
-	schedulespb.RegisterSchedulesServer(s.grpcServer, s.options.SchedulesPlugin)
+	schedulespb.RegisterSchedulesServer(s.grpcServer, s.SchedulesPlugin)
 
-	if s.options.WebsocketListenerPlugin == nil {
-		s.options.WebsocketListenerPlugin = websockets.NewWebsocketManager()
+	if s.WebsocketListenerPlugin == nil {
+		s.WebsocketListenerPlugin = websockets.NewWebsocketManager()
 	}
-	websocketspb.RegisterWebsocketHandlerServer(s.grpcServer, s.options.WebsocketListenerPlugin)
+	websocketspb.RegisterWebsocketHandlerServer(s.grpcServer, s.WebsocketListenerPlugin)
 
-	if s.options.HttpPlugin == nil {
-		s.options.HttpPlugin = http.New()
+	if s.HttpPlugin == nil {
+		s.HttpPlugin = http.New()
 	}
-	httppb.RegisterHttpServer(s.grpcServer, s.options.HttpPlugin)
+	httppb.RegisterHttpServer(s.grpcServer, s.HttpPlugin)
 
 	// Load & Register the service plugins
-	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.options.SecretManagerPlugin)
-	keyvalueServerWithCompat := decorators.KeyValueServerWithCompat(s.options.KeyValuePlugin)
+	secretsServerWithValidation := decorators.SecretsServerWithValidation(s.SecretManagerPlugin)
+	keyvalueServerWithCompat := decorators.KeyValueServerWithCompat(s.KeyValuePlugin)
 
 	kvstorepb.RegisterKvStoreServer(s.grpcServer, keyvalueServerWithCompat)
-	// TODO: Deprecated, remove in future release
 	keyvaluepb.RegisterKeyValueServer(s.grpcServer, keyvalueServerWithCompat)
-	topicspb.RegisterTopicsServer(s.grpcServer, s.options.TopicsPlugin)
-	storagepb.RegisterStorageServer(s.grpcServer, s.options.StoragePlugin)
+	topicspb.RegisterTopicsServer(s.grpcServer, s.TopicsPlugin)
+	storagepb.RegisterStorageServer(s.grpcServer, s.StoragePlugin)
 	secretspb.RegisterSecretManagerServer(s.grpcServer, secretsServerWithValidation)
-	resourcespb.RegisterResourcesServer(s.grpcServer, s.options.ResourcesPlugin)
-	websocketspb.RegisterWebsocketServer(s.grpcServer, s.options.WebsocketPlugin)
-	queuespb.RegisterQueuesServer(s.grpcServer, s.options.QueuesPlugin)
-	sqlpb.RegisterSqlServer(s.grpcServer, s.options.SqlPlugin)
+	resourcespb.RegisterResourcesServer(s.grpcServer, s.ResourcesPlugin)
+	websocketspb.RegisterWebsocketServer(s.grpcServer, s.WebsocketPlugin)
+	queuespb.RegisterQueuesServer(s.grpcServer, s.QueuesPlugin)
+	sqlpb.RegisterSqlServer(s.grpcServer, s.SqlPlugin)
 
-	lis, err := net.Listen("tcp", s.options.ServiceAddress)
+	lis, err := net.Listen("tcp", s.ServiceAddress)
 	if err != nil {
 		return fmt.Errorf("could not listen on configured service address: %w", err)
 	}
@@ -218,7 +206,7 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 
 	// Start the gRPC server
 	go (func() {
-		logger.Debugf("Services listening on: %s", s.options.ServiceAddress)
+		logger.Debugf("Services listening on: %s", s.ServiceAddress)
 		err := s.grpcServer.Serve(lis)
 		if err != nil {
 			logger.Errorf("grpc serve %v", err)
@@ -234,25 +222,24 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 	// Wait for the minimum number of active workers to be available before beginning the gateway
 	// This ensures workers have registered and can handle triggers as soon the gateway is ready, if a minimum > 1 has been set
 	logger.Debug("Waiting for active workers")
-	err = s.waitForMinimumWorkers(s.options.ChildTimeoutSeconds)
+	err = s.waitForMinimumWorkers(s.ChildTimeoutSeconds)
 	if err != nil {
 		return err
 	}
 
 	gatewayErrchan := make(chan error)
-	// poolErrchan := make(chan error)
 
 	// Start the gateway
 	go func(errch chan error) {
 		logger.Debugf("Starting Gateway, %d workers currently available", s.WorkerCount())
 
-		errch <- s.options.GatewayPlugin.Start(&gateway.GatewayStartOpts{
-			ApiPlugin:               s.options.ApiPlugin,
-			HttpPlugin:              s.options.HttpPlugin,
-			SchedulesPlugin:         s.options.SchedulesPlugin,
-			TopicsListenerPlugin:    s.options.TopicsListenerPlugin,
-			StorageListenerPlugin:   s.options.StorageListenerPlugin,
-			WebsocketListenerPlugin: s.options.WebsocketListenerPlugin,
+		errch <- s.GatewayPlugin.Start(&gateway.GatewayStartOpts{
+			ApiPlugin:               s.ApiPlugin,
+			HttpPlugin:              s.HttpPlugin,
+			SchedulesPlugin:         s.SchedulesPlugin,
+			TopicsListenerPlugin:    s.TopicsListenerPlugin,
+			StorageListenerPlugin:   s.StorageListenerPlugin,
+			WebsocketListenerPlugin: s.WebsocketListenerPlugin,
 		})
 	}(gatewayErrchan)
 
@@ -280,40 +267,51 @@ func (s *Membrane) Start(startOpts ...MembraneStartOptions) error {
 }
 
 func (s *Membrane) Stop() {
-	_ = s.options.GatewayPlugin.Stop()
+	_ = s.GatewayPlugin.Stop()
 	s.grpcServer.Stop()
 	s.processManager.StopAll()
 }
 
 // Create a new Membrane server
-func New(options *MembraneOptions) (*Membrane, error) {
-	// Get unset options from env or defaults
-	if options.ServiceAddress == "" {
-		options.ServiceAddress = env.SERVICE_ADDRESS.String()
+func New(opts ...RuntimeServerOption) (*Membrane, error) {
+	m := &Membrane{
+		// The resource service is defaulted, because it typically isn't required to be implemented for runtime servers.
+		ResourcesPlugin: &resource.RuntimeResourceService{},
 	}
 
-	minWorkers, err := env.MIN_WORKERS.Int()
-	if options.MinWorkers != nil {
-		minWorkers = *options.MinWorkers
-	} else if err != nil {
-		return nil, err
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	// Get unset options from env or defaults
+	if m.ServiceAddress == "" {
+		m.ServiceAddress = env.SERVICE_ADDRESS.String()
+	}
+
+	minWorkersEnv, err := env.MIN_WORKERS.Int()
+	if err == nil {
+		logger.Debugf("MIN_WORKERS environment variable set to %d", minWorkersEnv)
+		m.MinWorkers = minWorkersEnv
 	}
 
 	workerTimeout, err := env.WORKER_TIMEOUT.Int()
-	if options.ChildTimeoutSeconds < 1 {
-		options.ChildTimeoutSeconds = workerTimeout
+	if m.ChildTimeoutSeconds < 1 {
+		m.ChildTimeoutSeconds = workerTimeout
 	} else if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid WORKER_TIMEOUT: %w", err)
 	}
 
-	if options.GatewayPlugin == nil {
+	if m.ChildCommand == nil || len(m.ChildCommand) == 0 {
+		if len(os.Args) > 1 {
+			m.ChildCommand = os.Args[1:]
+		}
+	}
+
+	if m.GatewayPlugin == nil {
 		return nil, errors.New("missing gateway plugin, Gateway plugin must not be nil")
 	}
 
-	return &Membrane{
-		processManager: pm.NewProcessManager(options.ChildCommand, options.PreCommands),
-		options:        *options,
-		minWorkers:     minWorkers,
-		suppressLogs:   options.SuppressLogs,
-	}, nil
+	m.processManager = pm.NewProcessManager(m.ChildCommand, m.PreCommands)
+
+	return m, nil
 }

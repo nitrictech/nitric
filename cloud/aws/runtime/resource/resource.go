@@ -74,17 +74,11 @@ type AwsResourceService struct {
 
 type AwsResourceResolver interface {
 	GetApiGatewayById(context.Context, string) (*apigatewayv2.GetApiOutput, error)
+	GetAWSApiGatewayDetails(ctx context.Context, identifier *resourcespb.ResourceIdentifier) (*AWSApiGatewayDetails, error)
 	GetResources(context.Context, AwsResource) (map[string]ResolvedResource, error)
 }
 
-var (
-	_ AwsResourceResolver        = &AwsResourceService{}
-	_ resourcepb.ResourcesServer = &AwsResourceService{}
-)
-
-func (a *AwsResourceService) Declare(ctx context.Context, req *resourcepb.ResourceDeclareRequest) (*resourcepb.ResourceDeclareResponse, error) {
-	return &resourcepb.ResourceDeclareResponse{}, nil
-}
+var _ AwsResourceResolver = &AwsResourceService{}
 
 type AWSApiGatewayDetails struct {
 	Url string

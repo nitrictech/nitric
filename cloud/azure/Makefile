@@ -72,7 +72,7 @@ generate-mocks: clean-mocks
 	@mkdir -p mocks/azqueue
 	@mkdir -p mocks/mock_event_grid
 	@mkdir -p mocks/provider
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/azure/runtime/resource AzProvider > mocks/provider/azure.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/azure/runtime/resource AzResourceResolver > mocks/provider/azure.go
 	@go run github.com/golang/mock/mockgen -package mock_azblob github.com/Azure/azure-storage-blob-go/azblob StorageError > mocks/azblob/error.go
 	@go run github.com/golang/mock/mockgen -package mock_azqueue github.com/nitrictech/nitric/cloud/azure/runtime/queue/iface AzqueueServiceUrlIface,AzqueueQueueUrlIface,AzqueueMessageUrlIface,DequeueMessagesResponseIface,AzqueueMessageIdUrlIface > mocks/azqueue/mock.go
 	@go run github.com/golang/mock/mockgen -package mock_azblob github.com/nitrictech/nitric/cloud/azure/runtime/storage/iface AzblobServiceUrlIface,AzblobContainerUrlIface,AzblobBlockBlobUrlIface,AzblobDownloadResponse > mocks/azblob/mock.go

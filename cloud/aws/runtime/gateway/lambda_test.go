@@ -53,7 +53,7 @@ type MockLambdaRuntime struct {
 
 func (m *MockLambdaRuntime) Start(handler interface{}) {
 	// cast the function type to what we know it will be
-	typedFunc := handler.(func(ctx context.Context, data gateway.Event) (interface{}, error))
+	typedFunc := handler.(func(ctx context.Context, data json.RawMessage) (interface{}, error))
 	for _, event := range m.eventQueue {
 		bytes, _ := json.Marshal(event)
 		evt := gateway.Event{}
@@ -62,7 +62,7 @@ func (m *MockLambdaRuntime) Start(handler interface{}) {
 		Expect(err).To(BeNil())
 
 		// Unmarshal the thing into the event type we expect...
-		_, err = typedFunc(context.TODO(), evt)
+		_, err = typedFunc(context.TODO(), bytes)
 
 		if err != nil {
 			Expect(err).Should(HaveOccurred())
@@ -99,7 +99,7 @@ var _ = Describe("Lambda", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockManager := mock_apis.NewMockApiRequestHandler(ctrl)
 			// mockHandler := mock_worker.NewMockWorker(ctrl)
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockResolver := mock_provider.NewMockAwsResourceResolver(ctrl)
 
 			runtime := MockLambdaRuntime{
 				// Setup mock events for our runtime to process...
@@ -124,14 +124,14 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
+			client := gateway.New(mockResolver, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("The api gateway existing")
-				mockProvider.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
+				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
 					Tags: map[string]string{
 						"x-nitric-test-stack-name": "test-api",
 					},
@@ -181,7 +181,7 @@ var _ = Describe("Lambda", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockManager := mock_websockets.NewMockWebsocketRequestHandler(ctrl)
 
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockResolver := mock_provider.NewMockAwsResourceResolver(ctrl)
 
 			runtime := MockLambdaRuntime{
 				// Setup mock events for our runtime to process...
@@ -200,7 +200,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
+			client := gateway.New(mockResolver, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
@@ -213,7 +213,7 @@ var _ = Describe("Lambda", func() {
 				mockManager.EXPECT().WorkerCount().Return(1)
 
 				By("The websocket gateway existing")
-				mockProvider.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
+				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
 					Tags: map[string]string{
 						"x-nitric-test-stack-name": "test-api",
 					},
@@ -256,7 +256,7 @@ var _ = Describe("Lambda", func() {
 	Context("SNS Events", func() {
 		When("The Lambda Gateway receives SNS events", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockResolver := mock_provider.NewMockAwsResourceResolver(ctrl)
 
 			// pool := mock_pool.NewMockWorkerPool(ctrl)
 			mockManager := mock_topics.NewMockSubscriptionRequestHandler(ctrl)
@@ -293,11 +293,11 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
+			client := gateway.New(mockResolver, gateway.WithRuntime(runtime.Start))
 
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("having the topic available")
-				mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Topic).Return(map[string]resource.ResolvedResource{
+				mockResolver.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Topic).Return(map[string]resource.ResolvedResource{
 					"MyTopic": {
 						ARN: "arn:aws:sns:us-east-1:12345678910:arn:MyTopic",
 					},
@@ -336,7 +336,7 @@ var _ = Describe("Lambda", func() {
 	Context("S3 Events", func() {
 		When("The Lambda Gateway receives S3 Put events", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockResolver := mock_provider.NewMockAwsResourceResolver(ctrl)
 
 			// pool := mock_pool.NewMockWorkerPool(ctrl)
 			mockManager := mock_storage.NewMockBucketRequestHandler(ctrl)
@@ -365,14 +365,14 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
+			client := gateway.New(mockResolver, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("Returning the worker")
-				mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+				mockResolver.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
 					"images": {ARN: "arn:aws:sns:us-east-1:12345678910:arn:images"},
 				}, nil)
 				// pool.EXPECT().GetWorker(gomock.Any()).Return(mockHandler, nil)
@@ -410,7 +410,7 @@ var _ = Describe("Lambda", func() {
 		})
 		When("The Lambda Gateway receives S3 Delete events", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
+			mockResolver := mock_provider.NewMockAwsResourceResolver(ctrl)
 
 			mockManager := mock_storage.NewMockBucketRequestHandler(ctrl)
 
@@ -440,14 +440,14 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
+			client := gateway.New(mockResolver, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("The bucket existing")
-				mockProvider.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
+				mockResolver.EXPECT().GetResources(gomock.Any(), resource.AwsResource_Bucket).Return(map[string]resource.ResolvedResource{
 					"images": {ARN: "arn:aws:sns:us-east-1:12345678910:arn:images"},
 				}, nil)
 

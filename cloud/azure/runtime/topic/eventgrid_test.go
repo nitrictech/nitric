@@ -51,7 +51,7 @@ var _ = Describe("Event Grid Plugin", func() {
 		When("To a topic that does not exist", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			eventgridClient := mock_eventgrid.NewMockBaseClientAPI(ctrl)
-			mockProvider := mock_provider.NewMockAzProvider(ctrl)
+			mockProvider := mock_provider.NewMockAzResourceResolver(ctrl)
 			eventgridPlugin, _ := eventgrid_service.NewWithClient(mockProvider, eventgridClient)
 
 			It("should return an error", func() {
@@ -71,7 +71,7 @@ var _ = Describe("Event Grid Plugin", func() {
 		When("publishing to a topic that is unauthorised", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			eventgridClient := mock_eventgrid.NewMockBaseClientAPI(ctrl)
-			mockProvider := mock_provider.NewMockAzProvider(ctrl)
+			mockProvider := mock_provider.NewMockAzResourceResolver(ctrl)
 			eventgridPlugin, _ := eventgrid_service.NewWithClient(mockProvider, eventgridClient)
 
 			It("should return an error", func() {
@@ -102,7 +102,7 @@ var _ = Describe("Event Grid Plugin", func() {
 		When("To a topic that does exist", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			eventgridClient := mock_eventgrid.NewMockBaseClientAPI(ctrl)
-			mockProvider := mock_provider.NewMockAzProvider(ctrl)
+			mockProvider := mock_provider.NewMockAzResourceResolver(ctrl)
 			eventgridPlugin, _ := eventgrid_service.NewWithClient(mockProvider, eventgridClient)
 
 			It("should successfully publish the message", func() {

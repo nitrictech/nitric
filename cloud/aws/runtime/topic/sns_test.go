@@ -44,7 +44,7 @@ var _ = Describe("Sns", func() {
 	Context("Publish", func() {
 		When("Publishing to an available topic", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			awsMock := provider_mocks.NewMockAwsResourceProvider(ctrl)
+			awsMock := provider_mocks.NewMockAwsResourceResolver(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
 			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
@@ -84,7 +84,7 @@ var _ = Describe("Sns", func() {
 
 		When("Publishing to a non-existent topic", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			awsMock := provider_mocks.NewMockAwsResourceProvider(ctrl)
+			awsMock := provider_mocks.NewMockAwsResourceResolver(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
 			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
@@ -110,7 +110,7 @@ var _ = Describe("Sns", func() {
 
 		When("Publishing with access to the topic", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			awsMock := provider_mocks.NewMockAwsResourceProvider(ctrl)
+			awsMock := provider_mocks.NewMockAwsResourceResolver(ctrl)
 			snsMock := sns_mock.NewMockSNSAPI(ctrl)
 
 			eventsClient, _ := sns_service.NewWithClient(awsMock, snsMock, nil)
@@ -144,7 +144,7 @@ var _ = Describe("Sns", func() {
 	Context("Delayed Publish", func() {
 		When("Publishing to an available topic", func() {
 			ctrl := gomock.NewController(GinkgoT())
-			awsMock := provider_mocks.NewMockAwsResourceProvider(ctrl)
+			awsMock := provider_mocks.NewMockAwsResourceResolver(ctrl)
 			sfnMock := sfn_mock.NewMockSFNAPI(ctrl)
 
 			eventsClient, _ := sns_service.NewWithClient(awsMock, nil, sfnMock)

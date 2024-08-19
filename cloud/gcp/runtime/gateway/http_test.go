@@ -56,7 +56,7 @@ var _ = Describe("Http", func() {
 		os.Setenv("GATEWAY_ADDRESS", GATEWAY_ADDRESS)
 	})
 
-	provider := mock_provider.NewMockGcpResourceProvider(ctrl)
+	provider := mock_provider.NewMockGcpResourceResolver(ctrl)
 
 	httpPlugin, err := cloudrun_service.New(provider)
 	Expect(err).To(BeNil())
