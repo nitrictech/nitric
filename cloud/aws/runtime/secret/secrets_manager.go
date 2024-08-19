@@ -36,7 +36,7 @@ import (
 
 type SecretsManagerSecretService struct {
 	client   secretsmanageriface.SecretsManagerAPI
-	provider resource.AwsResourceProvider
+	resolver resource.AwsResourceResolver
 }
 
 var _ secretpb.SecretManagerServer = &SecretsManagerSecretService{}
@@ -57,7 +57,7 @@ func (s *SecretsManagerSecretService) validateNewSecret(sec *secretpb.Secret, va
 
 // getSecretArn - Retrieve the ARN for a given secret name
 func (s *SecretsManagerSecretService) getSecretArn(ctx context.Context, sec string) (string, error) {
-	secrets, err := s.provider.GetResources(ctx, resource.AwsResource_Secret)
+	secrets, err := s.resolver.GetResources(ctx, resource.AwsResource_Secret)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving secrets list: %w", err)
 	}
@@ -189,7 +189,7 @@ func (s *SecretsManagerSecretService) Access(ctx context.Context, req *secretpb.
 }
 
 // Gets a new Secrets Manager Client
-func New(provider resource.AwsResourceProvider) (*SecretsManagerSecretService, error) {
+func New(resolver resource.AwsResourceResolver) (*SecretsManagerSecretService, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -203,6 +203,6 @@ func New(provider resource.AwsResourceProvider) (*SecretsManagerSecretService, e
 
 	return &SecretsManagerSecretService{
 		client:   client,
-		provider: provider,
+		resolver: resolver,
 	}, nil
 }

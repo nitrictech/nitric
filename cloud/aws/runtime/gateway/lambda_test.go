@@ -124,8 +124,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
-			Expect(err).To(BeNil())
+			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
@@ -201,8 +200,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
-			Expect(err).To(BeNil())
+			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
@@ -295,8 +293,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
-			Expect(err).To(BeNil())
+			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
 
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("having the topic available")
@@ -368,8 +365,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
-			Expect(err).To(BeNil())
+			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock
@@ -444,8 +440,7 @@ var _ = Describe("Lambda", func() {
 				}},
 			}
 
-			client, err := gateway.NewWithRuntime(mockProvider, runtime.Start)
-			Expect(err).To(BeNil())
+			client := gateway.New(mockProvider, gateway.WithRuntime(runtime.Start))
 
 			// This function will block which means we don't need to wait on processing,
 			// the function will unblock once processing has finished, this is due to our mock

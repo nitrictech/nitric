@@ -47,7 +47,7 @@ const (
 type S3StorageService struct {
 	s3Client      s3iface.S3API
 	preSignClient s3iface.PreSignAPI
-	provider      resource.AwsResourceProvider
+	resolver      resource.AwsResourceResolver
 	selector      BucketSelector
 }
 
@@ -60,7 +60,7 @@ func (s *S3StorageService) getS3BucketName(ctx context.Context, bucket string) (
 		return s.selector(bucket)
 	}
 
-	buckets, err := s.provider.GetResources(ctx, resource.AwsResource_Bucket)
+	buckets, err := s.resolver.GetResources(ctx, resource.AwsResource_Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bucket list: %w", err)
 	}
@@ -328,7 +328,7 @@ func (s *S3StorageService) Exists(ctx context.Context, req *storagepb.StorageExi
 }
 
 // New creates a new default S3 storage plugin
-func New(provider resource.AwsResourceProvider) (*S3StorageService, error) {
+func New(resolver resource.AwsResourceResolver) (*S3StorageService, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -343,16 +343,16 @@ func New(provider resource.AwsResourceProvider) (*S3StorageService, error) {
 	return &S3StorageService{
 		s3Client:      s3Client,
 		preSignClient: s3.NewPresignClient(s3Client),
-		provider:      provider,
+		resolver:      resolver,
 	}, nil
 }
 
 // NewWithClient creates a new S3 Storage plugin and injects the given client
-func NewWithClient(provider resource.AwsResourceProvider, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (*S3StorageService, error) {
+func NewWithClient(provider resource.AwsResourceResolver, client s3iface.S3API, preSignClient s3iface.PreSignAPI, opts ...S3StorageServiceOption) (*S3StorageService, error) {
 	s3Client := &S3StorageService{
 		s3Client:      client,
 		preSignClient: preSignClient,
-		provider:      provider,
+		resolver:      provider,
 	}
 
 	for _, o := range opts {

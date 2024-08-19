@@ -72,13 +72,13 @@ type AwsResourceService struct {
 	cache     map[AwsResource]map[string]ResolvedResource
 }
 
-type AwsResourceProvider interface {
+type AwsResourceResolver interface {
 	GetApiGatewayById(context.Context, string) (*apigatewayv2.GetApiOutput, error)
 	GetResources(context.Context, AwsResource) (map[string]ResolvedResource, error)
 }
 
 var (
-	_ AwsResourceProvider        = &AwsResourceService{}
+	_ AwsResourceResolver        = &AwsResourceService{}
 	_ resourcepb.ResourcesServer = &AwsResourceService{}
 )
 

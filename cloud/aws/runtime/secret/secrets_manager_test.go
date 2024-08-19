@@ -48,7 +48,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
-					provider: mockProvider,
+					resolver: mockProvider,
 					client:   mockSecretClient,
 				}
 				It("Should successfully store a secret", func() {
@@ -86,7 +86,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should return error", func() {
 					defer ctrl.Finish()
@@ -153,7 +153,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should pass through the error", func() {
 					defer ctrl.Finish()
@@ -186,7 +186,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should pass through the error", func() {
 					defer ctrl.Finish()
@@ -227,7 +227,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should return the existing secret", func() {
 					defer ctrl.Finish()
@@ -271,7 +271,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should return a nil secret", func() {
 					defer ctrl.Finish()
@@ -300,7 +300,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockProvider := mock_provider.NewMockAwsResourceProvider(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should return the latest secret", func() {
 					defer ctrl.Finish()
@@ -381,7 +381,7 @@ var _ = Describe("Secrets Manager Plugin", func() {
 				mockSecretClient := mocks.NewMockSecretsManagerAPI(ctrl)
 				secretPlugin := &SecretsManagerSecretService{
 					client:   mockSecretClient,
-					provider: mockProvider,
+					resolver: mockProvider,
 				}
 				It("Should not return the secret", func() {
 					defer ctrl.Finish()

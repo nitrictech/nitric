@@ -55,7 +55,7 @@ func main() {
 	// Load the appropriate gateway based on the environment.
 	switch gatewayEnv {
 	case "lambda":
-		membraneOpts.GatewayPlugin, _ = lambda_service.New(provider)
+		membraneOpts.GatewayPlugin = lambda_service.New(provider)
 	default:
 		membraneOpts.GatewayPlugin, _ = base_http.NewHttpGateway(nil)
 	}

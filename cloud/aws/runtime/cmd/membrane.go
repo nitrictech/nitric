@@ -41,7 +41,7 @@ func main() {
 
 	membraneOpts := membrane.DefaultMembraneOptions()
 
-	provider, err := resource.New()
+	resolver, err := resource.New()
 	if err != nil {
 		logger.Fatalf("could not create aws provider: %v", err)
 		return
@@ -50,17 +50,17 @@ func main() {
 	// Load the appropriate gateway based on the environment.
 	switch gatewayEnv {
 	case "lambda":
-		membraneOpts.GatewayPlugin, _ = lambda_service.New(provider)
+		membraneOpts.GatewayPlugin, _ = lambda_service.New(resolver)
 	default:
 		membraneOpts.GatewayPlugin, _ = base_http.NewHttpGateway(nil)
 	}
 
-	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(provider)
-	membraneOpts.KeyValuePlugin, _ = dynamodb_service.New(provider)
-	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)
-	membraneOpts.StoragePlugin, _ = s3_service.New(provider)
-	membraneOpts.ResourcesPlugin = provider
-	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
+	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(resolver)
+	membraneOpts.KeyValuePlugin, _ = dynamodb_service.New(resolver)
+	membraneOpts.TopicsPlugin, _ = sns_service.New(resolver)
+	membraneOpts.StoragePlugin, _ = s3_service.New(resolver)
+	membraneOpts.ResourcesPlugin = resolver
+	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(resolver)
 
 	m, err := membrane.New(membraneOpts)
 	if err != nil {

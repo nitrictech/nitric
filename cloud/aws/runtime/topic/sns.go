@@ -47,7 +47,7 @@ import (
 type SnsEventService struct {
 	client    snsiface.SNSAPI
 	sfnClient sfniface.SFNAPI
-	provider  resource.AwsResourceProvider
+	resolver  resource.AwsResourceResolver
 }
 
 var _ topicpb.TopicsServer = &SnsEventService{}
@@ -61,11 +61,11 @@ func isSNSAccessDeniedErr(err error) bool {
 }
 
 func (s *SnsEventService) getTopics(ctx context.Context) (map[string]resource.ResolvedResource, error) {
-	return s.provider.GetResources(ctx, resource.AwsResource_Topic)
+	return s.resolver.GetResources(ctx, resource.AwsResource_Topic)
 }
 
 func (s *SnsEventService) getStateMachines(ctx context.Context) (map[string]resource.ResolvedResource, error) {
-	return s.provider.GetResources(ctx, resource.AwsResource_StateMachine)
+	return s.resolver.GetResources(ctx, resource.AwsResource_StateMachine)
 }
 
 func (s *SnsEventService) publish(ctx context.Context, topic string, message string) error {
@@ -169,7 +169,7 @@ func (s *SnsEventService) Publish(ctx context.Context, req *topicpb.TopicPublish
 }
 
 // Create new SNS event service plugin
-func New(provider resource.AwsResourceProvider) (*SnsEventService, error) {
+func New(resolver resource.AwsResourceResolver) (*SnsEventService, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -185,13 +185,13 @@ func New(provider resource.AwsResourceProvider) (*SnsEventService, error) {
 	return &SnsEventService{
 		client:    snsClient,
 		sfnClient: sfnClient,
-		provider:  provider,
+		resolver:  resolver,
 	}, nil
 }
 
-func NewWithClient(provider resource.AwsResourceProvider, client snsiface.SNSAPI, sfnClient sfniface.SFNAPI) (*SnsEventService, error) {
+func NewWithClient(provider resource.AwsResourceResolver, client snsiface.SNSAPI, sfnClient sfniface.SFNAPI) (*SnsEventService, error) {
 	return &SnsEventService{
-		provider:  provider,
+		resolver:  provider,
 		client:    client,
 		sfnClient: sfnClient,
 	}, nil

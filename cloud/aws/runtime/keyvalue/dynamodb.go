@@ -48,7 +48,7 @@ const (
 // DynamoKeyValueService - an AWS DynamoDB implementation of the Nitric Document Service
 type DynamoKeyValueService struct {
 	client   dynamodbiface.DynamoDBAPI
-	provider resource.AwsResourceProvider
+	resolver resource.AwsResourceResolver
 }
 
 // Ensure DynamoKeyValueService implements the KeyValueServer interface
@@ -358,7 +358,7 @@ func (s *DynamoKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKeysRequest, 
 }
 
 // New creates a new AWS DynamoDB implementation of a DocumentServiceServer
-func New(provider resource.AwsResourceProvider) (*DynamoKeyValueService, error) {
+func New(resolver resource.AwsResourceResolver) (*DynamoKeyValueService, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	// Create a new AWS session
@@ -373,16 +373,16 @@ func New(provider resource.AwsResourceProvider) (*DynamoKeyValueService, error) 
 
 	return &DynamoKeyValueService{
 		client:   dynamoClient,
-		provider: provider,
+		resolver: resolver,
 	}, nil
 }
 
 // NewWithClient creates a DocumentServiceServer with an given DynamoDB client instance.
 //
 //	Primarily used for testing
-func NewWithClient(provider resource.AwsResourceProvider, client *dynamodb.Client) (*DynamoKeyValueService, error) {
+func NewWithClient(provider resource.AwsResourceResolver, client *dynamodb.Client) (*DynamoKeyValueService, error) {
 	return &DynamoKeyValueService{
-		provider: provider,
+		resolver: provider,
 		client:   client,
 	}, nil
 }
@@ -413,7 +413,7 @@ func createItemMap(source map[string]interface{}, ref *kvstorepb.ValueRef) map[s
 }
 
 func (s *DynamoKeyValueService) getTableName(ctx context.Context, store string) (*string, error) {
-	tables, err := s.provider.GetResources(ctx, resource.AwsResource_Collection)
+	tables, err := s.resolver.GetResources(ctx, resource.AwsResource_Collection)
 	if err != nil {
 		return nil, fmt.Errorf("encountered an error retrieving the table list: %w", err)
 	}
