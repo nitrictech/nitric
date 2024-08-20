@@ -34,7 +34,7 @@ import (
 
 type EventGridEventService struct {
 	client   eventgridapi.BaseClientAPI
-	provider resource.AzProvider
+	provider resource.AzResourceResolver
 }
 
 var _ topicpb.TopicsServer = &EventGridEventService{}
@@ -117,7 +117,7 @@ func (s *EventGridEventService) Publish(ctx context.Context, req *topicpb.TopicP
 	return &topicpb.TopicPublishResponse{}, nil
 }
 
-func New(provider resource.AzProvider) (*EventGridEventService, error) {
+func New(provider resource.AzResourceResolver) (*EventGridEventService, error) {
 	// Get the event grid token, using the event grid resource endpoint
 	spt, err := provider.ServicePrincipalToken("https://eventgrid.azure.net")
 	if err != nil {
@@ -133,7 +133,7 @@ func New(provider resource.AzProvider) (*EventGridEventService, error) {
 	}, nil
 }
 
-func NewWithClient(provider resource.AzProvider, client eventgridapi.BaseClientAPI) (*EventGridEventService, error) {
+func NewWithClient(provider resource.AzResourceResolver, client eventgridapi.BaseClientAPI) (*EventGridEventService, error) {
 	return &EventGridEventService{
 		client:   client,
 		provider: provider,

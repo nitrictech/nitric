@@ -38,7 +38,7 @@ import (
 )
 
 type azMiddleware struct {
-	provider resource.AzProvider
+	provider resource.AzResourceResolver
 }
 
 func extractEvents(ctx *fasthttp.RequestCtx) ([]eventgrid.Event, error) {
@@ -281,7 +281,7 @@ func (a *azMiddleware) router(r *router.Router, opts *gateway.GatewayStartOpts) 
 }
 
 // Create a new HTTP Gateway plugin
-func New(provider resource.AzProvider) (gateway.GatewayService, error) {
+func New(provider resource.AzResourceResolver) (gateway.GatewayService, error) {
 	mw := &azMiddleware{
 		provider: provider,
 	}

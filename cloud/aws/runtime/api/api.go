@@ -24,7 +24,7 @@ import (
 )
 
 type AwsApiGatewayProvider struct {
-	provider *resource.AwsResourceService
+	resolver resource.AwsResourceResolver
 
 	*apis.RouteWorkerManager
 }
@@ -32,7 +32,7 @@ type AwsApiGatewayProvider struct {
 var _ apispb.ApiServer = &AwsApiGatewayProvider{}
 
 func (a *AwsApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
-	gwDetails, err := a.provider.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
+	gwDetails, err := a.resolver.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
 		Type: resourcespb.ResourceType_Api,
 		Name: req.ApiName,
 	})
@@ -45,9 +45,9 @@ func (a *AwsApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDeta
 	}, nil
 }
 
-func NewAwsApiGatewayProvider(provider *resource.AwsResourceService) *AwsApiGatewayProvider {
+func NewAwsApiGatewayProvider(resolver resource.AwsResourceResolver) *AwsApiGatewayProvider {
 	return &AwsApiGatewayProvider{
-		provider:           provider,
+		resolver:           resolver,
 		RouteWorkerManager: apis.New(),
 	}
 }

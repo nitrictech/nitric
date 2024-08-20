@@ -27,15 +27,14 @@ import (
 	"cloud.google.com/go/apigateway/apiv1/apigatewaypb"
 
 	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
-	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 )
 
-type GcpResourceProvider interface {
+type GcpResourceResolver interface {
 	// GetServiceAccountEmail for google cloud projects
 	GetServiceAccountEmail() (string, error)
 	GetProjectID() (string, error)
+	GetApiGatewayDetails(ctx context.Context, name string) (*GcpApiGatewayDetails, error)
 }
-
 type GcpResourceService struct {
 	apiClient           *apigateway.Client
 	stackName           string
@@ -44,10 +43,7 @@ type GcpResourceService struct {
 	region              string
 }
 
-var (
-	_ GcpResourceProvider = &GcpResourceService{}
-	_ v1.ResourcesServer  = &GcpResourceService{}
-)
+var _ GcpResourceResolver = &GcpResourceService{}
 
 const (
 	metadataFlavorKey      = "Metadata-Flavor"
@@ -59,7 +55,7 @@ const (
 )
 
 func createMetadataRequest(uri string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", projectIdUri, nil)
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -101,10 +97,6 @@ func (g *GcpResourceService) GetApiGatewayDetails(ctx context.Context, name stri
 	} else {
 		return nil, err
 	}
-}
-
-func (g *GcpResourceService) Declare(ctx context.Context, req *v1.ResourceDeclareRequest) (*v1.ResourceDeclareResponse, error) {
-	return &v1.ResourceDeclareResponse{}, nil
 }
 
 func (g *GcpResourceService) GetProjectID() (string, error) {

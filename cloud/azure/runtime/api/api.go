@@ -23,7 +23,7 @@ import (
 )
 
 type AzureApiGatewayProvider struct {
-	provider *resource.AzureResourceService
+	provider resource.AzResourceResolver
 	*apis.RouteWorkerManager
 }
 
@@ -40,7 +40,7 @@ func (g *AzureApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDe
 	}, nil
 }
 
-func NewAzureApiGatewayProvider(provider *resource.AzureResourceService) *AzureApiGatewayProvider {
+func NewAzureApiGatewayProvider(provider resource.AzResourceResolver) *AzureApiGatewayProvider {
 	return &AzureApiGatewayProvider{
 		provider:           provider,
 		RouteWorkerManager: apis.New(),

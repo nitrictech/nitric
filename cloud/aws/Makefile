@@ -15,12 +15,10 @@ sec:
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary
 # We only build a linux amd64 binary here to be packaged for cloud runtimes with docker
 # More binaries can be distributed in future if required
-.PHONY: runtimebin
 runtimebin:
 	@echo Building AWS Runtime Server
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-aws -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
-.PHONY: predeploybin
 predeploybin: runtimebin
 	@cp bin/runtime-aws common/runtime/runtime-aws
 
@@ -32,7 +30,6 @@ deploybintf: generate-terraform predeploybin
 	@echo Building AWS Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-awstf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
-.PHONY: install
 install: deploybin deploybintf
 	@echo installing aws deployment server to ${HOME}/.nitric/providers/nitric/aws-0.0.1
 	@echo installing awstf deployment server to ${HOME}/.nitric/providers/nitric/awstf-0.0.1
@@ -49,9 +46,8 @@ install: deploybin deploybintf
 		cp bin/deploy-awstf "${HOME}/.nitric/providers/nitric/awstf-0.0.1"; \
 	fi
 
-
 license-check: runtimebin
-	@echo Checking AWS Membrane OSS Licenses
+	@echo Checking AWS Runtime Server OSS Licenses
 	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-aws
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
@@ -76,7 +72,6 @@ test-coverage: generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
 
-
 clean-mocks:
 	@rm -rf ./mocks
 
@@ -95,9 +90,14 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/secretsmanageriface SecretsManagerAPI > mocks/secrets_manager/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface S3API,PreSignAPI > mocks/s3/mock.go
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/ifaces/sqsiface SQSAPI > mocks/sqs/mock.go
-	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceProvider > mocks/provider/aws.go
+	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/cloud/aws/runtime/resource AwsResourceResolver > mocks/provider/aws.go
 
 generate-terraform:
 	@cd deploytf && npx -y cdktf-cli@0.20.8 get
 
 generate-sources: generate-mocks
+
+tidy:
+	@go mod tidy
+
+.PHONY: binaries sec deploybin deploybintf install license-check fmt lint test test-coverage clean-mocks generate-mocks generate-terraform generate-sources tidy

@@ -34,7 +34,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// DynamoKeyValueService - an AWS DynamoDB implementation of the Nitric Document Service
+// AzureStorageTableKeyValueService - an Azure Storage Table implementation of the Nitric Key/Value Service
 type AzureStorageTableKeyValueService struct {
 	clientFactory AzureStorageClientFactory
 }
@@ -339,7 +339,7 @@ func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, sto
 	}
 }
 
-// New creates a new AWS DynamoDB implementation of a DocumentServiceServer
+// New creates a new Azure Storage Table implementation of a KeyValueServer
 func New() (*AzureStorageTableKeyValueService, error) {
 	storageAccountName := env.AZURE_STORAGE_ACCOUNT_NAME.String()
 	if storageAccountName == "" {

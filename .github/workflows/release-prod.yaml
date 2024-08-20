@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  # Bump the membrane version
+  # Bump the version
   version_bump:
     name: Bump Version and Create Release
     runs-on: ubuntu-latest

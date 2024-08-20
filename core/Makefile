@@ -9,7 +9,6 @@ include tools/tools.mk
 
 init: check-gopath go-mod-download install-tools
 
-.PHONY: check fmt lint
 check: lint test
 
 sec:
@@ -101,3 +100,8 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/nitrictech/nitric/core/pkg/workers/websockets WebsocketRequestHandler > mocks/workers/websockets/mock.go
 
 generate-sources: generate-proto generate-mocks
+
+tidy:
+	@go mod tidy
+
+.PHONY: check fmt lint sec test test-coverage generate-sources tidy

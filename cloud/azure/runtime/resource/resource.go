@@ -25,26 +25,23 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
-	resourcepb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
-
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
 
-type AzProvider interface {
+type AzResourceResolver interface {
 	GetResources(context.Context, AzResource) (map[string]AzGenericResource, error)
 	SubscriptionId() string
 	ResourceGroupName() string
 	ServicePrincipalToken(resource string) (*adal.ServicePrincipalToken, error)
+	GetApiDetails(ctx context.Context, name string) (*AzureApiMgmtDetails, error)
 }
 
-var _ resourcepb.ResourcesServer = &AzureResourceService{}
+var _ AzResourceResolver = &AzureResourceService{}
 
 type AzResource = string
 
 const (
-	AzResource_Topic AzResource = "Microsoft.Eventgrid/topics"
-	// Collections are handled by mongodb in azure
-	// AzResource_Collection AzResource = "TODO"
+	AzResource_Topic  AzResource = "Microsoft.Eventgrid/topics"
 	AzResource_Api    AzResource = "Microsoft.ApiManagement/service"
 	AzResource_Queue  AzResource = "Microsoft.Storage/storageAccounts/queueServices"
 	AzResource_Bucket AzResource = "Microsoft.Storage/storageAccounts/blobServices"
@@ -96,10 +93,6 @@ func (p *AzureResourceService) GetApiDetails(ctx context.Context, name string) (
 	}
 
 	return nil, fmt.Errorf("api resource %s not found", name)
-}
-
-func (p *AzureResourceService) Declare(ctx context.Context, req *resourcepb.ResourceDeclareRequest) (*resourcepb.ResourceDeclareResponse, error) {
-	return &resourcepb.ResourceDeclareResponse{}, nil
 }
 
 func (p *AzureResourceService) GetResources(ctx context.Context, r AzResource) (map[string]AzGenericResource, error) {
@@ -166,7 +159,7 @@ func (p *AzureResourceService) ResourceGroupName() string {
 	return p.rgName
 }
 
-var _ AzProvider = &AzureResourceService{}
+var _ AzResourceResolver = &AzureResourceService{}
 
 func New() (*AzureResourceService, error) {
 	rgName := os.Getenv(AZURE_RESOURCE_GROUP)

@@ -47,7 +47,7 @@ import (
 )
 
 type PubsubEventService struct {
-	resource.GcpResourceProvider
+	resource.GcpResourceResolver
 	client      ifaces_pubsub.PubsubClient
 	tasksClient ifaces_cloudtasks.CloudtasksClient
 	cache       map[string]ifaces_pubsub.Topic
@@ -208,7 +208,7 @@ func (s *PubsubEventService) Publish(ctx context.Context, req *topicpb.TopicPubl
 	return &topicpb.TopicPublishResponse{}, nil
 }
 
-func New(provider resource.GcpResourceProvider) (topicpb.TopicsServer, error) {
+func New(provider resource.GcpResourceResolver) (topicpb.TopicsServer, error) {
 	ctx := context.Background()
 
 	credentials, err := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
@@ -227,15 +227,15 @@ func New(provider resource.GcpResourceProvider) (topicpb.TopicsServer, error) {
 	}
 
 	return &PubsubEventService{
-		GcpResourceProvider: provider,
+		GcpResourceResolver: provider,
 		client:              ifaces_pubsub.AdaptPubsubClient(client),
 		tasksClient:         tasksClient,
 	}, nil
 }
 
-func NewWithClient(provider resource.GcpResourceProvider, client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (topicpb.TopicsServer, error) {
+func NewWithClient(provider resource.GcpResourceResolver, client ifaces_pubsub.PubsubClient, tasksClient ifaces_cloudtasks.CloudtasksClient) (topicpb.TopicsServer, error) {
 	return &PubsubEventService{
-		GcpResourceProvider: provider,
+		GcpResourceResolver: provider,
 		client:              client,
 		tasksClient:         tasksClient,
 	}, nil

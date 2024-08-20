@@ -15,94 +15,22 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/nitrictech/nitric/cloud/azure/runtime/api"
+	"github.com/nitrictech/nitric/cloud/azure/runtime"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
-	postgresql "github.com/nitrictech/nitric/cloud/azure/runtime/sql"
 	"github.com/nitrictech/nitric/core/pkg/logger"
-
-	http_service "github.com/nitrictech/nitric/cloud/azure/runtime/gateway"
-	aztables_service "github.com/nitrictech/nitric/cloud/azure/runtime/keyvalue"
-	azqueue_service "github.com/nitrictech/nitric/cloud/azure/runtime/queue"
-	key_vault "github.com/nitrictech/nitric/cloud/azure/runtime/secret"
-	azblob_service "github.com/nitrictech/nitric/cloud/azure/runtime/storage"
-	event_grid "github.com/nitrictech/nitric/cloud/azure/runtime/topic"
-	"github.com/nitrictech/nitric/core/pkg/membrane"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
 func main() {
-	var err error
-	term := make(chan os.Signal, 1)
-	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-	signal.Notify(term, os.Interrupt, syscall.SIGINT)
-
-	provider, err := resource.New()
+	resourceResolver, err := resource.New()
 	if err != nil {
-		logger.Fatalf("could not create core azure provider: %v", err)
+		logger.Fatalf("could not create core azure resource resolver: %v", err)
 	}
 
-	membraneOpts := membrane.DefaultMembraneOptions()
-
-	membraneOpts.ApiPlugin = api.NewAzureApiGatewayProvider(provider)
-
-	membraneOpts.KeyValuePlugin, err = aztables_service.New()
+	m, err := runtime.NewAzureRuntimeServer(resourceResolver)
 	if err != nil {
-		logger.Errorf("Failed to load document plugin: %s", err.Error())
+		logger.Fatalf("There was an error initializing the nitric server: %v", err)
 	}
 
-	membraneOpts.TopicsPlugin, err = event_grid.New(provider)
-	if err != nil {
-		logger.Errorf("Failed to load event plugin: %s", err.Error())
-	}
-
-	membraneOpts.GatewayPlugin, err = http_service.New(provider)
-	if err != nil {
-		logger.Errorf("Failed to load gateway plugin: %s", err.Error())
-	}
-
-	membraneOpts.StoragePlugin, err = azblob_service.New()
-	if err != nil {
-		logger.Errorf("Failed to load storage plugin: %s", err.Error())
-	}
-
-	membraneOpts.QueuesPlugin, err = azqueue_service.New()
-	if err != nil {
-		logger.Errorf("Failed to load queue plugin: %s", err.Error())
-	}
-
-	membraneOpts.SecretManagerPlugin, err = key_vault.New()
-	if err != nil {
-		logger.Errorf("Failed to load secret plugin: %s", err.Error())
-	}
-
-	membraneOpts.SqlPlugin, err = postgresql.New()
-	if err != nil {
-		logger.Errorf("Failed to load sql plugin: %s", err.Error())
-	}
-
-	membraneOpts.ResourcesPlugin = provider
-
-	m, err := membrane.New(membraneOpts)
-	if err != nil {
-		logger.Fatalf("There was an error initializing the membrane server: %v", err)
-	}
-
-	errChan := make(chan error)
-	// Start the Membrane server
-	go func(chan error) {
-		errChan <- m.Start()
-	}(errChan)
-
-	select {
-	case membraneError := <-errChan:
-		fmt.Printf("Membrane Error: %v, exiting\n", membraneError)
-	case sigTerm := <-term:
-		fmt.Printf("Received %v, exiting\n", sigTerm)
-	}
-
-	m.Stop()
+	server.Run(m)
 }

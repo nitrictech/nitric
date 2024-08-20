@@ -4,7 +4,7 @@ on:
     types: [published]
 
 jobs:
-  # Bump the membrane version
+  # Bump the nitric server version
   contract_release:
     name: Add contracts to release
     runs-on: ubuntu-latest

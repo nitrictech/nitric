@@ -40,7 +40,7 @@ import (
 )
 
 type SQSQueueService struct {
-	provider resource.AwsResourceProvider
+	provider resource.AwsResourceResolver
 	client   sqsiface.SQSAPI
 }
 
@@ -258,7 +258,7 @@ func (s *SQSQueueService) Complete(ctx context.Context, req *queuespb.QueueCompl
 	}
 }
 
-func New(provider resource.AwsResourceProvider) (queuespb.QueuesServer, error) {
+func New(provider resource.AwsResourceResolver) (queuespb.QueuesServer, error) {
 	awsRegion := env.AWS_REGION.String()
 
 	cfg, sessionError := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -276,7 +276,7 @@ func New(provider resource.AwsResourceProvider) (queuespb.QueuesServer, error) {
 	}, nil
 }
 
-func NewWithClient(provider resource.AwsResourceProvider, client sqsiface.SQSAPI) queuespb.QueuesServer {
+func NewWithClient(provider resource.AwsResourceResolver, client sqsiface.SQSAPI) queuespb.QueuesServer {
 	return &SQSQueueService{
 		client:   client,
 		provider: provider,

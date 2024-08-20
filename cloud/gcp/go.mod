@@ -17,7 +17,6 @@ require (
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
 	github.com/cdktf/cdktf-provider-google-go/google/v13 v13.22.0
 	github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13 v13.16.0
-	github.com/charmbracelet/log v0.2.4
 	github.com/fasthttp/router v1.4.18
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.56.1
@@ -158,7 +157,6 @@ require (
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/ghostiam/protogetter v0.3.4 // indirect
 	github.com/go-critic/go-critic v0.11.0 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect

@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package membrane
+package main
 
 import (
-	"os"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
-func DefaultMembraneOptions() *MembraneOptions {
-	options := &MembraneOptions{}
+func main() {
+	resourceResolver, err := resource.New()
+	if err != nil {
+		logger.Fatalf("could not create gcp resource resolver: %v", err)
+		return
+	}
 
-	options.ChildCommand = os.Args[1:]
+	m, err := runtime.NewGcpRuntimeServer(resourceResolver)
+	if err != nil {
+		logger.Fatalf("there was an error initializing the nitric server: %v", err)
+	}
 
-	return options
+	server.Run(m)
 }

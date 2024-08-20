@@ -29,12 +29,11 @@ import (
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	websocketpb "github.com/nitrictech/nitric/core/pkg/proto/websockets/v1"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"google.golang.org/grpc/codes"
 )
 
 type ApiGatewayWebsocketService struct {
-	provider *resource.AwsResourceService
+	resolver resource.AwsResourceResolver
 	clients  map[string]*apigatewaymanagementapi.Client
 }
 
@@ -66,8 +65,6 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 		callbackUrl = strings.Replace(details.Url, "wss", "https", 1)
 	}
 
-	otelaws.AppendMiddlewares(&cfg.APIOptions)
-
 	a.clients[socket] = apigatewaymanagementapi.NewFromConfig(cfg, func(o *apigatewaymanagementapi.Options) {
 		o.BaseEndpoint = aws.String(callbackUrl)
 	})
@@ -76,7 +73,7 @@ func (a *ApiGatewayWebsocketService) getClientForSocket(socket string) (*apigate
 }
 
 func (a *ApiGatewayWebsocketService) SocketDetails(ctx context.Context, req *websocketpb.WebsocketDetailsRequest) (*websocketpb.WebsocketDetailsResponse, error) {
-	gwDetails, err := a.provider.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
+	gwDetails, err := a.resolver.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
 		Type: resourcespb.ResourceType_Websocket,
 		Name: req.SocketName,
 	})
@@ -132,9 +129,9 @@ func (a *ApiGatewayWebsocketService) CloseConnection(ctx context.Context, req *w
 	return &websocketpb.WebsocketCloseConnectionResponse{}, nil
 }
 
-func NewAwsApiGatewayWebsocket(provider *resource.AwsResourceService) (*ApiGatewayWebsocketService, error) {
+func NewAwsApiGatewayWebsocket(resolver resource.AwsResourceResolver) (*ApiGatewayWebsocketService, error) {
 	return &ApiGatewayWebsocketService{
-		provider: provider,
+		resolver: resolver,
 		clients:  make(map[string]*apigatewaymanagementapi.Client),
 	}, nil
 }

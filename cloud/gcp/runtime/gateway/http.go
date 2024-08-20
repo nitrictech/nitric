@@ -35,7 +35,7 @@ import (
 )
 
 type gcpMiddleware struct {
-	provider resource.GcpResourceProvider
+	provider resource.GcpResourceResolver
 }
 
 type PubSubMessage struct {
@@ -231,7 +231,7 @@ func (g *gcpMiddleware) router(r *router.Router, opts *gateway.GatewayStartOpts)
 }
 
 // New - Create a New cloudrun gateway plugin
-func New(provider resource.GcpResourceProvider) (gateway.GatewayService, error) {
+func New(provider resource.GcpResourceResolver) (gateway.GatewayService, error) {
 	mw := &gcpMiddleware{
 		provider: provider,
 	}

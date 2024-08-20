@@ -59,7 +59,7 @@ var _ = Describe("Sqs", func() {
 			It("Should fail to publish the message", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-				providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+				providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 				plugin := NewWithClient(providerMock, sqsMock).(*SQSQueueService)
 
 				By("Calling GetResources and receiving an error")
@@ -78,7 +78,7 @@ var _ = Describe("Sqs", func() {
 			It("Should fail to publish the message", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-				providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+				providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 				plugin := NewWithClient(providerMock, sqsMock).(*SQSQueueService)
 
 				By("Calling GetResources and have queue be missing")
@@ -100,7 +100,7 @@ var _ = Describe("Sqs", func() {
 			It("Should send the task to the queue", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-				providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+				providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 				plugin := NewWithClient(providerMock, sqsMock)
 
 				queueUrl := aws.String("https://example.com/test-queue")
@@ -145,7 +145,7 @@ var _ = Describe("Sqs", func() {
 			It("Should return an error", func() {
 				ctrl := gomock.NewController(GinkgoT())
 				sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-				providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+				providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 				plugin := NewWithClient(providerMock, sqsMock)
 
 				queueUrl := aws.String("https://example.com/test-queue")
@@ -197,7 +197,7 @@ var _ = Describe("Sqs", func() {
 				It("Should fail to publish the message", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					By("provider GetResources returning an error")
@@ -234,7 +234,7 @@ var _ = Describe("Sqs", func() {
 				It("Should receive the message", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					queueUrl := aws.String("https://example.com/test-queue")
@@ -286,7 +286,7 @@ var _ = Describe("Sqs", func() {
 				It("Should receive no messages", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					queueUrl := aws.String("https://example.com/test-queue")
@@ -333,7 +333,7 @@ var _ = Describe("Sqs", func() {
 				It("Should return an error", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					queueUrl := aws.String("https://example.com/test-queue")
@@ -385,7 +385,7 @@ var _ = Describe("Sqs", func() {
 				It("Should successfully delete the task", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					queueUrl := aws.String("https://example.com/test-queue")
@@ -428,7 +428,7 @@ var _ = Describe("Sqs", func() {
 				It("Return an error", func() {
 					ctrl := gomock.NewController(GinkgoT())
 					sqsMock := mocks_sqs.NewMockSQSAPI(ctrl)
-					providerMock := mock_provider.NewMockAwsResourceProvider(ctrl)
+					providerMock := mock_provider.NewMockAwsResourceResolver(ctrl)
 					plugin := NewWithClient(providerMock, sqsMock)
 
 					queueUrl := aws.String("http://example.com/queue")
