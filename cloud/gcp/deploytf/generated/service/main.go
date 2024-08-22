@@ -26,6 +26,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "fqn", GoGetter: "Fqn"},
 			_jsii_.MemberProperty{JsiiProperty: "friendlyUniqueId", GoGetter: "FriendlyUniqueId"},
 			_jsii_.MemberMethod{JsiiMethod: "getString", GoMethod: "GetString"},
+			_jsii_.MemberProperty{JsiiProperty: "gpus", GoGetter: "Gpus"},
 			_jsii_.MemberProperty{JsiiProperty: "image", GoGetter: "Image"},
 			_jsii_.MemberMethod{JsiiMethod: "interpolationForOutput", GoMethod: "InterpolationForOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "invokerServiceAccountEmailOutput", GoGetter: "InvokerServiceAccountEmailOutput"},

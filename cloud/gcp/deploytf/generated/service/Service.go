@@ -39,6 +39,8 @@ type Service interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	Gpus() *float64
+	SetGpus(val *float64)
 	Image() *string
 	SetImage(val *string)
 	InvokerServiceAccountEmailOutput() *string
@@ -205,6 +207,16 @@ func (j *jsiiProxy_Service) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) Gpus() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"gpus",
 		&returns,
 	)
 	return returns
@@ -458,6 +470,14 @@ func (j *jsiiProxy_Service)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetGpus(val *float64) {
+	_jsii_.Set(
+		j,
+		"gpus",
 		val,
 	)
 }

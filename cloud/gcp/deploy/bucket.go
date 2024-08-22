@@ -24,8 +24,8 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/pubsub"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/pubsub"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 

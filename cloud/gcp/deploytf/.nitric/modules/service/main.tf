@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     docker = {
-      source  = "kreuzwerker/docker"
+      source = "kreuzwerker/docker"
     }
   }
 }
@@ -58,26 +58,37 @@ resource "random_password" "event_token" {
 }
 
 # Create a cloud run service
-resource "google_cloud_run_service" "service" {
+resource "google_cloud_run_v2_service" "service" {
   name = replace(var.service_name, "_", "-")
 
   location = var.region
   project  = var.project_id
 
   template {
-    metadata {
-      annotations = {
-        // TODO: Add configuration here
-        "autoscaling.knative.dev/minScale" = "0"
-        "autoscaling.knative.dev/maxScale" = "100"
-      }
+    scaling {
+      max_instance_count = "100"
+      min_instance_count = "0"
     }
-    spec {
-      service_account_name  = google_service_account.service_account.email
-      container_concurrency = var.container_concurrency
-      timeout_seconds       = var.timeout_seconds
-      containers {
-        env {
+    containers {
+      image = "${local.service_image_url}@${docker_registry_image.push.sha256_digest}"
+      resources {
+        limits = merge({
+          cpu    = "${var.cpus}"
+          memory = "${var.memory_mb}Mi"
+        }, var.gpus > 0 ? { "nvidia.com/gpu" = var.gpus } : {})
+      }
+
+      dynamic "node_selector" {
+        for_each = var.gpus > 0 ? [1] : []
+        content {
+          accelerator = "nvidia-l4"
+        }
+      }
+
+      ports {
+        container_port = 9001
+      }
+      env {
           name  = "EVENT_TOKEN"
           value = random_password.event_token.result
         }
@@ -97,18 +108,12 @@ resource "google_cloud_run_service" "service" {
             value = env.value
           }
         }
-        image = "${local.service_image_url}@${docker_registry_image.push.sha256_digest}"
-        ports {
-          container_port = 9001
-        }
-        resources {
-          limits = {
-            cpu    = "${var.cpus}"
-            memory = "${var.memory_mb}Mi"
-          }
-        }
-      }
     }
+
+
+    
+    service_account = google_service_account.service_account.email
+    timeout = var.timeout_seconds
   }
 
   depends_on = [docker_registry_image.push]

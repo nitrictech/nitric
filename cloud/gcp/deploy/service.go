@@ -25,9 +25,9 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrunv2"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/cloudrunv2"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/projects"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
@@ -194,9 +194,24 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		})
 	}
 
+	limits := map[string]string{
+		"cpu":    fmt.Sprintf("%2f", unitConfig.CloudRun.Cpus),
+		"memory": fmt.Sprintf("%dMi", unitConfig.CloudRun.Memory),
+	}
+
+	// Configuration will still break if the user specifies a 0 GPU count but their account does not support GPUs
+	// only add if requested
+	var nodeSelector cloudrunv2.ServiceTemplateNodeSelectorPtrInput = nil
+	if unitConfig.CloudRun.Gpus > 0 {
+		nodeSelector = &cloudrunv2.ServiceTemplateNodeSelectorArgs{
+			Accelerator: pulumi.String("nvidia-l4"),
+		}
+		limits["nvidia.com/gpu"] = fmt.Sprintf("%d", unitConfig.CloudRun.Gpus)
+	}
+
 	serviceTemplate := cloudrunv2.ServiceTemplateArgs{
 		ServiceAccount:                sa.ServiceAccount.Email,
-		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.Concurrency),
+		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.MaxInstances),
 		Scaling: &cloudrunv2.ServiceTemplateScalingArgs{
 			MinInstanceCount: pulumi.Int(unitConfig.CloudRun.MinInstances),
 			MaxInstanceCount: pulumi.Int(unitConfig.CloudRun.MaxInstances),
@@ -206,19 +221,15 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			cloudrunv2.ServiceTemplateContainerArgs{
 				Envs:  env,
 				Image: image.URI(),
-				Ports: cloudrunv2.ServiceTemplateContainerPortArray{
-					cloudrunv2.ServiceTemplateContainerPortArgs{
-						ContainerPort: pulumi.Int(9001),
-					},
+				Ports: cloudrunv2.ServiceTemplateContainerPortsArgs{
+					ContainerPort: pulumi.Int(9001),
 				},
 				Resources: cloudrunv2.ServiceTemplateContainerResourcesArgs{
-					Limits: pulumi.StringMap{
-						"cpu":    pulumi.Sprintf("%2f", unitConfig.CloudRun.Cpus),
-						"memory": pulumi.Sprintf("%dMi", unitConfig.CloudRun.Memory),
-					},
+					Limits: pulumi.ToStringMap(limits),
 				},
 			},
 		},
+		NodeSelector: nodeSelector,
 	}
 
 	// Add vpc egress if there is a sql database
