@@ -22,3 +22,4 @@ type HttpProxyConfig struct {
 	// The URL of the service being proxied.
 	TargetServiceUrl *string `field:"required" json:"targetServiceUrl" yaml:"targetServiceUrl"`
 }
+

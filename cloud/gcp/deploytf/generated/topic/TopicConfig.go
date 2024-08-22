@@ -20,3 +20,4 @@ type TopicConfig struct {
 	// The name of the topic.
 	TopicName *string `field:"required" json:"topicName" yaml:"topicName"`
 }
+
