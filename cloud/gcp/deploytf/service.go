@@ -64,6 +64,7 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		Environment:     &jsiiEnv,
 		StackId:         a.Stack.StackIdOutput(),
 		Cpus:            jsii.Number(typeConfig.CloudRun.Cpus),
+		Gpus:            jsii.Number(typeConfig.CloudRun.Gpus),
 		MemoryMb:        jsii.Number(typeConfig.CloudRun.Memory),
 		TimeoutSeconds:  jsii.Number(typeConfig.CloudRun.Timeout),
 		BaseComputeRole: a.Stack.BaseComputeRoleOutput(),

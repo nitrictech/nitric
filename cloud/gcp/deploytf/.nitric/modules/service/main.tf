@@ -105,6 +105,7 @@ resource "google_cloud_run_service" "service" {
           limits = {
             cpu    = "${var.cpus}"
             memory = "${var.memory_mb}Mi"
+            "nvidia.com/gpu": "${var.gpus}"
           }
         }
       }
