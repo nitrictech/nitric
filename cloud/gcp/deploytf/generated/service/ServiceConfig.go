@@ -31,7 +31,7 @@ type ServiceConfig struct {
 	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
 	// The amount of cpus to allocate to the CloudRun service 1.
 	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
-	// The amount of gpus to allocate to the CloudRun service 1.
+	// The amount of cpus to allocate to the CloudRun service 1.
 	Gpus *float64 `field:"optional" json:"gpus" yaml:"gpus"`
 	// The amount of memory to allocate to the CloudRun service in MB 512.
 	MemoryMb *float64 `field:"optional" json:"memoryMb" yaml:"memoryMb"`

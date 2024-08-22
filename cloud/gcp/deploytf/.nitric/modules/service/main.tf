@@ -102,11 +102,10 @@ resource "google_cloud_run_service" "service" {
           container_port = 9001
         }
         resources {
-          limits = {
+          limits = merge({
             cpu    = "${var.cpus}"
             memory = "${var.memory_mb}Mi"
-            "nvidia.com/gpu": "${var.gpus}"
-          }
+          }, var.gpus > 0 ? { "nvidia.com/gpu" = var.gpus } : {})
         }
       }
     }
