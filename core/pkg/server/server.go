@@ -301,7 +301,7 @@ func New(opts ...ServerOption) (*NitricServer, error) {
 		return nil, fmt.Errorf("invalid WORKER_TIMEOUT: %w", err)
 	}
 
-	if m.ChildCommand == nil || len(m.ChildCommand) == 0 {
+	if m.ChildCommand == nil {
 		if len(os.Args) > 1 {
 			m.ChildCommand = os.Args[1:]
 		}
