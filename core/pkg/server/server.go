@@ -277,6 +277,7 @@ func New(opts ...ServerOption) (*NitricServer, error) {
 	m := &NitricServer{
 		// The resource service is defaulted, because it typically isn't required to be implemented for runtime servers.
 		ResourcesPlugin: &runtime.RuntimeResourceService{},
+		MinWorkers:      -1,
 	}
 
 	for _, opt := range opts {
@@ -289,7 +290,7 @@ func New(opts ...ServerOption) (*NitricServer, error) {
 	}
 
 	minWorkersEnv, err := env.MIN_WORKERS.Int()
-	if err == nil {
+	if err == nil && m.MinWorkers < 0 {
 		logger.Debugf("MIN_WORKERS environment variable set to %d", minWorkersEnv)
 		m.MinWorkers = minWorkersEnv
 	}
