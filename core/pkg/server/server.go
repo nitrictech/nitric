@@ -289,7 +289,7 @@ func New(opts ...ServerOption) (*NitricServer, error) {
 	}
 
 	minWorkersEnv, err := env.MIN_WORKERS.Int()
-	if err == nil {
+	if err == nil && m.MinWorkers != 0 {
 		logger.Debugf("MIN_WORKERS environment variable set to %d", minWorkersEnv)
 		m.MinWorkers = minWorkersEnv
 	}
