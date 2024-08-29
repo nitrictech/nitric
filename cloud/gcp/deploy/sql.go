@@ -42,12 +42,17 @@ type CloudBuild struct {
 }
 
 func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error {
-	_, err := sql.NewDatabase(ctx, name, &sql.DatabaseArgs{
-		Name:           pulumi.String(name),
-		Instance:       a.masterDb.Name,
-		DeletionPolicy: pulumi.String(a.GcpConfig.Databases[name].DeletionPolicy),
-		Project:        pulumi.String(a.GcpConfig.ProjectId),
-	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
+	dbConfig := &sql.DatabaseArgs{
+		Name:     pulumi.String(name),
+		Instance: a.masterDb.Name,
+		Project:  pulumi.String(a.GcpConfig.ProjectId),
+	}
+
+	if a.GcpConfig.Databases[name] != nil {
+		dbConfig.DeletionPolicy = pulumi.String(a.GcpConfig.Databases[name].DeletionPolicy)
+	}
+
+	_, err := sql.NewDatabase(ctx, name, dbConfig, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.masterDb}))
 	if err != nil {
 		return err
 	}
