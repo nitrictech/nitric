@@ -76,6 +76,8 @@ func setSecurityRequirements(secReq *openapi3.SecurityRequirements, secDef map[s
 func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
+	additionalApiConfig := p.AzureConfig.Apis[name]
+
 	openapiDoc := &openapi3.T{}
 	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
 	if err != nil {
@@ -116,12 +118,21 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		displayName = openapiDoc.Info.Title
 	}
 
+	description := fmt.Sprintf("Nitric API Gateway for %s", p.StackId)
+
+	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
+		description = additionalApiConfig.Description
+	}
+
+	openapiDoc.Info.Description = description
+
 	b, err := marshalOpenAPISpec(openapiDoc)
 	if err != nil {
 		return err
 	}
 
 	api, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiRT), &apimanagement.ApiArgs{
+		Description:          pulumi.String(description),
 		DisplayName:          pulumi.String(displayName),
 		Protocols:            pulumi.StringArray{pulumi.String("https")},
 		ApiId:                pulumi.String(name),

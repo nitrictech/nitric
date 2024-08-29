@@ -135,6 +135,15 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}))
 	}
 
+	// get description
+	description := fmt.Sprintf("Nitric API Gateway for %s", a.StackId)
+
+	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
+		description = additionalApiConfig.Description
+	}
+
+	openapiDoc.Info.Description = description
+
 	apiGatewayTags := tags.Tags(a.StackId, name, resources.API)
 
 	doc := pulumi.All(nameArnPairs...).ApplyT(func(pairs []interface{}) (string, error) {
@@ -177,15 +186,9 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return string(b), nil
 	}).(pulumi.StringOutput)
 
-	description := pulumi.Sprintf("Nitric API Gateway for %s", a.StackId)
-
-	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
-		description = pulumi.Sprintf(additionalApiConfig.Description)
-	}
-
 	a.Apis[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
 		Body:        doc,
-		Description: description,
+		Description: pulumi.String(description),
 		// Name fixed to title in the spec, if these mismatch the name will change on the second deployment.
 		Name:           pulumi.String(openapiDoc.Info.Title),
 		ProtocolType:   pulumi.String("HTTP"),

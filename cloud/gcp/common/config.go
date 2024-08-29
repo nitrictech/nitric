@@ -41,8 +41,13 @@ type GcpCloudRunConfig struct {
 	Concurrency  int
 }
 
+type GcpApiConfig struct {
+	Description string
+}
+
 type GcpConfig struct {
 	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
+	Apis                                  map[string]*GcpApiConfig
 	Import                                GcpImports
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
 	ProjectId                             string `mapstructure:"gcp-project-id"`
@@ -77,6 +82,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error)
 
 	if gcpConfig.ScheduleTimezone == "" {
 		gcpConfig.ScheduleTimezone = "UTC"
+	}
+
+	if gcpConfig.Apis == nil {
+		gcpConfig.Apis = map[string]*GcpApiConfig{}
 	}
 
 	if gcpConfig.Config == nil {

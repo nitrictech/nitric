@@ -47,6 +47,8 @@ type nameUrlPair struct {
 func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, apiConfig *deploymentspb.Api) error {
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
+	additionalApiConfig := p.GcpConfig.Apis[name]
+
 	if apiConfig.GetOpenapi() == "" {
 		return fmt.Errorf("gcp provider can only deploy OpenAPI specs")
 	}
@@ -147,6 +149,14 @@ func (p *NitricGcpPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			}, nil
 		}))
 	}
+
+	description := fmt.Sprintf("Nitric API Gateway for %s", p.StackId)
+
+	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
+		description = additionalApiConfig.Description
+	}
+
+	openapiDoc.Info.Description = description
 
 	// Now we need to create the document provided and interpolate the deployed service targets
 	// i.e. their Urls...
