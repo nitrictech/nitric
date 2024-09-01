@@ -15,7 +15,7 @@ type HttpProxyConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The email of the service account that will invoke the API.
 	InvokerEmail *string `field:"required" json:"invokerEmail" yaml:"invokerEmail"`
-	// The name of the API Gateway.
+	// The name of the HTTP proxy gateway.
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// The ID of the stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`

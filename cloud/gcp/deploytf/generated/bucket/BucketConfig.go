@@ -14,8 +14,6 @@ type BucketConfig struct {
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The name of the bucket.
-	//
-	// This must be globally unique.
 	BucketName *string `field:"required" json:"bucketName" yaml:"bucketName"`
 	// The notification target configurations.
 	NotificationTargets interface{} `field:"required" json:"notificationTargets" yaml:"notificationTargets"`
