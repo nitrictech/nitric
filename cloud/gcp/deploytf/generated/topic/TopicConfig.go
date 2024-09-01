@@ -17,9 +17,7 @@ type TopicConfig struct {
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The services to create subscriptions for.
 	SubscriberServices interface{} `field:"required" json:"subscriberServices" yaml:"subscriberServices"`
-	// The name of the bucket.
-	//
-	// This must be globally unique.
+	// The name of the topic.
 	TopicName *string `field:"required" json:"topicName" yaml:"topicName"`
 }
 
