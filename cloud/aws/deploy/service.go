@@ -74,7 +74,6 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		RegistryArgs:  a.RegistryArgs,
 		Runtime:       runtime(),
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
-
 	// image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
 	if err != nil {
 		return err
@@ -183,11 +182,17 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		envVars[k] = v
 	}
 
+	if a.JobQueue != nil {
+		envVars["NITRIC_JOB_QUEUE_ARN"] = a.JobQueue.Arn
+	}
+
 	if a.DatabaseCluster != nil {
 		// Include the base database cluster URI for the runtime to resolve databases based on their name
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
 			a.DatabaseCluster.Endpoint, "5432")
 
+		// Include database migrations to ensure a pulumi dependency is created for the lambda
+		//	the migrations need to complete before the lambda is deployed
 		sqlDatabasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
 			return item.Migrated
 		})
@@ -218,7 +223,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	} else if a.Vpc != nil {
 		vpcConfig = &awslambda.FunctionVpcConfigArgs{
 			SubnetIds:        a.Vpc.PrivateSubnetIds,
-			SecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			SecurityGroupIds: pulumi.StringArray{a.RdsSecurityGroup.ID()},
 			// VpcId:            a.Vpc.VpcId,
 		}
 	}

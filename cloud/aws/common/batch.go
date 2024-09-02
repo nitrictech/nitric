@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package common
 
-import "github.com/nitrictech/nitric/core/pkg/env"
+import (
+	"fmt"
+)
 
-// AWS_REGION - AWS Region where the application is currently executing.
-var AWS_REGION = env.GetEnv("AWS_REGION", "us-east-1")
-
-// GATEWAY_ENVIRONMENT - The environment the gateway needs to connect to e.g. "lambda" for aws lambda OR "http" for EC2
-var GATEWAY_ENVIRONMENT = env.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
-
-// JOB_QUEUE_ARN - The AWS ARN of the job queue to use for job execution
-var JOB_QUEUE_ARN = env.GetEnv("NITRIC_JOB_QUEUE_ARN", "")
+func GetJobDefinitionName(stackId string, jobName string) (string, error) {
+	return fmt.Sprintf("%s-job-%s", stackId, jobName), nil
+}

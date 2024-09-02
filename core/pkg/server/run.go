@@ -39,7 +39,11 @@ func Run(m *NitricServer) {
 
 	select {
 	case serverErr := <-errChan:
-		logger.Errorf("Nitric Server Error: %v, exiting\n", serverErr)
+		if serverErr != nil {
+			logger.Errorf("Nitric Server Error: %v, exiting\n", serverErr)
+		}
+		// Closed channel, server stopped
+		logger.Debugf("Nitric Server Stopped\n")
 	case sigTerm := <-term:
 		logger.Infof("Received %v, exiting\n", sigTerm)
 	}
