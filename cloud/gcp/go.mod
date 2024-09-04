@@ -27,7 +27,7 @@ require (
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20240614052744-71e6e05bc47e
-	github.com/nitrictech/nitric/core v0.0.0-20240827004051-cd5d36aaa8e6
+	github.com/nitrictech/nitric/core v0.0.0-20240903041359-ff0d375e8b73
 	github.com/nitrictech/nitric/test v0.0.0-20240614052744-71e6e05bc47e
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2

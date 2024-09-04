@@ -75,6 +75,9 @@ type NitricGcpPulumiProvider struct {
 
 	SecretManagerClient *gcpsecretmanager.Client
 
+	JobDefinitionBucket *storage.Bucket
+	JobDefinitions      map[string]*storage.BucketObject
+	JobBatchMap         map[string]string
 	Project                *Project
 	ApiGateways            map[string]*apigateway.Gateway
 	HttpProxies            map[string]*apigateway.Gateway
@@ -86,6 +89,7 @@ type NitricGcpPulumiProvider struct {
 	Secrets                map[string]*secretmanager.Secret
 	DatabaseMigrationBuild map[string]*CloudBuild
 
+	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
 	cloudBuildWorkerPool *workerpool.WorkerPool
@@ -286,7 +290,38 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
+	batchResources := lo.Filter(resources, func(res *pulumix.NitricPulumiResource[any], idx int) bool {
+		_, ok := res.Config.(*deploymentspb.Resource_Batch)
+		return ok
+	})
+
+	for _, res := range batchResources {
+		jobs := res.Config.(*deploymentspb.Resource_Batch).Batch.Jobs
+		for _, job := range jobs {
+			a.JobBatchMap[job.Name] = res.Id.Name
+		}
+	}
+
+	if len(batchResources) > 0 {
+		// Create a bucket to store job definitions
+		a.JobDefinitionBucket, err = storage.NewBucket(ctx, "batch-jobs", &storage.BucketArgs{
+			Location: pulumi.String(a.Region),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (a *NitricGcpPulumiProvider) GetBatchServiceAccountForJob(jobName string) (*GcpIamServiceAccount, error) {
+	acct, ok := a.BatchServiceAccounts[a.JobBatchMap[jobName]]
+	if !ok {
+		return nil, fmt.Errorf("No service account found for job: %s", jobName)
+	}
+
+	return acct, nil
 }
 
 func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
@@ -383,14 +418,17 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		HttpProxies:            make(map[string]*apigateway.Gateway),
-		ApiGateways:            make(map[string]*apigateway.Gateway),
-		CloudRunServices:       make(map[string]*NitricCloudRunService),
-		Buckets:                make(map[string]*storage.Bucket),
-		Topics:                 make(map[string]*pubsub.Topic),
-		Queues:                 make(map[string]*pubsub.Topic),
-		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
-		Secrets:                make(map[string]*secretmanager.Secret),
+		JobBatchMap:          make(map[string]string),
+		BatchServiceAccounts: make(map[string]*GcpIamServiceAccount),
+		JobDefinitions:       make(map[string]*storage.BucketObject),
+		HttpProxies:          make(map[string]*apigateway.Gateway),
+		ApiGateways:          make(map[string]*apigateway.Gateway),
+		CloudRunServices:     make(map[string]*NitricCloudRunService),
+		Buckets:              make(map[string]*storage.Bucket),
+		Topics:               make(map[string]*pubsub.Topic),
+		Queues:               make(map[string]*pubsub.Topic),
+		QueueSubscriptions:   make(map[string]*pubsub.Subscription),
+		Secrets:              make(map[string]*secretmanager.Secret),
 		DatabaseMigrationBuild: make(map[string]*CloudBuild),
 	}
 }

@@ -143,7 +143,11 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			Name:  pulumi.String("NITRIC_STACK_ID"),
 			Value: pulumi.String(p.StackId),
 		},
-		cloudrunv2.ServiceTemplateContainerEnvArgs{
+		cloudrun.ServiceTemplateSpecContainerEnvArgs{
+			Name:  pulumi.String("GOOGLE_PROJECT_ID"),
+			Value: pulumi.String(p.GcpConfig.ProjectId),
+		},
+		cloudrun.ServiceTemplateSpecContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),
 			Value: sa.ServiceAccount.Email,
 		},
@@ -157,7 +161,14 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		},
 	}
 
-	env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
+	if p.JobDefinitionBucket != nil {
+		env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
+			Name:  pulumi.String("NITRIC_JOBS_BUCKET_NAME"),
+			Value: p.JobDefinitionBucket.Name,
+		})
+	}
+
+	env = append(env, cloudrun.ServiceTemplateSpecContainerEnvArgs{
 		Name:  pulumi.String("EVENT_TOKEN"),
 		Value: res.EventToken,
 	})

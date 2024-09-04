@@ -20,6 +20,7 @@ var (
 	GCP_REGION            = env.GetEnv("GCP_REGION", "")
 	GOOGLE_PROJECT_ID     = env.GetEnv("GOOGLE_PROJECT_ID", "")
 	SERVICE_ACCOUNT_EMAIL = env.GetEnv("SERVICE_ACCOUNT_EMAIL", "")
+	JOBS_BUCKET_NAME      = env.GetEnv("NITRIC_JOBS_BUCKET_NAME", "")
 )
 
 // The name of the google cloud tasks queue to use to delay message delivery to pubsub topics
