@@ -150,7 +150,7 @@ var RoleDefinitions = map[string]string{
 }
 
 func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, service *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.Provider(p.ContainerEnv.DockerProvider)}
 
 	res := &ContainerApp{
 		Name: name,
@@ -166,9 +166,6 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   service.GetImage().Uri,
 		RepositoryUrl: repositoryUrl,
-		Username:      p.ContainerEnv.RegistryUser.Elem(),
-		Password:      p.ContainerEnv.RegistryPass.Elem(),
-		Server:        p.ContainerEnv.Registry.LoginServer,
 		Runtime:       runtime(),
 	}, opts...)
 	if err != nil {

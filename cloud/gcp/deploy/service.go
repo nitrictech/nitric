@@ -24,7 +24,6 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
-	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudrun"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/projects"
@@ -46,7 +45,7 @@ type NitricCloudRunService struct {
 }
 
 func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.Provider(p.DockerProvider)}
 
 	res := &NitricCloudRunService{
 		Name: name,
@@ -80,17 +79,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.GcpConfig.ProjectId, imageName),
-		Username:      pulumi.String("oauth2accesstoken"),
-		Password:      pulumi.String(p.AuthToken.AccessToken),
-		Server:        pulumi.String("https://gcr.io"),
 		Runtime:       runtime(),
-		Telemetry: &telemetry.TelemetryConfigArgs{
-			TraceSampling:       unitConfig.Telemetry,
-			TraceName:           "googlecloud",
-			MetricName:          "googlecloud",
-			TraceExporterConfig: `{"retry_on_failure": {"enabled": false}}`,
-			Extensions:          []string{},
-		},
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
