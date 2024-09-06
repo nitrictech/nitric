@@ -22,7 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
 
-type ApiConfig struct {
+type AwsApiConfig struct {
 	Domains []string
 }
 
@@ -35,7 +35,7 @@ type AwsConfig struct {
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
 	Import                                AwsImports
 	Refresh                               bool
-	Apis                                  map[string]*ApiConfig
+	Apis                                  map[string]*AwsApiConfig
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -87,7 +87,7 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	}
 
 	if awsConfig.Apis == nil {
-		awsConfig.Apis = map[string]*ApiConfig{}
+		awsConfig.Apis = map[string]*AwsApiConfig{}
 	}
 
 	if awsConfig.Config == nil {

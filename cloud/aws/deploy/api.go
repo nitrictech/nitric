@@ -74,6 +74,8 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 
 	nameArnPairs := make([]interface{}, 0, len(a.Lambdas))
 
+	additionalApiConfig := a.AwsConfig.Apis[name]
+
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
 	}
@@ -133,6 +135,15 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		}))
 	}
 
+	// get description
+	description := fmt.Sprintf("Nitric API Gateway for %s", a.StackId)
+
+	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
+		description = additionalApiConfig.Description
+	}
+
+	openapiDoc.Info.Description = description
+
 	apiGatewayTags := tags.Tags(a.StackId, name, resources.API)
 
 	doc := pulumi.All(nameArnPairs...).ApplyT(func(pairs []interface{}) (string, error) {
@@ -176,7 +187,8 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}).(pulumi.StringOutput)
 
 	a.Apis[name], err = apigatewayv2.NewApi(ctx, name, &apigatewayv2.ApiArgs{
-		Body: doc,
+		Body:        doc,
+		Description: pulumi.String(description),
 		// Name fixed to title in the spec, if these mismatch the name will change on the second deployment.
 		Name:           pulumi.String(openapiDoc.Info.Title),
 		ProtocolType:   pulumi.String("HTTP"),
@@ -214,7 +226,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return ep
 	}).(pulumi.StringInput)
 
-	if a.AwsConfig.Apis[name] != nil {
+	if additionalApiConfig != nil {
 		// For each specified domain name
 		for _, domainName := range a.AwsConfig.Apis[name].Domains {
 			_, err := newDomainName(ctx, name, domainNameArgs{

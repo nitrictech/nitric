@@ -34,11 +34,16 @@ type AzureContainerAppsConfig struct {
 	MaxReplicas int `mapstructure:"max-replicas"`
 }
 
+type AzureApiConfig struct {
+	Description string
+}
+
 type AzureConfig struct {
 	Refresh                                 bool
 	ResourceGroup                           string `mapstructure:"resource-group"`
 	Org                                     string `mapstructure:"org"`
 	AdminEmail                              string `mapstructure:"adminemail"`
+	Apis                                    map[string]*AzureApiConfig
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -72,6 +77,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, erro
 
 	if azureConfig.Org == "" {
 		azureConfig.Org = "unknown"
+	}
+
+	if azureConfig.Apis == nil {
+		azureConfig.Apis = map[string]*AzureApiConfig{}
 	}
 
 	if azureConfig.Config == nil {

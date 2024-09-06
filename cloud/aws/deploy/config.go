@@ -23,7 +23,8 @@ import (
 )
 
 type ApiConfig struct {
-	Domains []string
+	Description string
+	Domains     []string
 }
 
 // AwsImports - Import configuration for AWS, maps nitric names of resources to the ARNs of existing AWS resources.
