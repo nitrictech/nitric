@@ -40,7 +40,7 @@ var projectPermissions = map[string]string{
 
 func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch, runtimeProvider provider.RuntimeProvider) error {
 	// Create a GCP batch task specification and push it to a GCP bucket for later use to run tasks
-	defaultResourceOpts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+	defaultResourceOpts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.Provider(p.DockerProvider)}
 
 	// Deploy the image for the Batch instaces to GCR
 	imageUriSplit := strings.Split(config.GetImage().GetUri(), "/")
@@ -49,11 +49,8 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 	image, err := image.NewImage(ctx, fmt.Sprintf("batch-image-%s", name), &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.GcpConfig.ProjectId, imageName),
-		Username:      pulumi.String("oauth2accesstoken"),
-		Password:      pulumi.String(p.AuthToken.AccessToken),
-		Server:        pulumi.String("https://gcr.io"),
 		Runtime:       runtimeProvider(),
-	}, defaultResourceOpts...)
+	}, p.WithDefaultResourceOptions(defaultResourceOpts...)...)
 	if err != nil {
 		return err
 	}
