@@ -199,6 +199,9 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 			},
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	err = ctx.RegisterResourceOutputs(res, pulumi.Map{})
 

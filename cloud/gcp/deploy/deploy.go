@@ -246,7 +246,6 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
