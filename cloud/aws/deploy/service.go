@@ -28,10 +28,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 )
@@ -43,7 +43,7 @@ func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId st
 	}, pulumi.Parent(parent))
 }
 
-func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authToken *ecr.GetAuthorizationTokenResult, repo *ecr.Repository, typeConfig *AwsConfigItem, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) (*image.Image, error) {
+func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, repo *ecr.Repository, config *pulumix.NitricPulumiServiceConfig, provider *docker.Provider, runtime provider.RuntimeProvider) (*image.Image, error) {
 	if config.GetImage() == nil {
 		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
 	}
@@ -59,17 +59,8 @@ func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, authT
 	return image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   config.GetImage().GetUri(),
 		RepositoryUrl: repo.RepositoryUrl,
-		Server:        pulumi.String(authToken.ProxyEndpoint),
-		Username:      pulumi.String(authToken.UserName),
-		Password:      pulumi.String(authToken.Password),
 		Runtime:       runtime(),
-		Telemetry: &telemetry.TelemetryConfigArgs{
-			TraceSampling: typeConfig.Telemetry,
-			TraceName:     "awsxray",
-			MetricName:    "awsemf",
-			Extensions:    []string{},
-		},
-	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}), pulumi.Provider(provider))
 }
 
 func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
@@ -98,7 +89,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.AwsConfig)
 	}
 
-	image, err := createImage(ctx, parent, name, a.EcrAuthToken, repo, typeConfig, config, runtime)
+	image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
 	if err != nil {
 		return err
 	}

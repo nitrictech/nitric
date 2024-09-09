@@ -25,6 +25,7 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/containerregistry"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
 	"github.com/pulumi/pulumi-azure-native-sdk/operationalinsights"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -44,13 +45,14 @@ type ContainerEnvArgs struct {
 type ContainerEnv struct {
 	pulumi.ResourceState
 
-	Name         string
-	Registry     *containerregistry.Registry
-	RegistryUser pulumi.StringPtrOutput
-	RegistryPass pulumi.StringPtrOutput
-	ManagedEnv   *app.ManagedEnvironment
-	Env          app.EnvironmentVarArray
-	ManagedUser  *managedidentity.UserAssignedIdentity
+	Name           string
+	DockerProvider *docker.Provider
+	Registry       *containerregistry.Registry
+	RegistryUser   pulumi.StringPtrOutput
+	RegistryPass   pulumi.StringPtrOutput
+	ManagedEnv     *app.ManagedEnvironment
+	Env            app.EnvironmentVarArray
+	ManagedUser    *managedidentity.UserAssignedIdentity
 }
 
 func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name string, envMap map[string]string, opts ...pulumi.ResourceOption) (*ContainerEnv, error) {
@@ -187,6 +189,19 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 
 		return cred.Passwords[0].Value, nil
 	}).(pulumi.StringPtrOutput)
+
+	res.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
+		RegistryAuth: &docker.ProviderRegistryAuthArray{
+			docker.ProviderRegistryAuthArgs{
+				Address:  res.Registry.LoginServer,
+				Username: res.RegistryUser,
+				Password: res.RegistryPass,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	err = ctx.RegisterResourceOutputs(res, pulumi.Map{})
 

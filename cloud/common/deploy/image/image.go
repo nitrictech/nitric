@@ -30,34 +30,25 @@ import (
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"golang.org/x/exp/maps"
-
-	"github.com/nitrictech/nitric/cloud/common/deploy/telemetry"
 )
 
 type ImageArgs struct {
 	SourceImage   string
 	Runtime       []byte
 	RepositoryUrl pulumi.StringInput
-	Server        pulumi.StringInput
-	Username      pulumi.StringInput
-	Password      pulumi.StringInput
-	Telemetry     *telemetry.TelemetryConfigArgs
 }
 
 type LocalImageArgs struct {
 	SourceImage   string
 	SourceImageID string
 	RepositoryUrl pulumi.StringInput
-	Server        pulumi.StringInput
-	Username      pulumi.StringInput
-	Password      pulumi.StringInput
 }
 
 type Image struct {
 	pulumi.ResourceState
 
 	Name        string
-	DockerImage *docker.Image
+	DockerImage *docker.RegistryImage
 }
 
 type WrappedBuildInput struct {
@@ -68,14 +59,14 @@ type WrappedBuildInput struct {
 var (
 	//go:embed wrapper.dockerfile
 	imageWrapper string
-	//go:embed wrapper-telemetry.dockerfile
-	telemetryImageWrapper string
 	//go:embed dummy.dockerfile
 	dummyImageWrapper string
 )
 
 func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
+
+	defaultOpts := append([]pulumi.ResourceOption{pulumi.Parent(res)}, opts...)
 
 	err := ctx.RegisterComponentResource("nitriccommon:LocalImage", name, res, opts...)
 	if err != nil {
@@ -106,7 +97,7 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 		return nil, err
 	}
 
-	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+	image, err := docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
 		ImageName: args.RepositoryUrl,
 		Build: docker.DockerBuildArgs{
 			Context:    pulumi.String(buildContext),
@@ -117,32 +108,39 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 			},
 			Platform: pulumi.String("linux/amd64"),
 		},
-		Registry: docker.RegistryArgs{
-			Server:   args.Server,
-			Username: args.Username,
-			Password: args.Password,
+		SkipPush: pulumi.Bool(true),
+	}, defaultOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
+		Name: image.ImageName,
+		Triggers: pulumi.Map{
+			"hash": image.RepoDigest,
 		},
-		SkipPush: pulumi.Bool(false),
-	}, pulumi.Parent(res))
+	}, defaultOpts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":     pulumi.String(res.Name),
-		"imageUri": res.DockerImage.ImageName,
+		"imageUri": pulumi.Sprintf("%s@%s", res.DockerImage.Name, res.DockerImage.Sha256Digest),
 	})
 }
 
 func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
 	res := &Image{Name: name}
 
+	defaultOpts := append([]pulumi.ResourceOption{pulumi.Parent(res)}, opts...)
+
 	err := ctx.RegisterComponentResource("nitriccommon:Image", name, res, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	imageWrapper, err := getWrapperDockerfile(args.Telemetry)
+	imageWrapper, err := getWrapperDockerfile()
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +200,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 		"BASE_IMAGE_ID": sourceImageID,
 	}, imageWrapper.Args)
 
-	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+	image, err := docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
 		ImageName: args.RepositoryUrl,
 		Build: docker.DockerBuildArgs{
 			Context:    pulumi.String(buildContext),
@@ -210,45 +208,34 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 			Args:       buildArgs,
 			Platform:   pulumi.String("linux/amd64"),
 		},
-		Registry: docker.RegistryArgs{
-			Server:   args.Server,
-			Username: args.Username,
-			Password: args.Password,
+		SkipPush: pulumi.Bool(true),
+	}, defaultOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
+		Name: image.ImageName,
+		Triggers: pulumi.Map{
+			"hash": image.RepoDigest,
 		},
-		SkipPush: pulumi.Bool(false),
-	}, pulumi.Parent(res))
+	}, defaultOpts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":     pulumi.String(res.Name),
-		"imageUri": res.DockerImage.ImageName,
+		"imageUri": pulumi.Sprintf("%s@%s", res.DockerImage.Name, res.DockerImage.Sha256Digest),
 	})
 }
 
 func (d *Image) URI() pulumi.StringOutput {
-	return d.DockerImage.RepoDigest.Elem().ToStringOutput()
+	return pulumi.Sprintf("%s@%s", d.DockerImage.Name, d.DockerImage.Sha256Digest)
 }
 
 // Returns the default docker file if telemetry sampling is disabled for this service. Otherwise, will return a wrapped telemetry image.
-func getWrapperDockerfile(configArgs *telemetry.TelemetryConfigArgs) (*WrappedBuildInput, error) {
-	if configArgs != nil && configArgs.TraceSampling > 0 {
-		config, err := telemetry.NewTelemetryConfig(configArgs)
-		if err != nil {
-			return nil, err
-		}
-
-		return &WrappedBuildInput{
-			Dockerfile: telemetryImageWrapper,
-			Args: map[string]string{
-				"OTELCOL_CONFIG":              config.Config,
-				"OTELCOL_CONTRIB_URI":         config.Uri,
-				"NITRIC_TRACE_SAMPLE_PERCENT": fmt.Sprint(configArgs.TraceSampling),
-			},
-		}, nil
-	}
-
+func getWrapperDockerfile() (*WrappedBuildInput, error) {
 	return &WrappedBuildInput{
 		Dockerfile: imageWrapper,
 		Args:       map[string]string{},

@@ -41,7 +41,7 @@ var runtimeFileName = "runtime"
 
 // Build a wrapped image on the current machine inline
 func BuildWrappedImage(args *BuildWrappedImageArgs) (string, error) {
-	imageWrapper, err := getWrapperDockerfile(nil)
+	imageWrapper, err := getWrapperDockerfile()
 	if err != nil {
 		return "", err
 	}

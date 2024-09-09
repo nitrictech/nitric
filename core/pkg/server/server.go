@@ -17,6 +17,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"time"
@@ -144,9 +145,13 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 		return err
 	}
 
+	if maxWorkers < 0 || maxWorkers > math.MaxUint32 {
+		return fmt.Errorf("MAX_WORKERS not in range 0-%d: %d", math.MaxUint32, maxWorkers)
+	}
+
 	if s.grpcServer == nil {
 		opts := []grpc.ServerOption{
-			grpc.MaxConcurrentStreams(uint32(maxWorkers)),
+			grpc.MaxConcurrentStreams(uint32(maxWorkers)), //#nosec G115 -- max workers checked for potential out of range or overflow errors
 		}
 
 		s.grpcServer = grpc.NewServer(opts...)
