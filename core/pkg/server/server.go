@@ -275,9 +275,9 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 			// Allowing the server to exit
 			return nil
 		}
-		exitErr = fmt.Errorf(fmt.Sprintf("Gateway Error: %v, exiting", gatewayErr))
+		exitErr = fmt.Errorf("Gateway Error: %w, exiting", gatewayErr)
 	case processErr := <-processErrchan:
-		exitErr = fmt.Errorf(fmt.Sprintf("Process error: %v, exiting", processErr))
+		exitErr = fmt.Errorf("Process error: %w, exiting", processErr)
 	}
 
 	return exitErr

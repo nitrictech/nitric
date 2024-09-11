@@ -79,7 +79,8 @@ message KeyValueStoreResource {
 message SecretResource {
 }
 
-message JobResource {}
+message JobResource { 
+}
 
 message SqlDatabaseMigrations {
   oneof migrations {

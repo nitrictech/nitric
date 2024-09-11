@@ -3,9 +3,9 @@ syntax = "proto3";
 package nitric.proto.deployments.v1;
 
 import "google/protobuf/struct.proto";
+import "nitric/proto/batch/v1/batch.proto";
 import "nitric/proto/resources/v1/resources.proto";
 import "nitric/proto/storage/v1/storage.proto";
-import "nitric/proto/batch/v1/batch.proto";
 
 //protoc plugin options for code generation
 option go_package = "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1;deploymentspb";
