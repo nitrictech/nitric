@@ -115,7 +115,7 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 
 	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	a.AzureConfig, err = ConfigFromAttributes(attributes)
