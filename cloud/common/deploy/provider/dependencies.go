@@ -15,6 +15,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 )
@@ -57,7 +58,7 @@ func checkDependencies(checks ...DependencyCheck) error {
 		}
 
 		// combine the errors in a list
-		return fmt.Errorf(errMsg)
+		return errors.New(errMsg)
 	}
 
 	return nil

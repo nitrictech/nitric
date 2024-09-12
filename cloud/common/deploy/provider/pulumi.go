@@ -336,7 +336,7 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 
 	_, err = stack.Destroy(context.TODO(), options...)
 	if err != nil {
-		logger.Errorf(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 

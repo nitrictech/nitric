@@ -73,7 +73,7 @@ func (a *NitricAwsTerraformProvider) Init(attributes map[string]interface{}) err
 
 	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	a.AwsConfig, err = common.ConfigFromAttributes(attributes)

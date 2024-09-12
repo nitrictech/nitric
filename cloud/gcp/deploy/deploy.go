@@ -121,7 +121,7 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 
 	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	a.GcpConfig, err = common.ConfigFromAttributes(attributes)
