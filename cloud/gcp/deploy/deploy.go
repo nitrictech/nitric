@@ -71,7 +71,6 @@ type NitricGcpPulumiProvider struct {
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
 	BaseComputeRole *projects.IAMCustomRole
-	DockerProvider  *docker.Provider
 
 	SecretManagerClient *gcpsecretmanager.Client
 
