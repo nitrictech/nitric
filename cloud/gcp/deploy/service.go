@@ -30,6 +30,7 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceaccount"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -213,6 +214,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		serviceTemplate.VpcAccess = &cloudrunv2.ServiceTemplateVpcAccessArgs{
 			Connector: p.vpcConnector.SelfLink,
 			Egress:    pulumi.String("PRIVATE_RANGES_ONLY"),
+			// TODO: Re-enable when pulumi network interface support is fixed for tear down
 			// NetworkInterfaces: &cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArray{
 			// 	&cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArgs{
 			// 		Network:    p.privateNetwork.ID(),
@@ -231,6 +233,13 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		serviceTemplate.Annotations = pulumi.ToStringMapOutput(map[string]pulumi.StringOutput{"run.googleapis.com/cloudsql-instances": p.masterDb.ConnectionName})
 	}
 
+	migrationBuilds := lo.Values(p.DatabaseMigrationBuild)
+
+	migrationBuildResources := []pulumi.Resource{}
+	for _, migration := range migrationBuilds {
+		migrationBuildResources = append(migrationBuildResources, migration)
+	}
+
 	res.Service, err = cloudrunv2.NewService(ctx, gcpServiceName, &cloudrunv2.ServiceArgs{
 		Location: pulumi.String(p.Region),
 		Project:  pulumi.String(p.GcpConfig.ProjectId),
@@ -242,7 +251,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 				Type:    pulumi.String("TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"),
 			},
 		},
-	}, p.WithDefaultResourceOptions(opts...)...)
+	}, p.WithDefaultResourceOptions(append([]pulumi.ResourceOption{pulumi.DependsOn(migrationBuildResources)}, opts...)...)...)
 	if err != nil {
 		return errors.WithMessage(err, "cloud run "+name)
 	}

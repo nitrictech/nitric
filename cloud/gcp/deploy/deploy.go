@@ -501,6 +501,7 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	// Create an explicit VPC connector for the Google Cloud Run VPC connections
+	// TODO: Remove this in favor of direct VPC egress when fixed
 	a.vpcConnector, err = vpcaccess.NewConnector(ctx, "db-vpc-connector", &vpcaccess.ConnectorArgs{
 		IpCidrRange: pulumi.String("10.8.0.0/28"),
 		Network:     a.privateNetwork.ID(),
