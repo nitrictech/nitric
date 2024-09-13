@@ -279,24 +279,6 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
-	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
-		RegistryAuth: &docker.ProviderRegistryAuthArray{
-			docker.ProviderRegistryAuthArgs{
-				Username: pulumi.String("oauth2accesstoken"),
-				Password: pulumi.String(a.AuthToken.AccessToken),
-				Address:  pulumi.String("https://gcr.io"),
-			},
-			docker.ProviderRegistryAuthArgs{
-				Address:  pulumi.Sprintf("%s-docker.pkg.dev", a.Region),
-				Username: pulumi.String("oauth2accesstoken"),
-				Password: pulumi.String(a.AuthToken.AccessToken),
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
