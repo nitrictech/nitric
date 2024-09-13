@@ -211,13 +211,14 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	// Add vpc egress if there is a sql database
 	if p.masterDb != nil {
 		serviceTemplate.VpcAccess = &cloudrunv2.ServiceTemplateVpcAccessArgs{
-			Egress: pulumi.String("PRIVATE_RANGES_ONLY"),
-			NetworkInterfaces: &cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArray{
-				&cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArgs{
-					Network:    p.privateNetwork.ID(),
-					Subnetwork: p.privateSubnet.ID(),
-				},
-			},
+			Connector: p.vpcConnector.SelfLink,
+			Egress:    pulumi.String("PRIVATE_RANGES_ONLY"),
+			// NetworkInterfaces: &cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArray{
+			// 	&cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArgs{
+			// 		Network:    p.privateNetwork.ID(),
+			// 		Subnetwork: p.privateSubnet.ID(),
+			// 	},
+			// },
 		}
 
 		dependsOn := []pulumi.Resource{p.privateNetwork, p.privateSubnet}

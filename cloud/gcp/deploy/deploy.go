@@ -47,6 +47,7 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/serviceusage"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/sql"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/storage"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/vpcaccess"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi-std/sdk/go/std"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
@@ -90,6 +91,7 @@ type NitricGcpPulumiProvider struct {
 	cloudBuildWorkerPool *workerpool.WorkerPool
 	privateNetwork       *compute.Network
 	privateSubnet        *compute.Subnetwork
+	vpcConnector         *vpcaccess.Connector
 
 	provider.NitricDefaultOrder
 }
@@ -498,6 +500,15 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		return err
 	}
 
+	// Create an explicit VPC connector for the Google Cloud Run VPC connections
+	a.vpcConnector, err = vpcaccess.NewConnector(ctx, "db-vpc-connector", &vpcaccess.ConnectorArgs{
+		IpCidrRange: pulumi.String("10.8.0.0/28"),
+		Network:     a.privateNetwork.ID(),
+	})
+	if err != nil {
+		return err
+	}
+
 	metricUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
 		Input: "cloudbuild.googleapis.com/private_pools",
 	}, nil)
@@ -535,8 +546,8 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 			MachineType: pulumi.String("e2-medium"),
 		},
 		NetworkConfig: &workerpool.WorkerPoolNetworkConfigArgs{
-			PeeredNetwork:        a.privateNetwork.ID(),
-			PeeredNetworkIpRange: pulumi.String("/29"),
+			PeeredNetwork: a.privateNetwork.ID(),
+			// PeeredNetworkIpRange: pulumi.String("/29"),
 		},
 	}, pulumi.DependsOn([]pulumi.Resource{privateVpcConnection, workerPoolQuota}))
 	if err != nil {
