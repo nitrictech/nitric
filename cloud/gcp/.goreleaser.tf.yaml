@@ -21,7 +21,7 @@ builds:
       - arm64
 archives:
   - name_template: >-
-      {{ .ProjectName }}tf_
+      {{ .ProjectName }}_
       {{- tolower .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
