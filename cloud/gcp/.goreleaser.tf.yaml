@@ -1,5 +1,5 @@
 ---
-project_name: gcp
+project_name: gcptf
 release:
   prerelease: auto
 before:
@@ -7,11 +7,11 @@ before:
     - go work sync
     - make predeploybin
 builds:
-  - id: gcp
+  - id: gcptf
     env:
       - CGO_ENABLED=0
     binary: gcp
-    main: ./cmd/deploy
+    main: ./cmd/deploytf
     goos:
       - linux
       - windows
@@ -21,17 +21,19 @@ builds:
       - arm64
 archives:
   - name_template: >-
-      {{ .ProjectName }}_
+      {{ .ProjectName }}tf_
       {{- tolower .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
       {{- else }}{{ tolower .Arch }}{{ end }}
+    id: gcptf
     builds:
-      - gcp
+      - gcptf
     format_overrides:
       - goos: windows
         format: zip
 checksum:
-  name_template: "gcp_checksums.txt"
+  name_template: "gcptf_checksums.txt"
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 changelog:
