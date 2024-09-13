@@ -21,6 +21,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/queue"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/secret"
+	sql_service "github.com/nitrictech/nitric/cloud/gcp/runtime/sql"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/storage"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/topic"
 	"github.com/nitrictech/nitric/core/pkg/server"
@@ -37,6 +38,8 @@ func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...s
 	gatewayPlugin, _ := gateway.New(resourcesPlugin)
 	apiPlugin := api.NewGcpApiGatewayProvider(resourcesPlugin)
 
+	sqlPlugin := sql_service.New()
+
 	defaultGcpOpts := []server.ServerOption{
 		server.WithKeyValuePlugin(keyValuePlugin),
 		server.WithSecretManagerPlugin(secretPlugin),
@@ -45,6 +48,7 @@ func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...s
 		server.WithTopicsPlugin(topicsPlugin),
 		server.WithQueuesPlugin(queuesPlugin),
 		server.WithApiPlugin(apiPlugin),
+		server.WithSqlPlugin(sqlPlugin),
 	}
 
 	// append overrides
