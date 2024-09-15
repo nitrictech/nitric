@@ -27,7 +27,8 @@ jobs:
         with:
           # either 'goreleaser' (default) or 'goreleaser-pro':
           distribution: goreleaser
-          args: release --clean
+          # Limit the number of parallel builds to prevent build crashes
+          args: release --clean -p 1
           workdir: cloud/gcp
           version: '~> v1'
         env:
