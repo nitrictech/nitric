@@ -1,5 +1,5 @@
 ---
-project_name: gcp
+project_name: awstf
 release:
   prerelease: auto
 before:
@@ -7,11 +7,11 @@ before:
     - go work sync
     - make predeploybin
 builds:
-  - id: gcp
+  - id: awstf
     env:
-      - CGO_ENABLED=0
-    binary: gcp
-    main: ./cmd/deploy
+      - CGO_ENABLED=0 
+    binary: aws
+    main: ./cmd/deploytf
     goos:
       - linux
       - windows
@@ -24,14 +24,16 @@ archives:
       {{ .ProjectName }}_
       {{- tolower .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
       {{- else }}{{ tolower .Arch }}{{ end }}
+    id: awstf
     builds:
-      - gcp
+      - awstf
     format_overrides:
       - goos: windows
         format: zip
 checksum:
-  name_template: "gcp_checksums.txt"
+  name_template: "awstf_checksums.txt"
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 changelog:
