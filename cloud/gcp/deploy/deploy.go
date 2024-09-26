@@ -75,9 +75,9 @@ type NitricGcpPulumiProvider struct {
 
 	SecretManagerClient *gcpsecretmanager.Client
 
-	JobDefinitionBucket *storage.Bucket
-	JobDefinitions      map[string]*storage.BucketObject
-	JobBatchMap         map[string]string
+	JobDefinitionBucket    *storage.Bucket
+	JobDefinitions         map[string]*storage.BucketObject
+	JobBatchMap            map[string]string
 	Project                *Project
 	ApiGateways            map[string]*apigateway.Gateway
 	HttpProxies            map[string]*apigateway.Gateway
@@ -418,17 +418,17 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
-		JobBatchMap:          make(map[string]string),
-		BatchServiceAccounts: make(map[string]*GcpIamServiceAccount),
-		JobDefinitions:       make(map[string]*storage.BucketObject),
-		HttpProxies:          make(map[string]*apigateway.Gateway),
-		ApiGateways:          make(map[string]*apigateway.Gateway),
-		CloudRunServices:     make(map[string]*NitricCloudRunService),
-		Buckets:              make(map[string]*storage.Bucket),
-		Topics:               make(map[string]*pubsub.Topic),
-		Queues:               make(map[string]*pubsub.Topic),
-		QueueSubscriptions:   make(map[string]*pubsub.Subscription),
-		Secrets:              make(map[string]*secretmanager.Secret),
+		JobBatchMap:            make(map[string]string),
+		BatchServiceAccounts:   make(map[string]*GcpIamServiceAccount),
+		JobDefinitions:         make(map[string]*storage.BucketObject),
+		HttpProxies:            make(map[string]*apigateway.Gateway),
+		ApiGateways:            make(map[string]*apigateway.Gateway),
+		CloudRunServices:       make(map[string]*NitricCloudRunService),
+		Buckets:                make(map[string]*storage.Bucket),
+		Topics:                 make(map[string]*pubsub.Topic),
+		Queues:                 make(map[string]*pubsub.Topic),
+		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
+		Secrets:                make(map[string]*secretmanager.Secret),
 		DatabaseMigrationBuild: make(map[string]*CloudBuild),
 	}
 }
