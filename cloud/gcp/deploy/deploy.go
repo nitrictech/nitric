@@ -35,6 +35,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/artifactregistry"
 	workerpool "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudbuild"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/compute"
@@ -68,6 +69,7 @@ type NitricGcpPulumiProvider struct {
 
 	DockerProvider *docker.Provider
 	RegistryArgs   *docker.RegistryArgs
+	ContainerRegistry *artifactregistry.Repository
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
@@ -239,6 +241,15 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 				Password: pulumi.String(a.AuthToken.AccessToken),
 			},
 		},
+	})
+	if err != nil {
+		return err
+	}
+
+	a.ContainerRegistry, err = artifactregistry.NewRepository(ctx, fmt.Sprintf("%s-services", a.StackId), &artifactregistry.RepositoryArgs{
+		Location:     pulumi.String(a.Region),
+		RepositoryId: pulumi.Sprintf("%s-services", a.StackId),
+		Format:       pulumi.String("DOCKER"),
 	})
 	if err != nil {
 		return err
