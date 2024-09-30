@@ -131,15 +131,23 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 			privateNetwork = p.privateNetwork.SelfLink
 		}
 
-		jobDefinitionContents := pulumi.All(image.URI(), p.BatchServiceAccounts[name].ServiceAccount.Email, dbUrl, privateNetwork, privateSubnet).ApplyT(func(args []interface{}) (string, error) {
+		jobDefinitionContents := pulumi.All(
+			image.URI(), p.BatchServiceAccounts[name].ServiceAccount.Email, dbUrl, privateNetwork, privateSubnet, p.StackId,
+		).ApplyT(func(args []interface{}) (string, error) {
 			uri := args[0].(string)
 			saEmail := args[1].(string)
 			dbUrl := args[2].(string)
 			privateNetwork := args[3].(string)
 			privateSubnet := args[4].(string)
+			stackId := args[5].(string)
 
 			envVars := map[string]string{
-				"NITRIC_JOB_NAME": j.Name,
+				"NITRIC_JOB_NAME":       j.Name,
+				"NITRIC_STACK_ID":       stackId,
+				"GOOGLE_PROJECT_ID":     p.GcpConfig.ProjectId,
+				"SERVICE_ACCOUNT_EMAIL": saEmail,
+				"GCP_REGION":            p.Region,
+				"MIN_WORKERS":           fmt.Sprintf("%d", len(config.Jobs)),
 			}
 
 			if dbUrl != "" {
