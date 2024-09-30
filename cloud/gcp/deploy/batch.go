@@ -116,9 +116,47 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 			containerOptions = append(containerOptions, "--runtime=nvidia")
 		}
 
-		jobDefinitionContents := pulumi.All(image.URI(), p.BatchServiceAccounts[name].ServiceAccount.Email).ApplyT(func(args []interface{}) (string, error) {
+		var dbUrl pulumi.StringOutput = pulumi.String("").ToStringOutput()
+		if p.masterDb != nil {
+			dbUrl = pulumi.Sprintf("postgresql://postgres:%s@%s:5432", p.dbMasterPassword.Result, p.masterDb.PrivateIpAddress)
+		}
+
+		var privateSubnet pulumi.StringOutput = pulumi.String("").ToStringOutput()
+		if p.privateSubnet != nil {
+			privateSubnet = p.privateSubnet.SelfLink
+		}
+
+		var privateNetwork pulumi.StringOutput = pulumi.String("").ToStringOutput()
+		if p.privateNetwork != nil {
+			privateNetwork = p.privateNetwork.SelfLink
+		}
+
+		jobDefinitionContents := pulumi.All(image.URI(), p.BatchServiceAccounts[name].ServiceAccount.Email, dbUrl, privateNetwork, privateSubnet).ApplyT(func(args []interface{}) (string, error) {
 			uri := args[0].(string)
 			saEmail := args[1].(string)
+			dbUrl := args[2].(string)
+			privateNetwork := args[3].(string)
+			privateSubnet := args[4].(string)
+
+			envVars := map[string]string{
+				"NITRIC_JOB_NAME": j.Name,
+			}
+
+			if dbUrl != "" {
+				envVars["NITRIC_DATABASE_BASE_URL"] = dbUrl
+			}
+
+			var networkInterfaces *batchpb.AllocationPolicy_NetworkPolicy = nil
+			if p.privateNetwork != nil && p.privateSubnet != nil {
+				networkInterfaces = &batchpb.AllocationPolicy_NetworkPolicy{
+					NetworkInterfaces: []*batchpb.AllocationPolicy_NetworkInterface{
+						{
+							Network:    privateNetwork,
+							Subnetwork: privateSubnet,
+						},
+					},
+				}
+			}
 
 			job := &batchpb.Job{
 				TaskGroups: []*batchpb.TaskGroup{
@@ -136,9 +174,7 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 								},
 							},
 							Environment: &batchpb.Environment{
-								Variables: map[string]string{
-									"NITRIC_JOB_NAME": j.Name,
-								},
+								Variables: envVars,
 							},
 							ComputeResource: &batchpb.ComputeResource{
 								CpuMilli:  int64(j.Requirements.Cpus * 1000),
@@ -154,6 +190,7 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 							"https://www.googleapis.com/auth/cloud-platform",
 						},
 					},
+					Network: networkInterfaces,
 					Instances: []*batchpb.AllocationPolicy_InstancePolicyOrTemplate{
 						{
 							PolicyTemplate: &batchpb.AllocationPolicy_InstancePolicyOrTemplate_Policy{
