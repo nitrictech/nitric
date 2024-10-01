@@ -80,6 +80,7 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.GcpConfig.ProjectId, imageName),
+		RegistryArgs:  p.RegistryArgs,
 		Runtime:       runtime(),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {

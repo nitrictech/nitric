@@ -15,6 +15,6 @@
 package deploy
 
 const (
-	PulumiDockerVersion = "4.4.4"
+	PulumiDockerVersion = "4.5.6"
 	PulumiRandomVersion = "4.14.0"
 )

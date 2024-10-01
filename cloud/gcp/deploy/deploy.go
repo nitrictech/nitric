@@ -67,6 +67,7 @@ type NitricGcpPulumiProvider struct {
 	GcpConfig *common.GcpConfig
 
 	DockerProvider *docker.Provider
+	RegistryArgs   *docker.RegistryArgs
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
@@ -213,6 +214,12 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	a.AuthToken, err = getGCPToken(ctx)
 	if err != nil {
 		return err
+	}
+
+	a.RegistryArgs = &docker.RegistryArgs{
+		Server:   pulumi.String("%s-docker.pkg.dev"),
+		Username: pulumi.String("oauth2accesstoken"),
+		Password: pulumi.String(a.AuthToken.AccessToken),
 	}
 
 	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{

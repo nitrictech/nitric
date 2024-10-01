@@ -31,7 +31,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
-	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 )
@@ -41,26 +40,6 @@ func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId st
 		ForceDelete: pulumi.BoolPtr(true),
 		Tags:        pulumi.ToStringMap(tags.Tags(stackId, name, resources.Service)),
 	}, pulumi.Parent(parent))
-}
-
-func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, repo *ecr.Repository, config *pulumix.NitricPulumiServiceConfig, provider *docker.Provider, runtime provider.RuntimeProvider) (*image.Image, error) {
-	if config.GetImage() == nil {
-		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
-	}
-
-	if config.GetImage().GetUri() == "" {
-		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
-	}
-
-	if config.Type == "" {
-		config.Type = "default"
-	}
-
-	return image.NewImage(ctx, name, &image.ImageArgs{
-		SourceImage:   config.GetImage().GetUri(),
-		RepositoryUrl: repo.RepositoryUrl,
-		Runtime:       runtime(),
-	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}), pulumi.Provider(provider))
 }
 
 func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
@@ -89,7 +68,14 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.AwsConfig)
 	}
 
-	image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
+	image, err := image.NewImage(ctx, name, &image.ImageArgs{
+		SourceImage:   config.GetImage().GetUri(),
+		RepositoryUrl: repo.RepositoryUrl,
+		RegistryArgs:  a.RegistryArgs,
+		Runtime:       runtime(),
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
+
+	// image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
 	if err != nil {
 		return err
 	}

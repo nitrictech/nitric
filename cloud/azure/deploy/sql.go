@@ -53,6 +53,7 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			SourceImage:   config.GetImageUri(),
 			SourceImageID: inspect.ID,
 			RepositoryUrl: repositoryUrl,
+			RegistryArgs:  a.ContainerEnv.RegistryArgs,
 		}, pulumi.Provider(a.ContainerEnv.DockerProvider))
 		if err != nil {
 			return err
@@ -99,8 +100,8 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			},
 			ImageRegistryCredentials: &containerinstance.ImageRegistryCredentialArray{
 				&containerinstance.ImageRegistryCredentialArgs{
-					Username: a.ContainerEnv.RegistryUser.Elem(),
-					Password: a.ContainerEnv.RegistryPass.Elem(),
+					Username: a.ContainerEnv.RegistryArgs.Username,
+					Password: a.ContainerEnv.RegistryArgs.Password,
 					Server:   a.ContainerEnv.Registry.LoginServer,
 				},
 			},

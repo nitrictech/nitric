@@ -48,8 +48,7 @@ type ContainerEnv struct {
 	Name           string
 	DockerProvider *docker.Provider
 	Registry       *containerregistry.Registry
-	RegistryUser   pulumi.StringPtrOutput
-	RegistryPass   pulumi.StringPtrOutput
+	RegistryArgs   *docker.RegistryArgs
 	ManagedEnv     *app.ManagedEnvironment
 	Env            app.EnvironmentVarArray
 	ManagedUser    *managedidentity.UserAssignedIdentity
@@ -175,12 +174,12 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 		})
 	})
 
-	res.RegistryUser = creds.ApplyT(func(arg interface{}) *string {
+	registryUser := creds.ApplyT(func(arg interface{}) *string {
 		cred := arg.(*containerregistry.ListRegistryCredentialsResult)
 		return cred.Username
 	}).(pulumi.StringPtrOutput)
 
-	res.RegistryPass = creds.ApplyT(func(arg interface{}) (*string, error) {
+	registryPass := creds.ApplyT(func(arg interface{}) (*string, error) {
 		cred := arg.(*containerregistry.ListRegistryCredentialsResult)
 
 		if len(cred.Passwords) == 0 || cred.Passwords[0].Value == nil {
@@ -190,12 +189,18 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 		return cred.Passwords[0].Value, nil
 	}).(pulumi.StringPtrOutput)
 
+	res.RegistryArgs = &docker.RegistryArgs{
+		Server:   res.Registry.LoginServer,
+		Username: registryUser,
+		Password: registryPass,
+	}
+
 	res.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
 		RegistryAuth: &docker.ProviderRegistryAuthArray{
 			docker.ProviderRegistryAuthArgs{
 				Address:  res.Registry.LoginServer,
-				Username: res.RegistryUser,
-				Password: res.RegistryPass,
+				Username: registryUser,
+				Password: registryPass,
 			},
 		},
 	})

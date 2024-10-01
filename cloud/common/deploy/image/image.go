@@ -36,11 +36,13 @@ type ImageArgs struct {
 	SourceImage   string
 	Runtime       []byte
 	RepositoryUrl pulumi.StringInput
+	RegistryArgs  *docker.RegistryArgs
 }
 
 type LocalImageArgs struct {
 	SourceImage   string
 	SourceImageID string
+	RegistryArgs  *docker.RegistryArgs
 	RepositoryUrl pulumi.StringInput
 }
 
@@ -48,7 +50,7 @@ type Image struct {
 	pulumi.ResourceState
 
 	Name        string
-	DockerImage *docker.RegistryImage
+	DockerImage *docker.Image
 }
 
 type WrappedBuildInput struct {
@@ -97,7 +99,7 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 		return nil, err
 	}
 
-	image, err := docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
 		ImageName: args.RepositoryUrl,
 		Build: docker.DockerBuildArgs{
 			Context:    pulumi.String(buildContext),
@@ -108,25 +110,26 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 			},
 			Platform: pulumi.String("linux/amd64"),
 		},
-		SkipPush: pulumi.Bool(true),
+		Registry: args.RegistryArgs,
+		SkipPush: pulumi.Bool(false),
 	}, defaultOpts...)
 	if err != nil {
 		return nil, err
 	}
 
-	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
-		Name: image.ImageName,
-		Triggers: pulumi.Map{
-			"hash": image.RepoDigest,
-		},
-	}, defaultOpts...)
-	if err != nil {
-		return nil, err
-	}
+	// res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
+	// 	Name: image.ImageName,
+	// 	Triggers: pulumi.Map{
+	// 		"hash": image.RepoDigest,
+	// 	},
+	// }, defaultOpts...)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":     pulumi.String(res.Name),
-		"imageUri": pulumi.Sprintf("%s@%s", res.DockerImage.Name, res.DockerImage.Sha256Digest),
+		"imageUri": res.DockerImage.RepoDigest,
 	})
 }
 
@@ -200,7 +203,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 		"BASE_IMAGE_ID": sourceImageID,
 	}, imageWrapper.Args)
 
-	image, err := docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
+	res.DockerImage, err = docker.NewImage(ctx, name+"-image", &docker.ImageArgs{
 		ImageName: args.RepositoryUrl,
 		Build: docker.DockerBuildArgs{
 			Context:    pulumi.String(buildContext),
@@ -208,30 +211,31 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 			Args:       buildArgs,
 			Platform:   pulumi.String("linux/amd64"),
 		},
-		SkipPush: pulumi.Bool(true),
+		Registry: args.RegistryArgs,
+		SkipPush: pulumi.Bool(false),
 	}, defaultOpts...)
 	if err != nil {
 		return nil, err
 	}
 
-	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
-		Name: image.ImageName,
-		Triggers: pulumi.Map{
-			"hash": image.RepoDigest,
-		},
-	}, defaultOpts...)
-	if err != nil {
-		return nil, err
-	}
+	// res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
+	// 	Name: image.ImageName,
+	// 	Triggers: pulumi.Map{
+	// 		"hash": image.RepoDigest,
+	// 	},
+	// }, defaultOpts...)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return res, ctx.RegisterResourceOutputs(res, pulumi.Map{
 		"name":     pulumi.String(res.Name),
-		"imageUri": pulumi.Sprintf("%s@%s", res.DockerImage.Name, res.DockerImage.Sha256Digest),
+		"imageUri": res.DockerImage.RepoDigest,
 	})
 }
 
 func (d *Image) URI() pulumi.StringOutput {
-	return pulumi.Sprintf("%s@%s", d.DockerImage.Name, d.DockerImage.Sha256Digest)
+	return d.DockerImage.RepoDigest.Elem() // pulumi.Sprintf("%s@%s", d.DockerImage.Name, d.DockerImage.Sha256Digest)
 }
 
 // Returns the default docker file if telemetry sampling is disabled for this service. Otherwise, will return a wrapped telemetry image.

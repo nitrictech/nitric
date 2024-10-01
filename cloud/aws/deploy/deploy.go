@@ -64,6 +64,7 @@ type NitricAwsPulumiProvider struct {
 	SqlDatabases map[string]*RdsDatabase
 
 	DockerProvider   *docker.Provider
+	RegistryArgs     *docker.RegistryArgs
 	Vpc              *ec2.Vpc
 	VpcAzs           []string
 	VpcSecurityGroup *awsec2.SecurityGroup
@@ -155,6 +156,12 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	a.EcrAuthToken, err = ecr.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenArgs{})
 	if err != nil {
 		return err
+	}
+
+	a.RegistryArgs = &docker.RegistryArgs{
+		Server:   pulumi.String(a.EcrAuthToken.ProxyEndpoint),
+		Username: pulumi.String(a.EcrAuthToken.UserName),
+		Password: pulumi.String(a.EcrAuthToken.Password),
 	}
 
 	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
