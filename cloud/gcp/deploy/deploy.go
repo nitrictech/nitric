@@ -67,8 +67,8 @@ type NitricGcpPulumiProvider struct {
 	StackId   string
 	GcpConfig *common.GcpConfig
 
-	DockerProvider *docker.Provider
-	RegistryArgs   *docker.RegistryArgs
+	DockerProvider    *docker.Provider
+	RegistryArgs      *docker.RegistryArgs
 	ContainerRegistry *artifactregistry.Repository
 
 	DelayQueue      *cloudtasks.Queue
