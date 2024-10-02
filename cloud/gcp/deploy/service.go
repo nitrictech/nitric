@@ -189,22 +189,20 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	// Configuration will still break if the user specifies a 0 GPU count but their account does not support GPUs
 	// only add if requested
-	var maxScaling = unitConfig.CloudRun.MaxInstances
 	var nodeSelector cloudrunv2.ServiceTemplateNodeSelectorPtrInput = nil
 	if unitConfig.CloudRun.Gpus > 0 {
 		nodeSelector = &cloudrunv2.ServiceTemplateNodeSelectorArgs{
 			Accelerator: pulumi.String("nvidia-l4"),
 		}
 		limits["nvidia.com/gpu"] = fmt.Sprintf("%d", unitConfig.CloudRun.Gpus)
-		maxScaling = 1
 	}
 
 	serviceTemplate := cloudrunv2.ServiceTemplateArgs{
 		ServiceAccount:                sa.ServiceAccount.Email,
-		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.Concurrency),
+		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.MaxInstances),
 		Scaling: &cloudrunv2.ServiceTemplateScalingArgs{
 			MinInstanceCount: pulumi.Int(unitConfig.CloudRun.MinInstances),
-			MaxInstanceCount: pulumi.Int(maxScaling),
+			MaxInstanceCount: pulumi.Int(unitConfig.CloudRun.MaxInstances),
 		},
 		Timeout: pulumi.Sprintf("%ds", unitConfig.CloudRun.Timeout),
 		Containers: cloudrunv2.ServiceTemplateContainerArray{
