@@ -40,7 +40,6 @@ type AwsBatchService struct {
 }
 
 func (a *AwsBatchService) SubmitJob(ctx context.Context, request *batchpb.JobSubmitRequest) (*batchpb.JobSubmitResponse, error) {
-	// find and submit a new job
 	jobDefinitionName, err := common.GetJobDefinitionName(a.stackId, request.GetJobName())
 	if err != nil {
 		return nil, err
@@ -57,9 +56,8 @@ func (a *AwsBatchService) SubmitJob(ctx context.Context, request *batchpb.JobSub
 
 	_, err = a.client.SubmitJob(ctx, &awsbatch.SubmitJobInput{
 		JobDefinition: aws.String(jobDefinitionName),
-		// Generate a unique name for the job
-		JobName:  aws.String(fmt.Sprintf("%s-%s", jobName, request.GetJobName())),
-		JobQueue: aws.String(a.jobQueueArn),
+		JobName:       aws.String(fmt.Sprintf("%s-%s", jobName, request.GetJobName())),
+		JobQueue:      aws.String(a.jobQueueArn),
 		ContainerOverrides: &types.ContainerOverrides{
 			Environment: []types.KeyValuePair{
 				{
@@ -95,7 +93,6 @@ func New() (*AwsBatchService, error) {
 	}
 
 	return &AwsBatchService{
-		// TODO: Configure client
 		stackId:     stackId,
 		client:      awsbatch.NewFromConfig(cfg),
 		jobQueueArn: jobQueueArn,
