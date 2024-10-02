@@ -115,7 +115,6 @@ func (a *NitricAwsPulumiProvider) batch(ctx *pulumi.Context) error {
 						"Service": "batch.amazonaws.com"
 					},
 					"Effect": "Allow",
-					"Sid": ""
 				}
 			]
 		}`),
@@ -217,7 +216,6 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 						"Service": "ecs-tasks.amazonaws.com"
 					},
 					"Effect": "Allow",
-					"Sid": ""
 				}
 			]
 		}`),
