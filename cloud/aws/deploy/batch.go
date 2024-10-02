@@ -281,6 +281,14 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 			dbPassword = p.DbMasterPassword.Result
 		}
 
+		if job.Requirements.Cpus == 0 {
+			job.Requirements.Cpus = 1
+		}
+
+		if job.Requirements.Memory == 0 {
+			job.Requirements.Memory = 512
+		}
+
 		containerProperties := pulumi.All(wrappedImage.URI(), p.BatchRoles[name].Arn, dbEndpoint, dbPassword).ApplyT(func(args []interface{}) (string, error) {
 			imageName := args[0].(string)
 			jobRoleArn := args[1].(string)
