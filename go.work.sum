@@ -74,6 +74,7 @@ cloud.google.com/go/analytics v0.25.0/go.mod h1:LZMfjJnKU1GDkvJV16dKnXm7KJJaMZfv
 cloud.google.com/go/apigateway v1.6.1 h1:aBSwCQPcp9rZ0zVEUeJbR623palnqtvxJlUyvzsKGQc=
 cloud.google.com/go/apigateway v1.6.1/go.mod h1:ufAS3wpbRjqfZrzpvLC2oh0MFlpRJm2E/ts25yyqmXA=
 cloud.google.com/go/apigateway v1.6.4/go.mod h1:0EpJlVGH5HwAN4VF4Iec8TAzGN1aQgbxAWGJsnPCGGY=
+cloud.google.com/go/apigateway v1.7.0 h1:KfvzagH2g7O6K/egrXopAbpvsxeDGNf2dbG7F39/4Jk=
 cloud.google.com/go/apigateway v1.7.0/go.mod h1:miZGNhmrC+SFhxjA7ayjKHk1cA+7vsSINp9K+JxKwZI=
 cloud.google.com/go/apigeeconnect v1.4.0 h1:AONoTYJviyv1vS4IkvWzq69gEVdvHx35wKXc+e6wjZQ=
 cloud.google.com/go/apigeeconnect v1.4.0/go.mod h1:kV4NwOKqjvt2JYR0AoIWo2QGfoRtn/pkS3QlHp0Ni04=
@@ -258,6 +259,7 @@ cloud.google.com/go/cloudtasks v1.7.0/go.mod h1:ImsfdYWwlWNJbdgPIIGJWC+gemEGTBK/
 cloud.google.com/go/cloudtasks v1.11.1 h1:zyF35LjQyVQQnWbglmVDbsgOHqkbkaxTeRDisEJsXtE=
 cloud.google.com/go/cloudtasks v1.11.1/go.mod h1:a9udmnou9KO2iulGscKR0qBYjreuX8oHwpmFsKspEvM=
 cloud.google.com/go/cloudtasks v1.12.4/go.mod h1:BEPu0Gtt2dU6FxZHNqqNdGqIG86qyWKBPGnsb7udGY0=
+cloud.google.com/go/cloudtasks v1.13.0 h1:rKVSsQwh0CI68n3RalLoGuW7sOtq2eil2gVZK4Pyi40=
 cloud.google.com/go/cloudtasks v1.13.0/go.mod h1:O1jFRGb1Vm3sN2u/tBdPiVGVTWIsrsbEs3K3N3nNlEU=
 cloud.google.com/go/compute v0.1.0/go.mod h1:GAesmwr110a34z04OlxYkATPBEfVhkymfTBXtfbBFow=
 cloud.google.com/go/compute v1.3.0/go.mod h1:cCZiE1NHEtai4wiufUhW8I8S1JKkAnhnQJWM7YD99wM=
@@ -833,6 +835,7 @@ cloud.google.com/go/pubsub v1.27.1/go.mod h1:hQN39ymbV9geqBnfQq6Xf63yNhUAhv9CZhz
 cloud.google.com/go/pubsub v1.32.0 h1:JOEkgEYBuUTHSyHS4TcqOFuWr+vD6qO/imsFqShUCp4=
 cloud.google.com/go/pubsub v1.32.0/go.mod h1:f+w71I33OMyxf9VpMVcZbnG5KSUkCOUHYpFd5U1GdRc=
 cloud.google.com/go/pubsub v1.33.0/go.mod h1:f+w71I33OMyxf9VpMVcZbnG5KSUkCOUHYpFd5U1GdRc=
+cloud.google.com/go/pubsub v1.42.0 h1:PVTbzorLryFL5ue8esTS2BfehUs0ahyNOY9qcd+HMOs=
 cloud.google.com/go/pubsub v1.42.0/go.mod h1:KADJ6s4MbTwhXmse/50SebEhE4SmUwHi48z3/dHar1Y=
 cloud.google.com/go/pubsublite v1.5.0 h1:iqrD8vp3giTb7hI1q4TQQGj77cj8zzgmMPsTZtLnprM=
 cloud.google.com/go/pubsublite v1.5.0/go.mod h1:xapqNQ1CuLfGi23Yda/9l4bBCKz/wC3KIJ5gKcxveZg=
@@ -1013,7 +1016,6 @@ cloud.google.com/go/storage v1.30.1/go.mod h1:NfxhC0UJE1aXSx7CIIbCf7y9HKT7Biccwk
 cloud.google.com/go/storage v1.35.1/go.mod h1:M6M/3V/D3KpzMTJyPOR/HU6n2Si5QdaXYEsng2xgOs8=
 cloud.google.com/go/storage v1.37.0 h1:WI8CsaFO8Q9KjPVtsZ5Cmi0dXV25zMoX0FklT7c3Jm4=
 cloud.google.com/go/storage v1.37.0/go.mod h1:i34TiT2IhiNDmcj65PqwCjcoUX7Z5pLzS8DEmoiFq1k=
-cloud.google.com/go/storage v1.43.0/go.mod h1:ajvxEa7WmZS1PxvKRq4bq0tFT3vMd502JwstCcYv0Q0=
 cloud.google.com/go/storagetransfer v1.6.0 h1:fUe3OydbbvHcAYp07xY+2UpH4AermGbmnm7qdEj3tGE=
 cloud.google.com/go/storagetransfer v1.6.0/go.mod h1:y77xm4CQV/ZhFZH75PLEXY0ROiS7Gh6pSKrM8dJyg6I=
 cloud.google.com/go/storagetransfer v1.8.0 h1:5T+PM+3ECU3EY2y9Brv0Sf3oka8pKmsCfpQ07+91G9o=
