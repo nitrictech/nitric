@@ -68,7 +68,6 @@ func (a *GcpBatchService) SubmitJob(ctx context.Context, request *batchpb.JobSub
 	jobDefinition.TaskGroups[0].TaskSpec.Environment.Variables["NITRIC_JOB_DATA"] = string(jobData)
 
 	_, err = a.batchClient.CreateJob(ctx, &gcpbatchpb.CreateJobRequest{
-		// TODO: check if this is the correct parent
 		Parent: fmt.Sprintf("projects/%s/locations/%s", a.projectId, a.region),
 		Job:    jobDefinition,
 	})
