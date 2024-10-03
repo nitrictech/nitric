@@ -114,6 +114,9 @@ var gcpActionsMap map[v1.Action][]string = map[v1.Action][]string{
 		"secretmanager.versions.access",
 		"secretmanager.versions.list",
 	},
+	v1.Action_JobSubmit: {
+		"batch.jobs.create",
+	},
 }
 
 var collectionActions []string = nil
@@ -162,6 +165,10 @@ func (a *NitricGcpPulumiProvider) serviceAccountForPrincipal(resource *deploymen
 		if f, ok := a.CloudRunServices[resource.Id.Name]; ok {
 			return f.ServiceAccount, nil
 		}
+	case resourcespb.ResourceType_Batch:
+		if f, ok := a.BatchServiceAccounts[resource.Id.Name]; ok {
+			return f.ServiceAccount, nil
+		}
 	default:
 		return nil, fmt.Errorf("could not find role for principal: %+v", resource)
 	}
@@ -189,6 +196,43 @@ func (p *NitricGcpPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 			memberId := pulumi.Sprintf("serviceAccount:%s", sa.Email)
 
 			switch resource.Id.Type {
+			case v1.ResourceType_Job:
+				// Give read access to the job definition object
+				// TODO: This currently gives access to the entire bucket, we should restrict this to the specific object
+				_, err = gcpstorage.NewBucketIAMMember(ctx, memberName, &gcpstorage.BucketIAMMemberArgs{
+					Bucket: p.JobDefinitionBucket.Name,
+					Member: memberId,
+					Role:   pulumi.String("roles/storage.objectViewer"),
+				}, opts...)
+				if err != nil {
+					return err
+				}
+
+				acct, err := p.GetBatchServiceAccountForJob(resource.Id.Name)
+				if err != nil {
+					return err
+				}
+
+				// Allow the account to act as the delegate (batch) service account
+				_, err = serviceaccount.NewIAMMember(ctx, memberName, &serviceaccount.IAMMemberArgs{
+					Member:           memberId,
+					ServiceAccountId: acct.ServiceAccount.Name,
+					Role:             pulumi.String("roles/iam.serviceAccountUser"),
+				})
+				if err != nil {
+					return err
+				}
+
+				// Give access to the batch job creation
+				_, err = projects.NewIAMMember(ctx, memberName, &projects.IAMMemberArgs{
+					Member:  memberId,
+					Project: pulumi.String(p.GcpConfig.ProjectId),
+					Role:    rolePolicy.Name,
+				}, opts...)
+				if err != nil {
+					return err
+				}
+
 			case v1.ResourceType_Bucket:
 				b := p.Buckets[resource.Id.Name]
 
