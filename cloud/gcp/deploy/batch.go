@@ -49,6 +49,7 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 	image, err := image.NewImage(ctx, fmt.Sprintf("batch-image-%s", name), &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", p.Region, p.GcpConfig.ProjectId, p.ContainerRegistry.Name, imageName),
+		RegistryArgs:  p.RegistryArgs,
 		Runtime:       runtimeProvider(),
 	}, p.WithDefaultResourceOptions(defaultResourceOpts...)...)
 	if err != nil {
