@@ -15,7 +15,10 @@
 package runtime
 
 import (
+	"github.com/nitrictech/nitric/cloud/common/runtime/env"
+	"github.com/nitrictech/nitric/cloud/common/runtime/gateway/jobs"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/api"
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/batch"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/gateway"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/keyvalue"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/queue"
@@ -32,10 +35,16 @@ func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...s
 	keyValuePlugin, _ := keyvalue.New()
 	topicsPlugin, _ := topic.New(resourcesPlugin)
 	storagePlugin, _ := storage.New()
+	batchPlugin, _ := batch.New()
 
 	queuesPlugin, _ := queue.New()
 
 	gatewayPlugin, _ := gateway.New(resourcesPlugin)
+	if env.NITRIC_JOB_NAME.String() != "" {
+		// Disable the gateway plugin if running as a job
+		gatewayPlugin = jobs.NewDefaultBatchGateway()
+	}
+
 	apiPlugin := api.NewGcpApiGatewayProvider(resourcesPlugin)
 
 	sqlPlugin := sql_service.New()
@@ -49,6 +58,7 @@ func NewGcpRuntimeServer(resourcesPlugin resource.GcpResourceResolver, opts ...s
 		server.WithQueuesPlugin(queuesPlugin),
 		server.WithApiPlugin(apiPlugin),
 		server.WithSqlPlugin(sqlPlugin),
+		server.WithBatchPlugin(batchPlugin),
 	}
 
 	// append overrides

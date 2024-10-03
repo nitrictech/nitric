@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -89,6 +90,9 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 		"sqs:GetQueueUrl",
 		"sqs:ListQueueTags",
 	},
+	resourcespb.Action_JobSubmit: {
+		"batch:SubmitJob",
+	},
 }
 
 func actionsToAwsActions(actions []resourcespb.Action) []string {
@@ -130,6 +134,19 @@ func (a *NitricAwsPulumiProvider) arnForResource(resource *deploymentspb.Resourc
 		if w, ok := a.Websockets[resource.Id.Name]; ok {
 			return []interface{}{pulumi.Sprintf("%s/*", w.ExecutionArn)}, nil
 		}
+	case resourcespb.ResourceType_Job:
+		if l, ok := a.JobDefinitions[resource.Id.Name]; ok {
+			// replace the revision with a wildcard
+			// this is because the revision is a unique identifier for the job definition
+			// and we want to allow any revision to be used
+			wildcardRevision := l.Arn.ApplyT(func(arn string) string {
+				arnParts := strings.Split(arn, ":")
+				// join all but the last part
+				return strings.Join(arnParts[:len(arnParts)-1], ":")
+			})
+
+			return []interface{}{wildcardRevision, a.JobQueue.Arn}, nil
+		}
 	default:
 		return nil, fmt.Errorf(
 			"invalid resource type: %s. Did you mean to define it as a principal?", resource.Id.Type)
@@ -142,6 +159,10 @@ func (a *NitricAwsPulumiProvider) roleForPrincipal(resource *deploymentspb.Resou
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Service:
 		if f, ok := a.LambdaRoles[resource.Id.Name]; ok {
+			return f, nil
+		}
+	case resourcespb.ResourceType_Batch:
+		if f, ok := a.BatchRoles[resource.Id.Name]; ok {
 			return f, nil
 		}
 	default:
@@ -174,8 +195,8 @@ func (a *NitricAwsPulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Reso
 
 	for _, princ := range config.Principals {
 		if role, err := a.roleForPrincipal(princ); err == nil {
-			if princ.Id.Type != resourcespb.ResourceType_Service {
-				return fmt.Errorf("invalid principal type: %s. Only services can be principals", princ.Id.Type)
+			if princ.Id.Type != resourcespb.ResourceType_Service && princ.Id.Type != resourcespb.ResourceType_Batch {
+				return fmt.Errorf("invalid principal type: %s. Only services and batches can be principals", princ.Id.Type)
 			}
 
 			principalRoles[princ.Id.Name] = role

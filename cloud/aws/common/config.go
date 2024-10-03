@@ -23,12 +23,20 @@ import (
 )
 
 type AwsApiConfig struct {
-	Domains []string
+	Description string
+	Domains     []string
 }
 
 type AwsImports struct {
 	// A map of nitric names to ARNs
 	Secrets map[string]string
+	Buckets map[string]string
+}
+
+type BatchComputeEnvConfig struct {
+	MinCpus       int      `mapstructure:"min-cpus"`
+	MaxCpus       int      `mapstructure:"max-cpus"`
+	InstanceTypes []string `mapstructure:"instance-types"`
 }
 
 type AwsConfig struct {
@@ -36,6 +44,7 @@ type AwsConfig struct {
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*AwsApiConfig
+	BatchComputeEnvConfig                 *BatchComputeEnvConfig `mapstructure:"batch-compute-env,omitempty"`
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -60,6 +69,12 @@ var defaultLambdaConfig = &AwsLambdaConfig{
 	Memory:                128,
 	Timeout:               15,
 	ProvisionedConcurreny: 0,
+}
+
+var defaultBatchComputeEnvConfig = &BatchComputeEnvConfig{
+	MinCpus:       0,
+	MaxCpus:       32,
+	InstanceTypes: []string{"optimal"},
 }
 
 var defaultAwsConfigItem = AwsConfigItem{
@@ -98,6 +113,16 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	if _, hasDefault := awsConfig.Config["default"]; !hasDefault {
 		awsConfig.Config["default"] = &defaultAwsConfigItem
 		awsConfig.Config["default"].Lambda = defaultLambdaConfig
+	}
+
+	if awsConfig.BatchComputeEnvConfig == nil {
+		awsConfig.BatchComputeEnvConfig = defaultBatchComputeEnvConfig
+	}
+
+	// merge in default values
+	err = mergo.Merge(awsConfig.BatchComputeEnvConfig, defaultBatchComputeEnvConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	for configName, configVal := range awsConfig.Config {

@@ -40,6 +40,9 @@ enum ResourceType {
   ApiSecurityDefinition = 12;
   Queue = 13;
   SqlDatabase = 14;
+  // Batches represent a collection of jobs
+  Batch = 15;
+  Job = 16;
 }
 
 // Unique identifier for a resource within a nitric application.
@@ -61,6 +64,7 @@ message ResourceDeclareRequest {
     ApiSecurityDefinitionResource api_security_definition = 16;
     QueueResource queue = 17;
     SqlDatabaseResource sql_database = 18;
+    JobResource job = 19;
   }
 }
 
@@ -73,6 +77,9 @@ message QueueResource {
 message KeyValueStoreResource {
 }
 message SecretResource {
+}
+
+message JobResource { 
 }
 
 message SqlDatabaseMigrations {
@@ -136,6 +143,9 @@ enum Action {
   // Queue Permissions: 6XX
   QueueEnqueue = 600;
   QueueDequeue = 601;
+
+  // Job Permissions: 7XX
+  JobSubmit = 700;
 }
 
 message ResourceDeclareResponse {

@@ -37,12 +37,12 @@ func ErrorsWithScope(scope string) ScopedErrorFactory {
 
 			detail, err := structpb.NewStruct(errorDetails)
 			if err != nil {
-				return status.Errorf(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
+				return status.Error(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
 			}
 
 			st, err = st.WithDetails(detail)
 			if err != nil {
-				return status.Errorf(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
+				return status.Error(code, fmt.Sprintf("%s - %s", scopedMsg, cause.Error()))
 			}
 		}
 

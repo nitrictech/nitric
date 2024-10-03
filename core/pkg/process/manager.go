@@ -36,8 +36,8 @@ type pMgr struct {
 }
 
 type ProcessManager interface {
-	StartPreProcesses() error
-	StartUserProcess() error
+	StartPreProcesses(...string) error
+	StartUserProcess(...string) error
 	Monitor() error
 	StopAll()
 }
@@ -56,13 +56,13 @@ func NewProcessManager(userCommand []string, preCommands [][]string) ProcessMana
 	return m
 }
 
-func (pm *pMgr) StartUserProcess() error {
-	return pm.userProcess.start()
+func (pm *pMgr) StartUserProcess(env ...string) error {
+	return pm.userProcess.start(env...)
 }
 
-func (pm *pMgr) StartPreProcesses() error {
+func (pm *pMgr) StartPreProcesses(env ...string) error {
 	for i := range pm.preProcesses {
-		if err := pm.preProcesses[i].start(); err != nil {
+		if err := pm.preProcesses[i].start(env...); err != nil {
 			return err
 		}
 	}
@@ -98,16 +98,20 @@ func (pm *pMgr) Monitor() error {
 	return <-pm.monitorErrChan
 }
 
-func (p *process) start() error {
+func (p *process) start(env ...string) error {
 	if len(p.Command) == 0 {
 		logger.Debug("No Command Specified, Skipping...")
 
 		return nil
 	}
 
+	allEnv := append([]string{}, os.Environ()...)
+	allEnv = append(allEnv, env...)
+
 	p.cmd = exec.Command(p.Command[0], p.Command[1:]...) //#nosec G204 -- This is by design inputs are determined at compile time
 	p.cmd.Stdout = os.Stdout
 	p.cmd.Stderr = os.Stderr
+	p.cmd.Env = allEnv
 
 	logger.Debugf("Starting: %s", p.Command[0])
 

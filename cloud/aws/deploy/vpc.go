@@ -56,7 +56,7 @@ func (a *NitricAwsPulumiProvider) vpc(ctx *pulumi.Context) error {
 		return err
 	}
 
-	a.VpcSecurityGroup, err = awsec2.NewSecurityGroup(ctx, "nitric-db-sg", &awsec2.SecurityGroupArgs{
+	a.RdsSecurityGroup, err = awsec2.NewSecurityGroup(ctx, "nitric-db-sg", &awsec2.SecurityGroupArgs{
 		VpcId: a.Vpc.VpcId,
 		// Allow only incoming postgres SQL connections
 		Ingress: awsec2.SecurityGroupIngressArray{
@@ -83,6 +83,39 @@ func (a *NitricAwsPulumiProvider) vpc(ctx *pulumi.Context) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func allVpcSubnetIds(vpc *ec2.Vpc) pulumi.StringArrayOutput {
+	return pulumi.All(vpc.PrivateSubnetIds, vpc.PublicSubnetIds).ApplyT(func(args []interface{}) []string {
+		subnets := []string{}
+		privateSubnets := args[0].([]string)
+		publicSubnets := args[1].([]string)
+
+		subnets = append(subnets, privateSubnets...)
+		subnets = append(subnets, publicSubnets...)
+
+		return subnets
+	}).(pulumi.StringArrayOutput)
+}
+
+// Apply rules to VPC security groups allowing them to mutually communicate
+func (a *NitricAwsPulumiProvider) applyVpcRules(ctx *pulumi.Context) error {
+	// Allow the database security group to communicate with the Batch security group
+	if a.RdsSecurityGroup != nil && a.BatchSecurityGroup != nil {
+		_, err := awsec2.NewSecurityGroupRule(ctx, "nitric-db-sg-to-batch-sg", &awsec2.SecurityGroupRuleArgs{
+			SecurityGroupId:       a.RdsSecurityGroup.ID(),
+			SourceSecurityGroupId: a.BatchSecurityGroup.ID(),
+			FromPort:              pulumi.Int(0),
+			ToPort:                pulumi.Int(0),
+			Protocol:              pulumi.String("-1"),
+			Type:                  pulumi.String("ingress"),
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -1,0 +1,96 @@
+syntax = "proto3";
+package nitric.proto.batch.v1;
+
+import "google/protobuf/struct.proto";
+
+// protoc plugin options for code generation
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/batch/v1;batchpb";
+option java_package = "io.nitric.proto.batch.v1";
+option java_multiple_files = true;
+option java_outer_classname = "BatchService";
+option php_namespace = "Nitric\\Proto\\Batch\\V1";
+option csharp_namespace = "Nitric.Proto.Batch.v1";
+
+// Service for processing jobs
+service Job {
+  rpc HandleJob(stream ClientMessage) returns (stream ServerMessage);
+}
+
+// Service for submitting jobs to be processed
+service Batch {
+  rpc SubmitJob(JobSubmitRequest) returns (JobSubmitResponse);
+}
+
+message ClientMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // Register a handler for a job
+    RegistrationRequest registration_request = 2;
+
+    // Handle a job submission
+    JobResponse job_response = 3;
+  }
+}
+
+message JobRequest {
+  string job_name = 1;
+
+  JobData data = 2;
+}
+
+message JobData {
+  oneof data {
+    google.protobuf.Struct struct = 1;
+  }
+}
+
+message JobResponse {
+  // Mark if the job was successfully processed
+  bool success = 1;
+}
+
+message RegistrationRequest {
+  string job_name = 1;
+
+  // Register with default requirements
+  JobResourceRequirements requirements = 2;
+}
+
+message RegistrationResponse {
+}
+
+message JobResourceRequirements {
+  // The number of CPUs to allocate for the job
+  float cpus = 1;
+  // The amount of memory to allocate for the job
+  int64 memory = 2;
+  // The number of GPUs to allocate for the job
+  int64 gpus = 3;
+}
+
+// ServerMessage is the message sent from the nitric server to the service
+message ServerMessage {
+  // globally unique ID of the request/response pair
+  string id = 1;
+
+  oneof content {
+    // 
+    RegistrationResponse registration_response = 2;
+
+    // Request to a job handler
+    JobRequest job_request = 3;
+  }
+}
+
+message JobSubmitRequest {
+  // The name of the job that should handle the data
+  string job_name = 1;
+
+  // The data to be processed by the job
+  JobData data = 2;
+}
+
+message JobSubmitResponse {
+}

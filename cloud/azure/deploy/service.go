@@ -166,6 +166,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   service.GetImage().Uri,
 		RepositoryUrl: repositoryUrl,
+		RegistryArgs:  p.ContainerEnv.RegistryArgs,
 		Runtime:       runtime(),
 	}, opts...)
 	if err != nil {
@@ -319,8 +320,8 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 			},
 			Registries: app.RegistryCredentialsArray{
 				app.RegistryCredentialsArgs{
-					Server:            p.ContainerEnv.Registry.LoginServer,
-					Username:          p.ContainerEnv.RegistryUser,
+					Server:            p.ContainerEnv.RegistryArgs.Server,
+					Username:          p.ContainerEnv.RegistryArgs.Username,
 					PasswordSecretRef: pulumi.String("pwd"),
 				},
 			},
@@ -333,7 +334,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 			Secrets: app.SecretArray{
 				app.SecretArgs{
 					Name:  pulumi.String("pwd"),
-					Value: p.ContainerEnv.RegistryPass,
+					Value: p.ContainerEnv.RegistryArgs.Password,
 				},
 				app.SecretArgs{
 					Name:  pulumi.String("client-id"),

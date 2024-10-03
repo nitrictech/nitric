@@ -35,6 +35,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/apigateway"
+	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/artifactregistry"
 	workerpool "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudbuild"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/compute"
@@ -66,7 +67,9 @@ type NitricGcpPulumiProvider struct {
 	StackId   string
 	GcpConfig *common.GcpConfig
 
-	DockerProvider *docker.Provider
+	DockerProvider    *docker.Provider
+	RegistryArgs      *docker.RegistryArgs
+	ContainerRegistry *artifactregistry.Repository
 
 	DelayQueue      *cloudtasks.Queue
 	AuthToken       *oauth2.Token
@@ -74,6 +77,9 @@ type NitricGcpPulumiProvider struct {
 
 	SecretManagerClient *gcpsecretmanager.Client
 
+	JobDefinitionBucket    *storage.Bucket
+	JobDefinitions         map[string]*storage.BucketObject
+	JobBatchMap            map[string]string
 	Project                *Project
 	ApiGateways            map[string]*apigateway.Gateway
 	HttpProxies            map[string]*apigateway.Gateway
@@ -85,6 +91,7 @@ type NitricGcpPulumiProvider struct {
 	Secrets                map[string]*secretmanager.Secret
 	DatabaseMigrationBuild map[string]*CloudBuild
 
+	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
 	cloudBuildWorkerPool *workerpool.WorkerPool
@@ -121,7 +128,7 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 
 	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	a.GcpConfig, err = common.ConfigFromAttributes(attributes)
@@ -215,6 +222,12 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return err
 	}
 
+	a.RegistryArgs = &docker.RegistryArgs{
+		Server:   pulumi.String("%s-docker.pkg.dev"),
+		Username: pulumi.String("oauth2accesstoken"),
+		Password: pulumi.String(a.AuthToken.AccessToken),
+	}
+
 	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
 		RegistryAuth: &docker.ProviderRegistryAuthArray{
 			docker.ProviderRegistryAuthArgs{
@@ -228,6 +241,15 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 				Password: pulumi.String(a.AuthToken.AccessToken),
 			},
 		},
+	})
+	if err != nil {
+		return err
+	}
+
+	a.ContainerRegistry, err = artifactregistry.NewRepository(ctx, fmt.Sprintf("%s-services", a.StackId), &artifactregistry.RepositoryArgs{
+		Location:     pulumi.String(a.Region),
+		RepositoryId: pulumi.Sprintf("%s-services", a.StackId),
+		Format:       pulumi.String("DOCKER"),
 	})
 	if err != nil {
 		return err
@@ -279,7 +301,38 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
+	batchResources := lo.Filter(resources, func(res *pulumix.NitricPulumiResource[any], idx int) bool {
+		_, ok := res.Config.(*deploymentspb.Resource_Batch)
+		return ok
+	})
+
+	for _, res := range batchResources {
+		jobs := res.Config.(*deploymentspb.Resource_Batch).Batch.Jobs
+		for _, job := range jobs {
+			a.JobBatchMap[job.Name] = res.Id.Name
+		}
+	}
+
+	if len(batchResources) > 0 {
+		// Create a bucket to store job definitions
+		a.JobDefinitionBucket, err = storage.NewBucket(ctx, "batch-jobs", &storage.BucketArgs{
+			Location: pulumi.String(a.Region),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (a *NitricGcpPulumiProvider) GetBatchServiceAccountForJob(jobName string) (*GcpIamServiceAccount, error) {
+	acct, ok := a.BatchServiceAccounts[a.JobBatchMap[jobName]]
+	if !ok {
+		return nil, fmt.Errorf("No service account found for job: %s", jobName)
+	}
+
+	return acct, nil
 }
 
 func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
@@ -376,6 +429,9 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 
 func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 	return &NitricGcpPulumiProvider{
+		JobBatchMap:            make(map[string]string),
+		BatchServiceAccounts:   make(map[string]*GcpIamServiceAccount),
+		JobDefinitions:         make(map[string]*storage.BucketObject),
 		HttpProxies:            make(map[string]*apigateway.Gateway),
 		ApiGateways:            make(map[string]*apigateway.Gateway),
 		CloudRunServices:       make(map[string]*NitricCloudRunService),

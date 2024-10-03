@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/batch"
 	aws_gateway "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/keyvalue"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/queue"
@@ -25,6 +26,9 @@ import (
 	aws_storage "github.com/nitrictech/nitric/cloud/aws/runtime/storage"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/topic"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
+	"github.com/nitrictech/nitric/cloud/common/runtime/env"
+	"github.com/nitrictech/nitric/cloud/common/runtime/gateway/jobs"
+	"github.com/nitrictech/nitric/core/pkg/gateway"
 	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
@@ -33,16 +37,22 @@ func NewAwsRuntimeServer(resolver resource.AwsResourceResolver, opts ...server.S
 	keyValuePlugin, _ := keyvalue.New(resolver)
 	topicsPlugin, _ := topic.New(resolver)
 	storagePlugin, _ := aws_storage.New(resolver)
+	batchPlugin, _ := batch.New()
 
 	websocketPlugin, _ := websocket.NewAwsApiGatewayWebsocket(resolver)
 	queuesPlugin, _ := queue.New(resolver)
 
-	gatewayPlugin := aws_gateway.New(resolver)
-	apiPlugin := api.NewAwsApiGatewayProvider(resolver)
+	var gatewayPlugin gateway.GatewayService = aws_gateway.New(resolver)
+	if env.NITRIC_JOB_NAME.String() != "" {
+		// swap out the gateway if we're executing a job
+		gatewayPlugin = jobs.NewDefaultBatchGateway()
+	}
 
+	apiPlugin := api.NewAwsApiGatewayProvider(resolver)
 	sqlPlugin := sql_service.NewRdsSqlService()
 
 	defaultAwsOpts := []server.ServerOption{
+		server.WithBatchPlugin(batchPlugin),
 		server.WithKeyValuePlugin(keyValuePlugin),
 		server.WithSecretManagerPlugin(secretPlugin),
 		server.WithGatewayPlugin(gatewayPlugin),

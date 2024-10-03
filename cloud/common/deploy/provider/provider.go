@@ -60,6 +60,8 @@ type NitricPulumiProvider interface {
 	KeyValueStore(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.KeyValueStore) error
 	// SqlDatabase - Deploy a SQL Database
 	SqlDatabase(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.SqlDatabase) error
+	// Job - Deploy a Job
+	Batch(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Batch, runtimeProvider RuntimeProvider) error
 
 	// Post - Called after all resources have been created, before the Pulumi Context is concluded
 	Post(ctx *pulumi.Context) error
@@ -83,6 +85,7 @@ func just(all []*deploymentspb.Resource, only resourcespb.ResourceType) []*deplo
 func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploymentspb.Resource {
 	typeOrder := []resourcespb.ResourceType{
 		resourcespb.ResourceType_SqlDatabase,
+		resourcespb.ResourceType_Batch,
 		resourcespb.ResourceType_Service,
 		resourcespb.ResourceType_Secret,
 		resourcespb.ResourceType_Queue,

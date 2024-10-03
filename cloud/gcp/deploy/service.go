@@ -79,7 +79,8 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
-		RepositoryUrl: pulumi.Sprintf("gcr.io/%s/%s", p.GcpConfig.ProjectId, imageName),
+		RepositoryUrl: pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", p.Region, p.GcpConfig.ProjectId, p.ContainerRegistry.Name, imageName),
+		RegistryArgs:  p.RegistryArgs,
 		Runtime:       runtime(),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
@@ -143,6 +144,10 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			Value: pulumi.String(p.StackId),
 		},
 		cloudrunv2.ServiceTemplateContainerEnvArgs{
+			Name:  pulumi.String("GOOGLE_PROJECT_ID"),
+			Value: pulumi.String(p.GcpConfig.ProjectId),
+		},
+		cloudrunv2.ServiceTemplateContainerEnvArgs{
 			Name:  pulumi.String("SERVICE_ACCOUNT_EMAIL"),
 			Value: sa.ServiceAccount.Email,
 		},
@@ -154,6 +159,13 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			Name:  pulumi.String("NITRIC_HTTP_PROXY_PORT"),
 			Value: pulumi.String(fmt.Sprint(3000)),
 		},
+	}
+
+	if p.JobDefinitionBucket != nil {
+		env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{
+			Name:  pulumi.String("NITRIC_JOBS_BUCKET_NAME"),
+			Value: p.JobDefinitionBucket.Name,
+		})
 	}
 
 	env = append(env, cloudrunv2.ServiceTemplateContainerEnvArgs{

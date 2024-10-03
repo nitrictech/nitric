@@ -67,6 +67,8 @@ var requiredServices = []string{
 	"vpcaccess.googleapis.com",
 	// Enable Cloud Build API
 	"cloudbuild.googleapis.com",
+	// Enable Batch API
+	"batch.googleapis.com",
 }
 
 // Creates a new GCP Project

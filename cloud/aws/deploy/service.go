@@ -31,7 +31,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	awslambda "github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
-	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 )
@@ -41,26 +40,6 @@ func createEcrRepository(ctx *pulumi.Context, parent pulumi.Resource, stackId st
 		ForceDelete: pulumi.BoolPtr(true),
 		Tags:        pulumi.ToStringMap(tags.Tags(stackId, name, resources.Service)),
 	}, pulumi.Parent(parent))
-}
-
-func createImage(ctx *pulumi.Context, parent pulumi.Resource, name string, repo *ecr.Repository, config *pulumix.NitricPulumiServiceConfig, provider *docker.Provider, runtime provider.RuntimeProvider) (*image.Image, error) {
-	if config.GetImage() == nil {
-		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
-	}
-
-	if config.GetImage().GetUri() == "" {
-		return nil, fmt.Errorf("aws provider can only deploy service with an image source")
-	}
-
-	if config.Type == "" {
-		config.Type = "default"
-	}
-
-	return image.NewImage(ctx, name, &image.ImageArgs{
-		SourceImage:   config.GetImage().GetUri(),
-		RepositoryUrl: repo.RepositoryUrl,
-		Runtime:       runtime(),
-	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}), pulumi.Provider(provider))
 }
 
 func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
@@ -89,7 +68,13 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		return fmt.Errorf("could not find config for type %s in %+v", config.Type, a.AwsConfig)
 	}
 
-	image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
+	image, err := image.NewImage(ctx, name, &image.ImageArgs{
+		SourceImage:   config.GetImage().GetUri(),
+		RepositoryUrl: repo.RepositoryUrl,
+		RegistryArgs:  a.RegistryArgs,
+		Runtime:       runtime(),
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
+	// image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
 	if err != nil {
 		return err
 	}
@@ -197,11 +182,17 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		envVars[k] = v
 	}
 
+	if a.JobQueue != nil {
+		envVars["NITRIC_JOB_QUEUE_ARN"] = a.JobQueue.Arn
+	}
+
 	if a.DatabaseCluster != nil {
 		// Include the base database cluster URI for the runtime to resolve databases based on their name
 		envVars["NITRIC_DATABASE_BASE_URL"] = pulumi.Sprintf("postgres://%s:%s@%s:%s", "nitric", a.DbMasterPassword.Result,
 			a.DatabaseCluster.Endpoint, "5432")
 
+		// Include database migrations to ensure a pulumi dependency is created for the lambda
+		//	the migrations need to complete before the lambda is deployed
 		sqlDatabasesMigrated := lo.Map(lo.Values(a.SqlDatabases), func(item *RdsDatabase, idx int) interface{} {
 			return item.Migrated
 		})
@@ -232,7 +223,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	} else if a.Vpc != nil {
 		vpcConfig = &awslambda.FunctionVpcConfigArgs{
 			SubnetIds:        a.Vpc.PrivateSubnetIds,
-			SecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+			SecurityGroupIds: pulumi.StringArray{a.RdsSecurityGroup.ID()},
 			// VpcId:            a.Vpc.VpcId,
 		}
 	}

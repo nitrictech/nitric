@@ -16,6 +16,7 @@ package topic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -110,7 +111,7 @@ func (s *EventGridEventService) Publish(ctx context.Context, req *topicpb.TopicP
 		return nil, newErr(
 			codes.Internal,
 			"returned non 200 status code",
-			fmt.Errorf(result.Status),
+			errors.New(result.Status),
 		)
 	}
 

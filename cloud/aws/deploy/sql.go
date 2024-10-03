@@ -96,7 +96,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 			MaxCapacity: pulumi.Float64(1),
 			MinCapacity: pulumi.Float64(0.5),
 		},
-		VpcSecurityGroupIds: pulumi.StringArray{a.VpcSecurityGroup.ID()},
+		VpcSecurityGroupIds: pulumi.StringArray{a.RdsSecurityGroup.ID()},
 		DbSubnetGroupName:   dbSubnetGroup.Name,
 		SkipFinalSnapshot:   pulumi.Bool(true),
 		Tags:                pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster", "DatabaseCluster")),

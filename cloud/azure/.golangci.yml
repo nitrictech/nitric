@@ -1,8 +1,6 @@
 run:
   timeout: "5m"
-  skip-files:
-  - tools/tools.go
-  go: 1.18
+  go: 1.21
 
 linters:
   disable-all: true
@@ -21,6 +19,8 @@ linters:
   - errorlint
 
 issues:
+  exclude-files:
+  - tools/tools.go
   max-issues-per-linter: 0
   max-same-issues: 0
 

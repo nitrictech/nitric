@@ -34,6 +34,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
@@ -59,14 +60,18 @@ type NitricAwsPulumiProvider struct {
 	*deploy.CommonStackDetails
 
 	StackId   string
-	AwsConfig *AwsConfig
+	AwsConfig *common.AwsConfig
 
 	SqlDatabases map[string]*RdsDatabase
 
-	DockerProvider   *docker.Provider
-	Vpc              *ec2.Vpc
-	VpcAzs           []string
-	VpcSecurityGroup *awsec2.SecurityGroup
+	DockerProvider     *docker.Provider
+	RegistryArgs       *docker.RegistryArgs
+	Vpc                *ec2.Vpc
+	VpcAzs             []string
+	RdsSecurityGroup   *awsec2.SecurityGroup
+	BatchSecurityGroup *awsec2.SecurityGroup
+	ComputeEnvironment *batch.ComputeEnvironment
+	JobQueue           *batch.JobQueue
 	// A codebuild job for creating the requested databases for a single database cluster
 	DbMasterPassword      *random.RandomPassword
 	CreateDatabaseProject *codebuild.Project
@@ -78,6 +83,7 @@ type NitricAwsPulumiProvider struct {
 	EcrAuthToken          *ecr.GetAuthorizationTokenResult
 	Lambdas               map[string]*lambda.Function
 	LambdaRoles           map[string]*iam.Role
+	BatchRoles            map[string]*iam.Role
 	HttpProxies           map[string]*apigatewayv2.Api
 	Apis                  map[string]*apigatewayv2.Api
 	Secrets               map[string]*secretsmanager.Secret
@@ -87,6 +93,7 @@ type NitricAwsPulumiProvider struct {
 	Queues                map[string]*sqs.Queue
 	Websockets            map[string]*apigatewayv2.Api
 	KeyValueStores        map[string]*dynamodb.Table
+	JobDefinitions        map[string]*batch.JobDefinition
 
 	provider.NitricDefaultOrder
 
@@ -111,10 +118,10 @@ func (a *NitricAwsPulumiProvider) Init(attributes map[string]interface{}) error 
 
 	a.CommonStackDetails, err = deploy.CommonStackDetailsFromAttributes(attributes)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	a.AwsConfig, err = ConfigFromAttributes(attributes)
+	a.AwsConfig, err = common.ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
@@ -155,6 +162,12 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	a.EcrAuthToken, err = ecr.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenArgs{})
 	if err != nil {
 		return err
+	}
+
+	a.RegistryArgs = &docker.RegistryArgs{
+		Server:   pulumi.String(a.EcrAuthToken.ProxyEndpoint),
+		Username: pulumi.String(a.EcrAuthToken.UserName),
+		Password: pulumi.String(a.EcrAuthToken.Password),
 	}
 
 	a.DockerProvider, err = docker.NewProvider(ctx, "docker-auth-provider", &docker.ProviderArgs{
@@ -200,11 +213,22 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
+	batches := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_Batch
+	})
+
+	if len(batches) > 0 {
+		err := a.batch(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 
 func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
-	return nil
+	return a.applyVpcRules(ctx)
 }
 
 func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
@@ -260,6 +284,7 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 	return &NitricAwsPulumiProvider{
 		Lambdas:               make(map[string]*lambda.Function),
 		LambdaRoles:           make(map[string]*iam.Role),
+		BatchRoles:            make(map[string]*iam.Role),
 		Apis:                  make(map[string]*apigatewayv2.Api),
 		HttpProxies:           make(map[string]*apigatewayv2.Api),
 		Secrets:               make(map[string]*secretsmanager.Secret),
@@ -271,5 +296,6 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		KeyValueStores:        make(map[string]*dynamodb.Table),
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
 		SqlDatabases:          make(map[string]*RdsDatabase),
+		JobDefinitions:        make(map[string]*batch.JobDefinition),
 	}
 }

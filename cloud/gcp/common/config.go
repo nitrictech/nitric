@@ -38,6 +38,11 @@ type GcpImports struct {
 	Secrets map[string]string
 }
 
+type GcpBatchCompute struct {
+	// Accelerator to use for the batch compute resources when GPUs are required
+	AcceleratorType string `mapstructure:"accelerator-type"`
+}
+
 type GcpCloudRunConfig struct {
 	Cpus         float64
 	Memory       int
@@ -56,8 +61,9 @@ type GcpConfig struct {
 	Apis                                  map[string]*GcpApiConfig
 	Databases                             map[string]*GcpDatabaseConfig `mapstructure:"databases"`
 	Import                                GcpImports
-	ScheduleTimezone                      string `mapstructure:"schedule-timezone"`
-	ProjectId                             string `mapstructure:"gcp-project-id"`
+	ScheduleTimezone                      string           `mapstructure:"schedule-timezone"`
+	ProjectId                             string           `mapstructure:"gcp-project-id"`
+	GcpBatchCompute                       *GcpBatchCompute `mapstructure:"batch-compute"`
 	Refresh                               bool
 }
 
@@ -68,6 +74,10 @@ var defaultCloudRunConfig = &GcpCloudRunConfig{
 	MinInstances: 0,
 	MaxInstances: 80,
 	Concurrency:  300,
+}
+
+var defaultGcpBatchCompute = &GcpBatchCompute{
+	AcceleratorType: "nvidia-tesla-t4",
 }
 
 var defaultGcpConfigItem = GcpConfigItem{
@@ -101,6 +111,16 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*GcpConfig, error)
 
 	if gcpConfig.Config == nil {
 		gcpConfig.Config = map[string]*GcpConfigItem{}
+	}
+
+	if gcpConfig.GcpBatchCompute == nil {
+		gcpConfig.GcpBatchCompute = defaultGcpBatchCompute
+	}
+
+	// Add omitted values from default configs where needed.
+	err = mergo.Merge(gcpConfig.GcpBatchCompute, defaultGcpBatchCompute)
+	if err != nil {
+		return nil, err
 	}
 
 	// if no default then set provider level defaults
