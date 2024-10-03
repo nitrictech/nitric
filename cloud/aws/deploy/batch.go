@@ -206,7 +206,7 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	p.BatchRoles[name], err = iam.NewRole(ctx, "BatchJobRole", &iam.RoleArgs{
+	p.BatchRoles[name], err = iam.NewRole(ctx, fmt.Sprintf("%s-BatchRole", name), &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(`{
 			"Version": "2012-10-17",
 			"Statement": [
