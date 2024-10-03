@@ -6,6 +6,7 @@ toolchain go1.23.0
 
 require (
 	cloud.google.com/go/apigateway v1.7.0
+	cloud.google.com/go/batch v1.10.0
 	cloud.google.com/go/cloudbuild v1.17.0
 	cloud.google.com/go/cloudtasks v1.13.0
 	cloud.google.com/go/firestore v1.16.0
