@@ -1,9 +1,5 @@
 run:
   timeout: "5m"
-  skip-files:
-    - tools/tools.go
-  skip-dirs:
-    - deploytf/generated
   go: 1.21
 
 linters:
@@ -23,6 +19,9 @@ linters:
     - errorlint
 
 issues:
+  exclude-dirs:
+    - deploytf/generated
+    - tools
   exclude-files:
     - tools/tools.go
   max-issues-per-linter: 0
