@@ -111,6 +111,14 @@ func (p *NitricGcpPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 			}
 		}
 
+		if j.Requirements.Cpus <= 0 {
+			j.Requirements.Cpus = 1
+		}
+
+		if j.Requirements.Memory <= 0 {
+			j.Requirements.Memory = 1024
+		}
+
 		containerOptions := []string{}
 		if j.Requirements.Gpus > 0 {
 			// TODO: Add support for additional accelerator types
