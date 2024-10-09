@@ -33,10 +33,6 @@ type AwsImports struct {
 	Buckets map[string]string
 }
 
-type EcsBlockDevice struct {
-	Dev
-}
-
 type EcsLaunchTemplate struct {
 	BlockDeviceMappings []struct {
 		DeviceName string `mapstructure:"device-name,omitempty"`
