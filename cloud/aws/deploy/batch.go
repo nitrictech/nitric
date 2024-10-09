@@ -138,22 +138,6 @@ func (a *NitricAwsPulumiProvider) batch(ctx *pulumi.Context) error {
 		return err
 	}
 
-	launchTemplate, err := awsec2.NewLaunchTemplate(ctx, "batch-launch-template", &awsec2.LaunchTemplateArgs{
-		BlockDeviceMappings: awsec2.LaunchTemplateBlockDeviceMappingArray{
-			&awsec2.LaunchTemplateBlockDeviceMappingArgs{
-				DeviceName: pulumi.String("/dev/xvda"),
-				Ebs: &awsec2.LaunchTemplateBlockDeviceMappingEbsArgs{
-					DeleteOnTermination: pulumi.String("true"),
-					VolumeSize:          pulumi.Int(50),
-					VolumeType:          pulumi.String("gp2"),
-				},
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	computeResourceOptions := &batch.ComputeEnvironmentComputeResourcesArgs{
 		MinVcpus:         pulumi.Int(a.AwsConfig.BatchComputeEnvConfig.MinCpus),
 		MaxVcpus:         pulumi.Int(a.AwsConfig.BatchComputeEnvConfig.MaxCpus),
@@ -163,9 +147,31 @@ func (a *NitricAwsPulumiProvider) batch(ctx *pulumi.Context) error {
 		Subnets:          subnets,
 		SecurityGroupIds: pulumi.StringArray{a.BatchSecurityGroup.ID()},
 		InstanceRole:     instanceProfile.Arn,
-		LaunchTemplate: &batch.ComputeEnvironmentComputeResourcesLaunchTemplateArgs{
+	}
+
+	if a.AwsConfig.BatchComputeEnvConfig.LaunchTemplate != nil {
+		blockDevicemappings := awsec2.LaunchTemplateBlockDeviceMappingArray{}
+		for _, bd := range a.AwsConfig.BatchComputeEnvConfig.LaunchTemplate.BlockDeviceMappings {
+			blockDevicemappings = append(blockDevicemappings, &awsec2.LaunchTemplateBlockDeviceMappingArgs{
+				DeviceName: pulumi.String(bd.DeviceName),
+				Ebs: &awsec2.LaunchTemplateBlockDeviceMappingEbsArgs{
+					DeleteOnTermination: pulumi.String(bd.Ebs.DeleteOnTermination),
+					VolumeSize:          pulumi.Int(bd.Ebs.VolumeSize),
+					VolumeType:          pulumi.String(bd.Ebs.VolumeType),
+				},
+			})
+		}
+
+		launchTemplate, err := awsec2.NewLaunchTemplate(ctx, "batch-launch-template", &awsec2.LaunchTemplateArgs{
+			BlockDeviceMappings: blockDevicemappings,
+		})
+		if err != nil {
+			return err
+		}
+
+		computeResourceOptions.LaunchTemplate = &batch.ComputeEnvironmentComputeResourcesLaunchTemplateArgs{
 			LaunchTemplateName: launchTemplate.Name,
-		},
+		}
 	}
 
 	a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{

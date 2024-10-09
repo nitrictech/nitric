@@ -33,10 +33,26 @@ type AwsImports struct {
 	Buckets map[string]string
 }
 
+type EcsBlockDevice struct {
+	Dev
+}
+
+type EcsLaunchTemplate struct {
+	BlockDeviceMappings []struct {
+		DeviceName string `mapstructure:"device-name,omitempty"`
+		Ebs        struct {
+			DeleteOnTermination string `mapstructure:"delete-on-termination,omitempty"`
+			VolumeSize          int    `mapstructure:"volume-size,omitempty"`
+			VolumeType          string `mapstructure:"volume-type,omitempty"`
+		} `mapstructure:"ebs,omitempty"`
+	} `mapstructure:"block-device-mappings,omitempty"`
+}
+
 type BatchComputeEnvConfig struct {
-	MinCpus       int      `mapstructure:"min-cpus"`
-	MaxCpus       int      `mapstructure:"max-cpus"`
-	InstanceTypes []string `mapstructure:"instance-types"`
+	MinCpus        int                `mapstructure:"min-cpus"`
+	MaxCpus        int                `mapstructure:"max-cpus"`
+	InstanceTypes  []string           `mapstructure:"instance-types"`
+	LaunchTemplate *EcsLaunchTemplate `mapstructure:"launch-template,omitempty"`
 }
 
 type AwsConfig struct {
@@ -72,9 +88,10 @@ var defaultLambdaConfig = &AwsLambdaConfig{
 }
 
 var defaultBatchComputeEnvConfig = &BatchComputeEnvConfig{
-	MinCpus:       0,
-	MaxCpus:       32,
-	InstanceTypes: []string{"optimal"},
+	MinCpus:        0,
+	MaxCpus:        32,
+	InstanceTypes:  []string{"optimal"},
+	LaunchTemplate: nil,
 }
 
 var defaultAwsConfigItem = AwsConfigItem{
