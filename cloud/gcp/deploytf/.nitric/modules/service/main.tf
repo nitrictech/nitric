@@ -65,6 +65,7 @@ resource "google_cloud_run_v2_service" "service" {
   project  = var.project_id
   # set launch_stage to BETA if gpus set otherwise GA
   launch_stage = var.gpus > 0 ? "BETA" : "GA"
+  deletion_protection = false
 
   template {
     scaling {

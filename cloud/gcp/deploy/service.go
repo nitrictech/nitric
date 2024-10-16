@@ -267,11 +267,12 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	res.Service, err = cloudrunv2.NewService(ctx, gcpServiceName, &cloudrunv2.ServiceArgs{
-		Location:    pulumi.String(p.Region),
-		Project:     pulumi.String(p.GcpConfig.ProjectId),
-		LaunchStage: pulumi.String(launchStage),
-		Template:    serviceTemplate,
-		Ingress:     pulumi.String("INGRESS_TRAFFIC_ALL"),
+		Location:           pulumi.String(p.Region),
+		Project:            pulumi.String(p.GcpConfig.ProjectId),
+		LaunchStage:        pulumi.String(launchStage),
+		DeletionProtection: pulumi.Bool(false),
+		Template:           serviceTemplate,
+		Ingress:            pulumi.String("INGRESS_TRAFFIC_ALL"),
 		Traffics: cloudrunv2.ServiceTrafficArray{
 			&cloudrunv2.ServiceTrafficArgs{
 				Percent: pulumi.Int(100),
