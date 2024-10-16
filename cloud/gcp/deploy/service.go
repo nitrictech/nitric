@@ -199,6 +199,8 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		"memory": fmt.Sprintf("%dMi", unitConfig.CloudRun.Memory),
 	}
 
+	annotations := map[string]string{}
+
 	// Configuration will still break if the user specifies a 0 GPU count but their account does not support GPUs
 	// only add if requested
 	var nodeSelector cloudrunv2.ServiceTemplateNodeSelectorPtrInput = nil
@@ -207,10 +209,13 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 			Accelerator: pulumi.String("nvidia-l4"),
 		}
 		limits["nvidia.com/gpu"] = fmt.Sprintf("%d", unitConfig.CloudRun.Gpus)
+		// launch stage is beta for GPU support
+		annotations["run.googleapis.com/launch-stage"] = "BETA"
 	}
 
 	serviceTemplate := cloudrunv2.ServiceTemplateArgs{
 		ServiceAccount:                sa.ServiceAccount.Email,
+		Annotations:                   pulumi.ToStringMap(annotations),
 		MaxInstanceRequestConcurrency: pulumi.Int(unitConfig.CloudRun.MaxInstances),
 		Scaling: &cloudrunv2.ServiceTemplateScalingArgs{
 			MinInstanceCount: pulumi.Int(unitConfig.CloudRun.MinInstances),
