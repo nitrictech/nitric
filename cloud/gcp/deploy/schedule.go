@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudscheduler"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/cloudscheduler"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
