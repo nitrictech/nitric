@@ -38,9 +38,9 @@ variable "cpus" {
 }
 
 variable "gpus" {
-    description = "The amount of cpus to allocate to the CloudRun service"
+    description = "The amount of gpus to allocate to the CloudRun service"
     type        = number
-    default     = 1
+    default     = 0
 }
 
 variable "min_instances" {

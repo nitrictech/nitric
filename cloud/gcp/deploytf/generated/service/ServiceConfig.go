@@ -31,7 +31,7 @@ type ServiceConfig struct {
 	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
 	// The amount of cpus to allocate to the CloudRun service 1.
 	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
-	// The amount of cpus to allocate to the CloudRun service 1.
+	// The amount of gpus to allocate to the CloudRun service.
 	Gpus *float64 `field:"optional" json:"gpus" yaml:"gpus"`
 	// The maximum number of instances to run 10.
 	MaxInstances *float64 `field:"optional" json:"maxInstances" yaml:"maxInstances"`
