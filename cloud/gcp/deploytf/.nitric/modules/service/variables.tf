@@ -43,6 +43,18 @@ variable "gpus" {
     default     = 1
 }
 
+variable "min_instances" {
+    description = "The minimum number of instances to run"
+    type        = number
+    default     = 0
+}
+
+variable "max_instances" {
+    description = "The maximum number of instances to run"
+    type        = number
+    default     = 10
+}
+
 variable "container_concurrency" {
     description = "The number of concurrent requests the CloudRun service can handle"
     type        = number

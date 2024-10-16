@@ -33,8 +33,12 @@ type ServiceConfig struct {
 	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
 	// The amount of cpus to allocate to the CloudRun service 1.
 	Gpus *float64 `field:"optional" json:"gpus" yaml:"gpus"`
+	// The maximum number of instances to run 10.
+	MaxInstances *float64 `field:"optional" json:"maxInstances" yaml:"maxInstances"`
 	// The amount of memory to allocate to the CloudRun service in MB 512.
 	MemoryMb *float64 `field:"optional" json:"memoryMb" yaml:"memoryMb"`
+	// The minimum number of instances to run.
+	MinInstances *float64 `field:"optional" json:"minInstances" yaml:"minInstances"`
 	// The timeout for the CloudRun service in seconds 10.
 	TimeoutSeconds *float64 `field:"optional" json:"timeoutSeconds" yaml:"timeoutSeconds"`
 }

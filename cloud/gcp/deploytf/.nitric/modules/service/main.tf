@@ -63,11 +63,13 @@ resource "google_cloud_run_v2_service" "service" {
 
   location = var.region
   project  = var.project_id
+  # set launch_stage to BETA if gpus set otherwise GA
+  launch_stage = var.gpus > 0 ? "BETA" : "GA"
 
   template {
     scaling {
-      max_instance_count = "100"
-      min_instance_count = "0"
+      max_instance_count = var.min_instances
+      min_instance_count = var.max_instances
     }
     containers {
       image = "${local.service_image_url}@${docker_registry_image.push.sha256_digest}"
@@ -109,8 +111,6 @@ resource "google_cloud_run_v2_service" "service" {
           }
         }
     }
-
-
     
     service_account = google_service_account.service_account.email
     timeout = var.timeout_seconds

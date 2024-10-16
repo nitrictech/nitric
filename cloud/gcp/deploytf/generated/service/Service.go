@@ -44,8 +44,12 @@ type Service interface {
 	Image() *string
 	SetImage(val *string)
 	InvokerServiceAccountEmailOutput() *string
+	MaxInstances() *float64
+	SetMaxInstances(val *float64)
 	MemoryMb() *float64
 	SetMemoryMb(val *float64)
+	MinInstances() *float64
+	SetMinInstances(val *float64)
 	// The tree node.
 	Node() constructs.Node
 	ProjectId() *string
@@ -242,11 +246,31 @@ func (j *jsiiProxy_Service) InvokerServiceAccountEmailOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) MaxInstances() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"maxInstances",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) MemoryMb() *float64 {
 	var returns *float64
 	_jsii_.Get(
 		j,
 		"memoryMb",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) MinInstances() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"minInstances",
 		&returns,
 	)
 	return returns
@@ -493,10 +517,26 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	)
 }
 
+func (j *jsiiProxy_Service)SetMaxInstances(val *float64) {
+	_jsii_.Set(
+		j,
+		"maxInstances",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Service)SetMemoryMb(val *float64) {
 	_jsii_.Set(
 		j,
 		"memoryMb",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetMinInstances(val *float64) {
+	_jsii_.Set(
+		j,
+		"minInstances",
 		val,
 	)
 }
