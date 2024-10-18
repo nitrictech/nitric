@@ -149,6 +149,31 @@ func (a *NitricAwsPulumiProvider) batch(ctx *pulumi.Context) error {
 		InstanceRole:     instanceProfile.Arn,
 	}
 
+	if a.AwsConfig.BatchComputeEnvConfig.LaunchTemplate != nil {
+		blockDevicemappings := awsec2.LaunchTemplateBlockDeviceMappingArray{}
+		for _, bd := range a.AwsConfig.BatchComputeEnvConfig.LaunchTemplate.BlockDeviceMappings {
+			blockDevicemappings = append(blockDevicemappings, &awsec2.LaunchTemplateBlockDeviceMappingArgs{
+				DeviceName: pulumi.String(bd.DeviceName),
+				Ebs: &awsec2.LaunchTemplateBlockDeviceMappingEbsArgs{
+					DeleteOnTermination: pulumi.String(bd.Ebs.DeleteOnTermination),
+					VolumeSize:          pulumi.Int(bd.Ebs.VolumeSize),
+					VolumeType:          pulumi.String(bd.Ebs.VolumeType),
+				},
+			})
+		}
+
+		launchTemplate, err := awsec2.NewLaunchTemplate(ctx, "batch-launch-template", &awsec2.LaunchTemplateArgs{
+			BlockDeviceMappings: blockDevicemappings,
+		})
+		if err != nil {
+			return err
+		}
+
+		computeResourceOptions.LaunchTemplate = &batch.ComputeEnvironmentComputeResourcesLaunchTemplateArgs{
+			LaunchTemplateName: launchTemplate.Name,
+		}
+	}
+
 	a.ComputeEnvironment, err = batch.NewComputeEnvironment(ctx, "compute-environment", &batch.ComputeEnvironmentArgs{
 		ComputeEnvironmentName: pulumi.Sprintf("%s-compute-environment", a.StackId),
 		ComputeResources:       computeResourceOptions,
