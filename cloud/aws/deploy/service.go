@@ -250,15 +250,16 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		// This appears to be because the local image ends up with multiple repositories and the wrong one is selected.
 		// XXX: Reverted change for the above comment as lambda image deployments were not rolling forward (under tag latest)
 		// causing intermittent deployment and runtime failures
-		ImageUri:    image.URI(),
-		MemorySize:  pulumi.IntPtr(typeConfig.Lambda.Memory),
-		Timeout:     pulumi.IntPtr(typeConfig.Lambda.Timeout),
-		Publish:     pulumi.BoolPtr(true),
-		PackageType: pulumi.String("Image"),
-		Role:        a.LambdaRoles[name].Arn,
-		Tags:        pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Service)),
-		VpcConfig:   vpcConfig,
-		Environment: awslambda.FunctionEnvironmentArgs{Variables: envVars},
+		ImageUri:         image.URI(),
+		MemorySize:       pulumi.IntPtr(typeConfig.Lambda.Memory),
+		Timeout:          pulumi.IntPtr(typeConfig.Lambda.Timeout),
+		EphemeralStorage: awslambda.FunctionEphemeralStorageArgs{Size: pulumi.IntPtr(typeConfig.Lambda.EphemeralStorage)},
+		Publish:          pulumi.BoolPtr(true),
+		PackageType:      pulumi.String("Image"),
+		Role:             a.LambdaRoles[name].Arn,
+		Tags:             pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Service)),
+		VpcConfig:        vpcConfig,
+		Environment:      awslambda.FunctionEnvironmentArgs{Variables: envVars},
 		// since we only rely on the repository to determine the ImageUri, the image must be added as a dependency to avoid a race.
 	}, append(dependsOn, opts...)...)
 	if err != nil {
