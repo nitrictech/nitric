@@ -34,7 +34,7 @@ variable "ephemeral_storage" {
 variable "timeout" {
   description = "The timeout for the lambda function"
   type        = number
-  default     = 10
+  default     = 15
 }
 
 variable "subnet_ids" {

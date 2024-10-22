@@ -90,14 +90,15 @@ resource "aws_lambda_function" "function" {
   role          = aws_iam_role.role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
-  # TODO: Make configurable
   timeout = var.timeout
+  memory_size = var.memory
   ephemeral_storage {
     size = var.ephemeral_storage
   }
   environment {
     variables = var.environment
   }
+
 
   dynamic "vpc_config" {
     for_each = length(var.subnet_ids) > 0 ? ["1"] : []

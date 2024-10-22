@@ -29,7 +29,7 @@ type ServiceConfig struct {
 	SecurityGroupIds *[]*string `field:"optional" json:"securityGroupIds" yaml:"securityGroupIds"`
 	// The subnet ids to use for the aws lambda function.
 	SubnetIds *[]*string `field:"optional" json:"subnetIds" yaml:"subnetIds"`
-	// The timeout for the lambda function 10.
+	// The timeout for the lambda function 15.
 	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
 }
 
