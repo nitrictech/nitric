@@ -21,15 +21,15 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// The amount of ephemeral storage to allocate to the lambda function 512.
+	// The amount of ephemeral storage to allocate to the lambda function in MB.
 	EphemeralStorage *float64 `field:"optional" json:"ephemeralStorage" yaml:"ephemeralStorage"`
-	// The amount of memory to allocate to the lambda function 128.
+	// The amount of memory to allocate to the lambda function in MB.
 	Memory *float64 `field:"optional" json:"memory" yaml:"memory"`
 	// The security group ids to use for the aws lambda function.
 	SecurityGroupIds *[]*string `field:"optional" json:"securityGroupIds" yaml:"securityGroupIds"`
 	// The subnet ids to use for the aws lambda function.
 	SubnetIds *[]*string `field:"optional" json:"subnetIds" yaml:"subnetIds"`
-	// The timeout for the lambda function 15.
+	// The timeout for the lambda function in seconds.
 	Timeout *float64 `field:"optional" json:"timeout" yaml:"timeout"`
 }
 
