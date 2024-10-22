@@ -251,10 +251,10 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 		// XXX: Reverted change for the above comment as lambda image deployments were not rolling forward (under tag latest)
 		// causing intermittent deployment and runtime failures
 		ImageUri:         image.URI(),
-		MemorySize:       pulumi.IntPtr(typeConfig.Lambda.Memory),
-		Timeout:          pulumi.IntPtr(typeConfig.Lambda.Timeout),
-		EphemeralStorage: awslambda.FunctionEphemeralStorageArgs{Size: pulumi.IntPtr(typeConfig.Lambda.EphemeralStorage)},
-		Publish:          pulumi.BoolPtr(true),
+		MemorySize:       pulumi.Int(typeConfig.Lambda.Memory),
+		Timeout:          pulumi.Int(typeConfig.Lambda.Timeout),
+		EphemeralStorage: awslambda.FunctionEphemeralStorageArgs{Size: pulumi.Int(typeConfig.Lambda.EphemeralStorage)},
+		Publish:          pulumi.Bool(true),
 		PackageType:      pulumi.String("Image"),
 		Role:             a.LambdaRoles[name].Arn,
 		Tags:             pulumi.ToStringMap(tags.Tags(a.StackId, name, resources.Service)),
