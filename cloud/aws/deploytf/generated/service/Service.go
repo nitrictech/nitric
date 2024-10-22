@@ -24,6 +24,8 @@ type Service interface {
 	SetDependsOn(val *[]*string)
 	Environment() *map[string]*string
 	SetEnvironment(val *map[string]*string)
+	EphemeralStorage() *float64
+	SetEphemeralStorage(val *float64)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -129,6 +131,16 @@ func (j *jsiiProxy_Service) Environment() *map[string]*string {
 	_jsii_.Get(
 		j,
 		"environment",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) EphemeralStorage() *float64 {
+	var returns *float64
+	_jsii_.Get(
+		j,
+		"ephemeralStorage",
 		&returns,
 	)
 	return returns
@@ -387,6 +399,14 @@ func (j *jsiiProxy_Service)SetEnvironment(val *map[string]*string) {
 	_jsii_.Set(
 		j,
 		"environment",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetEphemeralStorage(val *float64) {
+	_jsii_.Set(
+		j,
+		"ephemeralStorage",
 		val,
 	)
 }

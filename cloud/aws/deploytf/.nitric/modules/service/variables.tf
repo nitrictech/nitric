@@ -25,6 +25,12 @@ variable "memory" {
   default     = 128
 }
 
+variable "ephemeral_storage" {
+  description = "The amount of ephemeral storage to allocate to the lambda function"
+  type        = number
+  default     = 512
+}
+
 variable "timeout" {
   description = "The timeout for the lambda function"
   type        = number

@@ -91,7 +91,10 @@ resource "aws_lambda_function" "function" {
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
   # TODO: Make configurable
-  timeout = 30
+  timeout = var.timeout
+  ephemeral_storage {
+    size = var.ephemeral_storage
+  }
   environment {
     variables = var.environment
   }

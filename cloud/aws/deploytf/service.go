@@ -64,12 +64,13 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 	}
 
 	serviceConfig := &service.ServiceConfig{
-		ServiceName: jsii.String(name),
-		Image:       jsii.String(imageId),
-		Environment: &jsiiEnv,
-		StackId:     a.Stack.StackIdOutput(),
-		Memory:      jsii.Number(typeConfig.Lambda.Memory),
-		Timeout:     jsii.Number(typeConfig.Lambda.Timeout),
+		ServiceName:      jsii.String(name),
+		Image:            jsii.String(imageId),
+		Environment:      &jsiiEnv,
+		StackId:          a.Stack.StackIdOutput(),
+		Memory:           jsii.Number(typeConfig.Lambda.Memory),
+		Timeout:          jsii.Number(typeConfig.Lambda.Timeout),
+		EphemeralStorage: jsii.Number(typeConfig.Lambda.EphemeralStorage),
 	}
 
 	if a.Vpc != nil && a.Rds != nil {

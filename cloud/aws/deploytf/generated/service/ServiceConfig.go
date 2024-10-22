@@ -21,6 +21,8 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The amount of ephemeral storage to allocate to the lambda function 512.
+	EphemeralStorage *float64 `field:"optional" json:"ephemeralStorage" yaml:"ephemeralStorage"`
 	// The amount of memory to allocate to the lambda function 128.
 	Memory *float64 `field:"optional" json:"memory" yaml:"memory"`
 	// The security group ids to use for the aws lambda function.
