@@ -73,6 +73,7 @@ type AwsLambdaVpcConfig struct {
 type AwsLambdaConfig struct {
 	Memory                int
 	Timeout               int
+	EphemeralStorage      int                 `mapstructure:"ephemeral-storage"`
 	ProvisionedConcurreny int                 `mapstructure:"provisioned-concurrency"`
 	Vpc                   *AwsLambdaVpcConfig `mapstructure:"vpc,omitempty"`
 }
@@ -80,6 +81,7 @@ type AwsLambdaConfig struct {
 var defaultLambdaConfig = &AwsLambdaConfig{
 	Memory:                128,
 	Timeout:               15,
+	EphemeralStorage:      512,
 	ProvisionedConcurreny: 0,
 }
 
