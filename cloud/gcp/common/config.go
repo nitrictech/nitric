@@ -46,6 +46,7 @@ type GcpBatchCompute struct {
 type GcpCloudRunConfig struct {
 	Cpus         float64
 	Memory       int
+	Gpus         int
 	Timeout      int
 	MinInstances int `mapstructure:"min-instances"`
 	MaxInstances int `mapstructure:"max-instances"`
@@ -70,6 +71,7 @@ type GcpConfig struct {
 var defaultCloudRunConfig = &GcpCloudRunConfig{
 	Cpus:         1,
 	Memory:       512,
+	Gpus:         0,
 	Timeout:      300,
 	MinInstances: 0,
 	MaxInstances: 80,
