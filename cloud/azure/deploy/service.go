@@ -320,11 +320,6 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		return err
 	}
 
-	// containerAppId, err := random.NewRandomId(ctx, fmt.Sprintf("%s-id", name), &random.RandomIdArgs{
-	// 	ByteLength: pulumi.Int(4),
-
-	// 	Prefix: pulumi.String(appName),
-	// })
 	containerAppName := pulumi.Sprintf("%s%s", appName, containerAppId.Result)
 
 	res.App, err = app.NewContainerApp(ctx, fmt.Sprintf("%s-app", name), &app.ContainerAppArgs{
