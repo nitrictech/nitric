@@ -485,7 +485,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	a.privateNetwork, err = compute.NewNetwork(ctx, "nitric-db-private-network", &compute.NetworkArgs{
-		// Name:                  pulumi.String("nitric-db-private-network"),
 		Project:               pulumi.String(a.GcpConfig.ProjectId),
 		AutoCreateSubnetworks: pulumi.Bool(false),
 	})
@@ -494,7 +493,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	a.privateSubnet, err = compute.NewSubnetwork(ctx, "nitric-db-subnetwork", &compute.SubnetworkArgs{
-		Name:        pulumi.String("nitric-db-subnetwork"),
 		IpCidrRange: pulumi.String("10.0.0.0/26"),
 		Region:      pulumi.String(a.Region),
 		Project:     pulumi.String(a.GcpConfig.ProjectId),
@@ -512,7 +510,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	privateIpRange, err := compute.NewGlobalAddress(ctx, "nitric-db-ip-range", &compute.GlobalAddressArgs{
-		Name:         pulumi.String("nitric-db-ip-range"),
 		Project:      pulumi.String(a.GcpConfig.ProjectId),
 		Purpose:      pulumi.String("VPC_PEERING"),
 		AddressType:  pulumi.String("INTERNAL"),
@@ -529,7 +526,8 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		ReservedPeeringRanges: pulumi.StringArray{
 			privateIpRange.Name,
 		},
-	})
+		DeletionPolicy: pulumi.String("ABANDON"),
+	}, pulumi.DependsOn([]pulumi.Resource{a.privateSubnet, privateIpRange}))
 	if err != nil {
 		return err
 	}

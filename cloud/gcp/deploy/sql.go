@@ -106,10 +106,10 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 						Connector: a.vpcConnector.SelfLink,
 						Egress:    pulumi.String("PRIVATE_RANGES_ONLY"),
 						// TODO: Re-enable when pulumi network interface support is fixed for tear down
-						// NetworkInterfaces: &cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArray{
-						// 	&cloudrunv2.ServiceTemplateVpcAccessNetworkInterfaceArgs{
-						// 		Network:    p.privateNetwork.ID(),
-						// 		Subnetwork: p.privateSubnet.ID(),
+						// NetworkInterfaces: cloudrunv2.JobTemplateTemplateVpcAccessNetworkInterfaceArray{
+						// 	&cloudrunv2.JobTemplateTemplateVpcAccessNetworkInterfaceArgs{
+						// 		Network:    a.privateNetwork.ID(),
+						// 		Subnetwork: a.privateSubnet.ID(),
 						// 	},
 						// },
 					},
