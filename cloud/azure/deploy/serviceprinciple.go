@@ -53,8 +53,8 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 		Owners: pulumi.StringArray{
 			pulumi.String(current.ObjectId),
 		},
-		AppRoles: azuread.ApplicationAppRoleArray{
-			&azuread.ApplicationAppRoleArgs{
+		AppRoles: azuread.ApplicationAppRoleTypeArray{
+			&azuread.ApplicationAppRoleTypeArgs{
 				AllowedMemberTypes: pulumi.StringArray{
 					pulumi.String("Application"),
 				},
@@ -71,10 +71,8 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 		return nil, err
 	}
 
-	res.ClientID = app.ApplicationId
-
 	sp, err := azuread.NewServicePrincipal(ctx, ResourceName(ctx, name, ADServicePrincipalRT), &azuread.ServicePrincipalArgs{
-		ApplicationId: app.ApplicationId,
+		ClientId: app.ClientId,
 		Owners: pulumi.StringArray{
 			pulumi.String(current.ObjectId),
 		},
