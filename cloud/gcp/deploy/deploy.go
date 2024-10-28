@@ -546,51 +546,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		return err
 	}
 
-	// metricUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
-	// 	Input: "cloudbuild.googleapis.com/private_pools",
-	// }, nil)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// regionUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
-	// 	Input: "/project/region",
-	// }, nil)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// workerPoolQuota, err := serviceusage.NewConsumerQuotaOverride(ctx, "worker-pool-quota", &serviceusage.ConsumerQuotaOverrideArgs{
-	// 	Project:       pulumi.String(a.GcpConfig.ProjectId),
-	// 	Service:       pulumi.String("cloudbuild.googleapis.com"),
-	// 	Metric:        pulumi.String(metricUrlEncode.Result),
-	// 	Limit:         pulumi.String(regionUrlEncode.Result),
-	// 	OverrideValue: pulumi.String("1"),
-	// 	Force:         pulumi.Bool(true),
-	// 	Dimensions: pulumi.StringMap{
-	// 		"region": pulumi.String(a.Region),
-	// 	},
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// a.cloudBuildWorkerPool, err = workerpool.NewWorkerPool(ctx, "cloud-build-worker-pool", &workerpool.WorkerPoolArgs{
-	// 	Name:     pulumi.String("cloud-build-worker-pool"),
-	// 	Location: pulumi.String(a.Region),
-	// 	WorkerConfig: &workerpool.WorkerPoolWorkerConfigArgs{
-	// 		DiskSizeGb:  pulumi.Int(100),
-	// 		MachineType: pulumi.String("e2-medium"),
-	// 	},
-	// 	NetworkConfig: &workerpool.WorkerPoolNetworkConfigArgs{
-	// 		PeeredNetwork: a.privateNetwork.ID(),
-	// 		// PeeredNetworkIpRange: pulumi.String("/29"),
-	// 	},
-	// }, pulumi.DependsOn([]pulumi.Resource{privateVpcConnection, workerPoolQuota}))
-	// if err != nil {
-	// 	return err
-	// }
-
 	// generate a db cluster random password
 	a.dbMasterPassword, err = random.NewRandomPassword(ctx, "nitric-db-master-password", &random.RandomPasswordArgs{
 		Length:  pulumi.Int(16),

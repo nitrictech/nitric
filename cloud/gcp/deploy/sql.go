@@ -101,9 +101,6 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 			StartExecutionToken: pulumi.String("start-once-created"),
 			DeletionProtection:  pulumi.Bool(false),
 			Template: &cloudrunv2.JobTemplateArgs{
-				// Annotations: pulumi.ToStringMapOutput(
-				// 	map[string]pulumi.StringOutput{"run.googleapis.com/cloudsql-instances": a.masterDb.ConnectionName},
-				// ),
 				Template: &cloudrunv2.JobTemplateTemplateArgs{
 					VpcAccess: &cloudrunv2.JobTemplateTemplateVpcAccessArgs{
 						Connector: a.vpcConnector.SelfLink,
