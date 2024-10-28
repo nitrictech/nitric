@@ -83,6 +83,7 @@ func NewServicePrincipal(ctx *pulumi.Context, name string, args *ServicePrincipa
 
 	res.TenantID = sp.ApplicationTenantId
 	res.ServicePrincipalId = pulumi.StringOutput(sp.ID())
+	res.ClientID = app.ClientId
 
 	_, err = azuread.NewAppRoleAssignment(ctx, name+"sub-role", &azuread.AppRoleAssignmentArgs{
 		AppRoleId:         appRoleId,
