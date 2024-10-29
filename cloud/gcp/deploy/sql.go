@@ -98,7 +98,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 		a.DatabaseMigrationBuild[name], err = cloudrunv2.NewJob(ctx, name+"-migration", &cloudrunv2.JobArgs{
 			Location:            pulumi.String(a.Region),
-			StartExecutionToken: pulumi.String("start-once-created"),
+			StartExecutionToken: image.Sha256Digest,
 			DeletionProtection:  pulumi.Bool(false),
 			Template: &cloudrunv2.JobTemplateArgs{
 				Template: &cloudrunv2.JobTemplateTemplateArgs{
