@@ -404,6 +404,9 @@ func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
 func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
 	outputs := []interface{}{}
 
+	// Add Resource Group output as a link to the Azure Portal
+	outputs = append(outputs, pulumi.Sprintf("Resource Group:\n──────────────\n%s\n", pulumi.Sprintf("https://portal.azure.com/#@%s/resource/subscriptions/%s/resourceGroups/%s/overview", a.ClientConfig.TenantId, a.ClientConfig.SubscriptionId, a.ResourceGroup.Name)))
+
 	// Add APIs outputs
 	if len(a.Apis) > 0 {
 		outputs = append(outputs, pulumi.Sprintf("API Endpoints:\n──────────────"))
