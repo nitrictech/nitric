@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	_ "embed"
@@ -72,6 +73,7 @@ type NitricAwsPulumiProvider struct {
 	BatchSecurityGroup *awsec2.SecurityGroup
 	ComputeEnvironment *batch.ComputeEnvironment
 	JobQueue           *batch.JobQueue
+	ResourceGroup      *resourcegroups.Group
 	// A codebuild job for creating the requested databases for a single database cluster
 	DbMasterPassword      *random.RandomPassword
 	CreateDatabaseProject *codebuild.Project
@@ -184,7 +186,7 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	}
 
 	// Create AWS Resource groups with our tags
-	_, err = resourcegroups.NewGroup(ctx, "stack-resource-group", &resourcegroups.GroupArgs{
+	a.ResourceGroup, err = resourcegroups.NewGroup(ctx, "stack-resource-group", &resourcegroups.GroupArgs{
 		Name:        pulumi.String(a.FullStackName),
 		Description: pulumi.Sprintf("All deployed resources for the %s nitric stack", a.FullStackName),
 		ResourceQuery: &resourcegroups.GroupResourceQueryArgs{
@@ -233,6 +235,15 @@ func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
 
 func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
 	outputs := []interface{}{}
+
+	urlEncodedRgArn := a.ResourceGroup.Arn.ApplyT(func(arn string) string {
+		// URL encode the ARN
+		return url.QueryEscape(arn)
+	})
+
+	// Get a link to this stacks resource group in the AWS console
+	outputs = append(outputs, pulumi.Sprintf("Deployed Resources:\n──────────────"))
+	outputs = append(outputs, pulumi.Sprintf("https://%s.console.aws.amazon.com/resource-groups/group/%s\n", a.Region, urlEncodedRgArn))
 
 	// Add APIs outputs
 	if len(a.Apis) > 0 {
