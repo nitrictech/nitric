@@ -34,9 +34,9 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
-	"github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/artifactregistry"
-	workerpool "github.com/pulumi/pulumi-gcp/sdk/v6/go/gcp/cloudbuild"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/apigateway"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/artifactregistry"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/cloudrunv2"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/cloudtasks"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/compute"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/firestore"
@@ -45,12 +45,10 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/secretmanager"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/servicenetworking"
-	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/serviceusage"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/sql"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/vpcaccess"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
-	"github.com/pulumi/pulumi-std/sdk/go/std"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
@@ -89,12 +87,11 @@ type NitricGcpPulumiProvider struct {
 	Queues                 map[string]*pubsub.Topic
 	QueueSubscriptions     map[string]*pubsub.Subscription
 	Secrets                map[string]*secretmanager.Secret
-	DatabaseMigrationBuild map[string]*CloudBuild
+	DatabaseMigrationBuild map[string]*cloudrunv2.Job
 
 	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
-	cloudBuildWorkerPool *workerpool.WorkerPool
 	privateNetwork       *compute.Network
 	privateSubnet        *compute.Subnetwork
 	vpcConnector         *vpcaccess.Connector
@@ -104,7 +101,7 @@ type NitricGcpPulumiProvider struct {
 
 var _ provider.NitricPulumiProvider = (*NitricGcpPulumiProvider)(nil)
 
-const pulumiGcpVersion = "6.67.1"
+const pulumiGcpVersion = "8.6.0"
 
 func (a *NitricGcpPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
@@ -440,7 +437,7 @@ func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 		Queues:                 make(map[string]*pubsub.Topic),
 		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
 		Secrets:                make(map[string]*secretmanager.Secret),
-		DatabaseMigrationBuild: make(map[string]*CloudBuild),
+		DatabaseMigrationBuild: make(map[string]*cloudrunv2.Job),
 	}
 }
 
@@ -488,7 +485,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	a.privateNetwork, err = compute.NewNetwork(ctx, "nitric-db-private-network", &compute.NetworkArgs{
-		Name:                  pulumi.String("nitric-db-private-network"),
 		Project:               pulumi.String(a.GcpConfig.ProjectId),
 		AutoCreateSubnetworks: pulumi.Bool(false),
 	})
@@ -497,7 +493,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	a.privateSubnet, err = compute.NewSubnetwork(ctx, "nitric-db-subnetwork", &compute.SubnetworkArgs{
-		Name:        pulumi.String("nitric-db-subnetwork"),
 		IpCidrRange: pulumi.String("10.0.0.0/26"),
 		Region:      pulumi.String(a.Region),
 		Project:     pulumi.String(a.GcpConfig.ProjectId),
@@ -515,7 +510,6 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	}
 
 	privateIpRange, err := compute.NewGlobalAddress(ctx, "nitric-db-ip-range", &compute.GlobalAddressArgs{
-		Name:         pulumi.String("nitric-db-ip-range"),
 		Project:      pulumi.String(a.GcpConfig.ProjectId),
 		Purpose:      pulumi.String("VPC_PEERING"),
 		AddressType:  pulumi.String("INTERNAL"),
@@ -532,7 +526,8 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 		ReservedPeeringRanges: pulumi.StringArray{
 			privateIpRange.Name,
 		},
-	})
+		DeletionPolicy: pulumi.String("ABANDON"),
+	}, pulumi.DependsOn([]pulumi.Resource{a.privateSubnet, privateIpRange}))
 	if err != nil {
 		return err
 	}
@@ -540,54 +535,11 @@ func (a *NitricGcpPulumiProvider) createCloudSQLDatabase(ctx *pulumi.Context) er
 	// Create an explicit VPC connector for the Google Cloud Run VPC connections
 	// TODO: Remove this in favor of direct VPC egress when fixed
 	a.vpcConnector, err = vpcaccess.NewConnector(ctx, "db-vpc-connector", &vpcaccess.ConnectorArgs{
-		IpCidrRange: pulumi.String("10.8.0.0/28"),
-		Network:     a.privateNetwork.ID(),
+		IpCidrRange:  pulumi.String("10.8.0.0/28"),
+		Network:      a.privateNetwork.ID(),
+		MaxInstances: pulumi.Int(3),
+		MinInstances: pulumi.Int(2),
 	})
-	if err != nil {
-		return err
-	}
-
-	metricUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
-		Input: "cloudbuild.googleapis.com/private_pools",
-	}, nil)
-	if err != nil {
-		return err
-	}
-
-	regionUrlEncode, err := std.Urlencode(ctx, &std.UrlencodeArgs{
-		Input: "/project/region",
-	}, nil)
-	if err != nil {
-		return err
-	}
-
-	workerPoolQuota, err := serviceusage.NewConsumerQuotaOverride(ctx, "worker-pool-quota", &serviceusage.ConsumerQuotaOverrideArgs{
-		Project:       pulumi.String(a.GcpConfig.ProjectId),
-		Service:       pulumi.String("cloudbuild.googleapis.com"),
-		Metric:        pulumi.String(metricUrlEncode.Result),
-		Limit:         pulumi.String(regionUrlEncode.Result),
-		OverrideValue: pulumi.String("1"),
-		Force:         pulumi.Bool(true),
-		Dimensions: pulumi.StringMap{
-			"region": pulumi.String(a.Region),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	a.cloudBuildWorkerPool, err = workerpool.NewWorkerPool(ctx, "cloud-build-worker-pool", &workerpool.WorkerPoolArgs{
-		Name:     pulumi.String("cloud-build-worker-pool"),
-		Location: pulumi.String(a.Region),
-		WorkerConfig: &workerpool.WorkerPoolWorkerConfigArgs{
-			DiskSizeGb:  pulumi.Int(100),
-			MachineType: pulumi.String("e2-medium"),
-		},
-		NetworkConfig: &workerpool.WorkerPoolNetworkConfigArgs{
-			PeeredNetwork: a.privateNetwork.ID(),
-			// PeeredNetworkIpRange: pulumi.String("/29"),
-		},
-	}, pulumi.DependsOn([]pulumi.Resource{privateVpcConnection, workerPoolQuota}))
 	if err != nil {
 		return err
 	}

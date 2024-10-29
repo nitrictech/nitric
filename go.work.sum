@@ -246,6 +246,8 @@ cloud.google.com/go/cloudbuild v1.9.0/go.mod h1:qK1d7s4QlO0VwfYn5YuClDGg2hfmLZEb
 cloud.google.com/go/cloudbuild v1.10.1/go.mod h1:lyJg7v97SUIPq4RC2sGsz/9tNczhyv2AjML/ci4ulzU=
 cloud.google.com/go/cloudbuild v1.14.3/go.mod h1:eIXYWmRt3UtggLnFGx4JvXcMj4kShhVzGndL1LwleEM=
 cloud.google.com/go/cloudbuild v1.15.1/go.mod h1:gIofXZSu+XD2Uy+qkOrGKEx45zd7s28u/k8f99qKals=
+cloud.google.com/go/cloudbuild v1.17.0 h1:tMKv6Gh7jPH3TM3QBHkdPzls80kQbUSH9Q20Hn3QD40=
+cloud.google.com/go/cloudbuild v1.17.0/go.mod h1:/RbwgDlbQEwIKoWLIYnW72W3cWs+e83z7nU45xRKnj8=
 cloud.google.com/go/clouddms v1.4.0 h1:UhzHIlgFfMr6luVYVNydw/pl9/U5kgtjCMJHnSvoVws=
 cloud.google.com/go/clouddms v1.4.0/go.mod h1:Eh7sUGCC+aKry14O1NRljhjyrr0NFC0G2cjwX0cByRk=
 cloud.google.com/go/clouddms v1.5.0 h1:E7v4TpDGUyEm1C/4KIrpVSOCTm0P6vWdHT0I4mostRA=

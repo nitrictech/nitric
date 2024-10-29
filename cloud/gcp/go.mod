@@ -7,14 +7,12 @@ toolchain go1.23.0
 require (
 	cloud.google.com/go/apigateway v1.7.0
 	cloud.google.com/go/batch v1.10.0
-	cloud.google.com/go/cloudbuild v1.17.0
 	cloud.google.com/go/cloudtasks v1.13.0
 	cloud.google.com/go/firestore v1.16.0
 	cloud.google.com/go/pubsub v1.42.0
 	cloud.google.com/go/secretmanager v1.14.0
 	cloud.google.com/go/storage v1.43.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator v0.34.2
-	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/constructs-go/constructs/v10 v10.3.0
 	github.com/aws/jsii-runtime-go v1.99.0
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
@@ -34,8 +32,6 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
-	github.com/pulumi/pulumi-gcp/sdk/v6 v6.67.1
-	github.com/pulumi/pulumi-std/sdk v1.6.2
 	github.com/pulumi/pulumi/sdk/v3 v3.133.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
