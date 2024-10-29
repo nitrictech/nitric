@@ -148,7 +148,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	api, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiRT), &apimanagement.ApiArgs{
+	api, err := apimanagement.NewApi(ctx, fmt.Sprintf("%s-api", name), &apimanagement.ApiArgs{
 		Description:          pulumi.String(description),
 		DisplayName:          pulumi.String(displayName),
 		Protocols:            pulumi.StringArray{pulumi.String("https")},
