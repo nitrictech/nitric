@@ -17,6 +17,8 @@
 package deploy
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -94,11 +96,20 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "postgres", a.dbMasterPassword.Result, a.masterDb.PrivateIpAddress, "5432", name)
 
 		// Run as google cloud run jobs instead of using cloud build
-		// This way we don't need to configre private worker pools (can share VPC connectory with cloud run services)
+		// This way we don't need to configre private worker pools (can share VPC config with cloud run services)
+
+		imageDigest := image.Sha256Digest.ApplyT(func(digest string) string {
+			// Generate the MD5 hash of the combined string
+			// TODO: Chances for collisions are low, but we should consider a better way to generate unique names
+			hash := md5.Sum([]byte(digest))
+			md5Hash := hex.EncodeToString(hash[:])
+			// Truncate the MD5 hash to the first 63 characters if necessary
+			return md5Hash
+		}).(pulumi.StringOutput)
 
 		a.DatabaseMigrationBuild[name], err = cloudrunv2.NewJob(ctx, name+"-migration", &cloudrunv2.JobArgs{
 			Location:            pulumi.String(a.Region),
-			StartExecutionToken: image.Sha256Digest,
+			StartExecutionToken: imageDigest,
 			DeletionProtection:  pulumi.Bool(false),
 			Template: &cloudrunv2.JobTemplateArgs{
 				Template: &cloudrunv2.JobTemplateTemplateArgs{
