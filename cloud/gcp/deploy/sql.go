@@ -17,7 +17,7 @@
 package deploy
 
 import (
-	"crypto/md5"
+	"crypto/md5" //#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -101,7 +101,7 @@ func (a *NitricGcpPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 		imageDigest := image.Sha256Digest.ApplyT(func(digest string) string {
 			// Generate the MD5 hash of the combined string
 			// TODO: Chances for collisions are low, but we should consider a better way to generate unique names
-			hash := md5.Sum([]byte(digest))
+			hash := md5.Sum([]byte(digest)) //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 			md5Hash := hex.EncodeToString(hash[:])
 			// Truncate the MD5 hash to the first 63 characters if necessary
 			return md5Hash
