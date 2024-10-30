@@ -44,7 +44,7 @@ var (
 	// Can't end with period. Regex pattern: ^[-\w\._\(\)]+$
 	ResourceGroupRT = ResourceType{Abbreviation: "rg", MaxLen: 90, AllowUpperCase: true, AllowHyphen: true}
 
-	ContainerAppRT = ResourceType{Abbreviation: "app", MaxLen: 32, UseName: true, AllowHyphen: true}
+	ContainerAppRT = ResourceType{Abbreviation: "app", MaxLen: 28, UseName: true, AllowHyphen: true}
 	// Alphanumerics
 	RegistryRT = ResourceType{Abbreviation: "cr", MaxLen: 50, AllowUpperCase: true}
 	// Alphanumerics and hyphens. Start and end with alphanumeric.

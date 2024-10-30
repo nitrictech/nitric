@@ -308,7 +308,22 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 
 	appName := ResourceName(ctx, name, ContainerAppRT)
 
-	res.App, err = app.NewContainerApp(ctx, appName, &app.ContainerAppArgs{
+	containerAppId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-id", name), &random.RandomStringArgs{
+		Length: pulumi.Int(4),
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"name": name,
+		}),
+		Upper:   pulumi.Bool(false),
+		Special: pulumi.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	containerAppName := pulumi.Sprintf("%s%s", appName, containerAppId.Result)
+
+	res.App, err = app.NewContainerApp(ctx, fmt.Sprintf("%s-app", name), &app.ContainerAppArgs{
+		ContainerAppName:     containerAppName,
 		ResourceGroupName:    p.ResourceGroup.Name,
 		Location:             p.ResourceGroup.Location,
 		ManagedEnvironmentId: p.ContainerEnv.ManagedEnv.ID(),
@@ -326,7 +341,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 				},
 			},
 			Dapr: &app.DaprArgs{
-				AppId:       pulumi.String(appName),
+				AppId:       containerAppName,
 				AppPort:     pulumi.Int(9001),
 				AppProtocol: pulumi.String("http"),
 				Enabled:     pulumi.Bool(true),
@@ -373,9 +388,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		return err
 	}
 
-	authName := fmt.Sprintf("%s-auth", appName)
-
-	_, err = app.NewContainerAppsAuthConfig(ctx, authName, &app.ContainerAppsAuthConfigArgs{
+	_, err = app.NewContainerAppsAuthConfig(ctx, fmt.Sprintf("%s-auth", name), &app.ContainerAppsAuthConfigArgs{
 		AuthConfigName:   pulumi.String("current"),
 		ContainerAppName: res.App.Name,
 		GlobalValidation: &app.GlobalValidationArgs{

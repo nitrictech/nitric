@@ -25,6 +25,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
+	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -95,7 +96,23 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		}.ToUserIdentityPropertiesMapOutput()
 	}).(apimanagement.UserIdentityPropertiesMapOutput)
 
-	mgmtService, err := apimanagement.NewApiManagementService(ctx, ResourceName(ctx, name, ApiManagementServiceRT), &apimanagement.ApiManagementServiceArgs{
+	serviceName := ResourceName(ctx, name, ApiManagementServiceRT)
+	managedServiceId, err := random.NewRandomString(ctx, fmt.Sprintf("%s-id", name), &random.RandomStringArgs{
+		Length: pulumi.Int(4),
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"name": name,
+		}),
+		Upper:   pulumi.Bool(false),
+		Special: pulumi.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	managedServiceName := pulumi.Sprintf("%s%s", serviceName, managedServiceId.Result)
+
+	mgmtService, err := apimanagement.NewApiManagementService(ctx, fmt.Sprintf("%s-mgmt", name), &apimanagement.ApiManagementServiceArgs{
+		ServiceName:       managedServiceName,
 		ResourceGroupName: p.ResourceGroup.Name,
 		PublisherEmail:    pulumi.String(p.AzureConfig.AdminEmail),
 		PublisherName:     pulumi.String(p.AzureConfig.Org),
@@ -131,7 +148,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 		return err
 	}
 
-	api, err := apimanagement.NewApi(ctx, ResourceName(ctx, name, ApiRT), &apimanagement.ApiArgs{
+	api, err := apimanagement.NewApi(ctx, fmt.Sprintf("%s-api", name), &apimanagement.ApiArgs{
 		Description:          pulumi.String(description),
 		DisplayName:          pulumi.String(displayName),
 		Protocols:            pulumi.StringArray{pulumi.String("https")},
