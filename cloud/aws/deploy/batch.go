@@ -314,11 +314,12 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 			job.Requirements.Memory = 512
 		}
 
-		containerProperties := pulumi.All(wrappedImage.URI(), p.BatchRoles[name].Arn, dbEndpoint, dbPassword).ApplyT(func(args []interface{}) (string, error) {
+		containerProperties := pulumi.All(wrappedImage.URI(), p.BatchRoles[name].Arn, dbEndpoint, dbPassword, p.JobQueue.Arn).ApplyT(func(args []interface{}) (string, error) {
 			imageName := args[0].(string)
 			jobRoleArn := args[1].(string)
 			nitricDbEndpoint := args[2].(string)
 			nitricDbPassword := args[3].(string)
+			jobQueueArn := args[4].(string)
 
 			jobDefinitionContainerProperties := JobDefinitionContainerProperties{
 				Image: imageName,
@@ -344,6 +345,10 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 					{
 						Name:  "NITRIC_STACK_ID",
 						Value: p.StackId,
+					},
+					{
+						Name:  "NITRIC_JOB_QUEUE_ARN",
+						Value: jobQueueArn,
 					},
 					{
 						Name:  "AWS_REGION",
