@@ -20,19 +20,19 @@ variable "stack_id" {
 }
 
 variable "memory" {
-  description = "The amount of memory to allocate to the lambda function"
+  description = "The amount of memory to allocate to the lambda function in MB"
   type        = number
   default     = 128
 }
 
 variable "ephemeral_storage" {
-  description = "The amount of ephemeral storage to allocate to the lambda function"
+  description = "The amount of ephemeral storage to allocate to the lambda function in MB"
   type        = number
   default     = 512
 }
 
 variable "timeout" {
-  description = "The timeout for the lambda function"
+  description = "The timeout for the lambda function in seconds"
   type        = number
   default     = 15
 }
