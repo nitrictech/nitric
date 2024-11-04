@@ -208,7 +208,7 @@ func parsePulumiError(err error) error {
 // Up - automatically called by the Nitric CLI via the `up` command
 func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
 	// Verify if dependencies are available
-	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
+	if err := checkDependencies(checkPulumiAvailable); err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -288,7 +288,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 // Down - automatically called by the Nitric CLI via the `down` command
 func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
 	// Verify if dependencies are available
-	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
+	if err := checkDependencies(checkPulumiAvailable); err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 

@@ -31,16 +31,6 @@ func checkPulumiAvailable() error {
 	return nil
 }
 
-func checkDockerAvailable() error {
-	cmd := exec.Command("docker", "info")
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("docker is required to use this provider, please install docker and try again")
-	}
-
-	return nil
-}
-
 func checkDependencies(checks ...DependencyCheck) error {
 	errs := []error{}
 
