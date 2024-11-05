@@ -40,7 +40,8 @@ func Run(m *NitricServer) {
 	select {
 	case serverErr := <-errChan:
 		if serverErr != nil {
-			logger.Errorf("Nitric Server Error: %v, exiting\n", serverErr)
+			logger.Fatalf("Nitric Server Error: %v, exiting\n", serverErr)
+			os.Exit(1)
 		}
 		// Closed channel, server stopped
 		logger.Debugf("Nitric Server Stopped\n")
