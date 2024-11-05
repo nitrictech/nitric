@@ -15,12 +15,36 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
+
+	"github.com/docker/docker/client"
 )
 
 type DependencyCheck func() error
+
+func checkDockerAvailable() error {
+	// Create a new Docker client
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("error creating Docker client: %w", err)
+	}
+
+	defer func() {
+		if closeErr := cli.Close(); closeErr != nil {
+			panic(closeErr)
+		}
+	}()
+
+	// Perform a Docker operation to verify availability
+	if _, pingErr := cli.Ping(context.Background()); pingErr != nil {
+		return fmt.Errorf("docker compatible API is not available, please start the docker/podman and try again")
+	}
+
+	return nil
+}
 
 func checkPulumiAvailable() error {
 	_, err := exec.LookPath("pulumi")
