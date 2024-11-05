@@ -225,7 +225,6 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 		SourceImage:   config.GetImage().GetUri(),
 		RepositoryUrl: repo.RepositoryUrl,
 		Runtime:       runtime(),
-		RegistryArgs:  p.RegistryArgs,
 	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}), pulumi.Provider(p.DockerProvider))
 	if err != nil {
 		return err

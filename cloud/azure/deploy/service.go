@@ -166,7 +166,6 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   service.GetImage().Uri,
 		RepositoryUrl: repositoryUrl,
-		RegistryArgs:  p.ContainerEnv.RegistryArgs,
 		Runtime:       runtime(),
 	}, opts...)
 	if err != nil {

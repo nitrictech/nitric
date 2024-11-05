@@ -80,7 +80,6 @@ func (p *NitricGcpPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	image, err := image.NewImage(ctx, gcpServiceName, &image.ImageArgs{
 		SourceImage:   config.GetImage().Uri,
 		RepositoryUrl: pulumi.Sprintf("%s-docker.pkg.dev/%s/%s/%s", p.Region, p.GcpConfig.ProjectId, p.ContainerRegistry.Name, imageName),
-		RegistryArgs:  p.RegistryArgs,
 		Runtime:       runtime(),
 	}, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {

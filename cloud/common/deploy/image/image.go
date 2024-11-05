@@ -36,13 +36,11 @@ type ImageArgs struct {
 	SourceImage   string
 	Runtime       []byte
 	RepositoryUrl pulumi.StringInput
-	RegistryArgs  *docker.RegistryArgs
 }
 
 type LocalImageArgs struct {
 	SourceImage   string
 	SourceImageID string
-	RegistryArgs  *docker.RegistryArgs
 	RepositoryUrl pulumi.StringInput
 }
 
