@@ -53,7 +53,6 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			SourceImage:   config.GetImageUri(),
 			SourceImageID: inspect.ID,
 			RepositoryUrl: repositoryUrl,
-			RegistryArgs:  a.ContainerEnv.RegistryArgs,
 		}, pulumi.Provider(a.ContainerEnv.DockerProvider))
 		if err != nil {
 			return err

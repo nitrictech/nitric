@@ -71,9 +71,8 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	image, err := image.NewImage(ctx, name, &image.ImageArgs{
 		SourceImage:   config.GetImage().GetUri(),
 		RepositoryUrl: repo.RepositoryUrl,
-		RegistryArgs:  a.RegistryArgs,
 		Runtime:       runtime(),
-	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}))
+	}, pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{repo}), pulumi.Provider(a.DockerProvider))
 	// image, err := createImage(ctx, parent, name, repo, config, a.DockerProvider, runtime)
 	if err != nil {
 		return err
