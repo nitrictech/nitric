@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h3 align="center">build cloud aware applications</h3>
+<h3 align="center">Effortless backends with infrastructure from code</h3>
 
 <p align="center">
   <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/nitrictech/nitric?style=for-the-badge">
