@@ -136,7 +136,7 @@ This is the only code needed to deploy a working application to any cloud provid
 
 ## Want more?
 
-Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), including concepts, reference documentation for various languages and many tutorials/guides.
+Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), including concepts, reference documentation for various languages and many [tutorials/guides](https://nitric.io/docs/guides).
 
 - Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
 
