@@ -47,7 +47,7 @@ We also know abstraction should mean building on existing layers, not hiding the
 
 ## 🧑‍💻 Get started
 
-💿 Install Nitric:
+💿 **Install Nitric:**
 
 **macOS**:
 
