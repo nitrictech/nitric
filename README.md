@@ -76,9 +76,11 @@ nitric new
 
 🕹 **See our example apps**: [Example Apps Repo](https://github.com/nitrictech/examples).
 
+📚 **Prefer a walkthrough?** Read through our [guides](https://nitric.io/docs/guides).
+
 👋 **Any questions?** Join our developer community on [Discord](https://nitric.io/chat).
 
-⭐ **Give us a star** to help support our work
+⭐ **Give us a star** to help support our work!
 
 ## 🍿 Visual Learner?
 
