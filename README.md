@@ -84,7 +84,9 @@ nitric new
 
 To get up to speed quickly, take a look at our [quick intro to Nitric](https://www.youtube.com/watch?v=Hljs7Ei9SIs).
 
-[![Quick intro to Nitric](https://img.youtube.com/vi/Hljs7Ei9SIs/maxresdefault.jpg)](https://www.youtube.com/watch?v=Hljs7Ei9SIs)
+<a href="https://www.youtube.com/watch?v=Hljs7Ei9SIs">
+  <img width="600px" src="https://img.youtube.com/vi/Hljs7Ei9SIs/maxresdefault.jpg"/>
+</a>
 
 ## 🤷 So.. how does it work?
 
