@@ -16,12 +16,12 @@
 
 [Nitric](https://nitric.io) is a multi-language framework, with concise inline infrastructure from code. Modern applications should be robust, productive and a joy to build. Nitric solves common problems building for modern platforms:
 
-- [Easy infrastructure](https://nitric.io/docs/concepts/introduction#infrastructure-from-code-if-c) from code
-- Build for [any host without coupling](https://nitric.io/docs/reference/providers)
-- [Run locally](https://nitric.io/docs/getting-started/local-dashboard)
-- [IAM for humans](https://nitric.io/docs/concepts/access-control)
+- [Easy infrastructure](https://nitric.io/docs/get-started/foundations/why-nitric) from code
+- Build for [any host without coupling](https://nitric.io/docs/providers)
+- [Run locally](https://nitric.io/docs/get-started/foundations/projects/local-development#local-dashboard)
+- [IAM for humans](https://nitric.io/docs/get-started/foundations/infrastructure/security)
 - Common resources like [databases](https://nitric.io/docs/sql), [queues/topics](https://nitric.io/docs/messaging), [APIs](https://nitric.io/docs/apis), [key-value](https://nitric.io/docs/keyvalue), [buckets](https://nitric.io/docs/storage) and more
-- [Change services, IaC tools or cloud providers](https://nitric.io/docs/reference/providers) without changing code
+- [Change services, IaC tools or cloud providers](https://nitric.io/docs/providers) without changing code
 
 We also know abstraction should mean building on existing layers, not hiding them. Nitric includes powerful escape hatches for when things get custom.
 
@@ -51,19 +51,19 @@ We also know abstraction should mean building on existing layers, not hiding the
 
 💿 Install Nitric:
 
-macOS:
+**macOS**:
 
 ```
 brew install nitrictech/tap/nitric
 ```
 
-Linux:
+**Linux**:
 
 ```
 curl -L "https://nitric.io/install?version=latest" | bash
 ```
 
-Windows:
+**Windows**:
 
 ```
 scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
@@ -84,8 +84,7 @@ nitric new
 
 To get up to speed quickly, take a look at our [quick intro to Nitric](https://www.youtube.com/watch?v=Hljs7Ei9SIs).
 
-<a href="https://www.youtube.com/watch?v=Hljs7Ei9SIs"><img width="600px" src="https://img.youtube.com/vi/Hljs7Ei9SIs/maxresdefault.jpg
-"/></a>
+[![Quick intro to Nitric](https://img.youtube.com/vi/Hljs7Ei9SIs/maxresdefault.jpg)](https://www.youtube.com/watch?v=Hljs7Ei9SIs)
 
 ## 🤷 So.. how does it work?
 
