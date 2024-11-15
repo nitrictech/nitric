@@ -14,8 +14,6 @@
   <a href="https://discord.gg/Webemece5C"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord&style=for-the-badge"></a>
 </p>
 
-## About Nitric
-
 [Nitric](https://nitric.io) is a multi-language framework, with concise inline infrastructure from code. Modern applications should be robust, productive and a joy to build. Nitric solves common problems building for modern platforms:
 
 - [Easy infrastructure](https://nitric.io/docs/concepts/introduction#infrastructure-from-code-if-c) from code
@@ -34,8 +32,6 @@ We also know abstraction should mean building on existing layers, not hiding the
   <a href="https://github.com/nitrictech/node-sdk"><img src="https://skillicons.dev/icons?i=ts"/></a>
   <a href="https://github.com/nitrictech/python-sdk"><img src="https://skillicons.dev/icons?i=py"/></a>
   <a href="https://github.com/nitrictech/go-sdk"><img src="https://skillicons.dev/icons?i=go"/></a>
-  <a href="https://github.com/nitrictech/dotnet-sdk"><img src="https://skillicons.dev/icons?i=cs"/></a>
-  <a href="https://github.com/nitrictech/jvm-sdk"><img src="https://skillicons.dev/icons?i=java"/></a>
   <a href="https://github.com/nitrictech/dart-sdk"><img src="https://skillicons.dev/icons?i=dart"/></a>
 </p>
 
@@ -49,12 +45,65 @@ We also know abstraction should mean building on existing layers, not hiding the
 
 > These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
 
-## Example
+---
 
-Creating an API, a bucket with access permissions and writing files to that bucket via a serverless function.
+⭐ Give us a star to help support our work
+
+💿 Install Nitric:
+
+macOS:
+
+```
+brew install nitrictech/tap/nitric
+```
+
+Linux:
+
+```
+curl -L "https://nitric.io/install?version=latest" | bash
+```
+
+Windows:
+
+```
+scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
+scoop install nitric
+```
+
+🚀 Start building your first app:
+
+```
+nitric new
+```
+
+🕹 See our example apps: [Example Apps Repo](https://github.com/nitrictech/examples).
+
+👋 Any questions? Join our developer community on [Discord](https://nitric.io/chat).
+
+## 🍿 Visual Learner?
+
+To get up to speed quickly, take a look at our [quick intro to Nitric](https://www.youtube.com/watch?v=Hljs7Ei9SIs).
+
+<a href="https://www.youtube.com/watch?v=Hljs7Ei9SIs"><img width="600px" src="https://img.youtube.com/vi/Hljs7Ei9SIs/maxresdefault.jpg
+"/></a>
+
+## 🤷 So.. how does it work?
+
+Nitric focuses on what you want to achieve as the developer:
+
+_What workflow do you need to be productive?_
+
+_What system design are you trying to achieve?_.
+
+All you need to do is write your application code and your infrastructure requirements are inferred. Nitric then orchestrates and configures the deployment of your application, no need to manually write your Terraform or other IaC code. By abstracting these infrastructure requirements, it removes the need to write boilerplate and means your single application is portable across clouds including, AWS, GCP, and Azure.
+
+And, it's all **open-source**
+
+## 📝 Example: Note Taking
+
+Creating production-ready services and resources is simple, with less than 10 lines to deploy an API endpoint and a bucket with all the IAM permissions automatically configured.
 
 ```javascript
-// JavaScript Example
 import { api, bucket } from "@nitric/sdk";
 
 const main = api("main");
@@ -68,19 +117,31 @@ main.post("/notes/:title", async (ctx) => {
 
 This is the only code needed to deploy a working application to any cloud provider using [`nitric up`](https://nitric.io/docs/getting-started/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/reference/providers/pulumi), [Terraform](https://nitric.io/docs/reference/providers/terraform) or [any other automation tools](https://nitric.io/docs/reference/providers/custom/building-custom-provider) of your choice.
 
-## Documentation
+## Why use Nitric?
+
+1. **Developer-Centric Workflow** Nitric lets you design your application architecture, independent of the deployment automation tool or target platform. With highly declarative in-app infrastructure requirements.
+
+2. **Making Implicit Requirements Explicit** If your app needs storage, a database, or a message queue, Nitric ensures these resources are properly set up and integrated into your app, removing the friction of manual configuration.
+
+3. **Cloud-Agnostic and Portable** Nitric decouples your application from the underlying cloud infrastructure. Whether you're using AWS, Azure, GCP, or Kubernetes, Nitric allows you to map your application's requirements to the appropriate services across platforms.
+
+4. **Automated Infrastructure, Best Practices Included** One of the most error-prone aspects of cloud development is managing permissions, configurations, and security policies. Nitric automates this, making security best practices—like least privilege access and proper service configurations easy.
+
+5. **Focus on Application Logic** Nitric's approach allows you to focus on building your application, instead of the scaffolding required to run it in the cloud. By removing the manual steps from the IaC process, Nitric eliminates significant boilerplate and reduces the runtime checking needed to handle configuration errors.
+
+6. **Plugin-Based Architecture** Nitric's plugin-based architecture allows you to use the deployment plugins we provide, which use Pulumi or Terraform for deployment, or write your own. This flexibility allows you to use the tools you're comfortable with, while still benefiting from Nitric's infrastructure automation and cloud-agnostic approach.
+
+## Want more?
 
 Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), including concepts, reference documentation for various languages and many tutorials/guides.
-
-## Get in touch
 
 - Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
 
 - Join us on [Discord](https://nitric.io/chat)
 
-- Find us on [Twitter](https://twitter.com/nitric_io)
+- Find us on [X](https://twitter.com/nitric_io)
 
-- Send us an [email](mailto:maintainers@nitric.io)
+- Or send us an [email](mailto:maintainers@nitric.io)
 
 ## Contributing
 
