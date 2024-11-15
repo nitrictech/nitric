@@ -11,7 +11,7 @@
   <img alt="GitHub" src="https://img.shields.io/github/license/nitrictech/nitric?style=for-the-badge">
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nitrictech/nitric/test.yaml?branch=develop&style=for-the-badge">
   <img alt="Codecov" src="https://img.shields.io/codecov/c/github/nitrictech/nitric?style=for-the-badge">
-  <a href="https://discord.gg/Webemece5C"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord&style=for-the-badge"></a>
+  <a href="https://nitric.io/chat"><img alt="Discord" src="https://img.shields.io/discord/955259353043173427?label=discord&style=for-the-badge"></a>
 </p>
 
 [Nitric](https://nitric.io) is a multi-language framework, with concise inline infrastructure from code. Modern applications should be robust, productive and a joy to build. Nitric solves common problems building for modern platforms:
@@ -47,7 +47,7 @@ We also know abstraction should mean building on existing layers, not hiding the
 
 ---
 
-⭐ Give us a star to help support our work
+⭐ **Give us a star** to help support our work
 
 💿 Install Nitric:
 
@@ -139,7 +139,7 @@ Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), inclu
 
 - Join us on [Discord](https://nitric.io/chat)
 
-- Find us on [X](https://twitter.com/nitric_io)
+- Find us on [X](https://x.com/nitric_io)
 
 - Or send us an [email](mailto:maintainers@nitric.io)
 
