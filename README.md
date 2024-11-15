@@ -45,9 +45,7 @@ We also know abstraction should mean building on existing layers, not hiding the
 
 > These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
 
----
-
-⭐ **Give us a star** to help support our work
+## 🧑‍💻 Get started
 
 💿 Install Nitric:
 
@@ -70,15 +68,17 @@ scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
 scoop install nitric
 ```
 
-🚀 Start building your first app:
+🚀 **Start building your first app**:
 
 ```
 nitric new
 ```
 
-🕹 See our example apps: [Example Apps Repo](https://github.com/nitrictech/examples).
+🕹 **See our example apps**: [Example Apps Repo](https://github.com/nitrictech/examples).
 
-👋 Any questions? Join our developer community on [Discord](https://nitric.io/chat).
+👋 **Any questions?** Join our developer community on [Discord](https://nitric.io/chat).
+
+⭐ **Give us a star** to help support our work
 
 ## 🍿 Visual Learner?
 
