@@ -230,7 +230,12 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 }
 
 func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
-	return a.applyVpcRules(ctx)
+	err := a.applyVpcRules(ctx)
+	if err != nil {
+		return err
+	}
+
+	return a.resourcesStore(ctx)
 }
 
 func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
