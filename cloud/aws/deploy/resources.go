@@ -157,7 +157,6 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		}
 
 		indexJson, err := json.Marshal(index)
-
 		if err != nil {
 			return "", err
 		}

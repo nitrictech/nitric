@@ -8,7 +8,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	apigatewayv2 "github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	gomock "github.com/golang/mock/gomock"
 	resource "github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -53,10 +52,10 @@ func (mr *MockAwsResourceResolverMockRecorder) GetAWSApiGatewayDetails(arg0, arg
 }
 
 // GetApiGatewayById mocks base method.
-func (m *MockAwsResourceResolver) GetApiGatewayById(arg0 context.Context, arg1 string) (*apigatewayv2.GetApiOutput, error) {
+func (m *MockAwsResourceResolver) GetApiGatewayById(arg0 context.Context, arg1 string) (*resource.ApiGatewayDetails, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetApiGatewayById", arg0, arg1)
-	ret0, _ := ret[0].(*apigatewayv2.GetApiOutput)
+	ret0, _ := ret[0].(*resource.ApiGatewayDetails)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

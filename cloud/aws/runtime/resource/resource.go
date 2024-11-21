@@ -139,7 +139,6 @@ func (a *AwsTaggedResourceResolver) GetApiGatewayById(ctx context.Context, apiId
 		Type:        nitricType,
 		ApiEndpoint: *api.ApiEndpoint,
 	}, nil
-
 }
 
 func resourceTypeFromArn(arn string) (string, error) {

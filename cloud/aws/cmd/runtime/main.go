@@ -23,8 +23,8 @@ import (
 )
 
 func main() {
-	var resolver resource.AwsResourceResolver = nil
-	var err error = nil
+	var resolver resource.AwsResourceResolver
+	var err error
 
 	resolver, err = resource.NewSSMResourceResolver()
 

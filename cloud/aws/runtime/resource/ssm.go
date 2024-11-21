@@ -80,8 +80,9 @@ func (a *AwsSSMResourceResolver) GetApiGatewayById(ctx context.Context, apiId st
 	for name, api := range a.cache.Apis {
 		if strings.HasSuffix(api.Arn, apiId) {
 			return &ApiGatewayDetails{
-				Name: name,
-				Type: "api",
+				Name:        name,
+				Type:        "api",
+				ApiEndpoint: api.Endpoint,
 			}, nil
 		}
 	}
@@ -89,8 +90,9 @@ func (a *AwsSSMResourceResolver) GetApiGatewayById(ctx context.Context, apiId st
 	for name, api := range a.cache.HttpProxies {
 		if strings.HasSuffix(api.Arn, apiId) {
 			return &ApiGatewayDetails{
-				Name: name,
-				Type: "http-proxy",
+				Name:        name,
+				Type:        "http-proxy",
+				ApiEndpoint: api.Endpoint,
 			}, nil
 		}
 	}
@@ -98,8 +100,9 @@ func (a *AwsSSMResourceResolver) GetApiGatewayById(ctx context.Context, apiId st
 	for name, api := range a.cache.Websockets {
 		if strings.HasSuffix(api.Arn, apiId) {
 			return &ApiGatewayDetails{
-				Name: name,
-				Type: "websocket",
+				Name:        name,
+				Type:        "websocket",
+				ApiEndpoint: api.Endpoint,
 			}, nil
 		}
 	}
