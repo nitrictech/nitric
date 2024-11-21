@@ -32,15 +32,15 @@ type Topic struct {
 
 // ResourceIndex - The resource index for a nitric stack
 type ResourceIndex struct {
-	Buckets     map[string]AwsResourceName `json:"buckets"`
-	Topics      map[string]Topic           `json:"topics"`
-	KvStores    map[string]AwsResourceArn  `json:"kvStores"`
-	Queues      map[string]AwsResourceArn  `json:"queues"`
-	Secrets     map[string]AwsResourceArn  `json:"secrets"`
-	Apis        map[string]ApiGateway      `json:"apis"`
-	HttpProxies map[string]ApiGateway      `json:"httpProxies"`
-	Websockets  map[string]ApiGateway      `json:"websockets"`
-	Schedules   map[string]AwsResourceArn  `json:"schedules"`
+	Buckets     map[string]AwsResourceArn `json:"buckets"`
+	Topics      map[string]Topic          `json:"topics"`
+	KvStores    map[string]AwsResourceArn `json:"kvStores"`
+	Queues      map[string]AwsResourceArn `json:"queues"`
+	Secrets     map[string]AwsResourceArn `json:"secrets"`
+	Apis        map[string]ApiGateway     `json:"apis"`
+	HttpProxies map[string]ApiGateway     `json:"httpProxies"`
+	Websockets  map[string]ApiGateway     `json:"websockets"`
+	Schedules   map[string]AwsResourceArn `json:"schedules"`
 }
 
 func NewResourceIndex() *ResourceIndex {

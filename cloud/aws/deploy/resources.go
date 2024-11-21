@@ -28,7 +28,7 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 	// This will be used to store the ARNs/Identifiers of all resources created by the stack
 	bucketNameMap := pulumi.StringMap{}
 	for name, bucket := range a.Buckets {
-		bucketNameMap[name] = bucket.Bucket
+		bucketNameMap[name] = bucket.Arn
 	}
 
 	apiArnMap := pulumi.StringMap{}
