@@ -190,6 +190,12 @@ func (a *AwsSSMResourceResolver) GetResources(ctx context.Context, typ AwsResour
 				ARN: secret,
 			}
 		}
+	case AwsResource_Queue:
+		for name, queue := range a.cache.Queues {
+			resolvedResources[name] = ResolvedResource{
+				ARN: queue,
+			}
+		}
 	}
 
 	return resolvedResources, nil
