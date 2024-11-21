@@ -24,8 +24,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
-	commonenv "github.com/nitrictech/nitric/cloud/common/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	apispb "github.com/nitrictech/nitric/core/pkg/proto/apis/v1"
 	schedulespb "github.com/nitrictech/nitric/core/pkg/proto/schedules/v1"
@@ -174,21 +172,10 @@ func handleApiEvent(ctx context.Context, resolver resource.AwsResourceResolver, 
 		return nil, err
 	}
 
-	stackID := commonenv.NITRIC_STACK_ID.String()
-	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
-	if !ok {
-		return nil, fmt.Errorf("received request from non-nitric API gateway")
-	}
-
-	nitricType, ok := api.Tags[tags.GetResourceTypeKey(stackID)]
-	if !ok {
-		return nil, fmt.Errorf("received request from non-nitric API gateway")
-	}
-
-	if nitricType == "http-proxy" {
+	if api.Type == "http-proxy" {
 		return handleHttpProxyRequest(ctx, httpmanager, evt)
 	} else {
-		return handleApiGatewayRequest(ctx, nitricName, apismanager, evt)
+		return handleApiGatewayRequest(ctx, api.Name, apismanager, evt)
 	}
 }
 
@@ -322,11 +309,7 @@ func handleWebsocketEvent(ctx context.Context, resolver resource.AwsResourceReso
 		return nil, err
 	}
 
-	stackID := commonenv.NITRIC_STACK_ID.String()
-	nitricName, ok := api.Tags[tags.GetResourceNameKey(stackID)]
-	if !ok {
-		return nil, fmt.Errorf("received websocket trigger from non-nitric API gateway")
-	}
+	nitricName := api.Name
 
 	// Use the routekey to get the event type
 	wsEvent := &websocketspb.ServerMessage_WebsocketEventRequest{

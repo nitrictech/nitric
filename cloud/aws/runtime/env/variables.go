@@ -24,3 +24,5 @@ var GATEWAY_ENVIRONMENT = env.GetEnv("GATEWAY_ENVIRONMENT", "lambda")
 
 // JOB_QUEUE_ARN - The AWS ARN of the job queue to use for job execution
 var JOB_QUEUE_ARN = env.GetEnv("NITRIC_JOB_QUEUE_ARN", "")
+
+var NITRIC_AWS_RESOURCE_RESOLVER = env.GetEnv("NITRIC_AWS_RESOURCE_RESOLVER", "ssm")
