@@ -143,7 +143,7 @@ func (a *AwsSSMResourceResolver) populateCache(ctx context.Context) error {
 	return nil
 }
 
-func (a *AwsSSMResourceResolver) GetResources(ctx context.Context, typ AwsResource) (map[string]ResolvedResource, error) {
+func (a *AwsSSMResourceResolver) GetResources(ctx context.Context, resourceType AwsResource) (map[string]ResolvedResource, error) {
 	if err := a.populateCache(ctx); err != nil {
 		return nil, &ResourceResolutionError{
 			Msg:   "error populating resource cache",
@@ -153,7 +153,7 @@ func (a *AwsSSMResourceResolver) GetResources(ctx context.Context, typ AwsResour
 
 	resolvedResources := map[string]ResolvedResource{}
 
-	switch typ {
+	switch resourceType {
 	case AwsResource_Api:
 		for name, api := range a.cache.Apis {
 			resolvedResources[name] = ResolvedResource{
