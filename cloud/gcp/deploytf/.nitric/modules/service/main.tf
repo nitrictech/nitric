@@ -120,7 +120,7 @@ resource "google_cloud_run_v2_service" "service" {
     }
 
     service_account = google_service_account.service_account.email
-    timeout         = var.timeout_seconds
+    timeout         = "${var.timeout_seconds}s"
   }
 
   depends_on = [docker_registry_image.push]
