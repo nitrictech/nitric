@@ -64,7 +64,7 @@ type ResolvedResource struct {
 }
 
 // Aws core utility provider
-type AwsResourceService struct {
+type AwsTaggedResourceResolver struct {
 	stackID   string
 	cacheLock sync.Mutex
 	client    resourcegroupstaggingapiiface.ResourceGroupsTaggingAPIAPI
@@ -73,19 +73,19 @@ type AwsResourceService struct {
 }
 
 type AwsResourceResolver interface {
-	GetApiGatewayById(context.Context, string) (*apigatewayv2.GetApiOutput, error)
+	GetApiGatewayById(ctx context.Context, apiId string) (*ApiGatewayDetails, error)
 	GetAWSApiGatewayDetails(ctx context.Context, identifier *resourcespb.ResourceIdentifier) (*AWSApiGatewayDetails, error)
 	GetResources(context.Context, AwsResource) (map[string]ResolvedResource, error)
 }
 
-var _ AwsResourceResolver = &AwsResourceService{}
+var _ AwsResourceResolver = &AwsTaggedResourceResolver{}
 
 type AWSApiGatewayDetails struct {
 	Url string
 }
 
 // GetAWSApiGatewayDetails - Get the details for an AWS API Gateway resource related to a Nitric API or Websocket
-func (a *AwsResourceService) GetAWSApiGatewayDetails(ctx context.Context, identifier *resourcespb.ResourceIdentifier) (*AWSApiGatewayDetails, error) {
+func (a *AwsTaggedResourceResolver) GetAWSApiGatewayDetails(ctx context.Context, identifier *resourcespb.ResourceIdentifier) (*AWSApiGatewayDetails, error) {
 	resourceName := identifier.Name
 	resourceType := identifier.Type
 
@@ -119,14 +119,26 @@ func (a *AwsResourceService) GetAWSApiGatewayDetails(ctx context.Context, identi
 	}
 
 	return &AWSApiGatewayDetails{
-		Url: *api.ApiEndpoint,
+		Url: api.ApiEndpoint,
 	}, nil
 }
 
-func (a *AwsResourceService) GetApiGatewayById(ctx context.Context, apiId string) (*apigatewayv2.GetApiOutput, error) {
-	return a.apiClient.GetApi(context.TODO(), &apigatewayv2.GetApiInput{
+func (a *AwsTaggedResourceResolver) GetApiGatewayById(ctx context.Context, apiId string) (*ApiGatewayDetails, error) {
+	api, err := a.apiClient.GetApi(context.TODO(), &apigatewayv2.GetApiInput{
 		ApiId: aws.String(apiId),
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	nitricName := api.Tags[tags.GetResourceNameKey(a.stackID)]
+	nitricType := api.Tags[tags.GetResourceTypeKey(a.stackID)]
+
+	return &ApiGatewayDetails{
+		Name:        nitricName,
+		Type:        nitricType,
+		ApiEndpoint: *api.ApiEndpoint,
+	}, nil
 }
 
 func resourceTypeFromArn(arn string) (string, error) {
@@ -162,7 +174,7 @@ func resourceTypeFromArn(arn string) (string, error) {
 }
 
 // populate the resource cache
-func (a *AwsResourceService) populateCache(ctx context.Context) error {
+func (a *AwsTaggedResourceResolver) populateCache(ctx context.Context) error {
 	a.cacheLock.Lock()
 	defer a.cacheLock.Unlock()
 	if a.cache == nil {
@@ -245,7 +257,7 @@ func (e *ResourceResolutionError) Unwrap() error {
 	return e.Cause
 }
 
-func (a *AwsResourceService) GetResources(ctx context.Context, typ AwsResource) (map[string]ResolvedResource, error) {
+func (a *AwsTaggedResourceResolver) GetResources(ctx context.Context, typ AwsResource) (map[string]ResolvedResource, error) {
 	if err := a.populateCache(ctx); err != nil {
 		return nil, &ResourceResolutionError{
 			Msg:   "error populating resource cache",
@@ -256,7 +268,7 @@ func (a *AwsResourceService) GetResources(ctx context.Context, typ AwsResource) 
 	return a.cache[typ], nil
 }
 
-func New() (*AwsResourceService, error) {
+func NewTaggedResourceResolver() (*AwsTaggedResourceResolver, error) {
 	awsRegion := env.AWS_REGION.String()
 	stackID := commonenv.NITRIC_STACK_ID.String()
 
@@ -275,7 +287,7 @@ func New() (*AwsResourceService, error) {
 	apiClient := apigatewayv2.NewFromConfig(cfg)
 	client := resourcegroupstaggingapi.NewFromConfig(cfg)
 
-	return &AwsResourceService{
+	return &AwsTaggedResourceResolver{
 		stackID:   stackID,
 		client:    client,
 		cacheLock: sync.Mutex{},

@@ -43,6 +43,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/scheduler"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/secretsmanager"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
@@ -96,6 +97,7 @@ type NitricAwsPulumiProvider struct {
 	Websockets            map[string]*apigatewayv2.Api
 	KeyValueStores        map[string]*dynamodb.Table
 	JobDefinitions        map[string]*batch.JobDefinition
+	Schedules             map[string]*scheduler.Schedule
 
 	provider.NitricDefaultOrder
 
@@ -230,7 +232,12 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 }
 
 func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
-	return a.applyVpcRules(ctx)
+	err := a.applyVpcRules(ctx)
+	if err != nil {
+		return err
+	}
+
+	return a.resourcesStore(ctx)
 }
 
 func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {

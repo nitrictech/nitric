@@ -16,13 +16,22 @@ package main
 
 import (
 	"github.com/nitrictech/nitric/cloud/aws/runtime"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	"github.com/nitrictech/nitric/core/pkg/server"
 )
 
 func main() {
-	resolver, err := resource.New()
+	var resolver resource.AwsResourceResolver
+	var err error
+
+	resolver, err = resource.NewSSMResourceResolver()
+
+	if env.NITRIC_AWS_RESOURCE_RESOLVER.String() == "tagging" {
+		resolver, err = resource.NewTaggedResourceResolver()
+	}
+
 	if err != nil {
 		logger.Fatalf("could not create aws resource resolver: %v", err)
 		return

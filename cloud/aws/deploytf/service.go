@@ -47,10 +47,11 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 	}
 
 	jsiiEnv := map[string]*string{
-		"NITRIC_STACK_ID":        a.Stack.StackIdOutput(),
-		"NITRIC_ENVIRONMENT":     jsii.String("cloud"),
-		"MIN_WORKERS":            jsii.String(fmt.Sprint(config.Workers)),
-		"NITRIC_HTTP_PROXY_PORT": jsii.String(fmt.Sprint(3000)),
+		"NITRIC_STACK_ID":            a.Stack.StackIdOutput(),
+		"NITRIC_ENVIRONMENT":         jsii.String("cloud"),
+		"MIN_WORKERS":                jsii.String(fmt.Sprint(config.Workers)),
+		"NITRIC_HTTP_PROXY_PORT":     jsii.String(fmt.Sprint(3000)),
+		"NITRIC_AWS_RESOURCE_PLUGIN": jsii.String("tagging"),
 	}
 
 	// TODO: Only apply to requesting services

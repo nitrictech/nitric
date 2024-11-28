@@ -15,14 +15,12 @@
 package gateway_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -77,10 +75,7 @@ type protoMatcher struct {
 }
 
 func (m *protoMatcher) Matches(x interface{}) bool {
-	expectedBytes, _ := proto.Marshal(m.expected)
-	actualBytes, _ := proto.Marshal(x.(proto.Message))
-
-	return bytes.Equal(expectedBytes, actualBytes)
+	return proto.Equal(m.expected, x.(proto.Message))
 }
 
 func (m *protoMatcher) String() string {
@@ -131,10 +126,10 @@ var _ = Describe("Lambda", func() {
 			// handler only looping once over each request
 			It("The gateway should translate into a standard NitricRequest", func() {
 				By("The api gateway existing")
-				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
-					Tags: map[string]string{
-						"x-nitric-test-stack-name": "test-api",
-					},
+				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&resource.ApiGatewayDetails{
+					Name:        "test-api",
+					Type:        "api",
+					ApiEndpoint: "",
 				}, nil)
 
 				By("Having at least one worker available")
@@ -148,9 +143,11 @@ var _ = Describe("Lambda", func() {
 							Method: "GET",
 							Path:   "/test/test",
 							Headers: map[string]*apispb.HeaderValue{
-								"User-Agent":   {Value: []string{"Test"}},
-								"Content-Type": {Value: []string{"text/plain"}},
-								"Cookie":       {Value: []string{"test1=testcookie1", "test2=testcookie2"}},
+								"User-Agent":            {Value: []string{"Test"}},
+								"x-nitric-payload-type": {Value: []string{"TestPayload"}},
+								"x-nitric-request-id":   {Value: []string{"test-request-id"}},
+								"Content-Type":          {Value: []string{"text/plain"}},
+								"Cookie":                {Value: []string{"test1=testcookie1", "test2=testcookie2"}},
 							},
 							QueryParams: map[string]*apispb.QueryValue{
 								"key":  {Value: []string{"test", "test2"}},
@@ -213,10 +210,10 @@ var _ = Describe("Lambda", func() {
 				mockManager.EXPECT().WorkerCount().Return(1)
 
 				By("The websocket gateway existing")
-				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&apigatewayv2.GetApiOutput{
-					Tags: map[string]string{
-						"x-nitric-test-stack-name": "test-api",
-					},
+				mockResolver.EXPECT().GetApiGatewayById(gomock.Any(), "test-api").Return(&resource.ApiGatewayDetails{
+					Name:        "test-api",
+					Type:        "api",
+					ApiEndpoint: "",
 				}, nil)
 
 				By("Handling a single HTTP request")

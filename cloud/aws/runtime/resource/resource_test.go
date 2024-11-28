@@ -30,7 +30,7 @@ import (
 
 var _ = Describe("AwsProvider", func() {
 	When("Calling get resources with filled cache", func() {
-		provider := &AwsResourceService{
+		provider := &AwsTaggedResourceResolver{
 			cache: map[string]map[string]ResolvedResource{
 				AwsResource_Bucket: {
 					"test": ResolvedResource{
@@ -53,7 +53,7 @@ var _ = Describe("AwsProvider", func() {
 		When("Call to GetResources fails", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
-			provider := &AwsResourceService{
+			provider := &AwsTaggedResourceResolver{
 				client:  mockClient,
 				stackID: "test-stack",
 			}
@@ -77,7 +77,7 @@ var _ = Describe("AwsProvider", func() {
 		When("Call to GetResources succeeds", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			mockClient := mocks.NewMockResourceGroupsTaggingAPIAPI(ctrl)
-			provider := &AwsResourceService{
+			provider := &AwsTaggedResourceResolver{
 				client:  mockClient,
 				stackID: "test-stackID",
 			}

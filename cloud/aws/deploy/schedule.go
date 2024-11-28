@@ -74,7 +74,7 @@ func (a *NitricAwsPulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.Re
 	}
 
 	// Create a new eventbridge schedule
-	_, err = scheduler.NewSchedule(ctx, name, &scheduler.ScheduleArgs{
+	a.Schedules[name], err = scheduler.NewSchedule(ctx, name, &scheduler.ScheduleArgs{
 		ScheduleExpression:         pulumi.String(awsScheduleExpression),
 		ScheduleExpressionTimezone: pulumi.String(a.AwsConfig.ScheduleTimezone),
 		FlexibleTimeWindow: &scheduler.ScheduleFlexibleTimeWindowArgs{
