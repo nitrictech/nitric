@@ -14,6 +14,8 @@ import (
 // Source at ./.nitric/modules/service
 type Service interface {
 	cdktf.TerraformModule
+	ArtifactRegistryRepository() *string
+	SetArtifactRegistryRepository(val *string)
 	BaseComputeRole() *string
 	SetBaseComputeRole(val *string)
 	// Experimental.
@@ -104,6 +106,16 @@ type Service interface {
 // The jsii proxy struct for Service
 type jsiiProxy_Service struct {
 	internal.Type__cdktfTerraformModule
+}
+
+func (j *jsiiProxy_Service) ArtifactRegistryRepository() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"artifactRegistryRepository",
+		&returns,
+	)
+	return returns
 }
 
 func (j *jsiiProxy_Service) BaseComputeRole() *string {
@@ -441,6 +453,17 @@ func NewService_Override(s Service, scope constructs.Construct, id *string, conf
 		"service.Service",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Service)SetArtifactRegistryRepository(val *string) {
+	if err := j.validateSetArtifactRegistryRepositoryParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"artifactRegistryRepository",
+		val,
 	)
 }
 

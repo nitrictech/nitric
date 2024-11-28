@@ -121,7 +121,7 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 
 	var registryAuths []dockerprovider.DockerProviderRegistryAuth = []dockerprovider.DockerProviderRegistryAuth{
 		{
-			Address:  jsii.String("https://gcr.io"),
+			Address:  jsii.Sprintf("%s-docker.pkg.dev", a.Region),
 			Username: jsii.String("oauth2accesstoken"),
 			Password: googleConf.AccessToken(),
 		},
@@ -132,6 +132,7 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		Location:  jsii.String(a.Region),
 		StackName: jsii.String(a.StackName),
 	})
 

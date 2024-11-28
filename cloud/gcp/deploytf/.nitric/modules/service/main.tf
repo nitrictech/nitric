@@ -12,7 +12,7 @@ data "google_container_registry_repository" "repo" {
 }
 
 locals {
-  service_image_url = "${data.google_container_registry_repository.repo.repository_url}/${var.service_name}"
+  service_image_url = "${var.artifact_registry_repository}/${var.service_name}"
 }
 
 # Tag the provided docker image with the repository url
@@ -70,8 +70,8 @@ resource "google_cloud_run_v2_service" "service" {
 
   template {
     scaling {
-      max_instance_count = var.min_instances
-      min_instance_count = var.max_instances
+      min_instance_count = var.min_instances
+      max_instance_count = var.max_instances
     }
 
     # dynamic "node_selector" {

@@ -57,20 +57,21 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 	}
 
 	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
-		ProjectId:            jsii.String(a.GcpConfig.ProjectId),
-		Region:               jsii.String(a.Region),
-		ServiceName:          jsii.String(name[:min(len(name), 63)]),
-		Image:                jsii.String(imageId),
-		Environment:          &jsiiEnv,
-		StackId:              a.Stack.StackIdOutput(),
-		Cpus:                 jsii.Number(typeConfig.CloudRun.Cpus),
-		Gpus:                 jsii.Number(typeConfig.CloudRun.Gpus),
-		MemoryMb:             jsii.Number(typeConfig.CloudRun.Memory),
-		TimeoutSeconds:       jsii.Number(typeConfig.CloudRun.Timeout),
-		BaseComputeRole:      a.Stack.BaseComputeRoleOutput(),
-		MaxInstances:         jsii.Number(typeConfig.CloudRun.MaxInstances),
-		MinInstances:         jsii.Number(typeConfig.CloudRun.MinInstances),
-		ContainerConcurrency: jsii.Number(typeConfig.CloudRun.Concurrency),
+		ProjectId:                  jsii.String(a.GcpConfig.ProjectId),
+		Region:                     jsii.String(a.Region),
+		ServiceName:                jsii.String(name[:min(len(name), 63)]),
+		Image:                      jsii.String(imageId),
+		Environment:                &jsiiEnv,
+		StackId:                    a.Stack.StackIdOutput(),
+		Cpus:                       jsii.Number(typeConfig.CloudRun.Cpus),
+		Gpus:                       jsii.Number(typeConfig.CloudRun.Gpus),
+		MemoryMb:                   jsii.Number(typeConfig.CloudRun.Memory),
+		TimeoutSeconds:             jsii.Number(typeConfig.CloudRun.Timeout),
+		BaseComputeRole:            a.Stack.BaseComputeRoleOutput(),
+		MaxInstances:               jsii.Number(typeConfig.CloudRun.MaxInstances),
+		MinInstances:               jsii.Number(typeConfig.CloudRun.MinInstances),
+		ContainerConcurrency:       jsii.Number(typeConfig.CloudRun.Concurrency),
+		ArtifactRegistryRepository: a.Stack.ContainerRegistryUriOutput(),
 	})
 
 	return nil

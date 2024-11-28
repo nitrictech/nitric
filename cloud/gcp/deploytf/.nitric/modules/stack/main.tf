@@ -97,3 +97,11 @@ resource "google_project_iam_custom_role" "base_role" {
   title        = "${random_id.stack_id.hex} service base role"
   permissions = local.base_compute_permissions
 }
+
+# Deploy a artifact registry repository
+resource "google_artifact_registry_repository" "service-image-repo" {
+  location      = var.location
+  repository_id = "${var.stack_name}-services"
+  description   = "service images for nitric stack ${var.stack_name}"
+  format        = "DOCKER"
+}

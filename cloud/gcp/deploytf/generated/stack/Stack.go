@@ -19,6 +19,7 @@ type Stack interface {
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
+	ContainerRegistryUriOutput() *string
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
@@ -32,6 +33,8 @@ type Stack interface {
 	// Experimental.
 	FriendlyUniqueId() *string
 	IamRolesOutput() *string
+	Location() *string
+	SetLocation(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -108,6 +111,16 @@ func (j *jsiiProxy_Stack) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) ContainerRegistryUriOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"containerRegistryUriOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
@@ -153,6 +166,16 @@ func (j *jsiiProxy_Stack) IamRolesOutput() *string {
 	_jsii_.Get(
 		j,
 		"iamRolesOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) Location() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"location",
 		&returns,
 	)
 	return returns
@@ -278,6 +301,17 @@ func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetLocation(val *string) {
+	if err := j.validateSetLocationParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"location",
 		val,
 	)
 }
