@@ -93,6 +93,10 @@ func (a *NitricAwsTerraformProvider) CdkTfModules() (string, fs.FS, error) {
 	return ".nitric/modules", modules, nil
 }
 
+func (a *NitricAwsTerraformProvider) RequiredProviders() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
 	tfRegion := cdktf.NewTerraformVariable(stack, jsii.String("region"), &cdktf.TerraformVariableConfig{
 		Type:        jsii.String("string"),

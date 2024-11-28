@@ -170,6 +170,10 @@ func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, t
 	return storageAccount, nil
 }
 
+func (a *NitricAzurePulumiProvider) RequiredProviders() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func (a *NitricAzurePulumiProvider) createDatabaseServer(ctx *pulumi.Context, tags map[string]string) error {
 	var err error
 

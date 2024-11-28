@@ -83,6 +83,19 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 //go:embed .nitric/modules/**/*
 var modules embed.FS
 
+func (a *NitricGcpTerraformProvider) RequiredProviders() map[string]interface{} {
+	return map[string]interface{}{
+		"google": map[string]string{
+			"source":  "hashicorp/google",
+			"version": "~> 3.83.0",
+		},
+		"google-beta": map[string]string{
+			"source":  "hashicorp/google-beta",
+			"version": "~> 3.83.0",
+		},
+	}
+}
+
 func (a *NitricGcpTerraformProvider) CdkTfModules() (string, fs.FS, error) {
 	return ".nitric/modules", modules, nil
 }

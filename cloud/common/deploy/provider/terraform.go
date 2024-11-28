@@ -43,6 +43,9 @@ type NitricTerraformProvider interface {
 	// CdkTfModules - Return the relative parent directory (root golang packed) and embedded modules directory
 	CdkTfModules() (string, fs.FS, error)
 
+	// RequiredProviders - Return a list of required providers for this provider
+	RequiredProviders() map[string]interface{}
+
 	// Order - Return the order that resources should be deployed in.
 	// The order of resources is important as some resources depend on others.
 	// Changing the default order is not recommended unless you know what you are doing.
@@ -171,6 +174,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
 		// Ensure static output
 		"cdktfStaticModuleAssetHash": "nitric_modules",
+
+		"required_providers": nitricProvider.RequiredProviders(),
 	}
 
 	attributesMap := req.Attributes.AsMap()
