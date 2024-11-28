@@ -89,7 +89,7 @@ generate-mocks:
 generate-sources: generate-mocks
 
 generate-terraform:
-	@cd deploytf && npx -y cdktf-cli@0.20.8 get
+	@cd deploytf && npx -y cdktf-cli@0.20.10 get
 
 tidy:
 	@go mod tidy
