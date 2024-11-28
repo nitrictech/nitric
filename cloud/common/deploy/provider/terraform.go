@@ -174,8 +174,6 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
 		// Ensure static output
 		"cdktfStaticModuleAssetHash": "nitric_modules",
-
-		"required_providers": nitricProvider.RequiredProviders(),
 	}
 
 	attributesMap := req.Attributes.AsMap()
@@ -203,6 +201,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	}
 
 	stack := cdktf.NewTerraformStack(app, &fullStackName)
+
+	stack.AddOverride(jsii.String("terraform.required_providers"), nitricProvider.RequiredProviders())
 
 	// The code that defines your stack goes here
 	resources := nitricProvider.Order(req.Spec.Resources)

@@ -64,7 +64,8 @@ resource "google_cloud_run_v2_service" "service" {
   location = var.region
   project  = var.project_id
   # set launch_stage to BETA if gpus set otherwise GA
-  launch_stage = var.gpus > 0 ? "BETA" : "GA"
+  # launch_stage        = var.gpus > 0 ? "BETA" : "GA"
+  launch_stage        = "GA"
   deletion_protection = false
 
   template {
@@ -72,49 +73,54 @@ resource "google_cloud_run_v2_service" "service" {
       max_instance_count = var.min_instances
       min_instance_count = var.max_instances
     }
+
+    # dynamic "node_selector" {
+    #   for_each = var.gpus > 0 ? [1] : []
+    #   content {
+    #     accelerator = "nvidia-l4"
+    #   }
+    # }
     containers {
       image = "${local.service_image_url}@${docker_registry_image.push.sha256_digest}"
       resources {
-        limits = merge({
-          cpu    = "${var.cpus}"
+        limits = {
+          cpu    = var.cpus
           memory = "${var.memory_mb}Mi"
-        }, var.gpus > 0 ? { "nvidia.com/gpu" = var.gpus } : {})
-      }
-
-      dynamic "node_selector" {
-        for_each = var.gpus > 0 ? [1] : []
-        content {
-          accelerator = "nvidia-l4"
         }
+
+        # limits = merge({
+        #   cpu    = "${var.cpus}"
+        #   memory = "${var.memory_mb}Mi"
+        # }, var.gpus > 0 ? { "nvidia.com/gpu" = var.gpus } : {})
       }
 
       ports {
         container_port = 9001
       }
       env {
-          name  = "EVENT_TOKEN"
-          value = random_password.event_token.result
-        }
-        env {
-          name  = "SERVICE_ACCOUNT_EMAIL"
-          value = google_service_account.service_account.email
-        }
-        env {
-          name  = "GCP_REGION"
-          value = var.region
-        }
+        name  = "EVENT_TOKEN"
+        value = random_password.event_token.result
+      }
+      env {
+        name  = "SERVICE_ACCOUNT_EMAIL"
+        value = google_service_account.service_account.email
+      }
+      env {
+        name  = "GCP_REGION"
+        value = var.region
+      }
 
-        dynamic "env" {
-          for_each = var.environment
-          content {
-            name  = env.key
-            value = env.value
-          }
+      dynamic "env" {
+        for_each = var.environment
+        content {
+          name  = env.key
+          value = env.value
         }
+      }
     }
-    
+
     service_account = google_service_account.service_account.email
-    timeout = var.timeout_seconds
+    timeout         = var.timeout_seconds
   }
 
   depends_on = [docker_registry_image.push]
@@ -137,8 +143,8 @@ resource "google_service_account" "invoker_service_account" {
 
 # Give the above service account permissions to execute the CloudRun service
 resource "google_cloud_run_service_iam_member" "invoker" {
-  service  = google_cloud_run_service.service.name
-  location = google_cloud_run_service.service.location
+  service  = google_cloud_run_v2_service.service.name
+  location = google_cloud_run_v2_service.service.location
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.invoker_service_account.email}"
 }

@@ -1,5 +1,5 @@
 output "service_endpoint" { 
-  value = google_cloud_run_service.service.status[0].url
+  value = google_cloud_run_v2_service.service.status[0].url
 }
 
 output "service_account_email" {
@@ -15,5 +15,5 @@ output "event_token" {
 }
 
 output "service_name" {
-  value = google_cloud_run_service.service.name
+  value = google_cloud_run_v2_service.service.name
 }

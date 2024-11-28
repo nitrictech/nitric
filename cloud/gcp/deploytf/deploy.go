@@ -87,11 +87,11 @@ func (a *NitricGcpTerraformProvider) RequiredProviders() map[string]interface{} 
 	return map[string]interface{}{
 		"google": map[string]string{
 			"source":  "hashicorp/google",
-			"version": "~> 3.83.0",
+			"version": "~> 6.12.0",
 		},
 		"google-beta": map[string]string{
 			"source":  "hashicorp/google-beta",
-			"version": "~> 3.83.0",
+			"version": "~> 6.12.0",
 		},
 	}
 }
