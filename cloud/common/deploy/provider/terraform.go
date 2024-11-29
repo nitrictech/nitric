@@ -15,6 +15,7 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -29,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/samber/lo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -206,6 +208,51 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 	// The code that defines your stack goes here
 	resources := nitricProvider.Order(req.Spec.Resources)
+
+	// TODO: Ideally this would be configured via a NewBackend for type safety
+	// instead allowing for arbitrary map overrides that map directly to the backend
+	// property of any terraform based stack file
+	backend, ok := attributesMap["backend"].(map[string]interface{})
+	// if ok {
+	// 	stack.AddOverride(jsii.String("terraform.backend"), nil)
+	// 	// Do backend as map based override for now
+	// 	stack.AddOverride(jsii.String("terraform.backend"), backend)
+	// }
+
+	if ok && len(backend) > 1 {
+		logger.Fatalf("Only one backend is supported, found %d", len(backend))
+	}
+
+	if ok && len(backend) == 1 {
+		backendType := lo.Keys(backend)[0]
+		config := backend[backendType].(map[string]interface{})
+		jsonMap, err := json.Marshal(config)
+		if err != nil {
+			logger.Fatalf("Failed to serialize backend config %v", err)
+			return err
+		}
+
+		switch backendType {
+		case "gcs":
+			gcsConfig := &cdktf.GcsBackendConfig{}
+			// serialize the backend config
+			err := json.Unmarshal(jsonMap, gcsConfig)
+			if err != nil {
+				return err
+			}
+			cdktf.NewGcsBackend(stack, gcsConfig)
+		case "s3":
+			s3Config := &cdktf.S3BackendConfig{}
+			// serialize the backend config
+			err := json.Unmarshal(jsonMap, s3Config)
+			if err != nil {
+				return err
+			}
+			cdktf.NewS3Backend(stack, s3Config)
+		default:
+			logger.Fatalf("Unsupported backend type %s", backendType)
+		}
+	}
 
 	err = nitricProvider.Pre(stack, resources)
 	if err != nil {
