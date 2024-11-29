@@ -76,3 +76,8 @@ variable "base_compute_role" {
     description = "The base compute role to use for the service"
     type        = string
 }
+
+variable "artifact_registry_repository" {
+    description = "The base URI for the artifact registry repository the push this services image to"
+    type        = string
+}

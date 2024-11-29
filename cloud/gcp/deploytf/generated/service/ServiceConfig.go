@@ -13,6 +13,8 @@ type ServiceConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The base URI for the artifact registry repository the push this services image to.
+	ArtifactRegistryRepository *string `field:"required" json:"artifactRegistryRepository" yaml:"artifactRegistryRepository"`
 	// The base compute role to use for the service.
 	BaseComputeRole *string `field:"required" json:"baseComputeRole" yaml:"baseComputeRole"`
 	// Environment variables to set on the lambda function The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.

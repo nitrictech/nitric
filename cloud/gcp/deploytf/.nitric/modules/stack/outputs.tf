@@ -11,3 +11,8 @@ output "base_compute_role" {
 output "iam_roles" {
   value = module.iam_roles
 }
+
+output "container_registry_uri" {
+  value = "${var.location}-docker.pkg.dev/${data.google_project.project.project_id}/${google_artifact_registry_repository.service-image-repo.name}"
+  description = "The name of the container registry repository"
+}

@@ -13,6 +13,8 @@ type StackConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The location to deploy the stack.
+	Location *string `field:"required" json:"location" yaml:"location"`
 	// The name of the nitric stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 }

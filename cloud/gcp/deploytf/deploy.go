@@ -20,9 +20,9 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
-	"github.com/cdktf/cdktf-provider-google-go/google/v13/datagoogleclientconfig"
-	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v13/provider"
-	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v13/provider"
+	"github.com/cdktf/cdktf-provider-google-go/google/v14/datagoogleclientconfig"
+	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v14/provider"
+	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v14/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -56,6 +56,7 @@ type NitricGcpTerraformProvider struct {
 	Queues         map[string]queue.Queue
 	KeyValueStores map[string]keyvalue.Keyvalue
 	Websockets     map[string]websocket.Websocket
+	RawAttributes  map[string]interface{}
 
 	provider.NitricDefaultOrder
 }
@@ -75,6 +76,8 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}
 
+	a.RawAttributes = attributes
+
 	return nil
 }
 
@@ -83,32 +86,65 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 //go:embed .nitric/modules/**/*
 var modules embed.FS
 
+func (a *NitricGcpTerraformProvider) RequiredProviders() map[string]interface{} {
+	return map[string]interface{}{
+		"google": map[string]string{
+			"source":  "hashicorp/google",
+			"version": "~> 6.12.0",
+		},
+		"google-beta": map[string]string{
+			"source":  "hashicorp/google-beta",
+			"version": "~> 6.12.0",
+		},
+	}
+}
+
 func (a *NitricGcpTerraformProvider) CdkTfModules() (string, fs.FS, error) {
 	return ".nitric/modules", modules, nil
 }
 
-func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
+func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformStack) {
+	impersonateSa, impersonateOk := a.RawAttributes["impersonate"].(string)
+
 	tfRegion := cdktf.NewTerraformVariable(stack, jsii.String("region"), &cdktf.TerraformVariableConfig{
 		Type:        jsii.String("string"),
 		Default:     jsii.String(a.Region),
 		Description: jsii.String("The GCP region to deploy resources to"),
 	})
 
-	gcpprovider.NewGoogleProvider(stack, jsii.String("gcp"), &gcpprovider.GoogleProviderConfig{
-		Region:  tfRegion.StringValue(),
-		Project: jsii.String(a.GcpConfig.ProjectId),
-	})
+	if impersonateSa != "" && impersonateOk {
+		gcpprovider.NewGoogleProvider(stack, jsii.String("gcp"), &gcpprovider.GoogleProviderConfig{
+			Region:                    tfRegion.StringValue(),
+			Project:                   jsii.String(a.GcpConfig.ProjectId),
+			ImpersonateServiceAccount: jsii.String(impersonateSa),
+		})
 
-	gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
-		Region:  tfRegion.StringValue(),
-		Project: jsii.String(a.GcpConfig.ProjectId),
-	})
+		gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
+			Region:                    tfRegion.StringValue(),
+			Project:                   jsii.String(a.GcpConfig.ProjectId),
+			ImpersonateServiceAccount: jsii.String(impersonateSa),
+		})
+	} else {
+		gcpprovider.NewGoogleProvider(stack, jsii.String("gcp"), &gcpprovider.GoogleProviderConfig{
+			Region:  tfRegion.StringValue(),
+			Project: jsii.String(a.GcpConfig.ProjectId),
+		})
+
+		gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
+			Region:  tfRegion.StringValue(),
+			Project: jsii.String(a.GcpConfig.ProjectId),
+		})
+	}
+}
+
+func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
+	a.prepareGcpProviders(stack)
 
 	googleConf := datagoogleclientconfig.NewDataGoogleClientConfig(stack, jsii.String("gcp_client_config"), &datagoogleclientconfig.DataGoogleClientConfigConfig{})
 
 	var registryAuths []dockerprovider.DockerProviderRegistryAuth = []dockerprovider.DockerProviderRegistryAuth{
 		{
-			Address:  jsii.String("https://gcr.io"),
+			Address:  jsii.Sprintf("%s-docker.pkg.dev", a.Region),
 			Username: jsii.String("oauth2accesstoken"),
 			Password: googleConf.AccessToken(),
 		},
@@ -119,6 +155,7 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		Location:  jsii.String(a.Region),
 		StackName: jsii.String(a.StackName),
 	})
 
