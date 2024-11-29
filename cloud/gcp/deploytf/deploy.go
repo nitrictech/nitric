@@ -104,7 +104,6 @@ func (a *NitricGcpTerraformProvider) CdkTfModules() (string, fs.FS, error) {
 }
 
 func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformStack) {
-
 	impersonateSa, impersonateOk := a.RawAttributes["impersonate"].(string)
 
 	tfRegion := cdktf.NewTerraformVariable(stack, jsii.String("region"), &cdktf.TerraformVariableConfig{
@@ -136,7 +135,6 @@ func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformSt
 			Project: jsii.String(a.GcpConfig.ProjectId),
 		})
 	}
-
 }
 
 func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
