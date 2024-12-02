@@ -23,10 +23,16 @@ import (
 
 // // Queue - Deploy a Queue
 func (a *NitricGcpTerraformProvider) Queue(stack cdktf.TerraformStack, name string, config *deploymentspb.Queue) error {
-	a.Queues[name] = queue.NewQueue(stack, jsii.Sprintf("queue_%s", name), &queue.QueueConfig{
+	queueConfig := &queue.QueueConfig{
 		QueueName: jsii.String(name),
 		StackId:   a.Stack.StackIdOutput(),
-	})
+	}
+
+	if a.cmekEnabled {
+		queueConfig.KmsKey = a.Stack.CmekKeyOutput()
+	}
+
+	a.Queues[name] = queue.NewQueue(stack, jsii.Sprintf("queue_%s", name), queueConfig)
 
 	return nil
 }

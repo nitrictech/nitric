@@ -16,6 +16,8 @@ type Secret interface {
 	cdktf.TerraformModule
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CmekKey() *string
+	SetCmekKey(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
@@ -30,6 +32,8 @@ type Secret interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	Location() *string
+	SetLocation(val *string)
 	NameOutput() *string
 	// The tree node.
 	Node() constructs.Node
@@ -88,6 +92,16 @@ func (j *jsiiProxy_Secret) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
+func (j *jsiiProxy_Secret) CmekKey() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cmekKey",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Secret) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
@@ -133,6 +147,16 @@ func (j *jsiiProxy_Secret) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Secret) Location() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"location",
 		&returns,
 	)
 	return returns
@@ -256,6 +280,14 @@ func NewSecret_Override(s Secret, scope constructs.Construct, id *string, config
 	)
 }
 
+func (j *jsiiProxy_Secret)SetCmekKey(val *string) {
+	_jsii_.Set(
+		j,
+		"cmekKey",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Secret)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
@@ -268,6 +300,17 @@ func (j *jsiiProxy_Secret)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Secret)SetLocation(val *string) {
+	if err := j.validateSetLocationParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"location",
 		val,
 	)
 }

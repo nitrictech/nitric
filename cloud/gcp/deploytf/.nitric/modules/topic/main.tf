@@ -1,6 +1,9 @@
 # Create a new pubsub topic
 resource "google_pubsub_topic" "topic" {
   name = var.topic_name
+
+  kms_key_name = var.kms_key != "" ? var.kms_key : null
+
   labels = {
     "x-nitric-${var.stack_id}-name" = var.topic_name
     "x-nitric-${var.stack_id}-type" = "topic"
