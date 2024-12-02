@@ -20,6 +20,11 @@ variable "notification_targets" {
   }))
 }
 
+variable "kms_key" {
+  description = "The KMS key to use for encryption"
+  type        = string
+}
+
 variable "storage_class" {
   description = "The class of storage used to store the bucket's contents. This can be STANDARD, NEARLINE, COLDLINE, ARCHIVE, or MULTI_REGIONAL."
   type        = string

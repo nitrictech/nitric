@@ -49,6 +49,8 @@ type NitricGcpTerraformProvider struct {
 	// CmekEnabled - Enable Customer Managed Encryption Keys
 	cmekEnabled bool
 
+	kmsKey string
+
 	GcpConfig      *common.GcpConfig
 	Apis           map[string]api.Api
 	Buckets        map[string]bucket.Bucket
@@ -164,8 +166,9 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
-		Location:  jsii.String(a.Region),
-		StackName: jsii.String(a.StackName),
+		Location:    jsii.String(a.Region),
+		StackName:   jsii.String(a.StackName),
+		CmekEnabled: jsii.Bool(a.cmekEnabled),
 	})
 
 	return nil

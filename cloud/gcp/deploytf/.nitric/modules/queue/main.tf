@@ -2,6 +2,8 @@
 # Deploy a PubSub topic to serve as the queue
 resource "google_pubsub_topic" "queue" {
   name = "queue"
+
+  kms_key_name = var.kms_key != "" ? var.kms_key : null
   labels = {
     "x-nitric-${var.stack_id}-name" = var.queue_name
     "x-nitric-${var.stack_id}-type" = "queue"

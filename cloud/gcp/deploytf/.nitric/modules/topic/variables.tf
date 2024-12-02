@@ -8,6 +8,11 @@ variable "stack_id" {
   type        = string
 }
 
+variable "kms_key" {
+  description = "The KMS key to use for encryption"
+  type        = string
+}
+
 variable "subscriber_services" {
   description = "The services to create subscriptions for"
   type = list(object({

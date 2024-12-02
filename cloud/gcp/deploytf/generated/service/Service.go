@@ -46,6 +46,8 @@ type Service interface {
 	Image() *string
 	SetImage(val *string)
 	InvokerServiceAccountEmailOutput() *string
+	KmsKey() *string
+	SetKmsKey(val *string)
 	MaxInstances() *float64
 	SetMaxInstances(val *float64)
 	MemoryMb() *float64
@@ -253,6 +255,16 @@ func (j *jsiiProxy_Service) InvokerServiceAccountEmailOutput() *string {
 	_jsii_.Get(
 		j,
 		"invokerServiceAccountEmailOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) KmsKey() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKey",
 		&returns,
 	)
 	return returns
@@ -536,6 +548,14 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	_jsii_.Set(
 		j,
 		"image",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetKmsKey(val *string) {
+	_jsii_.Set(
+		j,
+		"kmsKey",
 		val,
 	)
 }

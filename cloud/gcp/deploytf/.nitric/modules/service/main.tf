@@ -74,6 +74,8 @@ resource "google_cloud_run_v2_service" "service" {
       max_instance_count = var.max_instances
     }
 
+    encryption_key = var.kms_key != "" ? var.kms_key : null
+
     # dynamic "node_selector" {
     #   for_each = var.gpus > 0 ? [1] : []
     #   content {

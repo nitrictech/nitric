@@ -13,6 +13,8 @@ type TopicConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"required" json:"kmsKey" yaml:"kmsKey"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The services to create subscriptions for.

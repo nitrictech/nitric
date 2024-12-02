@@ -13,6 +13,8 @@ type QueueConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"required" json:"kmsKey" yaml:"kmsKey"`
 	// The name of the queue.
 	QueueName *string `field:"required" json:"queueName" yaml:"queueName"`
 	// The ID of the Nitric stack.

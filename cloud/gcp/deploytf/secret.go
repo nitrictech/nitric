@@ -23,10 +23,17 @@ import (
 
 // // Secret - Deploy a Secret
 func (a *NitricGcpTerraformProvider) Secret(stack cdktf.TerraformStack, name string, config *deploymentspb.Secret) error {
-	a.Secrets[name] = secret.NewSecret(stack, jsii.Sprintf("secret_%s", name), &secret.SecretConfig{
+	secretConfig := &secret.SecretConfig{
 		SecretName: jsii.String(name),
 		StackId:    a.Stack.StackIdOutput(),
-	})
+		Location:   jsii.String(a.Region),
+	}
+
+	if a.cmekEnabled {
+		secretConfig.CmekKey = a.Stack.CmekKeyOutput()
+	}
+
+	a.Secrets[name] = secret.NewSecret(stack, jsii.Sprintf("secret_%s", name), secretConfig)
 
 	return nil
 }
