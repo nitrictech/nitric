@@ -29,12 +29,16 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// cloud run service directvpc config.
+	Vpc interface{} `field:"required" json:"vpc" yaml:"vpc"`
 	// The number of concurrent requests the CloudRun service can handle 80.
 	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
 	// The amount of cpus to allocate to the CloudRun service 1.
 	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
 	// The amount of gpus to allocate to the CloudRun service.
 	Gpus *float64 `field:"optional" json:"gpus" yaml:"gpus"`
+	// The name of the KMS key to use.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 	// The maximum number of instances to run 10.
 	MaxInstances *float64 `field:"optional" json:"maxInstances" yaml:"maxInstances"`
 	// The amount of memory to allocate to the CloudRun service in MB 512.

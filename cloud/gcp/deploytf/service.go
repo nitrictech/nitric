@@ -26,11 +26,12 @@ import (
 )
 
 func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name string, config *deploymentspb.Service, runtimeProvider provider.RuntimeProvider) error {
+	targetImageName := fmt.Sprintf("%s-%s", name, a.StackName)
 	imageId, err := image.BuildWrappedImage(&image.BuildWrappedImageArgs{
 		ServiceName: name,
 		SourceImage: config.GetImage().Uri,
 		// TODO: Use correct image uri
-		TargetImage: name,
+		TargetImage: targetImageName,
 		Runtime:     runtimeProvider(),
 	})
 	if err != nil {
@@ -56,7 +57,7 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		jsiiEnv[k] = jsii.String(v)
 	}
 
-	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), &service.ServiceConfig{
+	serviceConfig := &service.ServiceConfig{
 		ProjectId:                  jsii.String(a.GcpConfig.ProjectId),
 		Region:                     jsii.String(a.Region),
 		ServiceName:                jsii.String(name[:min(len(name), 63)]),
@@ -72,7 +73,14 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		MinInstances:               jsii.Number(typeConfig.CloudRun.MinInstances),
 		ContainerConcurrency:       jsii.Number(typeConfig.CloudRun.Concurrency),
 		ArtifactRegistryRepository: a.Stack.ContainerRegistryUriOutput(),
-	})
+		Vpc:                        a.vpcConfig,
+	}
+
+	if a.cmekEnabled {
+		serviceConfig.KmsKey = a.Stack.CmekKeyOutput()
+	}
+
+	a.Services[name] = service.NewService(stack, jsii.Sprintf("service_%s", name), serviceConfig)
 
 	return nil
 }

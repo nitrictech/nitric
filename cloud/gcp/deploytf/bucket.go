@@ -62,11 +62,17 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
-	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
+	bucketConfig := &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,
-	})
+	}
+
+	if n.cmekEnabled {
+		bucketConfig.KmsKey = n.Stack.CmekKeyOutput()
+	}
+
+	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), bucketConfig)
 
 	return nil
 }
