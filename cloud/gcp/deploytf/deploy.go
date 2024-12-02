@@ -46,6 +46,9 @@ type NitricGcpTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
 
+	// CmekEnabled - Enable Customer Managed Encryption Keys
+	cmekEnabled bool
+
 	GcpConfig      *common.GcpConfig
 	Apis           map[string]api.Api
 	Buckets        map[string]bucket.Bucket
@@ -77,6 +80,12 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 	}
 
 	a.RawAttributes = attributes
+
+	var ok bool
+	a.cmekEnabled, ok = a.RawAttributes["cmek"].(bool)
+	if !ok {
+		a.cmekEnabled = false
+	}
 
 	return nil
 }
