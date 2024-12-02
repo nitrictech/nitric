@@ -16,4 +16,5 @@ variable "location" {
 variable "cmek_key" {
   description = "The KMS key to use for encryption"
   type        = string
+  default     = ""
 }

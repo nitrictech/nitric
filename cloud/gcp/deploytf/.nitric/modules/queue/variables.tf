@@ -6,6 +6,7 @@ variable "queue_name" {
 variable "kms_key" {
   description = "The KMS key to use for encryption"
   type        = string
+  default     = ""
 }
 
 variable "stack_id" {
