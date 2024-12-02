@@ -49,8 +49,6 @@ type NitricGcpTerraformProvider struct {
 	// CmekEnabled - Enable Customer Managed Encryption Keys
 	cmekEnabled bool
 
-	kmsKey string
-
 	GcpConfig      *common.GcpConfig
 	Apis           map[string]api.Api
 	Buckets        map[string]bucket.Bucket
