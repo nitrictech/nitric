@@ -281,9 +281,6 @@ func NewSecret_Override(s Secret, scope constructs.Construct, id *string, config
 }
 
 func (j *jsiiProxy_Secret)SetCmekKey(val *string) {
-	if err := j.validateSetCmekKeyParameters(val); err != nil {
-		panic(err)
-	}
 	_jsii_.Set(
 		j,
 		"cmekKey",

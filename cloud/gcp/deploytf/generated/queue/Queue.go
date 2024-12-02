@@ -285,9 +285,6 @@ func (j *jsiiProxy_Queue)SetForEach(val cdktf.ITerraformIterator) {
 }
 
 func (j *jsiiProxy_Queue)SetKmsKey(val *string) {
-	if err := j.validateSetKmsKeyParameters(val); err != nil {
-		panic(err)
-	}
 	_jsii_.Set(
 		j,
 		"kmsKey",

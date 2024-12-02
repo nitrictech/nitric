@@ -36,10 +36,6 @@ func (j *jsiiProxy_Bucket) validateSetBucketNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetKmsKeyParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetNotificationTargetsParameters(val interface{}) error {
 	return nil
 }

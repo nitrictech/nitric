@@ -15,12 +15,12 @@ type BucketConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The name of the bucket.
 	BucketName *string `field:"required" json:"bucketName" yaml:"bucketName"`
-	// The KMS key to use for encryption.
-	KmsKey *string `field:"required" json:"kmsKey" yaml:"kmsKey"`
 	// The notification target configurations.
 	NotificationTargets interface{} `field:"required" json:"notificationTargets" yaml:"notificationTargets"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 	// The class of storage used to store the bucket's contents.
 	//
 	// This can be STANDARD, NEARLINE, COLDLINE, ARCHIVE, or MULTI_REGIONAL.

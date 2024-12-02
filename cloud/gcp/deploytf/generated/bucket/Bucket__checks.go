@@ -98,14 +98,6 @@ func (j *jsiiProxy_Bucket) validateSetBucketNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetKmsKeyParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetNotificationTargetsParameters(val interface{}) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")

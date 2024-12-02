@@ -32,10 +32,6 @@ func validateQueue_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Queue) validateSetKmsKeyParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Queue) validateSetQueueNameParameters(val *string) error {
 	return nil
 }

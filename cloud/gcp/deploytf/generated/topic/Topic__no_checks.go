@@ -32,10 +32,6 @@ func validateTopic_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Topic) validateSetKmsKeyParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Topic) validateSetStackIdParameters(val *string) error {
 	return nil
 }
