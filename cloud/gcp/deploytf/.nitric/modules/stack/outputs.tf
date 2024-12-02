@@ -27,3 +27,8 @@ output "cmek_key" {
   value = length(google_kms_crypto_key.cmek_key) > 0 ? google_kms_crypto_key.cmek_key[0].id : null
   description = "The name of the KMS key"
 }
+
+output "kms_key_iam_binding" {
+  value = length(google_kms_crypto_key.cmek_key) > 0 ? google_kms_crypto_key_iam_binding.cmek_key_binding[0] : null
+  description = "The IAM binding for the KMS key"
+}

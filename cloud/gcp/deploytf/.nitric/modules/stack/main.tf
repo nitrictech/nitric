@@ -3,6 +3,8 @@ resource "random_id" "stack_id" {
   byte_length = 4
 
   prefix = "${var.stack_name}-"
+
+  depends_on = [ google_kms_crypto_key_iam_binding.cmek_key_binding[0] ]
 }
 
 module "iam_roles" {
@@ -10,7 +12,7 @@ module "iam_roles" {
 }
 
 locals {
-  full_stack_id = "${var.stack_name}-${random_id.stack_id.hex}"
+  full_stack_id = "${random_id.stack_id.hex}"
   required_services = [
     # Enable the IAM API
     "iam.googleapis.com",
@@ -104,10 +106,17 @@ resource "google_project_iam_custom_role" "base_role" {
 # Deploy a artifact registry repository
 resource "google_artifact_registry_repository" "service-image-repo" {
   location      = var.location
-  repository_id = "${var.stack_name}-services"
+  repository_id = "${local.full_stack_id}-services"
   description   = "service images for nitric stack ${var.stack_name}"
   kms_key_name  = var.cmek_enabled ? google_kms_crypto_key.cmek_key[0].id : null
   format        = "DOCKER"
+  depends_on = [ google_kms_crypto_key_iam_binding.cmek_key_binding[0] ]
+}
+
+resource "random_id" "random_kms_id" {
+  byte_length = 4
+
+  prefix = "${var.stack_name}-"
 }
 
 # Deploy a KMS keyring and key if cmek enabled
@@ -115,12 +124,12 @@ resource "google_artifact_registry_repository" "service-image-repo" {
 resource "google_kms_key_ring" "cmek_key_ring" {
   count    = var.cmek_enabled ? 1 : 0
   location = var.location
-  name     = "${local.full_stack_id}-key-ring"
+  name     = "${random_id.random_kms_id.hex}-key-ring"
 }
 
 resource "google_kms_crypto_key" "cmek_key" {
   count    = var.cmek_enabled ? 1 : 0
-  name     = "${local.full_stack_id}-key-ring"
+  name     = "${random_id.random_kms_id.hex}-key-ring"
   key_ring = google_kms_key_ring.cmek_key_ring[0].id
 
   # lifecycle {
@@ -128,12 +137,26 @@ resource "google_kms_crypto_key" "cmek_key" {
   # }
 }
 
+resource "google_project_service_identity" "secret_manager_sa" {
+  count    = var.cmek_enabled ? 1 : 0
+  provider = google-beta
+
+  project = data.google_project.project.project_id
+  service = "secretmanager.googleapis.com"
+}
+
 locals {
   kms_reader_service_accounts = [
+    // Artifact registry service account
     "serviceAccount:service-${data.google_project.project.number}@gcp-sa-artifactregistry.iam.gserviceaccount.com",
+    // Pubsub service account
     "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com",
+    // Cloud run service account
     "serviceAccount:service-${data.google_project.project.number}@gs-project-accounts.iam.gserviceaccount.com",
+    // Cloud scheduler service account
     "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com",
+    // Cloud scheduler service account
+    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-secretmanager.iam.gserviceaccount.com"
   ]
 }
 
@@ -143,5 +166,5 @@ resource "google_kms_crypto_key_iam_binding" "cmek_key_binding" {
   crypto_key_id = google_kms_crypto_key.cmek_key[0].id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   members       = toset(local.kms_reader_service_accounts)
-  depends_on = [ google_project_service.required_services ]
+  depends_on    = [google_project_service.required_services, google_project_service_identity.secret_manager_sa[0]]
 }

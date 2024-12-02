@@ -37,6 +37,7 @@ type Stack interface {
 	// Experimental.
 	FriendlyUniqueId() *string
 	IamRolesOutput() *string
+	KmsKeyIamBindingOutput() *string
 	Location() *string
 	SetLocation(val *string)
 	// The tree node.
@@ -200,6 +201,16 @@ func (j *jsiiProxy_Stack) IamRolesOutput() *string {
 	_jsii_.Get(
 		j,
 		"iamRolesOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) KmsKeyIamBindingOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKeyIamBindingOutput",
 		&returns,
 	)
 	return returns

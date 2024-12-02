@@ -28,6 +28,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "getString", GoMethod: "GetString"},
 			_jsii_.MemberProperty{JsiiProperty: "iamRolesOutput", GoGetter: "IamRolesOutput"},
 			_jsii_.MemberMethod{JsiiMethod: "interpolationForOutput", GoMethod: "InterpolationForOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "kmsKeyIamBindingOutput", GoGetter: "KmsKeyIamBindingOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "location", GoGetter: "Location"},
 			_jsii_.MemberProperty{JsiiProperty: "node", GoGetter: "Node"},
 			_jsii_.MemberMethod{JsiiMethod: "overrideLogicalId", GoMethod: "OverrideLogicalId"},
