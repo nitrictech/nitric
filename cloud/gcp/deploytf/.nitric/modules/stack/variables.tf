@@ -3,6 +3,11 @@ variable "stack_name" {
   type        = string
 }
 
+variable "cmek_enabled" {
+  description = "Enable customer managed encryption keys"
+  type        = bool
+}
+
 variable "location" {
   description = "The location to deploy the stack"
   type        = string

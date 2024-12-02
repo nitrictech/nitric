@@ -8,7 +8,16 @@ resource "google_secret_manager_secret" "secret" {
   }
 
   replication {
-    auto {
+    user_managed {
+      replicas {
+        location = var.location
+        dynamic "customer_managed_encryption" {
+          for_each = var.cmek_key != "" ? [1] : []
+          content {
+            kms_key_name = var.cmek_key
+          }
+        }
+      }
     }
   }
 }

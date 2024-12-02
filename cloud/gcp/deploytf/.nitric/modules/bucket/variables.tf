@@ -10,14 +10,20 @@ variable "stack_id" {
 
 variable "notification_targets" {
   description = "The notification target configurations"
-  type        = map(object({
-    name = string
-    url = string
-    event_token = string
+  type = map(object({
+    name                          = string
+    url                           = string
+    event_token                   = string
     invoker_service_account_email = string
-    prefix = string
-    events = list(string)
+    prefix                        = string
+    events                        = list(string)
   }))
+}
+
+variable "kms_key" {
+  description = "The KMS key to use for encryption"
+  type        = string
+  default     = ""
 }
 
 variable "storage_class" {
