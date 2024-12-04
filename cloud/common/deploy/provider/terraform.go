@@ -21,7 +21,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"path/filepath"
 
 	goruntime "runtime"
 
@@ -36,6 +35,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type ModuleDirectory struct {
+	ParentDir string
+	Modules   fs.FS
+}
+
 type NitricTerraformProvider interface {
 	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
 	Init(attributes map[string]interface{}) error
@@ -43,7 +47,8 @@ type NitricTerraformProvider interface {
 	Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error
 
 	// CdkTfModules - Return the relative parent directory (root golang packed) and embedded modules directory
-	CdkTfModules() (string, fs.FS, error)
+	// CdkTfModules() (string, fs.FS, error)
+	CdkTfModules() ([]ModuleDirectory, error)
 
 	// RequiredProviders - Return a list of required providers for this provider
 	RequiredProviders() map[string]interface{}
@@ -110,6 +115,16 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 	}
 }
 
+func (m mergedFS) Open(name string) (fs.File, error) {
+	for _, f := range m.fses {
+		file, err := f.Open(name)
+		if err == nil {
+			return file, nil
+		}
+	}
+	return nil, fs.ErrNotExist
+}
+
 func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricTerraformProvider, runtime RuntimeProvider) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -127,53 +142,63 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 	fullStackName := fmt.Sprintf("%s-%s", projectName, stackName)
 
-	parentDir, modules, err := nitricProvider.CdkTfModules()
+	modules, err := nitricProvider.CdkTfModules()
 	if err != nil {
 		return err
 	}
 
-	// modules dir
-	modulesDir := filepath.Join(parentDir)
-
-	err = os.MkdirAll(modulesDir, 0o750)
-	if err != nil {
-		return err
-	}
-	// cleanup the modules when we're done
-	// NOTE: Its importent to ensure that the modules are written to a temporary directory like .nitric
-	defer os.RemoveAll(modulesDir)
-
-	err = fs.WalkDir(modules, ".", func(path string, d fs.DirEntry, err error) error {
+	fses := []fs.FS{}
+	relativeModules := []string{}
+	for _, module := range modules {
+		relativeModules = append(relativeModules, module.ParentDir)
+		err = os.MkdirAll(module.ParentDir, 0o750)
 		if err != nil {
 			return err
 		}
 
-		if !d.IsDir() {
-			data, err := modules.Open(path)
+		defer os.RemoveAll(module.ParentDir)
+		fses = append(fses, module.Modules)
+	}
+
+	// modules dir
+
+	// cleanup the modules when we're done
+	// NOTE: Its important to ensure that the modules are written to a temporary directory like .nitric
+
+	for _, fsx := range fses {
+		err = fs.WalkDir(fsx, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
-			defer data.Close()
 
-			//#nosec G304 -- path unpacking known modules embedded fs
-			out, err := os.Create(path)
-			if err != nil {
+			if !d.IsDir() {
+				data, err := fsx.Open(path)
+				if err != nil {
+					return err
+				}
+				defer data.Close()
+
+				//#nosec G304 -- path unpacking known modules embedded fs
+				out, err := os.Create(path)
+				if err != nil {
+					return err
+				}
+				defer out.Close()
+
+				fmt.Println("Writing module to", path)
+				_, err = io.Copy(out, data)
 				return err
 			}
-			defer out.Close()
 
-			_, err = io.Copy(out, data)
+			return os.MkdirAll(path, 0o750)
+		})
+		if err != nil {
 			return err
 		}
-
-		return os.MkdirAll(path, 0o750)
-	})
-	if err != nil {
-		return err
 	}
 
 	appCtx := map[string]interface{}{
-		"cdktfRelativeModules": []string{filepath.Join(modulesDir)},
+		"cdktfRelativeModules": relativeModules,
 		// Ensure static output
 		"cdktfStaticModuleAssetHash": "nitric_modules",
 	}
