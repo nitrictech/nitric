@@ -125,7 +125,11 @@ resource "google_cloud_run_v2_service" "service" {
     timeout         = "${var.timeout_seconds}s"
   }
 
-  depends_on = [docker_registry_image.push]
+  depends_on = [
+    docker_registry_image.push, 
+    google_service_account_iam_member.account_member, 
+    google_service_account_iam_member.service_account_iam_member
+  ]
 }
 
 # Create a random ID for the service name, so that it confirms to regex restrictions
@@ -133,6 +137,22 @@ resource "random_string" "service_id" {
   length  = 30 - length(local.ids_prefix)
   special = false
   upper   = false
+}
+
+
+data "google_client_openid_userinfo" "deployer" {
+}
+
+locals {
+  deployer_email = data.google_client_openid_userinfo.deployer.email
+  deployer_type  = endswith(local.deployer_email, "gserviceaccount.com") ? "serviceAccount" : "user"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_iam_member" {
+  service_account_id = google_service_account.invoker_service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
 }
 
 # Create an invoker service account for the google cloud run instance
