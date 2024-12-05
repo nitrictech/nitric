@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -50,12 +51,16 @@ type PubsubEventService struct {
 	resource.GcpResourceResolver
 	client      ifaces_pubsub.PubsubClient
 	tasksClient ifaces_cloudtasks.CloudtasksClient
+	cacheLock   sync.Mutex
 	cache       map[string]ifaces_pubsub.Topic
 }
 
 var _ topicpb.TopicsServer = &PubsubEventService{}
 
 func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub.Topic, error) {
+	s.cacheLock.Lock()
+	defer s.cacheLock.Unlock()
+
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
