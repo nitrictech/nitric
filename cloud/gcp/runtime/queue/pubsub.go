@@ -81,7 +81,7 @@ func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub
 
 			resType, hasType := labels[tags.GetResourceTypeKey(stackID)]
 
-			if name, ok := labels[tags.GetResourceNameKey(stackID)]; ok && name == queue && hasType && resType == "queue" {
+			if name, ok := labels[tags.GetResourceNameKey(stackID)]; ok && hasType && resType == "queue" {
 				s.cache[name] = t
 			}
 		}
