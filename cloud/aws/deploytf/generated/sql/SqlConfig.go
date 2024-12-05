@@ -21,10 +21,6 @@ type SqlConfig struct {
 	CreateDatabaseProjectName *string `field:"required" json:"createDatabaseProjectName" yaml:"createDatabaseProjectName"`
 	// The name of the database to create.
 	DbName *string `field:"required" json:"dbName" yaml:"dbName"`
-	// The URI of the docker image to use for the codebuild project.
-	ImageUri *string `field:"required" json:"imageUri" yaml:"imageUri"`
-	// The command to run to migrate the database.
-	MigrateCommand *string `field:"required" json:"migrateCommand" yaml:"migrateCommand"`
 	// The endpoint of the RDS cluster to connect to.
 	RdsClusterEndpoint *string `field:"required" json:"rdsClusterEndpoint" yaml:"rdsClusterEndpoint"`
 	// The password to connect to the RDS cluster.
@@ -37,7 +33,7 @@ type SqlConfig struct {
 	SubnetIds *[]*string `field:"required" json:"subnetIds" yaml:"subnetIds"`
 	// The vpc id to use for the codebuild project.
 	VpcId *string `field:"required" json:"vpcId" yaml:"vpcId"`
-	// The working directory for the codebuild project.
-	WorkDir *string `field:"required" json:"workDir" yaml:"workDir"`
+	// Details of the docker image to use for the codebuild project that performs database migrations.
+	Migrations interface{} `field:"optional" json:"migrations" yaml:"migrations"`
 }
 

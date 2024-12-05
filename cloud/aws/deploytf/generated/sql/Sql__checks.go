@@ -122,15 +122,7 @@ func (j *jsiiProxy_Sql) validateSetDbNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Sql) validateSetImageUriParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Sql) validateSetMigrateCommandParameters(val *string) error {
+func (j *jsiiProxy_Sql) validateSetMigrationsParameters(val interface{}) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -179,14 +171,6 @@ func (j *jsiiProxy_Sql) validateSetSubnetIdsParameters(val *[]*string) error {
 }
 
 func (j *jsiiProxy_Sql) validateSetVpcIdParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Sql) validateSetWorkDirParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
