@@ -128,7 +128,8 @@ resource "google_cloud_run_v2_service" "service" {
   depends_on = [
     docker_registry_image.push, 
     google_service_account_iam_member.account_member, 
-    google_service_account_iam_member.service_account_iam_member
+    google_service_account_iam_member.service_account_iam_member,
+    google_service_account_iam_member.service_account_invoker_iam_member
   ]
 }
 
@@ -150,6 +151,13 @@ locals {
 
 # If we're impersonation a service account, we need to grant that account the service account user role on the service account
 resource "google_service_account_iam_member" "service_account_iam_member" {
+  service_account_id = google_service_account.service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_invoker_iam_member" {
   service_account_id = google_service_account.invoker_service_account.name
   role               = "roles/iam.serviceAccountUser"
   member             = "${local.deployer_type}:${local.deployer_email}"
