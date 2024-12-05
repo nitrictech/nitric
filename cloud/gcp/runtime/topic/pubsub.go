@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -50,12 +51,16 @@ type PubsubEventService struct {
 	resource.GcpResourceResolver
 	client      ifaces_pubsub.PubsubClient
 	tasksClient ifaces_cloudtasks.CloudtasksClient
+	cacheLock   sync.Mutex
 	cache       map[string]ifaces_pubsub.Topic
 }
 
 var _ topicpb.TopicsServer = &PubsubEventService{}
 
 func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub.Topic, error) {
+	s.cacheLock.Lock()
+	defer s.cacheLock.Unlock()
+
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
@@ -75,7 +80,7 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 
 			resType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
 
-			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && hasType && name == topic && resType == "topic" {
+			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && hasType && resType == "topic" {
 				s.cache[name] = t
 			}
 		}
@@ -85,7 +90,7 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 		return topic, nil
 	}
 
-	return nil, fmt.Errorf("topic not found")
+	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
 type httpPubsubMessage struct {
