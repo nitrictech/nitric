@@ -80,7 +80,7 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 
 			resType, hasType := labels[tags.GetResourceTypeKey(env.GetNitricStackID())]
 
-			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && hasType && name == topic && resType == "topic" {
+			if name, ok := labels[tags.GetResourceNameKey(env.GetNitricStackID())]; ok && hasType && resType == "topic" {
 				s.cache[name] = t
 			}
 		}
@@ -90,7 +90,7 @@ func (s *PubsubEventService) getPubsubTopicFromName(topic string) (ifaces_pubsub
 		return topic, nil
 	}
 
-	return nil, fmt.Errorf("topic not found")
+	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
 type httpPubsubMessage struct {
