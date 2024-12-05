@@ -3,11 +3,6 @@ variable "db_name" {
   type        = string
 }
 
-variable "image_uri" {
-  description = "The URI of the docker image to use for the codebuild project"
-  type        = string
-}
-
 variable "rds_cluster_endpoint" {
   description = "The endpoint of the RDS cluster to connect to"
   type        = string
@@ -38,9 +33,14 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "work_dir" {
-  description = "The working directory for the codebuild project"
-  type        = string
+variable "migrations" {
+  description = "Details of the docker image to use for the codebuild project that performs database migrations"
+  type = object({
+    image_uri       = string # The URI of the docker image to use for the codebuild project
+    work_dir        = string # The working directory for the codebuild project
+    migrate_command = string # The command to run to migrate the database
+  })
+  default = null
 }
 
 variable "codebuild_role_arn" {
@@ -50,11 +50,6 @@ variable "codebuild_role_arn" {
 
 variable "codebuild_region" {
   description = "The region of the codebuild project"
-  type        = string
-}
-
-variable "migrate_command" {
-  description = "The command to run to migrate the database"
   type        = string
 }
 
