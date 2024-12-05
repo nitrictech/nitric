@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
@@ -43,6 +44,7 @@ type SecretManagerSecretService struct {
 	projectId string
 	stackName string
 	cache     map[string]string
+	cacheLock sync.Mutex
 }
 
 var _ secretpb.SecretManagerServer = &SecretManagerSecretService{}
@@ -82,21 +84,24 @@ func (s *SecretManagerSecretService) buildSecretVersionName(ctx context.Context,
 		return "", fmt.Errorf("provide non-blank version")
 	}
 
-	parent, inCache := s.cache[sv.Secret.Name]
-	if !inCache {
-		realSec, err := s.getSecret(ctx, sv.Secret)
-		if err != nil {
-			return "", err
-		}
-
-		parent = realSec.Name
+	parent, err := s.getSecret(ctx, sv.Secret)
+	if err != nil {
+		return "", err
 	}
 
 	return fmt.Sprintf("%s/versions/%s", parent, sv.Version), nil
 }
 
 // ensure a secret container exists for storing secret versions
-func (s *SecretManagerSecretService) getSecret(ctx context.Context, sec *secretpb.Secret) (*secretmanagerpb.Secret, error) {
+func (s *SecretManagerSecretService) getSecret(ctx context.Context, sec *secretpb.Secret) (string, error) {
+	s.cacheLock.Lock()
+	defer s.cacheLock.Unlock()
+
+	parent, inCache := s.cache[sec.Name]
+	if inCache {
+		return parent, nil
+	}
+
 	iter := s.client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: s.getParentName(),
 		Filter: fmt.Sprintf("labels.%s=%s", tags.GetResourceNameKey(env.GetNitricStackID()), sec.Name),
@@ -104,16 +109,16 @@ func (s *SecretManagerSecretService) getSecret(ctx context.Context, sec *secretp
 
 	result, err := iter.Next()
 	if errors.Is(err, iterator.Done) {
-		return nil, status.Error(grpccodes.NotFound, "secret not found")
+		return "", status.Error(grpccodes.NotFound, "secret not found")
 	}
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	s.cache[sec.Name] = result.Name
 
-	return result, nil
+	return result.Name, nil
 }
 
 // Put - Creates a new secret if one doesn't exist, or just adds a new secret version
@@ -139,7 +144,7 @@ func (s *SecretManagerSecretService) Put(ctx context.Context, req *secretpb.Secr
 	}
 
 	verResult, err := s.client.AddSecretVersion(ctx, &secretmanagerpb.AddSecretVersionRequest{
-		Parent: parentSec.Name,
+		Parent: parentSec,
 		Payload: &secretmanagerpb.SecretPayload{
 			Data: req.Value,
 		},

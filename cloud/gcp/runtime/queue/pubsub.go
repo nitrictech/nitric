@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -50,12 +51,16 @@ type PubsubQueueService struct {
 	newSubscriberClient func(ctx context.Context, opts ...option.ClientOption) (ifaces_pubsub.SubscriberClient, error)
 	projectId           string
 	cache               map[string]ifaces_pubsub.Topic
+	cacheLock           sync.Mutex
 }
 
 // Retrieves the Nitric "Queue Topic" for the specified queue (PubSub Topic).
 //
 // This retrieves the default Nitric Queue for the Topic based on tagging conventions.
 func (s *PubsubQueueService) getPubsubTopicFromName(queue string) (ifaces_pubsub.Topic, error) {
+	s.cacheLock.Lock()
+	defer s.cacheLock.Unlock()
+
 	if s.cache == nil {
 		topics := s.client.Topics(context.Background())
 		s.cache = make(map[string]ifaces_pubsub.Topic)
