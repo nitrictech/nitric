@@ -48,11 +48,7 @@ func (j *jsiiProxy_Sql) validateSetDbNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Sql) validateSetImageUriParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Sql) validateSetMigrateCommandParameters(val *string) error {
+func (j *jsiiProxy_Sql) validateSetMigrationsParameters(val interface{}) error {
 	return nil
 }
 
@@ -77,10 +73,6 @@ func (j *jsiiProxy_Sql) validateSetSubnetIdsParameters(val *[]*string) error {
 }
 
 func (j *jsiiProxy_Sql) validateSetVpcIdParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Sql) validateSetWorkDirParameters(val *string) error {
 	return nil
 }
 

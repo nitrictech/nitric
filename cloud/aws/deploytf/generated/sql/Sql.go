@@ -38,10 +38,8 @@ type Sql interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	ImageUri() *string
-	SetImageUri(val *string)
-	MigrateCommand() *string
-	SetMigrateCommand(val *string)
+	Migrations() interface{}
+	SetMigrations(val interface{})
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -66,8 +64,6 @@ type Sql interface {
 	Version() *string
 	VpcId() *string
 	SetVpcId(val *string)
-	WorkDir() *string
-	SetWorkDir(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -199,21 +195,11 @@ func (j *jsiiProxy_Sql) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Sql) ImageUri() *string {
-	var returns *string
+func (j *jsiiProxy_Sql) Migrations() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"imageUri",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Sql) MigrateCommand() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"migrateCommand",
+		"migrations",
 		&returns,
 	)
 	return returns
@@ -339,16 +325,6 @@ func (j *jsiiProxy_Sql) VpcId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Sql) WorkDir() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"workDir",
-		&returns,
-	)
-	return returns
-}
-
 
 func NewSql(scope constructs.Construct, id *string, config *SqlConfig) Sql {
 	_init_.Initialize()
@@ -437,24 +413,13 @@ func (j *jsiiProxy_Sql)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetImageUri(val *string) {
-	if err := j.validateSetImageUriParameters(val); err != nil {
+func (j *jsiiProxy_Sql)SetMigrations(val interface{}) {
+	if err := j.validateSetMigrationsParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"imageUri",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Sql)SetMigrateCommand(val *string) {
-	if err := j.validateSetMigrateCommandParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"migrateCommand",
+		"migrations",
 		val,
 	)
 }
@@ -521,17 +486,6 @@ func (j *jsiiProxy_Sql)SetVpcId(val *string) {
 	_jsii_.Set(
 		j,
 		"vpcId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Sql)SetWorkDir(val *string) {
-	if err := j.validateSetWorkDirParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"workDir",
 		val,
 	)
 }

@@ -24,28 +24,35 @@ import (
 )
 
 func (n *NitricAwsTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	// Inspect the provided migration image and get its command and working directory
-	inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
-	if err != nil {
-		return err
-	}
-
-	sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+	sqlConfig := sql.SqlConfig{
 		DbName:                    jsii.String(name),
-		ImageUri:                  jsii.String(inspect.ID),
 		RdsClusterEndpoint:        n.Rds.ClusterEndpointOutput(),
 		RdsClusterUsername:        n.Rds.ClusterUsernameOutput(),
 		RdsClusterPassword:        n.Rds.ClusterPasswordOutput(),
 		SubnetIds:                 cdktf.Token_AsList(n.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{}),
 		SecurityGroupIds:          &[]*string{n.Rds.SecurityGroupIdOutput()},
 		CreateDatabaseProjectName: n.Rds.CreateDatabaseProjectNameOutput(),
-		MigrateCommand:            jsii.String(inspect.Cmd),
-		WorkDir:                   jsii.String(lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/")),
 		VpcId:                     n.Vpc.VpcIdOutput(),
 		CodebuildRoleArn:          n.Rds.CodebuildRoleArnOutput(),
 		CodebuildRegion:           &n.Region,
 		DependsOn:                 &[]cdktf.ITerraformDependable{n.Rds},
-	})
+	}
+
+	// Inspect the provided migration image and get its command and working directory
+	if config.GetImageUri() != "" {
+		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+		if err != nil {
+			return err
+		}
+
+		sqlConfig.Migrations = map[string]interface{}{
+			"image_uri":       config.GetImageUri(),
+			"migrate_command": inspect.Cmd,
+			"work_dir":        lo.Ternary(inspect.WorkDir != "", inspect.WorkDir, "/"),
+		}
+	}
+
+	sql.NewSql(stack, jsii.String(name), &sqlConfig)
 
 	return nil
 }

@@ -7,23 +7,27 @@ terraform {
   }
 }
 
-# Create an ECR repository
+# Create an ECR repository for the migration image
 # If there is a migration image uri tag it and push it to ECR
 resource "aws_ecr_repository" "migrate_database" {
-  name = "nitric-migrate-database-${var.db_name}"
+  # Only do this if an image uri is provided
+  count = var.migrations != null ? 1 : 0
+  name  = "nitric-migrate-database-${var.db_name}"
 }
 
 # Tag the provided docker image with the ECR repository url
-resource "docker_tag" "tag" {
-  source_image = var.image_uri
-  target_image = aws_ecr_repository.migrate_database.repository_url
+resource "docker_tag" "migrate_tag" {
+  count        = length(aws_ecr_repository.migrate_database)
+  source_image = var.migrations.image_uri
+  target_image = aws_ecr_repository.migrate_database[count.index].repository_url
 }
 
 # Push the tagged image to the ECR repository
-resource "docker_registry_image" "push" {
-  name = aws_ecr_repository.migrate_database.repository_url
+resource "docker_registry_image" "migrate_image_push" {
+  count = length(aws_ecr_repository.migrate_database)
+  name  = aws_ecr_repository.migrate_database[count.index].repository_url
   triggers = {
-    source_image_id   = docker_tag.tag.source_image_id
+    source_image_id = docker_tag.migrate_tag[count.index].source_image_id
   }
 }
 
@@ -33,6 +37,7 @@ locals {
 
 # Create an AWS codebuild project for running migrations
 resource "aws_codebuild_project" "migrate_database" {
+  count        = length(aws_ecr_repository.migrate_database)
   name         = "nitric-migrate-database-${var.db_name}"
   description  = "Migrate the database on the RDS cluster"
   service_role = var.codebuild_role_arn
@@ -43,7 +48,7 @@ resource "aws_codebuild_project" "migrate_database" {
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "${aws_ecr_repository.migrate_database.repository_url}@${docker_registry_image.push.sha256_digest}"
+    image                       = "${aws_ecr_repository.migrate_database[count.index].repository_url}@${docker_registry_image.migrate_image_push[count.index].sha256_digest}"
     image_pull_credentials_type = "SERVICE_ROLE"
     type                        = "LINUX_CONTAINER"
     environment_variable {
@@ -70,8 +75,8 @@ resource "aws_codebuild_project" "migrate_database" {
         build = {
           commands = [
             "echo 'Migrating database $DB_NAME'",
-            "cd ${var.work_dir}",
-            var.migrate_command
+            "cd ${var.migrations.work_dir}",
+            var.migrations.migrate_command
           ]
         }
       }
@@ -96,18 +101,16 @@ resource "null_resource" "execute_create_database" {
       fi
     EOF
   }
-  triggers = {
-    image_id = docker_registry_image.push.id
-  }
 }
 
 # Execute the codebuild job using the aws-cli and wait for it to complete
 resource "null_resource" "execute_migrate_database" {
+  count = length(aws_ecr_repository.migrate_database)
   provisioner "local-exec" {
     interpreter = ["bash", "-c"]
     command     = <<EOF
       # Start the database migrations
-      BUILD_ID=$(aws codebuild start-build --project-name ${aws_codebuild_project.migrate_database.name} --region ${var.codebuild_region} --query 'build.id' --output text)
+      BUILD_ID=$(aws codebuild start-build --project-name ${aws_codebuild_project.migrate_database[count.index].name} --region ${var.codebuild_region} --query 'build.id' --output text)
       STATUS="IN_PROGRESS"
       while [[ $STATUS == "IN_PROGRESS" ]]; do
         sleep 5
@@ -121,8 +124,8 @@ resource "null_resource" "execute_migrate_database" {
     EOF
   }
   triggers = {
-    image_id = docker_registry_image.push.id
+    image_id = docker_registry_image.migrate_image_push[count.index].id
   }
   # Create the database first   
-  depends_on = [docker_registry_image.push, aws_codebuild_project.migrate_database, null_resource.execute_create_database]
+  depends_on = [docker_registry_image.migrate_image_push, aws_codebuild_project.migrate_database, null_resource.execute_create_database]
 }
