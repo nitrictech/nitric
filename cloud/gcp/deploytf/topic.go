@@ -50,11 +50,17 @@ func (a *NitricGcpTerraformProvider) Topic(stack cdktf.TerraformStack, name stri
 		})
 	}
 
-	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("topic_%s", name), &topic.TopicConfig{
+	topicConfig := &topic.TopicConfig{
 		StackId:            a.Stack.StackIdOutput(),
 		TopicName:          jsii.String(name),
 		SubscriberServices: subscriberInput,
-	})
+	}
+
+	if a.cmekEnabled {
+		topicConfig.KmsKey = a.Stack.CmekKeyOutput()
+	}
+
+	a.Topics[name] = topic.NewTopic(stack, jsii.Sprintf("topic_%s", name), topicConfig)
 
 	return nil
 }

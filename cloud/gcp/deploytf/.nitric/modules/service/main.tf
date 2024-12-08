@@ -74,6 +74,19 @@ resource "google_cloud_run_v2_service" "service" {
       max_instance_count = var.max_instances
     }
 
+    dynamic "vpc_access" {
+      for_each = var.vpc != null ? [1] : []
+      content {
+        network_interfaces {
+          network    = var.vpc.network
+          subnetwork = var.vpc.subnet
+          tags       = var.vpc.network_tags
+        }
+      }
+    }
+
+    encryption_key = var.kms_key != "" ? var.kms_key : null
+
     # dynamic "node_selector" {
     #   for_each = var.gpus > 0 ? [1] : []
     #   content {
@@ -123,7 +136,12 @@ resource "google_cloud_run_v2_service" "service" {
     timeout         = "${var.timeout_seconds}s"
   }
 
-  depends_on = [docker_registry_image.push]
+  depends_on = [
+    docker_registry_image.push,
+    google_service_account_iam_member.account_member,
+    google_service_account_iam_member.service_account_iam_member,
+    google_service_account_iam_member.service_account_invoker_iam_member
+  ]
 }
 
 # Create a random ID for the service name, so that it confirms to regex restrictions
@@ -131,6 +149,29 @@ resource "random_string" "service_id" {
   length  = 30 - length(local.ids_prefix)
   special = false
   upper   = false
+}
+
+
+data "google_client_openid_userinfo" "deployer" {
+}
+
+locals {
+  deployer_email = data.google_client_openid_userinfo.deployer.email
+  deployer_type  = endswith(local.deployer_email, "gserviceaccount.com") ? "serviceAccount" : "user"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_iam_member" {
+  service_account_id = google_service_account.service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_invoker_iam_member" {
+  service_account_id = google_service_account.invoker_service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
 }
 
 # Create an invoker service account for the google cloud run instance

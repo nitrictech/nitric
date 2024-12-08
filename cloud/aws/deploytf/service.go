@@ -26,11 +26,12 @@ import (
 )
 
 func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name string, config *deploymentspb.Service, runtimeProvider provider.RuntimeProvider) error {
+	targetImageName := fmt.Sprintf("%s-%s", name, a.StackName)
 	imageId, err := image.BuildWrappedImage(&image.BuildWrappedImageArgs{
 		ServiceName: name,
 		SourceImage: config.GetImage().Uri,
 		// TODO: Use correct image uri
-		TargetImage: name,
+		TargetImage: targetImageName,
 		Runtime:     runtimeProvider(),
 	})
 	if err != nil {

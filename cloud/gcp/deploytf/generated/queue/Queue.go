@@ -30,6 +30,8 @@ type Queue interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	KmsKey() *string
+	SetKmsKey(val *string)
 	NameOutput() *string
 	// The tree node.
 	Node() constructs.Node
@@ -133,6 +135,16 @@ func (j *jsiiProxy_Queue) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Queue) KmsKey() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKey",
 		&returns,
 	)
 	return returns
@@ -268,6 +280,14 @@ func (j *jsiiProxy_Queue)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Queue)SetKmsKey(val *string) {
+	_jsii_.Set(
+		j,
+		"kmsKey",
 		val,
 	)
 }

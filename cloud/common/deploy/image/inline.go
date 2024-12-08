@@ -111,6 +111,7 @@ func BuildWrappedImage(args *BuildWrappedImageArgs) (string, error) {
 	}
 
 	response, err := client.ImageBuild(context.TODO(), tarBuildContext, types.ImageBuildOptions{
+		Platform:   "linux/amd64",
 		BuildArgs:  buildArgs,
 		Tags:       []string{args.TargetImage},
 		Dockerfile: "Dockerfile",
