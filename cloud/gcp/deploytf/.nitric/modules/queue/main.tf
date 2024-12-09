@@ -1,7 +1,13 @@
 
+resource "random_string" "unique_id" {
+  length = 4
+  special = false
+  upper   = false
+}
+
 # Deploy a PubSub topic to serve as the queue
 resource "google_pubsub_topic" "queue" {
-  name = "${var.queue_name}-nitricqueue"
+  name = "${var.queue_name}-nitricqueue-${random_string.unique_id.result}"
 
   kms_key_name = var.kms_key != "" ? var.kms_key : null
   labels = {
@@ -12,7 +18,7 @@ resource "google_pubsub_topic" "queue" {
 
 # Create a pull subscription for the topic to emulate a queue
 resource "google_pubsub_subscription" "queue_subscription" {
-  name = "${var.queue_name}-nitricqueue"
+  name = "${var.queue_name}-nitricqueue-${random_string.unique_id.result}"
   topic = google_pubsub_topic.queue.name
   expiration_policy {
     # TODO: this is blank in the Pulumi provider - verify this is still correct

@@ -1,6 +1,12 @@
+resource "random_string" "unique_id" {
+  length = 4
+  special = false
+  upper   = false
+}
+
 # Create a new pubsub topic
 resource "google_pubsub_topic" "topic" {
-  name = var.topic_name
+  name = "${var.topic_name}-${random_string.unique_id.result}"
 
   kms_key_name = var.kms_key != "" ? var.kms_key : null
 

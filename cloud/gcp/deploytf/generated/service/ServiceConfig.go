@@ -29,8 +29,6 @@ type ServiceConfig struct {
 	ServiceName *string `field:"required" json:"serviceName" yaml:"serviceName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
-	// cloud run service directvpc config.
-	Vpc interface{} `field:"required" json:"vpc" yaml:"vpc"`
 	// The number of concurrent requests the CloudRun service can handle 80.
 	ContainerConcurrency *float64 `field:"optional" json:"containerConcurrency" yaml:"containerConcurrency"`
 	// The amount of cpus to allocate to the CloudRun service 1.
@@ -47,5 +45,7 @@ type ServiceConfig struct {
 	MinInstances *float64 `field:"optional" json:"minInstances" yaml:"minInstances"`
 	// The timeout for the CloudRun service in seconds 10.
 	TimeoutSeconds *float64 `field:"optional" json:"timeoutSeconds" yaml:"timeoutSeconds"`
+	// cloud run service directvpc config.
+	Vpc interface{} `field:"optional" json:"vpc" yaml:"vpc"`
 }
 

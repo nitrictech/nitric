@@ -33,6 +33,12 @@ locals {
   ids_prefix = "nitric-"
 }
 
+resource "random_string" "unique_id" {
+  length = 4
+  special = false
+  upper   = false
+}
+
 # Create a random ID for the service name, so that it confirms to regex restrictions
 resource "random_string" "service_account_id" {
   length  = 30 - length(local.ids_prefix)
@@ -57,9 +63,13 @@ resource "random_password" "event_token" {
   }
 }
 
+locals{
+  service_name = replace(var.service_name, "_", "-")
+}
+
 # Create a cloud run service
 resource "google_cloud_run_v2_service" "service" {
-  name = replace(var.service_name, "_", "-")
+  name = "${local.service_name}-${random_string.unique_id.result}"
 
   location = var.region
   project  = var.project_id

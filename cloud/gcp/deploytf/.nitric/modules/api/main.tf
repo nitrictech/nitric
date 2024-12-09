@@ -1,6 +1,6 @@
 resource "google_api_gateway_api" "api" {
   provider = google-beta
-  api_id   = var.name
+  api_id   = "${var.name}-${random_string.api_config_id.result}"
   labels = {
     "x-nitric-${var.stack_id}-name" = var.name
     "x-nitric-${var.stack_id}-type" = "api"
@@ -21,7 +21,7 @@ resource "random_string" "api_config_id" {
 
 resource "google_service_account" "service_account" {
   provider   = google-beta
-  account_id = "${var.name}-api"
+  account_id = "${var.name}-api-${random_string.api_config_id.result}"
 }
 
 # Get the current service account email and ensure it has service account user role on the service account
@@ -82,7 +82,7 @@ resource "google_api_gateway_api_config" "api_config" {
 
 resource "google_api_gateway_gateway" "gateway" {
   provider   = google-beta
-  gateway_id = "${var.name}-gateway"
+  gateway_id = "${var.name}-gateway-${random_string.api_config_id.result}"
   api_config = google_api_gateway_api_config.api_config.id
 
   labels = {

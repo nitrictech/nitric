@@ -91,6 +91,7 @@ variable "kms_key" {
 variable "vpc" {
   description = "cloud run service directvpc config"
   nullable = true
+  default = null
   type = object({
     network = string
     subnet = string
