@@ -111,9 +111,9 @@ resource "aws_codebuild_project" "create_database" {
     type         = "LINUX_CONTAINER"
 
     environment_variable {
-      name = "DB_PASSWORD"
+      name  = "DB_PASSWORD"
       value = random_password.rds_password.result
-      type = "PLAINTEXT"
+      type  = "PLAINTEXT"
     }
   }
 
@@ -131,11 +131,11 @@ resource "aws_codebuild_project" "create_database" {
       phases = {
         build = {
           commands = [
-            "echo 'Creating database $DB_NAME'",
+            "echo Creating database $DB_NAME",
             # FIXME: Store the password in a secret manager
             "export PGPASSWORD=$${DB_PASSWORD}",
             # "CREATE DATABASE ${DB_NAME}" || echo "database ${DB_NAME} already exists"
-            "psql -h ${aws_rds_cluster.rds_cluster.endpoint} -U ${aws_rds_cluster.rds_cluster.master_username} -d ${aws_rds_cluster.rds_cluster.database_name} -c \"CREATE DATABASE $${DB_NAME}\" || echo \"database $${DB_NAME} already exists\""
+            "psql -h ${aws_rds_cluster.rds_cluster.endpoint} -U ${aws_rds_cluster.rds_cluster.master_username} -d ${aws_rds_cluster.rds_cluster.database_name} -c \"CREATE DATABASE \\\"$${DB_NAME}\\\"\" || echo \"database $${DB_NAME} already exists\""
           ]
         }
       }
