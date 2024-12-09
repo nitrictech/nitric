@@ -100,7 +100,10 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		for _, pathOperation := range apiPath.Operations() {
 			if apiNitricTarget, ok := pathOperation.Extensions["x-nitric-target"]; ok {
 				if targetMap, isMap := apiNitricTarget.(map[string]any); isMap {
-					serviceName := targetMap["name"].(string)
+					serviceName, ok := targetMap["name"].(string)
+					if !ok {
+						return fmt.Errorf("missing or invalid 'name' field in x-nitric-target for path %s on API %s", pathOperation.OperationID, name)
+					}
 
 					nitricService, ok := n.Services[serviceName]
 					if !ok {
