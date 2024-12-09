@@ -29,7 +29,7 @@ type GcpApiGatewayProvider struct {
 
 var _ apispb.ApiServer = &GcpApiGatewayProvider{}
 
-func (g *GcpApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+func (g *GcpApiGatewayProvider) ApiDetails(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
 	gwDetails, err := g.provider.GetApiGatewayDetails(ctx, req.ApiName)
 	if err != nil {
 		return nil, err

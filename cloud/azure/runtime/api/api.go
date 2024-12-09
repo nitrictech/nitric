@@ -29,7 +29,7 @@ type AzureApiGatewayProvider struct {
 
 var _ apispb.ApiServer = &AzureApiGatewayProvider{}
 
-func (g *AzureApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+func (g *AzureApiGatewayProvider) ApiDetails(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
 	gwDetails, err := g.provider.GetApiDetails(ctx, req.ApiName)
 	if err != nil {
 		return nil, err

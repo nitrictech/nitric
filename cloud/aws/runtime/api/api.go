@@ -31,7 +31,7 @@ type AwsApiGatewayProvider struct {
 
 var _ apispb.ApiServer = &AwsApiGatewayProvider{}
 
-func (a *AwsApiGatewayProvider) Details(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
+func (a *AwsApiGatewayProvider) ApiDetails(ctx context.Context, req *apispb.ApiDetailsRequest) (*apispb.ApiDetailsResponse, error) {
 	gwDetails, err := a.resolver.GetAWSApiGatewayDetails(ctx, &resourcespb.ResourceIdentifier{
 		Type: resourcespb.ResourceType_Api,
 		Name: req.ApiName,
