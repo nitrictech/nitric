@@ -1,20 +1,21 @@
-package api
+package parameter
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/parameter/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api/internal"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/parameter/internal"
 )
 
-// Defines an Api based on a Terraform module.
+// Defines an Parameter based on a Terraform module.
 //
-// Source at ./.nitric/modules/api
-type Api interface {
+// Source at ./.nitric/modules/parameter
+type Parameter interface {
 	cdktf.TerraformModule
-	ArnOutput() *string
+	AccessRoleNames() *[]*string
+	SetAccessRoleNames(val *[]*string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
@@ -23,9 +24,6 @@ type Api interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	Domains() *[]*string
-	SetDomains(val *[]*string)
-	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -34,10 +32,12 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	Name() *string
-	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
+	ParameterName() *string
+	SetParameterName(val *string)
+	ParameterValue() *string
+	SetParameterValue(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -46,12 +46,6 @@ type Api interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	Spec() *string
-	SetSpec(val *string)
-	StackId() *string
-	SetStackId(val *string)
-	TargetLambdaFunctions() *map[string]*string
-	SetTargetLambdaFunctions(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -80,22 +74,22 @@ type Api interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Api
-type jsiiProxy_Api struct {
+// The jsii proxy struct for Parameter
+type jsiiProxy_Parameter struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Api) ArnOutput() *string {
-	var returns *string
+func (j *jsiiProxy_Parameter) AccessRoleNames() *[]*string {
+	var returns *[]*string
 	_jsii_.Get(
 		j,
-		"arnOutput",
+		"accessRoleNames",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Api) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_Parameter) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -105,7 +99,7 @@ func (j *jsiiProxy_Api) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Api) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_Parameter) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -115,7 +109,7 @@ func (j *jsiiProxy_Api) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) DependsOn() *[]*string {
+func (j *jsiiProxy_Parameter) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -125,27 +119,7 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Domains() *[]*string {
-	var returns *[]*string
-	_jsii_.Get(
-		j,
-		"domains",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) EndpointOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"endpointOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_Parameter) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -155,7 +129,7 @@ func (j *jsiiProxy_Api) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Fqn() *string {
+func (j *jsiiProxy_Parameter) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -165,7 +139,7 @@ func (j *jsiiProxy_Api) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
+func (j *jsiiProxy_Parameter) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -175,17 +149,7 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Name() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"name",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) Node() constructs.Node {
+func (j *jsiiProxy_Parameter) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -195,7 +159,27 @@ func (j *jsiiProxy_Api) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Providers() *[]interface{} {
+func (j *jsiiProxy_Parameter) ParameterName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"parameterName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Parameter) ParameterValue() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"parameterValue",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Parameter) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -205,7 +189,7 @@ func (j *jsiiProxy_Api) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) RawOverrides() interface{} {
+func (j *jsiiProxy_Parameter) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -215,7 +199,7 @@ func (j *jsiiProxy_Api) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_Parameter) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -225,7 +209,7 @@ func (j *jsiiProxy_Api) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Source() *string {
+func (j *jsiiProxy_Parameter) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -235,37 +219,7 @@ func (j *jsiiProxy_Api) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Spec() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"spec",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) StackId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackId",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) TargetLambdaFunctions() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"targetLambdaFunctions",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) Version() *string {
+func (j *jsiiProxy_Parameter) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -276,16 +230,16 @@ func (j *jsiiProxy_Api) Version() *string {
 }
 
 
-func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
+func NewParameter(scope constructs.Construct, id *string, config *ParameterConfig) Parameter {
 	_init_.Initialize()
 
-	if err := validateNewApiParameters(scope, id, config); err != nil {
+	if err := validateNewParameterParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Api{}
+	j := jsiiProxy_Parameter{}
 
 	_jsii_.Create(
-		"api.Api",
+		"parameter.Parameter",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -293,17 +247,28 @@ func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
 	return &j
 }
 
-func NewApi_Override(a Api, scope constructs.Construct, id *string, config *ApiConfig) {
+func NewParameter_Override(p Parameter, scope constructs.Construct, id *string, config *ParameterConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"api.Api",
+		"parameter.Parameter",
 		[]interface{}{scope, id, config},
-		a,
+		p,
 	)
 }
 
-func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Parameter)SetAccessRoleNames(val *[]*string) {
+	if err := j.validateSetAccessRoleNamesParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"accessRoleNames",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Parameter)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -311,18 +276,7 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetDomains(val *[]*string) {
-	if err := j.validateSetDomainsParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"domains",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Parameter)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -330,46 +284,24 @@ func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetName(val *string) {
-	if err := j.validateSetNameParameters(val); err != nil {
+func (j *jsiiProxy_Parameter)SetParameterName(val *string) {
+	if err := j.validateSetParameterNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"name",
+		"parameterName",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Api)SetSpec(val *string) {
-	if err := j.validateSetSpecParameters(val); err != nil {
+func (j *jsiiProxy_Parameter)SetParameterValue(val *string) {
+	if err := j.validateSetParameterValueParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"spec",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetStackId(val *string) {
-	if err := j.validateSetStackIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"stackId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
-	if err := j.validateSetTargetLambdaFunctionsParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"targetLambdaFunctions",
+		"parameterValue",
 		val,
 	)
 }
@@ -391,16 +323,16 @@ func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Api_IsConstruct(x interface{}) *bool {
+func Parameter_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateApi_IsConstructParameters(x); err != nil {
+	if err := validateParameter_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"api.Api",
+		"parameter.Parameter",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -410,16 +342,16 @@ func Api_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Api_IsTerraformElement(x interface{}) *bool {
+func Parameter_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateApi_IsTerraformElementParameters(x); err != nil {
+	if err := validateParameter_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"api.Api",
+		"parameter.Parameter",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -428,36 +360,36 @@ func Api_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (a *jsiiProxy_Api) AddOverride(path *string, value interface{}) {
-	if err := a.validateAddOverrideParameters(path, value); err != nil {
+func (p *jsiiProxy_Parameter) AddOverride(path *string, value interface{}) {
+	if err := p.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		p,
 		"addOverride",
 		[]interface{}{path, value},
 	)
 }
 
-func (a *jsiiProxy_Api) AddProvider(provider interface{}) {
-	if err := a.validateAddProviderParameters(provider); err != nil {
+func (p *jsiiProxy_Parameter) AddProvider(provider interface{}) {
+	if err := p.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		p,
 		"addProvider",
 		[]interface{}{provider},
 	)
 }
 
-func (a *jsiiProxy_Api) GetString(output *string) *string {
-	if err := a.validateGetStringParameters(output); err != nil {
+func (p *jsiiProxy_Parameter) GetString(output *string) *string {
+	if err := p.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
 	var returns *string
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"getString",
 		[]interface{}{output},
 		&returns,
@@ -466,14 +398,14 @@ func (a *jsiiProxy_Api) GetString(output *string) *string {
 	return returns
 }
 
-func (a *jsiiProxy_Api) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
-	if err := a.validateInterpolationForOutputParameters(moduleOutput); err != nil {
+func (p *jsiiProxy_Parameter) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+	if err := p.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
 	var returns cdktf.IResolvable
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"interpolationForOutput",
 		[]interface{}{moduleOutput},
 		&returns,
@@ -482,30 +414,30 @@ func (a *jsiiProxy_Api) InterpolationForOutput(moduleOutput *string) cdktf.IReso
 	return returns
 }
 
-func (a *jsiiProxy_Api) OverrideLogicalId(newLogicalId *string) {
-	if err := a.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
+func (p *jsiiProxy_Parameter) OverrideLogicalId(newLogicalId *string) {
+	if err := p.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		p,
 		"overrideLogicalId",
 		[]interface{}{newLogicalId},
 	)
 }
 
-func (a *jsiiProxy_Api) ResetOverrideLogicalId() {
+func (p *jsiiProxy_Parameter) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
-		a,
+		p,
 		"resetOverrideLogicalId",
 		nil, // no parameters
 	)
 }
 
-func (a *jsiiProxy_Api) SynthesizeAttributes() *map[string]interface{} {
+func (p *jsiiProxy_Parameter) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"synthesizeAttributes",
 		nil, // no parameters
 		&returns,
@@ -514,11 +446,11 @@ func (a *jsiiProxy_Api) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) SynthesizeHclAttributes() *map[string]interface{} {
+func (p *jsiiProxy_Parameter) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"synthesizeHclAttributes",
 		nil, // no parameters
 		&returns,
@@ -527,11 +459,11 @@ func (a *jsiiProxy_Api) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToHclTerraform() interface{} {
+func (p *jsiiProxy_Parameter) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"toHclTerraform",
 		nil, // no parameters
 		&returns,
@@ -540,11 +472,11 @@ func (a *jsiiProxy_Api) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToMetadata() interface{} {
+func (p *jsiiProxy_Parameter) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"toMetadata",
 		nil, // no parameters
 		&returns,
@@ -553,11 +485,11 @@ func (a *jsiiProxy_Api) ToMetadata() interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToString() *string {
+func (p *jsiiProxy_Parameter) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"toString",
 		nil, // no parameters
 		&returns,
@@ -566,11 +498,11 @@ func (a *jsiiProxy_Api) ToString() *string {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToTerraform() interface{} {
+func (p *jsiiProxy_Parameter) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		p,
 		"toTerraform",
 		nil, // no parameters
 		&returns,

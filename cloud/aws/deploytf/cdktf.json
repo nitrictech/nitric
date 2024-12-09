@@ -65,6 +65,10 @@
     {
       "name": "sql",
       "source": "./.nitric/modules/sql"
+    },
+    {
+      "name": "parameter",
+      "source": "./.nitric/modules/parameter"
     }
   ],
   "context": {}

@@ -14,6 +14,7 @@ import (
 // Source at ./.nitric/modules/http_proxy
 type HttpProxy interface {
 	cdktf.TerraformModule
+	ArnOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
@@ -22,6 +23,7 @@ type HttpProxy interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -79,6 +81,16 @@ type jsiiProxy_HttpProxy struct {
 	internal.Type__cdktfTerraformModule
 }
 
+func (j *jsiiProxy_HttpProxy) ArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"arnOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_HttpProxy) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
@@ -104,6 +116,16 @@ func (j *jsiiProxy_HttpProxy) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_HttpProxy) EndpointOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"endpointOutput",
 		&returns,
 	)
 	return returns

@@ -26,9 +26,9 @@ import (
 func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 	// Build the AWS resource index from the provider information
 	// This will be used to store the ARNs/Identifiers of all resources created by the stack
-	bucketNameMap := pulumi.StringMap{}
+	bucketArnMap := pulumi.StringMap{}
 	for name, bucket := range a.Buckets {
-		bucketNameMap[name] = bucket.Arn
+		bucketArnMap[name] = bucket.Arn
 	}
 
 	apiArnMap := pulumi.StringMap{}
@@ -85,7 +85,7 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 
 	// Build the index from the provider information
 	resourceIndexJson := pulumi.All(
-		bucketNameMap,
+		bucketArnMap,
 		apiArnMap,
 		apiEndpointMap,
 		websocketArnMap,
