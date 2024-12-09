@@ -22,7 +22,7 @@ import (
 )
 
 func (a *NitricAwsTerraformProvider) Http(stack cdktf.TerraformStack, name string, config *deploymentspb.Http) error {
-	http_proxy.NewHttpProxy(stack, jsii.Sprintf("http_%s", name), &http_proxy.HttpProxyConfig{
+	a.HttpProxies[name] = http_proxy.NewHttpProxy(stack, jsii.Sprintf("http_%s", name), &http_proxy.HttpProxyConfig{
 		StackId:              a.Stack.StackIdOutput(),
 		Name:                 jsii.String(name),
 		TargetLambdaFunction: a.Services[config.Target.GetService()].LambdaArnOutput(),

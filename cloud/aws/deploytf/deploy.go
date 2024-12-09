@@ -26,6 +26,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/http_proxy"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/keyvalue"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/queue"
 	rds "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/rds"
@@ -56,6 +57,7 @@ type NitricAwsTerraformProvider struct {
 	Apis           map[string]api.Api
 	Buckets        map[string]bucket.Bucket
 	Topics         map[string]topic.Topic
+	HttpProxies    map[string]http_proxy.HttpProxy
 	Schedules      map[string]schedule.Schedule
 	Services       map[string]service.Service
 	Secrets        map[string]secret.Secret
@@ -140,7 +142,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
-	return nil
+	return a.resourcesStore(stack)
 }
 
 // // Post - Called after all resources have been created, before the Pulumi Context is concluded
