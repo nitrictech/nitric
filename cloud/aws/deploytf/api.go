@@ -61,9 +61,6 @@ func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Op
 }
 
 func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string, config *deploymentspb.Api) error {
-	nameArnPairs := map[string]*string{}
-	targetNames := map[string]*string{}
-
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
 	}
@@ -99,16 +96,25 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	}
 
 	nitricServiceTargets := map[string]service.Service{}
-	for _, p := range openapiDoc.Paths {
-		for _, op := range p.Operations() {
-			if v, ok := op.Extensions["x-nitric-target"]; ok {
-				if targetMap, isMap := v.(map[string]any); isMap {
+	for _, apiPath := range openapiDoc.Paths {
+		for _, pathOperation := range apiPath.Operations() {
+			if apiNitricTarget, ok := pathOperation.Extensions["x-nitric-target"]; ok {
+				if targetMap, isMap := apiNitricTarget.(map[string]any); isMap {
 					serviceName := targetMap["name"].(string)
-					nitricServiceTargets[serviceName] = n.Services[serviceName]
+
+					nitricService, ok := n.Services[serviceName]
+					if !ok {
+						return fmt.Errorf("service %s is registered for path %s on API %s, but that service does not exist in the project", serviceName, pathOperation.OperationID, name)
+					}
+
+					nitricServiceTargets[serviceName] = nitricService
 				}
 			}
 		}
 	}
+
+	nameArnPairs := map[string]*string{}
+	targetNames := map[string]*string{}
 
 	// collect name arn pairs for output iteration
 	for k, v := range nitricServiceTargets {
