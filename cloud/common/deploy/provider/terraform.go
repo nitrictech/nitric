@@ -115,16 +115,6 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 	}
 }
 
-func (m mergedFS) Open(name string) (fs.File, error) {
-	for _, f := range m.fses {
-		file, err := f.Open(name)
-		if err == nil {
-			return file, nil
-		}
-	}
-	return nil, fs.ErrNotExist
-}
-
 func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricTerraformProvider, runtime RuntimeProvider) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
