@@ -24,6 +24,7 @@ import (
 	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v14/provider"
 	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v14/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/gcp/common"
@@ -42,9 +43,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type VpcConfig struct {
+	Network     string   `mapstructure:"network" json:"network"`
+	Subnet      string   `mapstructure:"subnet" json:"subnet"`
+	NetworkTags []string `mapstructure:"network-tags" json:"network_tags"`
+}
+
 type NitricGcpTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
+
+	// CmekEnabled - Enable Customer Managed Encryption Keys
+	cmekEnabled bool
+	vpcConfig   *VpcConfig
 
 	GcpConfig      *common.GcpConfig
 	Apis           map[string]api.Api
@@ -77,6 +88,19 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 	}
 
 	a.RawAttributes = attributes
+
+	var ok bool
+	a.cmekEnabled, ok = a.RawAttributes["cmek"].(bool)
+	if !ok {
+		a.cmekEnabled = false
+	}
+
+	a.vpcConfig = nil
+	vpcConfig, ok := a.RawAttributes["vpc"].(map[string]interface{})
+	if ok {
+		a.vpcConfig = &VpcConfig{}
+		mapstructure.Decode(vpcConfig, a.vpcConfig)
+	}
 
 	return nil
 }
@@ -155,8 +179,9 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	})
 
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
-		Location:  jsii.String(a.Region),
-		StackName: jsii.String(a.StackName),
+		Location:    jsii.String(a.Region),
+		StackName:   jsii.String(a.StackName),
+		CmekEnabled: jsii.Bool(a.cmekEnabled),
 	})
 
 	return nil

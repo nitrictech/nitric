@@ -19,5 +19,7 @@ type TopicConfig struct {
 	SubscriberServices interface{} `field:"required" json:"subscriberServices" yaml:"subscriberServices"`
 	// The name of the topic.
 	TopicName *string `field:"required" json:"topicName" yaml:"topicName"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 }
 

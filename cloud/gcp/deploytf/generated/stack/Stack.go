@@ -17,6 +17,10 @@ type Stack interface {
 	BaseComputeRoleOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CmekEnabled() *bool
+	SetCmekEnabled(val *bool)
+	CmekKeyOutput() *string
+	CmekKeyRingOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	ContainerRegistryUriOutput() *string
@@ -33,6 +37,7 @@ type Stack interface {
 	// Experimental.
 	FriendlyUniqueId() *string
 	IamRolesOutput() *string
+	KmsKeyIamBindingOutput() *string
 	Location() *string
 	SetLocation(val *string)
 	// The tree node.
@@ -96,6 +101,36 @@ func (j *jsiiProxy_Stack) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CmekEnabled() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"cmekEnabled",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CmekKeyOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cmekKeyOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CmekKeyRingOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cmekKeyRingOutput",
 		&returns,
 	)
 	return returns
@@ -166,6 +201,16 @@ func (j *jsiiProxy_Stack) IamRolesOutput() *string {
 	_jsii_.Get(
 		j,
 		"iamRolesOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) KmsKeyIamBindingOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKeyIamBindingOutput",
 		&returns,
 	)
 	return returns
@@ -286,6 +331,17 @@ func NewStack_Override(s Stack, scope constructs.Construct, id *string, config *
 		"stack.Stack",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetCmekEnabled(val *bool) {
+	if err := j.validateSetCmekEnabledParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cmekEnabled",
+		val,
 	)
 }
 

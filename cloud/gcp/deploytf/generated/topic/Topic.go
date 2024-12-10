@@ -30,6 +30,8 @@ type Topic interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	KmsKey() *string
+	SetKmsKey(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -135,6 +137,16 @@ func (j *jsiiProxy_Topic) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Topic) KmsKey() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKey",
 		&returns,
 	)
 	return returns
@@ -280,6 +292,14 @@ func (j *jsiiProxy_Topic)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Topic)SetKmsKey(val *string) {
+	_jsii_.Set(
+		j,
+		"kmsKey",
 		val,
 	)
 }

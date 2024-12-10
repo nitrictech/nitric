@@ -46,6 +46,8 @@ type Service interface {
 	Image() *string
 	SetImage(val *string)
 	InvokerServiceAccountEmailOutput() *string
+	KmsKey() *string
+	SetKmsKey(val *string)
 	MaxInstances() *float64
 	SetMaxInstances(val *float64)
 	MemoryMb() *float64
@@ -77,6 +79,8 @@ type Service interface {
 	SetTimeoutSeconds(val *float64)
 	// Experimental.
 	Version() *string
+	Vpc() interface{}
+	SetVpc(val interface{})
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -258,6 +262,16 @@ func (j *jsiiProxy_Service) InvokerServiceAccountEmailOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) KmsKey() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKey",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Service) MaxInstances() *float64 {
 	var returns *float64
 	_jsii_.Get(
@@ -428,6 +442,16 @@ func (j *jsiiProxy_Service) Version() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Service) Vpc() interface{} {
+	var returns interface{}
+	_jsii_.Get(
+		j,
+		"vpc",
+		&returns,
+	)
+	return returns
+}
+
 
 func NewService(scope constructs.Construct, id *string, config *ServiceConfig) Service {
 	_init_.Initialize()
@@ -540,6 +564,14 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	)
 }
 
+func (j *jsiiProxy_Service)SetKmsKey(val *string) {
+	_jsii_.Set(
+		j,
+		"kmsKey",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Service)SetMaxInstances(val *float64) {
 	_jsii_.Set(
 		j,
@@ -612,6 +644,17 @@ func (j *jsiiProxy_Service)SetTimeoutSeconds(val *float64) {
 	_jsii_.Set(
 		j,
 		"timeoutSeconds",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetVpc(val interface{}) {
+	if err := j.validateSetVpcParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"vpc",
 		val,
 	)
 }
