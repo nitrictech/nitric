@@ -72,8 +72,6 @@ type nameArnPair struct {
 func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	nameArnPairs := make([]interface{}, 0, len(a.Lambdas))
-
 	additionalApiConfig := a.AwsConfig.Apis[name]
 
 	if config.GetOpenapi() == "" {
@@ -116,11 +114,19 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
 				if targetMap, isMap := v.(map[string]any); isMap {
 					serviceName := targetMap["name"].(string)
-					nitricServiceTargets[serviceName] = a.Lambdas[serviceName]
+
+					lambda, ok := a.Lambdas[serviceName]
+					if !ok {
+						return fmt.Errorf("service %s is registered for path %s on API %s, but that service does not exist in the project", serviceName, op.OperationID, name)
+					}
+
+					nitricServiceTargets[serviceName] = lambda
 				}
 			}
 		}
 	}
+
+	nameArnPairs := make([]interface{}, 0, len(a.Lambdas))
 
 	// collect name arn pairs for output iteration
 	for k, v := range nitricServiceTargets {
