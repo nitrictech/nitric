@@ -32,3 +32,8 @@ output "kms_key_iam_binding" {
   value = length(google_kms_crypto_key.cmek_key) > 0 ? google_kms_crypto_key_iam_binding.cmek_key_binding[0] : null
   description = "The IAM binding for the KMS key"
 }
+
+output "firestore_database_id" {
+  value = google_firestore_database.database[0] != null ? google_firestore_database.database[0].name : "(default)"
+  description = "Firestore database for stack"
+}

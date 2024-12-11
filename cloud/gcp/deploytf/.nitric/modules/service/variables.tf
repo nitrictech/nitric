@@ -82,6 +82,12 @@ variable "artifact_registry_repository" {
   type        = string
 }
 
+variable "internal_ingress" {
+  description = "Whether to restrict ingress to internal traffic only"
+  type        = bool
+  default     = false
+}
+
 variable "kms_key" {
   description = "The name of the KMS key to use"
   type        = string
@@ -93,6 +99,7 @@ variable "vpc" {
   nullable = true
   default = null
   type = object({
+    all_traffic = bool
     network = string
     subnet = string
     network_tags = list(string)

@@ -38,6 +38,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/websocket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -46,11 +47,15 @@ type VpcConfig struct {
 	Network     string   `mapstructure:"network" json:"network"`
 	Subnet      string   `mapstructure:"subnet" json:"subnet"`
 	NetworkTags []string `mapstructure:"network-tags" json:"network_tags"`
+	AllTraffic  bool     `mapstructure:"all-traffic" json:"all_traffic"`
 }
 
 type NitricGcpTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
+
+	serviceIngress  bool
+	requiresKvStore bool
 
 	// CmekEnabled - Enable Customer Managed Encryption Keys
 	cmekEnabled bool
@@ -99,6 +104,11 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 	if ok {
 		a.vpcConfig = &VpcConfig{}
 		mapstructure.Decode(vpcConfig, a.vpcConfig)
+	}
+
+	serviceIngress, ok := a.RawAttributes["service_ingress"].(bool)
+	if ok {
+		a.serviceIngress = serviceIngress
 	}
 
 	return nil
@@ -182,10 +192,19 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		RegistryAuth: registryAuths,
 	})
 
+	// if resources has any kv stores, make sure kv is enabled for the stack
+	for _, resource := range resources {
+		if resource.Id.GetType() == resourcespb.ResourceType_KeyValueStore {
+			a.requiresKvStore = true
+			break
+		}
+	}
+
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
-		Location:    jsii.String(a.Region),
-		StackName:   jsii.String(a.StackName),
-		CmekEnabled: jsii.Bool(a.cmekEnabled),
+		Location:         jsii.String(a.Region),
+		StackName:        jsii.String(a.StackName),
+		CmekEnabled:      jsii.Bool(a.cmekEnabled),
+		FirestoreEnabled: jsii.Bool(a.requiresKvStore),
 	})
 
 	return nil

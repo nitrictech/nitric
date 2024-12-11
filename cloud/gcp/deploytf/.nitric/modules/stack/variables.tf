@@ -8,6 +8,11 @@ variable "cmek_enabled" {
   type        = bool
 }
 
+variable "firestore_enabled" {
+  description = "Enable Firestore"
+  type        = bool
+}
+
 variable "location" {
   description = "The location to deploy the stack"
   type        = string

@@ -78,6 +78,8 @@ resource "google_cloud_run_v2_service" "service" {
   launch_stage        = "GA"
   deletion_protection = false
 
+  ingress = var.internal_ingress == true ? "INGRESS_TRAFFIC_INTERNAL_ONLY" : "INGRESS_TRAFFIC_ALL"
+
   template {
     scaling {
       min_instance_count = var.min_instances
@@ -86,7 +88,10 @@ resource "google_cloud_run_v2_service" "service" {
 
     dynamic "vpc_access" {
       for_each = var.vpc != null ? [1] : []
+
+     
       content {
+        egress = var.vpc.all_traffic ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY"
         network_interfaces {
           network    = var.vpc.network
           subnetwork = var.vpc.subnet

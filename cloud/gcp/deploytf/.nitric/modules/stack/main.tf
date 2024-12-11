@@ -168,3 +168,20 @@ resource "google_kms_crypto_key_iam_binding" "cmek_key_binding" {
   members       = toset(local.kms_reader_service_accounts)
   depends_on    = [google_project_service.required_services, google_project_service_identity.secret_manager_sa[0]]
 }
+
+# Ensure firestore default db exists
+resource "google_firestore_database" "database" {
+  count = var.firestore_enabled ? 1 : 0
+
+  project     = data.google_project.project.project_id
+  name        = "${random_id.stack_id.hex}-kv"
+  location_id = var.location
+  type        = "FIRESTORE_NATIVE"
+
+  dynamic "cmek_config" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = var.cmek_enabled ? google_kms_crypto_key.cmek_key[0].id : null
+    }
+  }
+}
