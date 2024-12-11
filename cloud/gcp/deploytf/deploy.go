@@ -107,7 +107,7 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 		mapstructure.Decode(vpcConfig, a.vpcConfig)
 	}
 
-	serviceIngress, ok := a.RawAttributes["service_ingress"].(bool)
+	serviceIngress, ok := a.RawAttributes["internal-service-ingress"].(bool)
 	if ok {
 		a.serviceIngress = serviceIngress
 	}
@@ -207,6 +207,62 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	// write terraform outputs
+
+	cdktf.NewTerraformOutput(stack, jsii.Sprintf("stack-output"), &cdktf.TerraformOutputConfig{
+		Value: a.Stack,
+	})
+
+	// loop over all the resources and create outputs for them
+	for name, api := range a.Apis {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     api,
+		})
+	}
+
+	for name, bucket := range a.Buckets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     bucket,
+		})
+	}
+
+	for name, topic := range a.Topics {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     topic,
+		})
+	}
+
+	for name, schedule := range a.Schedules {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     schedule,
+		})
+	}
+
+	for name, service := range a.Services {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     service,
+		})
+	}
+
+	for name, secret := range a.Secrets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     secret,
+		})
+	}
+
+	for name, queue := range a.Queues {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     queue,
+		})
+	}
+
 	return nil
 }
 
