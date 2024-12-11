@@ -146,7 +146,13 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
-	return a.resourcesStore(stack)
+	// Give all the Services access to the resource index
+	accessRoleNames := []string{}
+	for _, service := range a.Services {
+		accessRoleNames = append(accessRoleNames, *service.RoleNameOutput())
+	}
+
+	return a.ResourcesStore(stack, accessRoleNames)
 }
 
 // // Post - Called after all resources have been created, before the Pulumi Context is concluded
