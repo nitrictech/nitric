@@ -28,6 +28,9 @@ type Stack interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	FirestoreDatabaseIdOutput() *string
+	FirestoreEnabled() *bool
+	SetFirestoreEnabled(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -161,6 +164,26 @@ func (j *jsiiProxy_Stack) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) FirestoreDatabaseIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"firestoreDatabaseIdOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) FirestoreEnabled() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"firestoreEnabled",
 		&returns,
 	)
 	return returns
@@ -349,6 +372,17 @@ func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetFirestoreEnabled(val *bool) {
+	if err := j.validateSetFirestoreEnabledParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"firestoreEnabled",
 		val,
 	)
 }

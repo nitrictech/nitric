@@ -53,6 +53,11 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		"MIN_WORKERS":            jsii.String(fmt.Sprint(config.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": jsii.String(fmt.Sprint(3000)),
 	}
+
+	if a.requiresKvStore {
+		jsiiEnv["FIRESTORE_DATABASE_NAME"] = a.Stack.FirestoreDatabaseIdOutput()
+	}
+
 	for k, v := range config.GetEnv() {
 		jsiiEnv[k] = jsii.String(v)
 	}
@@ -73,6 +78,7 @@ func (a *NitricGcpTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		MinInstances:               jsii.Number(typeConfig.CloudRun.MinInstances),
 		ContainerConcurrency:       jsii.Number(typeConfig.CloudRun.Concurrency),
 		ArtifactRegistryRepository: a.Stack.ContainerRegistryUriOutput(),
+		InternalIngress:            jsii.Bool(a.serviceIngress),
 		Vpc:                        a.vpcConfig,
 	}
 

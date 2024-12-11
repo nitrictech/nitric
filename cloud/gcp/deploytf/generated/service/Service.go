@@ -45,6 +45,8 @@ type Service interface {
 	SetGpus(val *float64)
 	Image() *string
 	SetImage(val *string)
+	InternalIngress() *bool
+	SetInternalIngress(val *bool)
 	InvokerServiceAccountEmailOutput() *string
 	KmsKey() *string
 	SetKmsKey(val *string)
@@ -247,6 +249,16 @@ func (j *jsiiProxy_Service) Image() *string {
 	_jsii_.Get(
 		j,
 		"image",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Service) InternalIngress() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"internalIngress",
 		&returns,
 	)
 	return returns
@@ -560,6 +572,14 @@ func (j *jsiiProxy_Service)SetImage(val *string) {
 	_jsii_.Set(
 		j,
 		"image",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Service)SetInternalIngress(val *bool) {
+	_jsii_.Set(
+		j,
+		"internalIngress",
 		val,
 	)
 }

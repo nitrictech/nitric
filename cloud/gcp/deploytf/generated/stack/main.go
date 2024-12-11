@@ -22,6 +22,8 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "containerRegistryUriOutput", GoGetter: "ContainerRegistryUriOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},
+			_jsii_.MemberProperty{JsiiProperty: "firestoreDatabaseIdOutput", GoGetter: "FirestoreDatabaseIdOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "firestoreEnabled", GoGetter: "FirestoreEnabled"},
 			_jsii_.MemberProperty{JsiiProperty: "forEach", GoGetter: "ForEach"},
 			_jsii_.MemberProperty{JsiiProperty: "fqn", GoGetter: "Fqn"},
 			_jsii_.MemberProperty{JsiiProperty: "friendlyUniqueId", GoGetter: "FriendlyUniqueId"},

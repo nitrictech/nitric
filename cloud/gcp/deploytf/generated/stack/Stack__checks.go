@@ -98,6 +98,14 @@ func (j *jsiiProxy_Stack) validateSetCmekEnabledParameters(val *bool) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetFirestoreEnabledParameters(val *bool) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetLocationParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
