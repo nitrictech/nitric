@@ -33,6 +33,12 @@ locals {
   ids_prefix = "nitric-"
 }
 
+resource "random_string" "unique_id" {
+  length = 4
+  special = false
+  upper   = false
+}
+
 # Create a random ID for the service name, so that it confirms to regex restrictions
 resource "random_string" "service_account_id" {
   length  = 30 - length(local.ids_prefix)
@@ -57,9 +63,13 @@ resource "random_password" "event_token" {
   }
 }
 
+locals{
+  service_name = replace(var.service_name, "_", "-")
+}
+
 # Create a cloud run service
 resource "google_cloud_run_v2_service" "service" {
-  name = replace(var.service_name, "_", "-")
+  name = "${local.service_name}-${random_string.unique_id.result}"
 
   location = var.region
   project  = var.project_id
@@ -68,11 +78,29 @@ resource "google_cloud_run_v2_service" "service" {
   launch_stage        = "GA"
   deletion_protection = false
 
+  ingress = var.internal_ingress == true ? "INGRESS_TRAFFIC_INTERNAL_ONLY" : "INGRESS_TRAFFIC_ALL"
+
   template {
     scaling {
       min_instance_count = var.min_instances
       max_instance_count = var.max_instances
     }
+
+    dynamic "vpc_access" {
+      for_each = var.vpc != null ? [1] : []
+
+     
+      content {
+        egress = var.vpc.all_traffic ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          network    = var.vpc.network
+          subnetwork = var.vpc.subnet
+          tags       = var.vpc.network_tags
+        }
+      }
+    }
+
+    encryption_key = var.kms_key != "" ? var.kms_key : null
 
     # dynamic "node_selector" {
     #   for_each = var.gpus > 0 ? [1] : []
@@ -123,7 +151,12 @@ resource "google_cloud_run_v2_service" "service" {
     timeout         = "${var.timeout_seconds}s"
   }
 
-  depends_on = [docker_registry_image.push]
+  depends_on = [
+    docker_registry_image.push,
+    google_service_account_iam_member.account_member,
+    google_service_account_iam_member.service_account_iam_member,
+    google_service_account_iam_member.service_account_invoker_iam_member
+  ]
 }
 
 # Create a random ID for the service name, so that it confirms to regex restrictions
@@ -131,6 +164,29 @@ resource "random_string" "service_id" {
   length  = 30 - length(local.ids_prefix)
   special = false
   upper   = false
+}
+
+
+data "google_client_openid_userinfo" "deployer" {
+}
+
+locals {
+  deployer_email = data.google_client_openid_userinfo.deployer.email
+  deployer_type  = endswith(local.deployer_email, "gserviceaccount.com") ? "serviceAccount" : "user"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_iam_member" {
+  service_account_id = google_service_account.service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
+}
+
+# If we're impersonation a service account, we need to grant that account the service account user role on the service account
+resource "google_service_account_iam_member" "service_account_invoker_iam_member" {
+  service_account_id = google_service_account.invoker_service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "${local.deployer_type}:${local.deployer_email}"
 }
 
 # Create an invoker service account for the google cloud run instance

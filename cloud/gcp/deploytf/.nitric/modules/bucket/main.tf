@@ -12,11 +12,29 @@ resource "random_id" "bucket_id" {
 data "google_client_config" "this" {
 }
 
-# Google Stora bucket
+# Google Storage bucket
 resource "google_storage_bucket" "bucket" {
-  name          = "${var.bucket_name}-${random_id.bucket_id.hex}"
-  location      = data.google_client_config.this.region
-  storage_class = var.storage_class
+  name                        = "${var.bucket_name}-${random_id.bucket_id.hex}"
+  location                    = data.google_client_config.this.region
+  storage_class               = var.storage_class
+  uniform_bucket_level_access = true
+  dynamic "encryption" {
+    for_each = var.kms_key != "" ? [var.kms_key] : []
+    content {
+      default_kms_key_name = encryption.value
+    }
+  }
+  versioning {
+    enabled = true
+  }
+  lifecycle_rule {
+    condition {
+      num_newer_versions = 5
+    }
+    action {
+      type = "Delete"
+    }
+  }
   labels = {
     "x-nitric-${var.stack_id}-name" = var.bucket_name
     "x-nitric-${var.stack_id}-type" = "bucket"
@@ -56,7 +74,7 @@ resource "google_storage_notification" "bucket_notification" {
     # The target is the notification target name
     "target" = each.value.name
   }
-  depends_on         = [google_pubsub_topic_iam_binding.bucket_notification_topic_iam_binding]
+  depends_on = [google_pubsub_topic_iam_binding.bucket_notification_topic_iam_binding]
 }
 
 # For each notification target create a pubsub subscription
