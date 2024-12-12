@@ -214,10 +214,19 @@ func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	})
 
 	// loop over all the resources and create outputs for them
+	allEndpoints := map[string]*string{}
+
 	for name, api := range a.Apis {
 		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     api,
+		})
+		allEndpoints[name] = api.EndpointOutput()
+	}
+
+	if len(allEndpoints) > 0 {
+		cdktf.NewTerraformOutput(stack, jsii.String("endpoints"), &cdktf.TerraformOutputConfig{
+			Value: allEndpoints,
 		})
 	}
 

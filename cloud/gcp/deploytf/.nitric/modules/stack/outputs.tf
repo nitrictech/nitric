@@ -34,6 +34,6 @@ output "kms_key_iam_binding" {
 }
 
 output "firestore_database_id" {
-  value = google_firestore_database.database[0] != null ? google_firestore_database.database[0].name : "(default)"
+  value = one(google_firestore_database.database) != null ? google_firestore_database.database[0].name : "(default)"
   description = "Firestore database for stack"
 }
