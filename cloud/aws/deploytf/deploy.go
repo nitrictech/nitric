@@ -146,6 +146,83 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	// Get a link to this stacks resource group in the AWS console
+	// outputs = append(outputs, pulumi.Sprintf("Deployed Resources:\n──────────────"))
+	// outputs = append(outputs, pulumi.Sprintf(, a.Region, urlEncodedRgArn))
+
+	// urlEncodedRgArn := a.ResourceGroup.Arn.ApplyT(func(arn string) string {
+	// 	// URL encode the ARN
+	// 	return url.QueryEscape(arn)
+	// })
+
+	cdktf.NewTerraformOutput(stack, jsii.Sprintf("deployed-resources"), &cdktf.TerraformOutputConfig{
+		Value: jsii.Sprintf("https://%s.console.aws.amazon.com/resource-groups/group/%s\n", a.Region, *cdktf.Fn_Urlencode(a.Stack.ResourceGroupArnOutput())),
+	})
+
+	// Set terraform outputs
+	cdktf.NewTerraformOutput(stack, jsii.Sprintf("stack-output"), &cdktf.TerraformOutputConfig{
+		Value: a.Stack,
+	})
+
+	// loop over all the resources and create outputs for them
+	allEndpoints := map[string]*string{}
+
+	for name, api := range a.Apis {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     api,
+		})
+		allEndpoints[name] = api.EndpointOutput()
+	}
+
+	if len(allEndpoints) > 0 {
+		cdktf.NewTerraformOutput(stack, jsii.String("endpoints"), &cdktf.TerraformOutputConfig{
+			Value: allEndpoints,
+		})
+	}
+
+	for name, bucket := range a.Buckets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-bucket-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     bucket,
+		})
+	}
+
+	for name, topic := range a.Topics {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-topic-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     topic,
+		})
+	}
+
+	for name, schedule := range a.Schedules {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-schedule-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     schedule,
+		})
+	}
+
+	for name, service := range a.Services {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-service-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     service,
+		})
+	}
+
+	for name, secret := range a.Secrets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-secret-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     secret,
+		})
+	}
+
+	for name, queue := range a.Queues {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-queue-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     queue,
+		})
+	}
+
 	// Give all the Services access to the resource index
 	accessRoleNames := []string{}
 	for _, service := range a.Services {

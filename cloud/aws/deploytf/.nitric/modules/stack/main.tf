@@ -12,7 +12,7 @@ resource "aws_resourcegroups_group" "group" {
 {
 
     "ResourceTypeFilters":["AWS::AllSupported"],
-	"TagFilters":[{"Key":"x-nitric-name-${random_string.id.result}"}]
+	"TagFilters":[{"Key":"x-nitric-${random_string.id.result}-name"}]
 }
 JSON
   }

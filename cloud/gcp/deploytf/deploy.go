@@ -235,42 +235,42 @@ func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	}
 
 	for name, bucket := range a.Buckets {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-bucket-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     bucket,
 		})
 	}
 
 	for name, topic := range a.Topics {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-topic-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     topic,
 		})
 	}
 
 	for name, schedule := range a.Schedules {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-schedule-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     schedule,
 		})
 	}
 
 	for name, service := range a.Services {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-service-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     service,
 		})
 	}
 
 	for name, secret := range a.Secrets {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-secret-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     secret,
 		})
 	}
 
 	for name, queue := range a.Queues {
-		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-queue-output", name), &cdktf.TerraformOutputConfig{
 			Sensitive: jsii.Bool(true),
 			Value:     queue,
 		})
