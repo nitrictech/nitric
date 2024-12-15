@@ -35,6 +35,14 @@ resource "google_storage_bucket" "bucket" {
       type = "Delete"
     }
   }
+
+  cors {
+    # TODO: Make this configurable
+    origin          = ["*"]
+    method          = ["GET", "HEAD", "PUT", "POST"]
+    response_header = ["*"]
+    max_age_seconds = 3600
+  }
   labels = {
     "x-nitric-${var.stack_id}-name" = var.bucket_name
     "x-nitric-${var.stack_id}-type" = "bucket"
