@@ -145,6 +145,14 @@ resource "google_project_service_identity" "secret_manager_sa" {
   service = "secretmanager.googleapis.com"
 }
 
+resource "google_project_service_identity" "firestore_sa" {
+  count    = var.firestore_enabled ? 1 : 0
+  provider = google-beta
+
+  project = data.google_project.project.project_id
+  service = "firestore.googleapis.com"
+}
+
 locals {
   kms_reader_service_accounts = [
     // Artifact registry service account
@@ -156,7 +164,9 @@ locals {
     // Cloud scheduler service account
     "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com",
     // Cloud scheduler service account
-    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-secretmanager.iam.gserviceaccount.com"
+    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-secretmanager.iam.gserviceaccount.com",
+    // Firestore service account
+    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-firestore.iam.gserviceaccount.com"
   ]
 }
 
@@ -166,7 +176,7 @@ resource "google_kms_crypto_key_iam_binding" "cmek_key_binding" {
   crypto_key_id = google_kms_crypto_key.cmek_key[0].id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   members       = toset(local.kms_reader_service_accounts)
-  depends_on    = [google_project_service.required_services, google_project_service_identity.secret_manager_sa[0]]
+  depends_on    = [google_project_service.required_services, google_project_service_identity.secret_manager_sa[0], google_project_service_identity.firestore_sa[0]]
 }
 
 # Ensure firestore default db exists
