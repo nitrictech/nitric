@@ -17,6 +17,10 @@ type Stack interface {
 	BaseComputeRoleOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CmekEnabled() *bool
+	SetCmekEnabled(val *bool)
+	CmekKeyOutput() *string
+	CmekKeyRingOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	ContainerRegistryUriOutput() *string
@@ -24,6 +28,9 @@ type Stack interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	FirestoreDatabaseIdOutput() *string
+	FirestoreEnabled() *bool
+	SetFirestoreEnabled(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -33,6 +40,7 @@ type Stack interface {
 	// Experimental.
 	FriendlyUniqueId() *string
 	IamRolesOutput() *string
+	KmsKeyIamBindingOutput() *string
 	Location() *string
 	SetLocation(val *string)
 	// The tree node.
@@ -101,6 +109,36 @@ func (j *jsiiProxy_Stack) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) CmekEnabled() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"cmekEnabled",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CmekKeyOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cmekKeyOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CmekKeyRingOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cmekKeyRingOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
@@ -126,6 +164,26 @@ func (j *jsiiProxy_Stack) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) FirestoreDatabaseIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"firestoreDatabaseIdOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) FirestoreEnabled() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"firestoreEnabled",
 		&returns,
 	)
 	return returns
@@ -166,6 +224,16 @@ func (j *jsiiProxy_Stack) IamRolesOutput() *string {
 	_jsii_.Get(
 		j,
 		"iamRolesOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) KmsKeyIamBindingOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"kmsKeyIamBindingOutput",
 		&returns,
 	)
 	return returns
@@ -289,10 +357,32 @@ func NewStack_Override(s Stack, scope constructs.Construct, id *string, config *
 	)
 }
 
+func (j *jsiiProxy_Stack)SetCmekEnabled(val *bool) {
+	if err := j.validateSetCmekEnabledParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cmekEnabled",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetFirestoreEnabled(val *bool) {
+	if err := j.validateSetFirestoreEnabledParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"firestoreEnabled",
 		val,
 	)
 }

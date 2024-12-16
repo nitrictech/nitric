@@ -152,12 +152,12 @@ func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	}
 
 	for k, p := range v2doc.Paths {
-		p.Get = gcpOperation(name, p.Get, naps, timeouts)
-		p.Post = gcpOperation(name, p.Post, naps, timeouts)
-		p.Patch = gcpOperation(name, p.Patch, naps, timeouts)
-		p.Put = gcpOperation(name, p.Put, naps, timeouts)
-		p.Delete = gcpOperation(name, p.Delete, naps, timeouts)
-		p.Options = gcpOperation(name, p.Options, naps, timeouts)
+		p.Get = gcpOperation(name, k, p.Get, naps, timeouts)
+		p.Post = gcpOperation(name, k, p.Post, naps, timeouts)
+		p.Patch = gcpOperation(name, k, p.Patch, naps, timeouts)
+		p.Put = gcpOperation(name, k, p.Put, naps, timeouts)
+		p.Delete = gcpOperation(name, k, p.Delete, naps, timeouts)
+		p.Options = gcpOperation(name, k, p.Options, naps, timeouts)
 		v2doc.Paths[k] = p
 	}
 
@@ -187,7 +187,7 @@ func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	return nil
 }
 
-func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]*string, timeouts map[string]*float64) *openapi2.Operation {
+func gcpOperation(apiName string, path string, op *openapi2.Operation, urls map[string]*string, timeouts map[string]*float64) *openapi2.Operation {
 	if op == nil {
 		return nil
 	}
@@ -219,10 +219,15 @@ func gcpOperation(apiName string, op *openapi2.Operation, urls map[string]*strin
 		}
 	}
 
+	pathTranslation := "APPEND_PATH_TO_ADDRESS"
+	if path == "/" {
+		pathTranslation = "CONSTANT_ADDRESS"
+	}
+
 	op.Extensions["x-google-backend"] = map[string]any{
 		// Append the name of the target origin api gateway to the target address
 		"address":          fmt.Sprintf("%s/x-nitric-api/%s", *urls[name], apiName),
-		"path_translation": "APPEND_PATH_TO_ADDRESS",
+		"path_translation": pathTranslation,
 		"deadline":         timeouts[name],
 	}
 

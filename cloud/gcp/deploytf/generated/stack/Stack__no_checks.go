@@ -32,6 +32,14 @@ func validateStack_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetCmekEnabledParameters(val *bool) error {
+	return nil
+}
+
+func (j *jsiiProxy_Stack) validateSetFirestoreEnabledParameters(val *bool) error {
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetLocationParameters(val *string) error {
 	return nil
 }

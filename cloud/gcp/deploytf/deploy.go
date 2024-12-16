@@ -24,6 +24,7 @@ import (
 	gcpprovider "github.com/cdktf/cdktf-provider-google-go/google/v14/provider"
 	gcpbetaprovider "github.com/cdktf/cdktf-provider-googlebeta-go/googlebeta/v14/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/gcp/common"
@@ -38,13 +39,28 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/websocket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+type VpcConfig struct {
+	Network     string   `mapstructure:"network" json:"network"`
+	Subnet      string   `mapstructure:"subnet" json:"subnet"`
+	NetworkTags []string `mapstructure:"network-tags" json:"network_tags"`
+	AllTraffic  bool     `mapstructure:"all-traffic" json:"all_traffic"`
+}
+
 type NitricGcpTerraformProvider struct {
 	*deploy.CommonStackDetails
 	Stack tfstack.Stack
+
+	serviceIngress  bool
+	requiresKvStore bool
+
+	// CmekEnabled - Enable Customer Managed Encryption Keys
+	cmekEnabled bool
+	vpcConfig   *VpcConfig
 
 	GcpConfig      *common.GcpConfig
 	Apis           map[string]api.Api
@@ -77,6 +93,24 @@ func (a *NitricGcpTerraformProvider) Init(attributes map[string]interface{}) err
 	}
 
 	a.RawAttributes = attributes
+
+	var ok bool
+	a.cmekEnabled, ok = a.RawAttributes["cmek"].(bool)
+	if !ok {
+		a.cmekEnabled = false
+	}
+
+	a.vpcConfig = nil
+	vpcConfig, ok := a.RawAttributes["vpc"].(map[string]interface{})
+	if ok {
+		a.vpcConfig = &VpcConfig{}
+		mapstructure.Decode(vpcConfig, a.vpcConfig)
+	}
+
+	serviceIngress, ok := a.RawAttributes["internal-service-ingress"].(bool)
+	if ok {
+		a.serviceIngress = serviceIngress
+	}
 
 	return nil
 }
@@ -154,15 +188,90 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		RegistryAuth: registryAuths,
 	})
 
+	// if resources has any kv stores, make sure kv is enabled for the stack
+	for _, resource := range resources {
+		if resource.Id.GetType() == resourcespb.ResourceType_KeyValueStore {
+			a.requiresKvStore = true
+			break
+		}
+	}
+
 	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
-		Location:  jsii.String(a.Region),
-		StackName: jsii.String(a.StackName),
+		Location:         jsii.String(a.Region),
+		StackName:        jsii.String(a.StackName),
+		CmekEnabled:      jsii.Bool(a.cmekEnabled),
+		FirestoreEnabled: jsii.Bool(a.requiresKvStore),
 	})
 
 	return nil
 }
 
 func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	// write terraform outputs
+
+	cdktf.NewTerraformOutput(stack, jsii.Sprintf("stack-output"), &cdktf.TerraformOutputConfig{
+		Value: a.Stack,
+	})
+
+	// loop over all the resources and create outputs for them
+	allEndpoints := map[string]*string{}
+
+	for name, api := range a.Apis {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-api-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     api,
+		})
+		allEndpoints[name] = api.EndpointOutput()
+	}
+
+	if len(allEndpoints) > 0 {
+		cdktf.NewTerraformOutput(stack, jsii.String("endpoints"), &cdktf.TerraformOutputConfig{
+			Value: allEndpoints,
+		})
+	}
+
+	for name, bucket := range a.Buckets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-bucket-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     bucket,
+		})
+	}
+
+	for name, topic := range a.Topics {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-topic-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     topic,
+		})
+	}
+
+	for name, schedule := range a.Schedules {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-schedule-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     schedule,
+		})
+	}
+
+	for name, service := range a.Services {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-service-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     service,
+		})
+	}
+
+	for name, secret := range a.Secrets {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-secret-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     secret,
+		})
+	}
+
+	for name, queue := range a.Queues {
+		cdktf.NewTerraformOutput(stack, jsii.Sprintf("%s-queue-output", name), &cdktf.TerraformOutputConfig{
+			Sensitive: jsii.Bool(true),
+			Value:     queue,
+		})
+	}
+
 	return nil
 }
 

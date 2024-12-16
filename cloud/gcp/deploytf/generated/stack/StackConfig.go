@@ -13,6 +13,10 @@ type StackConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// Enable customer managed encryption keys.
+	CmekEnabled *bool `field:"required" json:"cmekEnabled" yaml:"cmekEnabled"`
+	// Enable Firestore.
+	FirestoreEnabled *bool `field:"required" json:"firestoreEnabled" yaml:"firestoreEnabled"`
 	// The location to deploy the stack.
 	Location *string `field:"required" json:"location" yaml:"location"`
 	// The name of the nitric stack.

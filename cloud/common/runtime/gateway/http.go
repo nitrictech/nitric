@@ -78,10 +78,14 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 		// The API name is captured in the path using a path rewrite at the cloud API Gateway layer, and used to route the request to the correct workers
 		// the path is extracted here for routing. The original path is captured and passed to the workers, removing the rewrite.
 		apiName, apiOk := rc.UserValue(apiNameParam).(string)
-		originalPath, pathOk := rc.UserValue(originalPathParam).(string)
-		if !apiOk || !pathOk {
+		originalPath, _ := rc.UserValue(originalPathParam).(string)
+		if !apiOk {
 			rc.Error("invalid path", 400)
 			return
+		}
+
+		if originalPath == "" {
+			originalPath = "/"
 		}
 
 		headerMap := HttpHeadersToMap(&rc.Request.Header)

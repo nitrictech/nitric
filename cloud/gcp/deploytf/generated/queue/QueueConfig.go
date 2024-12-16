@@ -17,5 +17,7 @@ type QueueConfig struct {
 	QueueName *string `field:"required" json:"queueName" yaml:"queueName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 }
 

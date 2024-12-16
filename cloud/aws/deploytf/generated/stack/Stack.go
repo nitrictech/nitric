@@ -36,6 +36,7 @@ type Stack interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
+	ResourceGroupArnOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -159,6 +160,16 @@ func (j *jsiiProxy_Stack) RawOverrides() interface{} {
 	_jsii_.Get(
 		j,
 		"rawOverrides",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) ResourceGroupArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"resourceGroupArnOutput",
 		&returns,
 	)
 	return returns

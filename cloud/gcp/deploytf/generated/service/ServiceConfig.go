@@ -35,6 +35,10 @@ type ServiceConfig struct {
 	Cpus *float64 `field:"optional" json:"cpus" yaml:"cpus"`
 	// The amount of gpus to allocate to the CloudRun service.
 	Gpus *float64 `field:"optional" json:"gpus" yaml:"gpus"`
+	// Whether to restrict ingress to internal traffic only.
+	InternalIngress *bool `field:"optional" json:"internalIngress" yaml:"internalIngress"`
+	// The name of the KMS key to use.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 	// The maximum number of instances to run 10.
 	MaxInstances *float64 `field:"optional" json:"maxInstances" yaml:"maxInstances"`
 	// The amount of memory to allocate to the CloudRun service in MB 512.
@@ -43,5 +47,7 @@ type ServiceConfig struct {
 	MinInstances *float64 `field:"optional" json:"minInstances" yaml:"minInstances"`
 	// The timeout for the CloudRun service in seconds 10.
 	TimeoutSeconds *float64 `field:"optional" json:"timeoutSeconds" yaml:"timeoutSeconds"`
+	// cloud run service directvpc config.
+	Vpc interface{} `field:"optional" json:"vpc" yaml:"vpc"`
 }
 

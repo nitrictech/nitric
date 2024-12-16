@@ -10,6 +10,7 @@ terraform {
 # Create an ECR repository
 resource "aws_ecr_repository" "repo" {
   name = var.service_name
+  force_delete = true
 }
 
 data "aws_ecr_authorization_token" "ecr_auth" {

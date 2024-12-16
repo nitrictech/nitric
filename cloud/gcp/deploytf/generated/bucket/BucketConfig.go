@@ -19,6 +19,8 @@ type BucketConfig struct {
 	NotificationTargets interface{} `field:"required" json:"notificationTargets" yaml:"notificationTargets"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The KMS key to use for encryption.
+	KmsKey *string `field:"optional" json:"kmsKey" yaml:"kmsKey"`
 	// The class of storage used to store the bucket's contents.
 	//
 	// This can be STANDARD, NEARLINE, COLDLINE, ARCHIVE, or MULTI_REGIONAL.

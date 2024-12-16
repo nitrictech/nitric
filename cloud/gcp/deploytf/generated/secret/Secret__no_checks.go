@@ -32,6 +32,10 @@ func validateSecret_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Secret) validateSetLocationParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Secret) validateSetSecretNameParameters(val *string) error {
 	return nil
 }

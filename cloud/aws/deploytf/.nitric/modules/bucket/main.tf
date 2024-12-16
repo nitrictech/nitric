@@ -19,6 +19,23 @@ resource "aws_s3_bucket" "bucket" {
   }
 }
 
+resource "aws_s3_bucket_cors_configuration" "cors_policy" {
+  bucket = aws_s3_bucket.bucket.id
+
+  # TODO: Make this configurable
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST", "GET"]
+    allowed_origins = ["*"]
+    max_age_seconds = 3000
+  }
+
+  cors_rule {
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+  }
+}
+
 # Deploy bucket lambda invocation permissions
 resource "aws_lambda_permission" "allow_bucket" {
   for_each = var.notification_targets

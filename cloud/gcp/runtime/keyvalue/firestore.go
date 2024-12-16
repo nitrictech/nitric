@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/gcp/runtime/env"
 	"github.com/nitrictech/nitric/core/pkg/decorators/keyvalue"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/kvstore/v1"
@@ -126,7 +127,7 @@ func (s *FirestoreDocService) SetValue(ctx context.Context, req *v1.KvStoreSetVa
 
 		return nil, newErr(
 			codes.Internal,
-			"error updating value",
+			"error updating value "+err.Error(),
 			err,
 		)
 	}
@@ -219,12 +220,14 @@ func (s *FirestoreDocService) ScanKeys(req *v1.KvStoreScanKeysRequest, stream v1
 func New() (v1.KvStoreServer, error) {
 	ctx := context.Background()
 
+	databaseID := env.FIRESTORE_DATABASE_NAME.String()
+
 	credentials, credentialsError := google.FindDefaultCredentials(ctx, pubsub.ScopeCloudPlatform)
 	if credentialsError != nil {
 		return nil, fmt.Errorf("GCP credentials error: %w", credentialsError)
 	}
 
-	client, clientError := firestore.NewClient(ctx, credentials.ProjectID)
+	client, clientError := firestore.NewClientWithDatabase(ctx, credentials.ProjectID, databaseID)
 	if clientError != nil {
 		return nil, fmt.Errorf("firestore client error: %w", clientError)
 	}
