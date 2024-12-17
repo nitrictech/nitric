@@ -2,6 +2,7 @@ resource "aws_apigatewayv2_api" "api_gateway" {
   name          = var.name
   protocol_type = "HTTP"
   body = var.spec
+  fail_on_warnings = true
   tags = {
     "x-nitric-${var.stack_id}-name" = var.name,
     "x-nitric-${var.stack_id}-type" = "api",

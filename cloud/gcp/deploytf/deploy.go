@@ -16,7 +16,6 @@ package deploytf
 
 import (
 	"embed"
-	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
 	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
@@ -99,8 +98,13 @@ func (a *NitricGcpTerraformProvider) RequiredProviders() map[string]interface{} 
 	}
 }
 
-func (a *NitricGcpTerraformProvider) CdkTfModules() (string, fs.FS, error) {
-	return ".nitric/modules", modules, nil
+func (a *NitricGcpTerraformProvider) CdkTfModules() ([]provider.ModuleDirectory, error) {
+	return []provider.ModuleDirectory{
+		{
+			ParentDir: ".nitric/modules",
+			Modules:   modules,
+		},
+	}, nil
 }
 
 func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformStack) {

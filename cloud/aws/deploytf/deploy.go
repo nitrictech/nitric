@@ -16,7 +16,6 @@ package deploytf
 
 import (
 	"embed"
-	"io/fs"
 
 	"github.com/aws/jsii-runtime-go"
 	ecrauth "github.com/cdktf/cdktf-provider-aws-go/aws/v19/dataawsecrauthorizationtoken"
@@ -91,8 +90,13 @@ func (a *NitricAwsTerraformProvider) Init(attributes map[string]interface{}) err
 //go:embed .nitric/modules/**/*
 var modules embed.FS
 
-func (a *NitricAwsTerraformProvider) CdkTfModules() (string, fs.FS, error) {
-	return ".nitric/modules", modules, nil
+func (a *NitricAwsTerraformProvider) CdkTfModules() ([]provider.ModuleDirectory, error) {
+	return []provider.ModuleDirectory{
+		{
+			ParentDir: ".nitric/modules",
+			Modules:   modules,
+		},
+	}, nil
 }
 
 func (a *NitricAwsTerraformProvider) RequiredProviders() map[string]interface{} {
@@ -142,7 +146,13 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
-	return a.resourcesStore(stack)
+	// Give all the Services access to the resource index
+	accessRoleNames := []string{}
+	for _, service := range a.Services {
+		accessRoleNames = append(accessRoleNames, *service.RoleNameOutput())
+	}
+
+	return a.ResourcesStore(stack, accessRoleNames)
 }
 
 // // Post - Called after all resources have been created, before the Pulumi Context is concluded

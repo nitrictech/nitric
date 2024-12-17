@@ -15,9 +15,13 @@ resource "aws_ecr_repository" "repo" {
 data "aws_ecr_authorization_token" "ecr_auth" {
 }
 
+data "docker_image" "latest" {
+  name = var.image
+}
+
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
-  source_image = var.image
+  source_image = data.docker_image.latest.repo_digest
   target_image = aws_ecr_repository.repo.repository_url
 }
 
@@ -79,7 +83,7 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
 
 # Attach vpc access execution role if subnets are provided
 resource "aws_iam_role_policy_attachment" "vpc-access" {
-  count = length(var.subnet_ids) > 0 ? 1 : 0
+  count      = length(var.subnet_ids) > 0 ? 1 : 0
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
@@ -90,8 +94,8 @@ resource "aws_lambda_function" "function" {
   role          = aws_iam_role.role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
-  timeout = var.timeout
-  memory_size = var.memory
+  timeout       = var.timeout
+  memory_size   = var.memory
   ephemeral_storage {
     size = var.ephemeral_storage
   }
