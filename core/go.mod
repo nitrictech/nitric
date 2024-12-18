@@ -15,7 +15,7 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
 	github.com/uw-labs/lichen v0.1.7
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
 	google.golang.org/grpc v1.66.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.34.2
@@ -24,7 +24,7 @@ require (
 require (
 	github.com/valyala/fasthttp v1.55.0
 	github.com/yoheimuta/protolint v0.47.6
-	golang.org/x/sync v0.8.0
+	golang.org/x/sync v0.10.0
 )
 
 require (
@@ -71,7 +71,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/firefart/nonamedreturns v1.0.5 // indirect
 	github.com/frankban/quicktest v1.14.6 // indirect
@@ -224,10 +224,10 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
-	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/tools v0.27.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
