@@ -1,6 +1,6 @@
 ## Contributions
 
-Thanks for your interest in contributing to the Nitric community.
+Thanks for your interest in contributing to the Nitric community. If you want specifics about contributing to the documentation or the Nitric repo, take a look at the [development guide](./DEVELOPERS.md).
 
 There are plenty of ways to get involved, we've summarized a few here to get you started.
 
