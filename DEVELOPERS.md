@@ -80,7 +80,7 @@ There are two main ways to create a custom provider:
 - Find us on [Twitter](https://twitter.com/nitric_io)
 - Send us an [email](mailto:maintainers@nitric.io)
 
-# Documentation
+# Documentation Contribution
 
 If you find a mistake or are interested in contributing to our documentation you can fork the [documentation repo](https://github.com/nitrictech/docs), clone to your local machine and then open a pull request. If you found a problem but don't have the time to make the changes directly, then a [opening up an issue](https://github.com/nitrictech/docs/issues/new/choose) is much appreciated.
 
@@ -107,3 +107,68 @@ npm run cypress
 If there is a word that is flagged by the spellchecker but is actually valid you can update the `dictionary.txt` file.
 
 ### Components
+
+There are a few components that have been written specifically for the Nitric documentation. These require that the markdown is written in `.mdx` format. These components are listed below.
+
+If you would like to highlight something important you can use the `<Note>` component. This is normally reserved for common pitfalls, caveats, or warnings that a reader should take not of.
+
+```
+<Note>Content that you want to be highlighted</Note>
+```
+
+If you would like to have a title above your code examples, you can add metadata to the code markdown. This is generally reserved for adding file names to the tops of examples.
+
+````
+```js title:example/document.js
+
+```
+````
+
+For tabs to appear with the code examples with switchable languages, you can use the `<CodeSwitcher>` component.
+
+````
+<CodeSwitcher>
+
+```js title:example/document.js
+
+```
+
+```python title:example/document.py
+
+```
+
+</CodeSwitcher>
+````
+
+### Frontmatter
+
+There is metadata that is required for every docs page. This metadata is stored in the frontmatter at the top of the page. For a default docs page it looks like so:
+
+```
+---
+description: 'Basic description for this page of example documentation'
+---
+```
+
+The guides require a bit more metadata as there is filtering that needs to happen on the [guides page](https://nitric.io/docs/guides).
+
+```
+---
+description: 'Description for this guide'
+tags:
+  - A tag that can be used for filtering the guide
+languages:
+  - javascript
+  - typescript
+  - python
+  - dart
+  - go
+image: /docs/images/guides/example-guide/banner.png
+image_alt: 'The featured image for the Example Guide'
+featured:
+  image: /docs/images/guides/example-guide/featured.png
+  image_alt:
+published_at: 2024-12-21
+updated_at: 2024-12-21
+---
+```
