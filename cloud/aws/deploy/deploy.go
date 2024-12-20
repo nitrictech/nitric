@@ -306,6 +306,7 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		Apis:                  make(map[string]*apigatewayv2.Api),
 		HttpProxies:           make(map[string]*apigatewayv2.Api),
 		Secrets:               make(map[string]*secretsmanager.Secret),
+		Schedules:             make(map[string]*scheduler.Schedule),
 		Buckets:               make(map[string]*s3.Bucket),
 		BucketNotifications:   make(map[string]*s3.BucketNotification),
 		Websockets:            make(map[string]*apigatewayv2.Api),
