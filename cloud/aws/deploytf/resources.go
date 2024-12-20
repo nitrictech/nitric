@@ -24,7 +24,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/parameter"
 )
 
-func (a *NitricAwsTerraformProvider) resourcesStore(stack cdktf.TerraformStack) error {
+func (a *NitricAwsTerraformProvider) ResourcesStore(stack cdktf.TerraformStack, accessRoleNames []string) error {
 	index := common.NewResourceIndex()
 
 	for name, bucket := range a.Buckets {
@@ -74,12 +74,6 @@ func (a *NitricAwsTerraformProvider) resourcesStore(stack cdktf.TerraformStack) 
 	indexJson, err := json.Marshal(index)
 	if err != nil {
 		return fmt.Errorf("failed to marshal resource index: %w", err)
-	}
-
-	// Give all the Services access to the resource index
-	accessRoleNames := []string{}
-	for _, service := range a.Services {
-		accessRoleNames = append(accessRoleNames, *service.RoleNameOutput())
 	}
 
 	parameter.NewParameter(stack, jsii.String("nitric_resources"), &parameter.ParameterConfig{
