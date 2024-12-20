@@ -22,8 +22,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sfn v1.26.1
 	github.com/aws/aws-sdk-go-v2/service/sns v1.29.1
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.1
-	github.com/aws/constructs-go/constructs/v10 v10.3.0
-	github.com/aws/jsii-runtime-go v1.99.0
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.6
+	github.com/aws/constructs-go/constructs/v10 v10.4.2
+	github.com/aws/jsii-runtime-go v1.105.0
 	github.com/aws/smithy-go v1.22.1
 	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.20.1
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
@@ -32,7 +33,7 @@ require (
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.7
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.10
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20241029232835-f023e1be393d
@@ -100,7 +101,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.9.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.20.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.1 // indirect
@@ -142,7 +142,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/firefart/nonamedreturns v1.0.5 // indirect
@@ -334,17 +334,17 @@ require (
 	go.uber.org/automaxprocs v1.5.3 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/tools v0.27.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
