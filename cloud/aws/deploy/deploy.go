@@ -315,5 +315,6 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
 		SqlDatabases:          make(map[string]*RdsDatabase),
 		JobDefinitions:        make(map[string]*batch.JobDefinition),
+		Schedules:             make(map[string]*scheduler.Schedule),
 	}
 }
