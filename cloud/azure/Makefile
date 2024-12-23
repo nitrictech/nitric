@@ -17,12 +17,16 @@ runtimebin:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-azure -ldflags="-s -w -extldflags=-static" ./cmd/runtime
 
 predeploybin: runtimebin
-	@cp bin/runtime-azure deploy/runtime/runtime-azure
+	@cp bin/runtime-azure common/runtime/runtime-azure
 
 deploybin: predeploybin
 	@echo Building Azure Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
 	@rm deploy/runtime/runtime-azure
+
+deploybintf: generate-terraform predeploybin
+	@echo Building AWS Terraform Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-azuretf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
 install: deploybin
 	@echo installing azure deployment server to ${HOME}/.nitric/providers/nitric/azure-0.0.1
