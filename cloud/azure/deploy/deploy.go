@@ -22,6 +22,7 @@ import (
 
 	_ "embed"
 
+	"github.com/nitrictech/nitric/cloud/azure/common"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
@@ -63,7 +64,7 @@ type NitricAzurePulumiProvider struct {
 	Endpoint                        *cdn.Endpoint
 	staticWebsiteChangedFileOutputs pulumi.StringArray
 
-	AzureConfig *AzureConfig
+	AzureConfig *common.AzureConfig
 
 	ClientConfig *authorization.GetClientConfigResult
 
@@ -124,7 +125,7 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	a.AzureConfig, err = ConfigFromAttributes(attributes)
+	a.AzureConfig, err = common.ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
 	}

@@ -1,2 +1,2 @@
 dist/
-deploy/runtime-azure
+common/runtime/runtime-azure

@@ -49,10 +49,14 @@ type AztableEntity struct {
 	Content aztables.EDMBinary
 }
 
+func normalizeStoreName(storeName string) string {
+	return strings.Replace(storeName, "-", "", -1)
+}
+
 // Get a value from the Azure Storage table
 func (s *AzureStorageTableKeyValueService) GetValue(ctx context.Context, req *kvstorepb.KvStoreGetValueRequest) (*kvstorepb.KvStoreGetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.GetKey")
-	client, err := s.clientFactory(req.Ref.Store)
+	client, err := s.clientFactory(normalizeStoreName(req.Ref.Store))
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -130,7 +134,7 @@ func (s *AzureStorageTableKeyValueService) GetValue(ctx context.Context, req *kv
 // Set a value in the Azure Storage table
 func (s *AzureStorageTableKeyValueService) SetValue(ctx context.Context, req *kvstorepb.KvStoreSetValueRequest) (*kvstorepb.KvStoreSetValueResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.SetKeys")
-	client, err := s.clientFactory(req.Ref.Store)
+	client, err := s.clientFactory(normalizeStoreName(req.Ref.Store))
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -204,7 +208,7 @@ func (s *AzureStorageTableKeyValueService) SetValue(ctx context.Context, req *kv
 // Delete a key/value pair from the Azure Storage table
 func (s *AzureStorageTableKeyValueService) DeleteKey(ctx context.Context, req *kvstorepb.KvStoreDeleteKeyRequest) (*kvstorepb.KvStoreDeleteKeyResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzureStorageTableKeyValueService.DeleteKey")
-	client, err := s.clientFactory(req.Ref.Store)
+	client, err := s.clientFactory(normalizeStoreName(req.Ref.Store))
 	if err != nil {
 		return nil, newErr(
 			codes.Internal,
@@ -262,7 +266,7 @@ func (s *AzureStorageTableKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKe
 		)
 	}
 
-	client, err := s.clientFactory(storeName)
+	client, err := s.clientFactory(normalizeStoreName(storeName))
 	if err != nil {
 		return newErr(
 			codes.Internal,
