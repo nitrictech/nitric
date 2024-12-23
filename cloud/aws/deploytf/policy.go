@@ -25,14 +25,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// func md5Hash(b []byte) string {
-// 	hasher := md5.New() //#nosec G401 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
-// 	hasher.Write(b)
-
-// 	return hex.EncodeToString(hasher.Sum(nil))
-// }
-
-var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]string{
+var AwsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]string{
 	resourcespb.Action_BucketFileList: {
 		"s3:ListBucket",
 	},
@@ -87,11 +80,11 @@ var awsActionsMap map[resourcespb.Action][]string = map[resourcespb.Action][]str
 	},
 }
 
-func actionsToAwsActions(actions []resourcespb.Action) []string {
+func ActionsToAwsActions(actions []resourcespb.Action) []string {
 	awsActions := make([]string, 0)
 
 	for _, a := range actions {
-		awsActions = append(awsActions, awsActionsMap[a]...)
+		awsActions = append(awsActions, AwsActionsMap[a]...)
 	}
 
 	awsActions = lo.Uniq(awsActions)
@@ -99,8 +92,8 @@ func actionsToAwsActions(actions []resourcespb.Action) []string {
 	return awsActions
 }
 
-// // discover the arn of a deployed resource
-func (a *NitricAwsTerraformProvider) arnForResource(resource *deploymentspb.Resource) ([]*string, error) {
+// discover the arn of a deployed resource
+func (a *NitricAwsTerraformProvider) ArnForResource(resource *deploymentspb.Resource) ([]*string, error) {
 	switch resource.Id.Type {
 	case resourcespb.ResourceType_Bucket:
 		if b, ok := a.Buckets[resource.Id.Name]; ok {
@@ -149,13 +142,13 @@ func (a *NitricAwsTerraformProvider) roleForPrincipal(resource *deploymentspb.Re
 
 func (a *NitricAwsTerraformProvider) Policy(stack cdktf.TerraformStack, name string, config *deploymentspb.Policy) error {
 	// Get Actions
-	actions := actionsToAwsActions(config.Actions)
+	actions := ActionsToAwsActions(config.Actions)
 
 	// Get Targets
 	targetArns := make([]*string, 0, len(config.Resources))
 
 	for _, res := range config.Resources {
-		if arn, err := a.arnForResource(res); err == nil {
+		if arn, err := a.ArnForResource(res); err == nil {
 			targetArns = append(targetArns, arn...)
 		} else {
 			return fmt.Errorf("failed to create policy, unable to determine resource ARN: %w", err)
