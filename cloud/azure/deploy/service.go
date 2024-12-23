@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nitrictech/nitric/cloud/azure/common"
 	"github.com/nitrictech/nitric/cloud/azure/runtime/resource"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -36,7 +37,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 
-	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -57,7 +58,7 @@ type ContainerAppArgs struct {
 	ManagedIdentityID             pulumi.StringOutput
 	MongoDatabaseName             pulumi.StringInput
 	MongoDatabaseConnectionString pulumi.StringInput
-	Config                        AzureContainerAppsConfig
+	Config                        common.AzureContainerAppsConfig
 	Schedules                     []*deploy.Resource
 }
 
@@ -364,7 +365,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Service)),
+		Tags: pulumi.ToStringMap(tags.Tags(p.StackId, name, resources.Service)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
 				MaxReplicas: pulumi.Int(serviceConfig.ContainerApps.MaxReplicas),
