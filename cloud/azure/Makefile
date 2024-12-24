@@ -8,9 +8,8 @@ GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/go
 binaries: deploybin
 
 sec:
-	@touch deploy/runtime/runtime-azure
+	@touch common/runtime/runtime-azure
 	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
-	@rm deploy/runtime/runtime-azure
 
 runtimebin:
 	@echo Building Azure Runtime Server
@@ -22,21 +21,23 @@ predeploybin: runtimebin
 deploybin: predeploybin
 	@echo Building Azure Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-azure -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
-	@rm deploy/runtime/runtime-azure
 
 deploybintf: generate-terraform predeploybin
-	@echo Building AWS Terraform Deployment Server
+	@echo Building Azure Terraform Deployment Server
 	@CGO_ENABLED=0 go build -o bin/deploy-azuretf -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploytf
 
-install: deploybin
+install: deploybin deploybintf
 	@echo installing azure deployment server to ${HOME}/.nitric/providers/nitric/azure-0.0.1
+	@echo installing azure terraform deployment server to ${HOME}/.nitric/providers/nitric/azuretf-0.0.1
 	@mkdir -p ${HOME}/.nitric/providers/nitric/
 	@if [ "$(OS)" == "Windows_NT" ]; then \
 		rm -f "${HOME}/.nitric/providers/nitric/azure-0.0.1.exe"; \
 		cp bin/deploy-azure "${HOME}/.nitric/providers/nitric/azure-0.0.1.exe"; \
+		cp bin/deploy-azuretf "${HOME}/.nitric/providers/nitric/azuretf-0.0.1.exe"; \
 	else \
 		rm -f "${HOME}/.nitric/providers/nitric/azure-0.0.1"; \
 		cp bin/deploy-azure "${HOME}/.nitric/providers/nitric/azure-0.0.1"; \
+		cp bin/deploy-azuretf "${HOME}/.nitric/providers/nitric/azuretf-0.0.1"; \
 	fi
 
 license-check: runtimebin
@@ -47,15 +48,13 @@ sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
 fmt:
 	@go run github.com/google/addlicense -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-azure
+	@touch common/runtime/runtime-azure
 	$(GOLANGCI_LINT) run --fix
-	@rm deploy/runtime/runtime-azure
 
 lint:
 	@go run github.com/google/addlicense -check -c "Nitric Technologies Pty Ltd." -y "2021" $(sourcefiles)
-	@touch deploy/runtime/runtime-azure
+	@touch common/runtime/runtime-azure
 	$(GOLANGCI_LINT) run
-	@rm deploy/runtime/runtime-azure
 
 test: generate-mocks
 	@echo Running unit tests
@@ -83,7 +82,10 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 
-generate-sources: generate-mocks
+generate-sources: generate-mocks generate-terraform
+
+generate-terraform:
+	@cd deploytf && npx -y cdktf-cli@0.20.8 get
 
 tidy:
 	@go mod tidy
