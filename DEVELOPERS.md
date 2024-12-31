@@ -10,10 +10,6 @@ git clone https://github.com/<your-github-username>/nitric.git
 
 ### Installation
 
-```bash
-go mod tidy
-```
-
 Requirements:
 
 - Git
@@ -22,19 +18,27 @@ Requirements:
 - Docker
 - Google Protocol Buffers Compiler (protoc)
 
-To install dependencies use:
+To install the `protoc-gen-go` tooling use:
 
 ```bash
 make install-tools
 ```
 
-### Building
+Once you have the tools installed you can install the go dependencies:
+
+```bash
+go mod tidy
+```
+
+### Building Providers
+
+The following command will recursively go through all the providers in `cloud/` and build them into their respective `bin/` folders.
 
 ```bash
 make binaries
 ```
 
-To install the binaries into your nitric home use:
+To install the provider binaries into `NITRIC_HOME` use:
 
 ```bash
 make install
@@ -73,14 +77,7 @@ There are two main ways to create a custom provider:
 1. Create a new provider: This is the most flexible option, but also the most complex. You can [create a new provider from scratch](https://nitric.io/docs/providers/custom/create).
 2. Extend an existing provider: This is a good option if you want to leverage the existing provider's deployment automation and only need to make specific changes, such as use your own Terraform modules or deploy Nitric resources to a different cloud service. You [can extend an existing provider](https://nitric.io/docs/providers/custom/extend) to add your own configuration options or change the deployment process.
 
-## Community Channels
-
-- Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
-- Join us on [Discord](https://nitric.io/chat)
-- Find us on [Twitter](https://twitter.com/nitric_io)
-- Send us an [email](mailto:maintainers@nitric.io)
-
-# Documentation Contribution
+## Documentation Contribution
 
 If you find a mistake or are interested in contributing to our documentation you can fork the [documentation repo](https://github.com/nitrictech/docs), clone to your local machine and then open a pull request. If you found a problem but don't have the time to make the changes directly, then a [opening up an issue](https://github.com/nitrictech/docs/issues/new/choose) is much appreciated.
 
@@ -172,3 +169,10 @@ published_at: 2024-12-21
 updated_at: 2024-12-21
 ---
 ```
+
+## Community Channels
+
+- Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
+- Join us on [Discord](https://nitric.io/chat)
+- Find us on [Twitter](https://twitter.com/nitric_io)
+- Send us an [email](mailto:maintainers@nitric.io)
