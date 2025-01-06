@@ -15,6 +15,10 @@
       "source": "./.nitric/modules/stack"
     },
     {
+      "name": "roles",
+      "source": "./.nitric/modules/roles"
+    },
+    {
       "name": "topic",
       "source": "./.nitric/modules/topic"
     },
