@@ -17,17 +17,23 @@ package deploytf
 import (
 	"embed"
 
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/common"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type NitricAzureTerraformProvider struct {
 	*deploy.CommonStackDetails
+
+	Stack stack.Stack
 
 	AzureConfig *common.AzureConfig
 
@@ -70,7 +76,28 @@ func (a *NitricAzureTerraformProvider) RequiredProviders() map[string]interface{
 	return map[string]interface{}{}
 }
 
-func (a *NitricAzureTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
+func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
+
+	// If resources contains queues/buckets then we need to enable storage
+	_, enableStorage := lo.Find(resources, func(item *deploymentspb.Resource) bool {
+		return item.Id.GetType() == resourcespb.ResourceType_Bucket || item.Id.GetType() == resourcespb.ResourceType_Queue
+	})
+
+	_, enableDatabase := lo.Find(resources, func(item *deploymentspb.Resource) bool {
+		return item.Id.GetType() == resourcespb.ResourceType_SqlDatabase
+	})
+
+	_, enableKeyvault := lo.Find(resources, func(item *deploymentspb.Resource) bool {
+		return item.Id.GetType() == resourcespb.ResourceType_Secret
+	})
+
+	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
+	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
+		EnableStorage:  jsii.Bool(enableStorage),
+		EnableDatabase: jsii.Bool(enableDatabase),
+		EnableKeyvault: jsii.Bool(enableKeyvault),
+	})
+
 	return nil
 }
 
