@@ -43,7 +43,7 @@ We also know abstraction should mean building on existing layers, not hiding the
   <a href="./cloud/azure"><img src="https://skillicons.dev/icons?i=azure"/></a>
 </p>
 
-> These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/reference/providers/custom/building-custom-provider) as well
+> These are supported out of the box, but you can also build [custom providers](https://nitric.io/docs/providers/custom/create) as well
 
 ## 🧑‍💻 Get started
 
@@ -118,7 +118,7 @@ main.post("/notes/:title", async (ctx) => {
 });
 ```
 
-This is the only code needed to deploy a working application to any cloud provider using [`nitric up`](https://nitric.io/docs/getting-started/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/reference/providers/pulumi), [Terraform](https://nitric.io/docs/reference/providers/terraform) or [any other automation tools](https://nitric.io/docs/reference/providers/custom/building-custom-provider) of your choice.
+This is the only code needed to deploy a working application to any cloud provider using [`nitric up`](https://nitric.io/docs/get-started/foundations/deployment). Nitric can deploy this application using automatically generated [Pulumi](https://nitric.io/docs/providers/pulumi), [Terraform](https://nitric.io/docs/providers/terraform) or [any other automation tools](https://nitric.io/docs/providers/custom/create) of your choice.
 
 ## Why use Nitric?
 
@@ -148,4 +148,4 @@ Nitric has full documentation at [nitric.io/docs](https://nitric.io/docs), inclu
 
 ## Contributing
 
-We greatly appreciate contributions, consider starting with the [contributions guide](./CONTRIBUTING.md) and a chat on [Discord](https://nitric.io/chat) or [GitHub](https://github.com/nitrictech/nitric/discussions).
+We greatly appreciate contributions, consider starting with the [contributions guide](./CONTRIBUTING.md) or [development guide](./DEVELOPERS.md), and a chat on [Discord](https://nitric.io/chat) or [GitHub](https://github.com/nitrictech/nitric/discussions).
