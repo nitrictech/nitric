@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-Get started with Nitric development by forking the repository and cloning it to your local machine.
+Get started with Nitric development by [forking the repository](https://github.com/nitrictech/nitric/fork) and cloning it to your local machine.
 
 ```bash
 git clone https://github.com/<your-github-username>/nitric.git
@@ -74,8 +74,8 @@ export MIN_WORKERS=0; ./cloud/aws/bin/deploy-aws
 
 There are two main ways to create a custom provider:
 
-1. Create a new provider: This is the most flexible option, but also the most complex. You can [create a new provider from scratch](https://nitric.io/docs/providers/custom/create).
-2. Extend an existing provider: This is a good option if you want to leverage the existing provider's deployment automation and only need to make specific changes, such as use your own Terraform modules or deploy Nitric resources to a different cloud service. You [can extend an existing provider](https://nitric.io/docs/providers/custom/extend) to add your own configuration options or change the deployment process.
+1. **Create a new provider:** This is the most flexible option, but also the most complex. You can [create a new provider from scratch](https://nitric.io/docs/providers/custom/create).
+2. **Extend an existing provider:** This is a good option if you want to leverage the existing provider's deployment automation and only need to make specific changes, such as use your own Terraform modules or deploy Nitric resources to a different cloud service. You [can extend an existing provider](https://nitric.io/docs/providers/custom/extend) to add your own configuration options or change the deployment process.
 
 ## Documentation Contribution
 
@@ -174,5 +174,5 @@ updated_at: 2024-12-21
 
 - Ask questions in [GitHub discussions](https://github.com/nitrictech/nitric/discussions)
 - Join us on [Discord](https://nitric.io/chat)
-- Find us on [Twitter](https://twitter.com/nitric_io)
+- Find us on [X](https://x.com/nitric_io)
 - Send us an [email](mailto:maintainers@nitric.io)
