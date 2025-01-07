@@ -8,17 +8,17 @@ Our team encourages you to ask questions, raise requests for new features and le
 
 ### Ask a question about Nitric
 
-You can ask questions and launch discussions about Nitric-related topics in the nitric repository on [GitHub](https://github.com/nitrictech/nitric/core/discussions).
+You can ask questions and launch discussions about Nitric-related topics in the nitric repository on [GitHub](https://github.com/nitrictech/nitric/discussions).
 
 ### Submit a feature request
 
-You can ask questions and launch discussions about Nitric-related topics in the nitric repository on [GitHub](https://github.com/nitrictech/nitric/core/issues/new?assignees=&labels=&template=feature_request.md&title=%27Submit%20feature%20request%27).
+You can ask questions and launch discussions about Nitric-related topics in the nitric repository on [GitHub](https://github.com/nitrictech/nitric/issues/new?assignees=&labels=enhancement&projects=&template=2.feature.md).
 
 ### Create a bug report for Nitric
 
-If you find any error messages or run into issues whilst using the Nitric Platform, please make sure to create a [bug report](https://github.com/nitrictech/nitric/core/issues/new?assignees=&labels=&template=bug_report.md&title=%27Create%20bug%20report%27).
+If you find any error messages or run into issues whilst using the Nitric Platform, please make sure to create a [bug report](https://github.com/nitrictech/nitric/issues/new?assignees=&labels=bug&projects=&template=1.bug.md).
 
-You can also check out our [Creating bug reports](https://nitric.io/docs/support/bug-report) guide to step you through the process.
+You can also check out our [Creating bug reports](https://nitric.io/docs/misc/support#best-practices-for-writing-the-bug-report) guide to step you through the process.
 
 ### Issues and smaller features
 
