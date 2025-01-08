@@ -20,6 +20,8 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/common"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -34,6 +36,9 @@ type NitricAzureTerraformProvider struct {
 	*deploy.CommonStackDetails
 
 	Stack stack.Stack
+
+	Apis     map[string]api.Api
+	Services map[string]service.Service
 
 	AzureConfig *common.AzureConfig
 
@@ -106,5 +111,8 @@ func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
 }
 
 func NewNitricAzureProvider() *NitricAzureTerraformProvider {
-	return &NitricAzureTerraformProvider{}
+	return &NitricAzureTerraformProvider{
+		Apis:     make(map[string]api.Api),
+		Services: make(map[string]service.Service),
+	}
 }

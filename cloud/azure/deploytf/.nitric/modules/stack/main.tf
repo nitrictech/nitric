@@ -200,3 +200,15 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
     "x-nitric-${local.stack_name}-type" = "stack"
   }
 }
+
+# Create a new container app managed environment
+resource "azurerm_container_app_environment" "environment" {
+  name                = "nitric-environment"
+  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = azurerm_resource_group.resource_group.location
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics.id
+  tags = {
+    "x-nitric-${local.stack_name}-name" = var.stack_name
+    "x-nitric-${local.stack_name}-type" = "stack"
+  }
+}
