@@ -17,11 +17,37 @@ package deploytf
 import (
 	"fmt"
 
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
+type BucketListener struct {
+	Url                       *string `json:"url"`
+	ActiveDirectoryAppIdOrUri *string `json:"active_directory_app_id_or_uri"`
+	ActiveDirectoryTenantId   *string `json:"active_directory_tenant_id"`
+}
+
 // Bucket - Deploy a Storage Bucket
 func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
+	listeners := map[string]BucketListener{}
+
+	for _, v := range config.GetListeners() {
+		svc := n.Services[v.GetService()]
+
+		listeners[v.GetService()] = BucketListener{
+			Url:                       svc.EndpointOutput(),
+			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
+			ActiveDirectoryTenantId:   svc.TenantIdOutput(),
+		}
+	}
+
+	bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
+		Name:      jsii.String(name),
+		StackName: n.Stack.StackNameOutput(),
+		Listeners: listeners,
+	})
+
 	return fmt.Errorf("not implemented")
 }
