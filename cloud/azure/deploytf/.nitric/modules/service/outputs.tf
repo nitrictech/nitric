@@ -8,6 +8,11 @@ output "fqdn" {
     value       = azurerm_container_app.container_app.latest_revision_fqdn
 }
 
+output "event_token" {
+    description = "The event token of the container app"
+    value       = random_string.event_token.result
+}
+
 output "client_id" {
     description = "The client id of the container app"
     value       = azurerm_container_app.container_app.client_id

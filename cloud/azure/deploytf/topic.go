@@ -17,10 +17,32 @@ package deploytf
 import (
 	"fmt"
 
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
+	listeners := map[string]EventGridSubscriber{}
+
+	for _, v := range config.GetSubscriptions() {
+		svc := a.Services[v.GetService()]
+
+		listeners[v.GetService()] = EventGridSubscriber{
+			Url:                       svc.EndpointOutput(),
+			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
+			ActiveDirectoryTenantId:   svc.TenantIdOutput(),
+			EventToken:                svc.EventTokenOutput(),
+		}
+	}
+
+	topic.NewTopic(stack, jsii.String(name), &topic.TopicConfig{
+		Name:              jsii.String(name),
+		StackName:         a.Stack.StackNameOutput(),
+		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
+		Location:          jsii.String(a.Region),
+	})
+
 	return fmt.Errorf("not implemented")
 }

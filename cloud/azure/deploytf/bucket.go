@@ -23,23 +23,18 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
-type BucketListener struct {
-	Url                       *string `json:"url"`
-	ActiveDirectoryAppIdOrUri *string `json:"active_directory_app_id_or_uri"`
-	ActiveDirectoryTenantId   *string `json:"active_directory_tenant_id"`
-}
-
 // Bucket - Deploy a Storage Bucket
 func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
-	listeners := map[string]BucketListener{}
+	listeners := map[string]EventGridSubscriber{}
 
 	for _, v := range config.GetListeners() {
 		svc := n.Services[v.GetService()]
 
-		listeners[v.GetService()] = BucketListener{
+		listeners[v.GetService()] = EventGridSubscriber{
 			Url:                       svc.EndpointOutput(),
 			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
 			ActiveDirectoryTenantId:   svc.TenantIdOutput(),
+			EventToken:                svc.EventTokenOutput(),
 		}
 	}
 
