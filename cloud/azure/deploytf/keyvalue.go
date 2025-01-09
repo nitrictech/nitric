@@ -15,13 +15,18 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/keyvalue"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // // KeyValueStore - Deploy a Key Value tioStore
 func (a *NitricAzureTerraformProvider) KeyValueStore(stack cdktf.TerraformStack, name string, config *deploymentspb.KeyValueStore) error {
-	return fmt.Errorf("not implemented")
+	a.KvStores[name] = keyvalue.NewKeyvalue(stack, jsii.String(name), &keyvalue.KeyvalueConfig{
+		Name:               jsii.String(name),
+		StorageAccountName: jsii.String(*a.Stack.StorageAccountNameOutput()),
+	})
+
+	return nil
 }

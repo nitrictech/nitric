@@ -18,11 +18,16 @@ import (
 	"embed"
 
 	"github.com/aws/jsii-runtime-go"
+	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/common"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/keyvalue"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/queue"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/roles"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -36,9 +41,13 @@ type NitricAzureTerraformProvider struct {
 	*deploy.CommonStackDetails
 
 	Stack stack.Stack
+	Roles roles.Roles
 
 	Apis     map[string]api.Api
 	Services map[string]service.Service
+	Queues   map[string]queue.Queue
+	KvStores map[string]keyvalue.Keyvalue
+	Topics   map[string]topic.Topic
 
 	AzureConfig *common.AzureConfig
 
@@ -103,6 +112,20 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		EnableKeyvault: jsii.Bool(enableKeyvault),
 	})
 
+	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
+		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
+	})
+
+	dockerprovider.NewDockerProvider(tfstack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+		RegistryAuth: &[]*map[string]interface{}{
+			{
+				"address":  a.Stack.RegistryLoginServerOutput(),
+				"username": a.Stack.RegistryUsernameOutput(),
+				"password": a.Stack.RegistryPasswordOutput(),
+			},
+		},
+	})
+
 	return nil
 }
 
@@ -114,5 +137,8 @@ func NewNitricAzureProvider() *NitricAzureTerraformProvider {
 	return &NitricAzureTerraformProvider{
 		Apis:     make(map[string]api.Api),
 		Services: make(map[string]service.Service),
+		Queues:   make(map[string]queue.Queue),
+		Topics:   make(map[string]topic.Topic),
+		KvStores: make(map[string]keyvalue.Keyvalue),
 	}
 }

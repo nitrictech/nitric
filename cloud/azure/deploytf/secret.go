@@ -15,13 +15,14 @@
 package deploytf
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // // Secret - Deploy a Secret
 func (a *NitricAzureTerraformProvider) Secret(stack cdktf.TerraformStack, name string, config *deploymentspb.Secret) error {
-	return fmt.Errorf("not implemented")
+	// Secrets in Azure Key Vaults are unique resources created during deployment, so we don't need to do anything here.
+	// Instead, if at least one secret is requested a Key Vault will be created for the stack.
+	// Policies are also created which restrict access to the Key Vault and the named secrets inside.
+	return nil
 }

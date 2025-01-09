@@ -1,4 +1,40 @@
 
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "3.0.2"
+    }
+
+    azapi = {
+      source = "Azure/azapi"
+    }
+  }
+}
+
+data "docker_image" "latest" {
+  name = var.image_uri
+}
+
+locals {
+  remote_image_name = "${var.registry_login_server}/${var.stack_name}-${var.name}"
+}
+
+# Tag the provided docker image with the ECR repository url
+resource "docker_tag" "tag" {
+  source_image = data.docker_image.latest.repo_digest
+  target_image = local.remote_image_name
+}
+
+# Push the tagged image to the ECR repository
+resource "docker_registry_image" "push" {
+  name = aws_ecr_repository.repo.repository_url
+  triggers = {
+    source_image_id = docker_tag.tag.source_image_id
+  }
+}
+
+
 # Create an event token (random string) for the service
 resource "random_string" "event_token" {
   length  = 32
@@ -8,14 +44,6 @@ resource "random_string" "event_token" {
 data "azuread_client_config" "current" {}
 
 data "azurerm_client_config" "current" {}
-
-terraform {
-  required_providers {
-    azapi = {
-      source = "Azure/azapi"
-    }
-  }
-}
 
 locals {
   app_role_id    = "4962773b-9cdb-44cf-a8bf-237846a00ab7"
@@ -105,7 +133,7 @@ resource "azurerm_container_app" "container_app" {
 
   secret {
     name  = "registry-password"
-    value = "TODO"
+    value = var.registry_password
   }
 
   secret {
@@ -127,7 +155,7 @@ resource "azurerm_container_app" "container_app" {
   template {
     container {
       name   = "myapp"
-      image  = var.image_uri
+      image  = docker_registry_image.push.name
       cpu    = var.cpu
       memory = var.memory
 

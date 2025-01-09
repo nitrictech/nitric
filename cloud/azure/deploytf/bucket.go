@@ -39,9 +39,10 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 	}
 
 	bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
-		Name:      jsii.String(name),
-		StackName: n.Stack.StackNameOutput(),
-		Listeners: listeners,
+		Name:             jsii.String(name),
+		StackName:        n.Stack.StackNameOutput(),
+		StorageAccountId: n.Stack.StorageAccountNameOutput(),
+		Listeners:        listeners,
 	})
 
 	return fmt.Errorf("not implemented")

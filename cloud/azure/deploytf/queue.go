@@ -15,13 +15,17 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/queue"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // // Queue - Deploy a Queue
 func (a *NitricAzureTerraformProvider) Queue(stack cdktf.TerraformStack, name string, config *deploymentspb.Queue) error {
-	return fmt.Errorf("not implemented")
+	a.Queues[name] = queue.NewQueue(stack, jsii.String(name), &queue.QueueConfig{
+		Name:               jsii.String(name),
+		StorageAccountName: a.Stack.StorageAccountNameOutput(),
+	})
+	return nil
 }
