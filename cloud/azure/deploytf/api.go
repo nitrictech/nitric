@@ -25,6 +25,7 @@ import (
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pkg/errors"
 )
 
 type securityDefinition struct {
@@ -106,49 +107,49 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 
 	policyTemplates := map[string]*string{}
 
-	// for _, pathItem := range openapiDoc.Paths {
-	// 	for _, op := range pathItem.Operations() {
-	// 		if v, ok := op.Extensions["x-nitric-target"]; ok {
-	// 			var jwtTemplates []string
+	for _, pathItem := range openapiDoc.Paths {
+		for _, op := range pathItem.Operations() {
+			if v, ok := op.Extensions["x-nitric-target"]; ok {
+				var jwtTemplates []string
 
-	// 			// Apply top level security
-	// 			if openapiDoc.Security != nil {
-	// 				jwtTemplates = setSecurityRequirements(&openapiDoc.Security, secDef)
-	// 			}
+				// Apply top level security
+				if openapiDoc.Security != nil {
+					jwtTemplates = setSecurityRequirements(&openapiDoc.Security, secDef)
+				}
 
-	// 			// Override with path security
-	// 			if op.Security != nil {
-	// 				jwtTemplates = setSecurityRequirements(op.Security, secDef)
-	// 			}
+				// Override with path security
+				if op.Security != nil {
+					jwtTemplates = setSecurityRequirements(op.Security, secDef)
+				}
 
-	// 			jwtTemplateString := strings.Join(jwtTemplates, "\n")
-	// 			target := ""
+				jwtTemplateString := strings.Join(jwtTemplates, "\n")
+				target := ""
 
-	// 			targetMap, isMap := v.(map[string]interface{})
-	// 			if !isMap {
-	// 				return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
-	// 			}
+				targetMap, isMap := v.(map[string]interface{})
+				if !isMap {
+					return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
+				}
 
-	// 			target, isString := targetMap["name"].(string)
-	// 			if !isString {
-	// 				return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
-	// 			}
+				target, isString := targetMap["name"].(string)
+				if !isString {
+					return fmt.Errorf("operation: %s has malformed x-nitric-target annotation", op.OperationID)
+				}
 
-	// 			app, ok := p.Services[target]
-	// 			if !ok {
-	// 				return fmt.Errorf("Unable to find container app for service: %s", target)
-	// 			}
+				app, ok := n.Services[target]
+				if !ok {
+					return fmt.Errorf("unable to find container app for service: %s", target)
+				}
 
-	// 			policyTemplates[op.OperationID] = fmt.Sprintf(policyTemplate, fmt.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId)
+				policyTemplates[op.OperationID] = jsii.Sprintf(policyTemplate, fmt.Sprintf("%s%s%s", app.FqdnOutput(), "/x-nitric-api/", name), jwtTemplateString, app.ClientIdOutput(), n.Stack.AppIdentityOutput())
 
-	// 			if err != nil {
-	// 				return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
-	// 			}
-	// 		} else {
-	// 			return fmt.Errorf("operation: %s missing x-nitric-target annotation", op.OperationID)
-	// 		}
-	// 	}
-	// }
+				if err != nil {
+					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
+				}
+			} else {
+				return fmt.Errorf("operation: %s missing x-nitric-target annotation", op.OperationID)
+			}
+		}
+	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
 		PublisherName:            jsii.String(n.AzureConfig.Org),

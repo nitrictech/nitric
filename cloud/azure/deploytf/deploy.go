@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/common"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/keyvalue"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/roles"
@@ -44,6 +45,7 @@ type NitricAzureTerraformProvider struct {
 	Roles roles.Roles
 
 	Apis     map[string]api.Api
+	Buckets  map[string]bucket.Bucket
 	Services map[string]service.Service
 	Queues   map[string]queue.Queue
 	KvStores map[string]keyvalue.Keyvalue
@@ -136,6 +138,7 @@ func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
 func NewNitricAzureProvider() *NitricAzureTerraformProvider {
 	return &NitricAzureTerraformProvider{
 		Apis:     make(map[string]api.Api),
+		Buckets:  make(map[string]bucket.Bucket),
 		Services: make(map[string]service.Service),
 		Queues:   make(map[string]queue.Queue),
 		Topics:   make(map[string]topic.Topic),
