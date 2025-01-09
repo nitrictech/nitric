@@ -41,9 +41,9 @@ type ModuleDirectory struct {
 }
 
 type NitricTerraformProvider interface {
-	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
+	// Init - Initialize the provider with the given attributes, prior to any resource creation
 	Init(attributes map[string]interface{}) error
-	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
+	// Pre - Called prior to any resource creation, after the stack has been established
 	Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error
 
 	// CdkTfModules - Return the relative parent directory (root golang packed) and embedded modules directory
@@ -83,7 +83,7 @@ type NitricTerraformProvider interface {
 	// SqlDatabase - Deploy a SQL Database
 	SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error
 
-	// Post - Called after all resources have been created, before the Pulumi Context is concluded
+	// Post - Called after all resources have been created, before the stack is concluded
 	Post(stack cdktf.TerraformStack) error
 }
 
@@ -131,6 +131,24 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	}
 
 	fullStackName := fmt.Sprintf("%s-%s", projectName, stackName)
+
+	attributesMap := req.Attributes.AsMap()
+	outdir, ok := attributesMap["outdir"].(string)
+	if !ok {
+		outdir = "cdktf.out"
+	}
+
+	// TODO: This setting currently doesn't work
+	// actually needs an env variable to be set, but output is broken
+	hcl, ok := attributesMap["hcl"].(bool)
+	if !ok {
+		hcl = false
+	}
+
+	err = nitricProvider.Init(attributesMap)
+	if err != nil {
+		return err
+	}
 
 	modules, err := nitricProvider.CdkTfModules()
 	if err != nil {
@@ -193,29 +211,11 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		"cdktfStaticModuleAssetHash": "nitric_modules",
 	}
 
-	attributesMap := req.Attributes.AsMap()
-	outdir, ok := attributesMap["outdir"].(string)
-	if !ok {
-		outdir = "cdktf.out"
-	}
-
-	// TODO: This setting currently doesn't work
-	// actually needs an env variable to be set, but output is broken
-	hcl, ok := attributesMap["hcl"].(bool)
-	if !ok {
-		hcl = false
-	}
-
 	app := cdktf.NewApp(&cdktf.AppConfig{
 		HclOutput: jsii.Bool(hcl),
 		Outdir:    jsii.String(outdir),
 		Context:   &appCtx,
 	})
-
-	err = nitricProvider.Init(attributesMap)
-	if err != nil {
-		return err
-	}
 
 	stack := cdktf.NewTerraformStack(app, &fullStackName)
 
