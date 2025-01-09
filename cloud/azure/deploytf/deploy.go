@@ -27,6 +27,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/roles"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
@@ -44,12 +45,13 @@ type NitricAzureTerraformProvider struct {
 	Stack stack.Stack
 	Roles roles.Roles
 
-	Apis     map[string]api.Api
-	Buckets  map[string]bucket.Bucket
-	Services map[string]service.Service
-	Queues   map[string]queue.Queue
-	KvStores map[string]keyvalue.Keyvalue
-	Topics   map[string]topic.Topic
+	Apis      map[string]api.Api
+	Buckets   map[string]bucket.Bucket
+	Services  map[string]service.Service
+	Queues    map[string]queue.Queue
+	KvStores  map[string]keyvalue.Keyvalue
+	Topics    map[string]topic.Topic
+	Databases map[string]sql.Sql
 
 	AzureConfig *common.AzureConfig
 
@@ -112,6 +114,8 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		EnableStorage:  jsii.Bool(enableStorage),
 		EnableDatabase: jsii.Bool(enableDatabase),
 		EnableKeyvault: jsii.Bool(enableKeyvault),
+		Location:       jsii.String(a.Region),
+		StackName:      jsii.String(a.StackName),
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
@@ -137,11 +141,12 @@ func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
 
 func NewNitricAzureProvider() *NitricAzureTerraformProvider {
 	return &NitricAzureTerraformProvider{
-		Apis:     make(map[string]api.Api),
-		Buckets:  make(map[string]bucket.Bucket),
-		Services: make(map[string]service.Service),
-		Queues:   make(map[string]queue.Queue),
-		Topics:   make(map[string]topic.Topic),
-		KvStores: make(map[string]keyvalue.Keyvalue),
+		Apis:      make(map[string]api.Api),
+		Buckets:   make(map[string]bucket.Bucket),
+		Services:  make(map[string]service.Service),
+		Queues:    make(map[string]queue.Queue),
+		Topics:    make(map[string]topic.Topic),
+		KvStores:  make(map[string]keyvalue.Keyvalue),
+		Databases: make(map[string]sql.Sql),
 	}
 }

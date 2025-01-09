@@ -15,8 +15,6 @@
 package deploytf
 
 import (
-	"fmt"
-
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
@@ -42,7 +40,8 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 		StackName:         a.Stack.StackNameOutput(),
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 		Location:          jsii.String(a.Region),
+		Listeners:         listeners,
 	})
 
-	return fmt.Errorf("not implemented")
+	return nil
 }

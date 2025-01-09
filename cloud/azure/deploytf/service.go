@@ -37,6 +37,12 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		return err
 	}
 
+	if config.Type == "" {
+		config.Type = "default"
+	}
+
+	serviceConfig := a.AzureConfig.Config[config.Type]
+
 	jsiiEnv := map[string]*string{
 		"MIN_WORKERS": jsii.String(fmt.Sprint(config.Workers)),
 	}
@@ -52,9 +58,18 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	// }
 
 	a.Services[name] = service.NewService(stack, jsii.String(name), &service.ServiceConfig{
-		Name:     jsii.String(name),
-		ImageUri: jsii.String(imageId),
+		Name:                      jsii.String(name),
+		StackName:                 a.Stack.StackNameOutput(),
+		ImageUri:                  jsii.String(imageId),
+		ContainerAppEnvironmentId: a.Stack.ContainerAppEnvironmentIdOutput(),
+		Env:                       &jsiiEnv,
+		ResourceGroupName:         a.Stack.ResourceGroupNameOutput(),
+		RegistryLoginServer:       a.Stack.RegistryLoginServerOutput(),
+		RegistryUsername:          a.Stack.RegistryUsernameOutput(),
+		RegistryPassword:          a.Stack.RegistryPasswordOutput(),
+		Cpu:                       jsii.Number(serviceConfig.ContainerApps.Cpu),
+		Memory:                    jsii.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
 	})
 
-	return fmt.Errorf("not implemented")
+	return nil
 }

@@ -2,6 +2,14 @@ output "stack_name" {
   value = local.stack_name
 }
 
+output "subscription_id" {
+  value = data.azurerm_client_config.current.subscription_id
+}
+
+output "keyvault_name" {
+  value = azurerm_key_vault.keyvault.name
+}
+
 output "resource_group_name" {
   value = azurerm_resource_group.resource_group.name
 }
@@ -32,4 +40,12 @@ output "registry_username" {
 
 output "registry_password" {
   value = azurerm_container_registry.container_registry.admin_password
+}
+
+output "infrastructure_subnet_id" {
+  value = azurerm_subnet.infrastructure_subnet.id
+}
+
+output "container_app_subnet_id" {
+  value = azurerm_subnet.container_app_subnet.id
 }

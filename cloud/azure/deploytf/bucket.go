@@ -15,8 +15,6 @@
 package deploytf
 
 import (
-	"fmt"
-
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
@@ -38,12 +36,12 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 		}
 	}
 
-	bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
+	n.Buckets[name] = bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
 		Name:             jsii.String(name),
 		StackName:        n.Stack.StackNameOutput(),
 		StorageAccountId: n.Stack.StorageAccountNameOutput(),
 		Listeners:        listeners,
 	})
 
-	return fmt.Errorf("not implemented")
+	return nil
 }

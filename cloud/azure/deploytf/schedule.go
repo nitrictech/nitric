@@ -15,13 +15,22 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/schedule"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 // // Schedule - Deploy a Schedule
 func (a *NitricAzureTerraformProvider) Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error {
-	return fmt.Errorf("not implemented")
+	targetService := a.Services[config.GetTarget().GetService()]
+
+	schedule.NewSchedule(stack, jsii.String(name), &schedule.ScheduleConfig{
+		Name:                      jsii.String(name),
+		ContainerAppEnvironmentId: a.Stack.ContainerAppEnvironmentIdOutput(),
+		TargetEventToken:          targetService.EventTokenOutput(),
+		TargetAppId:               targetService.DaprAppIdOutput(),
+	})
+
+	return nil
 }

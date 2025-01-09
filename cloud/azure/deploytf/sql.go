@@ -15,12 +15,21 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	return fmt.Errorf("not implemented")
+	n.Databases[name] = sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+		ImageRegistryServer:        n.Stack.RegistryLoginServerOutput(),
+		ImageRegistryUsername:      n.Stack.RegistryUsernameOutput(),
+		ImageRegistryPassword:      n.Stack.RegistryPasswordOutput(),
+		Name:                       jsii.String(name),
+		Location:                   jsii.String(n.Region),
+		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
+	})
+
+	return nil
 }

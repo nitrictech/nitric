@@ -152,6 +152,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
+		Name:                     jsii.String(name),
 		PublisherName:            jsii.String(n.AzureConfig.Org),
 		PublisherEmail:           jsii.String(n.AzureConfig.AdminEmail),
 		Location:                 jsii.String(n.Region),
@@ -167,5 +168,5 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 
 	// For all paths
 
-	return fmt.Errorf("not implemented")
+	return nil
 }

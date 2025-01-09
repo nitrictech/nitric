@@ -28,7 +28,7 @@ resource "docker_tag" "tag" {
 
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
-  name = aws_ecr_repository.repo.repository_url
+  name = local.remote_image_name
   triggers = {
     source_image_id = docker_tag.tag.source_image_id
   }
