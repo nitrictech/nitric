@@ -25,7 +25,7 @@ output "client_id" {
 
 output "service_principal_id" {
     description = "The service principal id of the container app"
-    value       = azuread_service_principal.service_identity.id
+    value       = azuread_service_principal.service_identity.object_id
 }
 
 output "tenant_id" {

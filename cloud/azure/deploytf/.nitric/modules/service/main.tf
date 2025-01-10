@@ -79,9 +79,9 @@ resource "azuread_service_principal" "service_identity" {
 
 # Create a new app role assignment for the service principal
 resource "azuread_app_role_assignment" "role_assignment" {
-  app_role_id         = azuread_application.service_identity.id
+  app_role_id         = azuread_application.service_identity.object_id
   principal_object_id = data.azuread_client_config.current.object_id
-  resource_object_id  = azuread_service_principal.service_identity.id
+  resource_object_id  = azuread_service_principal.service_identity.object_id
 }
 
 # Create a new service principal password
