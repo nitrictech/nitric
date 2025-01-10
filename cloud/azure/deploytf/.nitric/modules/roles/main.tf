@@ -13,7 +13,7 @@ resource "azurerm_role_definition" "nitric_role_kv_read" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_kv_write" {
@@ -30,7 +30,7 @@ resource "azurerm_role_definition" "nitric_role_kv_write" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_kv_delete" {
@@ -46,7 +46,7 @@ resource "azurerm_role_definition" "nitric_role_kv_delete" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_queue_enqueue" {
@@ -64,7 +64,7 @@ resource "azurerm_role_definition" "nitric_role_queue_enqueue" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
   description = "nitric queue dequeue access"
@@ -82,7 +82,7 @@ resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_get" {
@@ -100,7 +100,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_get" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_put" {
@@ -116,7 +116,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_put" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_delete" {
@@ -132,7 +132,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_delete" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_list" {
@@ -148,7 +148,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_list" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_topic_publish" {
@@ -167,7 +167,7 @@ resource "azurerm_role_definition" "nitric_role_topic_publish" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_secret_access" {
@@ -183,7 +183,7 @@ resource "azurerm_role_definition" "nitric_role_secret_access" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
 resource "azurerm_role_definition" "nitric_role_secret_put" {
@@ -199,5 +199,5 @@ resource "azurerm_role_definition" "nitric_role_secret_put" {
     not_actions = []
   }
 
-  assignable_scopes = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }

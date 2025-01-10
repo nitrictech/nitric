@@ -6,7 +6,7 @@ resource "random_string" "stack_id" {
 }
 
 locals {
-  stack_name = "${var.stack_name}-${random_string.stack_id}"
+  stack_name = "${var.stack_name}-${random_string.stack_id.result}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "resource_group" {
 resource "azurerm_storage_account" "storage" {
   count = var.enable_storage ? 1 : 0
 
-  name                = "nitric_storage"
+  name                = "nitric"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   account_tier        = "Standard"
@@ -57,7 +57,7 @@ resource "azurerm_subnet" "database_subnet" {
 
   name                 = "nitric-database-subnet"
   resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network.name
+  virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.0.0/18"]
 }
 
@@ -67,7 +67,7 @@ resource "azurerm_subnet" "database_infrastructure_subnet" {
 
   name                 = "nitric-database-infrastructure-subnet"
   resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network.name
+  virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.64.0/18"]
 }
 
@@ -77,7 +77,7 @@ resource "azurerm_subnet" "database_client_subnet" {
 
   name                 = "nitric-database-client-subnet"
   resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network.name
+  virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.192.0/18"]
 }
 
@@ -94,9 +94,9 @@ resource "azurerm_private_dns_zone_virtual_network_link" "database_link_service"
   count = var.enable_database ? 1 : 0
 
   name                  = "nitric-database-link-service"
-  private_dns_zone_name = azurerm_private_dns_zone.database_dns_zone.name
+  private_dns_zone_name = azurerm_private_dns_zone.database_dns_zone[0].name
   resource_group_name   = azurerm_resource_group.resource_group.name
-  virtual_network_id    = azurerm_virtual_network.database_network.id
+  virtual_network_id    = azurerm_virtual_network.database_network[0].id
   registration_enabled  = false
   tags = {
     "x-nitric-${local.stack_name}-name" = var.stack_name
@@ -119,9 +119,9 @@ resource "azurerm_postgresql_server" "database" {
   name                         = "nitric-database"
   resource_group_name          = azurerm_resource_group.resource_group.name
   location                     = azurerm_resource_group.resource_group.location
-  version                      = "12.0"
+  version                      = "10.0"
   administrator_login          = "nitric"
-  administrator_login_password = random_password.database_master_password.result
+  administrator_login_password = random_password.database_master_password[0].result
 
   public_network_access_enabled = false
 
@@ -132,7 +132,7 @@ resource "azurerm_postgresql_server" "database" {
   storage_mb = 5120
 
   # TODO: Make configurable  
-  sku_name = "Standard_B1ms"
+  sku_name = "B_Gen4_1"
 
   tags = {
     "x-nitric-${local.stack_name}-name" = var.stack_name
@@ -145,8 +145,8 @@ resource "azurerm_postgresql_virtual_network_rule" "example" {
 
   name                                 = "postgresql-vnet-rule"
   resource_group_name                  = azurerm_resource_group.resource_group.name
-  server_name                          = azurerm_postgresql_server.database.name
-  subnet_id                            = azurerm_subnet.database_subnet.id
+  server_name                          = azurerm_postgresql_server.database[0].name
+  subnet_id                            = azurerm_subnet.database_subnet[0].id
   ignore_missing_vnet_service_endpoint = true
 }
 
@@ -158,7 +158,7 @@ resource "azurerm_key_vault" "keyvault" {
   resource_group_name        = azurerm_resource_group.resource_group.name
   location                   = azurerm_resource_group.resource_group.location
   sku_name                   = "standard"
-  soft_delete_retention_days = 0
+  soft_delete_retention_days = 7
   tenant_id                  = data.azurerm_client_config.current.tenant_id
   enable_rbac_authorization = true
 
@@ -177,7 +177,7 @@ resource "azurerm_user_assigned_identity" "managed_identity" {
 
 # Create a container registry for storing images
 resource "azurerm_container_registry" "container_registry" {
-  name                = "nitric-registry"
+  name                = "nitric"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   sku                 = "Basic"

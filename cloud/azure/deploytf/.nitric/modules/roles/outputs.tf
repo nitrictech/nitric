@@ -1,5 +1,5 @@
 output "bucket_read" {
-  value = azurerm_role_definition.nitric_role_bucket_file_read.id
+  value = azurerm_role_definition.nitric_role_bucket_file_get.id
   description = "The role ID for the Nitric bucket read role"
 }
 
@@ -9,7 +9,7 @@ output "topic_publish" {
 }
 
 output "bucket_write" {
-  value = azurerm_role_definition.nitric_role_bucket_file_write.id
+  value = azurerm_role_definition.nitric_role_bucket_file_put.id
   description = "The role ID for the Nitric bucket write role"
 }
 

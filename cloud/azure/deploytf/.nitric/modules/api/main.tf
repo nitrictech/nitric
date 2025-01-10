@@ -16,7 +16,7 @@ resource "azurerm_api_management" "api" {
   location            = var.location
   publisher_name      = var.publisher_name
   publisher_email     = var.publisher_email
-  sku_name            = "Consumption"
+  sku_name            = "Consumption_0"
   identity {
     type         = "UserAssigned"
     identity_ids = [var.app_identity]
@@ -32,7 +32,7 @@ resource "azurerm_api_management_api" "api" {
   # TODO: This may need to increment if the api changes   
   revision     = "1"
   display_name = "${var.name}-api"
-  path         = "/"
+  # path         = "/"
   protocols    = ["https"]
   description  = var.description
   import {

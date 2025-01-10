@@ -5,7 +5,7 @@ output "container_app_id" {
 
 output "dapr_app_id" {
     description = "The id of the dapr app"
-    value       = azurerm_container_app.container_app.dapr_app_id
+    value       = local.container_app_name
 }
 
 output "fqdn" {
@@ -20,7 +20,7 @@ output "event_token" {
 
 output "client_id" {
     description = "The client id of the container app"
-    value       = azurerm_container_app.container_app.client_id
+    value       = azuread_service_principal.service_identity.client_id
 }
 
 output "service_principal_id" {
@@ -30,7 +30,7 @@ output "service_principal_id" {
 
 output "tenant_id" {
     description = "The tenant id of the container app"
-    value       = azurerm_container_app.container_app.tenant_id
+    value       = data.azurerm_client_config.current.tenant_id
 }
 
 output "endpoint" {

@@ -112,6 +112,8 @@ require (
 	github.com/butuzov/mirror v1.2.0 // indirect
 	github.com/catenacyber/perfsprint v0.7.1 // indirect
 	github.com/ccojocar/zxcvbn-go v1.0.2 // indirect
+	github.com/cdktf/cdktf-provider-azuread-go/azuread/v13 v13.0.0 // indirect
+	github.com/cdktf/cdktf-provider-azurerm-go/azurerm/v13 v13.14.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.16.1 // indirect

@@ -19,27 +19,51 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
+
+type BucketSubscriber struct {
+	EventGridSubscriber `json:",inline"`
+	// Url                       *string   `json:"url"`
+	// ActiveDirectoryAppIdOrUri *string   `json:"active_directory_app_id_or_uri"`
+	// ActiveDirectoryTenantId   *string   `json:"active_directory_tenant_id"`
+	// EventToken                *string   `json:"event_token"`
+	EventType []*string `json:"event_type"`
+}
+
+func eventTypeToStorageEventType(eventType storagepb.BlobEventType) []*string {
+	switch eventType {
+	case storagepb.BlobEventType_Created:
+		return []*string{jsii.String("Microsoft.Storage.BlobCreated")}
+	case storagepb.BlobEventType_Deleted:
+		return []*string{jsii.String("Microsoft.Storage.BlobDeleted")}
+	default:
+		return []*string{}
+	}
+}
 
 // Bucket - Deploy a Storage Bucket
 func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
-	listeners := map[string]EventGridSubscriber{}
+	listeners := map[string]BucketSubscriber{}
 
 	for _, v := range config.GetListeners() {
 		svc := n.Services[v.GetService()]
 
-		listeners[v.GetService()] = EventGridSubscriber{
-			Url:                       svc.EndpointOutput(),
-			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
-			ActiveDirectoryTenantId:   svc.TenantIdOutput(),
-			EventToken:                svc.EventTokenOutput(),
+		listeners[v.GetService()] = BucketSubscriber{
+			EventGridSubscriber: EventGridSubscriber{
+				Url:                       svc.EndpointOutput(),
+				ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
+				ActiveDirectoryTenantId:   svc.TenantIdOutput(),
+				EventToken:                svc.EventTokenOutput(),
+			},
+			EventType: eventTypeToStorageEventType(v.GetConfig().BlobEventType),
 		}
 	}
 
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
 		Name:             jsii.String(name),
 		StackName:        n.Stack.StackNameOutput(),
-		StorageAccountId: n.Stack.StorageAccountNameOutput(),
+		StorageAccountId: n.Stack.StorageAccountIdOutput(),
 		Listeners:        listeners,
 	})
 

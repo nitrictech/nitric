@@ -7,7 +7,7 @@ output "subscription_id" {
 }
 
 output "keyvault_name" {
-  value = azurerm_key_vault.keyvault.name
+  value = one(azurerm_key_vault.keyvault) != null ? one(azurerm_key_vault.keyvault).name : null
 }
 
 output "resource_group_name" {
@@ -15,7 +15,7 @@ output "resource_group_name" {
 }
 
 output "app_identity" {
-  value = azurerm_user_assigned_identity.app_identity.name
+  value = azurerm_user_assigned_identity.managed_identity.id
 }
 
 output "container_app_environment_id" {
@@ -27,11 +27,11 @@ output "registry_login_server" {
 }
 
 output "storage_account_name" {
-  value = azurerm_storage_account.storage_account.name
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).name : null
 }
 
 output "storage_account_id" {
-  value = azurerm_storage_account.storage_account.id
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).id : null
 }
 
 output "registry_username" {
@@ -43,9 +43,9 @@ output "registry_password" {
 }
 
 output "infrastructure_subnet_id" {
-  value = azurerm_subnet.infrastructure_subnet.id
+  value = one(azurerm_subnet.database_infrastructure_subnet) != null ? one(azurerm_subnet.database_infrastructure_subnet).id : null
 }
 
 output "container_app_subnet_id" {
-  value = azurerm_subnet.container_app_subnet.id
+  value = one(azurerm_subnet.database_client_subnet) != null ? one(azurerm_subnet.database_client_subnet).id : null
 }

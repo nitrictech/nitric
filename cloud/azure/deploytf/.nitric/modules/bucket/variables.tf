@@ -20,5 +20,6 @@ variable "listeners" {
     active_directory_app_id_or_uri = string
     active_directory_tenant_id     = string
     event_token                    = string
+    event_type                     = list(string)
   }))
 }

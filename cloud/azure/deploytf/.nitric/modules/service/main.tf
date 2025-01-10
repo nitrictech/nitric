@@ -48,6 +48,7 @@ data "azurerm_client_config" "current" {}
 locals {
   app_role_id    = "4962773b-9cdb-44cf-a8bf-237846a00ab7"
   repository_url = "${var.registry_login_server}/${var.stack_name}-${var.name}"
+  # TODO: Remove these hardcoded role definitions
   role_definitions = {
     "KVSecretsOfficer"    = "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
     "BlobDataContrib"     = "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
@@ -78,7 +79,7 @@ resource "azuread_service_principal" "service_identity" {
 
 # Create a new app role assignment for the service principal
 resource "azuread_app_role_assignment" "role_assignment" {
-  app_role_id         = data.azuread_service_principal_app_role.app_role.id
+  app_role_id         = azuread_application.service_identity.id
   principal_object_id = data.azuread_client_config.current.object_id
   resource_object_id  = azuread_service_principal.service_identity.id
 }
@@ -95,7 +96,7 @@ resource "azurerm_role_assignment" "role_assignment" {
   principal_id       = azuread_service_principal.service_identity.id
   principal_type     = "ServicePrincipal"
   role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value}"
-  scope              = azurerm_resource_group.resource_group.id
+  scope              = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 }
 
 # Create a random string for the container app id
@@ -127,6 +128,7 @@ resource "azurerm_container_app" "container_app" {
     external_enabled = true
     target_port      = 9001
     traffic_weight {
+      latest_revision = true
       percentage = 100
     }
   }
@@ -218,11 +220,11 @@ resource "azapi_resource_action" "my_app_auth" {
   depends_on = [azurerm_container_app.container_app]
 
   type        = "Microsoft.App/containerApps/authConfigs@2024-03-01"
-  resource_id = "${azurerm_container_app.my_app.id}/authConfigs/current"
+  resource_id = "${azurerm_container_app.container_app.id}/authConfigs/current"
   method      = "PUT"
 
   body = { # wrap in jsondecode if using 'azapi' v1
-    location = azurerm_container_app.my_app.location
+    location = azurerm_container_app.container_app.location
     properties = {
       globalValidation = {
         unauthenticatedClientAction = "Return401"
@@ -231,12 +233,12 @@ resource "azapi_resource_action" "my_app_auth" {
         azureActiveDirectory = {
           enabled = true
           registration = {
-            clientId                = azuread_application.my_app.client_id
+            clientId                =  azuread_application.service_identity.client_id
             clientSecretSettingName = "client-secret"
             openIdIssuer            = "https://sts.windows.net/${data.azuread_client_config.current.tenant_id}/v2.0"
           }
           validation = {
-            allowedAudiences = [tolist(azuread_application.app.identifier_uris)[0]]
+            allowedAudiences = azuread_application.service_identity.identifier_uris != null ? azuread_application.service_identity.identifier_uris : []
             # defaultAuthorizationPolicy = {
             #   allowedApplications = [
             #     azuread_application.my_app.client_id,

@@ -16,8 +16,11 @@ package deploytf
 
 import (
 	"embed"
+	"fmt"
 
 	"github.com/aws/jsii-runtime-go"
+	azadprovider "github.com/cdktf/cdktf-provider-azuread-go/azuread/v13/provider"
+	azprovider "github.com/cdktf/cdktf-provider-azurerm-go/azurerm/v13/provider"
 	dockerprovider "github.com/cdktf/cdktf-provider-docker-go/docker/v11/provider"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/common"
@@ -53,7 +56,8 @@ type NitricAzureTerraformProvider struct {
 	Topics    map[string]topic.Topic
 	Databases map[string]sql.Sql
 
-	AzureConfig *common.AzureConfig
+	SubscriptionId string
+	AzureConfig    *common.AzureConfig
 
 	provider.NitricDefaultOrder
 }
@@ -71,6 +75,12 @@ func (a *NitricAzureTerraformProvider) Init(attributes map[string]interface{}) e
 	a.AzureConfig, err = common.ConfigFromAttributes(attributes)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
+	}
+
+	var ok bool
+	a.SubscriptionId, ok = attributes["subscription-id"].(string)
+	if !ok {
+		return fmt.Errorf("missing subscription-id attribute, required for configuring azure provider")
 	}
 
 	return nil
@@ -95,6 +105,19 @@ func (a *NitricAzureTerraformProvider) RequiredProviders() map[string]interface{
 }
 
 func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
+	// Create an azure terraform provider
+	// provider
+
+	azprovider.NewAzurermProvider(tfstack, jsii.String("azurerm"), &azprovider.AzurermProviderConfig{
+		Features:       &struct{}{},
+		SubscriptionId: jsii.String(a.SubscriptionId),
+	})
+
+	azadprovider.NewAzureadProvider(tfstack, jsii.String("azuread"), &azadprovider.AzureadProviderConfig{})
+
+	// azprovider.NewAzureProvider
+
+	// azadprovider.NewAzureProvider
 
 	// If resources contains queues/buckets then we need to enable storage
 	_, enableStorage := lo.Find(resources, func(item *deploymentspb.Resource) bool {

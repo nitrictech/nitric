@@ -15,6 +15,8 @@
 package deploytf
 
 import (
+	"strings"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
@@ -27,7 +29,9 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 	for _, v := range config.GetSubscriptions() {
 		svc := a.Services[v.GetService()]
 
-		listeners[v.GetService()] = EventGridSubscriber{
+		normalizedServiceName := strings.Replace(v.GetService(), "_", "-", -1)
+
+		listeners[normalizedServiceName] = EventGridSubscriber{
 			Url:                       svc.EndpointOutput(),
 			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
 			ActiveDirectoryTenantId:   svc.TenantIdOutput(),

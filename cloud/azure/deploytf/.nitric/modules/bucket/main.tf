@@ -9,10 +9,10 @@ resource "azurerm_storage_container" "container" {
 resource "azurerm_eventgrid_event_subscription" "subscription" {
   for_each = var.listeners
 
-  name                  = each.key
+  name                  = replace(each.key, "_", "-")
   scope                 = var.storage_account_id
   event_delivery_schema = "EventGridSchema"
-  included_event_types  = [each.value]
+  included_event_types  = each.value.event_type
 
   retry_policy {
     max_delivery_attempts = 10
