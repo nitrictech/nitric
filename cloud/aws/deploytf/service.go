@@ -74,6 +74,16 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		EphemeralStorage: jsii.Number(typeConfig.Lambda.EphemeralStorage),
 	}
 
+	if a.Vpc != nil && typeConfig.Lambda.Vpc != nil {
+		// conflicting VPC requirements produce an error
+		return fmt.Errorf("VPC requirements are conflicting, cannot have both a global VPC and a service specific VPC. If this is a requirement for your project please raise an issue at https://github.comm/nitrictech/nitric/issues")
+	}
+
+	if typeConfig.Lambda.Vpc != nil {
+		serviceConfig.SubnetIds = jsii.Strings(typeConfig.Lambda.Vpc.SubnetIds...)
+		serviceConfig.SecurityGroupIds = jsii.Strings(typeConfig.Lambda.Vpc.SecurityGroupIds...)
+	}
+
 	if a.Vpc != nil && a.Rds != nil {
 		serviceConfig.SecurityGroupIds = &[]*string{(a.Rds.SecurityGroupIdOutput())}
 		serviceConfig.SubnetIds = cdktf.Token_AsList(a.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{})
