@@ -79,10 +79,10 @@ func (g *gcpMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasth
 			var message topicpb.TopicMessage
 			err := proto.Unmarshal(pubsubEvent.Message.Data, &message)
 			if err != nil {
-				fmt.Print("could not parse message as a nitric event attempting to parse as generic json payload")
+				fmt.Println("could not parse message as a nitric event attempting to parse as generic json payload")
 
-				messageData := map[string]interface{}{}
-				err := json.Unmarshal(pubsubEvent.Message.Data, &message)
+				messageData := map[string]any{}
+				err := json.Unmarshal(pubsubEvent.Message.Data, &messageData)
 				if err != nil {
 					ctx.Error("could not unmarshal event data", 500)
 					return
