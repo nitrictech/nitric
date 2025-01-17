@@ -12,9 +12,9 @@ terraform {
   }
 }
 
-data "docker_image" "latest" {
-  name = var.image_uri
-}
+# data "docker_image" "latest" {
+#   name = var.image_uri
+# }
 
 locals {
   remote_image_name = "${var.registry_login_server}/${var.stack_name}-${var.name}"
@@ -22,7 +22,7 @@ locals {
 
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
-  source_image = data.docker_image.latest.repo_digest
+  source_image = var.image_uri
   target_image = local.remote_image_name
 }
 
@@ -79,7 +79,7 @@ resource "azuread_service_principal" "service_identity" {
 
 # Create a new app role assignment for the service principal
 resource "azuread_app_role_assignment" "role_assignment" {
-  app_role_id         = azuread_application.service_identity.object_id
+  app_role_id         = local.app_role_id
   principal_object_id = data.azuread_client_config.current.object_id
   resource_object_id  = azuread_service_principal.service_identity.object_id
 }

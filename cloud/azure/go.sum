@@ -199,6 +199,7 @@ github.com/cdktf/cdktf-provider-azuread-go/azuread/v13 v13.0.0 h1:ddYrrrLJ4hvMai
 github.com/cdktf/cdktf-provider-azuread-go/azuread/v13 v13.0.0/go.mod h1:w243czgI/4f2Zt+RGtYccB93SrRcIb+3g9yBGDFUj40=
 github.com/cdktf/cdktf-provider-azurerm-go/azurerm/v13 v13.14.0 h1:4/RW9LWE0xO/6Rcu9ayECzLW/puHFAHcTYMsI8O3gQo=
 github.com/cdktf/cdktf-provider-azurerm-go/azurerm/v13 v13.14.0/go.mod h1:y8kCSzK/PhCl01q9dwhVijyUdMi1qPOKgF3LHt0MJdE=
+github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0 h1:DRt9cAggV4kavJhwCDqdqpYMPgOOs/WYc/Yj2uo6PBs=
 github.com/cenkalti/backoff/v4 v4.2.1 h1:y4OZtCnogmCPw98Zjyt5a6+QwPLGkiQsYW5oUqylYbM=
 github.com/cenkalti/backoff/v4 v4.2.1/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
