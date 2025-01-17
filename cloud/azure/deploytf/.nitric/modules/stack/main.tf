@@ -3,6 +3,7 @@
 resource "random_string" "stack_id" {
   length  = 8
   special = false
+  lower = true
 }
 
 locals {
