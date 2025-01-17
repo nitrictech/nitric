@@ -31,7 +31,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// tagSecret - tags an existing secret in GCP and adds it to the stack.
+// tagTopic - applies nitric tags to an existing topic in GCP and adds it to the stack.
 func tagTopic(ctx *pulumi.Context, name string, projectId string, topicName string, tags map[string]string, client *pubsubv1.PublisherClient, opts []pulumi.ResourceOption) (*pubsub.Topic, error) {
 	topicLookup, err := pubsub.LookupTopic(ctx, &pubsub.LookupTopicArgs{
 		Project: &projectId,
