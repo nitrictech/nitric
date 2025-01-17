@@ -36,6 +36,7 @@ type GcpDatabaseConfig struct {
 type GcpImports struct {
 	// A map of nitric names to GCP Secret Manager names
 	Secrets map[string]string
+	Topics  map[string]string
 }
 
 type GcpBatchCompute struct {

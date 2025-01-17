@@ -19,7 +19,10 @@ package deploy
 import (
 	"fmt"
 
+	pubsubv1 "cloud.google.com/go/pubsub/apiv1"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -28,20 +31,69 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// tagSecret - tags an existing secret in GCP and adds it to the stack.
+func tagTopic(ctx *pulumi.Context, name string, projectId string, topicName string, tags map[string]string, client *pubsubv1.PublisherClient, opts []pulumi.ResourceOption) (*pubsub.Topic, error) {
+	topicLookup, err := pubsub.LookupTopic(ctx, &pubsub.LookupTopicArgs{
+		Project: &projectId,
+		Name:    topicName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = client.UpdateTopic(ctx.Context(), &pubsubpb.UpdateTopicRequest{
+		Topic: &pubsubpb.Topic{
+			Name:   topicLookup.Id,
+			Labels: tags,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{"labels"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	topic, err := pubsub.GetTopic(
+		ctx,
+		name,
+		pulumi.ID(topicLookup.Id),
+		nil,
+		// nitric didn't create this resource, so it shouldn't delete it either.
+		append(opts, pulumi.RetainOnDelete(true))...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return topic, nil
+}
+
+func createTopic(ctx *pulumi.Context, name string, stackId string, tags map[string]string, opts []pulumi.ResourceOption) (*pubsub.Topic, error) {
+	return pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
+		Labels: pulumi.ToStringMap(tags),
+	}, opts...)
+}
+
 func GetSubName(serviceName string, topicName string) string {
 	return fmt.Sprintf("%s-%s-sub", serviceName, topicName)
 }
 
 func (p *NitricGcpPulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error {
 	var err error
+	var topic *pubsub.Topic
 	opts := append([]pulumi.ResourceOption{}, pulumi.Parent(parent))
 
-	p.Topics[name], err = pubsub.NewTopic(ctx, name, &pubsub.TopicArgs{
-		Labels: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.Topic)),
-	}, p.WithDefaultResourceOptions(opts...)...)
+	if gcpName, ok := p.GcpConfig.Import.Topics[name]; ok {
+		topic, err = tagTopic(ctx, name, p.GcpConfig.ProjectId, gcpName, common.Tags(p.StackId, name, resources.Topic), p.PubsubClient, opts)
+	} else {
+		topic, err = createTopic(ctx, name, p.StackName, common.Tags(p.StackId, name, resources.Topic), opts)
+	}
+
 	if err != nil {
 		return err
 	}
+
+	p.Topics[name] = topic
 
 	for _, sub := range config.Subscriptions {
 		targetService := p.CloudRunServices[sub.GetService()]
