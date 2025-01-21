@@ -46,6 +46,7 @@ func eventTypeToStorageEventType(eventType storagepb.BlobEventType) []*string {
 func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
 	listeners := map[string]BucketSubscriber{}
 
+	allDependants := []cdktf.ITerraformDependable{}
 	for _, v := range config.GetListeners() {
 		svc := n.Services[v.GetService()]
 
@@ -58,6 +59,7 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 			},
 			EventType: eventTypeToStorageEventType(v.GetConfig().BlobEventType),
 		}
+		allDependants = append(allDependants, svc)
 	}
 
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
@@ -65,6 +67,7 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 		StackName:        n.Stack.StackNameOutput(),
 		StorageAccountId: n.Stack.StorageAccountIdOutput(),
 		Listeners:        listeners,
+		DependsOn:        &allDependants,
 	})
 
 	return nil

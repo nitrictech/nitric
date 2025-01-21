@@ -252,6 +252,41 @@ resource "azapi_resource_action" "my_app_auth" {
   }
 }
 
+locals {
+  service_endpoint = "https://${azurerm_container_app.container_app.latest_revision_fqdn}"
+}
+
+resource "null_resource" "poll_url" {
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Polling URL: ${local.service_endpoint}"
+      max_attempts=10
+      attempt=0
+
+      while true; do
+        echo "Polling attempt $attempt"
+        echo "Sending subscription validation request to ${local.service_endpoint}/${random_string.event_token.result}/x-nitric-topic/test"
+        response=$(curl -s -w "%%{http_code}" -o /dev/null -X POST "${local.service_endpoint}/${random_string.event_token.result}/x-nitric-topic/test" -H "aeg-event-type: SubscriptionValidation" -H "Content-Type: application/json" -d '{ "id": "", "data": "", "eventType": "", "subject": "", "dataVersion": "" }')
+        echo "Got $response response was expecting 200"
+        exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+          echo "Service is available at ${local.service_endpoint}"
+          break
+        fi
+
+        attempt=$((attempt + 1))
+        if [ $attempt -eq $max_attempts ]; then
+          echo "Service did not become available after $max_attempts attempts"
+          exit 1
+        fi
+
+        echo "Waiting for service to be available..."
+        sleep 10
+      done
+    EOT
+  }
+}
+
 
 
 

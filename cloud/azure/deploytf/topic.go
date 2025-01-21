@@ -33,6 +33,7 @@ type WebhookSubscriber struct {
 func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
 	listeners := map[string]WebhookSubscriber{}
 
+	allDependants := []cdktf.ITerraformDependable{}
 	for _, v := range config.GetSubscriptions() {
 		svc := a.Services[v.GetService()]
 
@@ -49,6 +50,8 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 				EventToken:                svc.EventTokenOutput(),
 			},
 		}
+
+		allDependants = append(allDependants, svc)
 	}
 
 	a.Topics[name] = topic.NewTopic(stack, jsii.String(name), &topic.TopicConfig{
@@ -57,6 +60,7 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 		Location:          jsii.String(a.Region),
 		Listeners:         listeners,
+		DependsOn:         &allDependants,
 	})
 
 	return nil

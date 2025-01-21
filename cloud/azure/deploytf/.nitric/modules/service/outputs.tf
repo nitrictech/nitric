@@ -41,3 +41,8 @@ output "endpoint" {
     description = "The endpoint of the container app"
     value       = "https://${azurerm_container_app.container_app.latest_revision_fqdn}"
 }
+
+output "poll_url" {
+  description = "The URL polling task to ensure the lastest revision is available"
+  value       = null_resource.poll_url
+}
