@@ -33,10 +33,22 @@ resource "azurerm_api_management_api" "api" {
   revision     = "1"
   display_name = "${var.name}-api"
   # path         = "/"
-  protocols    = ["https"]
-  description  = var.description
+  protocols   = ["https"]
+  description = var.description
+  subscription_required = false
   import {
     content_format = "openapi+json"
     content_value  = var.openapi_spec
   }
+}
+
+# Create api operation policies
+resource "azurerm_api_management_api_operation_policy" "api" {
+  for_each = var.operation_policy_templates
+
+  api_name            = azurerm_api_management_api.api.name
+  api_management_name = azurerm_api_management.api.name
+  resource_group_name = var.resource_group_name
+  operation_id        = each.key
+  xml_content         = each.value
 }
