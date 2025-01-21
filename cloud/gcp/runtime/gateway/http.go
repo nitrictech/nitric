@@ -32,6 +32,7 @@ import (
 	topicpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	topicspb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type gcpMiddleware struct {
@@ -78,18 +79,27 @@ func (g *gcpMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasth
 			var message topicpb.TopicMessage
 			err := proto.Unmarshal(pubsubEvent.Message.Data, &message)
 			if err != nil {
-				ctx.Error("could not unmarshal event data", 500)
-				return
-			}
+				fmt.Println("could not parse message as a nitric event attempting to parse as generic json payload")
 
-			// event := &faaspb.TriggerRequest{
-			// 	Context: &faaspb.TriggerRequest_Topic{
-			// 		Topic: &faaspb.TopicTriggerContext{
-			// 			Topic:   topicName,
-			// 			Message: &message,
-			// 		},
-			// 	},
-			// }
+				messageData := map[string]any{}
+				err := json.Unmarshal(pubsubEvent.Message.Data, &messageData)
+				if err != nil {
+					ctx.Error("could not unmarshal event data", 500)
+					return
+				}
+
+				structPayload, err := structpb.NewStruct(messageData)
+				if err != nil {
+					ctx.Error("could not convert message data to struct", 500)
+					return
+				}
+
+				message = topicpb.TopicMessage{
+					Content: &topicspb.TopicMessage_StructPayload{
+						StructPayload: structPayload,
+					},
+				}
+			}
 
 			event := &topicspb.ServerMessage{
 				Content: &topicspb.ServerMessage_MessageRequest{
@@ -99,24 +109,6 @@ func (g *gcpMiddleware) handleSubscription(opts *gateway.GatewayStartOpts) fasth
 					},
 				},
 			}
-
-			// worker, err := process.GetWorker(&pool.GetWorkerOptions{
-			// 	Trigger: event,
-			// })
-			// if err != nil {
-			// 	ctx.Error("Could not find handle for event", 500)
-			// }
-
-			// traceKey := propagator.CloudTraceFormatPropagator{}.Fields()[0]
-			// traceCtx := context.TODO()
-
-			// if pubsubEvent.Message.Attributes[traceKey] != "" {
-			// 	var mc propagation.MapCarrier = pubsubEvent.Message.Attributes
-			// 	traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, mc)
-			// } else {
-			// 	var hc propagation.HeaderCarrier = base_http.HttpHeadersToMap(&ctx.Request.Header)
-			// 	traceCtx = propagator.CloudTraceFormatPropagator{}.Extract(traceCtx, hc)
-			// }
 
 			response, err := opts.TopicsListenerPlugin.HandleRequest(event)
 			if err != nil {

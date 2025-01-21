@@ -26,6 +26,7 @@ import (
 
 	apiv1 "cloud.google.com/go/firestore/apiv1/admin"
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
+	gcppubsub "cloud.google.com/go/pubsub/apiv1"
 	gcpsecretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -74,6 +75,7 @@ type NitricGcpPulumiProvider struct {
 	BaseComputeRole *projects.IAMCustomRole
 
 	SecretManagerClient *gcpsecretmanager.Client
+	PubsubClient        *gcppubsub.PublisherClient
 
 	JobDefinitionBucket    *storage.Bucket
 	JobDefinitions         map[string]*storage.BucketObject
@@ -134,6 +136,11 @@ func (a *NitricGcpPulumiProvider) Init(attributes map[string]interface{}) error 
 	}
 
 	a.SecretManagerClient, err = gcpsecretmanager.NewClient(context.Background())
+	if err != nil {
+		return err
+	}
+
+	a.PubsubClient, err = gcppubsub.NewPublisherClient(context.Background())
 	if err != nil {
 		return err
 	}

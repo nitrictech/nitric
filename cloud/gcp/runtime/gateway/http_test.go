@@ -213,5 +213,64 @@ var _ = Describe("Http", func() {
 				Expect(string(responseBody)).To(Equal("success"))
 			})
 		})
+
+		When("From a subscription with a JSON event", func() {
+			content := map[string]interface{}{
+				"Test": "Test",
+			}
+
+			messageBytes, err := json.Marshal(content)
+			Expect(err).To(BeNil())
+
+			b64Event := base64.StdEncoding.EncodeToString(messageBytes)
+			payloadBytes, _ := json.Marshal(&map[string]interface{}{
+				"subscription": "test",
+				"message": map[string]interface{}{
+					"attributes": map[string]string{
+						"x-nitric-topic": "test",
+					},
+					"id":   "test",
+					"data": b64Event,
+				},
+			})
+
+			It("Should handle the event successfully", func() {
+				var capturedRequest *topicspb.ServerMessage
+
+				By("Handling exactly 1 request")
+				mockTopicRequestHandler.EXPECT().HandleRequest(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) (*topicspb.ClientMessage, error) {
+					capturedRequest = arg0.(*topicspb.ServerMessage)
+
+					return &topicspb.ClientMessage{
+						Id: "test",
+						Content: &topicspb.ClientMessage_MessageResponse{
+							MessageResponse: &topicspb.MessageResponse{
+								Success: true,
+							},
+						},
+					}, nil
+				})
+
+				request, err := http.NewRequest("POST", fmt.Sprintf("%s/x-nitric-topic/test", gatewayUrl), bytes.NewReader(payloadBytes))
+				Expect(err).To(BeNil())
+				request.Header.Add("Content-Type", "application/json")
+				resp, err := http.DefaultClient.Do(request)
+				Expect(err).To(BeNil())
+				responseBody, _ := io.ReadAll(resp.Body)
+
+				By("Not returning an error")
+				Expect(err).To(BeNil())
+
+				capturedMessageBody := capturedRequest.GetMessageRequest().GetMessage().GetStructPayload().AsMap()
+				By("Having the orignal payload translated")
+				Expect(capturedMessageBody["Test"]).To(Equal("Test"))
+
+				By("The request returns a successful status")
+				Expect(resp.StatusCode).To(Equal(200))
+
+				By("Returning the expected output")
+				Expect(string(responseBody)).To(Equal("success"))
+			})
+		})
 	})
 })
