@@ -59,6 +59,8 @@ type NitricAzureTerraformProvider struct {
 	SubscriptionId string
 	AzureConfig    *common.AzureConfig
 
+	dockerProvider dockerprovider.DockerProvider
+
 	provider.NitricDefaultOrder
 }
 
@@ -145,7 +147,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 	})
 
-	dockerprovider.NewDockerProvider(tfstack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+	a.dockerProvider = dockerprovider.NewDockerProvider(tfstack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
 		RegistryAuth: &[]*map[string]interface{}{
 			{
 				"address":  a.Stack.RegistryLoginServerOutput(),

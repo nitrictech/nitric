@@ -23,19 +23,31 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
+type WebhookSubscriber struct {
+	ClientId            *string `json:"client_id"`
+	ClientSecret        *string `json:"client_secret"`
+	TenantId            *string `json:"tenant_id"`
+	EventGridSubscriber `json:",inline"`
+}
+
 func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name string, config *deploymentspb.Topic) error {
-	listeners := map[string]EventGridSubscriber{}
+	listeners := map[string]WebhookSubscriber{}
 
 	for _, v := range config.GetSubscriptions() {
 		svc := a.Services[v.GetService()]
 
 		normalizedServiceName := strings.Replace(v.GetService(), "_", "-", -1)
 
-		listeners[normalizedServiceName] = EventGridSubscriber{
-			Url:                       svc.EndpointOutput(),
-			ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
-			ActiveDirectoryTenantId:   svc.TenantIdOutput(),
-			EventToken:                svc.EventTokenOutput(),
+		listeners[normalizedServiceName] = WebhookSubscriber{
+			ClientId:     svc.ClientIdOutput(),
+			ClientSecret: svc.ClientSecretOutput(),
+			TenantId:     svc.TenantIdOutput(),
+			EventGridSubscriber: EventGridSubscriber{
+				Url:                       svc.EndpointOutput(),
+				ActiveDirectoryAppIdOrUri: svc.ClientIdOutput(),
+				ActiveDirectoryTenantId:   svc.TenantIdOutput(),
+				EventToken:                svc.EventTokenOutput(),
+			},
 		}
 	}
 

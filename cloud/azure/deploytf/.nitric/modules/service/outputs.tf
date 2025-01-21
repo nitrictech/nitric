@@ -23,6 +23,10 @@ output "client_id" {
     value       = azuread_service_principal.service_identity.client_id
 }
 
+output "client_secret" {
+    description = "The client secret of the container app"
+    value       = azuread_service_principal_password.service_identity.value
+}
 output "service_principal_id" {
     description = "The service principal id of the container app"
     value       = azuread_service_principal.service_identity.object_id

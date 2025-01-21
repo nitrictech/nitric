@@ -33,8 +33,6 @@ resource "docker_registry_image" "push" {
     source_image_id = docker_tag.tag.source_image_id
   }
 }
-
-
 # Create an event token (random string) for the service
 resource "random_string" "event_token" {
   length  = 32
@@ -93,7 +91,7 @@ resource "azuread_service_principal_password" "service_identity" {
 resource "azurerm_role_assignment" "role_assignment" {
   for_each = local.role_definitions
 
-  principal_id       = azuread_service_principal.service_identity.id
+  principal_id       = azuread_service_principal.service_identity.object_id
   principal_type     = "ServicePrincipal"
   role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value}"
   scope              = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
@@ -214,8 +212,8 @@ resource "azurerm_container_app" "container_app" {
       }
     }
   }
+  depends_on = [ docker_registry_image.push ]
 }
-
 resource "azapi_resource_action" "my_app_auth" {
   depends_on = [azurerm_container_app.container_app]
 

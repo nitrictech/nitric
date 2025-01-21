@@ -69,6 +69,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		RegistryPassword:          a.Stack.RegistryPasswordOutput(),
 		Cpu:                       jsii.Number(serviceConfig.ContainerApps.Cpu),
 		Memory:                    jsii.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
+		DependsOn:                 &[]cdktf.ITerraformDependable{a.Stack},
 	})
 
 	return nil
