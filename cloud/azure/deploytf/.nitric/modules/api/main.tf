@@ -32,7 +32,6 @@ resource "azurerm_api_management_api" "api" {
   # TODO: This may need to increment if the api changes   
   revision     = "1"
   display_name = "${var.name}-api"
-  path         = "/"
   protocols   = ["https"]
   description = var.description
   subscription_required = false

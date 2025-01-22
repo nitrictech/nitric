@@ -140,7 +140,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 					return fmt.Errorf("unable to find container app for service: %s", target)
 				}
 
-				policyTemplates[op.OperationID] = jsii.Sprintf(policyTemplate, fmt.Sprintf("%s%s%s", *app.FqdnOutput(), "/x-nitric-api/", name), jwtTemplateString, *app.ClientIdOutput(), *n.Stack.AppIdentityOutput())
+				policyTemplates[op.OperationID] = jsii.Sprintf(policyTemplate, fmt.Sprintf("%s%s%s", *app.FqdnOutput(), "/x-nitric-api/", name), jwtTemplateString, *app.ClientIdOutput(), *n.Stack.AppIdentityClientIdOutput())
 
 				if err != nil {
 					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)

@@ -18,6 +18,10 @@ output "app_identity" {
   value = azurerm_user_assigned_identity.managed_identity.id
 }
 
+output "app_identity_client_id" {
+  value = azurerm_user_assigned_identity.managed_identity.client_id
+}
+
 output "container_app_environment_id" {
   value = azurerm_container_app_environment.environment.id
 }
@@ -32,6 +36,14 @@ output "storage_account_name" {
 
 output "storage_account_id" {
   value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).id : null
+}
+
+output "storage_account_blob_endpoint" {
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_blob_endpoint : null
+}
+
+output "storage_account_queue_endpoint" {
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_queue_endpoint : null
 }
 
 output "registry_username" {

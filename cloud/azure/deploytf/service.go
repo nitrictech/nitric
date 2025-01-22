@@ -44,7 +44,10 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	serviceConfig := a.AzureConfig.Config[config.Type]
 
 	jsiiEnv := map[string]*string{
-		"MIN_WORKERS": jsii.String(fmt.Sprint(config.Workers)),
+		"MIN_WORKERS":                          jsii.String(fmt.Sprint(config.Workers)),
+		"AZURE_STORAGE_ACCOUNT_NAME":           a.Stack.StorageAccountNameOutput(),
+		"AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT":  a.Stack.StorageAccountBlobEndpointOutput(),
+		"AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT": a.Stack.StorageAccountQueueEndpointOutput(),
 	}
 
 	for k, v := range config.GetEnv() {

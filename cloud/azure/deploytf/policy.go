@@ -60,8 +60,9 @@ func (p *NitricAzureTerraformProvider) actionsToAzureRoleDefinitions(actions []r
 }
 
 type ResourceScope struct {
-	Scope     *string `json:"scope"`
-	Condition *string `json:"condition"`
+	Scope      *string `json:"scope"`
+	Condition  *string `json:"condition"`
+	Dependency cdktf.ITerraformDependable
 }
 
 func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb.Resource) (*ResourceScope, error) {
@@ -79,6 +80,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 				*p.Stack.ResourceGroupNameOutput(),
 				*topic.Name(),
 			),
+			Dependency: topic,
 		}, nil
 	case resourcespb.ResourceType_KeyValueStore:
 		kv, ok := p.KvStores[resource.Id.Name]
@@ -94,6 +96,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 				*p.Stack.StorageAccountNameOutput(),
 				*kv.Name(),
 			),
+			Dependency: kv,
 		}, nil
 	case resourcespb.ResourceType_Bucket:
 		bucket, ok := p.Buckets[resource.Id.Name]
@@ -108,6 +111,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 				*p.Stack.StorageAccountNameOutput(),
 				*bucket.Name(),
 			),
+			Dependency: bucket,
 		}, nil
 	case resourcespb.ResourceType_Queue:
 		queue, ok := p.Queues[resource.Id.Name]
@@ -123,6 +127,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 				*p.Stack.StorageAccountNameOutput(),
 				*queue.Name(),
 			),
+			Dependency: queue,
 		}, nil
 	case resourcespb.ResourceType_Secret:
 		if !*p.Stack.EnableKeyvault() {
@@ -137,6 +142,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 				*p.Stack.KeyvaultNameOutput(),
 				resource.Id.Name,
 			),
+			Dependency: p.Stack,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown resource type %s", resource.Id.Type)
@@ -175,6 +181,7 @@ func (a *NitricAzureTerraformProvider) Policy(stack cdktf.TerraformStack, name s
 					ServicePrincipalId: spId,
 					Scope:              scope.Scope,
 					RoleDefinitionId:   role,
+					DependsOn:          &[]cdktf.ITerraformDependable{scope.Dependency},
 				})
 			}
 		}

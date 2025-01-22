@@ -26,9 +26,9 @@ import (
 func main() {
 	// os.Setenv("JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION", "true")
 	// os.Setenv("SYNTH_HCL_OUTPUT", "true")
-	awsStack := deploytf.NewNitricAzureProvider()
+	azureStack := deploytf.NewNitricAzureProvider()
 
-	providerServer := provider.NewTerraformProviderServer(awsStack, runtime.NitricAzureRuntime)
+	providerServer := provider.NewTerraformProviderServer(azureStack, runtime.NitricAzureRuntime)
 
 	// Start the terraform provider server
 	providerServer.Start()
