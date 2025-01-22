@@ -35,7 +35,7 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
-	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
+	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/keyvault"
 	"github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
