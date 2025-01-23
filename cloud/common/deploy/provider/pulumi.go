@@ -343,6 +343,86 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 	return nil
 }
 
+// Preview - automatically called by the Nitric CLI via the `preview` command
+func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_PreviewServer) error {
+	// Verify if dependencies are available
+	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
+	if err != nil {
+		return err
+	}
+
+	attributesMap := req.Attributes.AsMap()
+
+	err = s.provider.Init(attributesMap)
+	if err != nil {
+		return err
+	}
+
+	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider, s.runtime)
+
+	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
+	if err != nil {
+		return err
+	}
+
+	pulumiEventsChan := make(chan events.EngineEvent)
+
+	go func() {
+		// output the stream
+		_ = pulumix.StreamPulumiPreviewEngineEvents(stream, pulumiEventsChan)
+	}()
+
+	config, err := s.provider.Config()
+	if err != nil {
+		return err
+	}
+
+	err = autoStack.SetAllConfig(context.TODO(), config)
+	if err != nil {
+		return err
+	}
+
+	refresh, ok := attributesMap["refresh"].(bool)
+
+	options := []optup.Option{optup.EventStreams(pulumiEventsChan)}
+
+	if ok && refresh {
+		options = append(options, optup.Refresh())
+	}
+
+	result, err := autoStack.Up(context.TODO(), options...)
+	if err != nil {
+		err = handleCommonErrors(err)
+
+		for _, handler := range s.errorHandlers {
+			err = handler(err)
+		}
+
+		return err
+	}
+
+	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
+	if !ok {
+		resultStr = ""
+	}
+
+	err = stream.Send(&deploymentspb.DeploymentPreviewEvent{
+		Content: &deploymentspb.DeploymentPreviewEvent_Result{
+			Result: &deploymentspb.UpResult{
+				Content: &deploymentspb.UpResult_Text{
+					Text: resultStr,
+				},
+			},
+		},
+	})
+
+	return err
+}
+
 // Start - starts the Nitric Provider gRPC server, making it callable by the Nitric CLI during deployments.
 func (s *PulumiProviderServer) Start() {
 	port := env.PORT.String()

@@ -108,6 +108,14 @@ func (s *TerraformProviderServer) Down(req *deploymentspb.DeploymentDownRequest,
 	return status.Error(codes.Unimplemented, "Down not implemented for Terraform providers, please run terraform destroy against your stack state")
 }
 
+func (s *TerraformProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_PreviewServer) error {
+	if beta, err := env.BETA_PROVIDERS.Bool(); err != nil || !beta {
+		return status.Error(codes.FailedPrecondition, "Nitric terraform providers are currently in beta, please add beta-providers to the preview field of your nitric.yaml to enable")
+	}
+
+	return status.Error(codes.Unimplemented, "Preview not implemented for Terraform providers, please run terraform plan against your stack state")
+}
+
 func NewTerraformProviderServer(provider NitricTerraformProvider, runtime RuntimeProvider) *TerraformProviderServer {
 	return &TerraformProviderServer{
 		provider: provider,

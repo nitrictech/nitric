@@ -26,6 +26,10 @@ type DeploymentClient interface {
 	// Server will stream updates back to the connected client
 	// on the status of the deployment
 	Up(ctx context.Context, in *DeploymentUpRequest, opts ...grpc.CallOption) (Deployment_UpClient, error)
+	// Begins a new deployment preview
+	// Server will stream updates back to the connected client
+	// on the status of the preview request
+	Preview(ctx context.Context, in *DeploymentPreviewRequest, opts ...grpc.CallOption) (Deployment_PreviewClient, error)
 	// Tears down an existing deployment
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
@@ -72,8 +76,40 @@ func (x *deploymentUpClient) Recv() (*DeploymentUpEvent, error) {
 	return m, nil
 }
 
+func (c *deploymentClient) Preview(ctx context.Context, in *DeploymentPreviewRequest, opts ...grpc.CallOption) (Deployment_PreviewClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Deployment_ServiceDesc.Streams[1], "/nitric.proto.deployments.v1.Deployment/Preview", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &deploymentPreviewClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Deployment_PreviewClient interface {
+	Recv() (*DeploymentPreviewEvent, error)
+	grpc.ClientStream
+}
+
+type deploymentPreviewClient struct {
+	grpc.ClientStream
+}
+
+func (x *deploymentPreviewClient) Recv() (*DeploymentPreviewEvent, error) {
+	m := new(DeploymentPreviewEvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *deploymentClient) Down(ctx context.Context, in *DeploymentDownRequest, opts ...grpc.CallOption) (Deployment_DownClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Deployment_ServiceDesc.Streams[1], "/nitric.proto.deployments.v1.Deployment/Down", opts...)
+	stream, err := c.cc.NewStream(ctx, &Deployment_ServiceDesc.Streams[2], "/nitric.proto.deployments.v1.Deployment/Down", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +148,10 @@ type DeploymentServer interface {
 	// Server will stream updates back to the connected client
 	// on the status of the deployment
 	Up(*DeploymentUpRequest, Deployment_UpServer) error
+	// Begins a new deployment preview
+	// Server will stream updates back to the connected client
+	// on the status of the preview request
+	Preview(*DeploymentPreviewRequest, Deployment_PreviewServer) error
 	// Tears down an existing deployment
 	// Server will stream updates back to the connected client
 	// on the status of the teardown
@@ -124,6 +164,9 @@ type UnimplementedDeploymentServer struct {
 
 func (UnimplementedDeploymentServer) Up(*DeploymentUpRequest, Deployment_UpServer) error {
 	return status.Errorf(codes.Unimplemented, "method Up not implemented")
+}
+func (UnimplementedDeploymentServer) Preview(*DeploymentPreviewRequest, Deployment_PreviewServer) error {
+	return status.Errorf(codes.Unimplemented, "method Preview not implemented")
 }
 func (UnimplementedDeploymentServer) Down(*DeploymentDownRequest, Deployment_DownServer) error {
 	return status.Errorf(codes.Unimplemented, "method Down not implemented")
@@ -161,6 +204,27 @@ func (x *deploymentUpServer) Send(m *DeploymentUpEvent) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Deployment_Preview_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DeploymentPreviewRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DeploymentServer).Preview(m, &deploymentPreviewServer{stream})
+}
+
+type Deployment_PreviewServer interface {
+	Send(*DeploymentPreviewEvent) error
+	grpc.ServerStream
+}
+
+type deploymentPreviewServer struct {
+	grpc.ServerStream
+}
+
+func (x *deploymentPreviewServer) Send(m *DeploymentPreviewEvent) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _Deployment_Down_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DeploymentDownRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -193,6 +257,11 @@ var Deployment_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Up",
 			Handler:       _Deployment_Up_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Preview",
+			Handler:       _Deployment_Preview_Handler,
 			ServerStreams: true,
 		},
 		{
