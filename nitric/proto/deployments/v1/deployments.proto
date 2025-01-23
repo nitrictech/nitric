@@ -268,6 +268,20 @@ message WebsocketTarget {
   }
 }
 
+message Website {
+  // The production website output directory
+  string output_directory = 1;
+
+  // The index document for the website
+  string index_document = 2;
+
+  // The error document for the website
+  string error_document = 3;
+
+  // The base path for the website
+  string base_path = 4;
+}
+
 message ScheduleTarget {
   oneof target {
     // The name of an service to target
@@ -320,6 +334,7 @@ message Resource {
     Queue queue = 20;
     SqlDatabase sql_database = 21;
     Batch batch = 22;
+    Website website = 23;
   }
 }
 
