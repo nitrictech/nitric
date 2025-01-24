@@ -2,8 +2,14 @@ function handler(event) {
   var request = event.request;
   var uri = request.uri;
 
-  // Match any '/' that occurs at the end of a URI. Replace it with a default index
-  request.uri = uri.replace(/\/$/, "/index.html");
+  // If the URI has no extension and doesn't end with a trailing slash, append '/index.html'
+  if (!uri.includes(".") && !uri.endsWith("/")) {
+    request.uri = uri + "/index.html";
+  }
+  // If the URI ends with a trailing slash, replace it with '/index.html'
+  else if (uri.endsWith("/")) {
+    request.uri = uri.replace(/\/$/, "/index.html");
+  }
 
   return request;
 }
