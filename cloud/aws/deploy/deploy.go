@@ -66,6 +66,8 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
+	publicWebsiteBucket *s3.Bucket
+
 	DockerProvider     *docker.Provider
 	RegistryArgs       *docker.RegistryArgs
 	Vpc                *ec2.Vpc
@@ -228,6 +230,19 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
+	websites := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_Website
+	})
+
+	if len(websites) > 0 {
+		err := a.createWebsiteBucket(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("No websites to deploy")
+	}
+
 	return err
 }
 
@@ -235,6 +250,13 @@ func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
 	err := a.applyVpcRules(ctx)
 	if err != nil {
 		return err
+	}
+
+	if a.publicWebsiteBucket != nil {
+		err = a.deployCloudfrontDistribution(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return a.resourcesStore(ctx)

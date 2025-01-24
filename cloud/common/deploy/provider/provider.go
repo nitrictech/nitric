@@ -54,6 +54,8 @@ type NitricPulumiProvider interface {
 	Schedule(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Schedule) error
 	// Websocket - Deploy a Websocket Gateway
 	Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error
+	// Website - Deploy a Website
+	Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error
 	// Policy - Deploy a Policy
 	Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error
 	// KeyValueStore - Deploy a Key Value Store
@@ -94,6 +96,7 @@ func (*NitricDefaultOrder) Order(resources []*deploymentspb.Resource) []*deploym
 		resourcespb.ResourceType_KeyValueStore,
 		resourcespb.ResourceType_Api,
 		resourcespb.ResourceType_Websocket,
+		resourcespb.ResourceType_Website,
 		resourcespb.ResourceType_Schedule,
 		resourcespb.ResourceType_Http,
 		resourcespb.ResourceType_Policy,

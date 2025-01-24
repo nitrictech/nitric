@@ -127,6 +127,8 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 				err = nitricProvider.Http(ctx, parent, res.Id.Name, t.Http)
 			case *deploymentspb.Resource_KeyValueStore:
 				err = nitricProvider.KeyValueStore(ctx, parent, res.Id.Name, t.KeyValueStore)
+			case *deploymentspb.Resource_Website:
+				err = nitricProvider.Website(ctx, parent, res.Id.Name, t.Website)
 			}
 			if err != nil {
 				return err
