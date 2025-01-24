@@ -216,38 +216,11 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
 	//tags := common.Tags(a.StackId, name, resources.Website)
 
-	// indexPath := filepath.ToSlash(filepath.Join(name, config.IndexDocument))
-	// errorPrefixedPath := filepath.ToSlash(filepath.Join(name, config.ErrorDocument))
-
-	// TODO probably not needed
-	test, err := s3.NewBucketWebsiteConfigurationV2(ctx, "website-config-"+name, &s3.BucketWebsiteConfigurationV2Args{
-		Bucket: a.publicWebsiteBucket.Bucket,
-		IndexDocument: s3.BucketWebsiteConfigurationV2IndexDocumentArgs{
-			Suffix: pulumi.String(config.IndexDocument),
-		},
-		ErrorDocument: s3.BucketWebsiteConfigurationV2ErrorDocumentArgs{
-			Key: pulumi.String(config.ErrorDocument),
-		},
-	}, opts...)
-	if err != nil {
-		return err
-	}
-
-	// print test.WebsiteEndpoint with pulumi run
-	ctx.Export(fmt.Sprintf("website-%s-endpoint", name), test.WebsiteEndpoint)
-
 	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
 
-	// _, err = synced.NewS3BucketFolder(ctx, "bucket-folder-"+name, &synced.S3BucketFolderArgs{
-	// 	Path:       pulumi.String(cleanedPath),
-	// 	BucketName: a.publicWebsiteBucket.Bucket,
-	// }, opts...)
-	// if err != nil {
-	// 	return err
-	// }
 	// Enumerate the public directory in pwd and upload all files to the public bucket
 	// This will be the source for our cloudfront distribution
-	err = filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
