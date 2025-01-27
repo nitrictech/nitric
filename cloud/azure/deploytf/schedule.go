@@ -25,11 +25,17 @@ import (
 func (a *NitricAzureTerraformProvider) Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error {
 	targetService := a.Services[config.GetTarget().GetService()]
 
+	cronExpression, err := GenerateCronExpression(config)
+	if err != nil {
+		return err
+	}
+
 	schedule.NewSchedule(stack, jsii.String(name), &schedule.ScheduleConfig{
 		Name:                      jsii.String(name),
 		ContainerAppEnvironmentId: a.Stack.ContainerAppEnvironmentIdOutput(),
 		TargetEventToken:          targetService.EventTokenOutput(),
 		TargetAppId:               targetService.DaprAppIdOutput(),
+		CronExpression:            jsii.String(cronExpression),
 	})
 
 	return nil
