@@ -17,6 +17,7 @@ package deploytf
 import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploy"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/schedule"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
@@ -25,11 +26,17 @@ import (
 func (a *NitricAzureTerraformProvider) Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error {
 	targetService := a.Services[config.GetTarget().GetService()]
 
+	cronExpression, err := deploy.GenerateCronExpression(config)
+	if err != nil {
+		return err
+	}
+
 	schedule.NewSchedule(stack, jsii.String(name), &schedule.ScheduleConfig{
 		Name:                      jsii.String(name),
 		ContainerAppEnvironmentId: a.Stack.ContainerAppEnvironmentIdOutput(),
 		TargetEventToken:          targetService.EventTokenOutput(),
 		TargetAppId:               targetService.DaprAppIdOutput(),
+		CronExpression:            jsii.String(cronExpression),
 	})
 
 	return nil
