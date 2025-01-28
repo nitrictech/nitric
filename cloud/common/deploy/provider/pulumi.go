@@ -28,7 +28,9 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/apitype"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -73,7 +75,7 @@ func nitricResourceToPulumiResource(res *deploymentspb.Resource) *pulumix.Nitric
 	}
 }
 
-func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricPulumiProvider, runtime RuntimeProvider) func(*pulumi.Context) error {
+func createPulumiProgramForNitricProvider(spec *deploymentspb.Spec, nitricProvider NitricPulumiProvider, runtime RuntimeProvider) func(*pulumi.Context) error {
 	return func(ctx *pulumi.Context) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -83,8 +85,8 @@ func createPulumiProgramForNitricProvider(req *deploymentspb.DeploymentUpRequest
 		}()
 
 		// Need to convert the Nitric resources to Pulumi resources, this will allow us to extend their configurations with pulumi inputs/outputs
-		pulumiResources := make([]*pulumix.NitricPulumiResource[any], 0, len(req.Spec.Resources))
-		for _, res := range nitricProvider.Order(req.Spec.Resources) {
+		pulumiResources := make([]*pulumix.NitricPulumiResource[any], 0, len(spec.Resources))
+		for _, res := range nitricProvider.Order(spec.Resources) {
 			pulumiResources = append(pulumiResources, nitricResourceToPulumiResource(res))
 		}
 
@@ -224,7 +226,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		return err
 	}
 
-	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider, s.runtime)
+	pulumiProgram := createPulumiProgramForNitricProvider(req.Spec, s.provider, s.runtime)
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
 	if err != nil {
@@ -344,7 +346,7 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 }
 
 // Preview - automatically called by the Nitric CLI via the `preview` command
-func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_PreviewServer) error {
+func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentPreviewRequest, stream deploymentspb.Deployment_PreviewServer) error {
 	// Verify if dependencies are available
 	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
@@ -362,7 +364,7 @@ func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, s
 		return err
 	}
 
-	pulumiProgram := createPulumiProgramForNitricProvider(req, s.provider, s.runtime)
+	pulumiProgram := createPulumiProgramForNitricProvider(req.Spec, s.provider, s.runtime)
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
 	if err != nil {
@@ -388,13 +390,13 @@ func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, s
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
-	options := []optup.Option{optup.EventStreams(pulumiEventsChan)}
+	options := []optpreview.Option{optpreview.EventStreams(pulumiEventsChan)}
 
 	if ok && refresh {
-		options = append(options, optup.Refresh())
+		options = append(options, optpreview.Refresh())
 	}
 
-	result, err := autoStack.Up(context.TODO(), options...)
+	result, err := autoStack.Preview(context.TODO(), options...)
 	if err != nil {
 		err = handleCommonErrors(err)
 
@@ -405,10 +407,12 @@ func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentUpRequest, s
 		return err
 	}
 
-	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
-	if !ok {
-		resultStr = ""
-	}
+	// Plan 2 to add, 0 to change, 3 to destroy.
+	resultStr := fmt.Sprintf("Plan: %d to add, %d to change, %d to destroy.",
+		result.ChangeSummary[apitype.OpCreate],
+		result.ChangeSummary[apitype.OpUpdate],
+		result.ChangeSummary[apitype.OpDelete],
+	)
 
 	err = stream.Send(&deploymentspb.DeploymentPreviewEvent{
 		Content: &deploymentspb.DeploymentPreviewEvent_Result{

@@ -146,13 +146,17 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return err
 	}
 
-	stackIdChan := make(chan string)
-	pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-		stackIdChan <- id
-		return id
-	})
+	a.StackId = "stack-id"
 
-	a.StackId = <-stackIdChan
+	if !ctx.DryRun() {
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		a.StackId = <-stackIdChan
+	}
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config:            aws.Config{Region: aws.String(a.Region)},
