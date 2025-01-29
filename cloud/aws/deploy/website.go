@@ -17,24 +17,31 @@
 package deploy
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"mime"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/embeds"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	awscloudfront "github.com/aws/aws-sdk-go-v2/service/cloudfront"
+	awscloudfronttypes "github.com/aws/aws-sdk-go-v2/service/cloudfront/types"
+	"github.com/aws/aws-sdk-go/aws"
 )
 
 // createBucket - creates a new S3 bucket in AWS and tags it.
 func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error {
 	var err error
 
-	name := "public-website-bucket"
+	name := "website-bucket"
 
 	a.publicWebsiteBucket, err = s3.NewBucket(ctx, name, nil)
 	if err != nil {
@@ -48,8 +55,8 @@ func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error
 
 func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Context) error {
 	origins := cloudfront.DistributionOriginArray{}
-	var defaultCacheBehaviour *cloudfront.DistributionDefaultCacheBehaviorArgs = nil
-	orderedCacheBeviours := cloudfront.DistributionOrderedCacheBehaviorArray{}
+	var defaultCacheBehavior *cloudfront.DistributionDefaultCacheBehaviorArgs = nil
+	orderedCacheBehaviors := cloudfront.DistributionOrderedCacheBehaviorArray{}
 
 	oai, err := cloudfront.NewOriginAccessIdentity(ctx, "oai", &cloudfront.OriginAccessIdentityArgs{
 		Comment: pulumi.String("OAI for accessing S3 bucket"),
@@ -78,6 +85,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			]
 		}`, oaiPath, bucketID), nil
 	}).(pulumi.StringOutput)
+
 	_, err = s3.NewBucketPolicy(ctx, "publicBucketPolicy", &s3.BucketPolicyArgs{
 		Bucket: a.publicWebsiteBucket.Bucket,
 		Policy: policy,
@@ -85,6 +93,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	if err != nil {
 		return err
 	}
+
 	// We conventionally route to nitric resources from this distribution to create a single entry point
 	// for the entire stack. e.g. /api/main/* will route to a nitric api named "main"
 	apiRewriteFun, err := cloudfront.NewFunction(ctx, "api-url-rewrite-function", &cloudfront.FunctionArgs{
@@ -105,7 +114,6 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	// TODO handle multiple websites
 	if a.publicWebsiteBucket != nil {
 		origins = append(origins, &cloudfront.DistributionOriginArgs{
 			DomainName: a.publicWebsiteBucket.BucketRegionalDomainName,
@@ -114,16 +122,19 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
 			},
 		})
-		defaultCacheBehaviour = &cloudfront.DistributionDefaultCacheBehaviorArgs{
+
+		defaultCacheBehavior = &cloudfront.DistributionDefaultCacheBehaviorArgs{
 			TargetOriginId:       pulumi.String("publicOrigin"),
 			ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
 			AllowedMethods: pulumi.StringArray{
 				pulumi.String("GET"),
 				pulumi.String("HEAD"),
+				pulumi.String("OPTIONS"),
 			},
 			CachedMethods: pulumi.StringArray{
 				pulumi.String("GET"),
 				pulumi.String("HEAD"),
+				pulumi.String("OPTIONS"),
 			},
 			ForwardedValues: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesArgs{
 				QueryString: pulumi.Bool(false),
@@ -142,6 +153,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			},
 		}
 	}
+
 	// For each API forward to the appropriate API gateway
 	for name, api := range a.Apis {
 		apiDomainName := api.ApiEndpoint.ApplyT(func(endpoint string) string {
@@ -161,7 +173,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				HttpsPort: pulumi.Int(443),
 			},
 		})
-		orderedCacheBeviours = append(orderedCacheBeviours,
+		orderedCacheBehaviors = append(orderedCacheBehaviors,
 			&cloudfront.DistributionOrderedCacheBehaviorArgs{
 				PathPattern: pulumi.Sprintf("api/%s/*", name),
 				// rewrite the URL to the nitric service
@@ -187,12 +199,12 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	}
 
 	// Deploy a CloudFront distribution for the S3 bucket
-	cdn, err := cloudfront.NewDistribution(ctx, "distribution", &cloudfront.DistributionArgs{
+	a.websiteDistribution, err = cloudfront.NewDistribution(ctx, "cdn", &cloudfront.DistributionArgs{
 		Origins:               origins,
 		Enabled:               pulumi.Bool(true),
-		DefaultCacheBehavior:  defaultCacheBehaviour,
-		DefaultRootObject:     pulumi.String("index.html"), // TODO use root website index document
-		OrderedCacheBehaviors: orderedCacheBeviours,
+		DefaultCacheBehavior:  defaultCacheBehavior,
+		DefaultRootObject:     pulumi.String(a.websiteIndexDocument),
+		OrderedCacheBehaviors: orderedCacheBehaviors,
 		Restrictions: &cloudfront.DistributionRestrictionsArgs{
 			GeoRestriction: &cloudfront.DistributionRestrictionsGeoRestrictionArgs{
 				RestrictionType: pulumi.String("none"),
@@ -201,22 +213,67 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		ViewerCertificate: &cloudfront.DistributionViewerCertificateArgs{
 			CloudfrontDefaultCertificate: pulumi.Bool(true),
 		},
+		CustomErrorResponses: cloudfront.DistributionCustomErrorResponseArray{
+			&cloudfront.DistributionCustomErrorResponseArgs{
+				ErrorCode:        pulumi.Int(404),
+				ResponseCode:     pulumi.Int(404),
+				ResponsePagePath: pulumi.String(fmt.Sprintf("/%v", a.websiteErrorDocument)),
+			},
+		},
 	})
 	if err != nil {
 		return err
 	}
 
-	ctx.Export("cdn", pulumi.Sprintf("https://%s", cdn.DomainName))
+	// purge the cache with pulumi and the aws sdk
+	if len(a.uploadedHTMLFiles) > 0 {
+		pulumi.All(a.websiteDistribution.ID().ToStringOutput()).ApplyT(func(args []interface{}) error {
+			cdnID := args[0].(string)
+
+			cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(a.Region))
+			if err != nil {
+				return fmt.Errorf("failed to load AWS config: %v", err)
+			}
+
+			// Create CloudFront client
+			client := awscloudfront.NewFromConfig(cfg)
+
+			input := awscloudfront.CreateInvalidationInput{
+				DistributionId: &cdnID,
+				InvalidationBatch: &awscloudfronttypes.InvalidationBatch{
+					CallerReference: aws.String(time.Now().Format("2006-02-01 15:04:05")),
+					Paths: &awscloudfronttypes.Paths{
+						Quantity: aws.Int32(int32(len(a.uploadedHTMLFiles))),
+						Items:    a.uploadedHTMLFiles,
+					},
+				},
+			}
+
+			_, err = client.CreateInvalidation(context.TODO(), &input)
+			if err != nil {
+				return fmt.Errorf("failed to create CloudFront invalidation: %v", err)
+			}
+
+			return nil
+		})
+	}
+
+	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 
 	return nil
 }
 
-// Bucket - Implements deployments of Nitric Buckets using AWS S3
+// Website - Implements the Website deployment method for the AWS provider
 func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
 	//tags := common.Tags(a.StackId, name, resources.Website)
 
 	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
+
+	if config.BasePath == "/" {
+		a.websiteIndexDocument = config.IndexDocument
+		a.websiteErrorDocument = config.ErrorDocument
+	}
 
 	// Enumerate the public directory in pwd and upload all files to the public bucket
 	// This will be the source for our cloudfront distribution
@@ -254,7 +311,16 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			ContentType: pulumi.String(contentType),
 			Key:         pulumi.String(objectKey),
 		}, opts...)
-		return err
+		if err != nil {
+			return err
+		}
+
+		// Track HTML files for invalidation, could be optimized to only track files that have changed
+		if filepath.Ext(path) == ".html" {
+			a.uploadedHTMLFiles = append(a.uploadedHTMLFiles, objectKey)
+		}
+
+		return nil
 	})
 	if err != nil {
 		return err
