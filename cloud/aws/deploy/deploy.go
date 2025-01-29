@@ -288,6 +288,9 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 	}
 
 	if a.websiteDistribution != nil {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
 		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
 		outputs = append(outputs, pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 	}
