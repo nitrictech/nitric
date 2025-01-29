@@ -408,7 +408,7 @@ func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentPreviewReque
 	}
 
 	// Plan 2 to add, 0 to change, 3 to destroy.
-	resultStr := fmt.Sprintf("Plan: %d to add, %d to change, %d to destroy.",
+	resultStr := fmt.Sprintf("%d to add, %d to change, %d to destroy.",
 		result.ChangeSummary[apitype.OpCreate],
 		result.ChangeSummary[apitype.OpUpdate],
 		result.ChangeSummary[apitype.OpDelete],
