@@ -36,6 +36,7 @@ import (
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
@@ -66,7 +67,11 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
-	publicWebsiteBucket *s3.Bucket
+	publicWebsiteBucket  *s3.Bucket
+	websiteDistribution  *cloudfront.Distribution
+	uploadedHTMLFiles    []string
+	websiteIndexDocument string
+	websiteErrorDocument string
 
 	DockerProvider     *docker.Provider
 	RegistryArgs       *docker.RegistryArgs
@@ -280,6 +285,11 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		for apiName, api := range a.Apis {
 			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiEndpoint))
 		}
+	}
+
+	if a.websiteDistribution != nil {
+		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 	}
 
 	// Add HTTP Proxy outputs

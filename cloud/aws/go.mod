@@ -4,6 +4,8 @@ go 1.22.1
 
 toolchain go1.23.0
 
+replace github.com/nitrictech/nitric/cloud/common => C:\projects\nitric\nitric\cloud\common
+
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-lambda-go v1.34.1
@@ -25,7 +27,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.6
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
 	github.com/aws/jsii-runtime-go v1.105.0
-	github.com/aws/smithy-go v1.22.1
+	github.com/aws/smithy-go v1.22.2
 	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.20.1
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
 	github.com/getkin/kin-openapi v0.113.0
@@ -94,6 +96,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.24 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.20.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.7 // indirect

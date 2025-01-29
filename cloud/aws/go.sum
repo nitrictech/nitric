@@ -144,6 +144,8 @@ github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1 h1:nOJwQpU2wDe2qtw+vwk
 github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1/go.mod h1:A95FM8hxO6umoiROudoYtTmZYl7KN9nbez8deLDOCnA=
 github.com/aws/aws-sdk-go-v2/service/batch v1.44.1 h1:078c62Zp/bQx7C9OJ0xS7ISitV046XrwSylWIXt0Nno=
 github.com/aws/aws-sdk-go-v2/service/batch v1.44.1/go.mod h1:ELBM9CH29I8N+OxY5/M5bBs3YQ1rd+S6mmSJKiCiJv0=
+github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6 h1:h1g8lxLhRRIOJKx0hCuTkeDCYOV/DnP8OGugmgvVihY=
+github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6/go.mod h1:B0VXbI7WDpoR4kvqKBf4i43tdzrKxp31/MqWV7KtVEk=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1 h1:haLXE5R07oaq/UnvSyE43V4jp9gA2XRMYcxkFYHEpdU=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1/go.mod h1:mM51J0CILKQjqIawPDM4g6E1nyxdlvk/qaCDyJkx0II=
 github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.20.1 h1:kZR1TZ0VYcRK2LFiFt61EReplssCq9SZO4gVSYV1Aww=
@@ -171,8 +173,8 @@ github.com/aws/constructs-go/constructs/v10 v10.4.2 h1:+hDLTsFGLJmKIn0Dg20vWpKBr
 github.com/aws/constructs-go/constructs/v10 v10.4.2/go.mod h1:cXsNCKDV+9eR9zYYfwy6QuE4uPFp6jsq6TtH1MwBx9w=
 github.com/aws/jsii-runtime-go v1.105.0 h1:VZS3ZDL6byYkdjliGdGPC9zHpj+ExFac5fYxaJB0wf0=
 github.com/aws/jsii-runtime-go v1.105.0/go.mod h1:IKYYzQN1pmtjpOmvY//htYGLs7x0F4Cqi0x93vix6sg=
-github.com/aws/smithy-go v1.22.1 h1:/HPHZQ0g7f4eUeK6HKglFz8uwVfZKgoI25rb/J+dnro=
-github.com/aws/smithy-go v1.22.1/go.mod h1:irrKGvNn1InZwb2d7fkIRNucdfwR8R+Ts3wxYa/cJHg=
+github.com/aws/smithy-go v1.22.2 h1:6D9hW43xKFrRx/tXXfAlIZc4JI+yQe6snnWcQyxSyLQ=
+github.com/aws/smithy-go v1.22.2/go.mod h1:irrKGvNn1InZwb2d7fkIRNucdfwR8R+Ts3wxYa/cJHg=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
