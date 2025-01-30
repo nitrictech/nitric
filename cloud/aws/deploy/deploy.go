@@ -99,6 +99,7 @@ type NitricAwsPulumiProvider struct {
 	Secrets               map[string]*secretsmanager.Secret
 	Buckets               map[string]*s3.Bucket
 	BucketNotifications   map[string]*s3.BucketNotification
+	Distributions         map[string]*cloudfront.Distribution
 	Topics                map[string]*topic
 	Queues                map[string]*sqs.Queue
 	Websockets            map[string]*apigatewayv2.Api
@@ -349,6 +350,7 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		Queues:                make(map[string]*sqs.Queue),
 		KeyValueStores:        make(map[string]*dynamodb.Table),
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
+		Distributions:         make(map[string]*cloudfront.Distribution),
 		SqlDatabases:          make(map[string]*RdsDatabase),
 		JobDefinitions:        make(map[string]*batch.JobDefinition),
 	}
