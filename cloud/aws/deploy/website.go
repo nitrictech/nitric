@@ -26,6 +26,8 @@ import (
 	"time"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/embeds"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
@@ -42,8 +44,11 @@ func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error
 	var err error
 
 	name := "website-bucket"
+	tags := common.Tags(a.StackId, name, resources.Bucket)
 
-	a.publicWebsiteBucket, err = s3.NewBucket(ctx, name, nil)
+	a.publicWebsiteBucket, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
+		Tags: pulumi.ToStringMap(tags),
+	})
 	if err != nil {
 		return err
 	}
@@ -203,44 +208,45 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	if a.publicWebsiteBucket != nil {
-		origins = append(origins, &cloudfront.DistributionOriginArgs{
-			DomainName: a.publicWebsiteBucket.BucketRegionalDomainName,
-			OriginId:   pulumi.String("publicOrigin"),
-			S3OriginConfig: &cloudfront.DistributionOriginS3OriginConfigArgs{
-				OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
-			},
-		})
+	// Add the public bucket as an origin
+	origins = append(origins, &cloudfront.DistributionOriginArgs{
+		DomainName: a.publicWebsiteBucket.BucketRegionalDomainName,
+		OriginId:   pulumi.String("publicOrigin"),
+		S3OriginConfig: &cloudfront.DistributionOriginS3OriginConfigArgs{
+			OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
+		},
+	})
 
-		defaultCacheBehavior = &cloudfront.DistributionDefaultCacheBehaviorArgs{
-			TargetOriginId:       pulumi.String("publicOrigin"),
-			ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
-			AllowedMethods: pulumi.StringArray{
-				pulumi.String("GET"),
-				pulumi.String("HEAD"),
-				pulumi.String("OPTIONS"),
+	// Default cache behavior for the public bucket
+	defaultCacheBehavior = &cloudfront.DistributionDefaultCacheBehaviorArgs{
+		TargetOriginId:       pulumi.String("publicOrigin"),
+		ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
+		AllowedMethods: pulumi.StringArray{
+			pulumi.String("GET"),
+			pulumi.String("HEAD"),
+			pulumi.String("OPTIONS"),
+		},
+		CachedMethods: pulumi.StringArray{
+			pulumi.String("GET"),
+			pulumi.String("HEAD"),
+			pulumi.String("OPTIONS"),
+		},
+		ForwardedValues: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesArgs{
+			QueryString: pulumi.Bool(false),
+			Cookies: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs{
+				Forward: pulumi.String("none"),
 			},
-			CachedMethods: pulumi.StringArray{
-				pulumi.String("GET"),
-				pulumi.String("HEAD"),
-				pulumi.String("OPTIONS"),
+		},
+		// could be added to stack config in the future
+		MinTtl:     pulumi.Int(0),
+		DefaultTtl: pulumi.Int(3600),
+		MaxTtl:     pulumi.Int(86400),
+		FunctionAssociations: cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArray{
+			&cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs{
+				EventType:   pulumi.String("viewer-request"),
+				FunctionArn: rewriteFun.Arn,
 			},
-			ForwardedValues: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesArgs{
-				QueryString: pulumi.Bool(false),
-				Cookies: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs{
-					Forward: pulumi.String("none"),
-				},
-			},
-			MinTtl:     pulumi.Int(0),
-			DefaultTtl: pulumi.Int(3600),
-			MaxTtl:     pulumi.Int(86400),
-			FunctionAssociations: cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArray{
-				&cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs{
-					EventType:   pulumi.String("viewer-request"),
-					FunctionArn: rewriteFun.Arn,
-				},
-			},
-		}
+		},
 	}
 
 	// For each API forward to the appropriate API gateway
@@ -287,8 +293,12 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		)
 	}
 
+	name := "website-cdn"
+
+	tags := common.Tags(a.StackId, name, resources.Website)
+
 	// Deploy a CloudFront distribution for the S3 bucket
-	a.websiteDistribution, err = cloudfront.NewDistribution(ctx, "cdn", &cloudfront.DistributionArgs{
+	a.websiteDistribution, err = cloudfront.NewDistribution(ctx, name, &cloudfront.DistributionArgs{
 		Origins:               origins,
 		Enabled:               pulumi.Bool(true),
 		DefaultCacheBehavior:  defaultCacheBehavior,
@@ -299,6 +309,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				RestrictionType: pulumi.String("none"),
 			},
 		},
+		Tags: pulumi.ToStringMap(tags),
 		ViewerCertificate: &cloudfront.DistributionViewerCertificateArgs{
 			CloudfrontDefaultCertificate: pulumi.Bool(true),
 		},
@@ -319,6 +330,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	if err != nil {
 		return err
 	}
+
+	a.Distributions[name] = a.websiteDistribution
 
 	// apply invalidation on the distribution when files change
 	pulumi.All(a.websiteDistribution.ID().ToStringOutput(), a.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
@@ -362,7 +375,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return nil
 	})
 
-	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
+	ctx.Export("website-cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 
 	return nil
 }
