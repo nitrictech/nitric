@@ -95,8 +95,6 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		}
 
 		output := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (pulumi.StringOutput, error) {
-			fmt.Println("Uploading file", objectKey, "to bucket", bucket)
-
 			existingObj, err := s3.GetObject(ctx, &s3.GetObjectArgs{
 				Bucket: bucket,
 				Key:    objectKey,
@@ -307,7 +305,13 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		CustomErrorResponses: cloudfront.DistributionCustomErrorResponseArray{
 			&cloudfront.DistributionCustomErrorResponseArgs{
 				ErrorCode:        pulumi.Int(404),
-				ResponseCode:     pulumi.Int(404),
+				ResponseCode:     pulumi.Int(200),
+				ResponsePagePath: pulumi.String(fmt.Sprintf("/%v", a.websiteErrorDocument)),
+			},
+			// Redirect all 403 errors to the error page, s3 by default will return a 403 for missing files
+			&cloudfront.DistributionCustomErrorResponseArgs{
+				ErrorCode:        pulumi.Int(403),
+				ResponseCode:     pulumi.Int(200),
 				ResponsePagePath: pulumi.String(fmt.Sprintf("/%v", a.websiteErrorDocument)),
 			},
 		},
