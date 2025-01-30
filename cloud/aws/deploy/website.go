@@ -53,6 +53,97 @@ func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error
 	return nil
 }
 
+// Website - Implements the Website deployment method for the AWS provider
+func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
+
+	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
+
+	if config.BasePath == "/" {
+		a.websiteIndexDocument = config.IndexDocument
+		a.websiteErrorDocument = config.ErrorDocument
+	}
+
+	// Enumerate the public directory in pwd and upload all files to the public bucket
+	// This will be the source for our cloudfront distribution
+	err := filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+		// Determine the content type based on the file extension
+		contentType := mime.TypeByExtension(filepath.Ext(path))
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+
+		// Generate the object key to include the folder structure
+		var objectKey string
+
+		filePath := path[len(cleanedPath):]
+
+		arn := filepath.ToSlash(filepath.Join(name, filePath))
+
+		// If the base path is not the root, include it in the object key
+		if config.BasePath == "/" {
+			objectKey = filepath.ToSlash(filePath)
+		} else {
+			objectKey = filepath.ToSlash(filepath.Join(config.BasePath, filePath))
+		}
+
+		output := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (pulumi.StringOutput, error) {
+			fmt.Println("Uploading file", objectKey, "to bucket", bucket)
+
+			existingObj, err := s3.GetObject(ctx, &s3.GetObjectArgs{
+				Bucket: bucket,
+				Key:    objectKey,
+			})
+			if err != nil {
+				// TODO: Could find a better way to check if the object doesn't exist
+				if !strings.Contains(err.Error(), "couldn't find resource") {
+					// Propagate other errors
+					return pulumi.String("").ToStringOutput(), err
+				}
+			}
+
+			obj, err := s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
+				Bucket:      a.publicWebsiteBucket.Bucket,
+				Source:      pulumi.NewFileAsset(path),
+				ContentType: pulumi.String(contentType),
+				Key:         pulumi.String(objectKey),
+			}, opts...)
+			if err != nil {
+				return pulumi.String("").ToStringOutput(), err
+			}
+
+			if existingObj != nil {
+				return obj.Etag.ApplyT(func(newEtag string) pulumi.StringOutput {
+					// If the object is new or has changed, add it to the list of changed files
+					if newEtag != existingObj.Etag {
+						return pulumi.String(objectKey).ToStringOutput()
+					}
+
+					return pulumi.String("").ToStringOutput()
+				}).(pulumi.StringOutput), nil
+			}
+
+			return pulumi.String("").ToStringOutput(), nil
+		}).(pulumi.StringOutput)
+
+		a.websiteChangedFileOutputs = append(a.websiteChangedFileOutputs, output)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Context) error {
 	origins := cloudfront.DistributionOriginArray{}
 	var defaultCacheBehavior *cloudfront.DistributionDefaultCacheBehaviorArgs = nil
@@ -225,11 +316,19 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	// purge the cache with pulumi and the aws sdk
-	if len(a.uploadedHTMLFiles) > 0 {
-		pulumi.All(a.websiteDistribution.ID().ToStringOutput()).ApplyT(func(args []interface{}) error {
-			cdnID := args[0].(string)
+	// apply invalidation on the distribution when files change
+	pulumi.All(a.websiteDistribution.ID().ToStringOutput(), a.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
+		cdnID := args[0].(string)
+		websiteChangedFileKeys := []string{}
 
+		// Filter out empty strings from the array
+		for _, key := range args[1].([]string) {
+			if key != "" {
+				websiteChangedFileKeys = append(websiteChangedFileKeys, key)
+			}
+		}
+
+		if len(websiteChangedFileKeys) > 0 {
 			cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(a.Region))
 			if err != nil {
 				return fmt.Errorf("failed to load AWS config: %v", err)
@@ -243,8 +342,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				InvalidationBatch: &awscloudfronttypes.InvalidationBatch{
 					CallerReference: aws.String(time.Now().Format("2006-02-01 15:04:05")),
 					Paths: &awscloudfronttypes.Paths{
-						Quantity: aws.Int32(int32(len(a.uploadedHTMLFiles))),
-						Items:    a.uploadedHTMLFiles,
+						Quantity: aws.Int32(int32(len(websiteChangedFileKeys))),
+						Items:    websiteChangedFileKeys,
 					},
 				},
 			}
@@ -254,77 +353,12 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				return fmt.Errorf("failed to create CloudFront invalidation: %v", err)
 			}
 
-			return nil
-		})
-	}
-
-	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
-
-	return nil
-}
-
-// Website - Implements the Website deployment method for the AWS provider
-func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
-	//tags := common.Tags(a.StackId, name, resources.Website)
-
-	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
-
-	if config.BasePath == "/" {
-		a.websiteIndexDocument = config.IndexDocument
-		a.websiteErrorDocument = config.ErrorDocument
-	}
-
-	// Enumerate the public directory in pwd and upload all files to the public bucket
-	// This will be the source for our cloudfront distribution
-	err := filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		// Skip directories
-		if d.IsDir() {
-			return nil
-		}
-		// Determine the content type based on the file extension
-		contentType := mime.TypeByExtension(filepath.Ext(path))
-		if contentType == "" {
-			contentType = "application/octet-stream"
-		}
-
-		// Generate the object key to include the folder structure
-		var objectKey string
-
-		filePath := path[len(cleanedPath):]
-
-		arn := filepath.ToSlash(filepath.Join(name, filePath))
-
-		// If the base path is not the root, include it in the object key
-		if config.BasePath == "/" {
-			objectKey = filepath.ToSlash(filePath)
-		} else {
-			objectKey = filepath.ToSlash(filepath.Join(config.BasePath, filePath))
-		}
-
-		_, err = s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
-			Bucket:      a.publicWebsiteBucket.Bucket,
-			Source:      pulumi.NewFileAsset(path),
-			ContentType: pulumi.String(contentType),
-			Key:         pulumi.String(objectKey),
-		}, opts...)
-		if err != nil {
-			return err
-		}
-
-		// Track HTML files for invalidation, could be optimized to only track files that have changed
-		if filepath.Ext(path) == ".html" {
-			a.uploadedHTMLFiles = append(a.uploadedHTMLFiles, objectKey)
 		}
 
 		return nil
 	})
-	if err != nil {
-		return err
-	}
+
+	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 
 	return nil
 }
