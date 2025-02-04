@@ -107,7 +107,7 @@ type NitricAwsPulumiProvider struct {
 
 var _ provider.NitricPulumiProvider = (*NitricAwsPulumiProvider)(nil)
 
-const pulumiAwsVersion = "6.6.0"
+const pulumiAwsVersion = "6.67.0"
 
 func (a *NitricAwsPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
