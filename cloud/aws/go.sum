@@ -552,6 +552,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/invopop/yaml v0.1.0 h1:YW3WGUoJEXYfzWBjn00zIlrw7brGVD0fUKRYDPAPhrc=
 github.com/invopop/yaml v0.1.0/go.mod h1:2XuRLgs/ouIrW3XNzuNj7J3Nvu/Dig5MXvbCEdiBN3Q=
+github.com/iwdgo/sigintwindows v0.2.2 h1:P6oWzpvV7MrEAmhUgs+zmarrWkyL77ycZz4v7+1gYAE=
+github.com/iwdgo/sigintwindows v0.2.2/go.mod h1:70wPb8oz8OnxPvsj2QMUjgIVhb8hMu5TUgX8KfFl7QY=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
@@ -811,10 +813,10 @@ github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 h1:vkHw5I/plNdTr435
 github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231/go.mod h1:murToZ2N9hNJzewjHBgfFdXhZKjY3z5cYC1VXk+lbFE=
 github.com/pulumi/esc v0.9.1 h1:HH5eEv8sgyxSpY5a8yePyqFXzA8cvBvapfH8457+mIs=
 github.com/pulumi/esc v0.9.1/go.mod h1:oEJ6bOsjYlQUpjf70GiX+CXn3VBmpwFDxUTlmtUN84c=
-github.com/pulumi/pulumi-aws/sdk/v5 v5.35.0 h1:/N36bGYwcAXd6rEo5y0kdaIwaa0iS4vMyvrc5B4GBeU=
-github.com/pulumi/pulumi-aws/sdk/v5 v5.35.0/go.mod h1:axXtUAYEclH+SVqr/QmWFzMfJchxrrPiyMrywCcMF9A=
-github.com/pulumi/pulumi-aws/sdk/v6 v6.32.0 h1:Lrh2HiUJvlXpXCjWG7SOjJOTAkF6JdnvXvIaXcKuxmA=
-github.com/pulumi/pulumi-aws/sdk/v6 v6.32.0/go.mod h1:sIRGiNHIQNbfxV294D44laQv791coNsyWA6TjY0uqD4=
+github.com/pulumi/pulumi-aws/sdk/v5 v5.43.0 h1:m+BnGLhaLcW4AoyvA/3DRgtaTf6nmHtD9SFSGUY8XFE=
+github.com/pulumi/pulumi-aws/sdk/v5 v5.43.0/go.mod h1:qFeKTFSNIlMHotu9ntOWFjJBHtCiUhJeaiUB/0nVwXk=
+github.com/pulumi/pulumi-aws/sdk/v6 v6.67.0 h1:Clb/OOb2gcMeGGLixmeGVav9JQ6wUY4QwRw9oNNGuNQ=
+github.com/pulumi/pulumi-aws/sdk/v6 v6.67.0/go.mod h1:WSA4oz7YvZxNNjolk2yKaQR3PvT8KsPgCga0KyCqxBc=
 github.com/pulumi/pulumi-awsx/sdk v1.0.6 h1:oUan8VgA/pqEmbS2vXhh5Zbn7Lhs6yX5bPMzM03QuMI=
 github.com/pulumi/pulumi-awsx/sdk v1.0.6/go.mod h1:2H8uPHxZbfsIg9qr6yAfiIuvNnhBUqyhxw/8mXNLDFg=
 github.com/pulumi/pulumi-docker/sdk/v3 v3.2.0 h1:7liqzpMLCmk7BIO7w6f6JCh9IdtwCp0a//jA12i6eyo=
@@ -824,8 +826,8 @@ github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0/go.mod h1:zZCDXSO99WbbrmsijAZkLQId
 github.com/pulumi/pulumi-random/sdk/v4 v4.8.2 h1:ZlXB3mx1YvAjs+jm59rcpvfl1J7dpLOBOxUb5vEPkZk=
 github.com/pulumi/pulumi-random/sdk/v4 v4.8.2/go.mod h1:czSwj+jZnn/VWovMpTLUs/RL/ZS4PFHRdmlXrkvHqeI=
 github.com/pulumi/pulumi/sdk/v3 v3.27.0/go.mod h1:VsxW+TGv2VBLe/MeqsAr9r0zKzK/gbAhFT9QxYr24cY=
-github.com/pulumi/pulumi/sdk/v3 v3.137.0 h1:bxhYpOY7Z4xt+VmezEpHuhjpOekkaMqOjzxFg/1OhCw=
-github.com/pulumi/pulumi/sdk/v3 v3.137.0/go.mod h1:PvKsX88co8XuwuPdzolMvew5lZV+4JmZfkeSjj7A6dI=
+github.com/pulumi/pulumi/sdk/v3 v3.145.0 h1:r5iOgz67RElFXJt4GVVY2SBGh5sR24mL9NOcKBiBi/k=
+github.com/pulumi/pulumi/sdk/v3 v3.145.0/go.mod h1:5pZySnw3RiQKddx8orThjEFmWsXkGAY3ktKOxZj2Ym4=
 github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 h1:+Wl/0aFp0hpuHM3H//KMft64WQ1yX9LdJY64Qm/gFCo=
 github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1/go.mod h1:GJLgqsLeo4qgavUoL8JeGFNS7qcisx3awV/w9eWTmNI=
 github.com/quasilyte/go-ruleguard/dsl v0.3.22 h1:wd8zkOhSNr+I+8Qeciml08ivDt1pSXe60+5DqOpCjPE=
