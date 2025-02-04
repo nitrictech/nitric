@@ -83,23 +83,32 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 		return err
 	}
 
+	scaling := rds.ClusterServerlessv2ScalingConfigurationArgs{
+		MinCapacity: pulumi.Float64(a.AwsConfig.AuroraRdsClusterConfig.MinCapacity),
+		MaxCapacity: pulumi.Float64(a.AwsConfig.AuroraRdsClusterConfig.MaxCapacity),
+	}
+
+	if a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause != nil && *a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause > 0 {
+		if scaling.MinCapacity != pulumi.Float64(0) {
+			return fmt.Errorf("seconds-until-auto-pause can only be set when min-capacity is 0")
+		}
+		scaling.SecondsUntilAutoPause = pulumi.Int(*a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause)
+	}
+
 	a.DatabaseCluster, err = rds.NewCluster(ctx, "postgresql", &rds.ClusterArgs{
 		Engine:        pulumi.String(rds.EngineTypeAuroraPostgresql),
-		EngineVersion: pulumi.String("13.14"),
+		EngineVersion: pulumi.String("13.16"),
 		// TODO: limit number of availability zones
-		AvailabilityZones: pulumi.ToStringArray(a.VpcAzs),
-		DatabaseName:      pulumi.String("nitric"),
-		MasterUsername:    pulumi.String("nitric"),
-		MasterPassword:    a.DbMasterPassword.Result,
-		EngineMode:        pulumi.String(rds.EngineModeProvisioned),
-		Serverlessv2ScalingConfiguration: &rds.ClusterServerlessv2ScalingConfigurationArgs{
-			MaxCapacity: pulumi.Float64(1),
-			MinCapacity: pulumi.Float64(0.5),
-		},
-		VpcSecurityGroupIds: pulumi.StringArray{a.RdsSecurityGroup.ID()},
-		DbSubnetGroupName:   dbSubnetGroup.Name,
-		SkipFinalSnapshot:   pulumi.Bool(true),
-		Tags:                pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster", "DatabaseCluster")),
+		AvailabilityZones:                pulumi.ToStringArray(a.VpcAzs),
+		DatabaseName:                     pulumi.String("nitric"),
+		MasterUsername:                   pulumi.String("nitric"),
+		MasterPassword:                   a.DbMasterPassword.Result,
+		EngineMode:                       pulumi.String(rds.EngineModeProvisioned),
+		Serverlessv2ScalingConfiguration: &scaling,
+		VpcSecurityGroupIds:              pulumi.StringArray{a.RdsSecurityGroup.ID()},
+		DbSubnetGroupName:                dbSubnetGroup.Name,
+		SkipFinalSnapshot:                pulumi.Bool(true),
+		Tags:                             pulumi.ToStringMap(tags.Tags(a.StackId, "database-cluster", "DatabaseCluster")),
 		// NOTE: Workaround for https://github.com/pulumi/pulumi-aws/issues/2426
 		// Aurora instances don't support StorageType so we need to ignore changes otherwise we'll get unsolicited replacements
 	}, pulumi.IgnoreChanges([]string{"storageType"}))

@@ -51,12 +51,19 @@ type BatchComputeEnvConfig struct {
 	LaunchTemplate *EcsLaunchTemplate `mapstructure:"launch-template,omitempty"`
 }
 
+type AuroraRdsClusterConfig struct {
+	MinCapacity           float64 `mapstructure:"min-capacity"`
+	MaxCapacity           float64 `mapstructure:"max-capacity"`
+	SecondsUntilAutoPause *int    `mapstructure:"seconds-until-auto-pause"`
+}
+
 type AwsConfig struct {
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*AwsApiConfig
-	BatchComputeEnvConfig                 *BatchComputeEnvConfig `mapstructure:"batch-compute-env,omitempty"`
+	BatchComputeEnvConfig                 *BatchComputeEnvConfig  `mapstructure:"batch-compute-env,omitempty"`
+	AuroraRdsClusterConfig                *AuroraRdsClusterConfig `mapstructure:"aurora-rds-cluster,omitempty"`
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -90,6 +97,11 @@ var defaultBatchComputeEnvConfig = &BatchComputeEnvConfig{
 	MaxCpus:        32,
 	InstanceTypes:  []string{"optimal"},
 	LaunchTemplate: nil,
+}
+
+var defaultAuroraRdsClusterConfig = &AuroraRdsClusterConfig{
+	MinCapacity: 0.5,
+	MaxCapacity: 1,
 }
 
 var defaultAwsConfigItem = AwsConfigItem{
@@ -138,6 +150,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	err = mergo.Merge(awsConfig.BatchComputeEnvConfig, defaultBatchComputeEnvConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	if awsConfig.AuroraRdsClusterConfig == nil {
+		awsConfig.AuroraRdsClusterConfig = defaultAuroraRdsClusterConfig
 	}
 
 	for configName, configVal := range awsConfig.Config {
