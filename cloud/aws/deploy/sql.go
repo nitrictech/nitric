@@ -89,7 +89,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 	}
 
 	if a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause != nil && *a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause > 0 {
-		if scaling.MinCapacity != pulumi.Float64(0) {
+		if a.AwsConfig.AuroraRdsClusterConfig.MinCapacity != 0 {
 			return fmt.Errorf("seconds-until-auto-pause can only be set when min-capacity is 0")
 		}
 		scaling.SecondsUntilAutoPause = pulumi.Int(*a.AwsConfig.AuroraRdsClusterConfig.SecondsUntilAutoPause)
