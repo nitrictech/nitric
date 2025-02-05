@@ -245,8 +245,6 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		if err != nil {
 			return err
 		}
-	} else {
-		fmt.Println("No websites to deploy")
 	}
 
 	return err

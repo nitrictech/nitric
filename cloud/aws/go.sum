@@ -693,6 +693,8 @@ github.com/nishanths/exhaustive v0.12.0 h1:vIY9sALmw6T/yxiASewa4TQcFsVYZQQRUQJhK
 github.com/nishanths/exhaustive v0.12.0/go.mod h1:mEZ95wPIZW+x8kC4TgC+9YCUgiST7ecevsVDTgc2obs=
 github.com/nishanths/predeclared v0.2.2 h1:V2EPdZPliZymNAn79T8RkNApBjMmVKh5XRpLm/w98Vk=
 github.com/nishanths/predeclared v0.2.2/go.mod h1:RROzoN6TnGQupbC+lqggsOlcgysk3LMK/HI84Mp280c=
+github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5 h1:3o6h64DQw0tcyrdGyASDWy2Qc5ZmCPLNERIOhn3xDrc=
+github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5/go.mod h1:qrW1sRHW2+pCU8jQ5O7qonjmbK85DYTfZP+MQKLmHA4=
 github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce h1:i1uOqaOVasUjPhn3kkSWDbbOynAE7n9EVsNqNm7NeKQ=
 github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce/go.mod h1:3kPpyO2oZEGfurDVsTh9XTg43b/4JAIbLkaktEvRF58=
 github.com/nunnatsa/ginkgolinter v0.16.2 h1:8iLqHIZvN4fTLDC0Ke9tbSZVcyVHoBs0HIbnVSxfHJk=

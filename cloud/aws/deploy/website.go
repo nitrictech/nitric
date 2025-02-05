@@ -254,6 +254,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		apiDomainName := api.ApiEndpoint.ApplyT(func(endpoint string) string {
 			return strings.Replace(endpoint, "https://", "", 1)
 		}).(pulumi.StringOutput)
+
 		origins = append(origins, &cloudfront.DistributionOriginArgs{
 			DomainName: apiDomainName,
 			OriginId:   pulumi.String(name),
@@ -268,6 +269,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				HttpsPort: pulumi.Int(443),
 			},
 		})
+
 		orderedCacheBehaviors = append(orderedCacheBehaviors,
 			&cloudfront.DistributionOrderedCacheBehaviorArgs{
 				PathPattern: pulumi.Sprintf("api/%s/*", name),

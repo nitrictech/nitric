@@ -4,8 +4,6 @@ go 1.22.1
 
 toolchain go1.23.0
 
-replace github.com/nitrictech/nitric/cloud/common => C:\projects\nitric\nitric\cloud\common
-
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-lambda-go v1.34.1
@@ -17,6 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi v1.19.1
 	github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1
 	github.com/aws/aws-sdk-go-v2/service/batch v1.44.1
+	github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1
 	github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.21.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
@@ -38,7 +37,7 @@ require (
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.10
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-20241029232835-f023e1be393d
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5
 	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
