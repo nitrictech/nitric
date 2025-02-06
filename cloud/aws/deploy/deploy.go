@@ -40,7 +40,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
-	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/rds"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/resourcegroups"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/scheduler"
@@ -48,6 +47,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/sqs"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/codebuild"
 	awsec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/rds"
 	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
@@ -107,7 +107,7 @@ type NitricAwsPulumiProvider struct {
 
 var _ provider.NitricPulumiProvider = (*NitricAwsPulumiProvider)(nil)
 
-const pulumiAwsVersion = "6.6.0"
+const pulumiAwsVersion = "6.67.0"
 
 func (a *NitricAwsPulumiProvider) Config() (auto.ConfigMap, error) {
 	return auto.ConfigMap{
