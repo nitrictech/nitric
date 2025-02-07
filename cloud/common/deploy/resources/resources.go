@@ -29,5 +29,6 @@ const (
 	Stack       ResourceType = "stack"
 	Topic       ResourceType = "topic"
 	Websocket   ResourceType = "websocket"
+	Website     ResourceType = "website"
 	SqlDatabase ResourceType = "sql-database"
 )

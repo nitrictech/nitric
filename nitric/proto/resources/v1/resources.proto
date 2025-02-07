@@ -43,6 +43,7 @@ enum ResourceType {
   // Batches represent a collection of jobs
   Batch = 15;
   Job = 16;
+  Website = 17;
 }
 
 // Unique identifier for a resource within a nitric application.
