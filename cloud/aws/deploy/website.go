@@ -386,11 +386,11 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	return nil
 }
 
-// SafeInt32 - Safely convert an int to an int32 - gosec G115 (CWE-190)
+// SafeInt32 - Safely convert an int to an int32
 func SafeInt32(n int) (int32, error) {
 	if n > math.MaxInt32 {
 		return 0, fmt.Errorf("value exceeds int32 limit: %d", n)
 	}
 
-	return int32(n), nil
+	return int32(n), nil //#nosec G115 -- n is checked to be within int32 range
 }
