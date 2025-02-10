@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"mime"
 	"path/filepath"
 	"strings"
@@ -355,12 +356,17 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			// Create CloudFront client
 			client := awscloudfront.NewFromConfig(cfg)
 
+			quantity, err := SafeInt32(len(websiteChangedFileKeys))
+			if err != nil {
+				return err
+			}
+
 			input := awscloudfront.CreateInvalidationInput{
 				DistributionId: &cdnID,
 				InvalidationBatch: &awscloudfronttypes.InvalidationBatch{
 					CallerReference: aws.String(time.Now().Format("2006-01-02 15:04:05")),
 					Paths: &awscloudfronttypes.Paths{
-						Quantity: aws.Int32(int32(len(websiteChangedFileKeys))),
+						Quantity: aws.Int32(quantity),
 						Items:    websiteChangedFileKeys,
 					},
 				},
@@ -378,4 +384,13 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	ctx.Export("website-cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
 
 	return nil
+}
+
+// SafeInt32 - Safely convert an int to an int32 - gosec G115 (CWE-190)
+func SafeInt32(n int) (int32, error) {
+	if n > math.MaxInt32 {
+		return 0, fmt.Errorf("value exceeds int32 limit: %d", n)
+	}
+
+	return int32(n), nil
 }
