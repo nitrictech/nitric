@@ -15,7 +15,7 @@ data "azurerm_client_config" "current" {}
 
 # Create an azure resource group
 resource "azurerm_resource_group" "resource_group" {
-  name     = local.stack_name
+  name     = "${var.stack_name}-rg${random_string.stack_id.result}"
   location = var.location
   tags = {
     "x-nitric-${local.stack_name}-name" = var.stack_name
@@ -26,7 +26,7 @@ resource "azurerm_resource_group" "resource_group" {
 # Create an azure storage account
 resource "azurerm_storage_account" "storage" {
   count = var.enable_storage ? 1 : 0
-  name                  = "sa${var.stack_name}${random_string.stack_id.result}"
+  name                  = "${var.stack_name}sa${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   account_tier        = "Standard"
@@ -155,7 +155,7 @@ resource "azurerm_postgresql_virtual_network_rule" "example" {
 resource "azurerm_key_vault" "keyvault" {
   count = var.enable_keyvault ? 1 : 0
 
-  name                       = "nitric-keyvault"
+  name                       = "${var.stack_name}kv${random_string.stack_id.result}"
   resource_group_name        = azurerm_resource_group.resource_group.name
   location                   = azurerm_resource_group.resource_group.location
   sku_name                   = "standard"
@@ -178,7 +178,7 @@ resource "azurerm_user_assigned_identity" "managed_identity" {
 
 # Create a container registry for storing images
 resource "azurerm_container_registry" "container_registry" {
-  name                = "cr${var.stack_name}${random_string.stack_id.result}"
+  name                = "${var.stack_name}cr${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   sku                 = "Basic"
@@ -191,7 +191,7 @@ resource "azurerm_container_registry" "container_registry" {
 
 # Create an operational insights workspace
 resource "azurerm_log_analytics_workspace" "log_analytics" {
-  name                = "nitric-log-analytics"
+  name                = "${var.stack_name}log${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   sku                 = "PerGB2018"
@@ -204,7 +204,7 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
 
 # Create a new container app managed environment
 resource "azurerm_container_app_environment" "environment" {
-  name                = "nitric-environment"
+  name                = "${var.stack_name}kube${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics.id
