@@ -1,6 +1,16 @@
+# Generate a random id for the azure blob container
+resource "random_id" "storage_id" {
+  byte_length = 8
+
+  keepers = {
+    # Generate a new id each time we switch to a new AMI id
+    storage_name = var.name
+  }
+}
+
 # Create a new azure blob container
 resource "azurerm_storage_container" "container" {
-  name                  = var.name
+  name                  = "st${var.name}${random_id.storage_id.hex}"
   storage_account_id    = var.storage_account_id
   container_access_type = "private"
 }

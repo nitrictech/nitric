@@ -26,8 +26,7 @@ resource "azurerm_resource_group" "resource_group" {
 # Create an azure storage account
 resource "azurerm_storage_account" "storage" {
   count = var.enable_storage ? 1 : 0
-
-  name                = "nitric"
+  name                  = "sa${var.stack_name}${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   account_tier        = "Standard"
@@ -179,7 +178,7 @@ resource "azurerm_user_assigned_identity" "managed_identity" {
 
 # Create a container registry for storing images
 resource "azurerm_container_registry" "container_registry" {
-  name                = "nitric"
+  name                = "cr${var.stack_name}${random_string.stack_id.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   sku                 = "Basic"
