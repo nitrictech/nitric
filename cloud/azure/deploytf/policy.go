@@ -137,8 +137,8 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
 				"subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
-				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.SubscriptionIdOutput(),
+				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.KeyvaultNameOutput(),
 				resource.Id.Name,
 			),
