@@ -74,7 +74,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 		return nil
 	}
 
-	description := jsii.Sprintf("Nitric API Gateway for %s", n.Stack.StackNameOutput())
+	description := jsii.Sprintf("Nitric API Gateway for %s", *n.Stack.StackNameOutput())
 	if additionalApiConfig != nil && additionalApiConfig.Description != "" {
 		description = jsii.String(additionalApiConfig.Description)
 	}
