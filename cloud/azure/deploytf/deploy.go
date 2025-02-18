@@ -26,6 +26,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/common"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/http_proxy"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/keyvalue"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/queue"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/roles"
@@ -49,6 +50,7 @@ type NitricAzureTerraformProvider struct {
 	Roles roles.Roles
 
 	Apis      map[string]api.Api
+	Proxies   map[string]http_proxy.HttpProxy
 	Buckets   map[string]bucket.Bucket
 	Services  map[string]service.Service
 	Queues    map[string]queue.Queue
