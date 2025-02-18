@@ -48,6 +48,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		"AZURE_STORAGE_ACCOUNT_NAME":           a.Stack.StorageAccountNameOutput(),
 		"AZURE_STORAGE_ACCOUNT_BLOB_ENDPOINT":  a.Stack.StorageAccountBlobEndpointOutput(),
 		"AZURE_STORAGE_ACCOUNT_QUEUE_ENDPOINT": a.Stack.StorageAccountQueueEndpointOutput(),
+		"KVAULT_NAME":                          a.Stack.KeyvaultNameOutput(),
 	}
 
 	for k, v := range config.GetEnv() {
