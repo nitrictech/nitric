@@ -61,3 +61,11 @@ output "infrastructure_subnet_id" {
 output "container_app_subnet_id" {
   value = one(azurerm_subnet.database_client_subnet) != null ? one(azurerm_subnet.database_client_subnet).id : null
 }
+
+output "database_master_password" {
+  value = random_password.database_master_password.result
+}
+
+output "database_server_fqdn" {
+  value = azurerm_postgresql_server.database.fqdn
+}
