@@ -121,9 +121,11 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 
 	// azadprovider.NewAzureProvider
 
-	// If resources contains queues/buckets then we need to enable storage
+	// If resources contains queues/buckets/keyvalue then we need to enable storage
 	_, enableStorage := lo.Find(resources, func(item *deploymentspb.Resource) bool {
-		return item.Id.GetType() == resourcespb.ResourceType_Bucket || item.Id.GetType() == resourcespb.ResourceType_Queue
+		return item.Id.GetType() == resourcespb.ResourceType_Bucket ||
+			item.Id.GetType() == resourcespb.ResourceType_Queue ||
+			item.Id.GetType() == resourcespb.ResourceType_KeyValueStore
 	})
 
 	_, enableDatabase := lo.Find(resources, func(item *deploymentspb.Resource) bool {
