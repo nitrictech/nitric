@@ -147,14 +147,17 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 	})
 
-	a.dockerProvider = dockerprovider.NewDockerProvider(tfstack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
-		RegistryAuth: &[]*map[string]interface{}{
-			{
-				"address":  a.Stack.RegistryLoginServerOutput(),
-				"username": a.Stack.RegistryUsernameOutput(),
-				"password": a.Stack.RegistryPasswordOutput(),
-			},
+	auths := []dockerprovider.DockerProviderRegistryAuth{
+		{
+			Address:    a.Stack.RegistryLoginServerOutput(),
+			Username:   a.Stack.RegistryUsernameOutput(),
+			Password:   a.Stack.RegistryPasswordOutput(),
+			ConfigFile: jsii.String(""),
 		},
+	}
+
+	a.dockerProvider = dockerprovider.NewDockerProvider(tfstack, jsii.String("docker"), &dockerprovider.DockerProviderConfig{
+		RegistryAuth: auths,
 	})
 
 	return nil
