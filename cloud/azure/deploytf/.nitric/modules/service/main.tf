@@ -105,7 +105,8 @@ resource "random_string" "container_app_id" {
 }
 
 locals {
-  container_app_name = "${lower(replace(substr(var.name, 0, 28), "_", "-"))}-${random_string.container_app_id.result}"
+  truncated_name = substr(var.name, 0, 27) # Truncate the name to 27 characters to ensure the container app name is within the 32 character limit
+  container_app_name = "${lower(replace(local.truncated_name, "_", "-"))}-${random_string.container_app_id.result}"
 }
 
 # Create a new container app
