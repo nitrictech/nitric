@@ -156,7 +156,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 			Address:    a.Stack.RegistryLoginServerOutput(),
 			Username:   a.Stack.RegistryUsernameOutput(),
 			Password:   a.Stack.RegistryPasswordOutput(),
-			ConfigFile: jsii.String(""),
+			ConfigFile: jsii.String(""), // This is unset so username/password takes precedence over the config file
 		},
 	}
 
@@ -176,6 +176,7 @@ func NewNitricAzureProvider() *NitricAzureTerraformProvider {
 		Apis:      make(map[string]api.Api),
 		Buckets:   make(map[string]bucket.Bucket),
 		Services:  make(map[string]service.Service),
+		Proxies:   make(map[string]http_proxy.HttpProxy),
 		Queues:    make(map[string]queue.Queue),
 		Topics:    make(map[string]topic.Topic),
 		KvStores:  make(map[string]keyvalue.Keyvalue),

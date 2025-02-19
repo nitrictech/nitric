@@ -56,7 +56,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	}
 
 	// If the database is enabled, set the database connection string
-	if a.Stack.DatabaseServerFqdnOutput() != nil {
+	if *a.Stack.EnableDatabase() {
 		jsiiEnv["NITRIC_DATABASE_BASE_URL"] = jsii.Sprintf("postgres://%s:%s@%s:%s", "nitric", *a.Stack.DatabaseMasterPasswordOutput(),
 			*a.Stack.DatabaseServerFqdnOutput(), "5432")
 	}

@@ -63,9 +63,13 @@ output "container_app_subnet_id" {
 }
 
 output "database_master_password" {
-  value = random_password.database_master_password.result
+  value = one(random_password.database_master_password) != null ? one(random_password.database_master_password).result : null
 }
 
 output "database_server_fqdn" {
-  value = azurerm_postgresql_server.database.fqdn
+  value = one(azurerm_postgresql_server.database) != null ? one(azurerm_postgresql_server.database).fqdn : null
+}
+
+output "database_server_name" {
+  value = one(azurerm_postgresql_server.database) != null ? one(azurerm_postgresql_server.database).name : null
 }

@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "3.0.2"
+    }
+  }
+}
+
 # Create a new postgresql database
 resource "azurerm_postgresql_database" "db" {
   name                = var.name

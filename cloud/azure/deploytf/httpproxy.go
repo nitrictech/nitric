@@ -15,6 +15,8 @@
 package deploytf
 
 import (
+	"strings"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
@@ -41,6 +43,48 @@ const proxyTemplate = `<policies>
 		<base />
 	</on-error>
 </policies>`
+
+func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name string, config *deploymentspb.Http) error {
+	operationPolicyTemplate := map[string]*string{}
+
+	spec := newApiSpec(name)
+
+	for _, path := range spec.Paths {
+		for _, op := range path.Operations() {
+			service := n.Services[config.Target.GetService()]
+
+			operationPolicyTemplate[op.OperationID] = jsii.Sprintf(proxyTemplate, *service.FqdnOutput(), *service.ClientIdOutput(), *service.ClientIdOutput())
+		}
+	}
+
+	b, err := spec.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	// Limit to 42 as the random stack ID that appends is 8 characters
+	cleanName := strings.ReplaceAll(name, "_", "-")
+	if len(cleanName) > 42 {
+		cleanName = cleanName[:42]
+	}
+
+	n.Proxies[name] = http_proxy.NewHttpProxy(stack, jsii.String(cleanName), &http_proxy.HttpProxyConfig{
+		Name:                     jsii.String(cleanName),
+		PublisherName:            jsii.String(n.AzureConfig.Org),
+		PublisherEmail:           jsii.String(n.AzureConfig.AdminEmail),
+		Location:                 jsii.String(n.Region),
+		ResourceGroupName:        n.Stack.ResourceGroupNameOutput(),
+		AppIdentity:              n.Stack.AppIdentityOutput(),
+		Description:              jsii.Sprintf("Nitric HTTP Proxy for %s", n.Stack.StackNameOutput()),
+		OperationPolicyTemplates: &operationPolicyTemplate,
+
+		// No need to transform the openapi spec, we can just pass it directly
+		// We provide a seperate array for the creation of operation policies for the API
+		OpenapiSpec: jsii.String(string(b)),
+	})
+
+	return nil
+}
 
 func newApiSpec(name string) *openapi3.T {
 	doc := &openapi3.T{
@@ -80,40 +124,4 @@ func getOperation(operationId string) *openapi3.Operation {
 			},
 		},
 	}
-}
-
-func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name string, config *deploymentspb.Http) error {
-	operationPolicyTemplate := map[string]*string{}
-
-	for _, path := range spec.Paths {
-		for _, op := range path.Operations() {
-			service := n.Services[config.Target.GetService()]
-
-			operationPolicyTemplate[op.OperationID] = jsii.Sprintf(proxyTemplate, *service.FqdnOutput(), *service.ClientIdOutput(), *service.ClientIdOutput())
-		}
-	}
-
-	spec := newApiSpec(name)
-
-	b, err := spec.MarshalJSON()
-	if err != nil {
-		return err
-	}
-
-	n.Proxies[name] = http_proxy.NewHttpProxy(stack, jsii.String(name), &http_proxy.HttpProxyConfig{
-		Name:                     jsii.String(name),
-		PublisherName:            jsii.String(n.AzureConfig.Org),
-		PublisherEmail:           jsii.String(n.AzureConfig.AdminEmail),
-		Location:                 jsii.String(n.Region),
-		ResourceGroupName:        n.Stack.ResourceGroupNameOutput(),
-		AppIdentity:              n.Stack.AppIdentityOutput(),
-		Description:              jsii.Sprintf("Nitric HTTP Proxy for %s", n.Stack.StackNameOutput()),
-		OperationPolicyTemplates: &policyTemplates,
-
-		// No need to transform the openapi spec, we can just pass it directly
-		// We provide a seperate array for the creation of operation policies for the API
-		OpenapiSpec: jsii.String(string(b)),
-	})
-
-	return nil
 }
