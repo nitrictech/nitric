@@ -43,17 +43,26 @@ data "azuread_client_config" "current" {}
 
 data "azurerm_client_config" "current" {}
 
+variable "role_names" {
+  type = map(string)
+  default = {
+    "KVSecretsOfficer"    = "Key Vault Secrets Officer"
+    "BlobDataContrib"     = "Storage Blob Data Contributor"
+    "QueueDataContrib"    = "Storage Queue Data Contributor"
+    "EventGridDataSender" = "Event Grid Data Sender"
+    "TagContributor"      = "Tag Contributor"
+  }
+}
+
+data "azurerm_role_definition" "roles" {
+  for_each = var.role_names
+  name     = each.value
+}
+
 locals {
   app_role_id    = "4962773b-9cdb-44cf-a8bf-237846a00ab7"
   repository_url = "${var.registry_login_server}/${var.stack_name}-${var.name}"
-  # TODO: Remove these hardcoded role definitions
-  role_definitions = {
-    "KVSecretsOfficer"    = "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
-    "BlobDataContrib"     = "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
-    "QueueDataContrib"    = "974c5e8b-45b9-4653-ba55-5f855dd0fb88"
-    "EventGridDataSender" = "d5a91429-5739-47e2-a06b-3470a27159e7"
-    "TagContributor"      = "4a9ae827-6dc8-4573-8ac7-8239d42aa03f"
-  }
+  role_definitions = { for k, v in data.azurerm_role_definition.roles : k => v.id }
 }
 
 # Create a new azure ad service principal
