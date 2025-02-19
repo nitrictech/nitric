@@ -181,7 +181,7 @@ func (a *NitricAzureTerraformProvider) Policy(stack cdktf.TerraformStack, name s
 					ServicePrincipalId: spId,
 					Scope:              scope.Scope,
 					RoleDefinitionId:   role,
-					DependsOn:          &[]cdktf.ITerraformDependable{scope.Dependency},
+					DependsOn:          &[]cdktf.ITerraformDependable{scope.Dependency, a.Roles},
 				})
 			}
 		}
