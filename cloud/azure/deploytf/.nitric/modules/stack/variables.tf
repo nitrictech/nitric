@@ -25,9 +25,3 @@ variable "location" {
     description = "The location/region where the resources will be created"
     type        = string
 }
-
-variable "schedules" {
-  description = "List of service names which contain a schedule"
-  type        = list(string)
-  default     = []
-}

@@ -136,13 +136,6 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		return item.Id.GetType() == resourcespb.ResourceType_Secret
 	})
 
-	// Returns a list of service names which contain a schedule
-	schedules := lo.Map(lo.Filter(resources, func(item *deploymentspb.Resource, _ int) bool {
-		return item.Id.GetType() == resourcespb.ResourceType_Schedule
-	}), func(item *deploymentspb.Resource, _ int) string {
-		return item.GetSchedule().GetTarget().GetService()
-	})
-
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
 		EnableStorage:  jsii.Bool(enableStorage),
@@ -150,7 +143,6 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		EnableKeyvault: jsii.Bool(enableKeyvault),
 		Location:       jsii.String(a.Region),
 		StackName:      jsii.String(a.StackName),
-		Schedules:      jsii.Strings(schedules...),
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
