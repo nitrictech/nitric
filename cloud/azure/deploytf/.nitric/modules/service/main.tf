@@ -105,7 +105,7 @@ resource "random_string" "container_app_id" {
 }
 
 locals {
-  truncated_name = substr(var.name, 0, 27) # Truncate the name to 27 characters to ensure the container app name is within the 32 character limit
+  truncated_name     = substr(var.name, 0, 27) # Truncate the name to 27 characters to ensure the container app name is within the 32 character limit
   container_app_name = "${lower(replace(local.truncated_name, "_", "-"))}-${random_string.container_app_id.result}"
 }
 
@@ -128,7 +128,7 @@ resource "azurerm_container_app" "container_app" {
     target_port      = 9001
     traffic_weight {
       latest_revision = true
-      percentage = 100
+      percentage      = 100
     }
   }
 
@@ -154,6 +154,9 @@ resource "azurerm_container_app" "container_app" {
   }
 
   template {
+    min_replicas = var.min_replicas
+    max_replicas = var.max_replicas
+
     container {
       name   = "myapp"
       image  = docker_registry_image.push.name
@@ -213,7 +216,7 @@ resource "azurerm_container_app" "container_app" {
       }
     }
   }
-  depends_on = [ docker_registry_image.push ]
+  depends_on = [docker_registry_image.push]
 }
 resource "azapi_resource_action" "my_app_auth" {
   depends_on = [azurerm_container_app.container_app]
@@ -232,7 +235,7 @@ resource "azapi_resource_action" "my_app_auth" {
         azureActiveDirectory = {
           enabled = true
           registration = {
-            clientId                =  azuread_application.service_identity.client_id
+            clientId                = azuread_application.service_identity.client_id
             clientSecretSettingName = "client-secret"
             openIdIssuer            = "https://sts.windows.net/${data.azuread_client_config.current.tenant_id}/v2.0"
           }

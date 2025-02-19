@@ -55,12 +55,6 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		jsiiEnv[k] = jsii.String(v)
 	}
 
-	// If the database is enabled, set the database connection string
-	// if a.Rds != nil {
-	// 	jsiiEnv["NITRIC_DATABASE_BASE_URL"] = jsii.Sprintf("postgres://%s:%s@%s:%s", *a.Rds.ClusterUsernameOutput(), *a.Rds.ClusterPasswordOutput(),
-	// 		*a.Rds.ClusterEndpointOutput(), "5432")
-	// }
-
 	a.Services[name] = service.NewService(stack, jsii.String(name), &service.ServiceConfig{
 		Name:                      jsii.String(name),
 		StackName:                 a.Stack.StackNameOutput(),
@@ -74,6 +68,8 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		Cpu:                       jsii.Number(serviceConfig.ContainerApps.Cpu),
 		Memory:                    jsii.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
 		DependsOn:                 &[]cdktf.ITerraformDependable{a.Stack},
+		MinReplicas:               jsii.Number(serviceConfig.ContainerApps.MinReplicas),
+		MaxReplicas:               jsii.Number(serviceConfig.ContainerApps.MaxReplicas),
 	})
 
 	return nil
