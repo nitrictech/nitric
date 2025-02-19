@@ -26,6 +26,12 @@ import (
 func (a *NitricAzureTerraformProvider) Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error {
 	targetService := a.Services[config.GetTarget().GetService()]
 
+	//	If this instance contains a schedule set the minimum instances to 1
+	// schedules rely on the Dapr Runtime to trigger the function, without a running instance the Dapr Runtime will not execute, so the schedule won't trigger.
+	if targetService.MinReplicas() == nil || *targetService.MinReplicas() < 1 {
+		targetService.SetMinReplicas(jsii.Number(1))
+	}
+
 	cronExpression, err := deploy.GenerateCronExpression(config)
 	if err != nil {
 		return err
