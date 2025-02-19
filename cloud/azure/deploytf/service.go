@@ -23,6 +23,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/samber/lo"
 )
 
 func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name string, config *deploymentspb.Service, runtimeProvider provider.RuntimeProvider) error {
@@ -61,6 +62,10 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	// 		*a.Rds.ClusterEndpointOutput(), "5432")
 	// }
 
+	scheduleList := lo.Map(*a.Stack.Schedules(), func(s *string, _ int) string {
+		return *s
+	})
+
 	a.Services[name] = service.NewService(stack, jsii.String(name), &service.ServiceConfig{
 		Name:                      jsii.String(name),
 		StackName:                 a.Stack.StackNameOutput(),
@@ -74,6 +79,8 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		Cpu:                       jsii.Number(serviceConfig.ContainerApps.Cpu),
 		Memory:                    jsii.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
 		DependsOn:                 &[]cdktf.ITerraformDependable{a.Stack},
+		MinReplicas:               jsii.Number(0),
+		IsSchedule:                jsii.Bool(lo.Contains(scheduleList, name)),
 	})
 
 	return nil

@@ -107,6 +107,7 @@ resource "random_string" "container_app_id" {
 locals {
   truncated_name = substr(var.name, 0, 27) # Truncate the name to 27 characters to ensure the container app name is within the 32 character limit
   container_app_name = "${lower(replace(local.truncated_name, "_", "-"))}-${random_string.container_app_id.result}"
+  min_replicas  = var.is_schedule ? max(1, var.min_replicas) : var.min_replicas
 }
 
 # Create a new container app
@@ -154,6 +155,8 @@ resource "azurerm_container_app" "container_app" {
   }
 
   template {
+    min_replicas = local.min_replicas
+
     container {
       name   = "myapp"
       image  = docker_registry_image.push.name

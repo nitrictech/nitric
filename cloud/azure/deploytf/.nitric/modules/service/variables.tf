@@ -53,3 +53,13 @@ variable "env" {
     description = "The environment variables to set"
     type        = map(string)
 }
+
+variable "is_schedule" { 
+    description = "Does this service contain a schedule"
+    type        = bool
+}
+
+variable "min_replicas" {
+  description = "Minimum number of replicas for the service"
+  type        = number
+}
