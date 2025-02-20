@@ -139,7 +139,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 
 				app, ok := n.Services[target]
 				if !ok {
-					return fmt.Errorf("unable to find container app for service: %s", target)
+					return fmt.Errorf("unable to find container app for service: %s in api", target, name)
 				}
 
 				// Add the service as a dependency

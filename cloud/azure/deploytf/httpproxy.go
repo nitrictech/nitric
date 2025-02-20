@@ -15,6 +15,7 @@
 package deploytf
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/aws/jsii-runtime-go"
@@ -49,9 +50,17 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 
 	spec := newApiSpec(name)
 
+	dependsOnServices := map[string]cdktf.ITerraformDependable{}
+
 	for _, path := range spec.Paths {
 		for _, op := range path.Operations() {
-			service := n.Services[config.Target.GetService()]
+			target := config.Target.GetService()
+			service, ok := n.Services[target]
+			if !ok {
+				return fmt.Errorf("unable to find container app for service: %s in http proxy: %s", target, name)
+			}
+
+			dependsOnServices[target] = service
 
 			operationPolicyTemplate[op.OperationID] = jsii.Sprintf(proxyTemplate, *service.FqdnOutput(), *service.ClientIdOutput(), *service.ClientIdOutput())
 		}
@@ -68,6 +77,11 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 		cleanName = cleanName[:42]
 	}
 
+	dependsOn := []cdktf.ITerraformDependable{}
+	for _, v := range dependsOnServices {
+		dependsOn = append(dependsOn, v)
+	}
+
 	n.Proxies[name] = http_proxy.NewHttpProxy(stack, jsii.String(cleanName), &http_proxy.HttpProxyConfig{
 		Name:                     jsii.String(cleanName),
 		PublisherName:            jsii.String(n.AzureConfig.Org),
@@ -77,6 +91,7 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 		AppIdentity:              n.Stack.AppIdentityOutput(),
 		Description:              jsii.Sprintf("Nitric HTTP Proxy for %s", *n.Stack.StackNameOutput()),
 		OperationPolicyTemplates: &operationPolicyTemplate,
+		DependsOn:                &dependsOn,
 
 		// No need to transform the openapi spec, we can just pass it directly
 		// We provide a seperate array for the creation of operation policies for the API
