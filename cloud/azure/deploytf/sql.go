@@ -33,6 +33,7 @@ func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, n
 		Location:                   jsii.String(n.Region),
 		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
 		MigrationImage:             jsii.String(config.GetImageUri()),
+		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
 	})
 
 	return nil

@@ -18,30 +18,39 @@ resource "azurerm_postgresql_database" "db" {
 
 # Push the migration image
 data "docker_image" "latest" {
-  name = var.image_uri
+  count = var.migration_image != "" ? 1 : 0
+
+  name = var.migration_image
 }
 
 locals {
+  count = var.migration_image != "" ? 1 : 0
+
   remote_image_name = "${var.image_registry_server}/${var.stack_name}-${var.name}"
 }
 
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
-  source_image = data.docker_image.latest.repo_digest
+  count = var.migration_image != "" ? 1 : 0
+
+  source_image = data.docker_image.latest[0].repo_digest
   target_image = local.remote_image_name
 }
 
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
+  count = var.migration_image != "" ? 1 : 0
+
   name = local.remote_image_name
   triggers = {
-    source_image_id = docker_tag.tag.source_image_id
+    source_image_id = docker_tag.tag[0].source_image_id
   }
 }
 
-
 # Create a new azure container instances to execute the migration
 resource "azurerm_container_group" "migration" {
+  count = var.migration_image != "" ? 1 : 0
+
   name                = "${var.name}-migration"
   location            = var.location
   resource_group_name = var.resource_group_name
@@ -49,7 +58,6 @@ resource "azurerm_container_group" "migration" {
   dns_name_label      = "${var.name}-migration"
   restart_policy      = "Never"
   sku = "Standard"
-
 
   subnet_ids = [ var.migration_container_subnet_id ]
 
@@ -65,7 +73,7 @@ resource "azurerm_container_group" "migration" {
     memory = 1
 
     environment_variables = {
-      DB_URL = azurerm_postgresql_server.db_flexible_connection_strings[0].value
+      DB_URL = var.database_server_fqdn
       NITRIC_DB_NAME = var.name
     }
   }

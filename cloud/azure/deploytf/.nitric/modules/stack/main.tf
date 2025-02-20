@@ -60,6 +60,14 @@ resource "azurerm_subnet" "database_subnet" {
   resource_group_name  = azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.0.0/18"]
+
+  delegation {
+    name = "db-delegation"
+    service_delegation {
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"]
+    }
+  }
 }
 
 # Create an infrastructure subnet for the database server
@@ -114,26 +122,27 @@ resource "random_password" "database_master_password" {
 }
 
 # Create a database service if required
-resource "azurerm_postgresql_server" "database" {
+resource "azurerm_postgresql_flexible_server" "database" {
   count = var.enable_database ? 1 : 0
 
   name                         = "nitric-database"
   resource_group_name          = azurerm_resource_group.resource_group.name
   location                     = azurerm_resource_group.resource_group.location
-  version                      = "10.0"
+  version                      = "14"
   administrator_login          = "nitric"
-  administrator_login_password = random_password.database_master_password[0].result
+  administrator_password  = random_password.database_master_password[0].result
 
-  public_network_access_enabled = false
+  public_network_access_enabled     = false
+  
+  delegated_subnet_id = azurerm_subnet.database_subnet[0].id
+  private_dns_zone_id = azurerm_private_dns_zone.database_dns_zone[0].id
 
-  ssl_enforcement_enabled = true
-
-  # default to 5Gb storage
+  # default to 32Gb storage
   # TODO: Make configurable   
-  storage_mb = 5120
+  storage_mb = 32768
 
   # TODO: Make configurable  
-  sku_name = "B_Gen4_1"
+  sku_name = "B_Standard_B1ms"
 
   tags = {
     "x-nitric-${local.stack_name}-name" = var.stack_name
@@ -146,9 +155,11 @@ resource "azurerm_postgresql_virtual_network_rule" "example" {
 
   name                                 = "postgresql-vnet-rule"
   resource_group_name                  = azurerm_resource_group.resource_group.name
-  server_name                          = azurerm_postgresql_server.database[0].name
+  server_name                          = azurerm_postgresql_flexible_server.database[0].name
   subnet_id                            = azurerm_subnet.database_subnet[0].id
   ignore_missing_vnet_service_endpoint = true
+
+  depends_on = [ azurerm_postgresql_flexible_server.database ]
 }
 
 # Create a keyvault if secrets are enabled

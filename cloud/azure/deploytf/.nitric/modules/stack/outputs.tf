@@ -67,9 +67,9 @@ output "database_master_password" {
 }
 
 output "database_server_fqdn" {
-  value = one(azurerm_postgresql_server.database) != null ? one(azurerm_postgresql_server.database).fqdn : null
+  value = one(azurerm_postgresql_flexible_server.database) != null ? one(azurerm_postgresql_flexible_server.database).fqdn : null
 }
 
 output "database_server_name" {
-  value = one(azurerm_postgresql_server.database) != null ? one(azurerm_postgresql_server.database).name : null
+  value = one(azurerm_postgresql_flexible_server.database) != null ? one(azurerm_postgresql_flexible_server.database).name : null
 }

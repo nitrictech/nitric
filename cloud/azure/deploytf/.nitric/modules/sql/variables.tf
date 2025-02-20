@@ -48,4 +48,7 @@ variable "image_registry_password" {
   type        = string
 }
 
-
+variable "database_server_fqdn" {
+  description = "The database server fully qualified domain name"
+  type = string
+}
