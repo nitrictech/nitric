@@ -66,10 +66,12 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		RegistryUsername:          a.Stack.RegistryUsernameOutput(),
 		RegistryPassword:          a.Stack.RegistryPasswordOutput(),
 		Cpu:                       jsii.Number(serviceConfig.ContainerApps.Cpu),
-		Memory:                    jsii.Sprintf("%.2fGi", serviceConfig.ContainerApps.Memory),
-		DependsOn:                 &[]cdktf.ITerraformDependable{a.Stack},
-		MinReplicas:               jsii.Number(serviceConfig.ContainerApps.MinReplicas),
-		MaxReplicas:               jsii.Number(serviceConfig.ContainerApps.MaxReplicas),
+		// Format memory to a single decimal place (e.g., "0.5Gi") to prevent unnecessary
+		// changes in Terraform or other tools that may interpret "0.50Gi" as a difference.
+		Memory:      jsii.Sprintf("%.1fGi", serviceConfig.ContainerApps.Memory),
+		DependsOn:   &[]cdktf.ITerraformDependable{a.Stack},
+		MinReplicas: jsii.Number(serviceConfig.ContainerApps.MinReplicas),
+		MaxReplicas: jsii.Number(serviceConfig.ContainerApps.MaxReplicas),
 	})
 
 	return nil
