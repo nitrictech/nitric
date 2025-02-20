@@ -107,6 +107,8 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 
 	policyTemplates := map[string]*string{}
 
+	dependsOnServices := map[string]cdktf.ITerraformDependable{}
+
 	for _, pathItem := range openapiDoc.Paths {
 		for _, op := range pathItem.Operations() {
 			if v, ok := op.Extensions["x-nitric-target"]; ok {
@@ -140,6 +142,9 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 					return fmt.Errorf("unable to find container app for service: %s", target)
 				}
 
+				// Add the service as a dependency
+				dependsOnServices[target] = app
+
 				policyTemplates[op.OperationID] = jsii.Sprintf(policyTemplate, fmt.Sprintf("%s%s%s", *app.FqdnOutput(), "/x-nitric-api/", name), jwtTemplateString, *app.ClientIdOutput(), *n.Stack.AppIdentityClientIdOutput())
 
 				if err != nil {
@@ -151,6 +156,11 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 		}
 	}
 
+	dependsOn := []cdktf.ITerraformDependable{}
+	for _, v := range dependsOnServices {
+		dependsOn = append(dependsOn, v)
+	}
+
 	n.Apis[name] = api.NewApi(stack, jsii.String(name), &api.ApiConfig{
 		Name:                     jsii.String(name),
 		PublisherName:            jsii.String(n.AzureConfig.Org),
@@ -159,6 +169,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 		ResourceGroupName:        n.Stack.ResourceGroupNameOutput(),
 		AppIdentity:              n.Stack.AppIdentityOutput(),
 		Description:              description,
+		DependsOn:                &dependsOn,
 		OperationPolicyTemplates: &policyTemplates,
 
 		// No need to transform the openapi spec, we can just pass it directly
