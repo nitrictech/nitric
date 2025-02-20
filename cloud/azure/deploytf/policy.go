@@ -75,7 +75,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.EventGrid/topics/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.EventGrid/topics/%s",
 				*p.Stack.SubscriptionIdOutput(),
 				*p.Stack.ResourceGroupNameOutput(),
 				*topic.Name(),
@@ -90,7 +90,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
 				*p.Stack.SubscriptionIdOutput(),
 				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.StorageAccountNameOutput(),
@@ -105,7 +105,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 		}
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",
 				*p.Stack.SubscriptionIdOutput(),
 				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.StorageAccountNameOutput(),
@@ -121,7 +121,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
 				*p.Stack.SubscriptionIdOutput(),
 				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.StorageAccountNameOutput(),
@@ -136,7 +136,7 @@ func (p *NitricAzureTerraformProvider) scopeFromResource(resource *deploymentspb
 
 		return &ResourceScope{
 			Scope: jsii.Sprintf(
-				"subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
+				"/subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
 				*p.Stack.SubscriptionIdOutput(),
 				*p.Stack.ResourceGroupNameOutput(),
 				*p.Stack.KeyvaultNameOutput(),
