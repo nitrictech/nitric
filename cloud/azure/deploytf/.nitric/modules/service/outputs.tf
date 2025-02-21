@@ -9,8 +9,15 @@ output "dapr_app_id" {
 }
 
 output "fqdn" {
+  description = "The domain name of the container app"
+  # Gets the persistent endpoint of the container app, not the latest revision
+  # See: https://github.com/hashicorp/terraform-provider-azurerm/issues/26559
+  value = azurerm_container_app.container_app.ingress[0].fqdn
+}
+
+output "endpoint" {
   description = "The endpoint of the container app"
-  value       = azurerm_container_app.container_app.latest_revision_fqdn
+  value       = "https://${azurerm_container_app.container_app.ingress[0].fqdn}"
 }
 
 output "event_token" {
@@ -35,13 +42,6 @@ output "service_principal_id" {
 output "tenant_id" {
   description = "The tenant id of the container app"
   value       = data.azurerm_client_config.current.tenant_id
-}
-
-output "endpoint" {
-  description = "The endpoint of the container app"
-  # Gets the persistent endpoint of the container app, not the latest revision
-  # See: https://github.com/hashicorp/terraform-provider-azurerm/issues/26559
-  value = "https://${azurerm_container_app.container_app.ingress[0].fqdn}"
 }
 
 output "poll_url" {
