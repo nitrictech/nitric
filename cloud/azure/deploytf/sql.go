@@ -22,6 +22,8 @@ import (
 )
 
 func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
+	dependsOnServer := []cdktf.ITerraformDependable{n.Stack}
+
 	n.Databases[name] = sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
 		ImageRegistryServer:        n.Stack.RegistryLoginServerOutput(),
 		ImageRegistryUsername:      n.Stack.RegistryUsernameOutput(),
@@ -34,6 +36,7 @@ func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, n
 		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
 		MigrationImage:             jsii.String(config.GetImageUri()),
 		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
+		DependsOn:                  &dependsOnServer,
 	})
 
 	return nil

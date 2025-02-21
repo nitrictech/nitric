@@ -50,6 +50,8 @@ resource "azurerm_virtual_network" "database_network" {
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   address_space       = ["10.0.0.0/16"]
+
+  flow_timeout_in_minutes = 10
 }
 
 # Create a subnet for the database server
@@ -65,7 +67,6 @@ resource "azurerm_subnet" "database_subnet" {
     name = "db-delegation"
     service_delegation {
       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"]
     }
   }
 }
@@ -78,6 +79,8 @@ resource "azurerm_subnet" "database_infrastructure_subnet" {
   resource_group_name  = azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.64.0/18"]
+
+  depends_on = [ azurerm_subnet.database_subnet ]
 }
 
 # Create a subnet for containers to connect to the database
@@ -88,6 +91,15 @@ resource "azurerm_subnet" "database_client_subnet" {
   resource_group_name  = azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.192.0/18"]
+
+  delegation {
+    name = "container-instance-delegation"
+    service_delegation {
+      name = "Microsoft.ContainerInstance/containerGroups"
+    }
+  }
+
+  depends_on = [ azurerm_subnet.database_infrastructure_subnet ]
 }
 
 # Create a private zone for the database server
@@ -148,18 +160,12 @@ resource "azurerm_postgresql_flexible_server" "database" {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
   }
-}
 
-resource "azurerm_postgresql_virtual_network_rule" "example" {
-  count = var.enable_database ? 1 : 0
-
-  name                                 = "postgresql-vnet-rule"
-  resource_group_name                  = azurerm_resource_group.resource_group.name
-  server_name                          = azurerm_postgresql_flexible_server.database[0].name
-  subnet_id                            = azurerm_subnet.database_subnet[0].id
-  ignore_missing_vnet_service_endpoint = true
-
-  depends_on = [ azurerm_postgresql_flexible_server.database ]
+  depends_on = [ 
+    azurerm_subnet.database_subnet,
+    azurerm_private_dns_zone.database_dns_zone,
+    azurerm_private_dns_zone_virtual_network_link.database_link_service
+  ]
 }
 
 # Create a keyvault if secrets are enabled
