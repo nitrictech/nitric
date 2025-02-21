@@ -62,7 +62,7 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 
 			dependsOnServices[target] = service
 
-			operationPolicyTemplate[op.OperationID] = jsii.Sprintf(proxyTemplate, *service.FqdnOutput(), *service.ClientIdOutput(), *service.ClientIdOutput())
+			operationPolicyTemplate[op.OperationID] = jsii.Sprintf(proxyTemplate, *service.FqdnOutput(), *service.ClientIdOutput(), *n.Stack.AppIdentityClientIdOutput())
 		}
 	}
 
