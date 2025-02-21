@@ -46,13 +46,8 @@ data "azurerm_client_config" "current" {}
 locals {
   app_role_id    = "4962773b-9cdb-44cf-a8bf-237846a00ab7"
   repository_url = "${var.registry_login_server}/${var.stack_name}-${var.name}"
-  # TODO: Remove these hardcoded role definitions
   role_definitions = {
-    "KVSecretsOfficer"    = "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
-    "BlobDataContrib"     = "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
-    "QueueDataContrib"    = "974c5e8b-45b9-4653-ba55-5f855dd0fb88"
-    "EventGridDataSender" = "d5a91429-5739-47e2-a06b-3470a27159e7"
-    "TagContributor"      = "4a9ae827-6dc8-4573-8ac7-8239d42aa03f"
+    "TagContributor" = "4a9ae827-6dc8-4573-8ac7-8239d42aa03f"
   }
 }
 
@@ -218,6 +213,7 @@ resource "azurerm_container_app" "container_app" {
   }
   depends_on = [docker_registry_image.push]
 }
+
 resource "azapi_resource_action" "my_app_auth" {
   depends_on = [azurerm_container_app.container_app]
 
