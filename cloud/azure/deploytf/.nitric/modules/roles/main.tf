@@ -66,6 +66,7 @@ resource "azurerm_role_definition" "nitric_role_queue_enqueue" {
 
   assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
+
 resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
   description = "nitric queue dequeue access"
   name        = "QueueDequeue"

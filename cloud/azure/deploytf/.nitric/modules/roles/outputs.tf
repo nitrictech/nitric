@@ -1,25 +1,25 @@
 output "bucket_read" {
-  value = azurerm_role_definition.nitric_role_bucket_file_get.role_definition_resource_id
+  value       = azurerm_role_definition.nitric_role_bucket_file_get.role_definition_resource_id
   description = "The role ID for the Nitric bucket read role"
 }
 
 output "topic_publish" {
-  value = azurerm_role_definition.nitric_role_topic_publish.role_definition_resource_id
+  value       = azurerm_role_definition.nitric_role_topic_publish.role_definition_resource_id
   description = "The role ID for the Nitric topic publish role"
 }
 
 output "bucket_write" {
-  value = azurerm_role_definition.nitric_role_bucket_file_put.role_definition_resource_id
+  value       = azurerm_role_definition.nitric_role_bucket_file_put.role_definition_resource_id
   description = "The role ID for the Nitric bucket write role"
 }
 
 output "bucket_delete" {
-  value = azurerm_role_definition.nitric_role_bucket_file_delete.role_definition_resource_id
+  value       = azurerm_role_definition.nitric_role_bucket_file_delete.role_definition_resource_id
   description = "The role ID for the Nitric bucket delete role"
 }
 
 output "bucket_list" {
-  value = azurerm_role_definition.nitric_role_bucket_file_list.role_definition_resource_id
+  value       = azurerm_role_definition.nitric_role_bucket_file_list.role_definition_resource_id
   description = "The role ID for the Nitric bucket list role"
 }
 
@@ -45,7 +45,7 @@ output "kv_write" {
 
 output "kv_delete" {
   value       = azurerm_role_definition.nitric_role_kv_delete.role_definition_resource_id
-  description = "The role ID for the Nitric kv write role"
+  description = "The role ID for the Nitric kv delete role"
 }
 
 output "queue_enqueue" {

@@ -66,8 +66,7 @@ resource "azuread_application" "service_identity" {
 
 resource "azuread_service_principal" "service_identity" {
   client_id = azuread_application.service_identity.client_id
-  #   app_role_assignment_required = false
-  owners = [data.azuread_client_config.current.object_id]
+  owners    = [data.azuread_client_config.current.object_id]
 }
 
 # Create a new app role assignment for the service principal
@@ -105,7 +104,6 @@ locals {
 }
 
 # Create a new container app
-# TODO...
 resource "azurerm_container_app" "container_app" {
   name                         = local.container_app_name
   container_app_environment_id = var.container_app_environment_id
@@ -237,11 +235,6 @@ resource "azapi_resource_action" "my_app_auth" {
           }
           validation = {
             allowedAudiences = azuread_application.service_identity.identifier_uris != null ? azuread_application.service_identity.identifier_uris : []
-            # defaultAuthorizationPolicy = {
-            #   allowedApplications = [
-            #     azuread_application.my_app.client_id,
-            #   ]
-            # }
           }
         }
       }

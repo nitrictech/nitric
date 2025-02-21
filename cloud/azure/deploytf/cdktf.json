@@ -39,10 +39,6 @@
       "source": "./.nitric/modules/queue"
     },
     {
-      "name": "secret",
-      "source": "./.nitric/modules/secret"
-    },
-    {
       "name": "keyvalue",
       "source": "./.nitric/modules/keyvalue"
     },
