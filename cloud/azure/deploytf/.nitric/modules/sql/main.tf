@@ -55,7 +55,6 @@ resource "azurerm_container_group" "migration" {
   location            = var.location
   resource_group_name = var.resource_group_name
   os_type             = "Linux"
-  dns_name_label      = "${var.name}-migration"
   restart_policy      = "Never"
   sku = "Standard"
 
