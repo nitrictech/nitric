@@ -6,8 +6,8 @@ output "database_server_fqdn" {
   value = azurerm_postgresql_flexible_server.database.fqdn
 }
 
-output "database_server_name" {
-  value = azurerm_postgresql_flexible_server.database.name
+output "database_server_id" {
+  value = azurerm_postgresql_flexible_server.database.id
 }
 
 output "infrastructure_subnet_id" {

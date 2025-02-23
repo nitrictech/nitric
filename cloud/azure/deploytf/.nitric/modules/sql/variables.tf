@@ -18,8 +18,8 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "server_name" {
-  description = "The name of the postgresql server"
+variable "server_id" {
+  description = "The id of the postgresql flexible server"
   type        = string
 }
 
