@@ -7,13 +7,20 @@ terraform {
   }
 }
 
+data "azurerm_postgresql_flexible_server" "database_server" {
+  name = var.server_name
+  resource_group_name = var.resource_group_name
+}
+
 # Create a new postgresql database
 resource "azurerm_postgresql_database" "db" {
   name                = var.name
   resource_group_name = var.resource_group_name
-  server_name         = var.server_name
+  server_name         = data.azurerm_postgresql_flexible_server.database_server.name
   charset             = "UTF8"
   collation           = "en_US.UTF8"
+
+  depends_on = [ data.azurerm_postgresql_flexible_server.database_server ]
 }
 
 # Push the migration image

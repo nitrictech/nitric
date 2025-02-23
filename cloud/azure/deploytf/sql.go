@@ -22,21 +22,25 @@ import (
 )
 
 func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	dependsOnServer := []cdktf.ITerraformDependable{n.Stack}
+	dependsOnServer := []cdktf.ITerraformDependable{n.DatabaseServer}
 
 	n.Databases[name] = sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
-		ImageRegistryServer:        n.Stack.RegistryLoginServerOutput(),
-		ImageRegistryUsername:      n.Stack.RegistryUsernameOutput(),
-		ImageRegistryPassword:      n.Stack.RegistryPasswordOutput(),
-		Name:                       jsii.String(name),
-		StackName:                  n.Stack.StackNameOutput(),
-		ResourceGroupName:          n.Stack.ResourceGroupNameOutput(),
-		ServerName:                 n.Stack.DatabaseServerNameOutput(),
-		Location:                   jsii.String(n.Region),
-		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
+		Name:              jsii.String(name),
+		StackName:         n.Stack.StackNameOutput(),
+		ResourceGroupName: n.Stack.ResourceGroupNameOutput(),
+		Location:          jsii.String(n.Region),
+
+		ImageRegistryServer:   n.Stack.RegistryLoginServerOutput(),
+		ImageRegistryUsername: n.Stack.RegistryUsernameOutput(),
+		ImageRegistryPassword: n.Stack.RegistryPasswordOutput(),
+
+		ServerName:         n.DatabaseServer.DatabaseServerNameOutput(),
+		DatabaseServerFqdn: n.DatabaseServer.DatabaseServerFqdnOutput(),
+
+		MigrationContainerSubnetId: n.DatabaseServer.ContainerAppSubnetIdOutput(),
 		MigrationImage:             jsii.String(config.GetImageUri()),
-		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
-		DependsOn:                  &dependsOnServer,
+
+		DependsOn: &dependsOnServer,
 	})
 
 	return nil

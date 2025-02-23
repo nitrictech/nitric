@@ -32,6 +32,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/roles"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql_server"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
@@ -57,6 +58,8 @@ type NitricAzureTerraformProvider struct {
 	KvStores  map[string]keyvalue.Keyvalue
 	Topics    map[string]topic.Topic
 	Databases map[string]sql.Sql
+
+	DatabaseServer sql_server.SqlServer
 
 	SubscriptionId string
 	AzureConfig    *common.AzureConfig
@@ -141,11 +144,18 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
 		EnableStorage:  jsii.Bool(enableStorage),
-		EnableDatabase: jsii.Bool(enableDatabase),
 		EnableKeyvault: jsii.Bool(enableKeyvault),
 		Location:       jsii.String(a.Region),
 		StackName:      jsii.String(a.StackName),
 	})
+
+	if enableDatabase {
+		a.DatabaseServer = sql_server.NewSqlServer(tfstack, jsii.String("sql-server"), &sql_server.SqlServerConfig{
+			StackName:         jsii.String(a.StackName),
+			ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
+			Location:          a.Stack.Location(),
+		})
+	}
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),

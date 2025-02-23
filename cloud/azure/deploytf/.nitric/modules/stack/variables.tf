@@ -9,12 +9,6 @@ variable "enable_storage" {
     default     = false
 }
 
-variable "enable_database" {
-    description = "Enable the creation of a database"
-    type        = bool
-    default     = false
-}
-
 variable "enable_keyvault" {
     description = "Enable the creation of a keyvault"
     type        = bool
