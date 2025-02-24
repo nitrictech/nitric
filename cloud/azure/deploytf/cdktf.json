@@ -53,10 +53,6 @@
     {
       "name": "sql",
       "source": "./.nitric/modules/sql"
-    },
-    {
-      "name": "sql_server",
-      "source": "./.nitric/modules/sql_server"
     }
   ],
   "context": {}
