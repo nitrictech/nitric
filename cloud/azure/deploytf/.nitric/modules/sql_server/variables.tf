@@ -3,6 +3,11 @@ variable "stack_name" {
     type        = string
 }
 
+variable "stack_id" {
+    description = "The random id generated for this stack"
+    type = string
+}
+
 variable "location" {
     description = "The location/region where the resources will be created"
     type        = string

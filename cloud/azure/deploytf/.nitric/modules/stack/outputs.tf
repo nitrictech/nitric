@@ -2,6 +2,10 @@ output "stack_name" {
   value = local.stack_name
 }
 
+output "stack_id" {
+  value = random_string.stack_id.result
+}
+
 output "subscription_id" {
   value = data.azurerm_client_config.current.subscription_id
 }

@@ -15,10 +15,13 @@ resource "azurerm_subnet" "database_subnet" {
   virtual_network_name = azurerm_virtual_network.database_network.name
   address_prefixes     = ["10.0.0.0/18"]
 
+  service_endpoints    = ["Microsoft.Storage"]
+
   delegation {
     name = "db-delegation"
     service_delegation {
       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
 }
@@ -44,6 +47,7 @@ resource "azurerm_subnet" "database_client_subnet" {
     name = "container-instance-delegation"
     service_delegation {
       name = "Microsoft.ContainerInstance/containerGroups"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
 
@@ -77,12 +81,14 @@ resource "random_password" "database_master_password" {
 
 # Create a database service if required
 resource "azurerm_postgresql_flexible_server" "database" {
-  name                         = "nitric-db-${random_string.stack_id.result}"
+  name                         = "nitric-db-${var.stack_id}"
   resource_group_name          = var.resource_group_name
   location                     = var.location
   version                      = "14"
   administrator_login          = "nitric"
   administrator_password  = random_password.database_master_password.result
+
+  zone = "1"
 
   public_network_access_enabled     = false
   

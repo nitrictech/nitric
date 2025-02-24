@@ -152,6 +152,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 	if enableDatabase {
 		a.DatabaseServer = sql_server.NewSqlServer(tfstack, jsii.String("sql-server"), &sql_server.SqlServerConfig{
 			StackName:         jsii.String(a.StackName),
+			StackId:           a.Stack.StackIdOutput(),
 			ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 			Location:          a.Stack.Location(),
 		})

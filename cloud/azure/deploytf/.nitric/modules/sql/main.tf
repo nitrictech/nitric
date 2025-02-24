@@ -11,8 +11,8 @@ terraform {
 resource "azurerm_postgresql_flexible_server_database" "db" {
   name                = var.name
   server_id           = var.server_id
-  charset             = "UTF8"
-  collation           = "en_US.UTF8"
+  charset             = "utf8"
+  collation           = "en_US.utf8"
 }
 
 # Push the migration image
