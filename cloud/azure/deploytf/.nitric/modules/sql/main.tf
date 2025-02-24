@@ -16,7 +16,7 @@ resource "azurerm_postgresql_flexible_server_database" "db" {
 }
 
 locals {
-  count = var.migration_image != "" ? 1 : 0
+  count = var.migration_image_uri != "" ? 1 : 0
 
   remote_image_name = "${var.image_registry_server}/${var.stack_name}-${var.name}:latest"
 
@@ -25,15 +25,15 @@ locals {
 
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
-  count = var.migration_image != "" ? 1 : 0
+  count = var.migration_image_uri != "" ? 1 : 0
 
-  source_image = var.migration_image
+  source_image = var.migration_image_uri
   target_image = local.remote_image_name
 }
 
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
-  count = var.migration_image != "" ? 1 : 0
+  count = var.migration_image_uri != "" ? 1 : 0
 
   name = local.remote_image_name
 
@@ -44,7 +44,7 @@ resource "docker_registry_image" "push" {
 
 # Create a new azure container instances to execute the migration
 resource "azurerm_container_group" "migration" {
-  count = var.migration_image != "" ? 1 : 0
+  count = var.migration_image_uri != "" ? 1 : 0
 
   name                = "${var.name}-migration"
   location            = var.location

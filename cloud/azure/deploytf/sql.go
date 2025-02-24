@@ -18,11 +18,12 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql"
+	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
 func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
-	n.Databases[name] = sql.NewSql(stack, jsii.String(name), &sql.SqlConfig{
+	sqlConfig := &sql.SqlConfig{
 		Name:                       jsii.String(name),
 		StackName:                  n.Stack.StackNameOutput(),
 		ResourceGroupName:          n.Stack.ResourceGroupNameOutput(),
@@ -34,8 +35,19 @@ func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, n
 		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
 		DatabaseMasterPassword:     n.Stack.DatabaseMasterPasswordOutput(),
 		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
-		MigrationImage:             jsii.String(config.GetImageUri()),
-	})
+		DependsOn:                  &[]cdktf.ITerraformDependable{n.Stack},
+	}
+
+	if config.GetImageUri() != "" {
+		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
+		if err != nil {
+			return err
+		}
+
+		sqlConfig.MigrationImageUri = &inspect.ID
+	}
+
+	n.Databases[name] = sql.NewSql(stack, jsii.String(name), sqlConfig)
 
 	return nil
 }

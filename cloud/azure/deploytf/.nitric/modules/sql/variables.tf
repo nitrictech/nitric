@@ -23,7 +23,7 @@ variable "server_id" {
   type        = string
 }
 
-variable "migration_image" {
+variable "migration_image_uri" {
   description = "The migration image to use"
   type        = string
 }
