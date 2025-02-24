@@ -69,9 +69,11 @@ resource "azurerm_container_group" "migration" {
 
   container {
     name   = "${var.name}-migration"
-    image  = local.remote_image_name
+    # point to the pushed image sha256 digest to ensure container is updated when image changes
+    image  = "${var.image_registry_server}/${var.stack_name}-${var.name}@${docker_registry_image.push[count.index].sha256_digest}"
     cpu    = 1
     memory = 1
+    
 
     ports {
       port     = 80
