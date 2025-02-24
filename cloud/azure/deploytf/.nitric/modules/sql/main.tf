@@ -31,13 +31,18 @@ resource "docker_tag" "tag" {
   target_image = local.remote_image_name
 }
 
+data "docker_image" "latest" {
+  name = var.migration_image
+}
+
 # Push the tagged image to the ECR repository
 resource "docker_registry_image" "push" {
   count = var.migration_image != "" ? 1 : 0
 
   name = local.remote_image_name
+
   triggers = {
-    source_image_id = docker_tag.tag[0].source_image_id
+    source_image_id = data.docker_image.latest.id
   }
 }
 
