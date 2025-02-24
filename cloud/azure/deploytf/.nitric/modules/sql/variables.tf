@@ -52,3 +52,8 @@ variable "database_server_fqdn" {
   description = "The database server fully qualified domain name"
   type = string
 }
+
+variable "database_master_password" {
+  description = "The database master password"
+  type = string
+}

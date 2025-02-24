@@ -15,24 +15,19 @@ resource "azurerm_postgresql_flexible_server_database" "db" {
   collation           = "en_US.utf8"
 }
 
-# Push the migration image
-data "docker_image" "latest" {
-  count = var.migration_image != "" ? 1 : 0
-
-  name = var.migration_image
-}
-
 locals {
   count = var.migration_image != "" ? 1 : 0
 
-  remote_image_name = "${var.image_registry_server}/${var.stack_name}-${var.name}"
+  remote_image_name = "${var.image_registry_server}/${var.stack_name}-${var.name}:latest"
+
+  db_url = "postgres://nitric:${var.database_master_password}@${var.database_server_fqdn}:5432/${var.name}"
 }
 
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
   count = var.migration_image != "" ? 1 : 0
 
-  source_image = data.docker_image.latest[0].repo_digest
+  source_image = var.migration_image
   target_image = local.remote_image_name
 }
 
@@ -64,15 +59,26 @@ resource "azurerm_container_group" "migration" {
     username = var.image_registry_username
     password = var.image_registry_password
   }
+
+  ip_address_type = "Private"
+
   container {
     name   = "${var.name}-migration"
     image  = local.remote_image_name
     cpu    = 1
     memory = 1
 
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
+
     environment_variables = {
-      DB_URL = var.database_server_fqdn
+      DB_URL = local.db_url
       NITRIC_DB_NAME = var.name
     }
+    
   }
+
+  depends_on = [ docker_registry_image.push ]
 }

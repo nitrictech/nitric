@@ -32,6 +32,7 @@ func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, n
 		ImageRegistryPassword:      n.Stack.RegistryPasswordOutput(),
 		ServerId:                   n.Stack.DatabaseServerIdOutput(),
 		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
+		DatabaseMasterPassword:     n.Stack.DatabaseMasterPasswordOutput(),
 		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
 		MigrationImage:             jsii.String(config.GetImageUri()),
 	})
