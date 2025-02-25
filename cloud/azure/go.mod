@@ -29,16 +29,16 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
-	github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/app v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2 v2.39.0
-	github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.101.0
+	github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2 v2.88.0
+	github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/keyvault v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/managedidentity v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/network/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/network/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/operationalinsights v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
@@ -46,7 +46,7 @@ require (
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.53.5
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
-	github.com/pulumi/pulumi/sdk/v3 v3.137.0
+	github.com/pulumi/pulumi/sdk/v3 v3.150.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
 	github.com/valyala/fasthttp v1.55.0
@@ -267,9 +267,9 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
-	github.com/pulumi/esc v0.9.1 // indirect
-	github.com/pulumi/pulumi-azure-native-sdk v1.101.0 // indirect
-	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.44.0 // indirect
+	github.com/pulumi/esc v0.11.1 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk v1.104.0 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.88.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect

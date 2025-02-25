@@ -20,9 +20,8 @@ import (
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
-	"github.com/pulumi/pulumi-azure-native-sdk/eventgrid"
+	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
-	pulumiEventgrid "github.com/pulumi/pulumi-azure/sdk/v4/go/azure/eventgrid"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -60,18 +59,14 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 
 	subName := topicName + "-" + config.GetService()
 
-	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
+	_, err = eventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &eventgrid.EventSubscriptionArgs{
 		Scope: topic.ID(),
-		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
-			Url: pulumi.Sprintf("%s/%s/x-nitric-topic/%s", hostUrl, target.EventToken, topicName),
-			// Only send one event per batch to avoid a single failure nacking multiple events.
-			MaxEventsPerBatch:         pulumi.Int(1),
-			ActiveDirectoryAppIdOrUri: target.Sp.ClientID,
-			ActiveDirectoryTenantId:   target.Sp.TenantID,
-		},
-		RetryPolicy: pulumiEventgrid.EventSubscriptionRetryPolicyArgs{
-			MaxDeliveryAttempts: pulumi.Int(30),
-			EventTimeToLive:     pulumi.Int(5),
+		Destination: &eventgrid.WebHookEventSubscriptionDestinationArgs{
+			EndpointType:                           pulumi.String("WebHook"),
+			EndpointUrl:                            pulumi.Sprintf("%s/%s/x-nitric-topic/%s", hostUrl, target.EventToken, topicName),
+			MaxEventsPerBatch:                      pulumi.Int(1),
+			AzureActiveDirectoryApplicationIdOrUri: target.Sp.ClientID,
+			AzureActiveDirectoryTenantId:           target.Sp.TenantID,
 		},
 	}, opts...)
 

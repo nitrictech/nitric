@@ -20,8 +20,8 @@ import (
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
-	pulumiEventgrid "github.com/pulumi/pulumi-azure/sdk/v4/go/azure/eventgrid"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -59,22 +59,22 @@ func (p *NitricAzurePulumiProvider) newAzureBucketNotification(ctx *pulumi.Conte
 		return fmt.Errorf("unable to determine container app host URL: %w", err)
 	}
 
-	_, err = pulumiEventgrid.NewEventSubscription(ctx, ResourceName(ctx, bucketName+target.Name, EventSubscriptionRT), &pulumiEventgrid.EventSubscriptionArgs{
+	_, err = eventgrid.NewEventSubscription(ctx, ResourceName(ctx, bucketName+target.Name, EventSubscriptionRT), &eventgrid.EventSubscriptionArgs{
 		Scope: p.StorageAccount.ID(),
-		WebhookEndpoint: pulumiEventgrid.EventSubscriptionWebhookEndpointArgs{
-			Url: pulumi.Sprintf("%s/%s/x-nitric-notification/bucket/%s", hostUrl, target.EventToken, bucketName),
-			// Only send one event per batch to avoid a single failure nacking multiple events.
-			MaxEventsPerBatch:         pulumi.Int(1),
-			ActiveDirectoryAppIdOrUri: target.Sp.ClientID,
-			ActiveDirectoryTenantId:   target.Sp.TenantID,
+		Destination: &eventgrid.WebHookEventSubscriptionDestinationArgs{
+			EndpointType:                           pulumi.String("WebHook"),
+			EndpointUrl:                            pulumi.Sprintf("%s/%s/x-nitric-notification/bucket/%s", hostUrl, target.EventToken, bucketName),
+			MaxEventsPerBatch:                      pulumi.Int(1),
+			AzureActiveDirectoryApplicationIdOrUri: target.Sp.ClientID,
+			AzureActiveDirectoryTenantId:           target.Sp.TenantID,
 		},
-		RetryPolicy: pulumiEventgrid.EventSubscriptionRetryPolicyArgs{
-			MaxDeliveryAttempts: pulumi.Int(30),
-			EventTimeToLive:     pulumi.Int(5),
+		RetryPolicy: eventgrid.RetryPolicyArgs{
+			MaxDeliveryAttempts:      pulumi.Int(30),
+			EventTimeToLiveInMinutes: pulumi.Int(5),
 		},
-		IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&config.Config.BlobEventType)),
-		SubjectFilter: pulumiEventgrid.EventSubscriptionSubjectFilterArgs{
-			SubjectBeginsWith: pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", bucketName, removeWildcard(config.Config.KeyPrefixFilter)),
+		Filter: eventgrid.EventSubscriptionFilterArgs{
+			SubjectBeginsWith:  pulumi.Sprintf("/blobServices/default/containers/%s/blobs/%s", bucketName, removeWildcard(config.Config.KeyPrefixFilter)),
+			IncludedEventTypes: pulumi.ToStringArray(eventTypeToStorageEventType(&config.Config.BlobEventType)),
 		},
 	}, opts...)
 	if err != nil {
