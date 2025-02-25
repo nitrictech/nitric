@@ -50,14 +50,14 @@ jobs:
           key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
           restore-keys: |
             ${{ runner.os }}-golang-
+      - name: Linting check
+        run: make lint
       - name: Generate Sources
         run: make generate-sources
       - name: Check generated sources
         run: |
           git add .
           git diff --cached --quiet
-      - name: Linting check
-        run: make lint
       - name: Run Gosec Security Scanner
         run: make sec
       - name: Run Tests
