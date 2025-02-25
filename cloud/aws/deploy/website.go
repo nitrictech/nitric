@@ -44,17 +44,14 @@ import (
 func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error {
 	var err error
 
-	name := "website-bucket"
-	tags := common.Tags(a.StackId, name, resources.Bucket)
+	tags := common.Tags(a.StackId, a.websiteBucketName, resources.Website)
 
-	a.publicWebsiteBucket, err = s3.NewBucket(ctx, name, &s3.BucketArgs{
+	a.publicWebsiteBucket, err = s3.NewBucket(ctx, a.websiteBucketName, &s3.BucketArgs{
 		Tags: pulumi.ToStringMap(tags),
 	})
 	if err != nil {
 		return err
 	}
-
-	a.Buckets[name] = a.publicWebsiteBucket
 
 	return nil
 }

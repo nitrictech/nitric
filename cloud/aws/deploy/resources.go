@@ -83,6 +83,11 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		httpProxyEndpointMap[name] = proxy.ApiEndpoint
 	}
 
+	websiteBucketArnMap := pulumi.StringMap{}
+	if a.publicWebsiteBucket != nil {
+		websiteBucketArnMap[a.websiteBucketName] = a.publicWebsiteBucket.Arn
+	}
+
 	distributionsArnMap := pulumi.StringMap{}
 	for name, distribution := range a.Distributions {
 		distributionsArnMap[name] = distribution.Arn

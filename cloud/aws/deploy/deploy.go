@@ -67,6 +67,7 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
+	websiteBucketName         string
 	publicWebsiteBucket       *s3.Bucket
 	websiteDistribution       *cloudfront.Distribution
 	websiteChangedFileOutputs pulumi.StringArray
@@ -241,6 +242,9 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	})
 
 	if len(websites) > 0 {
+		// ensure name is unique for no conflicting bucket names
+		a.websiteBucketName = fmt.Sprintf("website-bucket-%s", a.StackId)
+
 		err := a.createWebsiteBucket(ctx)
 		if err != nil {
 			return err
