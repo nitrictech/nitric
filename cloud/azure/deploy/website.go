@@ -109,7 +109,6 @@ func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName s
 		return fmt.Errorf("failed to purge CDN endpoint: %w", err)
 	}
 
-	fmt.Println("Purge request submitted successfully.")
 	return nil
 }
 
