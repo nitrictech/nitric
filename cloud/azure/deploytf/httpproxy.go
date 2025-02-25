@@ -94,7 +94,7 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 		DependsOn:                &dependsOn,
 
 		// No need to transform the openapi spec, we can just pass it directly
-		// We provide a seperate array for the creation of operation policies for the API
+		// We provide a separate array for the creation of operation policies for the API
 		OpenapiSpec: jsii.String(string(b)),
 	})
 

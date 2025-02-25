@@ -173,7 +173,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 		OperationPolicyTemplates: &policyTemplates,
 
 		// No need to transform the openapi spec, we can just pass it directly
-		// We provide a seperate array for the creation of operation policies for the API
+		// We provide a separate array for the creation of operation policies for the API
 		OpenapiSpec: jsii.String(config.GetOpenapi()),
 	})
 
