@@ -77,6 +77,18 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		if d.IsDir() {
 			return nil
 		}
+
+		// Get file info to check for special types
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		// Skip non-regular files (e.g., symlinks, sockets, devices)
+		if info.Mode()&fs.ModeType != 0 {
+			return nil
+		}
+
 		// Determine the content type based on the file extension
 		contentType := mime.TypeByExtension(filepath.Ext(path))
 		if contentType == "" {
