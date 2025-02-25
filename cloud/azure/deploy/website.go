@@ -312,7 +312,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return parsed.Hostname(), nil
 	}).(pulumi.StringOutput)
 
-	endpointName := "website-endpoint"
+	endpointName := fmt.Sprintf("website-endpoint-%s", p.StackId)
 
 	deliveryRules := cdn.DeliveryRuleArray{}
 
