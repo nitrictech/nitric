@@ -82,7 +82,7 @@ generate-mocks: clean-mocks
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/2018-01-01/eventgrid/eventgridapi BaseClientAPI > mocks/mock_event_grid/mock.go
 	@go run github.com/golang/mock/mockgen github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2020-06-01/eventgrid/eventgridapi TopicsClientAPI > mocks/mock_event_grid/topic.go
 
-generate-sources: generate-mocks generate-terraform
+generate-sources: generate-mocks
 
 generate-terraform:
 	@cd deploytf && npx -y cdktf-cli@0.20.8 get
