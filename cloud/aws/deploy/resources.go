@@ -108,6 +108,7 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		httpProxyArnMap,
 		httpProxyEndpointMap,
 		distributionsArnMap,
+		websiteBucketArnMap,
 	).ApplyT(func(args []interface{}) (string, error) {
 		bucketNameMap := args[0].(map[string]string)
 		apiArnMap := args[1].(map[string]string)
@@ -122,6 +123,7 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		httpProxyArnMap := args[10].(map[string]string)
 		httpProxyEndpointMap := args[11].(map[string]string)
 		distributionsArnMap := args[12].(map[string]string)
+		websiteBucketArnMap := args[13].(map[string]string)
 
 		index := common.NewResourceIndex()
 		for name, bucket := range bucketNameMap {
@@ -170,6 +172,10 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 
 		for name, arn := range distributionsArnMap {
 			index.Distributions[name] = arn
+		}
+
+		for name, arn := range websiteBucketArnMap {
+			index.WebsiteBuckets[name] = arn
 		}
 
 		indexJson, err := json.Marshal(index)
