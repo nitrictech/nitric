@@ -6,7 +6,6 @@ use (
 	./cloud/aws
 	./cloud/azure
 	./cloud/common
-	./cloud/debug
 	./cloud/gcp
 	./core
 	./test
