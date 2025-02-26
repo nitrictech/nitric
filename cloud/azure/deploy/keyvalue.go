@@ -15,8 +15,6 @@
 package deploy
 
 import (
-	"strings"
-
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -26,12 +24,10 @@ func (p *NitricAzurePulumiProvider) KeyValueStore(ctx *pulumi.Context, parent pu
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
-	normalizedName := strings.ReplaceAll(name, "-", "")
-
-	p.KeyValueStores[name], err = storage.NewTable(ctx, normalizedName, &storage.TableArgs{
+	p.KeyValueStores[name], err = storage.NewTable(ctx, name, &storage.TableArgs{
 		AccountName:       p.StorageAccount.Name,
 		ResourceGroupName: p.ResourceGroup.Name,
-		TableName:         pulumi.String(normalizedName),
+		TableName:         pulumi.String(name),
 	}, opts...)
 
 	return err
