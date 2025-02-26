@@ -20,7 +20,6 @@ import (
 	//#nosec G501 -- md5 used only to produce a unique ID from non-sensistive information (policy IDs)
 
 	"fmt"
-	"strings"
 
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -72,12 +71,10 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 			),
 		}, nil
 	case resourcespb.ResourceType_KeyValueStore:
-		_, ok := p.KeyValueStores[resource.Id.Name]
+		kv, ok := p.KeyValueStores[resource.Id.Name]
 		if !ok {
 			return nil, fmt.Errorf("key value store %s not found", resource.Id.Name)
 		}
-
-		normalizedName := strings.ReplaceAll(resource.Id.Name, "-", "")
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
