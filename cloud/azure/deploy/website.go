@@ -202,7 +202,12 @@ func getBlobMD5(serviceURL *azblob.ServiceURL, containerName, blobName string) (
 func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{p.website})}
 
-	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
+	localDir, ok := config.AssetSource.(*deploymentspb.Website_LocalDirectory)
+	if !ok {
+		return fmt.Errorf("unsupported asset source type for website: %s", name)
+	}
+
+	cleanedPath := filepath.ToSlash(filepath.Clean(localDir.LocalDirectory))
 
 	if p.website == nil {
 		return fmt.Errorf("website storage account not found")

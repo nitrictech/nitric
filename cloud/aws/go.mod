@@ -25,16 +25,16 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.2
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.6
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
-	github.com/aws/jsii-runtime-go v1.105.0
+	github.com/aws/jsii-runtime-go v1.106.0
 	github.com/aws/smithy-go v1.22.2
-	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.20.1
+	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.54.0
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
 	github.com/getkin/kin-openapi v0.113.0
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.10
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5
@@ -73,7 +73,7 @@ require (
 	github.com/Djarvur/go-err113 v0.1.0 // indirect
 	github.com/GaijinEntertainment/go-exhaustruct/v3 v3.3.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
+	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
@@ -346,7 +346,7 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/tools v0.27.0 // indirect
+	golang.org/x/tools v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect

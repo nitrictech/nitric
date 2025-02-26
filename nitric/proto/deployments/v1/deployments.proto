@@ -269,21 +269,19 @@ message WebsocketTarget {
 }
 
 message Website {
-  // The production website output directory
-  string output_directory = 1;
-
   // The index document for the website
-  string index_document = 2;
+  string index_document = 1;
 
   // The error document for the website
-  string error_document = 3;
+  string error_document = 2;
 
   // The base path for the website
-  string base_path = 4;
+  string base_path = 3;
 
   // The source of the website assets
   oneof asset_source {
-    string local_directory = 5;
+    // The production website output directory
+    string local_directory = 4;
   }
 }
 

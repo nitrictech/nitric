@@ -97,7 +97,12 @@ func (a *NitricAwsPulumiProvider) getS3Client() (*awss3.Client, error) {
 func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
 
-	cleanedPath := filepath.ToSlash(filepath.Clean(config.OutputDirectory))
+	localDir, ok := config.AssetSource.(*deploymentspb.Website_LocalDirectory)
+	if !ok {
+		return fmt.Errorf("unsupported asset source type for website: %s", name)
+	}
+
+	cleanedPath := filepath.ToSlash(filepath.Clean(localDir.LocalDirectory))
 
 	if config.BasePath == "/" {
 		a.websiteIndexDocument = config.IndexDocument
