@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"math"
@@ -37,6 +38,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscloudfront "github.com/aws/aws-sdk-go-v2/service/cloudfront"
 	awscloudfronttypes "github.com/aws/aws-sdk-go-v2/service/cloudfront/types"
+	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go/aws"
 )
 
@@ -56,6 +59,41 @@ func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error
 	return nil
 }
 
+func fileETag(ctx context.Context, client *awss3.Client, bucketName, key string) (string, error) {
+	headObjectOutput, err := client.HeadObject(ctx, &awss3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		var notFound *s3types.NotFound
+
+		// If the file does not exist, return an empty string so we can ignore checking it
+		if errors.As(err, &notFound) {
+			return "", nil
+		}
+
+		// Otherwise, return the error
+		return "", err
+	}
+
+	// Trim the ETag to remove the quotes
+	etag := strings.Trim(*headObjectOutput.ETag, "\"")
+
+	return etag, nil
+}
+
+func (a *NitricAwsPulumiProvider) getS3Client() (*awss3.Client, error) {
+	// Load the AWS configuration
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(a.Region))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	// Create an S3 client
+	return awss3.NewFromConfig(cfg), nil
+}
+
 // Website - Implements the Website deployment method for the AWS provider
 func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
@@ -67,9 +105,15 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		a.websiteErrorDocument = config.ErrorDocument
 	}
 
+	// get the S3 client for reading the ETag of existing files
+	client, err := a.getS3Client()
+	if err != nil {
+		return err
+	}
+
 	// Enumerate the public directory in pwd and upload all files to the public bucket
 	// This will be the source for our cloudfront distribution
-	err := filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -110,16 +154,10 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		}
 
 		output := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (pulumi.StringOutput, error) {
-			existingObj, err := s3.GetObject(ctx, &s3.GetObjectArgs{
-				Bucket: bucket,
-				Key:    objectKey,
-			})
+			// Check if the object already exists
+			existingETag, err := fileETag(context.TODO(), client, bucket, strings.TrimPrefix(objectKey, "/"))
 			if err != nil {
-				// TODO: Could find a better way to check if the object doesn't exist
-				if !strings.Contains(err.Error(), "couldn't find resource") {
-					// Propagate other errors
-					return pulumi.String("").ToStringOutput(), err
-				}
+				return pulumi.String("").ToStringOutput(), err
 			}
 
 			obj, err := s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
@@ -132,10 +170,10 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 				return pulumi.String("").ToStringOutput(), err
 			}
 
-			if existingObj != nil {
+			if existingETag != "" {
 				return obj.Etag.ApplyT(func(newEtag string) pulumi.StringOutput {
 					// If the object is new or has changed, add it to the list of changed files
-					if newEtag != existingObj.Etag {
+					if newEtag != existingETag {
 						return pulumi.String(objectKey).ToStringOutput()
 					}
 
