@@ -57,7 +57,7 @@ jobs:
       - name: Check generated sources
         run: |
           git add .
-          git diff --cached --quiet
+          git diff --cached --exit-code
       - name: Run Gosec Security Scanner
         run: make sec
       - name: Run Tests
