@@ -24,29 +24,28 @@ require (
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-00010101000000-000000000000
-	github.com/nitrictech/nitric/core v0.0.0-20240514060310-15c1b165e761
+	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce
 	github.com/nitrictech/nitric/test v0.0.0-20240611083659-34f0571203c2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
-	github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/app v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/authorization v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/containerregistry v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2 v2.39.0
-	github.com/pulumi/pulumi-azure-native-sdk/eventgrid v1.101.0
+	github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2 v2.88.0
+	github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/keyvault v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/managedidentity v1.92.0
-	github.com/pulumi/pulumi-azure-native-sdk/network/v2 v2.44.0
+	github.com/pulumi/pulumi-azure-native-sdk/network/v2 v2.88.0
 	github.com/pulumi/pulumi-azure-native-sdk/operationalinsights v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
-	github.com/pulumi/pulumi-azure/sdk/v4 v4.42.0
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.53.5
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
-	github.com/pulumi/pulumi/sdk/v3 v3.137.0
+	github.com/pulumi/pulumi/sdk/v3 v3.150.0
 	github.com/samber/lo v1.38.1
 	github.com/uw-labs/lichen v0.1.7
 	github.com/valyala/fasthttp v1.55.0
@@ -84,11 +83,10 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
-	github.com/ProtonMail/go-crypto v1.0.0 // indirect
+	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alecthomas/go-check-sumtype v0.1.4 // indirect
-	github.com/alecthomas/repr v0.4.0 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.4 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
 	github.com/alingse/asasalint v0.0.11 // indirect
@@ -126,7 +124,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/curioswitch/go-reassign v0.2.0 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
+	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/daixiang0/gci v0.13.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
@@ -142,13 +140,13 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/firefart/nonamedreturns v1.0.5 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/ghostiam/protogetter v0.3.6 // indirect
 	github.com/go-critic/go-critic v0.11.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.5.0 // indirect
-	github.com/go-git/go-git/v5 v5.12.0 // indirect
+	github.com/go-git/go-billy/v5 v5.6.1 // indirect
+	github.com/go-git/go-git/v5 v5.13.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -196,6 +194,7 @@ require (
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/yaml v0.1.0 // indirect
+	github.com/iwdgo/sigintwindows v0.2.2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jgautheron/goconst v1.7.1 // indirect
 	github.com/jingyugao/rowserrcheck v1.1.1 // indirect
@@ -267,9 +266,9 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
-	github.com/pulumi/esc v0.9.1 // indirect
-	github.com/pulumi/pulumi-azure-native-sdk v1.101.0 // indirect
-	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.44.0 // indirect
+	github.com/pulumi/esc v0.11.1 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk v1.104.0 // indirect
+	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.88.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
@@ -292,7 +291,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sivchari/containedctx v1.0.3 // indirect
 	github.com/sivchari/tenv v1.10.0 // indirect
-	github.com/skeema/knownhosts v1.2.2 // indirect
+	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/sonatard/noctx v0.0.2 // indirect
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
@@ -304,7 +303,7 @@ require (
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/tdakkota/asciicheck v0.2.0 // indirect
 	github.com/tetafro/godot v1.4.17 // indirect
@@ -337,8 +336,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/automaxprocs v1.5.3 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
