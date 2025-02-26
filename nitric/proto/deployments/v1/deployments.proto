@@ -280,6 +280,11 @@ message Website {
 
   // The base path for the website
   string base_path = 4;
+
+  // The source of the website assets
+  oneof asset_source {
+    string local_directory = 5;
+  }
 }
 
 message ScheduleTarget {
