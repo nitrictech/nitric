@@ -61,6 +61,10 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 
 	_, err = eventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &eventgrid.EventSubscriptionArgs{
 		Scope: topic.ID(),
+		RetryPolicy: eventgrid.RetryPolicyArgs{
+			MaxDeliveryAttempts:      pulumi.Int(30),
+			EventTimeToLiveInMinutes: pulumi.Int(5),
+		},
 		Destination: &eventgrid.WebHookEventSubscriptionDestinationArgs{
 			EndpointType:                           pulumi.String("WebHook"),
 			EndpointUrl:                            pulumi.Sprintf("%s/%s/x-nitric-topic/%s", hostUrl, target.EventToken, topicName),
