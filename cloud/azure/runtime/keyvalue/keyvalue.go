@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -334,7 +335,10 @@ func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, sto
 		if tableName == "" {
 			return nil, fmt.Errorf("table name is required")
 		}
-		serviceURL := fmt.Sprintf("https://%s.table.core.windows.net/%s", storageAccountName, tableName)
+		// Hyphens not supported by azure storage tables
+		normalizedTableName := strings.Replace(tableName, "-", "", -1)
+
+		serviceURL := fmt.Sprintf("https://%s.table.core.windows.net/%s", storageAccountName, normalizedTableName)
 		return aztables.NewClient(serviceURL, creds, nil)
 	}
 }

@@ -82,7 +82,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				p.StorageAccount.Name,
-				kv.Name,
+				kv.TableName,
 			),
 		}, nil
 	case resourcespb.ResourceType_Bucket:
