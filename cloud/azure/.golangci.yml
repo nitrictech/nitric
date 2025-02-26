@@ -5,22 +5,25 @@ run:
 linters:
   disable-all: true
   enable:
-  - goimports
-  - gofmt
-  - govet
-  - gofumpt
-  - whitespace
-  - staticcheck
-  - ineffassign
-  - unused
-  - misspell
-  - unconvert
-  - errcheck
-  - errorlint
+    - goimports
+    - gofmt
+    - govet
+    - gofumpt
+    - whitespace
+    - staticcheck
+    - ineffassign
+    - unused
+    - misspell
+    - unconvert
+    - errcheck
+    - errorlint
 
 issues:
+  exclude-dirs:
+    - deploytf/generated
+    - tools
   exclude-files:
-  - tools/tools.go
+    - tools/tools.go
   max-issues-per-linter: 0
   max-same-issues: 0
 

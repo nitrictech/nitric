@@ -1,0 +1,40 @@
+---
+project_name: azuretf
+release:
+  prerelease: auto
+before:
+  hooks:
+    - go work sync
+    - make predeploybin
+builds:
+  - id: azuretf
+    env:
+      - CGO_ENABLED=0
+    binary: azure
+    main: ./cmd/deploytf
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- tolower .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ tolower .Arch }}{{ end }}
+    id: azuretf
+    builds:
+      - azuretf
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: "azuretf_checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  skip: true
