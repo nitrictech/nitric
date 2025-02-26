@@ -64,7 +64,6 @@ func fileETag(ctx context.Context, client *awss3.Client, bucketName, key string)
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	})
-
 	if err != nil {
 		var notFound *s3types.NotFound
 
