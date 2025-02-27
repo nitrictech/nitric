@@ -157,38 +157,43 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			objectKey = filepath.ToSlash(filepath.Join(config.BasePath, filePath))
 		}
 
-		output := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (pulumi.StringOutput, error) {
+		existingTag := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (string, error) {
 			// Check if the object already exists
 			existingETag, err := fileETag(context.TODO(), client, bucket, strings.TrimPrefix(objectKey, "/"))
 			if err != nil {
-				return pulumi.String("").ToStringOutput(), err
+				return "", err
 			}
 
-			obj, err := s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
-				Bucket:      a.publicWebsiteBucket.Bucket,
-				Source:      pulumi.NewFileAsset(path),
-				ContentType: pulumi.String(contentType),
-				Key:         pulumi.String(objectKey),
-			}, opts...)
-			if err != nil {
-				return pulumi.String("").ToStringOutput(), err
+			return existingETag, nil
+		})
+
+		obj, err := s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
+			Bucket:      a.publicWebsiteBucket.Bucket,
+			Source:      pulumi.NewFileAsset(path),
+			ContentType: pulumi.String(contentType),
+			Key:         pulumi.String(objectKey),
+		}, opts...)
+		if err != nil {
+			return err
+		}
+
+		keyToInvalidate := pulumi.All(obj.Etag, existingTag).ApplyT(func(args []any) (string, error) {
+			newEtag, newEtagOk := args[0].(string)
+			existingEtag, existingEtagOk := args[1].(string)
+
+			if !newEtagOk || !existingEtagOk {
+				return "", fmt.Errorf("failed to assert ETag types")
 			}
 
-			if existingETag != "" {
-				return obj.Etag.ApplyT(func(newEtag string) pulumi.StringOutput {
-					// If the object is new or has changed, add it to the list of changed files
-					if newEtag != existingETag {
-						return pulumi.String(objectKey).ToStringOutput()
-					}
-
-					return pulumi.String("").ToStringOutput()
-				}).(pulumi.StringOutput), nil
+			// if an existing ETag is present and it is different from the new ETag, return the key to invalidate
+			if existingEtag != "" && newEtag != existingEtag {
+				return objectKey, nil
 			}
 
-			return pulumi.String("").ToStringOutput(), nil
+			return "", nil
 		}).(pulumi.StringOutput)
 
-		a.websiteChangedFileOutputs = append(a.websiteChangedFileOutputs, output)
+		a.websiteChangedFileOutputs = append(a.websiteChangedFileOutputs, keyToInvalidate)
 
 		return nil
 	})
