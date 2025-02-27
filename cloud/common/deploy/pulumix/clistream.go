@@ -263,6 +263,38 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 	return nil
 }
 
+func StreamPulumiPreviewEngineEvents(stream deploymentspb.Deployment_PreviewServer, pulumiEventsChan <-chan events.EngineEvent) error {
+	evtHandler := pulumiEventHandler{
+		tree: DataTree{
+			Root: &DataNode{
+				Id:       "stack",
+				Data:     nil,
+				Children: make([]*DataNode, 0),
+			},
+		},
+	}
+
+	for evt := range pulumiEventsChan {
+		// translate the engine event to a server message and send back to the CLIent
+		updateDetails, err := evtHandler.engineEventToResourceUpdate(evt)
+		if err != nil {
+			// unknown event, possibly still useful for debugging.
+			logger.Debugf("%+v", evt)
+			continue
+		}
+
+		err = stream.Send(&deploymentspb.DeploymentPreviewEvent{
+			Content: &deploymentspb.DeploymentPreviewEvent_Update{
+				Update: updateDetails,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pulumiEventsChan <-chan events.EngineEvent) (err error) {
 	evtHandler := pulumiEventHandler{
 		tree: DataTree{

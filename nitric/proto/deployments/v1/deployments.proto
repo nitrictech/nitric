@@ -21,6 +21,10 @@ service Deployment {
   // Server will stream updates back to the connected client
   // on the status of the deployment
   rpc Up (DeploymentUpRequest) returns (stream DeploymentUpEvent);
+  // Begins a new deployment preview
+  // Server will stream updates back to the connected client
+  // on the status of the preview request
+  rpc Preview (DeploymentPreviewRequest) returns (stream DeploymentPreviewEvent);
   // Tears down an existing deployment
   // Server will stream updates back to the connected client
   // on the status of the teardown
@@ -124,6 +128,31 @@ message DeploymentDownEvent {
 
 // Terminal message indicating deployment success
 message DownResult {
+}
+
+message DeploymentPreviewRequest {
+  // The spec to deploy
+  Spec spec = 1;
+
+  // A map of attributes related to the deploy request
+  // this allows for adding project identifiers etc.
+  google.protobuf.Struct attributes = 2;
+
+  // A hint to the provider of the kind of output that the client can accept
+  // This will allow provider developers to provider richer output back to clients.
+  bool interactive = 3;
+}
+
+message DeploymentPreviewEvent {
+  oneof content {
+    string message = 1;
+    ResourceUpdate update = 2;
+    UpResult result = 3;
+  }
+}
+
+// Terminal message indicating deployment success
+message PreviewResult {
 }
 
 // An image source to be used for service deployment

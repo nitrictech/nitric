@@ -326,13 +326,17 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
-	stackIdChan := make(chan string)
-	pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-		stackIdChan <- id
-		return id
-	})
+	a.StackId = "stack-id"
 
-	a.StackId = <-stackIdChan
+	if !ctx.DryRun() {
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		a.StackId = <-stackIdChan
+	}
 
 	a.ClientConfig, err = authorization.GetClientConfig(ctx)
 	if err != nil {
