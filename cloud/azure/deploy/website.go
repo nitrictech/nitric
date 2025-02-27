@@ -283,19 +283,23 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 			return err
 		}
 
-		// Check if the file has changed
-		objectKeyOutput := existingMd5Output.ApplyT(func(existingMd5 string) pulumi.StringOutput {
-			// Get the MD5 hash of the new file
-			return blob.ContentMd5.ApplyT(func(newMd5 *string) pulumi.StringOutput {
-				if newMd5 != nil && existingMd5 != *newMd5 {
-					return pulumi.String(objectKey).ToStringOutput()
-				}
+		keyToInvalidate := pulumi.All(blob.ContentMd5, existingMd5Output).ApplyT(func(args []any) (string, error) {
+			newMd5, newMd5Ok := args[0].(*string)
+			existingMd5, existingMd5Ok := args[1].(string)
 
-				return pulumi.String("").ToStringOutput()
-			}).(pulumi.StringOutput)
+			if !newMd5Ok || !existingMd5Ok {
+				return "", fmt.Errorf("failed to assert md5 types")
+			}
+
+			// if an existing ETag is present and it is different from the new ETag, return the key to invalidate
+			if existingMd5 != "" && newMd5 != nil && *newMd5 != existingMd5 {
+				return objectKey, nil
+			}
+
+			return "", nil
 		}).(pulumi.StringOutput)
 
-		p.websiteChangedFileOutputs = append(p.websiteChangedFileOutputs, objectKeyOutput)
+		p.websiteChangedFileOutputs = append(p.websiteChangedFileOutputs, keyToInvalidate)
 
 		return nil
 	})
