@@ -69,7 +69,6 @@ type NitricAwsPulumiProvider struct {
 
 	websiteBucketName         string
 	publicWebsiteBucket       *s3.Bucket
-	websiteDistribution       *cloudfront.Distribution
 	websiteChangedFileOutputs pulumi.StringArray
 	websiteIndexDocument      string
 	websiteErrorDocument      string
@@ -100,7 +99,7 @@ type NitricAwsPulumiProvider struct {
 	Secrets               map[string]*secretsmanager.Secret
 	Buckets               map[string]*s3.Bucket
 	BucketNotifications   map[string]*s3.BucketNotification
-	Distributions         map[string]*cloudfront.Distribution
+	Distribution          *cloudfront.Distribution
 	Topics                map[string]*topic
 	Queues                map[string]*sqs.Queue
 	Websockets            map[string]*apigatewayv2.Api
@@ -290,12 +289,12 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		}
 	}
 
-	if a.websiteDistribution != nil {
+	if a.Distribution != nil {
 		if len(outputs) > 0 {
 			outputs = append(outputs, "\n")
 		}
 		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
-		outputs = append(outputs, pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.Distribution.DomainName))
 	}
 
 	// Add HTTP Proxy outputs
@@ -352,7 +351,6 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		Queues:                make(map[string]*sqs.Queue),
 		KeyValueStores:        make(map[string]*dynamodb.Table),
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
-		Distributions:         make(map[string]*cloudfront.Distribution),
 		SqlDatabases:          make(map[string]*RdsDatabase),
 		JobDefinitions:        make(map[string]*batch.JobDefinition),
 	}

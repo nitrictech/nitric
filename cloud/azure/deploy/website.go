@@ -59,7 +59,7 @@ func (p *NitricAzurePulumiProvider) createStaticWebsite(ctx *pulumi.Context, res
 		return fmt.Errorf("no root website configuration found")
 	}
 
-	p.website, err = storage.NewStorageAccountStaticWebsite(ctx, "website", &storage.StorageAccountStaticWebsiteArgs{
+	p.staticWebsite, err = storage.NewStorageAccountStaticWebsite(ctx, "website", &storage.StorageAccountStaticWebsiteArgs{
 		ResourceGroupName: p.ResourceGroup.Name,
 		AccountName:       p.StorageAccount.Name,
 		IndexDocument:     pulumi.String(rootWebsite.IndexDocument),
@@ -200,7 +200,7 @@ func getBlobMD5(serviceURL *azblob.ServiceURL, containerName, blobName string) (
 
 // Website - Implements the Website deployment method for the Azure provider
 func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{p.website})}
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{p.staticWebsite})}
 
 	localDir, ok := config.AssetSource.(*deploymentspb.Website_LocalDirectory)
 	if !ok {
@@ -209,7 +209,7 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 
 	cleanedPath := filepath.ToSlash(filepath.Clean(localDir.LocalDirectory))
 
-	if p.website == nil {
+	if p.staticWebsite == nil {
 		return fmt.Errorf("website storage account not found")
 	}
 
@@ -254,7 +254,7 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 
 		name := strings.TrimPrefix(objectKey, "/")
 
-		existingMd5Output := pulumi.All(p.ResourceGroup.Name, p.StorageAccount.Name, p.website.ContainerName).ApplyT(func(args []interface{}) (string, error) {
+		existingMd5Output := pulumi.All(p.ResourceGroup.Name, p.StorageAccount.Name, p.staticWebsite.ContainerName).ApplyT(func(args []interface{}) (string, error) {
 			resourceGroupName := args[0].(string)
 			accountName := args[1].(string)
 			containerName := args[2].(string)
@@ -275,7 +275,7 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 		blob, err := storage.NewBlob(ctx, name, &storage.BlobArgs{
 			ResourceGroupName: p.ResourceGroup.Name,
 			AccountName:       p.StorageAccount.Name,
-			ContainerName:     p.website.ContainerName,
+			ContainerName:     p.staticWebsite.ContainerName,
 			Source:            pulumi.NewFileAsset(path),
 			ContentType:       pulumi.String(contentType),
 		}, opts...)
@@ -299,7 +299,7 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 			return "", nil
 		}).(pulumi.StringOutput)
 
-		p.websiteChangedFileOutputs = append(p.websiteChangedFileOutputs, keyToInvalidate)
+		p.staticWebsiteChangedFileOutputs = append(p.staticWebsiteChangedFileOutputs, keyToInvalidate)
 
 		return nil
 	})
@@ -331,7 +331,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return parsed.Hostname(), nil
 	}).(pulumi.StringOutput)
 
-	endpointName := fmt.Sprintf("website-endpoint-%s", p.StackId)
+	endpointName := fmt.Sprintf("%s-cdn", p.StackId)
 
 	deliveryRules := cdn.DeliveryRuleArray{}
 
@@ -487,7 +487,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	}
 
 	// Purge the CDN endpoint if content has changed
-	pulumi.All(p.ResourceGroup.Name, profile.Name, p.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
+	pulumi.All(p.ResourceGroup.Name, profile.Name, p.staticWebsiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
 		resourceGroupName := args[0].(string)
 		profileName := args[1].(string)
 		websiteChangedFileKeys := []*string{}
@@ -514,9 +514,9 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	})
 
 	// Export the CDN endpoint hostname.
-	ctx.Export("website-cdn", pulumi.Sprintf("https://%s", endpoint.HostName))
+	ctx.Export("cdn", pulumi.Sprintf("https://%s", endpoint.HostName))
 
-	p.websiteEndpoint = endpoint
+	p.Endpoint = endpoint
 
 	return nil
 }

@@ -59,9 +59,9 @@ type NitricAzurePulumiProvider struct {
 	StackId   string
 	resources []*pulumix.NitricPulumiResource[any]
 
-	website                   *storage.StorageAccountStaticWebsite
-	websiteEndpoint           *cdn.Endpoint
-	websiteChangedFileOutputs pulumi.StringArray
+	staticWebsite                   *storage.StorageAccountStaticWebsite
+	Endpoint                        *cdn.Endpoint
+	staticWebsiteChangedFileOutputs pulumi.StringArray
 
 	AzureConfig *AzureConfig
 
@@ -421,7 +421,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 }
 
 func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
-	if a.website != nil {
+	if a.staticWebsite != nil {
 		err := a.deployCDN(ctx)
 		if err != nil {
 			return err
@@ -445,12 +445,12 @@ func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOu
 		}
 	}
 
-	if a.websiteEndpoint != nil {
+	if a.Endpoint != nil {
 		if len(outputs) > 0 {
 			outputs = append(outputs, "\n")
 		}
 		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
-		outputs = append(outputs, pulumi.Sprintf("https://%s", a.websiteEndpoint.HostName))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.Endpoint.HostName))
 	}
 
 	// Add HTTP Proxy outputs

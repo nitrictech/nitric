@@ -351,12 +351,12 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		)
 	}
 
-	name := "website-cdn"
+	name := fmt.Sprintf("%s-cdn", a.StackId)
 
 	tags := common.Tags(a.StackId, name, resources.Website)
 
 	// Deploy a CloudFront distribution for the S3 bucket
-	a.websiteDistribution, err = cloudfront.NewDistribution(ctx, name, &cloudfront.DistributionArgs{
+	a.Distribution, err = cloudfront.NewDistribution(ctx, name, &cloudfront.DistributionArgs{
 		Origins:               origins,
 		Enabled:               pulumi.Bool(true),
 		DefaultCacheBehavior:  defaultCacheBehavior,
@@ -389,10 +389,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	a.Distributions[name] = a.websiteDistribution
-
 	// apply invalidation on the distribution when files change
-	pulumi.All(a.websiteDistribution.ID().ToStringOutput(), a.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
+	pulumi.All(a.Distribution.ID().ToStringOutput(), a.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
 		cdnID := args[0].(string)
 		websiteChangedFileKeys := []string{}
 
@@ -437,7 +435,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return nil
 	})
 
-	ctx.Export("website-cdn", pulumi.Sprintf("https://%s", a.websiteDistribution.DomainName))
+	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.Distribution.DomainName))
 
 	return nil
 }
