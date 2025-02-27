@@ -83,16 +83,6 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		httpProxyEndpointMap[name] = proxy.ApiEndpoint
 	}
 
-	websiteBucketArnMap := pulumi.StringMap{}
-	if a.publicWebsiteBucket != nil {
-		websiteBucketArnMap[a.websiteBucketName] = a.publicWebsiteBucket.Arn
-	}
-
-	distributionsArnMap := pulumi.StringMap{}
-	for name, distribution := range a.Distributions {
-		distributionsArnMap[name] = distribution.Arn
-	}
-
 	// Build the index from the provider information
 	resourceIndexJson := pulumi.All(
 		bucketArnMap,
@@ -107,8 +97,6 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		stateMachArnMap,
 		httpProxyArnMap,
 		httpProxyEndpointMap,
-		distributionsArnMap,
-		websiteBucketArnMap,
 	).ApplyT(func(args []interface{}) (string, error) {
 		bucketNameMap := args[0].(map[string]string)
 		apiArnMap := args[1].(map[string]string)
@@ -122,8 +110,6 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		stateMachArnMap := args[9].(map[string]string)
 		httpProxyArnMap := args[10].(map[string]string)
 		httpProxyEndpointMap := args[11].(map[string]string)
-		distributionsArnMap := args[12].(map[string]string)
-		websiteBucketArnMap := args[13].(map[string]string)
 
 		index := common.NewResourceIndex()
 		for name, bucket := range bucketNameMap {
@@ -168,14 +154,6 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 
 		for name, arn := range secretsArnMap {
 			index.Secrets[name] = arn
-		}
-
-		for name, arn := range distributionsArnMap {
-			index.Distributions[name] = arn
-		}
-
-		for name, arn := range websiteBucketArnMap {
-			index.WebsiteBuckets[name] = arn
 		}
 
 		indexJson, err := json.Marshal(index)
