@@ -165,7 +165,7 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 					return err
 				}
 
-				_, err = authorization.NewRoleAssignment(ctx, fmt.Sprintf("%s-%s", principal.Id.Name, roleName), &authorization.RoleAssignmentArgs{
+				_, err = authorization.NewRoleAssignment(ctx, fmt.Sprintf("%s-%s-%s", principal.Id.Name, roleName, resource.Id.Name), &authorization.RoleAssignmentArgs{
 					PrincipalId:      sp.ServicePrincipalId,
 					PrincipalType:    pulumi.String("ServicePrincipal"),
 					RoleDefinitionId: role.ID(),
