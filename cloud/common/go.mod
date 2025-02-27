@@ -5,11 +5,11 @@ go 1.22.1
 toolchain go1.23.0
 
 require (
-	github.com/aws/jsii-runtime-go v1.105.0
+	github.com/aws/jsii-runtime-go v1.106.0
 	github.com/docker/docker v25.0.6+incompatible
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/google/addlicense v1.1.1
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.10
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce
 	github.com/onsi/ginkgo v1.16.5
@@ -39,7 +39,7 @@ require (
 	github.com/Crocmagnon/fatcontext v0.5.2 // indirect
 	github.com/Djarvur/go-err113 v0.1.0 // indirect
 	github.com/GaijinEntertainment/go-exhaustruct/v3 v3.3.0 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
+	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -298,13 +298,13 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/tools v0.27.0 // indirect
+	golang.org/x/tools v0.28.0 // indirect
 	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/warnings.v0 v0.1.2 // indirect

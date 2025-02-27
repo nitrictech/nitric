@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/authorization"
+	cdn "github.com/pulumi/pulumi-azure-native-sdk/cdn/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
 	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
@@ -42,6 +43,7 @@ import (
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -56,6 +58,10 @@ type NitricAzurePulumiProvider struct {
 
 	StackId   string
 	resources []*pulumix.NitricPulumiResource[any]
+
+	website                   *storage.StorageAccountStaticWebsite
+	websiteEndpoint           *cdn.Endpoint
+	websiteChangedFileOutputs pulumi.StringArray
 
 	AzureConfig *AzureConfig
 
@@ -376,10 +382,16 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	hasKvStores := hasResourceType(nitricResources, resourcespb.ResourceType_KeyValueStore)
 	hasQueues := hasResourceType(nitricResources, resourcespb.ResourceType_Queue)
 
+	websites := lo.Filter(nitricResources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_Website
+	})
+
+	hasWebsites := len(websites) > 0
+
 	// Create a storage account if buckets, kv stores or queues are required.
 	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
 	// This means we need to create a storage account for each stack, before buckets can be created.
-	if hasBuckets || hasKvStores || hasQueues {
+	if hasBuckets || hasKvStores || hasQueues || hasWebsites {
 		logger.Info("Stack declares bucket(s), key/value store(s) or queue(s), creating stack level Azure Storage Account")
 		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
@@ -398,10 +410,24 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
+	if hasWebsites {
+		err = a.createStaticWebsite(ctx, websites)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
+	if a.website != nil {
+		err := a.deployCDN(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -417,6 +443,14 @@ func (a *NitricAzurePulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOu
 		for apiName, api := range a.Apis {
 			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiManagementService.GatewayUrl))
 		}
+	}
+
+	if a.websiteEndpoint != nil {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.websiteEndpoint.HostName))
 	}
 
 	// Add HTTP Proxy outputs

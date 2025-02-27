@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resources
+package embeds
 
-type ResourceType string
+import (
+	_ "embed"
 
-const (
-	API         ResourceType = "api"
-	Bucket      ResourceType = "bucket"
-	Collection  ResourceType = "collection"
-	Service     ResourceType = "service"
-	HttpProxy   ResourceType = "http-proxy"
-	Policy      ResourceType = "policy"
-	Queue       ResourceType = "queue"
-	Schedule    ResourceType = "schedule"
-	Secret      ResourceType = "secret"
-	Stack       ResourceType = "stack"
-	Topic       ResourceType = "topic"
-	Websocket   ResourceType = "websocket"
-	Website     ResourceType = "website"
-	SqlDatabase ResourceType = "sql-database"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
+
+//go:embed api-url-rewrite.js
+var cloudfront_ApiUrlRewriteFunction string
+
+//go:embed url-rewrite.js
+var cloudfront_UrlRewriteFunctionName string
+
+func GetApiUrlRewriteFunction() pulumi.StringInput {
+	return pulumi.String(cloudfront_ApiUrlRewriteFunction)
+}
+
+func GetUrlRewriteFunction() pulumi.StringInput {
+	return pulumi.String(cloudfront_UrlRewriteFunctionName)
+}
