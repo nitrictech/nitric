@@ -50,7 +50,7 @@ func actionsToAzureRoleDefinitions(roles map[resourcespb.Action]*authorization.R
 
 type resourceScope struct {
 	scope     pulumi.StringInput
-	condition pulumi.StringInput
+	condition pulumi.StringPtrInput
 }
 
 // "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}"
