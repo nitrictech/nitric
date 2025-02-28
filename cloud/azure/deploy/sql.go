@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/containerinstance/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/dbforpostgresql/v2"
+	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -42,18 +43,27 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 	}
 
 	if config.GetImageUri() != "" {
-		repositoryUrl := pulumi.Sprintf("%s/%s", a.ContainerEnv.Registry.LoginServer, config.GetImageUri())
+		repositoryUrl := pulumi.Sprintf("%s/%s-%s:latest", a.ContainerEnv.Registry.LoginServer, a.StackName, config.GetImageUri())
 
 		inspect, err := image.CommandFromImageInspect(config.GetImageUri(), " ")
 		if err != nil {
 			return err
 		}
 
-		migrationImage, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
-			SourceImage:   config.GetImageUri(),
-			SourceImageID: inspect.ID,
-			RepositoryUrl: repositoryUrl,
-		}, pulumi.Provider(a.ContainerEnv.DockerProvider))
+		newTag, err := docker.NewTag(ctx, name+"-tag", &docker.TagArgs{
+			SourceImage: pulumi.String(inspect.ID),
+			TargetImage: repositoryUrl,
+		}, pulumi.Parent(parent))
+		if err != nil {
+			return err
+		}
+
+		migrationImage, err := docker.NewRegistryImage(ctx, name, &docker.RegistryImageArgs{
+			Name: repositoryUrl,
+			Triggers: pulumi.Map{
+				"imageSha": pulumi.String(inspect.ID),
+			},
+		}, pulumi.Parent(parent), pulumi.Provider(a.ContainerEnv.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
 		if err != nil {
 			return err
 		}
@@ -68,7 +78,8 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			ContainerGroupName: pulumi.String(containerGroupName),
 			Containers: containerinstance.ContainerArray{
 				&containerinstance.ContainerArgs{
-					Image: pulumi.Sprintf("%s/%s-migrations:latest", a.ContainerEnv.Registry.LoginServer, migrationImage.Name),
+					// point to the pushed image sha256 digest to ensure container is updated when image changes
+					Image: pulumi.Sprintf("%s/%s-%s@%s", a.ContainerEnv.Registry.LoginServer, a.StackName, config.GetImageUri(), migrationImage.Sha256Digest),
 					Name:  pulumi.Sprintf("%s-migration", name),
 					Resources: &containerinstance.ResourceRequirementsArgs{
 						Requests: &containerinstance.ResourceRequestsArgs{
