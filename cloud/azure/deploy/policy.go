@@ -50,7 +50,7 @@ func actionsToAzureRoleDefinitions(roles map[resourcespb.Action]*authorization.R
 
 type resourceScope struct {
 	scope     pulumi.StringInput
-	condition pulumi.StringInput
+	condition pulumi.StringPtrInput
 }
 
 // "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}"
@@ -64,7 +64,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.EventGrid/topics/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.EventGrid/topics/%s",
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				topic.Name,
@@ -78,7 +78,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/tableServices/default/tables/%s",
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				p.StorageAccount.Name,
@@ -99,7 +99,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				p.StorageAccount.Name,
@@ -114,7 +114,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
+				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/queueServices/default/queues/%s",
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				p.StorageAccount.Name,
@@ -128,7 +128,7 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 
 		return &resourceScope{
 			scope: pulumi.Sprintf(
-				"subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
+				"/subscriptions/%s/resourcegroups/%s/providers/Microsoft.KeyVault/vaults/%s/secrets/%s",
 				p.ClientConfig.SubscriptionId,
 				p.ResourceGroup.Name,
 				p.KeyVault.Name,
@@ -165,7 +165,7 @@ func (p *NitricAzurePulumiProvider) Policy(ctx *pulumi.Context, parent pulumi.Re
 					return err
 				}
 
-				_, err = authorization.NewRoleAssignment(ctx, fmt.Sprintf("%s-%s", principal.Id.Name, roleName), &authorization.RoleAssignmentArgs{
+				_, err = authorization.NewRoleAssignment(ctx, fmt.Sprintf("%s-%s-%s", principal.Id.Name, roleName, resource.Id.Name), &authorization.RoleAssignmentArgs{
 					PrincipalId:      sp.ServicePrincipalId,
 					PrincipalType:    pulumi.String("ServicePrincipal"),
 					RoleDefinitionId: role.ID(),
