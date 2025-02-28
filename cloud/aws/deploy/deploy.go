@@ -36,6 +36,7 @@ import (
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/dynamodb"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/ecr"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
@@ -66,6 +67,12 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
+	websiteBucketName         string
+	publicWebsiteBucket       *s3.Bucket
+	websiteChangedFileOutputs pulumi.StringArray
+	websiteIndexDocument      string
+	websiteErrorDocument      string
+
 	DockerProvider     *docker.Provider
 	RegistryArgs       *docker.RegistryArgs
 	Vpc                *ec2.Vpc
@@ -92,6 +99,7 @@ type NitricAwsPulumiProvider struct {
 	Secrets               map[string]*secretsmanager.Secret
 	Buckets               map[string]*s3.Bucket
 	BucketNotifications   map[string]*s3.BucketNotification
+	Distribution          *cloudfront.Distribution
 	Topics                map[string]*topic
 	Queues                map[string]*sqs.Queue
 	Websockets            map[string]*apigatewayv2.Api
@@ -228,6 +236,20 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
+	websites := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
+		return item.Id.Type == resourcespb.ResourceType_Website
+	})
+
+	if len(websites) > 0 {
+		// ensure name is unique for no conflicting bucket names
+		a.websiteBucketName = fmt.Sprintf("website-bucket-%s", a.StackId)
+
+		err := a.createWebsiteBucket(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 
@@ -235,6 +257,13 @@ func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
 	err := a.applyVpcRules(ctx)
 	if err != nil {
 		return err
+	}
+
+	if a.publicWebsiteBucket != nil {
+		err = a.deployCloudfrontDistribution(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return a.resourcesStore(ctx)
@@ -258,6 +287,14 @@ func (a *NitricAwsPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		for apiName, api := range a.Apis {
 			outputs = append(outputs, pulumi.Sprintf("%s: %s", apiName, api.ApiEndpoint))
 		}
+	}
+
+	if a.Distribution != nil {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.Distribution.DomainName))
 	}
 
 	// Add HTTP Proxy outputs
