@@ -49,7 +49,7 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 			return err
 		}
 
-		image, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
+		migrationImage, err := image.NewLocalImage(ctx, name, &image.LocalImageArgs{
 			SourceImage:   config.GetImageUri(),
 			SourceImageID: inspect.ID,
 			RepositoryUrl: repositoryUrl,
@@ -62,11 +62,13 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 
 		databaseUrl := pulumi.Sprintf("postgres://%s:%s@%s:%s/%s", "nitric", a.DbMasterPassword.Result, a.DatabaseServer.FullyQualifiedDomainName, "5432", name)
 
+		opts = append(opts, pulumi.DependsOn([]pulumi.Resource{migrationImage}))
+
 		a.SqlMigrations[name], err = containerinstance.NewContainerGroup(ctx, containerGroupName, &containerinstance.ContainerGroupArgs{
 			ContainerGroupName: pulumi.String(containerGroupName),
 			Containers: containerinstance.ContainerArray{
 				&containerinstance.ContainerArgs{
-					Image: pulumi.Sprintf("%s/%s-migrations:latest", a.ContainerEnv.Registry.LoginServer, image.Name),
+					Image: pulumi.Sprintf("%s/%s-migrations:latest", a.ContainerEnv.Registry.LoginServer, migrationImage.Name),
 					Name:  pulumi.Sprintf("%s-migration", name),
 					Resources: &containerinstance.ResourceRequirementsArgs{
 						Requests: &containerinstance.ResourceRequestsArgs{
