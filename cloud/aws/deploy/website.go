@@ -24,6 +24,7 @@ import (
 	"math"
 	"mime"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscloudfront "github.com/aws/aws-sdk-go-v2/service/cloudfront"
@@ -305,8 +307,14 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		},
 	}
 
+	// Sort the APIs by name
+	sortedApiKeys := lo.Keys(a.Apis)
+	slices.Sort(sortedApiKeys)
+
 	// For each API forward to the appropriate API gateway
-	for name, api := range a.Apis {
+	for _, name := range sortedApiKeys {
+		api := a.Apis[name]
+
 		apiDomainName := api.ApiEndpoint.ApplyT(func(endpoint string) string {
 			return strings.Replace(endpoint, "https://", "", 1)
 		}).(pulumi.StringOutput)

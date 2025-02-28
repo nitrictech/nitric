@@ -26,6 +26,7 @@ import (
 	"mime"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/samber/lo"
 
 	cdn "github.com/pulumi/pulumi-azure-native-sdk/cdn/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
@@ -358,9 +360,15 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	ruleOrder := 1
 
+	// Sort the APIs by name
+	sortedApiKeys := lo.Keys(p.Apis)
+	slices.Sort(sortedApiKeys)
+
 	// For each API forward to the appropriate API gateway
-	for name, resource := range p.Apis {
-		apiHostName := resource.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
+	for _, name := range sortedApiKeys {
+		api := p.Apis[name]
+
+		apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
 			parsed, err := url.Parse(gatewayUrl)
 			if err != nil {
 				return "", err
