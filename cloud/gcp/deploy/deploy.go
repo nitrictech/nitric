@@ -190,13 +190,17 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return err
 	}
 
-	stackIdChan := make(chan string)
-	pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-		stackIdChan <- id
-		return id
-	})
+	a.StackId = "stack-id"
 
-	a.StackId = <-stackIdChan
+	if !ctx.DryRun() {
+		stackIdChan := make(chan string)
+		pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
+			stackIdChan <- id
+			return id
+		})
+
+		a.StackId = <-stackIdChan
+	}
 
 	project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
 		ProjectId: &a.GcpConfig.ProjectId,
