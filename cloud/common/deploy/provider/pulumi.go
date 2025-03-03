@@ -207,28 +207,50 @@ func parsePulumiError(err error) error {
 	return pe
 }
 
-// Up - automatically called by the Nitric CLI via the `up` command
-func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
+func (s *PulumiProviderServer) initializePulumiStack(spec *deploymentspb.Spec, attributesMap map[string]any) (*auto.Stack, error) {
 	// Verify if dependencies are available
 	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
-		return status.Error(codes.FailedPrecondition, err.Error())
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
+	projectName, stackName, err := stackAndProjectFromAttributes(attributesMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	attributesMap := req.Attributes.AsMap()
 
 	err = s.provider.Init(attributesMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	pulumiProgram := createPulumiProgramForNitricProvider(req.Spec, s.provider, s.runtime)
+	var pulumiProgram func(*pulumi.Context) error
+	if spec != nil {
+		pulumiProgram = createPulumiProgramForNitricProvider(spec, s.provider, s.runtime)
+	}
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := s.provider.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	err = autoStack.SetAllConfig(context.TODO(), config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &autoStack, err
+}
+
+// Up - automatically called by the Nitric CLI via the `up` command
+func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
+	attributesMap := req.Attributes.AsMap()
+
+	autoStack, err := s.initializePulumiStack(req.Spec, attributesMap)
 	if err != nil {
 		return err
 	}
@@ -239,16 +261,6 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		// output the stream
 		_ = pulumix.StreamPulumiUpEngineEvents(stream, pulumiEventsChan)
 	}()
-
-	config, err := s.provider.Config()
-	if err != nil {
-		return err
-	}
-
-	err = autoStack.SetAllConfig(context.TODO(), config)
-	if err != nil {
-		return err
-	}
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
@@ -289,25 +301,9 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 // Down - automatically called by the Nitric CLI via the `down` command
 func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
-	// Verify if dependencies are available
-	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
-		return status.Error(codes.FailedPrecondition, err.Error())
-	}
-
-	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
-
 	attributesMap := req.Attributes.AsMap()
-	if err != nil {
-		return err
-	}
 
-	// run down on the stack
-	err = s.provider.Init(attributesMap)
-	if err != nil {
-		return err
-	}
-
-	stack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, nil)
+	autoStack, err := s.initializePulumiStack(nil, attributesMap)
 	if err != nil {
 		return err
 	}
@@ -318,16 +314,6 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 		_ = pulumix.StreamPulumiDownEngineEvents(stream, pulumiEventsChan)
 	}()
 
-	config, err := s.provider.Config()
-	if err != nil {
-		return err
-	}
-
-	err = stack.SetAllConfig(context.TODO(), config)
-	if err != nil {
-		return err
-	}
-
 	refresh, ok := attributesMap["refresh"].(bool)
 
 	options := []optdestroy.Option{optdestroy.EventStreams(pulumiEventsChan)}
@@ -336,7 +322,7 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 		options = append(options, optdestroy.Refresh())
 	}
 
-	_, err = stack.Destroy(context.TODO(), options...)
+	_, err = autoStack.Destroy(context.TODO(), options...)
 	if err != nil {
 		logger.Error(err.Error())
 		return err
@@ -347,26 +333,9 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 
 // Preview - automatically called by the Nitric CLI via the `preview` command
 func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentPreviewRequest, stream deploymentspb.Deployment_PreviewServer) error {
-	// Verify if dependencies are available
-	if err := checkDependencies(checkPulumiAvailable, checkDockerAvailable); err != nil {
-		return status.Error(codes.FailedPrecondition, err.Error())
-	}
-
-	projectName, stackName, err := stackAndProjectFromAttributes(req.Attributes.AsMap())
-	if err != nil {
-		return err
-	}
-
 	attributesMap := req.Attributes.AsMap()
 
-	err = s.provider.Init(attributesMap)
-	if err != nil {
-		return err
-	}
-
-	pulumiProgram := createPulumiProgramForNitricProvider(req.Spec, s.provider, s.runtime)
-
-	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
+	autoStack, err := s.initializePulumiStack(req.Spec, attributesMap)
 	if err != nil {
 		return err
 	}
@@ -377,16 +346,6 @@ func (s *PulumiProviderServer) Preview(req *deploymentspb.DeploymentPreviewReque
 		// output the stream
 		_ = pulumix.StreamPulumiPreviewEngineEvents(stream, pulumiEventsChan)
 	}()
-
-	config, err := s.provider.Config()
-	if err != nil {
-		return err
-	}
-
-	err = autoStack.SetAllConfig(context.TODO(), config)
-	if err != nil {
-		return err
-	}
 
 	refresh, ok := attributesMap["refresh"].(bool)
 
