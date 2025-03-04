@@ -398,66 +398,56 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 			},
 		})
 
-		deliveryRuleOutput := pulumi.All(p.ResourceGroup.Name, profile.Name).ApplyT(func(args []interface{}) cdn.DeliveryRuleOutput {
-			resourceGroupName := args[0].(string)
-			profileName := args[1].(string)
-
-			apiOriginGroupId := fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
-				p.ClientConfig.SubscriptionId,
-				resourceGroupName,
-				profileName,
-				endpointName,
-				apiOriginGroupName)
-
-			rule := &cdn.DeliveryRuleArgs{
-				Name:  pulumi.Sprintf("forward_%s", name),
-				Order: pulumi.Int(ruleOrder),
-				Conditions: pulumi.ToArray(
-					[]interface{}{
-						cdn.DeliveryRuleUrlPathCondition{
-							Name: "UrlPath",
-							Parameters: cdn.UrlPathMatchConditionParameters{
-								MatchValues: []string{
-									fmt.Sprintf("/api/%s", name),
-								},
-								Transforms: []string{
-									string(cdn.TransformLowercase),
-								},
-								TypeName: "DeliveryRuleUrlPathMatchConditionParameters",
-								Operator: string(cdn.OperatorBeginsWith),
+		rule := &cdn.DeliveryRuleArgs{
+			Name:  pulumi.Sprintf("forward_%s", name),
+			Order: pulumi.Int(ruleOrder),
+			Conditions: pulumi.ToArray(
+				[]interface{}{
+					cdn.DeliveryRuleUrlPathConditionArgs{
+						Name: pulumi.String("UrlPath"),
+						Parameters: cdn.UrlPathMatchConditionParametersArgs{
+							MatchValues: pulumi.StringArray{
+								pulumi.Sprintf("/api/%s", name),
 							},
-						},
-					}),
-				Actions: pulumi.ToArray(
-					[]interface{}{
-						cdn.OriginGroupOverrideAction{
-							Name: "OriginGroupOverride",
-							Parameters: cdn.OriginGroupOverrideActionParameters{
-								OriginGroup: cdn.ResourceReference{
-									Id: &apiOriginGroupId,
-								},
-								TypeName: "DeliveryRuleOriginGroupOverrideActionParameters",
+							Transforms: pulumi.StringArray{
+								pulumi.String(cdn.TransformLowercase),
 							},
+							TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
+							Operator: pulumi.String(cdn.OperatorBeginsWith),
 						},
-						cdn.UrlRewriteAction{
-							Name: "UrlRewrite",
-							Parameters: cdn.UrlRewriteActionParameters{
-								Destination:   "/",
-								SourcePattern: fmt.Sprintf("/api/%s/", name),
-								TypeName:      "DeliveryRuleUrlRewriteActionParameters",
-							},
-						},
-						// TODO add cache control
 					},
-				),
-			}
+				}),
+			Actions: pulumi.ToArray(
+				[]interface{}{
+					cdn.OriginGroupOverrideActionArgs{
+						Name: pulumi.String("OriginGroupOverride"),
+						Parameters: cdn.OriginGroupOverrideActionParametersArgs{
+							OriginGroup: cdn.ResourceReferenceArgs{
+								Id: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
+									p.ClientConfig.SubscriptionId,
+									p.ResourceGroup.Name,
+									profile.Name,
+									endpointName,
+									apiOriginGroupName),
+							},
+							TypeName: pulumi.String("DeliveryRuleOriginGroupOverrideActionParameters"),
+						},
+					},
+					cdn.UrlRewriteActionArgs{
+						Name: pulumi.String("UrlRewrite"),
+						Parameters: cdn.UrlRewriteActionParametersArgs{
+							Destination:   pulumi.String("/"),
+							SourcePattern: pulumi.String(fmt.Sprintf("/api/%s/", name)),
+							TypeName:      pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
+						},
+					},
+				},
+			),
+		}
 
-			ruleOrder++
+		ruleOrder++
 
-			return rule.ToDeliveryRuleOutput()
-		}).(cdn.DeliveryRuleOutput)
-
-		deliveryRules = append(deliveryRules, deliveryRuleOutput)
+		deliveryRules = append(deliveryRules, rule)
 	}
 
 	endpoint, err := cdn.NewEndpoint(ctx, endpointName, &cdn.EndpointArgs{
