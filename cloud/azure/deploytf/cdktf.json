@@ -1,0 +1,59 @@
+{
+  "language": "go",
+  "app": "go run main.go",
+  "codeMakerOutput": "generated",
+  "projectId": "150e1b15-e776-4bf9-8987-fe4a08b35e7d",
+  "sendCrashReports": "false",
+  "terraformProviders": [],
+  "terraformModules": [
+    {
+      "name": "bucket",
+      "source": "./.nitric/modules/bucket"
+    },
+    {
+      "name": "stack",
+      "source": "./.nitric/modules/stack"
+    },
+    {
+      "name": "roles",
+      "source": "./.nitric/modules/roles"
+    },
+    {
+      "name": "topic",
+      "source": "./.nitric/modules/topic"
+    },
+    {
+      "name": "service",
+      "source": "./.nitric/modules/service"
+    },
+    {
+      "name": "api",
+      "source": "./.nitric/modules/api"
+    },
+    {
+      "name": "schedule",
+      "source": "./.nitric/modules/schedule"
+    },
+    {
+      "name": "queue",
+      "source": "./.nitric/modules/queue"
+    },
+    {
+      "name": "keyvalue",
+      "source": "./.nitric/modules/keyvalue"
+    },
+    {
+      "name": "policy",
+      "source": "./.nitric/modules/policy"
+    },
+    {
+      "name": "http_proxy",
+      "source": "./.nitric/modules/http_proxy"
+    },
+    {
+      "name": "sql",
+      "source": "./.nitric/modules/sql"
+    }
+  ],
+  "context": {}
+}
