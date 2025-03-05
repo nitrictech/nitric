@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/azure/common/deploy"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-azure-native-sdk/app"
@@ -45,7 +46,7 @@ func (p *NitricAzurePulumiProvider) Schedule(ctx *pulumi.Context, parent pulumi.
 
 	normalizedName := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 
-	cronExpression, err := GenerateCronExpression(config)
+	cronExpression, err := deploy.GenerateCronExpression(config)
 	if err != nil {
 		return err
 	}

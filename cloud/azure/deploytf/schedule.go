@@ -17,7 +17,7 @@ package deploytf
 import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/azure/deploy"
+	"github.com/nitrictech/nitric/cloud/azure/common/deploy"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/schedule"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
