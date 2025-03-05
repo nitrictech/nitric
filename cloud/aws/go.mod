@@ -336,11 +336,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-<<<<<<< HEAD
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
-=======
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
->>>>>>> 0718f4c5 (work sync)
+	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect; indirect (work sync)
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.22.0 // indirect
@@ -349,13 +345,8 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-<<<<<<< HEAD
-	golang.org/x/tools v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
-=======
 	golang.org/x/tools v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
->>>>>>> 30b6acf8 (wip: Azure terraform provider.)
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

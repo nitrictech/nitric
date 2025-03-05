@@ -333,11 +333,7 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-<<<<<<< HEAD
-	golang.org/x/tools v0.28.0 // indirect
-=======
 	golang.org/x/tools v0.29.0 // indirect
->>>>>>> 30b6acf8 (wip: Azure terraform provider.)
 	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
