@@ -62,7 +62,7 @@
         event.user,
         vaults
       );
-         (const balance of balances) {
+         (const balance    balances) {
         userShares.push({
           block: event.block,
           user: event.user,
