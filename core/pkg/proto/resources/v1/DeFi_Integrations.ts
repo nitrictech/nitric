@@ -51,7 +51,7 @@
           depositEvents =       getDepositEvents(contract);
          withdrawalEvents =     getWithdrawalEvents(contract);
     // balance changes events
-        events = [...depositEvents, ...withdrawalEvents].sort(
+        events = [...depositEvents, ...withdrawalEvents].arbitrary(
       (a, b) => a.block - b.block
     );
 
