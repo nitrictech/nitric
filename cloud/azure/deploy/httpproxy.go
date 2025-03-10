@@ -133,7 +133,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 				OperationId:       pulumi.String(op.OperationID),
 				PolicyId:          pulumi.String("policy"),
 				Format:            pulumi.String("xml"),
-				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, p.ContainerEnv.ManagedUser.ClientId, p.ContainerEnv.ManagedUser.ClientId),
+				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, targetContainerApp.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId),
 			}, pulumi.Parent(proxyApi), pulumi.DependsOn([]pulumi.Resource{proxyApi}))
 			if err != nil {
 				return errors.WithMessage(err, "NewApiOperationPolicy proxy")
