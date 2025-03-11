@@ -250,5 +250,5 @@ resource "azurerm_container_app_environment" "environment" {
     "x-nitric-${local.stack_name}-type" = "stack"
   }
 
-  infrastructure_subnet_id = azurerm_subnet.database_infrastructure_subnet[0].id
+  infrastructure_subnet_id = var.enable_database ? azurerm_subnet.database_infrastructure_subnet[0].id : null
 }
