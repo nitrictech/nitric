@@ -1,0 +1,8 @@
+<validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized. Access token is missing or invalid." require-expiration-time="false">  
+    <openid-config url="{{.OidcUri}}.well-known/openid-configuration" />  
+    <required-claims>  
+        <claim name="aud" match="any" separator=",">  
+            <value>{{.RequiredClaim}}</value>  
+        </claim>  
+    </required-claims>  
+</validate-jwt>
