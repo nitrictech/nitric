@@ -1,12 +1,12 @@
 <policies>
     <inbound>
         <base />
-        <set-backend-service base-url="https://{{.BackendHostName}}" />
-        {{.ExtraPolicies}}
-        <authentication-managed-identity resource="{{.ManagedIdentityResource}}" client-id="{{.ManagedIdentityClientId}}" />
         <set-header name="X-Forwarded-Authorization" exists-action="override">
             <value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value>
         </set-header>
+        <set-backend-service base-url="https://{{.BackendHostName}}" />
+        {{.ExtraPolicies}}
+        <authentication-managed-identity resource="{{.ManagedIdentityResource}}" client-id="{{.ManagedIdentityClientId}}" />
     </inbound>
     <backend>
         <base />
