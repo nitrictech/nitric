@@ -28,6 +28,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "enableDatabase", GoGetter: "EnableDatabase"},
 			_jsii_.MemberProperty{JsiiProperty: "enableKeyvault", GoGetter: "EnableKeyvault"},
 			_jsii_.MemberProperty{JsiiProperty: "enableStorage", GoGetter: "EnableStorage"},
+			_jsii_.MemberProperty{JsiiProperty: "enableWebsite", GoGetter: "EnableWebsite"},
 			_jsii_.MemberProperty{JsiiProperty: "forEach", GoGetter: "ForEach"},
 			_jsii_.MemberProperty{JsiiProperty: "fqn", GoGetter: "Fqn"},
 			_jsii_.MemberProperty{JsiiProperty: "friendlyUniqueId", GoGetter: "FriendlyUniqueId"},
@@ -55,6 +56,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountIdOutput", GoGetter: "StorageAccountIdOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountNameOutput", GoGetter: "StorageAccountNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountQueueEndpointOutput", GoGetter: "StorageAccountQueueEndpointOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "storageAccountWebHostOutput", GoGetter: "StorageAccountWebHostOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "subscriptionIdOutput", GoGetter: "SubscriptionIdOutput"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeAttributes", GoMethod: "SynthesizeAttributes"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeHclAttributes", GoMethod: "SynthesizeHclAttributes"},
@@ -63,6 +65,8 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "toString", GoMethod: "ToString"},
 			_jsii_.MemberMethod{JsiiMethod: "toTerraform", GoMethod: "ToTerraform"},
 			_jsii_.MemberProperty{JsiiProperty: "version", GoGetter: "Version"},
+			_jsii_.MemberProperty{JsiiProperty: "websiteRootErrorDocument", GoGetter: "WebsiteRootErrorDocument"},
+			_jsii_.MemberProperty{JsiiProperty: "websiteRootIndexDocument", GoGetter: "WebsiteRootIndexDocument"},
 		},
 		func() interface{} {
 			j := jsiiProxy_Stack{}
