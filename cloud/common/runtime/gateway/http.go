@@ -147,6 +147,13 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
 		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
+
+		// Copy the X-Forwarded-Authorization header to the Authorization header
+		// This is required for the HTTP plugin to authenticate the request
+		if auth := rc.Request.Header.Peek("X-Forwarded-Authorization"); len(auth) > 0 {
+			rc.Request.Header.Set("Authorization", string(auth))
+		}
+
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
 			logger.Errorf("error handling request: %s", err)
