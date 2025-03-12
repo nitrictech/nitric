@@ -155,6 +155,12 @@ func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(c
 			rc.Request.Header.Set("Authorization", string(auth))
 		}
 
+		// Copy the cloud provider authorization header to the X-Platform-Authorization header
+		// This will preserve the Bearer token used to communicate with the compute platform in case needed in future
+		if auth := rc.Request.Header.Peek("Authorization"); len(auth) > 0 {
+			rc.Request.Header.Set("X-Platform-Authorization", string(auth))
+		}
+
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
 			logger.Errorf("error handling request: %s", err)
