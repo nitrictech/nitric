@@ -40,6 +40,16 @@ resource "azurerm_storage_account" "storage" {
   }
 }
 
+# Create a storage container for the website
+resource "azurerm_storage_account_static_website" "storage_website" {
+  count              = var.enable_website ? 1 : 0
+  storage_account_id = azurerm_storage_account.storage[0].id
+  index_document     = var.website_root_index_document
+  error_404_document = var.website_root_error_document
+
+  depends_on = [azurerm_storage_account.storage]
+}
+
 # Create a keyvault if secrets are enabled
 resource "azurerm_key_vault" "keyvault" {
   count = var.enable_keyvault ? 1 : 0
@@ -250,5 +260,5 @@ resource "azurerm_container_app_environment" "environment" {
     "x-nitric-${local.stack_name}-type" = "stack"
   }
 
-  infrastructure_subnet_id = azurerm_subnet.database_infrastructure_subnet[0].id
+  infrastructure_subnet_id = var.enable_database ? azurerm_subnet.database_infrastructure_subnet[0].id : null
 }
