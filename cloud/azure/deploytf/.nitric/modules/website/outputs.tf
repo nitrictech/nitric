@@ -1,3 +1,4 @@
+# TODO purge cdn with changed files
 # output "uploaded_files" {
 #   value = {
 #     for file, blob in azurerm_storage_blob.website_files :
