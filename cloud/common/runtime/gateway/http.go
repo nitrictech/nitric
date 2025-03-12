@@ -149,7 +149,8 @@ func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(c
 		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
 
 		// Copy the X-Forwarded-Authorization header to the Authorization header
-		// This is required for the HTTP plugin to authenticate the request
+		// In cloud environments, the Authorization header is usually stripped by the cloud provider
+		// at the api gateway layer, and forwarded as a custom header in order to authenticate with the compute platform its forwarding to.
 		if auth := rc.Request.Header.Peek("X-Forwarded-Authorization"); len(auth) > 0 {
 			rc.Request.Header.Set("Authorization", string(auth))
 		}
