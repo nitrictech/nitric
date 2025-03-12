@@ -70,7 +70,7 @@ resource "azapi_resource" "cdn_endpoint" {
       originGroups = concat(
         # Website origin group
         [{
-          name = "website-origin-group"
+          name = local.default_origin_group_name
           properties = {
             origins = [{
               id = "${azurerm_cdn_profile.website_profile.id}/endpoints/${local.endpoint_name}/origins/${var.storage_account_name}"
@@ -90,7 +90,7 @@ resource "azapi_resource" "cdn_endpoint" {
       
       # Set default origin group
       defaultOriginGroup = {
-        id = "${azurerm_cdn_profile.website_profile.id}/endpoints/${local.endpoint_name}/originGroups/website-origin-group"
+        id = "${azurerm_cdn_profile.website_profile.id}/endpoints/${local.endpoint_name}/originGroups/${local.default_origin_group_name}"
       }
       
       # Define delivery rules
@@ -107,7 +107,6 @@ resource "azapi_resource" "cdn_endpoint" {
                 operator = "BeginsWith"
                 matchValues = ["/api/${key}"]
                 transforms = ["Lowercase"]
-                negateCondition = false
               }
             }]
             actions = [
