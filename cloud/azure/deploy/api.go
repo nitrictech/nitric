@@ -33,18 +33,6 @@ import (
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 )
 
-// const policyTemplate = `<policies><inbound><base /><set-backend-service base-url="https://%s" />%s<authentication-managed-identity resource="%s" client-id="%s" /><set-header name="X-Forwarded-Authorization" exists-action="override"><value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>`
-
-// const jwtTemplate = `<validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized. Access token is missing or invalid." require-expiration-time="false">
-// <openid-config url="%s.well-known/openid-configuration" />
-// <required-claims>
-// 	<claim name="aud" match="any" separator=",">
-// 		<value>%s</value>
-// 	</claim>
-// </required-claims>
-// </validate-jwt>
-// `
-
 func marshalOpenAPISpec(spec *openapi3.T) ([]byte, error) {
 	sec := spec.Security
 	spec.Security = openapi3.SecurityRequirements{}
