@@ -148,17 +148,17 @@ func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(c
 	return func(rc *fasthttp.RequestCtx) {
 		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
 
+		// Copy the cloud provider authorization header to the X-Platform-Authorization header
+		// This will preserve the Bearer token used to communicate with the compute platform in case needed in future
+		if auth := rc.Request.Header.Peek("Authorization"); len(auth) > 0 {
+			rc.Request.Header.Set("X-Platform-Authorization", string(auth))
+		}
+
 		// Copy the X-Forwarded-Authorization header to the Authorization header
 		// In cloud environments, the Authorization header is usually stripped by the cloud provider
 		// at the api gateway layer, and forwarded as a custom header in order to authenticate with the compute platform its forwarding to.
 		if auth := rc.Request.Header.Peek("X-Forwarded-Authorization"); len(auth) > 0 {
 			rc.Request.Header.Set("Authorization", string(auth))
-		}
-
-		// Copy the cloud provider authorization header to the X-Platform-Authorization header
-		// This will preserve the Bearer token used to communicate with the compute platform in case needed in future
-		if auth := rc.Request.Header.Peek("Authorization"); len(auth) > 0 {
-			rc.Request.Header.Set("X-Platform-Authorization", string(auth))
 		}
 
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
