@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/nitrictech/nitric/cloud/azure/deploy/embeds"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
@@ -45,25 +46,25 @@ type AzureHttpProxy struct {
 	Service *apimanagement.ApiManagementService
 }
 
-const proxyTemplate = `<policies>
-	<inbound>
-		<base />
-		<set-backend-service base-url="https://%s"/>
-		<authentication-managed-identity resource="%s" client-id="%s" />
-		<set-header name="X-Forwarded-Authorization" exists-action="override">
-			<value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value>
-		</set-header>
-	</inbound>
-	<backend>
-		<base />
-	</backend>
-	<outbound>
-		<base />
-	</outbound>
-	<on-error>
-		<base />
-	</on-error>
-</policies>`
+// const proxyTemplate = `<policies>
+// 	<inbound>
+// 		<base />
+// 		<set-backend-service base-url="https://%s"/>
+// 		<authentication-managed-identity resource="%s" client-id="%s" />
+// 		<set-header name="X-Forwarded-Authorization" exists-action="override">
+// 			<value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value>
+// 		</set-header>
+// 	</inbound>
+// 	<backend>
+// 		<base />
+// 	</backend>
+// 	<outbound>
+// 		<base />
+// 	</outbound>
+// 	<on-error>
+// 		<base />
+// 	</on-error>
+// </policies>`
 
 func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Resource, name string, http *deploymentspb.Http) error {
 	var err error
@@ -124,6 +125,23 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 
 	targetContainerApp := p.ContainerApps[http.GetTarget().GetService()]
 
+	apiPolicy := pulumi.All(targetContainerApp.App.LatestRevisionFqdn, targetContainerApp.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId).ApplyT(func(args []interface{}) (string, error) {
+		backendHostName := args[0].(string)
+		servicePrincipalClientId := args[1].(string)
+		managedUserClientId := args[2].(string)
+
+		policy, err := embeds.GetApiPolicyTemplate(embeds.ApiPolicyTemplateArgs{
+			BackendHostName:         backendHostName,
+			ManagedIdentityClientId: servicePrincipalClientId,
+			ManagedIdentityResource: managedUserClientId,
+		})
+		if err != nil {
+			return "", err
+		}
+
+		return policy, nil
+	}).(pulumi.StringOutput)
+
 	for _, path := range spec.Paths {
 		for _, op := range path.Operations() {
 			_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
@@ -133,7 +151,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 				OperationId:       pulumi.String(op.OperationID),
 				PolicyId:          pulumi.String("policy"),
 				Format:            pulumi.String("xml"),
-				Value:             pulumi.Sprintf(proxyTemplate, targetContainerApp.App.LatestRevisionFqdn, targetContainerApp.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId),
+				Value:             apiPolicy,
 			}, pulumi.Parent(proxyApi), pulumi.DependsOn([]pulumi.Resource{proxyApi}))
 			if err != nil {
 				return errors.WithMessage(err, "NewApiOperationPolicy proxy")

@@ -246,11 +246,15 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 				_ = ctx.Log.Info("op policy "+op.OperationID+" , name "+name, &pulumi.LogArgs{Ephemeral: true})
 
 				policyValue := pulumi.All(app.App.LatestRevisionFqdn, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId).ApplyT(func(args []interface{}) (string, error) {
+					backendHostName := args[0].(string)
+					servicePrincipalClientId := args[1].(string)
+					managedUserClientId := args[2].(string)
+
 					policyTemplate, err := embeds.GetApiPolicyTemplate(embeds.ApiPolicyTemplateArgs{
-						BackendHostName:         args[0].(string),
+						BackendHostName:         fmt.Sprintf("%s%s%s", backendHostName, "/x-nitric-api/", name),
 						ExtraPolicies:           jwtTemplateString,
-						ManagedIdentityResource: args[1].(string),
-						ManagedIdentityClientId: args[2].(string),
+						ManagedIdentityResource: servicePrincipalClientId,
+						ManagedIdentityClientId: managedUserClientId,
 					})
 					if err != nil {
 						return "", err
