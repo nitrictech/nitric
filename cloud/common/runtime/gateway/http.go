@@ -65,6 +65,12 @@ func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 		if strings.ToLower(keyString) == "host" {
 			// Don't copy the host header
 			headerCopy["X-Forwarded-For"] = []string{string(val)}
+		} else if strings.ToLower(keyString) == "x-forwarded-authorization" {
+			// Forward original authorization header
+			headerCopy["Authorization"] = []string{string(val)}
+		} else if strings.ToLower(keyString) == "authorization" {
+			// Forward original authorization header
+			headerCopy["X-Platform-Authorization"] = []string{string(val)}
 		} else {
 			headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 		}
@@ -144,6 +150,20 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 func (s *HttpGateway) newHttpProxyHandler(opts *gateway.GatewayStartOpts) func(ctx *fasthttp.RequestCtx) {
 	return func(rc *fasthttp.RequestCtx) {
 		logger.Debugf("handling HTTP request: %s", rc.Request.URI())
+
+		// Copy the cloud provider authorization header to the X-Platform-Authorization header
+		// This will preserve the Bearer token used to communicate with the compute platform in case needed in future
+		if auth := rc.Request.Header.Peek("Authorization"); len(auth) > 0 {
+			rc.Request.Header.Set("X-Platform-Authorization", string(auth))
+		}
+
+		// Copy the X-Forwarded-Authorization header to the Authorization header
+		// In cloud environments, the Authorization header is usually stripped by the cloud provider
+		// at the api gateway layer, and forwarded as a custom header in order to authenticate with the compute platform its forwarding to.
+		if auth := rc.Request.Header.Peek("X-Forwarded-Authorization"); len(auth) > 0 {
+			rc.Request.Header.Set("Authorization", string(auth))
+		}
+
 		resp, err := opts.HttpPlugin.HandleRequest(&rc.Request)
 		if err != nil {
 			logger.Errorf("error handling request: %s", err)

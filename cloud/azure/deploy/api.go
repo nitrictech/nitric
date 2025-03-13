@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nitrictech/nitric/cloud/azure/deploy/embeds"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -31,18 +32,6 @@ import (
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 )
-
-const policyTemplate = `<policies><inbound><base /><set-backend-service base-url="https://%s" />%s<authentication-managed-identity resource="%s" client-id="%s" /><set-header name="X-Forwarded-Authorization" exists-action="override"><value>@(context.Request.Headers.GetValueOrDefault("Authorization",""))</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>`
-
-const jwtTemplate = `<validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized. Access token is missing or invalid." require-expiration-time="false">  
-<openid-config url="%s.well-known/openid-configuration" />  
-<required-claims>  
-	<claim name="aud" match="any" separator=",">  
-		<value>%s</value>  
-	</claim>  
-</required-claims>  
-</validate-jwt>
-`
 
 func marshalOpenAPISpec(spec *openapi3.T) ([]byte, error) {
 	sec := spec.Security
@@ -60,18 +49,25 @@ type securityDefinition struct {
 	Audiences []string
 }
 
-func setSecurityRequirements(secReq *openapi3.SecurityRequirements, secDef map[string]securityDefinition) []string {
+func setSecurityRequirements(secReq *openapi3.SecurityRequirements, secDef map[string]securityDefinition) ([]string, error) {
 	jwtTemplates := []string{}
 
 	for _, sec := range *secReq {
 		for sn := range sec {
 			if sd, ok := secDef[sn]; ok {
-				jwtTemplates = append(jwtTemplates, fmt.Sprintf(jwtTemplate, sd.Issuer, strings.Join(sd.Audiences, ",")))
+				jwtTemplate, err := embeds.GetApiJwtTemplate(embeds.JwtTemplateArgs{
+					OidcUri:       sd.Issuer,
+					RequiredClaim: strings.Join(sd.Audiences, ","),
+				})
+				if err != nil {
+					return nil, err
+				}
+				jwtTemplates = append(jwtTemplates, jwtTemplate)
 			}
 		}
 	}
 
-	return jwtTemplates
+	return jwtTemplates, nil
 }
 
 func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error {
@@ -208,12 +204,18 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 
 				// Apply top level security
 				if openapiDoc.Security != nil {
-					jwtTemplates = setSecurityRequirements(&openapiDoc.Security, secDef)
+					jwtTemplates, err = setSecurityRequirements(&openapiDoc.Security, secDef)
+					if err != nil {
+						return err
+					}
 				}
 
 				// Override with path security
 				if op.Security != nil {
-					jwtTemplates = setSecurityRequirements(op.Security, secDef)
+					jwtTemplates, err = setSecurityRequirements(op.Security, secDef)
+					if err != nil {
+						return err
+					}
 				}
 
 				jwtTemplateString := strings.Join(jwtTemplates, "\n")
@@ -231,7 +233,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 
 				app, ok := p.ContainerApps[target]
 				if !ok {
-					return fmt.Errorf("Unable to find container app for service: %s", target)
+					return fmt.Errorf("unable to find container app for service: %s", target)
 				}
 
 				// this.api.id returns a URL path, which is the incorrect value here.
@@ -243,6 +245,24 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 
 				_ = ctx.Log.Info("op policy "+op.OperationID+" , name "+name, &pulumi.LogArgs{Ephemeral: true})
 
+				policyValue := pulumi.All(app.App.LatestRevisionFqdn, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId).ApplyT(func(args []interface{}) (string, error) {
+					backendHostName := args[0].(string)
+					servicePrincipalClientId := args[1].(string)
+					managedUserClientId := args[2].(string)
+
+					policyTemplate, err := embeds.GetApiPolicyTemplate(embeds.ApiPolicyTemplateArgs{
+						BackendHostName:         fmt.Sprintf("%s%s%s", backendHostName, "/x-nitric-api/", name),
+						ExtraPolicies:           jwtTemplateString,
+						ManagedIdentityResource: servicePrincipalClientId,
+						ManagedIdentityClientId: managedUserClientId,
+					})
+					if err != nil {
+						return "", err
+					}
+
+					return policyTemplate, nil
+				}).(pulumi.StringOutput)
+
 				_, err = apimanagement.NewApiOperationPolicy(ctx, ResourceName(ctx, name+"-"+op.OperationID, ApiOperationPolicyRT), &apimanagement.ApiOperationPolicyArgs{
 					ResourceGroupName: p.ResourceGroup.Name,
 					ApiId:             apiId,
@@ -250,7 +270,8 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 					OperationId:       pulumi.String(op.OperationID),
 					PolicyId:          pulumi.String("policy"),
 					Format:            pulumi.String("xml"),
-					Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId),
+					// Value:             pulumi.Sprintf(policyTemplate, pulumi.Sprintf("%s%s%s", app.App.LatestRevisionFqdn, "/x-nitric-api/", name), jwtTemplateString, app.Sp.ClientID, p.ContainerEnv.ManagedUser.ClientId),
+					Value: policyValue,
 				}, pulumi.Parent(api))
 				if err != nil {
 					return errors.WithMessage(err, "NewApiOperationPolicy "+op.OperationID)
