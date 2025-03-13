@@ -2,7 +2,7 @@
     <inbound>
         <base />
         <set-header name="X-Forwarded-Authorization" exists-action="override">
-            <value>@(context.Request.Headers["Authorization"].FirstOrDefault())</value>
+            <value>@(context.Request.Headers.GetValueOrDefault("Authorization", ""))</value>
         </set-header>
         <set-backend-service base-url="https://{{.BackendHostName}}" />
         {{.ExtraPolicies}}
