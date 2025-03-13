@@ -132,8 +132,8 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 
 		policy, err := embeds.GetApiPolicyTemplate(embeds.ApiPolicyTemplateArgs{
 			BackendHostName:         backendHostName,
-			ManagedIdentityClientId: servicePrincipalClientId,
-			ManagedIdentityResource: managedUserClientId,
+			ManagedIdentityClientId: managedUserClientId,
+			ManagedIdentityResource: servicePrincipalClientId,
 		})
 		if err != nil {
 			return "", err
