@@ -68,6 +68,9 @@ func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 		} else if strings.ToLower(keyString) == "x-forwarded-authorization" {
 			// Forward original authorization header
 			headerCopy["Authorization"] = []string{string(val)}
+		} else if strings.ToLower(keyString) == "authorization" {
+			// Forward original authorization header
+			headerCopy["X-Platform-Authorization"] = []string{string(val)}
 		} else {
 			headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 		}
