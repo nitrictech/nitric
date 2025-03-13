@@ -1,32 +1,30 @@
-package api
+package cdn
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api/internal"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/internal"
 )
 
-// Defines an Api based on a Terraform module.
+// Defines an Cdn based on a Terraform module.
 //
-// Source at ./.nitric/modules/api
-type Api interface {
+// Source at ./.nitric/modules/cdn
+type Cdn interface {
 	cdktf.TerraformModule
-	ApiGatewayUrlOutput() *string
-	AppIdentity() *string
-	SetAppIdentity(val *string)
+	Apis() interface{}
+	SetApis(val interface{})
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CdnUrlOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	Description() *string
-	SetDescription(val *string)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -37,20 +35,10 @@ type Api interface {
 	FriendlyUniqueId() *string
 	Location() *string
 	SetLocation(val *string)
-	Name() *string
-	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
-	OpenapiSpec() *string
-	SetOpenapiSpec(val *string)
-	OperationPolicyTemplates() *map[string]*string
-	SetOperationPolicyTemplates(val *map[string]*string)
 	// Experimental.
 	Providers() *[]interface{}
-	PublisherEmail() *string
-	SetPublisherEmail(val *string)
-	PublisherName() *string
-	SetPublisherName(val *string)
 	// Experimental.
 	RawOverrides() interface{}
 	ResourceGroupName() *string
@@ -59,6 +47,14 @@ type Api interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StackName() *string
+	SetStackName(val *string)
+	StorageAccountId() *string
+	SetStorageAccountId(val *string)
+	StorageAccountName() *string
+	SetStorageAccountName(val *string)
+	StorageAccountPrimaryWebHost() *string
+	SetStorageAccountPrimaryWebHost(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -87,32 +83,22 @@ type Api interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Api
-type jsiiProxy_Api struct {
+// The jsii proxy struct for Cdn
+type jsiiProxy_Cdn struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Api) ApiGatewayUrlOutput() *string {
-	var returns *string
+func (j *jsiiProxy_Cdn) Apis() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"apiGatewayUrlOutput",
+		"apis",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Api) AppIdentity() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"appIdentity",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -122,7 +108,17 @@ func (j *jsiiProxy_Api) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Api) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_Cdn) CdnUrlOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"cdnUrlOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -132,7 +128,7 @@ func (j *jsiiProxy_Api) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) DependsOn() *[]*string {
+func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -142,17 +138,7 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Description() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"description",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_Cdn) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -162,7 +148,7 @@ func (j *jsiiProxy_Api) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Fqn() *string {
+func (j *jsiiProxy_Cdn) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -172,7 +158,7 @@ func (j *jsiiProxy_Api) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
+func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -182,7 +168,7 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Location() *string {
+func (j *jsiiProxy_Cdn) Location() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -192,17 +178,7 @@ func (j *jsiiProxy_Api) Location() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Name() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"name",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) Node() constructs.Node {
+func (j *jsiiProxy_Cdn) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -212,27 +188,7 @@ func (j *jsiiProxy_Api) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Api) OpenapiSpec() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"openapiSpec",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) OperationPolicyTemplates() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"operationPolicyTemplates",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) Providers() *[]interface{} {
+func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -242,27 +198,7 @@ func (j *jsiiProxy_Api) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) PublisherEmail() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"publisherEmail",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) PublisherName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"publisherName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) RawOverrides() interface{} {
+func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -272,7 +208,7 @@ func (j *jsiiProxy_Api) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Api) ResourceGroupName() *string {
+func (j *jsiiProxy_Cdn) ResourceGroupName() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -282,7 +218,7 @@ func (j *jsiiProxy_Api) ResourceGroupName() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -292,7 +228,7 @@ func (j *jsiiProxy_Api) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Source() *string {
+func (j *jsiiProxy_Cdn) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -302,7 +238,47 @@ func (j *jsiiProxy_Api) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Version() *string {
+func (j *jsiiProxy_Cdn) StackName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) StorageAccountId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) StorageAccountName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) StorageAccountPrimaryWebHost() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountPrimaryWebHost",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -313,16 +289,16 @@ func (j *jsiiProxy_Api) Version() *string {
 }
 
 
-func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
+func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
 	_init_.Initialize()
 
-	if err := validateNewApiParameters(scope, id, config); err != nil {
+	if err := validateNewCdnParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Api{}
+	j := jsiiProxy_Cdn{}
 
 	_jsii_.Create(
-		"api.Api",
+		"cdn.Cdn",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -330,28 +306,28 @@ func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
 	return &j
 }
 
-func NewApi_Override(a Api, scope constructs.Construct, id *string, config *ApiConfig) {
+func NewCdn_Override(c Cdn, scope constructs.Construct, id *string, config *CdnConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"api.Api",
+		"cdn.Cdn",
 		[]interface{}{scope, id, config},
-		a,
+		c,
 	)
 }
 
-func (j *jsiiProxy_Api)SetAppIdentity(val *string) {
-	if err := j.validateSetAppIdentityParameters(val); err != nil {
+func (j *jsiiProxy_Cdn)SetApis(val interface{}) {
+	if err := j.validateSetApisParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"appIdentity",
+		"apis",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -359,18 +335,7 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetDescription(val *string) {
-	if err := j.validateSetDescriptionParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"description",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -378,7 +343,7 @@ func (j *jsiiProxy_Api)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetLocation(val *string) {
+func (j *jsiiProxy_Cdn)SetLocation(val *string) {
 	if err := j.validateSetLocationParameters(val); err != nil {
 		panic(err)
 	}
@@ -389,68 +354,57 @@ func (j *jsiiProxy_Api)SetLocation(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetName(val *string) {
-	if err := j.validateSetNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"name",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetOpenapiSpec(val *string) {
-	if err := j.validateSetOpenapiSpecParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"openapiSpec",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetOperationPolicyTemplates(val *map[string]*string) {
-	if err := j.validateSetOperationPolicyTemplatesParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"operationPolicyTemplates",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetPublisherEmail(val *string) {
-	if err := j.validateSetPublisherEmailParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"publisherEmail",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetPublisherName(val *string) {
-	if err := j.validateSetPublisherNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"publisherName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetResourceGroupName(val *string) {
+func (j *jsiiProxy_Cdn)SetResourceGroupName(val *string) {
 	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetStorageAccountId(val *string) {
+	if err := j.validateSetStorageAccountIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"storageAccountId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetStorageAccountName(val *string) {
+	if err := j.validateSetStorageAccountNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"storageAccountName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetStorageAccountPrimaryWebHost(val *string) {
+	if err := j.validateSetStorageAccountPrimaryWebHostParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"storageAccountPrimaryWebHost",
 		val,
 	)
 }
@@ -472,16 +426,16 @@ func (j *jsiiProxy_Api)SetResourceGroupName(val *string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Api_IsConstruct(x interface{}) *bool {
+func Cdn_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateApi_IsConstructParameters(x); err != nil {
+	if err := validateCdn_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"api.Api",
+		"cdn.Cdn",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -491,16 +445,16 @@ func Api_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Api_IsTerraformElement(x interface{}) *bool {
+func Cdn_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateApi_IsTerraformElementParameters(x); err != nil {
+	if err := validateCdn_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"api.Api",
+		"cdn.Cdn",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -509,36 +463,36 @@ func Api_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (a *jsiiProxy_Api) AddOverride(path *string, value interface{}) {
-	if err := a.validateAddOverrideParameters(path, value); err != nil {
+func (c *jsiiProxy_Cdn) AddOverride(path *string, value interface{}) {
+	if err := c.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		c,
 		"addOverride",
 		[]interface{}{path, value},
 	)
 }
 
-func (a *jsiiProxy_Api) AddProvider(provider interface{}) {
-	if err := a.validateAddProviderParameters(provider); err != nil {
+func (c *jsiiProxy_Cdn) AddProvider(provider interface{}) {
+	if err := c.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		c,
 		"addProvider",
 		[]interface{}{provider},
 	)
 }
 
-func (a *jsiiProxy_Api) GetString(output *string) *string {
-	if err := a.validateGetStringParameters(output); err != nil {
+func (c *jsiiProxy_Cdn) GetString(output *string) *string {
+	if err := c.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
 	var returns *string
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"getString",
 		[]interface{}{output},
 		&returns,
@@ -547,14 +501,14 @@ func (a *jsiiProxy_Api) GetString(output *string) *string {
 	return returns
 }
 
-func (a *jsiiProxy_Api) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
-	if err := a.validateInterpolationForOutputParameters(moduleOutput); err != nil {
+func (c *jsiiProxy_Cdn) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+	if err := c.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
 	var returns cdktf.IResolvable
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"interpolationForOutput",
 		[]interface{}{moduleOutput},
 		&returns,
@@ -563,30 +517,30 @@ func (a *jsiiProxy_Api) InterpolationForOutput(moduleOutput *string) cdktf.IReso
 	return returns
 }
 
-func (a *jsiiProxy_Api) OverrideLogicalId(newLogicalId *string) {
-	if err := a.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
+func (c *jsiiProxy_Cdn) OverrideLogicalId(newLogicalId *string) {
+	if err := c.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
 	_jsii_.InvokeVoid(
-		a,
+		c,
 		"overrideLogicalId",
 		[]interface{}{newLogicalId},
 	)
 }
 
-func (a *jsiiProxy_Api) ResetOverrideLogicalId() {
+func (c *jsiiProxy_Cdn) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
-		a,
+		c,
 		"resetOverrideLogicalId",
 		nil, // no parameters
 	)
 }
 
-func (a *jsiiProxy_Api) SynthesizeAttributes() *map[string]interface{} {
+func (c *jsiiProxy_Cdn) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"synthesizeAttributes",
 		nil, // no parameters
 		&returns,
@@ -595,11 +549,11 @@ func (a *jsiiProxy_Api) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) SynthesizeHclAttributes() *map[string]interface{} {
+func (c *jsiiProxy_Cdn) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"synthesizeHclAttributes",
 		nil, // no parameters
 		&returns,
@@ -608,11 +562,11 @@ func (a *jsiiProxy_Api) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToHclTerraform() interface{} {
+func (c *jsiiProxy_Cdn) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"toHclTerraform",
 		nil, // no parameters
 		&returns,
@@ -621,11 +575,11 @@ func (a *jsiiProxy_Api) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToMetadata() interface{} {
+func (c *jsiiProxy_Cdn) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"toMetadata",
 		nil, // no parameters
 		&returns,
@@ -634,11 +588,11 @@ func (a *jsiiProxy_Api) ToMetadata() interface{} {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToString() *string {
+func (c *jsiiProxy_Cdn) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"toString",
 		nil, // no parameters
 		&returns,
@@ -647,11 +601,11 @@ func (a *jsiiProxy_Api) ToString() *string {
 	return returns
 }
 
-func (a *jsiiProxy_Api) ToTerraform() interface{} {
+func (c *jsiiProxy_Cdn) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
-		a,
+		c,
 		"toTerraform",
 		nil, // no parameters
 		&returns,

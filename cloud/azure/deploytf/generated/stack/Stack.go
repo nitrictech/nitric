@@ -36,6 +36,8 @@ type Stack interface {
 	SetEnableKeyvault(val *bool)
 	EnableStorage() *bool
 	SetEnableStorage(val *bool)
+	EnableWebsite() *bool
+	SetEnableWebsite(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -72,9 +74,14 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
+	StorageAccountWebHostOutput() *string
 	SubscriptionIdOutput() *string
 	// Experimental.
 	Version() *string
+	WebsiteRootErrorDocument() *string
+	SetWebsiteRootErrorDocument(val *string)
+	WebsiteRootIndexDocument() *string
+	SetWebsiteRootIndexDocument(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -241,6 +248,16 @@ func (j *jsiiProxy_Stack) EnableStorage() *bool {
 	_jsii_.Get(
 		j,
 		"enableStorage",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) EnableWebsite() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"enableWebsite",
 		&returns,
 	)
 	return returns
@@ -476,6 +493,16 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) StorageAccountWebHostOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountWebHostOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -491,6 +518,26 @@ func (j *jsiiProxy_Stack) Version() *string {
 	_jsii_.Get(
 		j,
 		"version",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteRootErrorDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteRootErrorDocument",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteRootIndexDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteRootIndexDocument",
 		&returns,
 	)
 	return returns
@@ -556,6 +603,14 @@ func (j *jsiiProxy_Stack)SetEnableStorage(val *bool) {
 	)
 }
 
+func (j *jsiiProxy_Stack)SetEnableWebsite(val *bool) {
+	_jsii_.Set(
+		j,
+		"enableWebsite",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
@@ -590,6 +645,22 @@ func (j *jsiiProxy_Stack)SetStackName(val *string) {
 	_jsii_.Set(
 		j,
 		"stackName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetWebsiteRootErrorDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"websiteRootErrorDocument",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetWebsiteRootIndexDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"websiteRootIndexDocument",
 		val,
 	)
 }
