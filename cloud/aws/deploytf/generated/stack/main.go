@@ -17,6 +17,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "cdktfStack", GoGetter: "CdktfStack"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},
+			_jsii_.MemberProperty{JsiiProperty: "enableWebsite", GoGetter: "EnableWebsite"},
 			_jsii_.MemberProperty{JsiiProperty: "forEach", GoGetter: "ForEach"},
 			_jsii_.MemberProperty{JsiiProperty: "fqn", GoGetter: "Fqn"},
 			_jsii_.MemberProperty{JsiiProperty: "friendlyUniqueId", GoGetter: "FriendlyUniqueId"},
@@ -37,6 +38,9 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "toString", GoMethod: "ToString"},
 			_jsii_.MemberMethod{JsiiMethod: "toTerraform", GoMethod: "ToTerraform"},
 			_jsii_.MemberProperty{JsiiProperty: "version", GoGetter: "Version"},
+			_jsii_.MemberProperty{JsiiProperty: "websiteBucketNameOutput", GoGetter: "WebsiteBucketNameOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "websiteRootErrorDocument", GoGetter: "WebsiteRootErrorDocument"},
+			_jsii_.MemberProperty{JsiiProperty: "websiteRootIndexDocument", GoGetter: "WebsiteRootIndexDocument"},
 		},
 		func() interface{} {
 			j := jsiiProxy_Stack{}

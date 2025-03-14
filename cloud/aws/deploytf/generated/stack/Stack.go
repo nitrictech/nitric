@@ -22,6 +22,8 @@ type Stack interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	EnableWebsite() *bool
+	SetEnableWebsite(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -43,6 +45,11 @@ type Stack interface {
 	StackIdOutput() *string
 	// Experimental.
 	Version() *string
+	WebsiteBucketNameOutput() *string
+	WebsiteRootErrorDocument() *string
+	SetWebsiteRootErrorDocument(val *string)
+	WebsiteRootIndexDocument() *string
+	SetWebsiteRootIndexDocument(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -99,6 +106,16 @@ func (j *jsiiProxy_Stack) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) EnableWebsite() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"enableWebsite",
 		&returns,
 	)
 	return returns
@@ -204,6 +221,36 @@ func (j *jsiiProxy_Stack) Version() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) WebsiteBucketNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteBucketNameOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteRootErrorDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteRootErrorDocument",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteRootIndexDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteRootIndexDocument",
+		&returns,
+	)
+	return returns
+}
+
 
 func NewStack(scope constructs.Construct, id *string, config *StackConfig) Stack {
 	_init_.Initialize()
@@ -240,10 +287,34 @@ func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
 	)
 }
 
+func (j *jsiiProxy_Stack)SetEnableWebsite(val *bool) {
+	_jsii_.Set(
+		j,
+		"enableWebsite",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetWebsiteRootErrorDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"websiteRootErrorDocument",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetWebsiteRootIndexDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"websiteRootIndexDocument",
 		val,
 	)
 }
