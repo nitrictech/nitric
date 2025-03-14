@@ -16,6 +16,8 @@ package embeds
 
 import (
 	_ "embed"
+	"strings"
+	"text/template"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -23,13 +25,28 @@ import (
 //go:embed api-url-rewrite.js
 var cloudfront_ApiUrlRewriteFunction string
 
-//go:embed url-rewrite.js
+//go:embed url-rewrite.tmpl.js
 var cloudfront_UrlRewriteFunctionName string
 
 func GetApiUrlRewriteFunction() pulumi.StringInput {
 	return pulumi.String(cloudfront_ApiUrlRewriteFunction)
 }
 
-func GetUrlRewriteFunction() pulumi.StringInput {
-	return pulumi.String(cloudfront_UrlRewriteFunctionName)
+func GetUrlRewriteFunction(basePath string) (pulumi.StringInput, error) {
+	tmpl, err := template.New("rewrite-function").Parse(cloudfront_UrlRewriteFunctionName)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]string{
+		"BasePath": basePath,
+	}
+
+	var output strings.Builder
+	err = tmpl.Execute(&output, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return pulumi.String(output.String()), nil
 }

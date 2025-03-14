@@ -30,6 +30,8 @@ resource "aws_lambda_permission" "allow_bucket" {
 
 # Deploy lambda notifications
 resource "aws_s3_bucket_notification" "bucket_notification" {
+  count = length(var.notification_targets) > 0 ? 1 : 0
+  
   bucket = aws_s3_bucket.bucket.id
 
   // make dynamic blocks for lambda function

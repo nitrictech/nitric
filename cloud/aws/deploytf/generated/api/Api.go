@@ -23,8 +23,8 @@ type Api interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	Domains() *[]*string
-	SetDomains(val *[]*string)
+	DomainNames() *[]*string
+	SetDomainNames(val *[]*string)
 	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
@@ -34,6 +34,7 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IdOutput() *string
 	Name() *string
 	SetName(val *string)
 	// The tree node.
@@ -50,10 +51,13 @@ type Api interface {
 	SetSpec(val *string)
 	StackId() *string
 	SetStackId(val *string)
+	StageNameOutput() *string
 	TargetLambdaFunctions() *map[string]*string
 	SetTargetLambdaFunctions(val *map[string]*string)
 	// Experimental.
 	Version() *string
+	ZoneIds() *map[string]*string
+	SetZoneIds(val *map[string]*string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -125,11 +129,11 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) Domains() *[]*string {
+func (j *jsiiProxy_Api) DomainNames() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
-		"domains",
+		"domainNames",
 		&returns,
 	)
 	return returns
@@ -170,6 +174,16 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) IdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"idOutput",
 		&returns,
 	)
 	return returns
@@ -255,6 +269,16 @@ func (j *jsiiProxy_Api) StackId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Api) StageNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stageNameOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Api) TargetLambdaFunctions() *map[string]*string {
 	var returns *map[string]*string
 	_jsii_.Get(
@@ -270,6 +294,16 @@ func (j *jsiiProxy_Api) Version() *string {
 	_jsii_.Get(
 		j,
 		"version",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) ZoneIds() *map[string]*string {
+	var returns *map[string]*string
+	_jsii_.Get(
+		j,
+		"zoneIds",
 		&returns,
 	)
 	return returns
@@ -311,13 +345,13 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Api)SetDomains(val *[]*string) {
-	if err := j.validateSetDomainsParameters(val); err != nil {
+func (j *jsiiProxy_Api)SetDomainNames(val *[]*string) {
+	if err := j.validateSetDomainNamesParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"domains",
+		"domainNames",
 		val,
 	)
 }
@@ -370,6 +404,17 @@ func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
 	_jsii_.Set(
 		j,
 		"targetLambdaFunctions",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Api)SetZoneIds(val *map[string]*string) {
+	if err := j.validateSetZoneIdsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"zoneIds",
 		val,
 	)
 }

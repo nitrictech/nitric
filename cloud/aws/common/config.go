@@ -27,6 +27,11 @@ type AwsApiConfig struct {
 	Domains     []string
 }
 
+type AwsCdnConfig struct {
+	Domain                string
+	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
+}
+
 type AwsImports struct {
 	// A map of nitric names to ARNs
 	Secrets map[string]string
@@ -62,6 +67,7 @@ type AwsConfig struct {
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*AwsApiConfig
+	Cdn                                   *AwsCdnConfig           `mapstructure:"cdn,omitempty"`
 	BatchComputeEnvConfig                 *BatchComputeEnvConfig  `mapstructure:"batch-compute-env,omitempty"`
 	AuroraRdsClusterConfig                *AuroraRdsClusterConfig `mapstructure:"aurora-rds-cluster,omitempty"`
 	config.AbstractConfig[*AwsConfigItem] `mapstructure:"config,squash"`
@@ -104,6 +110,11 @@ var defaultAuroraRdsClusterConfig = &AuroraRdsClusterConfig{
 	MaxCapacity: 1,
 }
 
+var defaultCdnConfig = &AwsCdnConfig{
+	Domain:                "",
+	SkipCacheInvalidation: false,
+}
+
 var defaultAwsConfigItem = AwsConfigItem{
 	Telemetry: 0,
 }
@@ -134,6 +145,10 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 
 	if awsConfig.Config == nil {
 		awsConfig.Config = map[string]*AwsConfigItem{}
+	}
+
+	if awsConfig.Cdn == nil {
+		awsConfig.Cdn = defaultCdnConfig
 	}
 
 	// if no default then set provider level defaults
