@@ -106,6 +106,22 @@ func (j *jsiiProxy_Cdn) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetPublisherEmailParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Cdn) validateSetPublisherNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")

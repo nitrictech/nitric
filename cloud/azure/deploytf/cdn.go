@@ -48,6 +48,8 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 		StorageAccountPrimaryWebHost: n.Stack.StorageAccountWebHostOutput(),
 		ResourceGroupName:            n.Stack.ResourceGroupNameOutput(),
 		Location:                     jsii.String(n.Region),
+		PublisherName:                jsii.String(n.AzureConfig.Org),
+		PublisherEmail:               jsii.String(n.AzureConfig.AdminEmail),
 		Apis:                         apiGateways,
 		DependsOn:                    &[]cdktf.ITerraformDependable{n.Stack},
 	})

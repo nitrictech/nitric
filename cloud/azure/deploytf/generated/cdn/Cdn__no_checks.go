@@ -40,6 +40,14 @@ func (j *jsiiProxy_Cdn) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetPublisherEmailParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Cdn) validateSetPublisherNameParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }

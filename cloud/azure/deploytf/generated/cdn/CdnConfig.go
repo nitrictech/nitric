@@ -15,6 +15,10 @@ type CdnConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The location/region where the resources will be created.
 	Location *string `field:"required" json:"location" yaml:"location"`
+	// The email of the publisher.
+	PublisherEmail *string `field:"required" json:"publisherEmail" yaml:"publisherEmail"`
+	// The name of the publisher.
+	PublisherName *string `field:"required" json:"publisherName" yaml:"publisherName"`
 	// The name of the resource group to use for the cdn.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
 	// The name of the stack.

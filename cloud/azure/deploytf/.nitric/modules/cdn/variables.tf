@@ -36,3 +36,13 @@ variable "location" {
   description = "The location/region where the resources will be created"
   type        = string
 }
+
+variable "publisher_name" {
+  description = "The name of the publisher"
+  type        = string
+}
+
+variable "publisher_email" {
+  description = "The email of the publisher"
+  type        = string
+}
