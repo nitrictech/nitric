@@ -91,6 +91,11 @@ type NitricGcpPulumiProvider struct {
 	Secrets                map[string]*secretmanager.Secret
 	DatabaseMigrationBuild map[string]*cloudrunv2.Job
 
+	// files to upload to the website bucket
+	// The map key represents the baseUrl/directory in the bucket
+	WebsiteBuckets map[string]*storage.Bucket
+	// WebsiteFiles  map[string][]pulumi.Asset
+
 	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
