@@ -62,9 +62,13 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		}
 
 		pr := compute.URLMapPathMatcherPathRuleArgs{
-			Service:     bs.ID(),
-			Paths:       pulumi.StringArray{pulumi.Sprintf("/apis/%s/*", name)},
-			RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{},
+			Service: bs.ID(),
+			Paths:   pulumi.StringArray{pulumi.Sprintf("/apis/%s/*", name)},
+			RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{
+				UrlRewrite: compute.URLMapPathMatcherPathRuleRouteActionUrlRewriteArgs{
+					PathPrefixRewrite: pulumi.String("/"),
+				},
+			},
 		}
 
 		pathRules = append(pathRules, pr)
