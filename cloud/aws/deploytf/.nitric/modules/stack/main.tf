@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "bucket" {
   bucket = "website-bucket-${random_string.id.result}"
 
   tags = {
-    "x-nitric-${var.stack_id}-name" = "website-bucket-${random_string.id.result}"
-    "x-nitric-${var.stack_id}-type" = "bucket"
+    "x-nitric-${random_string.id.result}-name" = "website-bucket-${random_string.id.result}"
+    "x-nitric-${random_string.id.result}-type" = "bucket"
   }
 }

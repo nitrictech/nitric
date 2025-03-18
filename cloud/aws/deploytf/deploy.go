@@ -16,6 +16,7 @@ package deploytf
 
 import (
 	"embed"
+	"fmt"
 
 	"github.com/aws/jsii-runtime-go"
 	ecrauth "github.com/cdktf/cdktf-provider-aws-go/aws/v19/dataawsecrauthorizationtoken"
@@ -35,6 +36,7 @@ import (
 	tfstack "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/topic"
 	vpc "github.com/nitrictech/nitric/cloud/aws/deploytf/generated/vpc"
+	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/website"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/websocket"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -63,6 +65,9 @@ type NitricAwsTerraformProvider struct {
 	Queues         map[string]queue.Queue
 	KeyValueStores map[string]keyvalue.Keyvalue
 	Websockets     map[string]websocket.Websocket
+	Websites       map[string]website.Website
+
+	EnableWebsites bool
 
 	provider.NitricDefaultOrder
 }
@@ -125,7 +130,13 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		},
 	})
 
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
+	_, enableWebsites := lo.Find(resources, func(item *deploymentspb.Resource) bool {
+		return item.Id.GetType() == resourcespb.ResourceType_Website
+	})
+
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		EnableWebsite: jsii.Bool(enableWebsites),
+	})
 
 	databases := lo.Filter(resources, func(item *deploymentspb.Resource, idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
@@ -142,6 +153,29 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		})
 	}
 
+	// set the website root index and error documents if we have a website
+	if enableWebsites {
+		var rootWebsite *deploymentspb.Website
+
+		a.EnableWebsites = true
+
+		for _, resource := range resources {
+			config, ok := resource.Config.(*deploymentspb.Resource_Website)
+
+			if ok && config.Website.BasePath == "/" {
+				rootWebsite = config.Website
+				break
+			}
+		}
+
+		if rootWebsite == nil {
+			return fmt.Errorf("no root website configuration found")
+		}
+
+		a.Stack.SetWebsiteRootErrorDocument(jsii.String(rootWebsite.ErrorDocument))
+		a.Stack.SetWebsiteRootIndexDocument(jsii.String(rootWebsite.IndexDocument))
+	}
+
 	return nil
 }
 
@@ -150,6 +184,10 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	accessRoleNames := []string{}
 	for _, service := range a.Services {
 		accessRoleNames = append(accessRoleNames, *service.RoleNameOutput())
+	}
+
+	if a.EnableWebsites {
+		a.NewCdn(stack)
 	}
 
 	return a.ResourcesStore(stack, accessRoleNames)

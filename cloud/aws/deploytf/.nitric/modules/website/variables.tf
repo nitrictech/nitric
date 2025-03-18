@@ -1,3 +1,8 @@
+variable "name" {
+  type = string
+  description = "The name of the website"
+}
+
 variable "base_path" {
   type = string
   description = "The base path for the website"
@@ -10,5 +15,5 @@ variable "local_directory" {
 
 variable "website_bucket_name" {
   type = string
-  description = ""
+  description = "The name of the bucket to deploy the website files to"
 }
