@@ -67,6 +67,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 			RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{
 				UrlRewrite: compute.URLMapPathMatcherPathRuleRouteActionUrlRewriteArgs{
 					PathPrefixRewrite: pulumi.String("/"),
+					HostRewrite:       api.DefaultHostname,
 				},
 			},
 		}
