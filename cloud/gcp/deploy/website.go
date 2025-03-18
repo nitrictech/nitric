@@ -101,6 +101,11 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 			pr := compute.URLMapPathMatcherPathRuleArgs{
 				Service: backend.ID(),
 				Paths:   pulumi.StringArray{pulumi.String(filepath.Join("/", name, "./*"))},
+				RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{
+					UrlRewrite: compute.URLMapPathMatcherPathRuleRouteActionUrlRewriteArgs{
+						PathPrefixRewrite: pulumi.String("/"),
+					},
+				},
 			}
 
 			pathRules = append(pathRules, pr)
@@ -160,11 +165,21 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
 	var err error
 
+	indexDoc := config.GetIndexDocument()
+	if indexDoc == "" {
+		indexDoc = "index.html"
+	}
+
+	errorDoc := config.GetErrorDocument()
+	if errorDoc == "" {
+		errorDoc = "404.html"
+	}
+
 	a.WebsiteBuckets[config.BasePath], err = storage.NewBucket(ctx, "websites", &storage.BucketArgs{
 		Location: pulumi.String(a.Region),
 		Website: &storage.BucketWebsiteArgs{
-			MainPageSuffix: pulumi.String(config.IndexDocument),
-			NotFoundPage:   pulumi.String(config.ErrorDocument),
+			MainPageSuffix: pulumi.String(indexDoc),
+			NotFoundPage:   pulumi.String(errorDoc),
 		},
 	})
 	if err != nil {
