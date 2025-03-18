@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"mime"
 	"path/filepath"
+	"strings"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
@@ -30,18 +31,7 @@ import (
 )
 
 // Deploy a cloud cdn entrypoint
-func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context, parent pulumi.Resource) error {
-	// Create an IAM binding to allow public read access to the bucket.
-
-	// Enable the storage bucket as a CDN.
-	backendBucket, err := compute.NewBackendBucket(ctx, "backend-bucket", &compute.BackendBucketArgs{
-		BucketName: bucket.Name,
-		EnableCdn:  pulumi.Bool(true),
-	})
-	if err != nil {
-		return err
-	}
-
+func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	pathRules := compute.URLMapPathMatcherPathRuleArray{}
 
 	// Add deployed API gatewayss to the URLMap
@@ -72,15 +62,21 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context, parent p
 		}
 
 		pr := compute.URLMapPathMatcherPathRuleArgs{
-			Service: bs.ID(),
-			Paths:   pulumi.StringArray{pulumi.Sprintf("apis/%s/**", api.Name)},
+			Service:     bs.ID(),
+			Paths:       pulumi.StringArray{pulumi.Sprintf("/apis/%s/*", name)},
+			RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{},
 		}
 
 		pathRules = append(pathRules, pr)
 	}
 	var defaultService pulumi.StringOutput
 	for name, website := range a.WebsiteBuckets {
-		backend, err := compute.NewBackendBucket(ctx, fmt.Sprintf("%s-backend-bucket", name), &compute.BackendBucketArgs{
+		normalizedName := strings.Replace(name, "/", "", -1)
+		if normalizedName == "" {
+			normalizedName = "default"
+		}
+
+		backend, err := compute.NewBackendBucket(ctx, fmt.Sprintf("%s-site-bucket", normalizedName), &compute.BackendBucketArgs{
 			BucketName: website.Name,
 			EnableCdn:  pulumi.Bool(true),
 		})
@@ -90,10 +86,17 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context, parent p
 
 		if name == "/" {
 			defaultService = backend.SelfLink
+
+			// pr := compute.URLMapPathMatcherPathRuleArgs{
+			// 	Service: backend.ID(),
+			// 	Paths:   pulumi.StringArray{pulumi.String("./*")},
+			// }
+
+			// pathRules = append(pathRules, pr)
 		} else {
 			pr := compute.URLMapPathMatcherPathRuleArgs{
 				Service: backend.ID(),
-				Paths:   pulumi.StringArray{pulumi.String(filepath.Join("/", name, "./**"))},
+				Paths:   pulumi.StringArray{pulumi.String(filepath.Join("/", name, "./*"))},
 			}
 
 			pathRules = append(pathRules, pr)
@@ -118,7 +121,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context, parent p
 		PathMatchers: compute.URLMapPathMatcherArray{
 			compute.URLMapPathMatcherArgs{
 				Name:           pulumi.String("all-paths"),
-				DefaultService: backendBucket.SelfLink,
+				DefaultService: defaultService,
 				PathRules:      pathRules,
 			},
 		},
@@ -154,6 +157,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 	var err error
 
 	a.WebsiteBuckets[config.BasePath], err = storage.NewBucket(ctx, "websites", &storage.BucketArgs{
+		Location: pulumi.String(a.Region),
 		Website: &storage.BucketWebsiteArgs{
 			MainPageSuffix: pulumi.String(config.IndexDocument),
 			NotFoundPage:   pulumi.String(config.ErrorDocument),
@@ -200,8 +204,14 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			contentType = "application/octet-stream"
 		}
 
+		relativePath, err := filepath.Rel(config.GetLocalDirectory(), path)
+		if err != nil {
+			return err
+		}
+
 		storage.NewBucketObject(ctx, path, &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
+			Name:        pulumi.String(relativePath),
 			Source:      pulumi.NewFileAsset(path),
 			ContentType: pulumi.String(contentType),
 		})
@@ -211,5 +221,5 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		return err
 	}
 
-	return fmt.Errorf("websites aren't yet supported by Nitric on Google Cloud, remove the websites from your project and try again or run `nitric down` to destroy this stack")
+	return nil
 }

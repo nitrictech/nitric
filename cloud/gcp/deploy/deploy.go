@@ -395,6 +395,8 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 }
 
 func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
+	a.deployEntrypoint(ctx)
+
 	return nil
 }
 
@@ -450,6 +452,7 @@ func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
 		Secrets:                make(map[string]*secretmanager.Secret),
 		DatabaseMigrationBuild: make(map[string]*cloudrunv2.Job),
+		WebsiteBuckets:         make(map[string]*storage.Bucket),
 	}
 }
 
