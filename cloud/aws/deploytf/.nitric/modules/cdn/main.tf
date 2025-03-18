@@ -6,19 +6,17 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
   comment = "OAI for accessing S3 bucket"
 }
 
-resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
-  bucket = var.website_bucket_id
-  policy = data.aws_iam_policy_document.allow_access_from_another_account.json
-}
-
 data "aws_iam_policy_document" "allow_access_from_another_account" {
+  version = "2012-10-17"
   statement {
     principals {
       type        = "AWS"
       identifiers = [
-        aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+        aws_cloudfront_origin_access_identity.oai.iam_arn
       ]
     }
+
+    effect = "Allow"
 
     actions = [
       "s3:GetObject",
@@ -30,6 +28,10 @@ data "aws_iam_policy_document" "allow_access_from_another_account" {
   }
 }
 
+resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
+  bucket = var.website_bucket_id
+  policy = data.aws_iam_policy_document.allow_access_from_another_account.json
+}
 
 resource "aws_cloudfront_function" "api-url-rewrite-function" {
   name    = "api-url-rewrite-function"
@@ -47,24 +49,53 @@ resource "aws_cloudfront_function" "url-rewrite-function" {
   code    = file("${path.module}/scripts/url-rewrite.js")
 }
 
-
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name              = var.website_bucket_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_identity.oai.id
     origin_id                = local.s3_origin_id
   }
-  
-  origin {
-    domain_name = var.api_endpoint
-    origin_id = var.website_name
 
-    custom_origin_config {
-      origin_read_timeout = 30
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols = ["TLSv1.2", "SSLv3"]
-      http_port = 80
-      https_port = 443
+  dynamic "origin" {
+    for_each = var.apis
+
+    content {
+      domain_name = origin.value.gateway_url
+      origin_id = origin.key
+
+      custom_origin_config {
+        origin_read_timeout = 30
+        origin_protocol_policy = "https-only"
+        origin_ssl_protocols = ["TLSv1.2", "SSLv3"]
+        http_port = 80
+        https_port = 443
+      }
+    }
+  }
+
+  dynamic "ordered_cache_behavior" {
+    for_each = var.apis
+
+    content {
+      path_pattern = "api/${ordered_cache_behavior.key}/*"
+
+      function_association {
+        event_type = "viewer-request"
+        function_arn = aws_cloudfront_function.api-url-rewrite-function.arn
+      }
+
+      allowed_methods = ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"]
+      cached_methods = ["GET","HEAD","OPTIONS"]
+      target_origin_id = ordered_cache_behavior.key
+
+      forwarded_values {
+        query_string = true
+        cookies {
+          forward = "all"
+        }
+      }
+
+      viewer_protocol_policy = "https-only"
     }
   }
 
@@ -94,29 +125,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
-  # Cache behavior with precedence 0
-  ordered_cache_behavior {
-    path_pattern = "api/${var.website_name}/*"
-
-    function_association {
-      event_type = "viewer-request"
-      function_arn = aws_cloudfront_function.api-url-rewrite-function.arn
-    }
-
-    allowed_methods = ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"]
-    cached_methods = ["GET","HEAD","OPTIONS"]
-    target_origin_id = var.website_name
-
-    forwarded_values {
-      query_string = true
-      cookies {
-        forward = "all"
-      }
-    }
-
-    viewer_protocol_policy = "https-only"
-  }
-
   default_root_object = var.website_index_document
 
   restrictions {
@@ -142,7 +150,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   tags = {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${var.stack_name}-name" = var.stack_name
+    "x-nitric-${var.stack_name}-type" = "stack"
   }
 }

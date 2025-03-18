@@ -67,6 +67,18 @@
       "source": "./.nitric/modules/sql"
     },
     {
+      "name": "website",
+      "source": "./.nitric/modules/website"
+    },
+    {
+      "name": "cdn",
+      "source": "./.nitric/modules/cdn"
+    },
+    {
+      "name": "domain",
+      "source": "./.nitric/modules/domain"
+    },
+    {
       "name": "parameter",
       "source": "./.nitric/modules/parameter"
     }

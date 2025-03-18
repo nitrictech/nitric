@@ -45,6 +45,9 @@ type Stack interface {
 	StackIdOutput() *string
 	// Experimental.
 	Version() *string
+	WebsiteBucketArnOutput() *string
+	WebsiteBucketDomainNameOutput() *string
+	WebsiteBucketIdOutput() *string
 	WebsiteBucketNameOutput() *string
 	WebsiteRootErrorDocument() *string
 	SetWebsiteRootErrorDocument(val *string)
@@ -216,6 +219,36 @@ func (j *jsiiProxy_Stack) Version() *string {
 	_jsii_.Get(
 		j,
 		"version",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteBucketArnOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteBucketArnOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteBucketDomainNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteBucketDomainNameOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) WebsiteBucketIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteBucketIdOutput",
 		&returns,
 	)
 	return returns
