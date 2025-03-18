@@ -225,6 +225,7 @@ resource "azapi_resource" "cdn_endpoint" {
                     typeName = "DeliveryRuleUrlPathMatchConditionParameters"
                     operator = "BeginsWith"
                     matchValues = ["/api/"]
+                    transforms = ["Lowercase"]
                   }
                 }
               ],
@@ -251,6 +252,8 @@ resource "azapi_resource" "cdn_endpoint" {
   depends_on = [azurerm_cdn_profile.website_profile]
 }
 
+data "azurerm_subscription" "current" {}
+
 resource "terraform_data" "cdn_purge" {  
   # This will run on every Terraform apply
   triggers_replace = [
@@ -264,9 +267,11 @@ resource "terraform_data" "cdn_purge" {
       if [ ${length(local.transformed_paths)} -gt 0 ]; then
       MSYS_NO_PATHCONV=1 az cdn endpoint purge \
         --resource-group ${var.resource_group_name} \
-        --profile-name ${azurerm_cdn_profile.website_profile.name} \
-        --name ${local.endpoint_name} \
-        --content-paths ${join(" ", formatlist("\"%s\"", local.transformed_paths))}
+        --profile-name ${sensitive(azurerm_cdn_profile.website_profile.name)} \
+        --subscription ${sensitive(data.azurerm_subscription.current.subscription_id)} \
+        --name ${sensitive(local.endpoint_name)} \
+        --content-paths ${join(" ", formatlist("\"%s\"", local.transformed_paths))} \
+        --no-wait
       fi
     EOF
   }

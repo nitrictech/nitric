@@ -6,6 +6,7 @@ variable "stack_name" {
 variable "storage_account_id" {
   description = "The id of the storage account to use for the cdn"
   type        = string
+  sensitive   = true
 }
 
 variable "storage_account_name" {
@@ -21,6 +22,7 @@ variable "storage_account_primary_web_host" {
 variable "resource_group_name" {
   description = "The name of the resource group to use for the cdn"
   type        = string
+  sensitive   = true
 }
 
 variable "apis" {
