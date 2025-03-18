@@ -255,11 +255,13 @@ resource "azapi_resource" "cdn_endpoint" {
 data "azurerm_subscription" "current" {}
 
 resource "terraform_data" "cdn_purge" {  
+  count = length(local.transformed_paths) > 0 ? 1 : 0  
   # This will run on every Terraform apply
   triggers_replace = [
     # Force this to run on every apply when paths are changed
     local.changed_path_md5_hashes
   ]
+  
   provisioner "local-exec" {
     interpreter = ["bash", "-c"]
     command     = <<EOF
