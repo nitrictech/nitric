@@ -17,9 +17,16 @@ locals {
   
   # Boolean flag to indicate if we have any APIs
   has_apis = length(local.api_keys) > 0
-}
 
-data "azurerm_client_config" "current" {}
+  # ensure any path that ends with index.html is treated as a directory
+  transformed_paths = sort([
+    for path in keys(var.cdn_purge_paths) : (
+      endswith(path, "/index.html") ? trimsuffix(path, "index.html") : path
+    )
+  ])
+
+  changed_path_md5_hashes = join(",", sort(values(var.cdn_purge_paths)))
+}
 
 # Create the CDN profile for the website
 resource "azurerm_cdn_profile" "website_profile" {
@@ -242,4 +249,27 @@ resource "azapi_resource" "cdn_endpoint" {
   response_export_values = ["properties.hostName"]
 
   depends_on = [azurerm_cdn_profile.website_profile]
+}
+
+resource "terraform_data" "cdn_purge" {  
+  # This will run on every Terraform apply
+  triggers_replace = [
+    # Force this to run on every apply when paths are changed
+    local.changed_path_md5_hashes
+  ]
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command     = <<EOF
+      # Purge the CDN endpoint if local.transformed_paths isn't empty
+      if [ ${length(local.transformed_paths)} -gt 0 ]; then
+      MSYS_NO_PATHCONV=1 az cdn endpoint purge \
+        --resource-group ${var.resource_group_name} \
+        --profile-name ${azurerm_cdn_profile.website_profile.name} \
+        --name ${local.endpoint_name} \
+        --content-paths ${join(" ", formatlist("\"%s\"", local.transformed_paths))}
+      fi
+    EOF
+  }
+
+  depends_on = [azapi_resource.cdn_endpoint]
 }

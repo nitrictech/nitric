@@ -19,6 +19,8 @@ type WebsiteConfig struct {
 	LocalDirectory *string `field:"required" json:"localDirectory" yaml:"localDirectory"`
 	// The name of the website.
 	Name *string `field:"required" json:"name" yaml:"name"`
+	// The connection string for the storage account.
+	StorageAccountConnectionString *string `field:"required" json:"storageAccountConnectionString" yaml:"storageAccountConnectionString"`
 	// The name of the storage account.
 	StorageAccountName *string `field:"required" json:"storageAccountName" yaml:"storageAccountName"`
 }

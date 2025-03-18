@@ -27,7 +27,6 @@ variable "apis" {
   description = "Map of APIs and their gateway information"
   type = map(object({
     gateway_url = string
-    # Add any other API properties you might need
   }))
   default = {}
 }
@@ -45,4 +44,11 @@ variable "publisher_name" {
 variable "publisher_email" {
   description = "The email of the publisher"
   type        = string
+}
+
+# Variable to hold content paths to purge
+variable "cdn_purge_paths" {
+  description = "Map of content paths to purge from the CDN"
+  type        = map(string)
+  default     = {}
 }

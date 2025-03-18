@@ -18,6 +18,7 @@ type Website interface {
 	SetBasePath(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	ChangedFilesOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
@@ -46,6 +47,8 @@ type Website interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StorageAccountConnectionString() *string
+	SetStorageAccountConnectionString(val *string)
 	StorageAccountName() *string
 	SetStorageAccountName(val *string)
 	// Experimental.
@@ -96,6 +99,16 @@ func (j *jsiiProxy_Website) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) ChangedFilesOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"changedFilesOutput",
 		&returns,
 	)
 	return returns
@@ -221,6 +234,16 @@ func (j *jsiiProxy_Website) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) StorageAccountConnectionString() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountConnectionString",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) StorageAccountName() *string {
 	var returns *string
 	_jsii_.Get(
@@ -314,6 +337,17 @@ func (j *jsiiProxy_Website)SetName(val *string) {
 	_jsii_.Set(
 		j,
 		"name",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetStorageAccountConnectionString(val *string) {
+	if err := j.validateSetStorageAccountConnectionStringParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"storageAccountConnectionString",
 		val,
 	)
 }

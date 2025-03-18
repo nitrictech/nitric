@@ -18,4 +18,7 @@ variable "storage_account_name" {
   type        = string
 }
 
-
+variable "storage_account_connection_string" {
+  description = "The connection string for the storage account"
+  type        = string
+}

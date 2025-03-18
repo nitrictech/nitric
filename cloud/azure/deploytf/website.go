@@ -26,11 +26,12 @@ func (n *NitricAzureTerraformProvider) Website(stack cdktf.TerraformStack, name 
 	allDependants := []cdktf.ITerraformDependable{n.Stack}
 
 	n.Websites[name] = website.NewWebsite(stack, jsii.String(name), &website.WebsiteConfig{
-		Name:               jsii.String(name),
-		LocalDirectory:     jsii.String(config.GetLocalDirectory()),
-		BasePath:           jsii.String(config.GetBasePath()),
-		StorageAccountName: n.Stack.StorageAccountNameOutput(),
-		DependsOn:          &allDependants,
+		Name:                           jsii.String(name),
+		LocalDirectory:                 jsii.String(config.GetLocalDirectory()),
+		BasePath:                       jsii.String(config.GetBasePath()),
+		StorageAccountConnectionString: n.Stack.StorageAccountConnectionStringOutput(),
+		StorageAccountName:             n.Stack.StorageAccountNameOutput(),
+		DependsOn:                      &allDependants,
 	})
 
 	return nil

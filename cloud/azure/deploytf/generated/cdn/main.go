@@ -16,6 +16,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "addProvider", GoMethod: "AddProvider"},
 			_jsii_.MemberProperty{JsiiProperty: "apis", GoGetter: "Apis"},
 			_jsii_.MemberProperty{JsiiProperty: "cdktfStack", GoGetter: "CdktfStack"},
+			_jsii_.MemberProperty{JsiiProperty: "cdnPurgePaths", GoGetter: "CdnPurgePaths"},
 			_jsii_.MemberProperty{JsiiProperty: "cdnUrlOutput", GoGetter: "CdnUrlOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},

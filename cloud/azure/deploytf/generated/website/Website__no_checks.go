@@ -44,6 +44,10 @@ func (j *jsiiProxy_Website) validateSetNameParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Website) validateSetStorageAccountConnectionStringParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Website) validateSetStorageAccountNameParameters(val *string) error {
 	return nil
 }

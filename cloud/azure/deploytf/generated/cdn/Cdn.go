@@ -18,6 +18,8 @@ type Cdn interface {
 	SetApis(val interface{})
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CdnPurgePaths() *map[string]*string
+	SetCdnPurgePaths(val *map[string]*string)
 	CdnUrlOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
@@ -107,6 +109,16 @@ func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) CdnPurgePaths() *map[string]*string {
+	var returns *map[string]*string
+	_jsii_.Get(
+		j,
+		"cdnPurgePaths",
 		&returns,
 	)
 	return returns
@@ -347,6 +359,14 @@ func (j *jsiiProxy_Cdn)SetApis(val interface{}) {
 	_jsii_.Set(
 		j,
 		"apis",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetCdnPurgePaths(val *map[string]*string) {
+	_jsii_.Set(
+		j,
+		"cdnPurgePaths",
 		val,
 	)
 }
