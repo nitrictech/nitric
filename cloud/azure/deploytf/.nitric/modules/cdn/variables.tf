@@ -3,17 +3,6 @@ variable "stack_name" {
   type        = string
 }
 
-variable "storage_account_id" {
-  description = "The id of the storage account to use for the cdn"
-  type        = string
-  sensitive   = true
-}
-
-variable "storage_account_name" {
-  description = "The name of the storage account to use for the cdn"
-  type        = string
-}
-
 variable "storage_account_primary_web_host" {
   description = "The primary web host of the storage account to use for the cdn"
   type        = string
@@ -31,21 +20,6 @@ variable "apis" {
     gateway_url = string
   }))
   default = {}
-}
-
-variable "location" {
-  description = "The location/region where the resources will be created"
-  type        = string
-}
-
-variable "publisher_name" {
-  description = "The name of the publisher"
-  type        = string
-}
-
-variable "publisher_email" {
-  description = "The email of the publisher"
-  type        = string
 }
 
 # Variable to hold content paths to purge

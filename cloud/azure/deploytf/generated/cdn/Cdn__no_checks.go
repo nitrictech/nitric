@@ -36,31 +36,11 @@ func (j *jsiiProxy_Cdn) validateSetApisParameters(val interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetLocationParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetPublisherEmailParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetPublisherNameParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }
 
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountIdParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountNameParameters(val *string) error {
 	return nil
 }
 

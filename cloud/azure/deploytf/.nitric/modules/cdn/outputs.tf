@@ -1,4 +1,4 @@
 output "cdn_url" {
-  description = "The URL of the CDN endpoint"
-  value = "https://${azapi_resource.cdn_endpoint.output.properties.hostName}"
+  description = "The URL of the endpoint"
+  value = "https://${azurerm_cdn_frontdoor_endpoint.cdn_endpoint.host_name}"
 }

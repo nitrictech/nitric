@@ -98,30 +98,6 @@ func (j *jsiiProxy_Cdn) validateSetApisParameters(val interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetLocationParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetPublisherEmailParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetPublisherNameParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
@@ -131,22 +107,6 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 }
 
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountIdParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

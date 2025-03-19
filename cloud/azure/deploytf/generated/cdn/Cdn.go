@@ -35,16 +35,10 @@ type Cdn interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	Location() *string
-	SetLocation(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
-	PublisherEmail() *string
-	SetPublisherEmail(val *string)
-	PublisherName() *string
-	SetPublisherName(val *string)
 	// Experimental.
 	RawOverrides() interface{}
 	ResourceGroupName() *string
@@ -55,10 +49,6 @@ type Cdn interface {
 	Source() *string
 	StackName() *string
 	SetStackName(val *string)
-	StorageAccountId() *string
-	SetStorageAccountId(val *string)
-	StorageAccountName() *string
-	SetStorageAccountName(val *string)
 	StorageAccountPrimaryWebHost() *string
 	SetStorageAccountPrimaryWebHost(val *string)
 	// Experimental.
@@ -184,16 +174,6 @@ func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Location() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"location",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Cdn) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
@@ -209,26 +189,6 @@ func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
 	_jsii_.Get(
 		j,
 		"providers",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) PublisherEmail() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"publisherEmail",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) PublisherName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"publisherName",
 		&returns,
 	)
 	return returns
@@ -279,26 +239,6 @@ func (j *jsiiProxy_Cdn) StackName() *string {
 	_jsii_.Get(
 		j,
 		"stackName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) StorageAccountId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"storageAccountId",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) StorageAccountName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"storageAccountName",
 		&returns,
 	)
 	return returns
@@ -387,39 +327,6 @@ func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetLocation(val *string) {
-	if err := j.validateSetLocationParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"location",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetPublisherEmail(val *string) {
-	if err := j.validateSetPublisherEmailParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"publisherEmail",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetPublisherName(val *string) {
-	if err := j.validateSetPublisherNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"publisherName",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Cdn)SetResourceGroupName(val *string) {
 	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
 		panic(err)
@@ -438,28 +345,6 @@ func (j *jsiiProxy_Cdn)SetStackName(val *string) {
 	_jsii_.Set(
 		j,
 		"stackName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetStorageAccountId(val *string) {
-	if err := j.validateSetStorageAccountIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"storageAccountId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetStorageAccountName(val *string) {
-	if err := j.validateSetStorageAccountNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"storageAccountName",
 		val,
 	)
 }

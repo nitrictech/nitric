@@ -67,14 +67,9 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 
 	return cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
 		StackName:                    n.Stack.StackNameOutput(),
-		StorageAccountId:             n.Stack.StorageAccountIdOutput(),
-		StorageAccountName:           n.Stack.StorageAccountNameOutput(),
 		StorageAccountPrimaryWebHost: n.Stack.StorageAccountWebHostOutput(),
 		ResourceGroupName:            n.Stack.ResourceGroupNameOutput(),
 		CdnPurgePaths:                filesToPurgeMap,
-		Location:                     jsii.String(n.Region),
-		PublisherName:                jsii.String(n.AzureConfig.Org),
-		PublisherEmail:               jsii.String(n.AzureConfig.AdminEmail),
 		Apis:                         apiGateways,
 		DependsOn:                    &dependsOn,
 	})
