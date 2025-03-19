@@ -513,7 +513,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 			pulumi.String(cdn.AFDEndpointProtocolsHttps),
 		},
 		ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
-		HttpsRedirect:      pulumi.String(cdn.HttpsRedirectEnabled),
+		HttpsRedirect:      pulumi.String(cdn.HttpsRedirectDisabled),
 		PatternsToMatch:    pulumi.ToStringArray([]string{"/*"}),
 		EnabledState:       cdn.EnabledStateEnabled,
 		OriginGroup: &cdn.ResourceReferenceArgs{
