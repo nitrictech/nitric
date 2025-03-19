@@ -475,6 +475,10 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 									Id: apiOriginGroup.ID(),
 								},
 							},
+							CacheConfiguration: cdn.CacheConfigurationArgs{
+								CacheBehavior:              pulumi.String(cdn.RuleCacheBehaviorHonorOrigin),
+								QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorIgnoreQueryString),
+							},
 							TypeName: pulumi.String("DeliveryRuleRouteConfigurationOverrideActionParameters"),
 						},
 					},
@@ -528,7 +532,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 				},
 				IsCompressionEnabled: pulumi.Bool(true),
 			},
-			QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorUseQueryString),
+			QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorIgnoreQueryString),
 		},
 		RuleSets: ruleSets,
 	}, pulumi.DependsOn([]pulumi.Resource{defaultOriginGroup}))
