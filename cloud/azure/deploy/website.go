@@ -74,15 +74,6 @@ func (p *NitricAzurePulumiProvider) createStaticWebsite(ctx *pulumi.Context, res
 	return nil
 }
 
-func (p *NitricAzurePulumiProvider) getOriginId(profile pulumi.StringOutput, endpoint string, origin pulumi.StringOutput) pulumi.StringOutput {
-	return pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/origins/%s",
-		p.ClientConfig.SubscriptionId,
-		p.ResourceGroup.Name,
-		profile,
-		endpoint,
-		origin)
-}
-
 func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName string, contentPaths []*string) error {
 	// Authenticate with Azure
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -91,7 +82,7 @@ func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName s
 	}
 
 	// Create a CDN endpoint client
-	client, err := armcdn.NewEndpointsClient(subscriptionID, cred, nil)
+	client, err := armcdn.NewAFDEndpointsClient(subscriptionID, cred, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create CDN endpoint client: %w", err)
 	}
@@ -102,7 +93,7 @@ func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName s
 		resourceGroup,
 		profileName,
 		endpointName,
-		armcdn.PurgeParameters{
+		armcdn.AfdPurgeParameters{
 			ContentPaths: contentPaths,
 		},
 		nil,
@@ -316,8 +307,10 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	profile, err := cdn.NewProfile(ctx, "website-profile", &cdn.ProfileArgs{
 		ResourceGroupName: p.ResourceGroup.Name,
+		Location:          pulumi.String("Global"),
 		Sku: &cdn.SkuArgs{
-			Name: pulumi.String("Standard_Microsoft"),
+			// TODO could make this a config option, standard or premium
+			Name: cdn.SkuName_Standard_AzureFrontDoor,
 		},
 	})
 	if err != nil {
@@ -335,153 +328,212 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	endpointName := fmt.Sprintf("%s-cdn", p.StackId)
 
-	deliveryRules := cdn.DeliveryRuleArray{}
+	defaultOriginGroupName := fmt.Sprintf("%s-default-origin-group", p.StackId)
 
-	origins := cdn.DeepCreatedOriginArray{
-		&cdn.DeepCreatedOriginArgs{
-			Name:             p.StorageAccount.Name,
-			HostName:         originHostname,
-			OriginHostHeader: originHostname,
-		},
+	defaultOriginName := fmt.Sprintf("%s-default-origin", p.StackId)
+
+	endpoint, err := cdn.NewAFDEndpoint(ctx, endpointName, &cdn.AFDEndpointArgs{
+		EndpointName:      pulumi.String(endpointName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		Location:          profile.Location,
+		EnabledState:      cdn.EnabledStateEnabled,
+	}, pulumi.DependsOn([]pulumi.Resource{profile}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor endpoint: %w", err)
 	}
 
-	defaultOriginGroupName := "website-origin-group"
-
-	originGroups := cdn.DeepCreatedOriginGroupArray{
-		&cdn.DeepCreatedOriginGroupArgs{
-			Name: pulumi.String(defaultOriginGroupName),
-			Origins: cdn.ResourceReferenceArray{
-				&cdn.ResourceReferenceArgs{
-					Id: p.getOriginId(profile.Name, endpointName, p.StorageAccount.Name),
-				},
-			},
-		},
-	}
-
-	ruleOrder := 1
-
-	// Sort the APIs by name
-	sortedApiKeys := lo.Keys(p.Apis)
-	slices.Sort(sortedApiKeys)
-
-	// For each API forward to the appropriate API gateway
-	for _, name := range sortedApiKeys {
-		api := p.Apis[name]
-
-		apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
-			parsed, err := url.Parse(gatewayUrl)
-			if err != nil {
-				return "", err
-			}
-
-			return parsed.Hostname(), nil
-		}).(pulumi.StringOutput)
-
-		apiOriginName := pulumi.Sprintf("api-origin-%s", name)
-
-		origins = append(origins, &cdn.DeepCreatedOriginArgs{
-			Name:             apiOriginName,
-			HostName:         apiHostName,
-			OriginHostHeader: apiHostName,
-			HttpPort:         pulumi.Int(80),
-			HttpsPort:        pulumi.Int(443),
-		})
-
-		apiOriginGroupName := fmt.Sprintf("api-origin-group-%s", name)
-
-		originGroups = append(originGroups, &cdn.DeepCreatedOriginGroupArgs{
-			Name: pulumi.String(apiOriginGroupName),
-			Origins: cdn.ResourceReferenceArray{
-				&cdn.ResourceReferenceArgs{
-					Id: p.getOriginId(profile.Name, endpointName, apiOriginName),
-				},
-			},
-		})
-
-		rule := &cdn.DeliveryRuleArgs{
-			Name:  pulumi.Sprintf("forward_%s", name),
-			Order: pulumi.Int(ruleOrder),
-			Conditions: pulumi.ToArray(
-				[]interface{}{
-					cdn.DeliveryRuleUrlPathConditionArgs{
-						Name: pulumi.String("UrlPath"),
-						Parameters: cdn.UrlPathMatchConditionParametersArgs{
-							MatchValues: pulumi.StringArray{
-								pulumi.Sprintf("/api/%s", name),
-							},
-							Transforms: pulumi.StringArray{
-								pulumi.String(cdn.TransformLowercase),
-							},
-							TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
-							Operator: pulumi.String(cdn.OperatorBeginsWith),
-						},
-					},
-				}),
-			Actions: pulumi.ToArray(
-				[]interface{}{
-					cdn.OriginGroupOverrideActionArgs{
-						Name: pulumi.String("OriginGroupOverride"),
-						Parameters: cdn.OriginGroupOverrideActionParametersArgs{
-							OriginGroup: cdn.ResourceReferenceArgs{
-								Id: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
-									p.ClientConfig.SubscriptionId,
-									p.ResourceGroup.Name,
-									profile.Name,
-									endpointName,
-									apiOriginGroupName),
-							},
-							TypeName: pulumi.String("DeliveryRuleOriginGroupOverrideActionParameters"),
-						},
-					},
-					cdn.UrlRewriteActionArgs{
-						Name: pulumi.String("UrlRewrite"),
-						Parameters: cdn.UrlRewriteActionParametersArgs{
-							Destination:   pulumi.String("/"),
-							SourcePattern: pulumi.String(fmt.Sprintf("/api/%s/", name)),
-							TypeName:      pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
-						},
-					},
-				},
-			),
-		}
-
-		ruleOrder++
-
-		deliveryRules = append(deliveryRules, rule)
-	}
-
-	endpoint, err := cdn.NewEndpoint(ctx, endpointName, &cdn.EndpointArgs{
-		EndpointName:         pulumi.String(endpointName),
-		ResourceGroupName:    p.ResourceGroup.Name,
-		ProfileName:          profile.Name,
-		IsHttpAllowed:        pulumi.Bool(false),
-		IsHttpsAllowed:       pulumi.Bool(true),
-		IsCompressionEnabled: pulumi.Bool(true),
-		ContentTypesToCompress: pulumi.StringArray{
-			pulumi.String("text/html"),
-			pulumi.String("text/css"),
-			pulumi.String("application/javascript"),
-			pulumi.String("application/json"),
-			pulumi.String("image/svg+xml"),
-			pulumi.String("font/woff"),
-			pulumi.String("font/woff2"),
-		},
-		OriginGroups: originGroups,
-		DefaultOriginGroup: cdn.ResourceReferenceArgs{
-			Id: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
-				p.ClientConfig.SubscriptionId,
-				p.ResourceGroup.Name,
-				profile.Name, endpointName,
-				defaultOriginGroupName),
-		},
-		Origins: origins,
-		DeliveryPolicy: &cdn.EndpointPropertiesUpdateParametersDeliveryPolicyArgs{
-			Description: pulumi.String("Default policy for the website endpoint"),
-			Rules:       deliveryRules,
+	defaultOriginGroup, err := cdn.NewAFDOriginGroup(ctx, defaultOriginGroupName, &cdn.AFDOriginGroupArgs{
+		OriginGroupName:   pulumi.String(defaultOriginGroupName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		LoadBalancingSettings: &cdn.LoadBalancingSettingsParametersArgs{
+			AdditionalLatencyInMilliseconds: pulumi.Int(200), // Lower latency tolerance for faster failover
+			SampleSize:                      pulumi.Int(5),   // More samples for better decision-making
+			SuccessfulSamplesRequired:       pulumi.Int(3),   // Keep at 3 to maintain reliability
 		},
 	}, pulumi.DependsOn([]pulumi.Resource{profile}))
 	if err != nil {
-		return fmt.Errorf("failed to create CDN endpoint: %w", err)
+		return fmt.Errorf("failed to create Frontdoor origin group: %w", err)
+	}
+
+	_, err = cdn.NewAFDOrigin(ctx, defaultOriginName, &cdn.AFDOriginArgs{
+		OriginName:        pulumi.String(defaultOriginName),
+		OriginGroupName:   defaultOriginGroup.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		HostName:          originHostname,
+		OriginHostHeader:  originHostname,
+		HttpPort:          pulumi.Int(80),
+		HttpsPort:         pulumi.Int(443),
+		EnabledState:      cdn.EnabledStateEnabled,
+	}, pulumi.DependsOn([]pulumi.Resource{defaultOriginGroup}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor origin: %w", err)
+	}
+
+	// Create a rule set for the CDN endpoint if there are APIs
+	ruleSets := cdn.ResourceReferenceArray{}
+
+	if len(p.Apis) > 0 {
+		ruleSetName := "apiruleset"
+		ruleOrder := 1
+
+		ruleSet, err := cdn.NewRuleSet(ctx, ruleSetName, &cdn.RuleSetArgs{
+			RuleSetName:       pulumi.String(ruleSetName),
+			ResourceGroupName: p.ResourceGroup.Name,
+			ProfileName:       profile.Name,
+		}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
+		if err != nil {
+			return fmt.Errorf("failed to create Frontdoor rule set: %w", err)
+		}
+
+		ruleSets = append(ruleSets, &cdn.ResourceReferenceArgs{
+			Id: ruleSet.ID(),
+		})
+
+		// Sort the APIs by name
+		sortedApiKeys := lo.Keys(p.Apis)
+		slices.Sort(sortedApiKeys)
+
+		// Create a delivery rule for each API
+		for _, apiName := range sortedApiKeys {
+			api := p.Apis[apiName]
+
+			apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
+				parsed, err := url.Parse(gatewayUrl)
+				if err != nil {
+					return "", err
+				}
+
+				return parsed.Hostname(), nil
+			}).(pulumi.StringOutput)
+
+			apiOriginGroupName := fmt.Sprintf("api-origin-group-%s", apiName)
+
+			apiOriginGroup, err := cdn.NewAFDOriginGroup(ctx, apiOriginGroupName, &cdn.AFDOriginGroupArgs{
+				OriginGroupName:   pulumi.String(apiOriginGroupName),
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				LoadBalancingSettings: &cdn.LoadBalancingSettingsParametersArgs{
+					AdditionalLatencyInMilliseconds: pulumi.Int(100), // Quick failover for API requests
+					SampleSize:                      pulumi.Int(5),   // More accurate health assessment
+					SuccessfulSamplesRequired:       pulumi.Int(2),   // Faster recovery for healthy endpoints
+				},
+			}, pulumi.DependsOn([]pulumi.Resource{ruleSet}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin group: %w", err)
+			}
+
+			apiOriginName := fmt.Sprintf("api-origin-%s", apiName)
+
+			origin, err := cdn.NewAFDOrigin(ctx, apiOriginName, &cdn.AFDOriginArgs{
+				OriginName:        pulumi.String(apiOriginName),
+				OriginGroupName:   apiOriginGroup.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				HostName:          apiHostName,
+				OriginHostHeader:  apiHostName,
+				HttpPort:          pulumi.Int(80),
+				HttpsPort:         pulumi.Int(443),
+			}, pulumi.DependsOn([]pulumi.Resource{apiOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin: %w", err)
+			}
+
+			ruleName := fmt.Sprintf("apirule%s", apiName)
+
+			_, err = cdn.NewRule(ctx, ruleName, &cdn.RuleArgs{
+				Order:             pulumi.Int(ruleOrder),
+				RuleName:          pulumi.String(ruleName),
+				RuleSetName:       ruleSet.Name,
+				ProfileName:       profile.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
+				Conditions: pulumi.ToArray(
+					[]interface{}{
+						cdn.DeliveryRuleUrlPathConditionArgs{
+							Name: pulumi.String(cdn.MatchVariableUrlPath),
+							Parameters: cdn.UrlPathMatchConditionParametersArgs{
+								MatchValues: pulumi.StringArray{
+									pulumi.Sprintf("/api/%s", apiName),
+								},
+								Transforms: pulumi.StringArray{
+									pulumi.String(cdn.TransformLowercase),
+								},
+								TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
+								Operator: pulumi.String(cdn.OperatorBeginsWith),
+							},
+						},
+					}),
+				Actions: pulumi.ToArray([]interface{}{
+					cdn.DeliveryRuleRouteConfigurationOverrideActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionRouteConfigurationOverride),
+						Parameters: cdn.RouteConfigurationOverrideActionParametersArgs{
+							OriginGroupOverride: cdn.OriginGroupOverrideArgs{
+								ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
+								OriginGroup: &cdn.ResourceReferenceArgs{
+									Id: apiOriginGroup.ID(),
+								},
+							},
+							TypeName: pulumi.String("DeliveryRuleRouteConfigurationOverrideActionParameters"),
+						},
+					},
+					cdn.UrlRewriteActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionUrlRewrite),
+						Parameters: cdn.UrlRewriteActionParametersArgs{
+							Destination:   pulumi.String("/"),
+							SourcePattern: pulumi.String(fmt.Sprintf("/api/%s/", apiName)),
+							TypeName:      pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
+						},
+					},
+				}),
+			}, pulumi.DependsOn([]pulumi.Resource{ruleSet, origin, apiOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor rule: %w", err)
+			}
+
+			ruleOrder++
+		}
+	}
+
+	routeName := fmt.Sprintf("%s-main-route", p.StackId)
+
+	_, err = cdn.NewRoute(ctx, routeName, &cdn.RouteArgs{
+		RouteName:         pulumi.String(routeName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		// TODO make this a config option for custom domains
+		LinkToDefaultDomain: pulumi.String(cdn.LinkToDefaultDomainEnabled),
+		ProfileName:         profile.Name,
+		EndpointName:        endpoint.Name,
+		SupportedProtocols: pulumi.StringArray{
+			pulumi.String(cdn.AFDEndpointProtocolsHttps),
+		},
+		ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
+		HttpsRedirect:      pulumi.String(cdn.HttpsRedirectEnabled),
+		PatternsToMatch:    pulumi.ToStringArray([]string{"/*"}),
+		EnabledState:       cdn.EnabledStateEnabled,
+		OriginGroup: &cdn.ResourceReferenceArgs{
+			Id: defaultOriginGroup.ID(),
+		},
+		CacheConfiguration: &cdn.AfdRouteCacheConfigurationArgs{
+			CompressionSettings: &cdn.CompressionSettingsArgs{
+				ContentTypesToCompress: pulumi.StringArray{
+					pulumi.String("text/html"),
+					pulumi.String("text/css"),
+					pulumi.String("application/javascript"),
+					pulumi.String("application/json"),
+					pulumi.String("image/svg+xml"),
+					pulumi.String("font/woff"),
+					pulumi.String("font/woff2"),
+				},
+				IsCompressionEnabled: pulumi.Bool(true),
+			},
+			QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorUseQueryString),
+		},
+		RuleSets: ruleSets,
+	}, pulumi.DependsOn([]pulumi.Resource{defaultOriginGroup}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor route: %w", err)
 	}
 
 	// Purge the CDN endpoint if content has changed

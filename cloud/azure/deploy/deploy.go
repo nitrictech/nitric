@@ -61,7 +61,7 @@ type NitricAzurePulumiProvider struct {
 	resources []*pulumix.NitricPulumiResource[any]
 
 	staticWebsite                   *storage.StorageAccountStaticWebsite
-	Endpoint                        *cdn.Endpoint
+	Endpoint                        *cdn.AFDEndpoint
 	staticWebsiteChangedFileOutputs pulumi.StringArray
 
 	AzureConfig *common.AzureConfig
