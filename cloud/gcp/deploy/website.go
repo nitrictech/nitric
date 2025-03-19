@@ -25,6 +25,7 @@ import (
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/certificatemanager"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/compute"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/dns"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
@@ -164,8 +165,18 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	}
 
 	// Create a managed ssl certificate for the domain
-	sslCert, err := compute.NewManagedSslCertificate(ctx, "cdn-ssl-cert", &compute.ManagedSslCertificateArgs{
-		Managed: compute.ManagedSslCertificateManagedArgs{
+	// sslCert, err := compute.NewManagedSslCertificate(ctx, "cdn-ssl-cert", &compute.ManagedSslCertificateArgs{
+	// 	Managed: compute.ManagedSslCertificateManagedArgs{
+	// 		Domains: pulumi.StringArray{pulumi.String(subDomain)},
+	// 	},
+	// })
+	// if err != nil {
+	// 	return err
+	// }
+
+	sslCert, err := certificatemanager.NewCertificate(ctx, "cdn-cert", &certificatemanager.CertificateArgs{
+		Scope: pulumi.String("ALL_REGIONS"),
+		Managed: certificatemanager.CertificateManagedArgs{
 			Domains: pulumi.StringArray{pulumi.String(subDomain)},
 		},
 	})
