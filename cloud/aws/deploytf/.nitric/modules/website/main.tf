@@ -18,8 +18,8 @@ locals {
 
 resource "aws_s3_object" "object" {
   for_each = local.transformed_files
+  bucket = var.website_bucket_id
 
-  bucket = var.website_bucket_name
   key    = trimprefix(each.key, "/")
   source = each.value.source_path
   content_type = each.value.content_type
@@ -27,4 +27,3 @@ resource "aws_s3_object" "object" {
   # required to detect file changes in Terraform 
   etag = each.value.digests.md5
 }
-

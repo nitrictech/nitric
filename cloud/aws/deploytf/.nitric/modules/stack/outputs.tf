@@ -20,5 +20,5 @@ output "website_bucket_arn" {
 
 output "website_bucket_domain_name" {
   description = "The domain name for the website bucket"
-  value = aws_s3_bucket.bucket.bucket_domain_name
+  value = aws_s3_bucket.bucket.bucket_regional_domain_name
 }

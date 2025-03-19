@@ -50,17 +50,23 @@ resource "aws_cloudfront_function" "url-rewrite-function" {
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
+  default_root_object = var.website_index_document
+  enabled = true
+  
   origin {
     domain_name              = var.website_bucket_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_identity.oai.id
     origin_id                = local.s3_origin_id
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+    }
   }
 
   dynamic "origin" {
     for_each = var.apis
 
     content {
-      domain_name = origin.value.gateway_url
+      domain_name = replace(origin.value.gateway_url, "https://", "")
       origin_id = origin.key
 
       custom_origin_config {
@@ -99,8 +105,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
-  enabled = true
-
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]
@@ -124,8 +128,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       function_arn = aws_cloudfront_function.url-rewrite-function.arn
     }
   }
-
-  default_root_object = var.website_index_document
 
   restrictions {
     geo_restriction {
