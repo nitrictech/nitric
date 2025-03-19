@@ -13,7 +13,7 @@ variable "local_directory" {
   description = "The production website output directory"
 }
 
-variable "website_bucket_name" {
+variable "website_bucket_id" {
   type = string
-  description = "The name of the bucket to deploy the website files to"
+  description = "The id of the bucket to deploy the website files to"
 }

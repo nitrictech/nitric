@@ -179,6 +179,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 	return nil
 }
 
+// Post - Called after all resources have been created, before the Pulumi Context is concluded
 func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	// Give all the Services access to the resource index
 	accessRoleNames := []string{}
@@ -193,9 +194,6 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	return a.ResourcesStore(stack, accessRoleNames)
 }
 
-// // Post - Called after all resources have been created, before the Pulumi Context is concluded
-// Post(stack cdktf.TerraformStack) error
-
 func NewNitricAwsProvider() *NitricAwsTerraformProvider {
 	return &NitricAwsTerraformProvider{
 		Apis:           make(map[string]api.Api),
@@ -206,6 +204,7 @@ func NewNitricAwsProvider() *NitricAwsTerraformProvider {
 		Secrets:        make(map[string]secret.Secret),
 		Queues:         make(map[string]queue.Queue),
 		KeyValueStores: make(map[string]keyvalue.Keyvalue),
+		Websites:       make(map[string]website.Website),
 		Websockets:     make(map[string]websocket.Websocket),
 	}
 }

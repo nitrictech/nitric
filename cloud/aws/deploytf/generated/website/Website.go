@@ -48,8 +48,8 @@ type Website interface {
 	Source() *string
 	// Experimental.
 	Version() *string
-	WebsiteBucketName() *string
-	SetWebsiteBucketName(val *string)
+	WebsiteBucketId() *string
+	SetWebsiteBucketId(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -231,11 +231,11 @@ func (j *jsiiProxy_Website) Version() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Website) WebsiteBucketName() *string {
+func (j *jsiiProxy_Website) WebsiteBucketId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"websiteBucketName",
+		"websiteBucketId",
 		&returns,
 	)
 	return returns
@@ -318,13 +318,13 @@ func (j *jsiiProxy_Website)SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Website)SetWebsiteBucketName(val *string) {
-	if err := j.validateSetWebsiteBucketNameParameters(val); err != nil {
+func (j *jsiiProxy_Website)SetWebsiteBucketId(val *string) {
+	if err := j.validateSetWebsiteBucketIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"websiteBucketName",
+		"websiteBucketId",
 		val,
 	)
 }
