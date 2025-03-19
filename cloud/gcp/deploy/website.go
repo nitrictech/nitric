@@ -26,6 +26,7 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/compute"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/dns"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -34,7 +35,7 @@ import (
 func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	pathRules := compute.URLMapPathMatcherPathRuleArray{}
 
-	// Add deployed API gatewayss to the URLMap
+	// Add deployed API gateways to the URLMap
 	for name, api := range a.ApiGateways {
 		neg, err := compute.NewRegionNetworkEndpointGroup(ctx, fmt.Sprintf("%s-apigw-neg", name), &compute.RegionNetworkEndpointGroupArgs{
 			NetworkEndpointType: pulumi.String("SERVERLESS"),
@@ -91,13 +92,6 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 
 		if name == "/" {
 			defaultService = backend.SelfLink
-
-			// pr := compute.URLMapPathMatcherPathRuleArgs{
-			// 	Service: backend.ID(),
-			// 	Paths:   pulumi.StringArray{pulumi.String("./*")},
-			// }
-
-			// pathRules = append(pathRules, pr)
 		} else {
 			pr := compute.URLMapPathMatcherPathRuleArgs{
 				Service: backend.ID(),
@@ -140,9 +134,50 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
+	// If a domain is specified in the config, then lookup to see if there is a GCP managed zone for it
+	managedZone, err := dns.LookupManagedZone(ctx, &dns.LookupManagedZoneArgs{
+		Name: a.GcpConfig.CdnDomain.ZoneName,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Add root zone, to ensure reliable comparisons (i.e. trailing dot, e.g. example.com.)
+	var subDomain = strings.ToLower(a.GcpConfig.CdnDomain.DomainName)
+	if !strings.HasSuffix(subDomain, ".") {
+		subDomain = subDomain + "."
+	}
+
+	if !strings.HasSuffix(subDomain, managedZone.DnsName) {
+		return fmt.Errorf("CDN domain %s is not a subdomain of managed zone %s", subDomain, managedZone.DnsName)
+	}
+
+	// Create root DNS record for the IP address
+	_, err = dns.NewRecordSet(ctx, "cdn-dns-record", &dns.RecordSetArgs{
+		Name:        pulumi.String(subDomain),
+		ManagedZone: pulumi.String(managedZone.Name),
+		Type:        pulumi.String("A"),
+		Rrdatas:     pulumi.StringArray{ip.Address},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Create a managed ssl certificate for the domain
+	sslCert, err := compute.NewManagedSslCertificate(ctx, "cdn-ssl-cert", &compute.ManagedSslCertificateArgs{
+		Managed: compute.ManagedSslCertificateManagedArgs{
+			Domains: pulumi.StringArray{pulumi.String(subDomain)},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
 	// Create an HTTP proxy to route requests to the URLMap.
-	httpProxy, err := compute.NewTargetHttpProxy(ctx, "http-proxy", &compute.TargetHttpProxyArgs{
-		UrlMap: urlMap.SelfLink,
+	// https://www.pulumi.com/registry/packages/gcp/api-docs/compute/targethttpsproxy/#target-https-proxy-certificate-manager-certificate
+	httpsProxy, err := compute.NewTargetHttpsProxy(ctx, "http-proxy", &compute.TargetHttpsProxyArgs{
+		CertificateManagerCertificates: pulumi.StringArray{pulumi.Sprintf("//certificatemanager.googleapis.com/%v", sslCert.ID())},
+		UrlMap:                         urlMap.SelfLink,
 	})
 	if err != nil {
 		return err
@@ -153,7 +188,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		IpAddress:  ip.Address,
 		IpProtocol: pulumi.String("TCP"),
 		PortRange:  pulumi.String("80"),
-		Target:     httpProxy.SelfLink,
+		Target:     httpsProxy.SelfLink,
 	})
 	if err != nil {
 		return err
