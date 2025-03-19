@@ -206,7 +206,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	// https://www.pulumi.com/registry/packages/gcp/api-docs/compute/targethttpsproxy/#target-https-proxy-certificate-manager-certificate
 	httpsProxy, err := compute.NewTargetHttpsProxy(ctx, "http-proxy", &compute.TargetHttpsProxyArgs{
 		// CertificateManagerCertificates: pulumi.StringArray{pulumi.Sprintf("//certificatemanager.googleapis.com/%v", sslCert.ID())},
-		CertificateMap: certMap.ID(),
+		CertificateMap: pulumi.Sprintf("//certificatemanager.googleapis.com/%v", certMap.ID()),
 		UrlMap:         urlMap.SelfLink,
 	})
 	if err != nil {
