@@ -175,7 +175,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	// }
 
 	sslCert, err := certificatemanager.NewCertificate(ctx, "cdn-cert", &certificatemanager.CertificateArgs{
-		Scope: pulumi.String("ALL_REGIONS"),
+		Scope: pulumi.String("DEFAULT"),
 		Managed: certificatemanager.CertificateManagedArgs{
 			Domains: pulumi.StringArray{pulumi.String(subDomain)},
 		},
@@ -184,11 +184,30 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
+	certMap, err := certificatemanager.NewCertificateMapResource(ctx, "cert-map", &certificatemanager.CertificateMapResourceArgs{})
+	if err != nil {
+		return err
+	}
+
+	_, err = certificatemanager.NewCertificateMapEntry(ctx, "default", &certificatemanager.CertificateMapEntryArgs{
+		Name:        pulumi.String("cdn-cert-map-entry"),
+		Description: pulumi.String("CDN Certificate Map Entry"),
+		Map:         certMap.Name,
+		Certificates: pulumi.StringArray{
+			sslCert.ID(),
+		},
+		Matcher: pulumi.String("PRIMARY"),
+	})
+	if err != nil {
+		return err
+	}
+
 	// Create an HTTP proxy to route requests to the URLMap.
 	// https://www.pulumi.com/registry/packages/gcp/api-docs/compute/targethttpsproxy/#target-https-proxy-certificate-manager-certificate
 	httpsProxy, err := compute.NewTargetHttpsProxy(ctx, "http-proxy", &compute.TargetHttpsProxyArgs{
-		CertificateManagerCertificates: pulumi.StringArray{pulumi.Sprintf("//certificatemanager.googleapis.com/%v", sslCert.ID())},
-		UrlMap:                         urlMap.SelfLink,
+		// CertificateManagerCertificates: pulumi.StringArray{pulumi.Sprintf("//certificatemanager.googleapis.com/%v", sslCert.ID())},
+		CertificateMap: certMap.ID(),
+		UrlMap:         urlMap.SelfLink,
 	})
 	if err != nil {
 		return err
