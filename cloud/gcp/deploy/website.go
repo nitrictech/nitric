@@ -177,7 +177,8 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	sslCert, err := certificatemanager.NewCertificate(ctx, "cdn-cert", &certificatemanager.CertificateArgs{
 		Scope: pulumi.String("DEFAULT"),
 		Managed: certificatemanager.CertificateManagedArgs{
-			Domains: pulumi.StringArray{pulumi.String(subDomain)},
+			// Removing trailing dot (root zone), it's unsupported by certificate manager
+			Domains: pulumi.StringArray{pulumi.String(subDomain[:len(subDomain)-1])},
 		},
 	})
 	if err != nil {
