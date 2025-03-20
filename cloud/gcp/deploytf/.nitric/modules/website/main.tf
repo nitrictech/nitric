@@ -1,6 +1,6 @@
 # Create the GCP bucket
 resource "google_storage_bucket" "website_bucket" {
-  name     = var.bucket_name
+  name     = "${var.stack_id}-${var.website_name}"
   location = var.region
 
   website {
