@@ -76,6 +76,8 @@ type NitricTerraformProvider interface {
 	Schedule(stack cdktf.TerraformStack, name string, config *deploymentspb.Schedule) error
 	// Websocket - Deploy a Websocket Gateway
 	Websocket(stack cdktf.TerraformStack, name string, config *deploymentspb.Websocket) error
+	// Website - Deploy a Website
+	Website(stack cdktf.TerraformStack, name string, config *deploymentspb.Website) error
 	// Policy - Deploy a Policy
 	Policy(stack cdktf.TerraformStack, name string, config *deploymentspb.Policy) error
 	// KeyValueStore - Deploy a Key Value Store
@@ -290,6 +292,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			err = nitricProvider.Api(stack, res.Id.Name, t.Api)
 		case *deploymentspb.Resource_Websocket:
 			err = nitricProvider.Websocket(stack, res.Id.Name, t.Websocket)
+		case *deploymentspb.Resource_Website:
+			err = nitricProvider.Website(stack, res.Id.Name, t.Website)
 		case *deploymentspb.Resource_Schedule:
 			err = nitricProvider.Schedule(stack, res.Id.Name, t.Schedule)
 		case *deploymentspb.Resource_Policy:
