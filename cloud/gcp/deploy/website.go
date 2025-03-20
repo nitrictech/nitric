@@ -159,26 +159,52 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		ManagedZone: pulumi.String(managedZone.Name),
 		Type:        pulumi.String("A"),
 		Rrdatas:     pulumi.StringArray{ip.Address},
+		Ttl:         pulumi.IntPtr(300),
 	})
 	if err != nil {
 		return err
 	}
 
-	// Create a managed ssl certificate for the domain
-	// sslCert, err := compute.NewManagedSslCertificate(ctx, "cdn-ssl-cert", &compute.ManagedSslCertificateArgs{
-	// 	Managed: compute.ManagedSslCertificateManagedArgs{
-	// 		Domains: pulumi.StringArray{pulumi.String(subDomain)},
-	// 	},
-	// })
-	// if err != nil {
-	// 	return err
-	// }
+	_, err = dns.NewRecordSet(ctx, "www-cdn-dns-record", &dns.RecordSetArgs{
+		Name:        pulumi.String(fmt.Sprintf("www.%s", subDomain)),
+		ManagedZone: pulumi.String(managedZone.Name),
+		Type:        pulumi.String("A"),
+		Rrdatas:     pulumi.StringArray{ip.Address},
+		Ttl:         pulumi.IntPtr(300),
+	})
+	if err != nil {
+		return err
+	}
+
+	dnsAuth, err := certificatemanager.NewDnsAuthorization(ctx, "cert-auth", &certificatemanager.DnsAuthorizationArgs{
+		Description: pulumi.String("the default dns auth"),
+		// Removing trailing dot (root zone), it's unsupported by certificate manager
+		Domain: pulumi.String(subDomain[:len(subDomain)-1]),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = dns.NewRecordSet(ctx, "cert-auth-record", &dns.RecordSetArgs{
+		Name:        dnsAuth.DnsResourceRecords.Index(pulumi.Int(0)).Name().Elem(),
+		ManagedZone: pulumi.String(managedZone.Name),
+		Type:        pulumi.String("CNAME"),
+		Rrdatas:     pulumi.StringArray{dnsAuth.DnsResourceRecords.Index(pulumi.Int(0)).Data().Elem()},
+		Ttl:         pulumi.IntPtr(300),
+	})
+	if err != nil {
+		return err
+	}
 
 	sslCert, err := certificatemanager.NewCertificate(ctx, "cdn-cert", &certificatemanager.CertificateArgs{
 		Scope: pulumi.String("DEFAULT"),
 		Managed: certificatemanager.CertificateManagedArgs{
-			// Removing trailing dot (root zone), it's unsupported by certificate manager
-			Domains: pulumi.StringArray{pulumi.String(subDomain[:len(subDomain)-1])},
+			Domains: pulumi.StringArray{
+				dnsAuth.Domain,
+			},
+			DnsAuthorizations: pulumi.StringArray{
+				dnsAuth.ID(),
+			},
 		},
 	})
 	if err != nil {
@@ -218,7 +244,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	_, err = compute.NewGlobalForwardingRule(ctx, "http-forwarding-rule", &compute.GlobalForwardingRuleArgs{
 		IpAddress:  ip.Address,
 		IpProtocol: pulumi.String("TCP"),
-		PortRange:  pulumi.String("80"),
+		PortRange:  pulumi.String("443"),
 		Target:     httpsProxy.SelfLink,
 	})
 	if err != nil {
