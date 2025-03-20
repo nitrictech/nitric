@@ -247,7 +247,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		errorDoc = "404.html"
 	}
 
-	a.WebsiteBuckets[config.BasePath], err = storage.NewBucket(ctx, "websites", &storage.BucketArgs{
+	a.WebsiteBuckets[config.BasePath], err = storage.NewBucket(ctx, fmt.Sprintf("%s-site", name), &storage.BucketArgs{
 		Location: pulumi.String(a.Region),
 		Website: &storage.BucketWebsiteArgs{
 			MainPageSuffix: pulumi.String(indexDoc),
@@ -258,7 +258,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		return err
 	}
 
-	_, err = storage.NewBucketIAMBinding(ctx, "bucket-iam-binding", &storage.BucketIAMBindingArgs{
+	_, err = storage.NewBucketIAMBinding(ctx, fmt.Sprintf("%s-site-bucket-iam", name), &storage.BucketIAMBindingArgs{
 		Bucket: a.WebsiteBuckets[config.BasePath].Name,
 		Role:   pulumi.String("roles/storage.objectViewer"),
 		Members: pulumi.StringArray{
@@ -300,7 +300,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return err
 		}
 
-		storage.NewBucketObject(ctx, path, &storage.BucketObjectArgs{
+		storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, path), &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
 			Name:        pulumi.String(relativePath),
 			Source:      pulumi.NewFileAsset(path),
