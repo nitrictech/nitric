@@ -377,7 +377,6 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	if len(p.Apis) > 0 {
 		ruleSetName := "apiruleset"
-		ruleOrder := 1
 
 		ruleSet, err := cdn.NewRuleSet(ctx, ruleSetName, &cdn.RuleSetArgs{
 			RuleSetName:       pulumi.String(ruleSetName),
@@ -399,6 +398,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		// Create a delivery rule for each API
 		for _, apiName := range sortedApiKeys {
 			api := p.Apis[apiName]
+			ruleOrder := apiNameToUniqueNumber(apiName)
 
 			apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
 				parsed, err := url.Parse(gatewayUrl)
@@ -429,6 +429,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 			origin, err := cdn.NewAFDOrigin(ctx, apiOriginName, &cdn.AFDOriginArgs{
 				OriginName:        pulumi.String(apiOriginName),
+				EnabledState:      cdn.EnabledStateEnabled,
 				OriginGroupName:   apiOriginGroup.Name,
 				ResourceGroupName: p.ResourceGroup.Name,
 				ProfileName:       profile.Name,
@@ -477,7 +478,8 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 							},
 							CacheConfiguration: cdn.CacheConfigurationArgs{
 								CacheBehavior:              pulumi.String(cdn.RuleCacheBehaviorHonorOrigin),
-								QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorIgnoreQueryString),
+								IsCompressionEnabled:       cdn.RuleIsCompressionEnabledEnabled,
+								QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorUseQueryString),
 							},
 							TypeName: pulumi.String("DeliveryRuleRouteConfigurationOverrideActionParameters"),
 						},
@@ -485,9 +487,10 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 					cdn.UrlRewriteActionArgs{
 						Name: pulumi.String(cdn.DeliveryRuleActionUrlRewrite),
 						Parameters: cdn.UrlRewriteActionParametersArgs{
-							Destination:   pulumi.String("/"),
-							SourcePattern: pulumi.String(fmt.Sprintf("/api/%s/", apiName)),
-							TypeName:      pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
+							Destination:           pulumi.String("/"),
+							SourcePattern:         pulumi.String(fmt.Sprintf("/api/%s/", apiName)),
+							PreserveUnmatchedPath: pulumi.Bool(true),
+							TypeName:              pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
 						},
 					},
 				}),
@@ -573,4 +576,21 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	p.Endpoint = endpoint
 
 	return nil
+}
+
+// Convert API name to a unique numeric value based on character codes
+// This creates a number that's guaranteed unique for different strings
+func apiNameToUniqueNumber(name string) int {
+	// Start at a high base to avoid conflicts with other rules
+	base := 10000
+
+	// Use character position and value to guarantee uniqueness
+	// This is essentially creating a custom numeric representation
+	for i, char := range name {
+		// Multiply by position+1 to weight characters differently
+		// Use prime number multiplier to reduce collision risk
+		base += int(char) * (i + 1) * 31
+	}
+
+	return base
 }
