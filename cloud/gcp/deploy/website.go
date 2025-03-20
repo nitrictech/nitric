@@ -115,7 +115,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	}
 
 	// Create a URLMap to route requests to the storage bucket.
-	urlMap, err := compute.NewURLMap(ctx, "url-map", &compute.URLMapArgs{
+	httpsUrlMap, err := compute.NewURLMap(ctx, "https-site-url-map", &compute.URLMapArgs{
 		DefaultService: defaultService,
 		HostRules: compute.URLMapHostRuleArray{
 			compute.URLMapHostRuleArgs{
@@ -176,34 +176,13 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
-	dnsAuth, err := certificatemanager.NewDnsAuthorization(ctx, "cert-auth", &certificatemanager.DnsAuthorizationArgs{
-		Description: pulumi.String("the default dns auth"),
-		// Removing trailing dot (root zone), it's unsupported by certificate manager
-		Domain: pulumi.String(subDomain[:len(subDomain)-1]),
-	})
-	if err != nil {
-		return err
-	}
-
-	_, err = dns.NewRecordSet(ctx, "cert-auth-record", &dns.RecordSetArgs{
-		Name:        dnsAuth.DnsResourceRecords.Index(pulumi.Int(0)).Name().Elem(),
-		ManagedZone: pulumi.String(managedZone.Name),
-		Type:        pulumi.String("CNAME"),
-		Rrdatas:     pulumi.StringArray{dnsAuth.DnsResourceRecords.Index(pulumi.Int(0)).Data().Elem()},
-		Ttl:         pulumi.IntPtr(300),
-	})
-	if err != nil {
-		return err
-	}
-
+	// The certificate will use Load Balancer authorization (as opposed to DNS auth).
 	sslCert, err := certificatemanager.NewCertificate(ctx, "cdn-cert", &certificatemanager.CertificateArgs{
 		Scope: pulumi.String("DEFAULT"),
 		Managed: certificatemanager.CertificateManagedArgs{
 			Domains: pulumi.StringArray{
-				dnsAuth.Domain,
-			},
-			DnsAuthorizations: pulumi.StringArray{
-				dnsAuth.ID(),
+				// Removing trailing dot (root zone), it's unsupported by certificate manager
+				pulumi.String(subDomain[:len(subDomain)-1]),
 			},
 		},
 	})
@@ -234,7 +213,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	httpsProxy, err := compute.NewTargetHttpsProxy(ctx, "http-proxy", &compute.TargetHttpsProxyArgs{
 		// CertificateManagerCertificates: pulumi.StringArray{pulumi.Sprintf("//certificatemanager.googleapis.com/%v", sslCert.ID())},
 		CertificateMap: pulumi.Sprintf("//certificatemanager.googleapis.com/%v", certMap.ID()),
-		UrlMap:         urlMap.SelfLink,
+		UrlMap:         httpsUrlMap.SelfLink,
 	})
 	if err != nil {
 		return err
