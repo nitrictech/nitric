@@ -1,34 +1,33 @@
-package cdn
+package cdn_api_rewrites
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_api_rewrites/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/internal"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_api_rewrites/internal"
 )
 
-// Defines an Cdn based on a Terraform module.
+// Defines an CdnApiRewrites based on a Terraform module.
 //
-// Source at ./.nitric/modules/cdn
-type Cdn interface {
+// Source at ./.nitric/modules/cdn_api_rewrites
+type CdnApiRewrites interface {
 	cdktf.TerraformModule
+	ApiHostName() *string
+	SetApiHostName(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
-	CdnFrontdoorProfileIdOutput() *string
-	CdnFrontdoorRuleSetIdOutput() *string
-	CdnPurgePaths() *map[string]*string
-	SetCdnPurgePaths(val *map[string]*string)
-	CdnUrlOutput() *string
+	CdnFrontdoorProfileId() *string
+	SetCdnFrontdoorProfileId(val *string)
+	CdnFrontdoorRuleSetId() *string
+	SetCdnFrontdoorRuleSetId(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	EnableApiRewrites() *bool
-	SetEnableApiRewrites(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -37,22 +36,20 @@ type Cdn interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	Name() *string
+	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	ResourceGroupName() *string
-	SetResourceGroupName(val *string)
+	RuleOrder() *float64
+	SetRuleOrder(val *float64)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
-	StorageAccountPrimaryWebHost() *string
-	SetStorageAccountPrimaryWebHost(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -81,12 +78,22 @@ type Cdn interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Cdn
-type jsiiProxy_Cdn struct {
+// The jsii proxy struct for CdnApiRewrites
+type jsiiProxy_CdnApiRewrites struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_CdnApiRewrites) ApiHostName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"apiHostName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_CdnApiRewrites) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -96,47 +103,27 @@ func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnFrontdoorProfileIdOutput() *string {
+func (j *jsiiProxy_CdnApiRewrites) CdnFrontdoorProfileId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"cdnFrontdoorProfileIdOutput",
+		"cdnFrontdoorProfileId",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnFrontdoorRuleSetIdOutput() *string {
+func (j *jsiiProxy_CdnApiRewrites) CdnFrontdoorRuleSetId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"cdnFrontdoorRuleSetIdOutput",
+		"cdnFrontdoorRuleSetId",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnPurgePaths() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"cdnPurgePaths",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) CdnUrlOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"cdnUrlOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_CdnApiRewrites) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -146,7 +133,7 @@ func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
+func (j *jsiiProxy_CdnApiRewrites) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -156,17 +143,7 @@ func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) EnableApiRewrites() *bool {
-	var returns *bool
-	_jsii_.Get(
-		j,
-		"enableApiRewrites",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_CdnApiRewrites) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -176,7 +153,7 @@ func (j *jsiiProxy_Cdn) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Fqn() *string {
+func (j *jsiiProxy_CdnApiRewrites) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -186,7 +163,7 @@ func (j *jsiiProxy_Cdn) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
+func (j *jsiiProxy_CdnApiRewrites) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -196,7 +173,17 @@ func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Node() constructs.Node {
+func (j *jsiiProxy_CdnApiRewrites) Name() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"name",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_CdnApiRewrites) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -206,7 +193,7 @@ func (j *jsiiProxy_Cdn) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
+func (j *jsiiProxy_CdnApiRewrites) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -216,7 +203,7 @@ func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
+func (j *jsiiProxy_CdnApiRewrites) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -226,17 +213,17 @@ func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) ResourceGroupName() *string {
-	var returns *string
+func (j *jsiiProxy_CdnApiRewrites) RuleOrder() *float64 {
+	var returns *float64
 	_jsii_.Get(
 		j,
-		"resourceGroupName",
+		"ruleOrder",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_CdnApiRewrites) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -246,7 +233,7 @@ func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Source() *string {
+func (j *jsiiProxy_CdnApiRewrites) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -256,27 +243,7 @@ func (j *jsiiProxy_Cdn) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) StackName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) StorageAccountPrimaryWebHost() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"storageAccountPrimaryWebHost",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) Version() *string {
+func (j *jsiiProxy_CdnApiRewrites) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -287,16 +254,16 @@ func (j *jsiiProxy_Cdn) Version() *string {
 }
 
 
-func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
+func NewCdnApiRewrites(scope constructs.Construct, id *string, config *CdnApiRewritesConfig) CdnApiRewrites {
 	_init_.Initialize()
 
-	if err := validateNewCdnParameters(scope, id, config); err != nil {
+	if err := validateNewCdnApiRewritesParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Cdn{}
+	j := jsiiProxy_CdnApiRewrites{}
 
 	_jsii_.Create(
-		"cdn.Cdn",
+		"cdn_api_rewrites.CdnApiRewrites",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -304,25 +271,50 @@ func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
 	return &j
 }
 
-func NewCdn_Override(c Cdn, scope constructs.Construct, id *string, config *CdnConfig) {
+func NewCdnApiRewrites_Override(c CdnApiRewrites, scope constructs.Construct, id *string, config *CdnApiRewritesConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"cdn.Cdn",
+		"cdn_api_rewrites.CdnApiRewrites",
 		[]interface{}{scope, id, config},
 		c,
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetCdnPurgePaths(val *map[string]*string) {
+func (j *jsiiProxy_CdnApiRewrites)SetApiHostName(val *string) {
+	if err := j.validateSetApiHostNameParameters(val); err != nil {
+		panic(err)
+	}
 	_jsii_.Set(
 		j,
-		"cdnPurgePaths",
+		"apiHostName",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_CdnApiRewrites)SetCdnFrontdoorProfileId(val *string) {
+	if err := j.validateSetCdnFrontdoorProfileIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cdnFrontdoorProfileId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnApiRewrites)SetCdnFrontdoorRuleSetId(val *string) {
+	if err := j.validateSetCdnFrontdoorRuleSetIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cdnFrontdoorRuleSetId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnApiRewrites)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -330,15 +322,7 @@ func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetEnableApiRewrites(val *bool) {
-	_jsii_.Set(
-		j,
-		"enableApiRewrites",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_CdnApiRewrites)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -346,35 +330,21 @@ func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetResourceGroupName(val *string) {
-	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
+func (j *jsiiProxy_CdnApiRewrites)SetName(val *string) {
+	if err := j.validateSetNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"resourceGroupName",
+		"name",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
-		panic(err)
-	}
+func (j *jsiiProxy_CdnApiRewrites)SetRuleOrder(val *float64) {
 	_jsii_.Set(
 		j,
-		"stackName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetStorageAccountPrimaryWebHost(val *string) {
-	if err := j.validateSetStorageAccountPrimaryWebHostParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"storageAccountPrimaryWebHost",
+		"ruleOrder",
 		val,
 	)
 }
@@ -396,16 +366,16 @@ func (j *jsiiProxy_Cdn)SetStorageAccountPrimaryWebHost(val *string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Cdn_IsConstruct(x interface{}) *bool {
+func CdnApiRewrites_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateCdn_IsConstructParameters(x); err != nil {
+	if err := validateCdnApiRewrites_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"cdn.Cdn",
+		"cdn_api_rewrites.CdnApiRewrites",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -415,16 +385,16 @@ func Cdn_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Cdn_IsTerraformElement(x interface{}) *bool {
+func CdnApiRewrites_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateCdn_IsTerraformElementParameters(x); err != nil {
+	if err := validateCdnApiRewrites_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"cdn.Cdn",
+		"cdn_api_rewrites.CdnApiRewrites",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -433,7 +403,7 @@ func Cdn_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) AddOverride(path *string, value interface{}) {
+func (c *jsiiProxy_CdnApiRewrites) AddOverride(path *string, value interface{}) {
 	if err := c.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
@@ -444,7 +414,7 @@ func (c *jsiiProxy_Cdn) AddOverride(path *string, value interface{}) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) AddProvider(provider interface{}) {
+func (c *jsiiProxy_CdnApiRewrites) AddProvider(provider interface{}) {
 	if err := c.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
@@ -455,7 +425,7 @@ func (c *jsiiProxy_Cdn) AddProvider(provider interface{}) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) GetString(output *string) *string {
+func (c *jsiiProxy_CdnApiRewrites) GetString(output *string) *string {
 	if err := c.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
@@ -471,7 +441,7 @@ func (c *jsiiProxy_Cdn) GetString(output *string) *string {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+func (c *jsiiProxy_CdnApiRewrites) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
 	if err := c.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
@@ -487,7 +457,7 @@ func (c *jsiiProxy_Cdn) InterpolationForOutput(moduleOutput *string) cdktf.IReso
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) OverrideLogicalId(newLogicalId *string) {
+func (c *jsiiProxy_CdnApiRewrites) OverrideLogicalId(newLogicalId *string) {
 	if err := c.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
@@ -498,7 +468,7 @@ func (c *jsiiProxy_Cdn) OverrideLogicalId(newLogicalId *string) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) ResetOverrideLogicalId() {
+func (c *jsiiProxy_CdnApiRewrites) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
 		c,
 		"resetOverrideLogicalId",
@@ -506,7 +476,7 @@ func (c *jsiiProxy_Cdn) ResetOverrideLogicalId() {
 	)
 }
 
-func (c *jsiiProxy_Cdn) SynthesizeAttributes() *map[string]interface{} {
+func (c *jsiiProxy_CdnApiRewrites) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
@@ -519,7 +489,7 @@ func (c *jsiiProxy_Cdn) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) SynthesizeHclAttributes() *map[string]interface{} {
+func (c *jsiiProxy_CdnApiRewrites) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
@@ -532,7 +502,7 @@ func (c *jsiiProxy_Cdn) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToHclTerraform() interface{} {
+func (c *jsiiProxy_CdnApiRewrites) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
@@ -545,7 +515,7 @@ func (c *jsiiProxy_Cdn) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToMetadata() interface{} {
+func (c *jsiiProxy_CdnApiRewrites) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
@@ -558,7 +528,7 @@ func (c *jsiiProxy_Cdn) ToMetadata() interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToString() *string {
+func (c *jsiiProxy_CdnApiRewrites) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
@@ -571,7 +541,7 @@ func (c *jsiiProxy_Cdn) ToString() *string {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToTerraform() interface{} {
+func (c *jsiiProxy_CdnApiRewrites) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(

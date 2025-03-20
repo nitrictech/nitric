@@ -1,6 +1,6 @@
 //go:build !no_runtime_type_checking
 
-package cdn
+package cdn_api_rewrites
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
 
-func (c *jsiiProxy_Cdn) validateAddOverrideParameters(path *string, value interface{}) error {
+func (c *jsiiProxy_CdnApiRewrites) validateAddOverrideParameters(path *string, value interface{}) error {
 	if path == nil {
 		return fmt.Errorf("parameter path is required, but nil was provided")
 	}
@@ -23,7 +23,7 @@ func (c *jsiiProxy_Cdn) validateAddOverrideParameters(path *string, value interf
 	return nil
 }
 
-func (c *jsiiProxy_Cdn) validateAddProviderParameters(provider interface{}) error {
+func (c *jsiiProxy_CdnApiRewrites) validateAddProviderParameters(provider interface{}) error {
 	if provider == nil {
 		return fmt.Errorf("parameter provider is required, but nil was provided")
 	}
@@ -50,7 +50,7 @@ func (c *jsiiProxy_Cdn) validateAddProviderParameters(provider interface{}) erro
 	return nil
 }
 
-func (c *jsiiProxy_Cdn) validateGetStringParameters(output *string) error {
+func (c *jsiiProxy_CdnApiRewrites) validateGetStringParameters(output *string) error {
 	if output == nil {
 		return fmt.Errorf("parameter output is required, but nil was provided")
 	}
@@ -58,7 +58,7 @@ func (c *jsiiProxy_Cdn) validateGetStringParameters(output *string) error {
 	return nil
 }
 
-func (c *jsiiProxy_Cdn) validateInterpolationForOutputParameters(moduleOutput *string) error {
+func (c *jsiiProxy_CdnApiRewrites) validateInterpolationForOutputParameters(moduleOutput *string) error {
 	if moduleOutput == nil {
 		return fmt.Errorf("parameter moduleOutput is required, but nil was provided")
 	}
@@ -66,7 +66,7 @@ func (c *jsiiProxy_Cdn) validateInterpolationForOutputParameters(moduleOutput *s
 	return nil
 }
 
-func (c *jsiiProxy_Cdn) validateOverrideLogicalIdParameters(newLogicalId *string) error {
+func (c *jsiiProxy_CdnApiRewrites) validateOverrideLogicalIdParameters(newLogicalId *string) error {
 	if newLogicalId == nil {
 		return fmt.Errorf("parameter newLogicalId is required, but nil was provided")
 	}
@@ -74,7 +74,7 @@ func (c *jsiiProxy_Cdn) validateOverrideLogicalIdParameters(newLogicalId *string
 	return nil
 }
 
-func validateCdn_IsConstructParameters(x interface{}) error {
+func validateCdnApiRewrites_IsConstructParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -82,7 +82,7 @@ func validateCdn_IsConstructParameters(x interface{}) error {
 	return nil
 }
 
-func validateCdn_IsTerraformElementParameters(x interface{}) error {
+func validateCdnApiRewrites_IsTerraformElementParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -90,7 +90,7 @@ func validateCdn_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
+func (j *jsiiProxy_CdnApiRewrites) validateSetApiHostNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -98,7 +98,7 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_CdnApiRewrites) validateSetCdnFrontdoorProfileIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -106,7 +106,7 @@ func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetStorageAccountPrimaryWebHostParameters(val *string) error {
+func (j *jsiiProxy_CdnApiRewrites) validateSetCdnFrontdoorRuleSetIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -114,7 +114,15 @@ func (j *jsiiProxy_Cdn) validateSetStorageAccountPrimaryWebHostParameters(val *s
 	return nil
 }
 
-func validateNewCdnParameters(scope constructs.Construct, id *string, config *CdnConfig) error {
+func (j *jsiiProxy_CdnApiRewrites) validateSetNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func validateNewCdnApiRewritesParameters(scope constructs.Construct, id *string, config *CdnApiRewritesConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")
 	}

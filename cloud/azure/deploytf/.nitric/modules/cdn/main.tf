@@ -1,23 +1,7 @@
-terraform {
-  required_providers {
-    azapi = {
-      source = "Azure/azapi"
-    }
-  }
-}
-
 locals {
   endpoint_name               = "${var.stack_name}-cdn"
   default_origin_group_name   = "website-origin-group"
   default_origin_name         = "website-origin"
-  api_proxy_origin_group_name = "api-proxy-origin-group"
-  api_proxy_origin_name       = "api-proxy-origin"
-
-  # sorted api keys
-  api_keys = sort(keys(var.apis))
-  
-  # Boolean flag to indicate if we have any APIs
-  has_apis = length(local.api_keys) > 0
 
   # ensure any path that ends with index.html is treated as a directory
   transformed_paths = sort([
@@ -69,76 +53,9 @@ resource "azurerm_cdn_frontdoor_origin" "default_origin" {
 
 # create default ruleset if apis are present
 resource "azurerm_cdn_frontdoor_rule_set" "default_ruleset" {
-  count                     = local.has_apis ? 1 : 0
+  count                     = var.enable_api_rewrites ? 1 : 0
   name                      = "apiruleset"
   cdn_frontdoor_profile_id  = azurerm_cdn_frontdoor_profile.cdn_profile.id
-}
-
-# create an origin group for each api
-resource "azurerm_cdn_frontdoor_origin_group" "api_origin_group" {
-  for_each = { for idx, key in local.api_keys : key => var.apis[key] }
-  
-  name                      = "${local.api_proxy_origin_group_name}-${each.key}"
-  cdn_frontdoor_profile_id  = azurerm_cdn_frontdoor_profile.cdn_profile.id
-  load_balancing {
-    additional_latency_in_milliseconds = 100 # Reduced latency for API
-    sample_size                        = 5 # Increased sample size for better accuracy
-    successful_samples_required        = 2 # Reduced successful samples required for faster failover
-  }
-}
-
-# create an origin for each api
-resource "azurerm_cdn_frontdoor_origin" "api_origin" {
-  for_each = { for idx, key in local.api_keys : key => var.apis[key] }
-
-  name                           = "${local.api_proxy_origin_name}-${each.key}"
-  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.api_origin_group[each.key].id
-
-  certificate_name_check_enabled = false
-
-  host_name          = replace(each.value.gateway_url, "https://", "")
-  http_port          = 80
-  https_port         = 443
-  origin_host_header = replace(each.value.gateway_url, "https://", "")
-}
-
-# create a rule for each api
-resource "azurerm_cdn_frontdoor_rule" "api_rule" {
-  for_each                  = { for idx, key in local.api_keys : key => var.apis[key] }
-  name                      = "apirule${each.key}"
-  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default_ruleset[0].id
-  order                     = index(local.api_keys, each.key) + 1
-
-  
-  conditions {
-    url_path_condition {
-      operator         = "BeginsWith"
-      negate_condition = false
-      match_values     = ["/api/${each.key}"]
-      transforms       = ["Lowercase"]
-    }
-  }
-
-  actions {
-    route_configuration_override_action {
-      cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.api_origin_group[each.key].id
-      forwarding_protocol = "HttpsOnly"
-      cache_behavior = "HonorOrigin"
-      query_string_caching_behavior = "IgnoreQueryString"
-    }
-    
-    url_rewrite_action {
-      source_pattern   = "/api/${each.key}/"
-      destination      = "/"
-      preserve_unmatched_path = false
-    }
-  }
- 
-  depends_on = [ 
-    azurerm_cdn_frontdoor_rule_set.default_ruleset,
-    azurerm_cdn_frontdoor_origin.api_origin,
-    azurerm_cdn_frontdoor_origin_group.api_origin_group
-  ]
 }
 
 # Create the CDN route
@@ -149,7 +66,7 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
   cdn_frontdoor_origin_ids = [
     azurerm_cdn_frontdoor_origin.default_origin.id
   ]
-  cdn_frontdoor_rule_set_ids = local.has_apis ? [azurerm_cdn_frontdoor_rule_set.default_ruleset[0].id] : []
+  cdn_frontdoor_rule_set_ids = var.enable_api_rewrites ? [azurerm_cdn_frontdoor_rule_set.default_ruleset[0].id] : []
   supported_protocols = [ "Https" ]
   https_redirect_enabled = false
   patterns_to_match =  [
@@ -166,8 +83,11 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
   }
 
   depends_on = [ 
+    azurerm_cdn_frontdoor_profile.cdn_profile,
+    azurerm_cdn_frontdoor_endpoint.cdn_endpoint,
+    azurerm_cdn_frontdoor_origin_group.default_origin_group,
     azurerm_cdn_frontdoor_origin.default_origin,
-    azurerm_cdn_frontdoor_origin_group.default_origin_group
+    azurerm_cdn_frontdoor_rule_set.default_ruleset
   ]
 }
 

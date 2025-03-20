@@ -14,17 +14,15 @@ variable "resource_group_name" {
   sensitive   = true
 }
 
-variable "apis" {
-  description = "Map of APIs and their gateway information"
-  type = map(object({
-    gateway_url = string
-  }))
-  default = {}
-}
-
 # Variable to hold content paths to purge
 variable "cdn_purge_paths" {
   description = "Map of content paths to purge from the CDN"
   type        = map(string)
   default     = {}
+}
+
+variable "enable_api_rewrites" {
+  description = "Enable API rewrites"
+  type        = bool
+  default     = false
 }

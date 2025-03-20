@@ -19,9 +19,9 @@ type CdnConfig struct {
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 	// The primary web host of the storage account to use for the cdn.
 	StorageAccountPrimaryWebHost *string `field:"required" json:"storageAccountPrimaryWebHost" yaml:"storageAccountPrimaryWebHost"`
-	// Map of APIs and their gateway information.
-	Apis interface{} `field:"optional" json:"apis" yaml:"apis"`
 	// Map of content paths to purge from the CDN The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	CdnPurgePaths *map[string]*string `field:"optional" json:"cdnPurgePaths" yaml:"cdnPurgePaths"`
+	// Enable API rewrites.
+	EnableApiRewrites *bool `field:"optional" json:"enableApiRewrites" yaml:"enableApiRewrites"`
 }
 

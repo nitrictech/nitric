@@ -32,10 +32,6 @@ func validateCdn_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetApisParameters(val interface{}) error {
-	return nil
-}
-
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }
