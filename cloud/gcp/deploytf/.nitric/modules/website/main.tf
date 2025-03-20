@@ -18,26 +18,32 @@ resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
     "allUsers"
   ]
 }
+module "template_files" {
+  source  = "hashicorp/dir/template"
+  version = "1.0.2"
+  
+  base_dir = var.local_directory
+}
+
+locals {
+  # Apply the base path logic for key transformation
+  transformed_files = {
+    for path, file in module.template_files.files : (
+      var.base_path == "/" ? 
+        path : 
+        "${trimsuffix(var.base_path, "/")}/${path}"
+    ) => file
+  }
+}
+
 
 # Upload files from the local directory to the bucket
 resource "google_storage_bucket_object" "website_files" {
-  for_each = fileset(var.local_directory, "**") # Recursively get all files in the directory
+  for_each = local.transformed_files
 
-  name        = each.value
+  name        = trimprefix(each.key, "/")
   bucket      = google_storage_bucket.website_bucket.name
-  source      = "${var.local_directory}/${each.value}"
-  content_type = lookup(
-    {
-      ".html" = "text/html",
-      ".css"  = "text/css",
-      ".js"   = "application/javascript",
-      ".png"  = "image/png",
-      ".jpg"  = "image/jpeg",
-      ".jpeg" = "image/jpeg",
-      ".gif"  = "image/gif",
-      ".svg"  = "image/svg+xml"
-    },
-    regex("\\.[^.]+$", each.value), # Match file extension
-    "application/octet-stream"     # Default content type
-  )
+  source                 = each.value.source_path
+  content_type           = each.value.content_type
 }
+

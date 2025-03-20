@@ -90,6 +90,46 @@ func validateWebsite_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Website) validateSetBasePathParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetRegionParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetStackIdParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetWebsiteNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func validateNewWebsiteParameters(scope constructs.Construct, id *string, config *WebsiteConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")
@@ -99,6 +139,9 @@ func validateNewWebsiteParameters(scope constructs.Construct, id *string, config
 		return fmt.Errorf("parameter id is required, but nil was provided")
 	}
 
+	if config == nil {
+		return fmt.Errorf("parameter config is required, but nil was provided")
+	}
 	if err := _jsii_.ValidateStruct(config, func() string { return "parameter config" }); err != nil {
 		return err
 	}

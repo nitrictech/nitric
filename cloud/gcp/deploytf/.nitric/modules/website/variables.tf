@@ -1,10 +1,20 @@
+variable "stack_id" {
+  description = "The ID of the stack."
+  type        = string
+}
+
+variable "website_name" {
+    description = "The name of the website."
+    type        = string
+}
+
 variable "region" {
   description = "The region where the bucket will be created."
   type        = string
 }
 
-variable "bucket_name" {
-  description = "The name of the bucket."
+variable "base_path" {
+  description = "The base path for the website files."
   type        = string
 }
 

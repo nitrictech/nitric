@@ -32,6 +32,26 @@ func validateWebsite_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Website) validateSetBasePathParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetRegionParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetStackIdParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Website) validateSetWebsiteNameParameters(val *string) error {
+	return nil
+}
+
 func validateNewWebsiteParameters(scope constructs.Construct, id *string, config *WebsiteConfig) error {
 	return nil
 }

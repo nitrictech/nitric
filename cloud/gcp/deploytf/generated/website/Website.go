@@ -14,6 +14,9 @@ import (
 // Source at ./.nitric/modules/website
 type Website interface {
 	cdktf.TerraformModule
+	BasePath() *string
+	SetBasePath(val *string)
+	BucketNameOutput() *string
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
@@ -22,6 +25,8 @@ type Website interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	ErrorDocument() *string
+	SetErrorDocument(val *string)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -30,18 +35,28 @@ type Website interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IndexDocument() *string
+	SetIndexDocument(val *string)
+	LocalDirectory() *string
+	SetLocalDirectory(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
+	Region() *string
+	SetRegion(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StackId() *string
+	SetStackId(val *string)
 	// Experimental.
 	Version() *string
+	WebsiteName() *string
+	SetWebsiteName(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -73,6 +88,26 @@ type jsiiProxy_Website struct {
 	internal.Type__cdktfTerraformModule
 }
 
+func (j *jsiiProxy_Website) BasePath() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"basePath",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) BucketNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"bucketNameOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
@@ -98,6 +133,16 @@ func (j *jsiiProxy_Website) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) ErrorDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"errorDocument",
 		&returns,
 	)
 	return returns
@@ -133,6 +178,26 @@ func (j *jsiiProxy_Website) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) IndexDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"indexDocument",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) LocalDirectory() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"localDirectory",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
@@ -163,6 +228,16 @@ func (j *jsiiProxy_Website) RawOverrides() interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Website) Region() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"region",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -183,11 +258,31 @@ func (j *jsiiProxy_Website) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) StackId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackId",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
 		"version",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) WebsiteName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteName",
 		&returns,
 	)
 	return returns
@@ -221,6 +316,17 @@ func NewWebsite_Override(w Website, scope constructs.Construct, id *string, conf
 	)
 }
 
+func (j *jsiiProxy_Website)SetBasePath(val *string) {
+	if err := j.validateSetBasePathParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"basePath",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Website)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
@@ -229,10 +335,70 @@ func (j *jsiiProxy_Website)SetDependsOn(val *[]*string) {
 	)
 }
 
+func (j *jsiiProxy_Website)SetErrorDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"errorDocument",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Website)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetIndexDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"indexDocument",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetLocalDirectory(val *string) {
+	if err := j.validateSetLocalDirectoryParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"localDirectory",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetRegion(val *string) {
+	if err := j.validateSetRegionParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"region",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetWebsiteName(val *string) {
+	if err := j.validateSetWebsiteNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"websiteName",
 		val,
 	)
 }
