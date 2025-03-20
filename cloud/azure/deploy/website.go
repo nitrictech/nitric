@@ -498,8 +498,6 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 			if err != nil {
 				return fmt.Errorf("failed to create Frontdoor rule: %w", err)
 			}
-
-			ruleOrder++
 		}
 	}
 
