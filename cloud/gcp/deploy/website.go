@@ -32,13 +32,13 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// Deploy a cloud cdn entrypoint
+// Deploy a cloud CDN entrypoint
 func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	pathRules := compute.URLMapPathMatcherPathRuleArray{}
 
 	// Add deployed API gateways to the URLMap
-	for name, api := range a.ApiGateways {
-		neg, err := compute.NewRegionNetworkEndpointGroup(ctx, fmt.Sprintf("%s-apigw-neg", name), &compute.RegionNetworkEndpointGroupArgs{
+	for apiName, api := range a.ApiGateways {
+		neg, err := compute.NewRegionNetworkEndpointGroup(ctx, fmt.Sprintf("%s-apigw-neg", apiName), &compute.RegionNetworkEndpointGroupArgs{
 			NetworkEndpointType: pulumi.String("SERVERLESS"),
 			Region:              api.Region,
 			ServerlessDeployment: compute.RegionNetworkEndpointGroupServerlessDeploymentArgs{
@@ -50,13 +50,12 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 			return err
 		}
 
-		bs, err := compute.NewBackendService(ctx, fmt.Sprintf("%s-apigw-bs", name), &compute.BackendServiceArgs{
+		bs, err := compute.NewBackendService(ctx, fmt.Sprintf("%s-apigw-bs", apiName), &compute.BackendServiceArgs{
 			Backends: compute.BackendServiceBackendArray{
 				compute.BackendServiceBackendArgs{
 					Group: neg.SelfLink,
 				},
 			},
-			// EnableCdn: pulumi.Bool(true),
 			Protocol: pulumi.String("HTTPS"),
 		}, nil)
 		if err != nil {
@@ -65,7 +64,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 
 		pr := compute.URLMapPathMatcherPathRuleArgs{
 			Service: bs.ID(),
-			Paths:   pulumi.StringArray{pulumi.Sprintf("/apis/%s/*", name)},
+			Paths:   pulumi.StringArray{pulumi.Sprintf("/apis/%s/*", apiName)},
 			RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{
 				UrlRewrite: compute.URLMapPathMatcherPathRuleRouteActionUrlRewriteArgs{
 					PathPrefixRewrite: pulumi.String("/"),
@@ -76,27 +75,40 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 
 		pathRules = append(pathRules, pr)
 	}
+
+	cdnPolicy := compute.BackendBucketCdnPolicyArgs{}
+
+	if a.GcpConfig.CdnDomain.ClientTtl != nil {
+		cdnPolicy.ClientTtl = pulumi.Int(*a.GcpConfig.CdnDomain.ClientTtl)
+	}
+
+	if a.GcpConfig.CdnDomain.DefaultTtl != nil {
+		cdnPolicy.DefaultTtl = pulumi.Int(*a.GcpConfig.CdnDomain.DefaultTtl)
+	}
+
 	var defaultService pulumi.StringOutput
-	for name, website := range a.WebsiteBuckets {
-		normalizedName := strings.Replace(name, "/", "", -1)
+	for sitePath, siteBucket := range a.WebsiteBuckets {
+		normalizedName := strings.Replace(sitePath, "/", "", -1)
 		if normalizedName == "" {
 			normalizedName = "default"
 		}
 
 		backend, err := compute.NewBackendBucket(ctx, fmt.Sprintf("%s-site-bucket", normalizedName), &compute.BackendBucketArgs{
-			BucketName: website.Name,
-			EnableCdn:  pulumi.Bool(true),
+			BucketName:      siteBucket.Name,
+			EnableCdn:       pulumi.Bool(true),
+			CompressionMode: pulumi.String("AUTOMATIC"),
+			CdnPolicy:       cdnPolicy,
 		})
 		if err != nil {
 			return err
 		}
 
-		if name == "/" {
+		if sitePath == "/" {
 			defaultService = backend.SelfLink
 		} else {
 			pr := compute.URLMapPathMatcherPathRuleArgs{
 				Service: backend.ID(),
-				Paths:   pulumi.StringArray{pulumi.String(filepath.Join("/", name, "./*"))},
+				Paths:   pulumi.StringArray{pulumi.String(filepath.Join("/", sitePath, "./*"))},
 				RouteAction: compute.URLMapPathMatcherPathRuleRouteActionArgs{
 					UrlRewrite: compute.URLMapPathMatcherPathRuleRouteActionUrlRewriteArgs{
 						PathPrefixRewrite: pulumi.String("/"),
@@ -289,7 +301,6 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return nil
 		}
 
-		// Determine the content type based on the file extension
 		contentType := mime.TypeByExtension(filepath.Ext(path))
 		if contentType == "" {
 			contentType = "application/octet-stream"
@@ -300,12 +311,16 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return err
 		}
 
-		storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, path), &storage.BucketObjectArgs{
+		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, path), &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
 			Name:        pulumi.String(relativePath),
 			Source:      pulumi.NewFileAsset(path),
 			ContentType: pulumi.String(contentType),
 		})
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {

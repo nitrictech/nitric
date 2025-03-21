@@ -63,6 +63,10 @@ type CdnDomainConfig struct {
 	ZoneName string `mapstructure:"zone-name"`
 	// Name of the domain name to set for the CDN
 	DomainName string `mapstructure:"domain-name"`
+	// Specifies the TTL the CDN sends in the Cache-Control or Expires headers to clients
+	ClientTtl *int
+	// Specifies the TTL for content cached by the CDN when the origin server does not provide any caching directives
+	DefaultTtl *int
 }
 
 type GcpConfig struct {
