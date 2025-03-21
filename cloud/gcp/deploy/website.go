@@ -33,6 +33,17 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+func ensureValidSubdomain(domain string, subdomain string) error {
+	domain = strings.ToLower(strings.TrimSuffix(domain, "."))
+	subdomain = strings.ToLower(strings.TrimSuffix(subdomain, "."))
+
+	if subdomain == domain || strings.HasSuffix(subdomain, "."+domain) {
+		return nil
+	}
+
+	return fmt.Errorf("%s is not a valid subdomain of %s", subdomain, domain)
+}
+
 // Deploy a cloud CDN entrypoint
 func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	pathRules := compute.URLMapPathMatcherPathRuleArray{}
@@ -162,8 +173,9 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		subDomain = subDomain + "."
 	}
 
-	if !strings.HasSuffix(subDomain, managedZone.DnsName) {
-		return fmt.Errorf("CDN domain %s is not a subdomain of managed zone %s", subDomain, managedZone.DnsName)
+	err = ensureValidSubdomain(managedZone.DnsName, subDomain)
+	if err != nil {
+		return fmt.Errorf("CDN domain '%s' is not valid for zone '%s': %w", strings.TrimSuffix(subDomain, "."), managedZone.Name, err)
 	}
 
 	// Create root DNS record for the IP address
@@ -195,7 +207,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		Managed: certificatemanager.CertificateManagedArgs{
 			Domains: pulumi.StringArray{
 				// Removing trailing dot (root zone), it's unsupported by certificate manager
-				pulumi.String(subDomain[:len(subDomain)-1]),
+				pulumi.String(strings.TrimSuffix(subDomain, ".")),
 			},
 		},
 	})
