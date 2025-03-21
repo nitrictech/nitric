@@ -25,6 +25,7 @@ import (
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 
+	"github.com/pulumi/pulumi-command/sdk/go/command/local"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/certificatemanager"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/compute"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/dns"
@@ -241,6 +242,13 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Invalid the CDN Cache
+	local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
+		// Only run on update, the cache is already empty on first creation
+		Create: pulumi.String(""),
+		Update: pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path \"/*\"", httpsUrlMap.Name),
+	})
 
 	return nil
 }
