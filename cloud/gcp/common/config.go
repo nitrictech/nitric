@@ -60,9 +60,9 @@ type GcpApiConfig struct {
 
 type CdnDomainConfig struct {
 	// Name of the managed zone in google cloud dns
-	ZoneName string `mapstructure:"zone-name"`
+	ZoneName string `json:zone_name,mapstructure:"zone-name"`
 	// Name of the domain name to set for the CDN
-	DomainName string `mapstructure:"domain-name"`
+	DomainName string `json:domain_name,mapstructure:"domain-name"`
 	// Specifies the TTL the CDN sends in the Cache-Control or Expires headers to clients
 	ClientTtl *int `mapstructure:"client-ttl"`
 	// Specifies the TTL for content cached by the CDN when the origin server does not provide any caching directives

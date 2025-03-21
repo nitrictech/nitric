@@ -12,9 +12,9 @@ variable "stack_id" {
 variable "website_buckets" {
   description = "A map of website bucket configurations."
   type = map(object({
-    name          = string
-    index_document = string
-    error_document = string
+    name            = string
+    index_document  = string
+    error_document  = string
     local_directory = string
   }))
 }
@@ -33,5 +33,7 @@ variable "cdn_domain" {
   type = object({
     domain_name = string
     zone_name   = string
+    client_ttl  = number
+    default_ttl = number
   })
 }

@@ -169,6 +169,12 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	if len(a.Websites) > 0 {
+		err := a.deployEntrypoint(stack)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

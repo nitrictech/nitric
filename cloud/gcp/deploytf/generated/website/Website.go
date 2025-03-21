@@ -27,6 +27,7 @@ type Website interface {
 	SetDependsOn(val *[]*string)
 	ErrorDocument() *string
 	SetErrorDocument(val *string)
+	ErrorDocumentOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -37,8 +38,10 @@ type Website interface {
 	FriendlyUniqueId() *string
 	IndexDocument() *string
 	SetIndexDocument(val *string)
+	IndexDocumentOutput() *string
 	LocalDirectory() *string
 	SetLocalDirectory(val *string)
+	LocalDirectoryOutput() *string
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
@@ -148,6 +151,16 @@ func (j *jsiiProxy_Website) ErrorDocument() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) ErrorDocumentOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"errorDocumentOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
@@ -188,11 +201,31 @@ func (j *jsiiProxy_Website) IndexDocument() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) IndexDocumentOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"indexDocumentOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) LocalDirectory() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
 		"localDirectory",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) LocalDirectoryOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"localDirectoryOutput",
 		&returns,
 	)
 	return returns

@@ -17,6 +17,8 @@ type ApiConfig struct {
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// The OpenAPI spec as a JSON string.
 	OpenapiSpec *string `field:"required" json:"openapiSpec" yaml:"openapiSpec"`
+	// The region where the API Gateway will be created.
+	Region *string `field:"required" json:"region" yaml:"region"`
 	// The ID of the stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The map of target service names The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.

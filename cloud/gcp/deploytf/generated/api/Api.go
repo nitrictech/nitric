@@ -18,6 +18,7 @@ type Api interface {
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
+	DefaultHostOutput() *string
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
@@ -31,6 +32,7 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	GatewayIdOutput() *string
 	Name() *string
 	SetName(val *string)
 	// The tree node.
@@ -41,6 +43,9 @@ type Api interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
+	Region() *string
+	SetRegion(val *string)
+	RegionOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -102,6 +107,16 @@ func (j *jsiiProxy_Api) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Api) DefaultHostOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"defaultHostOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
@@ -152,6 +167,16 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Api) GatewayIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"gatewayIdOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Api) Name() *string {
 	var returns *string
 	_jsii_.Get(
@@ -197,6 +222,26 @@ func (j *jsiiProxy_Api) RawOverrides() interface{} {
 	_jsii_.Get(
 		j,
 		"rawOverrides",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) Region() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"region",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) RegionOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"regionOutput",
 		&returns,
 	)
 	return returns
@@ -314,6 +359,17 @@ func (j *jsiiProxy_Api)SetOpenapiSpec(val *string) {
 	_jsii_.Set(
 		j,
 		"openapiSpec",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Api)SetRegion(val *string) {
+	if err := j.validateSetRegionParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"region",
 		val,
 	)
 }
