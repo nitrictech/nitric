@@ -378,7 +378,6 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 				return fmt.Errorf("failed to create Frontdoor rule for subsite: %w", err)
 			}
 		}
-
 	}
 
 	// Create a rule set for the CDN endpoint if there are APIs
@@ -566,10 +565,8 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	}).(pulumi.StringOutput)
 
 	// Purge the CDN endpoint if content has changed
-	// Run a command when the bucket name changes
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
-		Create: pulumi.String(""),
-		Update: pulumi.Sprintf("az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --content-paths '/*' --subscription %s --no-wait", p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
+		Create: pulumi.Sprintf("az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths /* --no-wait", p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
 		Triggers: pulumi.Array{
 			sortedMd5Result,
 		},
