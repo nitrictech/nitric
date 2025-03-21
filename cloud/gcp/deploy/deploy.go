@@ -411,6 +411,14 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		}
 	}
 
+	if len(a.WebsiteBuckets) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.GcpConfig.CdnDomain.DomainName))
+	}
+
 	// Add HTTP Proxy outputs
 	if len(a.HttpProxies) > 0 {
 		if len(outputs) > 0 {
