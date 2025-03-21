@@ -44,7 +44,6 @@ import (
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -60,7 +59,8 @@ type NitricAzurePulumiProvider struct {
 	StackId   string
 	resources []*pulumix.NitricPulumiResource[any]
 
-	staticWebsite                   *storage.StorageAccountStaticWebsite
+	WebsiteStorageAccounts          map[string]*storage.StorageAccount
+	WebsiteContainers               map[string]*storage.StorageAccountStaticWebsite
 	Endpoint                        *cdn.AFDEndpoint
 	staticWebsiteChangedFileOutputs pulumi.StringArray
 
@@ -383,16 +383,10 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	hasKvStores := hasResourceType(nitricResources, resourcespb.ResourceType_KeyValueStore)
 	hasQueues := hasResourceType(nitricResources, resourcespb.ResourceType_Queue)
 
-	websites := lo.Filter(nitricResources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
-		return item.Id.Type == resourcespb.ResourceType_Website
-	})
-
-	hasWebsites := len(websites) > 0
-
 	// Create a storage account if buckets, kv stores or queues are required.
 	// Unlike AWS and GCP which have centralized storage management, Azure allows for multiple storage accounts.
 	// This means we need to create a storage account for each stack, before buckets can be created.
-	if hasBuckets || hasKvStores || hasQueues || hasWebsites {
+	if hasBuckets || hasKvStores || hasQueues {
 		logger.Info("Stack declares bucket(s), key/value store(s) or queue(s), creating stack level Azure Storage Account")
 		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
@@ -411,18 +405,11 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 		return err
 	}
 
-	if hasWebsites {
-		err = a.createStaticWebsite(ctx, websites)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
 func (a *NitricAzurePulumiProvider) Post(ctx *pulumi.Context) error {
-	if a.staticWebsite != nil {
+	if len(a.WebsiteContainers) > 0 {
 		err := a.deployCDN(ctx)
 		if err != nil {
 			return err
@@ -487,14 +474,16 @@ func NewNitricAzurePulumiProvider() *NitricAzurePulumiProvider {
 	principalsMap[resourcespb.ResourceType_Service] = map[string]*ServicePrincipal{}
 
 	return &NitricAzurePulumiProvider{
-		Apis:           make(map[string]ApiResources),
-		HttpProxies:    make(map[string]ApiResources),
-		Buckets:        make(map[string]*storage.BlobContainer),
-		Queues:         make(map[string]*storage.Queue),
-		ContainerApps:  make(map[string]*ContainerApp),
-		Topics:         make(map[string]*eventgrid.Topic),
-		SqlMigrations:  make(map[string]*containerinstance.ContainerGroup),
-		Principals:     principalsMap,
-		KeyValueStores: make(map[string]*storage.Table),
+		Apis:                   make(map[string]ApiResources),
+		HttpProxies:            make(map[string]ApiResources),
+		Buckets:                make(map[string]*storage.BlobContainer),
+		Queues:                 make(map[string]*storage.Queue),
+		ContainerApps:          make(map[string]*ContainerApp),
+		Topics:                 make(map[string]*eventgrid.Topic),
+		SqlMigrations:          make(map[string]*containerinstance.ContainerGroup),
+		Principals:             principalsMap,
+		KeyValueStores:         make(map[string]*storage.Table),
+		WebsiteStorageAccounts: make(map[string]*storage.StorageAccount),
+		WebsiteContainers:      make(map[string]*storage.StorageAccountStaticWebsite),
 	}
 }
