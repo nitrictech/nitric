@@ -46,6 +46,14 @@ func ensureValidSubdomain(domain string, subdomain string) error {
 
 // Deploy a cloud CDN entrypoint
 func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
+	if a.GcpConfig.CdnDomain.ZoneName == "" {
+		return fmt.Errorf("a valid DNS zone is required to deploy websites to GCP")
+	}
+
+	if a.GcpConfig.CdnDomain.DomainName == "" {
+		return fmt.Errorf("a valid domain name is required to deploy websites to GCP")
+	}
+
 	pathRules := compute.URLMapPathMatcherPathRuleArray{}
 
 	// Add deployed API gateways to the URLMap
