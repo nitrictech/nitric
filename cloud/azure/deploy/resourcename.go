@@ -87,9 +87,9 @@ var (
 	// Lowercase letters and numbers.
 	DatabaseServerRT = ResourceType{Abbreviation: "pg-svr", MaxLen: 24}
 	// Start with letter and no special characters.
-	FrontDoorRuleRT = ResourceType{Abbreviation: "rule", MaxLen: 80}
+	FrontDoorRuleRT = ResourceType{Abbreviation: "rule", MaxLen: 80, UseName: true}
 	// Start with letter and no special characters.
-	FrontDoorRuleSetRT = ResourceType{Abbreviation: "ruleset", MaxLen: 80}
+	FrontDoorRuleSetRT = ResourceType{Abbreviation: "ruleset", MaxLen: 80, UseName: true}
 )
 
 // cleanNameSegment removes all non-alphanumeric characters from a string.

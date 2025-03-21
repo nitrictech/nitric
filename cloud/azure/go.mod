@@ -275,6 +275,7 @@ require (
 	github.com/pulumi/esc v0.11.1 // indirect
 	github.com/pulumi/pulumi-azure-native-sdk v1.104.0 // indirect
 	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.88.0 // indirect
+	github.com/pulumi/pulumi-command/sdk v1.0.2 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect

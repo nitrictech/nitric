@@ -17,24 +17,17 @@
 package deploy
 
 import (
-	"context"
-	"encoding/base64"
-	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"mime"
 	"net/url"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
-	"sync"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/cdn/armcdn"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
-	"github.com/Azure/azure-storage-blob-go/azblob"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pulumi/pulumi-command/sdk/go/command/local"
 	"github.com/samber/lo"
 
 	cdn "github.com/pulumi/pulumi-azure-native-sdk/cdn/v2"
@@ -42,123 +35,6 @@ import (
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
-
-func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName string, contentPaths []*string) error {
-	// Authenticate with Azure
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return fmt.Errorf("failed to obtain a credential: %w", err)
-	}
-
-	// Create a CDN endpoint client
-	client, err := armcdn.NewAFDEndpointsClient(subscriptionID, cred, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create CDN endpoint client: %w", err)
-	}
-
-	// Call PurgeContent
-	_, err = client.BeginPurgeContent(
-		context.Background(),
-		resourceGroup,
-		profileName,
-		endpointName,
-		armcdn.AfdPurgeParameters{
-			ContentPaths: contentPaths,
-		},
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to purge CDN endpoint: %w", err)
-	}
-
-	return nil
-}
-
-var (
-	blobClientInstance *azblob.ServiceURL
-	once               sync.Once
-)
-
-func getBlobServiceClient(subscriptionID, resourceGroupName, accountName string) (*azblob.ServiceURL, error) {
-	var err error
-
-	once.Do(func() {
-		// Authenticate using Default Azure Credentials
-		cred, e := azidentity.NewDefaultAzureCredential(nil)
-		if e != nil {
-			err = fmt.Errorf("failed to create Azure credential: %w", e)
-			return
-		}
-
-		clientFactory, e := armstorage.NewClientFactory(subscriptionID, cred, nil)
-		if e != nil {
-			err = fmt.Errorf("failed to create storage client factory: %w", e)
-			return
-		}
-
-		accountsClient := clientFactory.NewAccountsClient()
-
-		// Get the account keys for the Storage Account
-		result, e := accountsClient.ListKeys(context.Background(), resourceGroupName, accountName, nil)
-		if e != nil {
-			log.Fatalf("failed to get account keys: %v", e)
-			return
-		}
-
-		accountKey := *result.Keys[0].Value
-
-		// Create shared key credentials
-		sharedKeyCred, e := azblob.NewSharedKeyCredential(accountName, accountKey)
-		if e != nil {
-			err = fmt.Errorf("failed to create shared key credential: %w", e)
-			return
-		}
-
-		// Create a pipeline with the credentials
-		pipeline := azblob.NewPipeline(sharedKeyCred, azblob.PipelineOptions{})
-
-		// Build the storage account URL
-		urlStr := fmt.Sprintf("https://%s.blob.core.windows.net", accountName)
-
-		parsedUrl, e := url.Parse(urlStr)
-		if e != nil {
-			err = fmt.Errorf("failed to parse URL: %w", e)
-			return
-		}
-
-		// Create the service client with the URL and the pipeline
-		blobClient := azblob.NewServiceURL(*parsedUrl, pipeline)
-		blobClientInstance = &blobClient
-	})
-
-	return blobClientInstance, err
-}
-
-// Get MD5 hash of a blob (if it exists)
-func getBlobMD5(serviceURL *azblob.ServiceURL, containerName, blobName string) (string, error) {
-	containerURL := serviceURL.NewContainerURL(containerName)
-	blobURL := containerURL.NewBlobURL(blobName)
-
-	props, err := blobURL.GetProperties(context.TODO(), azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
-	if err != nil {
-		var storageErr azblob.StorageError
-
-		if errors.As(err, &storageErr) && storageErr.ServiceCode() == azblob.ServiceCodeBlobNotFound {
-			return "", nil // Return empty string if blob does not exist
-		}
-		return "", fmt.Errorf("failed to get blob properties: %w", err)
-	}
-
-	md5 := props.ContentMD5()
-	if md5 == nil {
-		return "", nil
-	}
-
-	// Convert the byte slice (MD5) to Base64
-	base64MD5 := base64.StdEncoding.EncodeToString(md5)
-
-	return base64MD5, nil
-}
 
 // Website - Implements the Website deployment method for the Azure provider
 func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
@@ -250,24 +126,6 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 
 		name := strings.TrimPrefix(objectKey, "/")
 
-		existingMd5Output := pulumi.All(p.ResourceGroup.Name, p.WebsiteStorageAccounts[config.BasePath].Name, p.WebsiteContainers[config.BasePath].ContainerName).ApplyT(func(args []interface{}) (string, error) {
-			resourceGroupName := args[0].(string)
-			accountName := args[1].(string)
-			containerName := args[2].(string)
-
-			serviceClient, err := getBlobServiceClient(p.ClientConfig.SubscriptionId, resourceGroupName, accountName)
-			if err != nil {
-				return "", err
-			}
-
-			existingMd5, err := getBlobMD5(serviceClient, containerName, name)
-			if err != nil {
-				return "", err
-			}
-
-			return existingMd5, nil
-		}).(pulumi.StringOutput)
-
 		uniqueName := fmt.Sprintf("%s-%s", normalizedName, name)
 
 		blob, err := storage.NewBlob(ctx, uniqueName, &storage.BlobArgs{
@@ -282,23 +140,8 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 			return err
 		}
 
-		keyToInvalidate := pulumi.All(blob.ContentMd5, existingMd5Output).ApplyT(func(args []any) (string, error) {
-			newMd5, newMd5Ok := args[0].(*string)
-			existingMd5, existingMd5Ok := args[1].(string)
-
-			if !newMd5Ok || !existingMd5Ok {
-				return "", fmt.Errorf("failed to assert md5 types")
-			}
-
-			// if an existing ETag is present and it is different from the new ETag, return the key to invalidate
-			if existingMd5 != "" && newMd5 != nil && *newMd5 != existingMd5 {
-				return objectKey, nil
-			}
-
-			return "", nil
-		}).(pulumi.StringOutput)
-
-		p.staticWebsiteChangedFileOutputs = append(p.staticWebsiteChangedFileOutputs, keyToInvalidate)
+		// Get the MD5 hash of the blob and store it in the outputs
+		p.websiteFileMd5Outputs = append(p.websiteFileMd5Outputs, blob.ContentMd5)
 
 		return nil
 	})
@@ -390,7 +233,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	})
 
 	// Create a rule for redirecting paths that end in a slash
-	_, err = cdn.NewRule(ctx, ResourceName(ctx, ResourceName(ctx, "redirectslash", FrontDoorRuleRT), FrontDoorRuleRT), &cdn.RuleArgs{
+	_, err = cdn.NewRule(ctx, ResourceName(ctx, "redirectslash", FrontDoorRuleRT), &cdn.RuleArgs{
 		Order:             pulumi.Int(1),
 		RuleName:          pulumi.String("redirectslash"),
 		RuleSetName:       defaultRuleSet.Name,
@@ -402,13 +245,10 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 					Name: pulumi.String(cdn.MatchVariableUrlPath),
 					Parameters: cdn.UrlPathMatchConditionParametersArgs{
 						MatchValues: pulumi.StringArray{
-							pulumi.String("/"),
-						},
-						Transforms: pulumi.StringArray{
-							pulumi.String(cdn.TransformLowercase),
+							pulumi.String(".*\\/$"),
 						},
 						TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
-						Operator: pulumi.String(cdn.OperatorEndsWith),
+						Operator: pulumi.String(cdn.OperatorRegEx),
 					},
 				},
 			}),
@@ -419,6 +259,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 					RedirectType:        pulumi.String(cdn.RedirectTypeFound),
 					DestinationProtocol: pulumi.String(cdn.DestinationProtocolMatchRequest),
 					CustomPath:          pulumi.String("/{url_path:0:-1}"),
+					TypeName:            pulumi.String("DeliveryRuleUrlRedirectActionParameters"),
 				},
 			},
 		}),
@@ -493,8 +334,8 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 							Name: pulumi.String(cdn.MatchVariableUrlPath),
 							Parameters: cdn.UrlPathMatchConditionParametersArgs{
 								MatchValues: pulumi.StringArray{
-									// Match the base path and any sub-paths
-									pulumi.Sprintf("^%s(|/.*)$", basePath),
+									// Match the base path and any sub-paths, azure requires no leading slash
+									pulumi.Sprintf("%s(/.*)?$", strings.TrimPrefix(basePath, "/")),
 								},
 								Transforms: pulumi.StringArray{
 									pulumi.String(cdn.TransformLowercase),
@@ -707,32 +548,35 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return fmt.Errorf("failed to create Frontdoor route: %w", err)
 	}
 
-	// Purge the CDN endpoint if content has changed
-	pulumi.All(p.ResourceGroup.Name, profile.Name, p.staticWebsiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
-		resourceGroupName := args[0].(string)
-		profileName := args[1].(string)
-		websiteChangedFileKeys := []*string{}
-
-		for _, key := range args[2].([]string) {
-			if key != "" {
-				// require to purge the index.html file served at root of cdn
-				if strings.HasSuffix(key, "/index.html") {
-					key = strings.TrimSuffix(key, "index.html")
+	// Apply a function to sort the array
+	sortedMd5Result := p.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
+		// Convert each element to string
+		md5Strings := []string{}
+		for _, md5 := range arr {
+			if md5Str, ok := md5.(string); ok {
+				if md5Str != "" {
+					md5Strings = append(md5Strings, md5Str)
 				}
-
-				websiteChangedFileKeys = append(websiteChangedFileKeys, &key)
 			}
 		}
 
-		if len(websiteChangedFileKeys) > 0 {
-			err := purgeCDNEndpoint(p.ClientConfig.SubscriptionId, resourceGroupName, profileName, endpointName, websiteChangedFileKeys)
-			if err != nil {
-				return err
-			}
-		}
+		sort.Strings(md5Strings)
 
-		return nil
-	})
+		return strings.Join(md5Strings, "")
+	}).(pulumi.StringOutput)
+
+	// Purge the CDN endpoint if content has changed
+	// Run a command when the bucket name changes
+	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
+		Create: pulumi.String(""),
+		Update: pulumi.Sprintf("az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --content-paths '/*' --subscription %s --no-wait", p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
+		Triggers: pulumi.Array{
+			sortedMd5Result,
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
+	if err != nil {
+		return fmt.Errorf("failed to create command to purge CDN endpoint: %w", err)
+	}
 
 	// Export the CDN endpoint hostname.
 	ctx.Export("cdn", pulumi.Sprintf("https://%s", endpoint.HostName))

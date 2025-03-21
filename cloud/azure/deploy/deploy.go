@@ -59,10 +59,10 @@ type NitricAzurePulumiProvider struct {
 	StackId   string
 	resources []*pulumix.NitricPulumiResource[any]
 
-	WebsiteStorageAccounts          map[string]*storage.StorageAccount
-	WebsiteContainers               map[string]*storage.StorageAccountStaticWebsite
-	Endpoint                        *cdn.AFDEndpoint
-	staticWebsiteChangedFileOutputs pulumi.StringArray
+	WebsiteStorageAccounts map[string]*storage.StorageAccount
+	WebsiteContainers      map[string]*storage.StorageAccountStaticWebsite
+	Endpoint               *cdn.AFDEndpoint
+	websiteFileMd5Outputs  pulumi.Array
 
 	AzureConfig *common.AzureConfig
 
