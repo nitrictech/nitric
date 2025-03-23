@@ -1,6 +1,8 @@
 package deploytf
 
 import (
+	"fmt"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/cdn"
@@ -29,6 +31,14 @@ type WebsiteInput struct {
 }
 
 func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack) error {
+	if a.GcpConfig.CdnDomain.ZoneName == "" {
+		return fmt.Errorf("a valid DNS zone is required to deploy websites to GCP")
+	}
+
+	if a.GcpConfig.CdnDomain.DomainName == "" {
+		return fmt.Errorf("a valid domain name is required to deploy websites to GCP")
+	}
+
 	apis := map[string]ApiInput{}
 	websites := map[string]WebsiteInput{}
 
