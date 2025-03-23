@@ -566,9 +566,14 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	// Purge the CDN endpoint if content has changed
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
-		Create: pulumi.Sprintf("az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths /* --no-wait", p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
+		Create: pulumi.Sprintf("MSYS_NO_PATHCONV=1 az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths '/*' --no-wait",
+			p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
 		Triggers: pulumi.Array{
 			sortedMd5Result,
+		},
+		Interpreter: pulumi.StringArray{
+			pulumi.String("bash"),
+			pulumi.String("-c"),
 		},
 	}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
 	if err != nil {
