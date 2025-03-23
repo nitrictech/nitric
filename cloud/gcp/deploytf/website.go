@@ -8,6 +8,13 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
+type CdnInput struct {
+	ZoneName   *string `json:"zone_name"`
+	DomainName *string `json:"domain_name"`
+	ClientTtl  *int    `json:"client_ttl"`
+	DefaultTtl *int    `json:"default_ttl"`
+}
+
 type ApiInput struct {
 	Region      *string `json:"region"`
 	GatewayId   *string `json:"gateway_id"`
@@ -24,6 +31,13 @@ type WebsiteInput struct {
 func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack) error {
 	apis := map[string]ApiInput{}
 	websites := map[string]WebsiteInput{}
+
+	cdnInput := &CdnInput{
+		ZoneName:   jsii.String(a.GcpConfig.CdnDomain.ZoneName),
+		DomainName: jsii.String(a.GcpConfig.CdnDomain.DomainName),
+		ClientTtl:  a.GcpConfig.CdnDomain.ClientTtl,
+		DefaultTtl: a.GcpConfig.CdnDomain.DefaultTtl,
+	}
 
 	for name, api := range a.Apis {
 		apis[name] = ApiInput{
@@ -47,7 +61,7 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 		Region:         jsii.String(a.Region),
 		StackId:        a.Stack.StackIdOutput(),
 		WebsiteBuckets: websites,
-		CdnDomain:      &a.GcpConfig.CdnDomain,
+		CdnDomain:      cdnInput,
 	})
 
 	return nil
