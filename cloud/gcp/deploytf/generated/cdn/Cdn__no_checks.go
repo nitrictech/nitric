@@ -40,6 +40,10 @@ func (j *jsiiProxy_Cdn) validateSetCdnDomainParameters(val interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetProjectIdParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetRegionParameters(val *string) error {
 	return nil
 }

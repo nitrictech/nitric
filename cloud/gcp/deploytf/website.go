@@ -24,6 +24,7 @@ type ApiInput struct {
 }
 
 type WebsiteInput struct {
+	BasePath       *string `json:"base_path"`
 	BucketName     *string `json:"name"`
 	IndexDocument  *string `json:"index_document"`
 	ErrorDocument  *string `json:"error_document"`
@@ -64,6 +65,7 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 		}
 
 		websites[websiteName] = WebsiteInput{
+			BasePath:       website.BasePath(),
 			BucketName:     website.BucketNameOutput(),
 			IndexDocument:  website.IndexDocumentOutput(),
 			ErrorDocument:  website.ErrorDocumentOutput(),
@@ -72,6 +74,7 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 	}
 
 	cdn.NewCdn(stack, jsii.String("cdn"), &cdn.CdnConfig{
+		ProjectId:      jsii.String(a.GcpConfig.ProjectId),
 		ApiGateways:    apis,
 		Region:         jsii.String(a.Region),
 		StackId:        a.Stack.StackIdOutput(),

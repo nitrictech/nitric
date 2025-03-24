@@ -17,6 +17,8 @@ type CdnConfig struct {
 	ApiGateways interface{} `field:"required" json:"apiGateways" yaml:"apiGateways"`
 	// The CDN domain configuration.
 	CdnDomain interface{} `field:"required" json:"cdnDomain" yaml:"cdnDomain"`
+	// The project ID where resources will be created.
+	ProjectId *string `field:"required" json:"projectId" yaml:"projectId"`
 	// The region where resources will be created.
 	Region *string `field:"required" json:"region" yaml:"region"`
 	// The unique identifier for the stack.

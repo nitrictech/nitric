@@ -1,4 +1,9 @@
 # Variables for configuration
+variable "project_id" {
+  description = "The project ID where resources will be created."
+  type        = string
+}
+
 variable "region" {
   description = "The region where resources will be created."
   type        = string
@@ -13,6 +18,7 @@ variable "website_buckets" {
   description = "A map of website bucket configurations."
   type = map(object({
     name            = string
+    base_path       = string
     index_document  = string
     error_document  = string
     local_directory = string

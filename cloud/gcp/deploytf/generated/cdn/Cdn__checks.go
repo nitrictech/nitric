@@ -106,6 +106,14 @@ func (j *jsiiProxy_Cdn) validateSetCdnDomainParameters(val interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetProjectIdParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetRegionParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")

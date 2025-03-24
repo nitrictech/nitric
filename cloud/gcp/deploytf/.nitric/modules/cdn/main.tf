@@ -1,28 +1,3 @@
-# Create GCP buckets for websites
-resource "google_storage_bucket" "website_buckets" {
-  for_each = var.website_buckets
-
-  name     = each.value.name
-  location = var.region
-
-  website {
-    main_page_suffix = each.value.index_document
-    not_found_page   = each.value.error_document
-  }
-}
-
-# Set public access permissions for website buckets
-resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
-  for_each = var.website_buckets
-
-  bucket = google_storage_bucket.website_buckets[each.key].name
-  role   = "roles/storage.objectViewer"
-
-  members = [
-    "allUsers"
-  ]
-}
-
 # Create Network Endpoint Groups for API Gateways
 resource "google_compute_region_network_endpoint_group" "api_gateway_negs" {
   provider = google-beta
@@ -55,7 +30,7 @@ resource "google_compute_backend_bucket" "website_backends" {
   for_each = var.website_buckets
 
   name        = "${each.key}-site-bucket"
-  bucket_name = google_storage_bucket.website_buckets[each.key].name
+  bucket_name = each.value.name
   enable_cdn  = true
 }
 
@@ -94,11 +69,14 @@ resource "google_compute_url_map" "https_url_map" {
     }
 
     dynamic "path_rule" {
-      for_each = var.website_buckets
+      for_each = tomap({
+        for key, value in var.website_buckets :
+        key => value if key != "default"
+      })
 
       content {
         service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
-        paths   = ["/${path_rule.key}/*"]
+        paths   = ["/${path_rule.base_path}/*"]
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -174,7 +152,7 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
 # Invalidate the CDN cache if files have changed
 resource "null_resource" "invalidate_cache" {
   provisioner "local-exec" {
-    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*'"
+    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*' --project ${var.project_id}"
   }
 
   triggers = {
