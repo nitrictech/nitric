@@ -7,7 +7,7 @@ output "region" {
 }
 
 output gateway_id {
-  value = google_api_gateway_gateway.gateway.id
+  value = google_api_gateway_gateway.gateway.gateway_id
 }
 
 output default_host {
