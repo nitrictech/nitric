@@ -5,12 +5,12 @@ output "bucket_name" {
 
 output "index_document" {
   description = "The index document for the bucket."
-  value       = google_storage_bucket_website.website_bucket_website.main_page_suffix
+  value       = one(google_storage_bucket.website_bucket.website).main_page_suffix
 }
 
 output "error_document" {
   description = "The error document for the bucket."
-  value       = google_storage_bucket_website.website_bucket_website.not_found_page
+  value       = one(google_storage_bucket.website_bucket.website).not_found_page
 }
 
 output "local_directory" {

@@ -82,8 +82,8 @@ resource "google_compute_url_map" "https_url_map" {
       for_each = var.api_gateways
 
       content {
-        service = google_compute_backend_service.api_gateway_backends[each.key].self_link
-        paths   = ["/apis/" + each.key + "/*"]
+        service = google_compute_backend_service.api_gateway_backends[path_rule.key].self_link
+        paths   = ["/apis/${path_rule.key}/*"]
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -97,8 +97,8 @@ resource "google_compute_url_map" "https_url_map" {
       for_each = var.website_buckets
 
       content {
-        service = google_compute_backend_bucket.website_backends[each.key].self_link
-        paths   = ["/" + each.key + "/*"]
+        service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
+        paths   = ["/${path_rule.key}/*"]
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -116,20 +116,18 @@ data "google_dns_managed_zone" "cdn_zone" {
 
 # Create DNS Records for the CDN
 resource "google_dns_record_set" "cdn_dns_record" {
-  name         = var.cdn_domain.domain_name
+  name         = endswith(var.cdn_domain.domain_name, ".") ? var.cdn_domain.domain_name : "${var.cdn_domain.domain_name}."
   managed_zone = data.google_dns_managed_zone.cdn_zone.name
   type         = "A"
   rrdatas      = [google_compute_global_address.cdn_ip.address]
 }
 
 resource "google_dns_record_set" "www_cdn_dns_record" {
-  name         = "www.${var.cdn_domain.domain_name}"
+  name         = endswith(var.cdn_domain.domain_name, ".") ? "www.${var.cdn_domain.domain_name}" : "www.${var.cdn_domain.domain_name}."
   managed_zone = data.google_dns_managed_zone.cdn_zone.name
   type         = "A"
   rrdatas      = [google_compute_global_address.cdn_ip.address]
 }
-
-
 
 resource "google_certificate_manager_certificate" "cdn_cert" {
   provider    = google-beta
@@ -151,7 +149,7 @@ resource "google_certificate_manager_certificate_map" "cdn_cert_map" {
 resource "google_certificate_manager_certificate_map_entry" "cdn_cert_map_entry" {
   name        = "cdn-cert-map-entry"
   description = "CDN Certificate Map Entry"
-  map = google_certificate_manager_certificate_map.certificate_map.name 
+  map = google_certificate_manager_certificate_map.cdn_cert_map.name 
   certificates = [google_certificate_manager_certificate.cdn_cert.id]
   matcher = "PRIMARY"
 }
@@ -159,7 +157,7 @@ resource "google_certificate_manager_certificate_map_entry" "cdn_cert_map_entry"
 # Create a Target HTTPS Proxy
 resource "google_compute_target_https_proxy" "https_proxy" {
   name             = "https-proxy"
-  ssl_certificates = [google_compute_managed_ssl_certificate.cdn_cert.self_link]
+  # ssl_certificates = [google_compute_managed_ssl_certificate.cdn_cert.self_link]
   certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.cdn_cert_map.id}"
   url_map          = google_compute_url_map.https_url_map.self_link
 }
@@ -171,4 +169,17 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
   ip_protocol = "TCP"
   port_range  = "443"
   target      = google_compute_target_https_proxy.https_proxy.self_link
+}
+
+# Invalidate the CDN cache if files have changed
+resource "null_resource" "invalidate_cache" {
+  provisioner "local-exec" {
+    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*'"
+  }
+
+  triggers = {
+    url_map = google_compute_url_map.https_url_map.self_link
+  }
+
+  depends_on = [ google_compute_global_forwarding_rule.https_forwarding_rule ]
 }

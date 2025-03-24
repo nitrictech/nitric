@@ -24,8 +24,8 @@ type ApiInput struct {
 }
 
 type WebsiteInput struct {
-	BucketName     *string `json:"bucket_name"`
-	IndexDocument  *string `json:"base_path"`
+	BucketName     *string `json:"name"`
+	IndexDocument  *string `json:"index_document"`
 	ErrorDocument  *string `json:"error_document"`
 	LocalDirectory *string `json:"local_directory"`
 }
@@ -58,7 +58,12 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 	}
 
 	for name, website := range a.Websites {
-		websites[name] = WebsiteInput{
+		websiteName := name
+		if *website.BasePath() == "/" {
+			websiteName = "default"
+		}
+
+		websites[websiteName] = WebsiteInput{
 			BucketName:     website.BucketNameOutput(),
 			IndexDocument:  website.IndexDocumentOutput(),
 			ErrorDocument:  website.ErrorDocumentOutput(),
