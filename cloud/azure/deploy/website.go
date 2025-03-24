@@ -367,7 +367,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 						Name: pulumi.String(cdn.DeliveryRuleActionUrlRewrite),
 						Parameters: cdn.UrlRewriteActionParametersArgs{
 							Destination:           pulumi.String("/"),
-							SourcePattern:         pulumi.String(fmt.Sprintf("%s/", basePath)),
+							SourcePattern:         pulumi.String(strings.TrimSuffix(basePath, "/")),
 							PreserveUnmatchedPath: pulumi.Bool(true),
 							TypeName:              pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
 						},
