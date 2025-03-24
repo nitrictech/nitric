@@ -21,29 +21,17 @@ resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
 module "template_files" {
   source  = "hashicorp/dir/template"
   version = "1.0.2"
-  
+
   base_dir = var.local_directory
 }
 
-locals {
-  # Apply the base path logic for key transformation
-  transformed_files = {
-    for path, file in module.template_files.files : (
-      var.base_path == "/" ? 
-        path : 
-        "${trimsuffix(var.base_path, "/")}/${path}"
-    ) => file
-  }
-}
-
-
 # Upload files from the local directory to the bucket
 resource "google_storage_bucket_object" "website_files" {
-  for_each = local.transformed_files
+  for_each = module.template_files.files
 
-  name        = trimprefix(each.key, "/")
-  bucket      = google_storage_bucket.website_bucket.name
-  source                 = each.value.source_path
-  content_type           = each.value.content_type
+  name         = trimprefix(each.key, "/")
+  bucket       = google_storage_bucket.website_bucket.name
+  source       = each.value.source_path
+  content_type = each.value.content_type
 }
 
