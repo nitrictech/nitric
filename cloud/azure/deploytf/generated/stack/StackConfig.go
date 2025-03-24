@@ -23,13 +23,7 @@ type StackConfig struct {
 	EnableKeyvault *bool `field:"optional" json:"enableKeyvault" yaml:"enableKeyvault"`
 	// Enable the creation of a storage account.
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
-	// Enable the creation of a website.
-	EnableWebsite *bool `field:"optional" json:"enableWebsite" yaml:"enableWebsite"`
 	// The id of the subnet to deploy the infrastructure resources.
 	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
-	// The root error document for the website 404.html.
-	WebsiteRootErrorDocument *string `field:"optional" json:"websiteRootErrorDocument" yaml:"websiteRootErrorDocument"`
-	// The root index document for the website index.html.
-	WebsiteRootIndexDocument *string `field:"optional" json:"websiteRootIndexDocument" yaml:"websiteRootIndexDocument"`
 }
 

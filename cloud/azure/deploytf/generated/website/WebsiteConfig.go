@@ -17,11 +17,15 @@ type WebsiteConfig struct {
 	BasePath *string `field:"required" json:"basePath" yaml:"basePath"`
 	// The local directory to deploy the website from.
 	LocalDirectory *string `field:"required" json:"localDirectory" yaml:"localDirectory"`
-	// The name of the website.
-	Name *string `field:"required" json:"name" yaml:"name"`
-	// The connection string for the storage account.
-	StorageAccountConnectionString *string `field:"required" json:"storageAccountConnectionString" yaml:"storageAccountConnectionString"`
-	// The name of the storage account.
-	StorageAccountName *string `field:"required" json:"storageAccountName" yaml:"storageAccountName"`
+	// The location/region where the resources will be created.
+	Location *string `field:"required" json:"location" yaml:"location"`
+	// The name of the resource group to use for the cdn.
+	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
+	// The name of the stack.
+	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The error document for the website 404.html.
+	ErrorDocument *string `field:"optional" json:"errorDocument" yaml:"errorDocument"`
+	// The index document for the website index.html.
+	IndexDocument *string `field:"optional" json:"indexDocument" yaml:"indexDocument"`
 }
 

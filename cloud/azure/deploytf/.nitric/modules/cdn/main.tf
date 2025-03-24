@@ -1,16 +1,9 @@
 locals {
   endpoint_name               = "${var.stack_name}-cdn"
-  default_origin_group_name   = "website-origin-group"
-  default_origin_name         = "website-origin"
+  default_origin_group_name   = "${var.stack_name}-default-origin-group"
+  default_origin_name         = "${var.stack_name}-default-origin"
 
-  # ensure any path that ends with index.html is treated as a directory
-  transformed_paths = sort([
-    for path in keys(var.cdn_purge_paths) : (
-      endswith(path, "/index.html") ? trimsuffix(path, "index.html") : path
-    )
-  ])
-
-  changed_path_md5_hashes = join(",", sort(values(var.cdn_purge_paths)))
+  changed_path_md5_hashes     = join("", sort(values(var.uploaded_files)))
 }
 
 # Create the CDN profile for the website
@@ -42,17 +35,49 @@ resource "azurerm_cdn_frontdoor_origin" "default_origin" {
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.default_origin_group.id
 
   certificate_name_check_enabled = false
+  enabled            = true
 
-  host_name          = var.storage_account_primary_web_host
+  host_name          = var.primary_web_host
   http_port          = 80
   https_port         = 443
-  origin_host_header = var.storage_account_primary_web_host
+  origin_host_header = var.primary_web_host
 
   depends_on = [ azurerm_cdn_frontdoor_origin_group.default_origin_group ]
 }
 
-# create default ruleset if apis are present
+# create default ruleset for default rules
 resource "azurerm_cdn_frontdoor_rule_set" "default_ruleset" {
+  name                      = "defaultruleset"
+  cdn_frontdoor_profile_id  = azurerm_cdn_frontdoor_profile.cdn_profile.id
+}
+
+resource "azurerm_cdn_frontdoor_rule" "redirect_slash_rule" {
+  name                      = "redirectslash"
+  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default_ruleset.id
+  order                     = 1
+
+  
+  conditions {
+    url_path_condition {
+      operator         = "RegEx"
+      match_values     = [".*\\/$"]
+    }
+  }
+
+  actions {
+    url_redirect_action {
+      redirect_type        = "Found"
+      redirect_protocol    = "MatchRequest"
+      destination_path     = "/{url_path:0:-1}"
+      destination_hostname = ""
+    }
+  }
+ 
+  depends_on = [ azurerm_cdn_frontdoor_rule_set.default_ruleset ]
+}
+
+# create default ruleset if apis are present
+resource "azurerm_cdn_frontdoor_rule_set" "api_ruleset" {
   count                     = var.enable_api_rewrites ? 1 : 0
   name                      = "apiruleset"
   cdn_frontdoor_profile_id  = azurerm_cdn_frontdoor_profile.cdn_profile.id
@@ -66,7 +91,7 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
   cdn_frontdoor_origin_ids = [
     azurerm_cdn_frontdoor_origin.default_origin.id
   ]
-  cdn_frontdoor_rule_set_ids = var.enable_api_rewrites ? [azurerm_cdn_frontdoor_rule_set.default_ruleset[0].id] : []
+  cdn_frontdoor_rule_set_ids = var.enable_api_rewrites ? [azurerm_cdn_frontdoor_rule_set.default_ruleset.id, azurerm_cdn_frontdoor_rule_set.api_ruleset[0].id] : [azurerm_cdn_frontdoor_rule_set.default_ruleset.id]
   supported_protocols = [ "Https" ]
   https_redirect_enabled = false
   patterns_to_match =  [
@@ -87,7 +112,8 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
     azurerm_cdn_frontdoor_endpoint.cdn_endpoint,
     azurerm_cdn_frontdoor_origin_group.default_origin_group,
     azurerm_cdn_frontdoor_origin.default_origin,
-    azurerm_cdn_frontdoor_rule_set.default_ruleset
+    azurerm_cdn_frontdoor_rule_set.default_ruleset,
+    azurerm_cdn_frontdoor_rule_set.api_ruleset
   ]
 }
 
@@ -104,15 +130,13 @@ resource "terraform_data" "endpoint_purge" {
     interpreter = ["bash", "-c"]
     command     = <<EOF
       # Purge the endpoint if local.transformed_paths isn't empty
-      if [ ${length(local.transformed_paths)} -gt 0 ]; then
       MSYS_NO_PATHCONV=1 az afd endpoint purge \
         --resource-group ${var.resource_group_name} \
         --profile-name ${sensitive(azurerm_cdn_frontdoor_profile.cdn_profile.name)} \
         --subscription ${sensitive(data.azurerm_subscription.current.subscription_id)} \
         --endpoint-name ${sensitive(local.endpoint_name)} \
-        --content-paths ${join(" ", formatlist("\"%s\"", local.transformed_paths))} \
+        --content-paths '/*' \
         --no-wait
-      fi
     EOF
   }
 

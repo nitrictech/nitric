@@ -17,17 +17,19 @@ package deploytf
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_api_rewrites"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_subsites"
 	"github.com/samber/lo"
 )
 
-// Convert API name to a unique numeric value based on character codes
+// Convert name to a unique numeric value based on character codes
 // This creates a number that's guaranteed unique for different strings
-func apiNameToUniqueNumber(name string) int {
+func nameToUniqueNumber(name string) int {
 	// Start at a high base to avoid conflicts with other rules
 	base := 10000
 
@@ -48,39 +50,64 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 
 	allCdnPurgeMaps := []interface{}{}
 
-	var filesToPurgeMap *map[string]*string
+	var uploadedFiles *map[string]*string
+	var primaryWebHost *string
 
 	for _, ws := range n.Websites {
+		// set the primary web host to the first website
+		if *ws.BasePath() == "/" {
+			primaryWebHost = ws.StorageAccountWebHostOutput()
+		}
+
 		// add website to depends on
 		dependsOn = append(dependsOn, ws)
 
-		changedFilesOutput := ws.ChangedFilesOutput()
-
-		if changedFilesOutput == nil {
-			continue
-		}
-
-		allCdnPurgeMaps = append(allCdnPurgeMaps, *cdktf.Token_AsStringMap(changedFilesOutput, nil))
+		allCdnPurgeMaps = append(allCdnPurgeMaps, *cdktf.Token_AsStringMap(ws.UploadedFilesOutput(), nil))
 	}
 
 	// merge all maps into one
 	if len(allCdnPurgeMaps) > 0 {
-		filesToPurgeMap = cdktf.Token_AsStringMap(cdktf.Fn_Merge(&allCdnPurgeMaps), nil)
+		uploadedFiles = cdktf.Token_AsStringMap(cdktf.Fn_Merge(&allCdnPurgeMaps), nil)
 	}
 
-	enableApis := len(n.Apis) > 0
+	enableApiRewrites := len(n.Apis) > 0
 
 	afdCDN := cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
-		StackName:                    n.Stack.StackNameOutput(),
-		StorageAccountPrimaryWebHost: n.Stack.StorageAccountWebHostOutput(),
-		ResourceGroupName:            n.Stack.ResourceGroupNameOutput(),
-		CdnPurgePaths:                filesToPurgeMap,
-		EnableApiRewrites:            jsii.Bool(enableApis),
-		DependsOn:                    &dependsOn,
+		StackName:         n.Stack.StackNameOutput(),
+		ResourceGroupName: n.Stack.ResourceGroupNameOutput(),
+		UploadedFiles:     uploadedFiles,
+		PrimaryWebHost:    primaryWebHost,
+		EnableApiRewrites: jsii.Bool(enableApiRewrites),
+		DependsOn:         &dependsOn,
 	})
 
+	if len(n.Websites) > 1 {
+		for _, ws := range n.Websites {
+			// add website to depends on
+			dependsOn = append(dependsOn, ws)
+
+			if *ws.BasePath() == "/" {
+				continue
+			}
+
+			normalizedName := strings.ReplaceAll(*ws.BasePath(), "/", "")
+			dependsOn := []cdktf.ITerraformDependable{n.Stack, afdCDN}
+
+			cdn_subsites.NewCdnSubsites(tfstack, jsii.String(fmt.Sprintf("cdn_subsite_%s", normalizedName)), &cdn_subsites.CdnSubsitesConfig{
+				Name:                         jsii.String(normalizedName),
+				StackName:                    n.Stack.StackNameOutput(),
+				BasePath:                     ws.BasePath(),
+				RuleOrder:                    jsii.Number(nameToUniqueNumber(normalizedName)),
+				CdnDefaultFrontdoorRuleSetId: afdCDN.CdnFrontdoorDefaultRuleSetIdOutput(),
+				PrimaryWebHost:               ws.StorageAccountWebHostOutput(),
+				CdnFrontdoorProfileId:        afdCDN.CdnFrontdoorProfileIdOutput(),
+				DependsOn:                    &dependsOn,
+			})
+		}
+	}
+
 	// add cdn api rewrites if apis are present
-	if enableApis {
+	if enableApiRewrites {
 		sortedApiKeys := lo.Keys(n.Apis)
 		slices.Sort(sortedApiKeys)
 
@@ -89,13 +116,13 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 			rewriteDependsOn := []cdktf.ITerraformDependable{n.Stack, afdCDN, api}
 
 			// calculate a unique rule order for the api
-			ruleOrder := apiNameToUniqueNumber(apiName)
+			ruleOrder := nameToUniqueNumber(apiName)
 
 			cdn_api_rewrites.NewCdnApiRewrites(tfstack, jsii.String(fmt.Sprintf("cdn_api_rewrite_%s", apiName)), &cdn_api_rewrites.CdnApiRewritesConfig{
 				Name:                  jsii.String(apiName),
 				ApiHostName:           api.ApiGatewayUrlOutput(),
 				CdnFrontdoorProfileId: afdCDN.CdnFrontdoorProfileIdOutput(),
-				CdnFrontdoorRuleSetId: afdCDN.CdnFrontdoorRuleSetIdOutput(),
+				CdnFrontdoorRuleSetId: afdCDN.CdnFrontdoorApiRuleSetIdOutput(),
 				RuleOrder:             jsii.Number(ruleOrder),
 				DependsOn:             &rewriteDependsOn,
 			})

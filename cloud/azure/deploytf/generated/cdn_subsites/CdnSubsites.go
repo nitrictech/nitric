@@ -1,33 +1,33 @@
-package cdn
+package cdn_subsites
 
 import (
 	_jsii_ "github.com/aws/jsii-runtime-go/runtime"
-	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/jsii"
+	_init_ "github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_subsites/jsii"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn/internal"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/cdn_subsites/internal"
 )
 
-// Defines an Cdn based on a Terraform module.
+// Defines an CdnSubsites based on a Terraform module.
 //
-// Source at ./.nitric/modules/cdn
-type Cdn interface {
+// Source at ./.nitric/modules/cdn_subsites
+type CdnSubsites interface {
 	cdktf.TerraformModule
+	BasePath() *string
+	SetBasePath(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
-	CdnFrontdoorApiRuleSetIdOutput() *string
-	CdnFrontdoorDefaultRuleSetIdOutput() *string
-	CdnFrontdoorProfileIdOutput() *string
-	CdnUrlOutput() *string
+	CdnDefaultFrontdoorRuleSetId() *string
+	SetCdnDefaultFrontdoorRuleSetId(val *string)
+	CdnFrontdoorProfileId() *string
+	SetCdnFrontdoorProfileId(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	EnableApiRewrites() *bool
-	SetEnableApiRewrites(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -36,6 +36,8 @@ type Cdn interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	Name() *string
+	SetName(val *string)
 	// The tree node.
 	Node() constructs.Node
 	PrimaryWebHost() *string
@@ -44,16 +46,14 @@ type Cdn interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
-	ResourceGroupName() *string
-	SetResourceGroupName(val *string)
+	RuleOrder() *float64
+	SetRuleOrder(val *float64)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
 	StackName() *string
 	SetStackName(val *string)
-	UploadedFiles() *map[string]*string
-	SetUploadedFiles(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -82,12 +82,22 @@ type Cdn interface {
 	ToTerraform() interface{}
 }
 
-// The jsii proxy struct for Cdn
-type jsiiProxy_Cdn struct {
+// The jsii proxy struct for CdnSubsites
+type jsiiProxy_CdnSubsites struct {
 	internal.Type__cdktfTerraformModule
 }
 
-func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
+func (j *jsiiProxy_CdnSubsites) BasePath() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"basePath",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_CdnSubsites) CdktfStack() cdktf.TerraformStack {
 	var returns cdktf.TerraformStack
 	_jsii_.Get(
 		j,
@@ -97,47 +107,27 @@ func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnFrontdoorApiRuleSetIdOutput() *string {
+func (j *jsiiProxy_CdnSubsites) CdnDefaultFrontdoorRuleSetId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"cdnFrontdoorApiRuleSetIdOutput",
+		"cdnDefaultFrontdoorRuleSetId",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnFrontdoorDefaultRuleSetIdOutput() *string {
+func (j *jsiiProxy_CdnSubsites) CdnFrontdoorProfileId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"cdnFrontdoorDefaultRuleSetIdOutput",
+		"cdnFrontdoorProfileId",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) CdnFrontdoorProfileIdOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"cdnFrontdoorProfileIdOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) CdnUrlOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"cdnUrlOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
+func (j *jsiiProxy_CdnSubsites) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
 		j,
@@ -147,7 +137,7 @@ func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
+func (j *jsiiProxy_CdnSubsites) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
 		j,
@@ -157,17 +147,7 @@ func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) EnableApiRewrites() *bool {
-	var returns *bool
-	_jsii_.Get(
-		j,
-		"enableApiRewrites",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) ForEach() cdktf.ITerraformIterator {
+func (j *jsiiProxy_CdnSubsites) ForEach() cdktf.ITerraformIterator {
 	var returns cdktf.ITerraformIterator
 	_jsii_.Get(
 		j,
@@ -177,7 +157,7 @@ func (j *jsiiProxy_Cdn) ForEach() cdktf.ITerraformIterator {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Fqn() *string {
+func (j *jsiiProxy_CdnSubsites) Fqn() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -187,7 +167,7 @@ func (j *jsiiProxy_Cdn) Fqn() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
+func (j *jsiiProxy_CdnSubsites) FriendlyUniqueId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -197,7 +177,17 @@ func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Node() constructs.Node {
+func (j *jsiiProxy_CdnSubsites) Name() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"name",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_CdnSubsites) Node() constructs.Node {
 	var returns constructs.Node
 	_jsii_.Get(
 		j,
@@ -207,7 +197,7 @@ func (j *jsiiProxy_Cdn) Node() constructs.Node {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) PrimaryWebHost() *string {
+func (j *jsiiProxy_CdnSubsites) PrimaryWebHost() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -217,7 +207,7 @@ func (j *jsiiProxy_Cdn) PrimaryWebHost() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
+func (j *jsiiProxy_CdnSubsites) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
 		j,
@@ -227,7 +217,7 @@ func (j *jsiiProxy_Cdn) Providers() *[]interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
+func (j *jsiiProxy_CdnSubsites) RawOverrides() interface{} {
 	var returns interface{}
 	_jsii_.Get(
 		j,
@@ -237,17 +227,17 @@ func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) ResourceGroupName() *string {
-	var returns *string
+func (j *jsiiProxy_CdnSubsites) RuleOrder() *float64 {
+	var returns *float64
 	_jsii_.Get(
 		j,
-		"resourceGroupName",
+		"ruleOrder",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
+func (j *jsiiProxy_CdnSubsites) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
@@ -257,7 +247,7 @@ func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) Source() *string {
+func (j *jsiiProxy_CdnSubsites) Source() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -267,7 +257,7 @@ func (j *jsiiProxy_Cdn) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) StackName() *string {
+func (j *jsiiProxy_CdnSubsites) StackName() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -277,17 +267,7 @@ func (j *jsiiProxy_Cdn) StackName() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) UploadedFiles() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"uploadedFiles",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) Version() *string {
+func (j *jsiiProxy_CdnSubsites) Version() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
@@ -298,16 +278,16 @@ func (j *jsiiProxy_Cdn) Version() *string {
 }
 
 
-func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
+func NewCdnSubsites(scope constructs.Construct, id *string, config *CdnSubsitesConfig) CdnSubsites {
 	_init_.Initialize()
 
-	if err := validateNewCdnParameters(scope, id, config); err != nil {
+	if err := validateNewCdnSubsitesParameters(scope, id, config); err != nil {
 		panic(err)
 	}
-	j := jsiiProxy_Cdn{}
+	j := jsiiProxy_CdnSubsites{}
 
 	_jsii_.Create(
-		"cdn.Cdn",
+		"cdn_subsites.CdnSubsites",
 		[]interface{}{scope, id, config},
 		&j,
 	)
@@ -315,17 +295,50 @@ func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
 	return &j
 }
 
-func NewCdn_Override(c Cdn, scope constructs.Construct, id *string, config *CdnConfig) {
+func NewCdnSubsites_Override(c CdnSubsites, scope constructs.Construct, id *string, config *CdnSubsitesConfig) {
 	_init_.Initialize()
 
 	_jsii_.Create(
-		"cdn.Cdn",
+		"cdn_subsites.CdnSubsites",
 		[]interface{}{scope, id, config},
 		c,
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
+func (j *jsiiProxy_CdnSubsites)SetBasePath(val *string) {
+	if err := j.validateSetBasePathParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"basePath",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnSubsites)SetCdnDefaultFrontdoorRuleSetId(val *string) {
+	if err := j.validateSetCdnDefaultFrontdoorRuleSetIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cdnDefaultFrontdoorRuleSetId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnSubsites)SetCdnFrontdoorProfileId(val *string) {
+	if err := j.validateSetCdnFrontdoorProfileIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"cdnFrontdoorProfileId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnSubsites)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
@@ -333,15 +346,7 @@ func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetEnableApiRewrites(val *bool) {
-	_jsii_.Set(
-		j,
-		"enableApiRewrites",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
+func (j *jsiiProxy_CdnSubsites)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
@@ -349,7 +354,18 @@ func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetPrimaryWebHost(val *string) {
+func (j *jsiiProxy_CdnSubsites)SetName(val *string) {
+	if err := j.validateSetNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"name",
+		val,
+	)
+}
+
+func (j *jsiiProxy_CdnSubsites)SetPrimaryWebHost(val *string) {
 	if err := j.validateSetPrimaryWebHostParameters(val); err != nil {
 		panic(err)
 	}
@@ -360,32 +376,21 @@ func (j *jsiiProxy_Cdn)SetPrimaryWebHost(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetResourceGroupName(val *string) {
-	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
-		panic(err)
-	}
+func (j *jsiiProxy_CdnSubsites)SetRuleOrder(val *float64) {
 	_jsii_.Set(
 		j,
-		"resourceGroupName",
+		"ruleOrder",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetStackName(val *string) {
+func (j *jsiiProxy_CdnSubsites)SetStackName(val *string) {
 	if err := j.validateSetStackNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
 		"stackName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetUploadedFiles(val *map[string]*string) {
-	_jsii_.Set(
-		j,
-		"uploadedFiles",
 		val,
 	)
 }
@@ -407,16 +412,16 @@ func (j *jsiiProxy_Cdn)SetUploadedFiles(val *map[string]*string) {
 // this type-testing method instead.
 //
 // Returns: true if `x` is an object created from a class which extends `Construct`.
-func Cdn_IsConstruct(x interface{}) *bool {
+func CdnSubsites_IsConstruct(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateCdn_IsConstructParameters(x); err != nil {
+	if err := validateCdnSubsites_IsConstructParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"cdn.Cdn",
+		"cdn_subsites.CdnSubsites",
 		"isConstruct",
 		[]interface{}{x},
 		&returns,
@@ -426,16 +431,16 @@ func Cdn_IsConstruct(x interface{}) *bool {
 }
 
 // Experimental.
-func Cdn_IsTerraformElement(x interface{}) *bool {
+func CdnSubsites_IsTerraformElement(x interface{}) *bool {
 	_init_.Initialize()
 
-	if err := validateCdn_IsTerraformElementParameters(x); err != nil {
+	if err := validateCdnSubsites_IsTerraformElementParameters(x); err != nil {
 		panic(err)
 	}
 	var returns *bool
 
 	_jsii_.StaticInvoke(
-		"cdn.Cdn",
+		"cdn_subsites.CdnSubsites",
 		"isTerraformElement",
 		[]interface{}{x},
 		&returns,
@@ -444,7 +449,7 @@ func Cdn_IsTerraformElement(x interface{}) *bool {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) AddOverride(path *string, value interface{}) {
+func (c *jsiiProxy_CdnSubsites) AddOverride(path *string, value interface{}) {
 	if err := c.validateAddOverrideParameters(path, value); err != nil {
 		panic(err)
 	}
@@ -455,7 +460,7 @@ func (c *jsiiProxy_Cdn) AddOverride(path *string, value interface{}) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) AddProvider(provider interface{}) {
+func (c *jsiiProxy_CdnSubsites) AddProvider(provider interface{}) {
 	if err := c.validateAddProviderParameters(provider); err != nil {
 		panic(err)
 	}
@@ -466,7 +471,7 @@ func (c *jsiiProxy_Cdn) AddProvider(provider interface{}) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) GetString(output *string) *string {
+func (c *jsiiProxy_CdnSubsites) GetString(output *string) *string {
 	if err := c.validateGetStringParameters(output); err != nil {
 		panic(err)
 	}
@@ -482,7 +487,7 @@ func (c *jsiiProxy_Cdn) GetString(output *string) *string {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
+func (c *jsiiProxy_CdnSubsites) InterpolationForOutput(moduleOutput *string) cdktf.IResolvable {
 	if err := c.validateInterpolationForOutputParameters(moduleOutput); err != nil {
 		panic(err)
 	}
@@ -498,7 +503,7 @@ func (c *jsiiProxy_Cdn) InterpolationForOutput(moduleOutput *string) cdktf.IReso
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) OverrideLogicalId(newLogicalId *string) {
+func (c *jsiiProxy_CdnSubsites) OverrideLogicalId(newLogicalId *string) {
 	if err := c.validateOverrideLogicalIdParameters(newLogicalId); err != nil {
 		panic(err)
 	}
@@ -509,7 +514,7 @@ func (c *jsiiProxy_Cdn) OverrideLogicalId(newLogicalId *string) {
 	)
 }
 
-func (c *jsiiProxy_Cdn) ResetOverrideLogicalId() {
+func (c *jsiiProxy_CdnSubsites) ResetOverrideLogicalId() {
 	_jsii_.InvokeVoid(
 		c,
 		"resetOverrideLogicalId",
@@ -517,7 +522,7 @@ func (c *jsiiProxy_Cdn) ResetOverrideLogicalId() {
 	)
 }
 
-func (c *jsiiProxy_Cdn) SynthesizeAttributes() *map[string]interface{} {
+func (c *jsiiProxy_CdnSubsites) SynthesizeAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
@@ -530,7 +535,7 @@ func (c *jsiiProxy_Cdn) SynthesizeAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) SynthesizeHclAttributes() *map[string]interface{} {
+func (c *jsiiProxy_CdnSubsites) SynthesizeHclAttributes() *map[string]interface{} {
 	var returns *map[string]interface{}
 
 	_jsii_.Invoke(
@@ -543,7 +548,7 @@ func (c *jsiiProxy_Cdn) SynthesizeHclAttributes() *map[string]interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToHclTerraform() interface{} {
+func (c *jsiiProxy_CdnSubsites) ToHclTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
@@ -556,7 +561,7 @@ func (c *jsiiProxy_Cdn) ToHclTerraform() interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToMetadata() interface{} {
+func (c *jsiiProxy_CdnSubsites) ToMetadata() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(
@@ -569,7 +574,7 @@ func (c *jsiiProxy_Cdn) ToMetadata() interface{} {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToString() *string {
+func (c *jsiiProxy_CdnSubsites) ToString() *string {
 	var returns *string
 
 	_jsii_.Invoke(
@@ -582,7 +587,7 @@ func (c *jsiiProxy_Cdn) ToString() *string {
 	return returns
 }
 
-func (c *jsiiProxy_Cdn) ToTerraform() interface{} {
+func (c *jsiiProxy_CdnSubsites) ToTerraform() interface{} {
 	var returns interface{}
 
 	_jsii_.Invoke(

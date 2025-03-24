@@ -32,15 +32,15 @@ func validateCdn_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetPrimaryWebHostParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }
 
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountPrimaryWebHostParameters(val *string) error {
 	return nil
 }
 

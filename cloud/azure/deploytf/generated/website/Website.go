@@ -18,13 +18,14 @@ type Website interface {
 	SetBasePath(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
-	ChangedFilesOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	ErrorDocument() *string
+	SetErrorDocument(val *string)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -33,24 +34,28 @@ type Website interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IndexDocument() *string
+	SetIndexDocument(val *string)
 	LocalDirectory() *string
 	SetLocalDirectory(val *string)
-	Name() *string
-	SetName(val *string)
+	Location() *string
+	SetLocation(val *string)
 	// The tree node.
 	Node() constructs.Node
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
+	ResourceGroupName() *string
+	SetResourceGroupName(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StorageAccountConnectionString() *string
-	SetStorageAccountConnectionString(val *string)
-	StorageAccountName() *string
-	SetStorageAccountName(val *string)
+	StackName() *string
+	SetStackName(val *string)
+	StorageAccountWebHostOutput() *string
+	UploadedFilesOutput() *string
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -104,16 +109,6 @@ func (j *jsiiProxy_Website) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
-func (j *jsiiProxy_Website) ChangedFilesOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"changedFilesOutput",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Website) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
@@ -129,6 +124,16 @@ func (j *jsiiProxy_Website) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) ErrorDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"errorDocument",
 		&returns,
 	)
 	return returns
@@ -164,6 +169,16 @@ func (j *jsiiProxy_Website) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) IndexDocument() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"indexDocument",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) LocalDirectory() *string {
 	var returns *string
 	_jsii_.Get(
@@ -174,11 +189,11 @@ func (j *jsiiProxy_Website) LocalDirectory() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Website) Name() *string {
+func (j *jsiiProxy_Website) Location() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"name",
+		"location",
 		&returns,
 	)
 	return returns
@@ -214,6 +229,16 @@ func (j *jsiiProxy_Website) RawOverrides() interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Website) ResourceGroupName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"resourceGroupName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -234,21 +259,31 @@ func (j *jsiiProxy_Website) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Website) StorageAccountConnectionString() *string {
+func (j *jsiiProxy_Website) StackName() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"storageAccountConnectionString",
+		"stackName",
 		&returns,
 	)
 	return returns
 }
 
-func (j *jsiiProxy_Website) StorageAccountName() *string {
+func (j *jsiiProxy_Website) StorageAccountWebHostOutput() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"storageAccountName",
+		"storageAccountWebHostOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) UploadedFilesOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"uploadedFilesOutput",
 		&returns,
 	)
 	return returns
@@ -311,10 +346,26 @@ func (j *jsiiProxy_Website)SetDependsOn(val *[]*string) {
 	)
 }
 
+func (j *jsiiProxy_Website)SetErrorDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"errorDocument",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Website)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Website)SetIndexDocument(val *string) {
+	_jsii_.Set(
+		j,
+		"indexDocument",
 		val,
 	)
 }
@@ -330,35 +381,35 @@ func (j *jsiiProxy_Website)SetLocalDirectory(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Website)SetName(val *string) {
-	if err := j.validateSetNameParameters(val); err != nil {
+func (j *jsiiProxy_Website)SetLocation(val *string) {
+	if err := j.validateSetLocationParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"name",
+		"location",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Website)SetStorageAccountConnectionString(val *string) {
-	if err := j.validateSetStorageAccountConnectionStringParameters(val); err != nil {
+func (j *jsiiProxy_Website)SetResourceGroupName(val *string) {
+	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"storageAccountConnectionString",
+		"resourceGroupName",
 		val,
 	)
 }
 
-func (j *jsiiProxy_Website)SetStorageAccountName(val *string) {
-	if err := j.validateSetStorageAccountNameParameters(val); err != nil {
+func (j *jsiiProxy_Website)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"storageAccountName",
+		"stackName",
 		val,
 	)
 }

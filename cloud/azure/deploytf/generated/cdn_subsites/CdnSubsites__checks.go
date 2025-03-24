@@ -1,6 +1,6 @@
 //go:build !no_runtime_type_checking
 
-package website
+package cdn_subsites
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
 
-func (w *jsiiProxy_Website) validateAddOverrideParameters(path *string, value interface{}) error {
+func (c *jsiiProxy_CdnSubsites) validateAddOverrideParameters(path *string, value interface{}) error {
 	if path == nil {
 		return fmt.Errorf("parameter path is required, but nil was provided")
 	}
@@ -23,7 +23,7 @@ func (w *jsiiProxy_Website) validateAddOverrideParameters(path *string, value in
 	return nil
 }
 
-func (w *jsiiProxy_Website) validateAddProviderParameters(provider interface{}) error {
+func (c *jsiiProxy_CdnSubsites) validateAddProviderParameters(provider interface{}) error {
 	if provider == nil {
 		return fmt.Errorf("parameter provider is required, but nil was provided")
 	}
@@ -50,7 +50,7 @@ func (w *jsiiProxy_Website) validateAddProviderParameters(provider interface{}) 
 	return nil
 }
 
-func (w *jsiiProxy_Website) validateGetStringParameters(output *string) error {
+func (c *jsiiProxy_CdnSubsites) validateGetStringParameters(output *string) error {
 	if output == nil {
 		return fmt.Errorf("parameter output is required, but nil was provided")
 	}
@@ -58,7 +58,7 @@ func (w *jsiiProxy_Website) validateGetStringParameters(output *string) error {
 	return nil
 }
 
-func (w *jsiiProxy_Website) validateInterpolationForOutputParameters(moduleOutput *string) error {
+func (c *jsiiProxy_CdnSubsites) validateInterpolationForOutputParameters(moduleOutput *string) error {
 	if moduleOutput == nil {
 		return fmt.Errorf("parameter moduleOutput is required, but nil was provided")
 	}
@@ -66,7 +66,7 @@ func (w *jsiiProxy_Website) validateInterpolationForOutputParameters(moduleOutpu
 	return nil
 }
 
-func (w *jsiiProxy_Website) validateOverrideLogicalIdParameters(newLogicalId *string) error {
+func (c *jsiiProxy_CdnSubsites) validateOverrideLogicalIdParameters(newLogicalId *string) error {
 	if newLogicalId == nil {
 		return fmt.Errorf("parameter newLogicalId is required, but nil was provided")
 	}
@@ -74,7 +74,7 @@ func (w *jsiiProxy_Website) validateOverrideLogicalIdParameters(newLogicalId *st
 	return nil
 }
 
-func validateWebsite_IsConstructParameters(x interface{}) error {
+func validateCdnSubsites_IsConstructParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -82,7 +82,7 @@ func validateWebsite_IsConstructParameters(x interface{}) error {
 	return nil
 }
 
-func validateWebsite_IsTerraformElementParameters(x interface{}) error {
+func validateCdnSubsites_IsTerraformElementParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -90,7 +90,7 @@ func validateWebsite_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetBasePathParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetBasePathParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -98,7 +98,7 @@ func (j *jsiiProxy_Website) validateSetBasePathParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetCdnDefaultFrontdoorRuleSetIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -106,7 +106,7 @@ func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) err
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetLocationParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetCdnFrontdoorProfileIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -114,7 +114,7 @@ func (j *jsiiProxy_Website) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetResourceGroupNameParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -122,7 +122,7 @@ func (j *jsiiProxy_Website) validateSetResourceGroupNameParameters(val *string) 
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetPrimaryWebHostParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -130,7 +130,15 @@ func (j *jsiiProxy_Website) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
-func validateNewWebsiteParameters(scope constructs.Construct, id *string, config *WebsiteConfig) error {
+func (j *jsiiProxy_CdnSubsites) validateSetStackNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func validateNewCdnSubsitesParameters(scope constructs.Construct, id *string, config *CdnSubsitesConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")
 	}

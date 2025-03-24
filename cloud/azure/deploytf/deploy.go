@@ -142,42 +142,14 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		return item.Id.GetType() == resourcespb.ResourceType_Secret
 	})
 
-	_, enableWebsites := lo.Find(resources, func(item *deploymentspb.Resource) bool {
-		return item.Id.GetType() == resourcespb.ResourceType_Website
-	})
-
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
 		EnableStorage:  jsii.Bool(enableStorage),
 		EnableKeyvault: jsii.Bool(enableKeyvault),
 		EnableDatabase: jsii.Bool(enableDatabase),
-		EnableWebsite:  jsii.Bool(enableWebsites),
 		Location:       jsii.String(a.Region),
 		StackName:      jsii.String(a.StackName),
 	})
-
-	// set the website root index and error documents if we have a website
-	if enableWebsites {
-		var rootWebsite *deploymentspb.Website
-
-		a.EnableWebsites = true
-
-		for _, resource := range resources {
-			config, ok := resource.Config.(*deploymentspb.Resource_Website)
-
-			if ok && config.Website.BasePath == "/" {
-				rootWebsite = config.Website
-				break
-			}
-		}
-
-		if rootWebsite == nil {
-			return fmt.Errorf("no root website configuration found")
-		}
-
-		a.Stack.SetWebsiteRootErrorDocument(jsii.String(rootWebsite.ErrorDocument))
-		a.Stack.SetWebsiteRootIndexDocument(jsii.String(rootWebsite.IndexDocument))
-	}
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
@@ -202,7 +174,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 
 func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	// Create a CDN for the stack if we have a website
-	if a.EnableWebsites {
+	if len(a.Websites) > 0 {
 		a.NewCdn(stack)
 	}
 

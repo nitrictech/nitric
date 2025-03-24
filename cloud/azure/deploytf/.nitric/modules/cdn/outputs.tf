@@ -8,7 +8,12 @@ output "cdn_frontdoor_profile_id" {
   value = azurerm_cdn_frontdoor_profile.cdn_profile.id
 }
 
-output "cdn_frontdoor_rule_set_id" {
-  description = "The ID of the CDN rule set"
-  value = one(azurerm_cdn_frontdoor_rule_set.default_ruleset) != null ? one(azurerm_cdn_frontdoor_rule_set.default_ruleset).id : null
+output "cdn_frontdoor_api_rule_set_id" {
+  description = "The ID of the API rewrite rule set"
+  value = one(azurerm_cdn_frontdoor_rule_set.api_ruleset) != null ? one(azurerm_cdn_frontdoor_rule_set.api_ruleset).id : null
+}
+
+output "cdn_frontdoor_default_rule_set_id" {
+  description = "The ID of the default rule set"
+  value = azurerm_cdn_frontdoor_rule_set.default_ruleset.id
 }

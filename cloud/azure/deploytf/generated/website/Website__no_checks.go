@@ -40,15 +40,15 @@ func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) err
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetNameParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetStorageAccountConnectionStringParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetStorageAccountNameParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 

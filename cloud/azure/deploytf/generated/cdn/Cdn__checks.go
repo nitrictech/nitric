@@ -90,6 +90,14 @@ func validateCdn_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetPrimaryWebHostParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
@@ -99,14 +107,6 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 }
 
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetStorageAccountPrimaryWebHostParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

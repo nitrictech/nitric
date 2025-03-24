@@ -65,6 +65,10 @@
     {
       "name": "cdn_api_rewrites",
       "source": "./.nitric/modules/cdn_api_rewrites"
+    },
+    {
+      "name": "cdn_subsites",
+      "source": "./.nitric/modules/cdn_subsites"
     }
   ],
   "context": {}
