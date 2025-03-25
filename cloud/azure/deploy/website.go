@@ -287,7 +287,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 			originGroupName := fmt.Sprintf("%s-%s-origin-group", p.StackId, normalizedName)
 
-			originGroup, err := cdn.NewAFDOriginGroup(ctx, originGroupName, &cdn.AFDOriginGroupArgs{
+			subsiteOriginGroup, err := cdn.NewAFDOriginGroup(ctx, originGroupName, &cdn.AFDOriginGroupArgs{
 				OriginGroupName:   pulumi.String(originGroupName),
 				ResourceGroupName: p.ResourceGroup.Name,
 				ProfileName:       profile.Name,
@@ -305,7 +305,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 			originHostname := getPrimaryEndpointUrl(storageAccount)
 
-			_, err = cdn.NewAFDOrigin(ctx, originName, &cdn.AFDOriginArgs{
+			subsiteOrigin, err := cdn.NewAFDOrigin(ctx, originName, &cdn.AFDOriginArgs{
 				OriginName:        pulumi.String(originName),
 				ResourceGroupName: p.ResourceGroup.Name,
 				ProfileName:       profile.Name,
@@ -314,8 +314,8 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 				HttpPort:          pulumi.Int(80),
 				HttpsPort:         pulumi.Int(443),
 				EnabledState:      cdn.EnabledStateEnabled,
-				OriginGroupName:   originGroup.Name,
-			}, pulumi.DependsOn([]pulumi.Resource{originGroup}))
+				OriginGroupName:   subsiteOriginGroup.Name,
+			}, pulumi.DependsOn([]pulumi.Resource{subsiteOriginGroup}))
 			if err != nil {
 				return fmt.Errorf("failed to create Frontdoor origin for subsite: %w", err)
 			}
@@ -352,7 +352,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 							OriginGroupOverride: cdn.OriginGroupOverrideArgs{
 								ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
 								OriginGroup: &cdn.ResourceReferenceArgs{
-									Id: originGroup.ID(),
+									Id: subsiteOriginGroup.ID(),
 								},
 							},
 							CacheConfiguration: cdn.CacheConfigurationArgs{
@@ -373,7 +373,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 						},
 					},
 				}),
-			}, pulumi.DependsOn([]pulumi.Resource{defaultRuleSet, originGroup}))
+			}, pulumi.DependsOn([]pulumi.Resource{defaultRuleSet, subsiteOrigin, subsiteOriginGroup}))
 			if err != nil {
 				return fmt.Errorf("failed to create Frontdoor rule for subsite: %w", err)
 			}
