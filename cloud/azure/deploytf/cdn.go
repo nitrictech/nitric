@@ -27,8 +27,10 @@ import (
 	"github.com/samber/lo"
 )
 
-// Convert name to a unique numeric value based on character codes
-// This creates a number that's guaranteed unique for different strings
+// Required due to the way Azure handles rule replacement and ordering
+// We need to ensure that the rules are unique and ordered in a way that
+// avoids conflicts with other rules. This is a simple way to do that
+// by converting the name to a unique number based on its character codes.
 func nameToUniqueNumber(name string) int {
 	// Start at a high base to avoid conflicts with other rules
 	base := 10000
@@ -44,14 +46,63 @@ func nameToUniqueNumber(name string) int {
 	return base
 }
 
+func ensureValidSubdomain(domain string, subdomain string) error {
+	domain = strings.ToLower(strings.TrimSuffix(domain, "."))
+	subdomain = strings.ToLower(strings.TrimSuffix(subdomain, "."))
+
+	if subdomain == domain || strings.HasSuffix(subdomain, "."+domain) {
+		return nil
+	}
+
+	return fmt.Errorf("%s is not a valid subdomain of %s", subdomain, domain)
+}
+
 // function to create a new cdn
-func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cdn {
+func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) error {
 	dependsOn := []cdktf.ITerraformDependable{n.Stack}
 
 	allCdnPurgeMaps := []interface{}{}
 
 	var uploadedFiles *map[string]*string
 	var primaryWebHost *string
+	var subDomain string
+	var enableCustomDomain bool
+	var isApexDomain bool
+
+	// Validate the custom domain configuration
+	if n.AzureConfig.CdnDomain.DomainName != "" && n.AzureConfig.CdnDomain.ZoneName != "" {
+		if n.AzureConfig.CdnDomain.ZoneName == "" {
+			return fmt.Errorf("zone-name is required for custom domain")
+		}
+
+		if n.AzureConfig.CdnDomain.DomainName == "" {
+			return fmt.Errorf("domain-name is required for custom domain")
+		}
+
+		if n.AzureConfig.CdnDomain.ZoneResourceGroup == "" {
+			return fmt.Errorf("zone-resource-group is required for custom domain")
+		}
+
+		subDomain = strings.ToLower(n.AzureConfig.CdnDomain.DomainName)
+
+		// check if the domain name is a subdomain of the zone name
+		err := ensureValidSubdomain(n.AzureConfig.CdnDomain.ZoneName, subDomain)
+		if err != nil {
+			return err
+		}
+
+		// if it is a subdomain, remove the zone name from the subdomain
+		subDomain = strings.ReplaceAll(strings.TrimSuffix(subDomain, n.AzureConfig.CdnDomain.ZoneName), ".", "")
+
+		isApexDomain = subDomain == ""
+
+		// if domain is an apex domain, create a unique subdomain for naming purposes
+		if isApexDomain {
+			subDomain = fmt.Sprintf("%s-%s", n.StackName, strings.ReplaceAll(n.AzureConfig.CdnDomain.ZoneName, ".", "-"))
+		}
+
+		enableCustomDomain = true
+	}
 
 	for _, ws := range n.Websites {
 		// set the primary web host to the first website
@@ -73,12 +124,18 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 	enableApiRewrites := len(n.Apis) > 0
 
 	afdCDN := cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
-		StackName:         n.Stack.StackNameOutput(),
-		ResourceGroupName: n.Stack.ResourceGroupNameOutput(),
-		UploadedFiles:     uploadedFiles,
-		PrimaryWebHost:    primaryWebHost,
-		EnableApiRewrites: jsii.Bool(enableApiRewrites),
-		DependsOn:         &dependsOn,
+		StackName:             n.Stack.StackNameOutput(),
+		ResourceGroupName:     n.Stack.ResourceGroupNameOutput(),
+		UploadedFiles:         uploadedFiles,
+		PrimaryWebHost:        primaryWebHost,
+		ZoneResourceGroupName: jsii.String(n.AzureConfig.CdnDomain.ZoneResourceGroup),
+		ZoneName:              jsii.String(n.AzureConfig.CdnDomain.ZoneName),
+		CustomDomainHostName:  jsii.String(n.AzureConfig.CdnDomain.DomainName),
+		DomainName:            jsii.String(subDomain),
+		IsApexDomain:          jsii.Bool(isApexDomain),
+		EnableCustomDomain:    jsii.Bool(enableCustomDomain),
+		EnableApiRewrites:     jsii.Bool(enableApiRewrites),
+		DependsOn:             &dependsOn,
 	})
 
 	if len(n.Websites) > 1 {
@@ -129,5 +186,5 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.
 		}
 	}
 
-	return afdCDN
+	return nil
 }

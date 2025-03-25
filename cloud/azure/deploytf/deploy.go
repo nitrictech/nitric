@@ -175,7 +175,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	// Create a CDN for the stack if we have a website
 	if len(a.Websites) > 0 {
-		a.NewCdn(stack)
+		return a.NewCdn(stack)
 	}
 
 	return nil

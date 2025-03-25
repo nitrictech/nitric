@@ -18,6 +18,43 @@ resource "azurerm_cdn_frontdoor_endpoint" "cdn_endpoint" {
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.cdn_profile.id
 }
 
+data "azurerm_dns_zone" "dns_zone" {
+  count = var.enable_custom_domain ? 1 : 0
+  name  = var.zone_name
+  resource_group_name = var.zone_resource_group_name
+}
+
+resource "azurerm_cdn_frontdoor_custom_domain" "custom_domain" {
+  count                    = var.enable_custom_domain ? 1 : 0
+  name                     = var.domain_name
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.cdn_profile.id
+  dns_zone_id              = data.azurerm_dns_zone.dns_zone[0].id
+  host_name                = var.custom_domain_host_name
+
+  lifecycle {
+    # allows any previous custom domain to be disassociated before destroyed
+    create_before_destroy = true
+  }
+
+  tls {
+    certificate_type    = "ManagedCertificate"
+  }
+}
+
+resource "azurerm_dns_txt_record" "validate_domain" {
+  count               = var.enable_custom_domain ? 1 : 0
+  name                = var.is_apex_domain ? "_dnsauth" : join(".", ["_dnsauth", var.domain_name])
+  zone_name           = data.azurerm_dns_zone.dns_zone[0].name
+  resource_group_name = var.zone_resource_group_name
+  ttl                 = 3600
+
+  record {
+    value = azurerm_cdn_frontdoor_custom_domain.custom_domain[0].validation_token
+  }
+
+  depends_on = [ azurerm_cdn_frontdoor_custom_domain.custom_domain ]
+}
+
 resource "azurerm_cdn_frontdoor_origin_group" "default_origin_group" {
   name                     = local.default_origin_group_name
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.cdn_profile.id
@@ -99,6 +136,8 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
     "/*"
   ]
 
+  cdn_frontdoor_custom_domain_ids = var.enable_custom_domain ? [azurerm_cdn_frontdoor_custom_domain.custom_domain[0].id] : []
+
   cache {
     query_string_caching_behavior = "IgnoreQueryString"
     compression_enabled = true
@@ -115,6 +154,38 @@ resource "azurerm_cdn_frontdoor_route" "main_route" {
     azurerm_cdn_frontdoor_origin.default_origin,
     azurerm_cdn_frontdoor_rule_set.default_ruleset,
     azurerm_cdn_frontdoor_rule_set.api_ruleset
+  ]
+}
+
+resource "azurerm_dns_cname_record" "add_dns_cname" {
+  count               = var.enable_custom_domain && !var.is_apex_domain ? 1 : 0
+
+  name                = var.domain_name
+  zone_name           = data.azurerm_dns_zone.dns_zone[0].name
+  resource_group_name = var.zone_resource_group_name
+  ttl                 = 3600
+  record              = azurerm_cdn_frontdoor_endpoint.cdn_endpoint.host_name
+
+  depends_on = [
+    azurerm_cdn_frontdoor_custom_domain.custom_domain,
+    azurerm_cdn_frontdoor_route.main_route,
+    azurerm_cdn_frontdoor_endpoint.cdn_endpoint
+  ]
+}
+
+resource "azurerm_dns_a_record" "add_apex_record" {
+  count               = var.enable_custom_domain && var.is_apex_domain ? 1 : 0
+
+  name                = "@"
+  zone_name           = data.azurerm_dns_zone.dns_zone[0].name
+  resource_group_name = var.zone_resource_group_name
+  ttl                 = 3600
+  target_resource_id  = azurerm_cdn_frontdoor_endpoint.cdn_endpoint.id
+
+  depends_on = [
+    azurerm_cdn_frontdoor_custom_domain.custom_domain,
+    azurerm_cdn_frontdoor_route.main_route,
+    azurerm_cdn_frontdoor_endpoint.cdn_endpoint
   ]
 }
 

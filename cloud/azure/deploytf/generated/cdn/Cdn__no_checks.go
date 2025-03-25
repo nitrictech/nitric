@@ -32,6 +32,14 @@ func validateCdn_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetCustomDomainHostNameParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Cdn) validateSetDomainNameParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetPrimaryWebHostParameters(val *string) error {
 	return nil
 }
@@ -41,6 +49,14 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 }
 
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Cdn) validateSetZoneNameParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Cdn) validateSetZoneResourceGroupNameParameters(val *string) error {
 	return nil
 }
 

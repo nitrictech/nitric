@@ -22,12 +22,18 @@ type Cdn interface {
 	CdnUrlOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
+	CustomDomainHostName() *string
+	SetCustomDomainHostName(val *string)
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	DomainName() *string
+	SetDomainName(val *string)
 	EnableApiRewrites() *bool
 	SetEnableApiRewrites(val *bool)
+	EnableCustomDomain() *bool
+	SetEnableCustomDomain(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -36,6 +42,8 @@ type Cdn interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IsApexDomain() *bool
+	SetIsApexDomain(val *bool)
 	// The tree node.
 	Node() constructs.Node
 	PrimaryWebHost() *string
@@ -56,6 +64,10 @@ type Cdn interface {
 	SetUploadedFiles(val *map[string]*string)
 	// Experimental.
 	Version() *string
+	ZoneName() *string
+	SetZoneName(val *string)
+	ZoneResourceGroupName() *string
+	SetZoneResourceGroupName(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -147,6 +159,16 @@ func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) CustomDomainHostName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"customDomainHostName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	var returns *[]*string
 	_jsii_.Get(
@@ -157,11 +179,31 @@ func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) DomainName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"domainName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) EnableApiRewrites() *bool {
 	var returns *bool
 	_jsii_.Get(
 		j,
 		"enableApiRewrites",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) EnableCustomDomain() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"enableCustomDomain",
 		&returns,
 	)
 	return returns
@@ -192,6 +234,16 @@ func (j *jsiiProxy_Cdn) FriendlyUniqueId() *string {
 	_jsii_.Get(
 		j,
 		"friendlyUniqueId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) IsApexDomain() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"isApexDomain",
 		&returns,
 	)
 	return returns
@@ -297,6 +349,26 @@ func (j *jsiiProxy_Cdn) Version() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) ZoneName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"zoneName",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) ZoneResourceGroupName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"zoneResourceGroupName",
+		&returns,
+	)
+	return returns
+}
+
 
 func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
 	_init_.Initialize()
@@ -325,10 +397,32 @@ func NewCdn_Override(c Cdn, scope constructs.Construct, id *string, config *CdnC
 	)
 }
 
+func (j *jsiiProxy_Cdn)SetCustomDomainHostName(val *string) {
+	if err := j.validateSetCustomDomainHostNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"customDomainHostName",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetDomainName(val *string) {
+	if err := j.validateSetDomainNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"domainName",
 		val,
 	)
 }
@@ -341,10 +435,26 @@ func (j *jsiiProxy_Cdn)SetEnableApiRewrites(val *bool) {
 	)
 }
 
+func (j *jsiiProxy_Cdn)SetEnableCustomDomain(val *bool) {
+	_jsii_.Set(
+		j,
+		"enableCustomDomain",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetIsApexDomain(val *bool) {
+	_jsii_.Set(
+		j,
+		"isApexDomain",
 		val,
 	)
 }
@@ -386,6 +496,28 @@ func (j *jsiiProxy_Cdn)SetUploadedFiles(val *map[string]*string) {
 	_jsii_.Set(
 		j,
 		"uploadedFiles",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetZoneName(val *string) {
+	if err := j.validateSetZoneNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"zoneName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetZoneResourceGroupName(val *string) {
+	if err := j.validateSetZoneResourceGroupNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"zoneResourceGroupName",
 		val,
 	)
 }
