@@ -283,7 +283,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	}
 
 	// Pull the hostname out of the root storage-account endpoint.
-	originHostname := getPrimaryEndpointUrl(p.WebsiteStorageAccounts["/"])
+	originHostname := getWebEndpointHostName(p.WebsiteStorageAccounts["/"])
 	defaultOriginGroupName := fmt.Sprintf("%s-default-origin-group", p.StackId)
 
 	defaultOriginName := fmt.Sprintf("%s-default-origin", p.StackId)
@@ -405,7 +405,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 			originName := fmt.Sprintf("%s-%s-origin", p.StackId, normalizedName)
 
-			originHostname := getPrimaryEndpointUrl(storageAccount)
+			originHostname := getWebEndpointHostName(storageAccount)
 
 			subsiteOrigin, err := cdn.NewAFDOrigin(ctx, originName, &cdn.AFDOriginArgs{
 				OriginName:        pulumi.String(originName),
@@ -691,7 +691,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	return nil
 }
 
-func getPrimaryEndpointUrl(storageAccount *storage.StorageAccount) pulumi.StringOutput {
+func getWebEndpointHostName(storageAccount *storage.StorageAccount) pulumi.StringOutput {
 	return storageAccount.PrimaryEndpoints.ApplyT(func(endpoints storage.EndpointsResponse) (string, error) {
 		parsed, err := url.Parse(endpoints.Web)
 		if err != nil {
@@ -703,6 +703,8 @@ func getPrimaryEndpointUrl(storageAccount *storage.StorageAccount) pulumi.String
 
 // Convert a name to a unique number
 // This creates a number that's guaranteed unique for different strings
+// Required due to conflicts with Azure's rule order during updates/replacements
+// https://learn.microsoft.com/en-us/answers/questions/2103790/why-does-a-azure-front-door-rule-set-rule-has-an-o
 func nameToUniqueNumber(name string) int {
 	// Start at a high base to avoid conflicts with other rules
 	base := 10000
