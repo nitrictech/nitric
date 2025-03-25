@@ -31,6 +31,7 @@ import (
 	"github.com/samber/lo"
 
 	cdn "github.com/pulumi/pulumi-azure-native-sdk/cdn/v2"
+	network "github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -152,6 +153,17 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 	return nil
 }
 
+func ensureValidSubdomain(domain string, subdomain string) error {
+	domain = strings.ToLower(strings.TrimSuffix(domain, "."))
+	subdomain = strings.ToLower(strings.TrimSuffix(subdomain, "."))
+
+	if subdomain == domain || strings.HasSuffix(subdomain, "."+domain) {
+		return nil
+	}
+
+	return fmt.Errorf("%s is not a valid subdomain of %s", subdomain, domain)
+}
+
 // Deploy CDN
 func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	profile, err := cdn.NewProfile(ctx, "website-profile", &cdn.ProfileArgs{
@@ -166,14 +178,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return err
 	}
 
-	// Pull the hostname out of the root storage-account endpoint.
-	originHostname := getPrimaryEndpointUrl(p.WebsiteStorageAccounts["/"])
-
 	endpointName := fmt.Sprintf("%s-cdn", p.StackId)
-
-	defaultOriginGroupName := fmt.Sprintf("%s-default-origin-group", p.StackId)
-
-	defaultOriginName := fmt.Sprintf("%s-default-origin", p.StackId)
 
 	endpoint, err := cdn.NewAFDEndpoint(ctx, endpointName, &cdn.AFDEndpointArgs{
 		EndpointName:      pulumi.String(endpointName),
@@ -185,6 +190,103 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Frontdoor endpoint: %w", err)
 	}
+
+	customDomains := cdn.ActivatedResourceReferenceArray{}
+
+	if p.AzureConfig.CdnDomain.DomainName != "" && p.AzureConfig.CdnDomain.ZoneName != "" {
+		// both are required if one is set
+		if p.AzureConfig.CdnDomain.ZoneName == "" {
+			return fmt.Errorf("zone-name is required")
+		}
+
+		if p.AzureConfig.CdnDomain.DomainName == "" {
+			return fmt.Errorf("domain-name is required")
+		}
+
+		if p.AzureConfig.CdnDomain.ZoneResourceGroup == "" {
+			return fmt.Errorf("zone-resource-group is required")
+		}
+
+		dnsZone, err := network.LookupZone(ctx, &network.LookupZoneArgs{
+			ResourceGroupName: p.AzureConfig.CdnDomain.ZoneResourceGroup,
+			ZoneName:          p.AzureConfig.CdnDomain.ZoneName,
+		})
+		if err != nil {
+			return err
+		}
+
+		subDomain := strings.ToLower(p.AzureConfig.CdnDomain.DomainName)
+
+		// check if the domain name is a subdomain of the zone name
+		err = ensureValidSubdomain(p.AzureConfig.CdnDomain.ZoneName, subDomain)
+		if err != nil {
+			return err
+		}
+
+		// if it is a subdomain, remove the zone name from the subdomain
+		subDomain = strings.TrimSuffix(subDomain, "."+p.AzureConfig.CdnDomain.ZoneName)
+
+		domain, err := cdn.NewAFDCustomDomain(ctx, subDomain, &cdn.AFDCustomDomainArgs{
+			ResourceGroupName: p.ResourceGroup.Name,
+			ProfileName:       profile.Name,
+			CustomDomainName:  pulumi.String(subDomain),
+			HostName:          pulumi.String(p.AzureConfig.CdnDomain.DomainName),
+			AzureDnsZone: &cdn.ResourceReferenceArgs{
+				Id: pulumi.String(dnsZone.Id),
+			},
+			TlsSettings: &cdn.AFDDomainHttpsParametersArgs{
+				CertificateType:   cdn.AfdCertificateTypeManagedCertificate,
+				MinimumTlsVersion: cdn.AfdMinimumTlsVersionTLS12,
+			},
+		}, pulumi.DependsOn([]pulumi.Resource{profile, endpoint}))
+		if err != nil {
+			return err
+		}
+
+		// Create a TXT record for domain validation
+		_, err = network.NewRecordSet(ctx, fmt.Sprintf("validate-%s", subDomain), &network.RecordSetArgs{
+			RecordType:            pulumi.String("TXT"),
+			RelativeRecordSetName: pulumi.Sprintf("_dnsauth.%s", subDomain),
+			ResourceGroupName:     pulumi.String(p.AzureConfig.CdnDomain.ZoneResourceGroup),
+			Ttl:                   pulumi.Float64(3600), // Set TTL to one hour
+			TxtRecords: network.TxtRecordArray{
+				&network.TxtRecordArgs{
+					Value: pulumi.StringArray{
+						domain.ValidationProperties.ValidationToken(),
+					},
+				},
+			},
+			ZoneName: pulumi.String(dnsZone.Name),
+		}, pulumi.DependsOn([]pulumi.Resource{domain}))
+		if err != nil {
+			return err
+		}
+
+		// Create a CNAME record for the custom domain
+		_, err = network.NewRecordSet(ctx, fmt.Sprintf("cdn-%s", subDomain), &network.RecordSetArgs{
+			RecordType:            pulumi.String("CNAME"),
+			RelativeRecordSetName: pulumi.String(subDomain),
+			ResourceGroupName:     pulumi.String(p.AzureConfig.CdnDomain.ZoneResourceGroup),
+			Ttl:                   pulumi.Float64(3600), // Set TTL to one hour
+			CnameRecord: &network.CnameRecordArgs{
+				Cname: endpoint.HostName,
+			},
+			ZoneName: pulumi.String(dnsZone.Name),
+		}, pulumi.DependsOn([]pulumi.Resource{domain}))
+		if err != nil {
+			return err
+		}
+
+		customDomains = append(customDomains, &cdn.ActivatedResourceReferenceArgs{
+			Id: domain.ID(),
+		})
+	}
+
+	// Pull the hostname out of the root storage-account endpoint.
+	originHostname := getPrimaryEndpointUrl(p.WebsiteStorageAccounts["/"])
+	defaultOriginGroupName := fmt.Sprintf("%s-default-origin-group", p.StackId)
+
+	defaultOriginName := fmt.Sprintf("%s-default-origin", p.StackId)
 
 	defaultOriginGroup, err := cdn.NewAFDOriginGroup(ctx, defaultOriginGroupName, &cdn.AFDOriginGroupArgs{
 		OriginGroupName:   pulumi.String(defaultOriginGroupName),
@@ -511,6 +613,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	_, err = cdn.NewRoute(ctx, routeName, &cdn.RouteArgs{
 		RouteName:         pulumi.String(routeName),
+		CustomDomains:     customDomains,
 		ResourceGroupName: p.ResourceGroup.Name,
 		// TODO make this a config option for custom domains
 		LinkToDefaultDomain: pulumi.String(cdn.LinkToDefaultDomainEnabled),
