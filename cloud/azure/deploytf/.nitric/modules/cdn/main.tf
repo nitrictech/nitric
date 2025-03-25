@@ -22,10 +22,11 @@ resource "azurerm_cdn_frontdoor_origin_group" "default_origin_group" {
   name                     = local.default_origin_group_name
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.cdn_profile.id
 
+  # https://learn.microsoft.com/en-us/azure/frontdoor/origin?pivots=front-door-standard-premium#load-balancing-settings
   load_balancing {
-    additional_latency_in_milliseconds = 200
-    sample_size                        = 5
-    successful_samples_required        = 3
+    additional_latency_in_milliseconds = 200 # Lower latency tolerance for faster failover
+    sample_size                        = 5 # More samples for better decision-making
+    successful_samples_required        = 3 # Keep at 3 to maintain reliability
   }
 }
 
