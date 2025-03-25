@@ -346,7 +346,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return err
 		}
 
-		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, path), &storage.BucketObjectArgs{
+		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, relativePath), &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
 			Name:        pulumi.String(relativePath),
 			Source:      pulumi.NewFileAsset(path),
