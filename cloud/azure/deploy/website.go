@@ -196,15 +196,15 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	if p.AzureConfig.CdnDomain.DomainName != "" && p.AzureConfig.CdnDomain.ZoneName != "" {
 		// both are required if one is set
 		if p.AzureConfig.CdnDomain.ZoneName == "" {
-			return fmt.Errorf("zone-name is required")
+			return fmt.Errorf("zone-name is required for custom domain")
 		}
 
 		if p.AzureConfig.CdnDomain.DomainName == "" {
-			return fmt.Errorf("domain-name is required")
+			return fmt.Errorf("domain-name is required for custom domain")
 		}
 
 		if p.AzureConfig.CdnDomain.ZoneResourceGroup == "" {
-			return fmt.Errorf("zone-resource-group is required")
+			return fmt.Errorf("zone-resource-group is required for custom domain")
 		}
 
 		dnsZone, err := network.LookupZone(ctx, &network.LookupZoneArgs{
