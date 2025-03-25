@@ -176,7 +176,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	}
 
 	// Add root zone, to ensure reliable comparisons (i.e. trailing dot, e.g. example.com.)
-	var subDomain = strings.ToLower(a.GcpConfig.CdnDomain.DomainName)
+	subDomain := strings.ToLower(a.GcpConfig.CdnDomain.DomainName)
 	if !strings.HasSuffix(subDomain, ".") {
 		subDomain = subDomain + "."
 	}
@@ -264,11 +264,14 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 	}
 
 	// Invalid the CDN Cache
-	local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
+	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
 		// Only run on update, the cache is already empty on first creation
 		Create: pulumi.String(""),
 		Update: pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path \"/*\"", httpsUrlMap.Name),
 	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
