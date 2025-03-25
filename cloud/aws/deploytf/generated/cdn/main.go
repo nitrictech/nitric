@@ -28,6 +28,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "providers", GoGetter: "Providers"},
 			_jsii_.MemberProperty{JsiiProperty: "rawOverrides", GoGetter: "RawOverrides"},
 			_jsii_.MemberMethod{JsiiMethod: "resetOverrideLogicalId", GoMethod: "ResetOverrideLogicalId"},
+			_jsii_.MemberProperty{JsiiProperty: "rootWebsite", GoGetter: "RootWebsite"},
 			_jsii_.MemberProperty{JsiiProperty: "skipAssetCreationFromLocalModules", GoGetter: "SkipAssetCreationFromLocalModules"},
 			_jsii_.MemberProperty{JsiiProperty: "source", GoGetter: "Source"},
 			_jsii_.MemberProperty{JsiiProperty: "stackName", GoGetter: "StackName"},
@@ -38,11 +39,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "toString", GoMethod: "ToString"},
 			_jsii_.MemberMethod{JsiiMethod: "toTerraform", GoMethod: "ToTerraform"},
 			_jsii_.MemberProperty{JsiiProperty: "version", GoGetter: "Version"},
-			_jsii_.MemberProperty{JsiiProperty: "websiteBucketArn", GoGetter: "WebsiteBucketArn"},
-			_jsii_.MemberProperty{JsiiProperty: "websiteBucketDomainName", GoGetter: "WebsiteBucketDomainName"},
-			_jsii_.MemberProperty{JsiiProperty: "websiteBucketId", GoGetter: "WebsiteBucketId"},
-			_jsii_.MemberProperty{JsiiProperty: "websiteErrorDocument", GoGetter: "WebsiteErrorDocument"},
-			_jsii_.MemberProperty{JsiiProperty: "websiteIndexDocument", GoGetter: "WebsiteIndexDocument"},
+			_jsii_.MemberProperty{JsiiProperty: "websites", GoGetter: "Websites"},
 		},
 		func() interface{} {
 			j := jsiiProxy_Cdn{}

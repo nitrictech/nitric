@@ -17,13 +17,3 @@ resource "aws_resourcegroups_group" "group" {
 JSON
   }
 }
-
-# AWS S3 bucket
-resource "aws_s3_bucket" "bucket" {
-  bucket = "website-bucket-${random_string.id.result}"
-
-  tags = {
-    "x-nitric-${random_string.id.result}-name" = "website-bucket-${random_string.id.result}"
-    "x-nitric-${random_string.id.result}-type" = "bucket"
-  }
-}

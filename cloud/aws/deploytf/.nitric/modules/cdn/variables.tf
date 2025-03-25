@@ -3,31 +3,24 @@ variable "stack_name" {
   type        = string
 }
 
-variable "website_bucket_id" {
-  description = "The ID for the website bucket"
-  type = string
+variable "root_website" {
+  description = "information about the root website for default behaviour"
+  type = object({
+    name = string
+    index_document = optional(string, "index.html")
+    error_document = optional(string, "404.html")
+  })
 }
 
-variable "website_bucket_arn" {
-  description = "The ARN for the website bucket"
-  type = string
-}
-
-variable "website_bucket_domain_name" {
-  description = "The domain name for the website bucket"
-  type        = string
-}
-
-variable "website_index_document" {
-  description = "The website index document"
-  type = string
-  default = "index.html"
-}
-
-variable "website_error_document" {
-  description = "The website error document"
-  type = string
-  default = "404.html"
+variable "websites" {
+  description = "Map of websites and their storage information"
+  type = map(object({
+    bucket_domain_name = string
+    bucket_arn = string
+    bucket_id = string
+    base_path = string
+    changed_files = list(string)
+  }))
 }
 
 variable "apis" {

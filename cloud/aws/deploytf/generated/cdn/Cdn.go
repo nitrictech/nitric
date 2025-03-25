@@ -38,6 +38,8 @@ type Cdn interface {
 	Providers() *[]interface{}
 	// Experimental.
 	RawOverrides() interface{}
+	RootWebsite() interface{}
+	SetRootWebsite(val interface{})
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
@@ -46,16 +48,8 @@ type Cdn interface {
 	SetStackName(val *string)
 	// Experimental.
 	Version() *string
-	WebsiteBucketArn() *string
-	SetWebsiteBucketArn(val *string)
-	WebsiteBucketDomainName() *string
-	SetWebsiteBucketDomainName(val *string)
-	WebsiteBucketId() *string
-	SetWebsiteBucketId(val *string)
-	WebsiteErrorDocument() *string
-	SetWebsiteErrorDocument(val *string)
-	WebsiteIndexDocument() *string
-	SetWebsiteIndexDocument(val *string)
+	Websites() interface{}
+	SetWebsites(val interface{})
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -187,6 +181,16 @@ func (j *jsiiProxy_Cdn) RawOverrides() interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) RootWebsite() interface{} {
+	var returns interface{}
+	_jsii_.Get(
+		j,
+		"rootWebsite",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	var returns *bool
 	_jsii_.Get(
@@ -227,51 +231,11 @@ func (j *jsiiProxy_Cdn) Version() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) WebsiteBucketArn() *string {
-	var returns *string
+func (j *jsiiProxy_Cdn) Websites() interface{} {
+	var returns interface{}
 	_jsii_.Get(
 		j,
-		"websiteBucketArn",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) WebsiteBucketDomainName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"websiteBucketDomainName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) WebsiteBucketId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"websiteBucketId",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) WebsiteErrorDocument() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"websiteErrorDocument",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Cdn) WebsiteIndexDocument() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"websiteIndexDocument",
+		"websites",
 		&returns,
 	)
 	return returns
@@ -332,6 +296,17 @@ func (j *jsiiProxy_Cdn)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
+func (j *jsiiProxy_Cdn)SetRootWebsite(val interface{}) {
+	if err := j.validateSetRootWebsiteParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"rootWebsite",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Cdn)SetStackName(val *string) {
 	if err := j.validateSetStackNameParameters(val); err != nil {
 		panic(err)
@@ -343,51 +318,13 @@ func (j *jsiiProxy_Cdn)SetStackName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetWebsiteBucketArn(val *string) {
-	if err := j.validateSetWebsiteBucketArnParameters(val); err != nil {
+func (j *jsiiProxy_Cdn)SetWebsites(val interface{}) {
+	if err := j.validateSetWebsitesParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"websiteBucketArn",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetWebsiteBucketDomainName(val *string) {
-	if err := j.validateSetWebsiteBucketDomainNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"websiteBucketDomainName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetWebsiteBucketId(val *string) {
-	if err := j.validateSetWebsiteBucketIdParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"websiteBucketId",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetWebsiteErrorDocument(val *string) {
-	_jsii_.Set(
-		j,
-		"websiteErrorDocument",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Cdn)SetWebsiteIndexDocument(val *string) {
-	_jsii_.Set(
-		j,
-		"websiteIndexDocument",
+		"websites",
 		val,
 	)
 }

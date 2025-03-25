@@ -19,7 +19,7 @@ type WebsiteConfig struct {
 	LocalDirectory *string `field:"required" json:"localDirectory" yaml:"localDirectory"`
 	// The name of the website.
 	Name *string `field:"required" json:"name" yaml:"name"`
-	// The id of the bucket to deploy the website files to.
-	WebsiteBucketId *string `field:"required" json:"websiteBucketId" yaml:"websiteBucketId"`
+	// The unique ID for this stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 }
 

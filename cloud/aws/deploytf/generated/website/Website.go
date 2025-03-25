@@ -18,6 +18,7 @@ type Website interface {
 	SetBasePath(val *string)
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	ChangedFilesOutput() *string
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
@@ -46,10 +47,13 @@ type Website interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StackId() *string
+	SetStackId(val *string)
 	// Experimental.
 	Version() *string
-	WebsiteBucketId() *string
-	SetWebsiteBucketId(val *string)
+	WebsiteArnOutput() *string
+	WebsiteBucketDomainOutput() *string
+	WebsiteIdOutput() *string
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -96,6 +100,16 @@ func (j *jsiiProxy_Website) CdktfStack() cdktf.TerraformStack {
 	_jsii_.Get(
 		j,
 		"cdktfStack",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) ChangedFilesOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"changedFilesOutput",
 		&returns,
 	)
 	return returns
@@ -221,6 +235,16 @@ func (j *jsiiProxy_Website) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Website) StackId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackId",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Website) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -231,11 +255,31 @@ func (j *jsiiProxy_Website) Version() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Website) WebsiteBucketId() *string {
+func (j *jsiiProxy_Website) WebsiteArnOutput() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"websiteBucketId",
+		"websiteArnOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) WebsiteBucketDomainOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteBucketDomainOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) WebsiteIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"websiteIdOutput",
 		&returns,
 	)
 	return returns
@@ -318,13 +362,13 @@ func (j *jsiiProxy_Website)SetName(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Website)SetWebsiteBucketId(val *string) {
-	if err := j.validateSetWebsiteBucketIdParameters(val); err != nil {
+func (j *jsiiProxy_Website)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"websiteBucketId",
+		"stackId",
 		val,
 	)
 }

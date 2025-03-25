@@ -1,36 +1,33 @@
 locals {
   s3_origin_id = "publicOrigin"
+  website_files_hash = sha256(join(" ", [for key, value in var.websites : join(" ", [for file in value.changed_files : "\"${file}\"" ]) ]))
 }
 
 resource "aws_cloudfront_origin_access_identity" "oai" {
   comment = "OAI for accessing S3 bucket"
 }
 
-data "aws_iam_policy_document" "allow_access_from_another_account" {
-  version = "2012-10-17"
-  statement {
-    principals {
-      type        = "AWS"
-      identifiers = [
-        aws_cloudfront_origin_access_identity.oai.iam_arn
-      ]
-    }
-
-    effect = "Allow"
-
-    actions = [
-      "s3:GetObject",
-    ]
-
-    resources = [
-      "${var.website_bucket_arn}/*",
-    ]
-  }
-}
-
 resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
-  bucket = var.website_bucket_id
-  policy = data.aws_iam_policy_document.allow_access_from_another_account.json
+  for_each = {
+    for name, website in var.websites : name => website
+    if website.base_path != "/"
+  }
+
+  bucket = each.value.bucket_id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.oai.iam_arn
+        }
+        Action = "s3:GetObject"
+        Resource = "${each.value.bucket_arn}/*"
+      }
+    ]
+  })
 }
 
 resource "aws_cloudfront_function" "api-url-rewrite-function" {
@@ -42,23 +39,31 @@ resource "aws_cloudfront_function" "api-url-rewrite-function" {
 }
 
 resource "aws_cloudfront_function" "url-rewrite-function" {
-  name    = "url-rewrite-function"
+  for_each = var.websites
+
+  name    = "url-rewrite-function-${each.key}"
   runtime = "cloudfront-js-1.0"
   comment = "Rewrite URLs to default index document"
   publish = true
-  code    = file("${path.module}/scripts/url-rewrite.js")
+  code    = templatefile("${path.module}/scripts/url-rewrite.tpl.js", {
+    base_path = each.value.base_path
+  })
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
-  default_root_object = var.website_index_document
+  default_root_object = var.root_website.index_document
   enabled = true
-  
-  origin {
-    domain_name              = var.website_bucket_domain_name
-    origin_id                = local.s3_origin_id
 
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+  dynamic "origin" {
+    for_each = var.websites
+
+    content {
+      domain_name = origin.value.bucket_domain_name
+      origin_id = origin.key
+
+      s3_origin_config {
+        origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+      }
     }
   }
 
@@ -105,10 +110,43 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
+  dynamic "ordered_cache_behavior" {
+    for_each = {
+      for name, website in var.websites : name => website
+      if website.base_path != "/"
+    }
+
+    content {
+      path_pattern = "${trimprefix(ordered_cache_behavior.value.base_path, "/")}*"
+
+      function_association {
+        event_type = "viewer-request"
+        function_arn = aws_cloudfront_function.url-rewrite-function[ordered_cache_behavior.key].arn
+      }
+
+      allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+      cached_methods   = ["GET", "HEAD", "OPTIONS"]
+      target_origin_id = ordered_cache_behavior.key
+
+      forwarded_values {
+        query_string = false
+        cookies {
+          forward = "none"
+        }
+      }
+
+      viewer_protocol_policy = "redirect-to-https"
+    }
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = local.s3_origin_id
+    target_origin_id = var.root_website.name
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
 
     forwarded_values {
       query_string = false
@@ -116,16 +154,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       cookies {
         forward = "none"
       }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-
-    function_association {
-      event_type = "viewer-request"
-      function_arn = aws_cloudfront_function.url-rewrite-function.arn
     }
   }
 
@@ -142,17 +170,22 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   custom_error_response {
     error_code = 404
     response_code = 200
-    response_page_path = "/${var.website_error_document}"
+    response_page_path = "/${var.root_website.error_document}"
   }
 
   custom_error_response {
     error_code = 403
     response_code = 200
-    response_page_path = "/${var.website_error_document}"
-  }
-
-  tags = {
-    "x-nitric-${var.stack_name}-name" = var.stack_name
-    "x-nitric-${var.stack_name}-type" = "stack"
+    response_page_path = "/${var.root_website.error_document}"
   }
 }
+
+# resource "null_resource" "invalidate_cache" {
+#   triggers = {
+#     website_files_hash = local.website_files_hash
+#   }
+
+#   provisioner "local-exec" {
+#     command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*'"
+#   }
+# }

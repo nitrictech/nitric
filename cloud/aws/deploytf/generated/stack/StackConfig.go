@@ -15,9 +15,5 @@ type StackConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// Enable the creation of a website.
 	EnableWebsite *bool `field:"optional" json:"enableWebsite" yaml:"enableWebsite"`
-	// The root error document for the website 404.html.
-	WebsiteRootErrorDocument *string `field:"optional" json:"websiteRootErrorDocument" yaml:"websiteRootErrorDocument"`
-	// The root index document for the website index.html.
-	WebsiteRootIndexDocument *string `field:"optional" json:"websiteRootIndexDocument" yaml:"websiteRootIndexDocument"`
 }
 
