@@ -1,6 +1,6 @@
 locals {
   s3_origin_id = "publicOrigin"
-  website_files_hash = sha256(join(" ", [for key, value in var.websites : join(" ", [for file in value.changed_files : "\"${file}\"" ]) ]))
+  website_files = [for key, value in var.websites : join(" ", [for file in value.changed_files : "\"${file}\"" ]) ]
 }
 
 resource "aws_cloudfront_origin_access_identity" "oai" {
@@ -8,10 +8,7 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 }
 
 resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
-  for_each = {
-    for name, website in var.websites : name => website
-    if website.base_path != "/"
-  }
+  for_each = var.websites
 
   bucket = each.value.bucket_id
 
@@ -39,7 +36,10 @@ resource "aws_cloudfront_function" "api-url-rewrite-function" {
 }
 
 resource "aws_cloudfront_function" "url-rewrite-function" {
-  for_each = var.websites
+  for_each = {
+    for name, website in var.websites : name => website
+    if website.base_path != "/"
+  }
 
   name    = "url-rewrite-function-${each.key}"
   runtime = "cloudfront-js-1.0"
@@ -180,12 +180,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 }
 
-# resource "null_resource" "invalidate_cache" {
-#   triggers = {
-#     website_files_hash = local.website_files_hash
-#   }
-
-#   provisioner "local-exec" {
-#     command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*'"
-#   }
-# }
+resource "terraform_data" "invalidate_cache" {
+  count = length(local.website_files) > 0 ? 1 : 0
+  provisioner "local-exec" {
+    command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*'"
+  }
+}
