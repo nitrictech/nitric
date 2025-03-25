@@ -68,6 +68,7 @@ type NitricAwsTerraformProvider struct {
 	Websites       map[string]website.Website
 
 	EnableWebsites bool
+	RootWebsite    RootWebsite
 
 	provider.NitricDefaultOrder
 }
@@ -134,9 +135,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		return item.Id.GetType() == resourcespb.ResourceType_Website
 	})
 
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
-		EnableWebsite: jsii.Bool(enableWebsites),
-	})
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
 
 	databases := lo.Filter(resources, func(item *deploymentspb.Resource, idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
@@ -155,6 +154,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 
 	// set the website root index and error documents if we have a website
 	if enableWebsites {
+		var rootWebsiteName string
 		var rootWebsite *deploymentspb.Website
 
 		a.EnableWebsites = true
@@ -163,6 +163,7 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 			config, ok := resource.Config.(*deploymentspb.Resource_Website)
 
 			if ok && config.Website.BasePath == "/" {
+				rootWebsiteName = resource.Id.Name
 				rootWebsite = config.Website
 				break
 			}
@@ -172,8 +173,11 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 			return fmt.Errorf("no root website configuration found")
 		}
 
-		a.Stack.SetWebsiteRootErrorDocument(jsii.String(rootWebsite.ErrorDocument))
-		a.Stack.SetWebsiteRootIndexDocument(jsii.String(rootWebsite.IndexDocument))
+		a.RootWebsite = RootWebsite{
+			Name:          &rootWebsiteName,
+			IndexDocument: &rootWebsite.IndexDocument,
+			ErrorDocument: &rootWebsite.ErrorDocument,
+		}
 	}
 
 	return nil

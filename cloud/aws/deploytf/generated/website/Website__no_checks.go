@@ -44,7 +44,7 @@ func (j *jsiiProxy_Website) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Website) validateSetWebsiteBucketIdParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

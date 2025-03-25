@@ -5,25 +5,19 @@ module "template_files" {
   base_dir = var.local_directory
 }
 
-locals {
-  # Apply the base path logic for key transformation
-  transformed_files = {
-    for path, file in module.template_files.files : (
-      var.base_path == "/" ? 
-        path : 
-        "${trimsuffix(var.base_path, "/")}/${path}"
-    ) => file
-  }
+# AWS S3 bucket
+resource "aws_s3_bucket" "website_bucket" {
+  bucket = "website-bucket-${var.name}-${var.stack_id}"
 }
 
 resource "aws_s3_object" "object" {
-  for_each = local.transformed_files
-  bucket = var.website_bucket_id
+  for_each = module.template_files.files
+  bucket = aws_s3_bucket.website_bucket.id
 
-  key    = trimprefix(each.key, "/")
+  key    = each.key
   source = each.value.source_path
   content_type = each.value.content_type
 
   # required to detect file changes in Terraform 
-  etag = each.value.digests.md5
+  etag = filemd5(each.value.source_path)
 }

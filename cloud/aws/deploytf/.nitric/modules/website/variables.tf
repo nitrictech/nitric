@@ -3,6 +3,11 @@ variable "name" {
   description = "The name of the website"
 }
 
+variable "stack_id" {
+  type = string
+  description = "The unique ID for this stack"
+}
+
 variable "base_path" {
   type = string
   description = "The base path for the website"
@@ -11,9 +16,4 @@ variable "base_path" {
 variable "local_directory" {
   type = string
   description = "The production website output directory"
-}
-
-variable "website_bucket_id" {
-  type = string
-  description = "The id of the bucket to deploy the website files to"
 }

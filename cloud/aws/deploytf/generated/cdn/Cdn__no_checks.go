@@ -36,19 +36,15 @@ func (j *jsiiProxy_Cdn) validateSetApisParameters(val interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetRootWebsiteParameters(val interface{}) error {
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketArnParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketDomainNameParameters(val *string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketIdParameters(val *string) error {
+func (j *jsiiProxy_Cdn) validateSetWebsitesParameters(val interface{}) error {
 	return nil
 }
 

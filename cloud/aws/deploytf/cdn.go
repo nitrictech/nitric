@@ -27,6 +27,20 @@ type ApiGateway struct {
 	GatewayURL *string `json:"gateway_url"`
 }
 
+type WebsiteConfig struct {
+	BucketDomainName *string    `json:"bucket_domain_name"`
+	BucketArn        *string    `json:"bucket_arn"`
+	BucketId         *string    `json:"bucket_id"`
+	BasePath         *string    `json:"base_path"`
+	ChangedFiles     *[]*string `json:"changed_files"`
+}
+
+type RootWebsite struct {
+	Name          *string `json:"name"`
+	IndexDocument *string `json:"index_document"`
+	ErrorDocument *string `json:"error_document"`
+}
+
 // function to create a new cdn
 func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cdn {
 	apiGateways := make(map[string]ApiGateway)
@@ -41,14 +55,24 @@ func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cd
 		}
 	}
 
+	websites := make(map[string]WebsiteConfig)
+	for websiteName, website := range a.Websites {
+		websiteFiles := cdktf.Token_AsList(website.ChangedFilesOutput(), nil)
+
+		websites[websiteName] = WebsiteConfig{
+			BucketDomainName: website.WebsiteBucketDomainOutput(),
+			BucketArn:        website.WebsiteArnOutput(),
+			BucketId:         website.WebsiteIdOutput(),
+			BasePath:         website.BasePath(),
+			ChangedFiles:     websiteFiles,
+		}
+	}
+
 	return cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
-		StackName:               a.Stack.StackIdOutput(),
-		WebsiteBucketId:         a.Stack.WebsiteBucketIdOutput(),
-		WebsiteBucketArn:        a.Stack.WebsiteBucketArnOutput(),
-		WebsiteBucketDomainName: a.Stack.WebsiteBucketDomainNameOutput(),
-		Apis:                    apiGateways,
-		DependsOn:               &[]cdktf.ITerraformDependable{a.Stack},
-		WebsiteErrorDocument:    a.Stack.WebsiteRootErrorDocument(),
-		WebsiteIndexDocument:    a.Stack.WebsiteRootIndexDocument(),
+		StackName:   a.Stack.StackIdOutput(),
+		Websites:    websites,
+		Apis:        apiGateways,
+		RootWebsite: &a.RootWebsite,
+		DependsOn:   &[]cdktf.ITerraformDependable{a.Stack},
 	})
 }

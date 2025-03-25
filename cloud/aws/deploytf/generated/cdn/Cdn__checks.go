@@ -98,6 +98,14 @@ func (j *jsiiProxy_Cdn) validateSetApisParameters(val interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Cdn) validateSetRootWebsiteParameters(val interface{}) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
@@ -106,23 +114,7 @@ func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketArnParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketDomainNameParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
-func (j *jsiiProxy_Cdn) validateSetWebsiteBucketIdParameters(val *string) error {
+func (j *jsiiProxy_Cdn) validateSetWebsitesParameters(val interface{}) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
