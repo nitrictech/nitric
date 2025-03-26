@@ -151,7 +151,9 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
 
 locals {
   all_bucket_md5s = merge(
-    var.website_buckets.*.website_file_md5s,
+    [
+      for bucket in values(var.website_buckets) : bucket.website_file_md5s
+    ]...
   )
 }
 
