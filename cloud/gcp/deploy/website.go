@@ -351,7 +351,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		}
 
 		// Clean the relative path to ensure it is URL-safe and cross platform
-		// This is important for GCP storage, as it doesn't support backslashes in paths
+		// This is important so files from a Windows host don't use backslashes for bucket keys
 		cleanedRelativePath := filepath.ToSlash(relativePath)
 
 		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, cleanedRelativePath), &storage.BucketObjectArgs{
