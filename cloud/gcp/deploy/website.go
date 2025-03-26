@@ -22,6 +22,7 @@ import (
 	"mime"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -267,10 +268,31 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
+	sortedMd5Result := a.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
+		// Convert each element to string
+		md5Strings := []string{}
+		for _, md5 := range arr {
+			if md5Str, ok := md5.(string); ok && md5Str != "" {
+				md5Strings = append(md5Strings, md5Str)
+			}
+		}
+
+		sort.Strings(md5Strings)
+
+		return strings.Join(md5Strings, "")
+	}).(pulumi.StringOutput)
+
 	// Invalid the CDN Cache
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
 		Create:  pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path \"/*\"", httpsUrlMap.Name),
 		Logging: local.LoggingStdoutAndStderr,
+		Triggers: pulumi.Array{
+			sortedMd5Result,
+		},
+		Interpreter: pulumi.StringArray{
+			pulumi.String("bash"),
+			pulumi.String("-c"),
+		},
 	})
 	if err != nil {
 		return err
@@ -353,7 +375,7 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		// This is important so files from a Windows host don't use backslashes for bucket keys
 		cleanedRelativePath := filepath.ToSlash(relativePath)
 
-		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, cleanedRelativePath), &storage.BucketObjectArgs{
+		siteFile, err := storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, cleanedRelativePath), &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
 			Name:        pulumi.String(cleanedRelativePath),
 			Source:      pulumi.NewFileAsset(path),
@@ -362,6 +384,8 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		if err != nil {
 			return err
 		}
+
+		a.websiteFileMd5Outputs = append(a.websiteFileMd5Outputs, siteFile.Md5hash)
 
 		return nil
 	})

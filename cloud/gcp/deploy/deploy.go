@@ -93,8 +93,8 @@ type NitricGcpPulumiProvider struct {
 
 	// files to upload to the website bucket
 	// The map key represents the baseUrl/directory in the bucket
-	WebsiteBuckets map[string]*storage.Bucket
-	// WebsiteFiles  map[string][]pulumi.Asset
+	WebsiteBuckets        map[string]*storage.Bucket
+	websiteFileMd5Outputs pulumi.Array
 
 	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
