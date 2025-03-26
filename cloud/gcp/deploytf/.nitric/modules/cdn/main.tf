@@ -58,7 +58,7 @@ resource "google_compute_url_map" "https_url_map" {
 
       content {
         service = google_compute_backend_service.api_gateway_backends[path_rule.key].self_link
-        paths   = ["/apis/${path_rule.key}/*"]
+        paths   = ["/api/${path_rule.key}/*"]
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
