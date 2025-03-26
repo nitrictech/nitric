@@ -268,8 +268,13 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
+	if a.GcpConfig.CdnDomain.SkipCacheInvalidation != nil {
+		if *a.GcpConfig.CdnDomain.SkipCacheInvalidation {
+			return nil
+		}
+	}
+
 	sortedMd5Result := a.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
-		// Convert each element to string
 		md5Strings := []string{}
 		for _, md5 := range arr {
 			if md5Str, ok := md5.(string); ok && md5Str != "" {
@@ -282,7 +287,7 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return strings.Join(md5Strings, "")
 	}).(pulumi.StringOutput)
 
-	// Invalid the CDN Cache
+	// Invalidate the CDN Cache
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
 		Create:  pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path '/*' --async", httpsUrlMap.Name),
 		Logging: local.LoggingStdoutAndStderr,

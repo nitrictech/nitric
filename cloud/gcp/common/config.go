@@ -67,6 +67,8 @@ type CdnDomainConfig struct {
 	ClientTtl *int
 	// Specifies the TTL for content cached by the CDN when the origin server does not provide any caching directives
 	DefaultTtl *int
+	// If true, CDN cache invalidation will not be run on deployment
+	SkipCacheInvalidation *bool `mapstructure:"skip-cache-invalidation"`
 }
 
 type GcpConfig struct {
