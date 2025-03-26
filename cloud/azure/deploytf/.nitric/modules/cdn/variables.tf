@@ -57,3 +57,9 @@ variable "is_apex_domain" {
   type        = bool
   default     = false
 }
+
+variable "skip_cache_invalidation" {
+  description = "Skip cache invalidation"
+  type        = bool
+  default     = false
+}

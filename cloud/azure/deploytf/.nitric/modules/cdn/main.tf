@@ -191,7 +191,9 @@ resource "azurerm_dns_a_record" "add_apex_record" {
 
 data "azurerm_subscription" "current" {}
 
-resource "terraform_data" "endpoint_purge" {  
+resource "terraform_data" "endpoint_purge" {
+  count = var.skip_cache_invalidation ? 0 : 1
+
   # This will run on every Terraform apply
   triggers_replace = [
     # Force this to run on every apply when paths are changed

@@ -33,6 +33,8 @@ type CdnConfig struct {
 	EnableCustomDomain *bool `field:"optional" json:"enableCustomDomain" yaml:"enableCustomDomain"`
 	// Is the custom domain an apex domain.
 	IsApexDomain *bool `field:"optional" json:"isApexDomain" yaml:"isApexDomain"`
+	// Skip cache invalidation.
+	SkipCacheInvalidation *bool `field:"optional" json:"skipCacheInvalidation" yaml:"skipCacheInvalidation"`
 	// Map of uploaded files with their MD5 hashes The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	UploadedFiles *map[string]*string `field:"optional" json:"uploadedFiles" yaml:"uploadedFiles"`
 }

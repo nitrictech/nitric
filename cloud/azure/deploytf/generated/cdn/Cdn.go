@@ -56,6 +56,8 @@ type Cdn interface {
 	SetResourceGroupName(val *string)
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
+	SkipCacheInvalidation() *bool
+	SetSkipCacheInvalidation(val *bool)
 	// Experimental.
 	Source() *string
 	StackName() *string
@@ -309,6 +311,16 @@ func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) SkipCacheInvalidation() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"skipCacheInvalidation",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) Source() *string {
 	var returns *string
 	_jsii_.Get(
@@ -477,6 +489,14 @@ func (j *jsiiProxy_Cdn)SetResourceGroupName(val *string) {
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetSkipCacheInvalidation(val *bool) {
+	_jsii_.Set(
+		j,
+		"skipCacheInvalidation",
 		val,
 	)
 }
