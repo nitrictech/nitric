@@ -17,192 +17,68 @@
 package deploy
 
 import (
-	"context"
-	"encoding/base64"
-	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"mime"
 	"net/url"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
-	"sync"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/cdn/armcdn"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
-	"github.com/Azure/azure-storage-blob-go/azblob"
-	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pulumi/pulumi-command/sdk/go/command/local"
 	"github.com/samber/lo"
 
 	cdn "github.com/pulumi/pulumi-azure-native-sdk/cdn/v2"
+	network "github.com/pulumi/pulumi-azure-native-sdk/network/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/storage"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (p *NitricAzurePulumiProvider) createStaticWebsite(ctx *pulumi.Context, resources []*pulumix.NitricPulumiResource[any]) error {
-	var rootWebsite *deploymentspb.Website
+// Website - Implements the Website deployment method for the Azure provider
+func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
+
 	var err error
+	normalizedName := strings.ReplaceAll(config.BasePath, "/", "")
 
-	for _, resource := range resources {
-		config, ok := resource.Config.(*deploymentspb.Resource_Website)
-
-		if ok && config.Website.BasePath == "/" {
-			rootWebsite = config.Website
-			break
-		}
+	if normalizedName == "" {
+		normalizedName = "root"
 	}
 
-	if rootWebsite == nil {
-		return fmt.Errorf("no root website configuration found")
-	}
-
-	p.staticWebsite, err = storage.NewStorageAccountStaticWebsite(ctx, "website", &storage.StorageAccountStaticWebsiteArgs{
+	// create website storage account
+	p.WebsiteStorageAccounts[config.BasePath], err = storage.NewStorageAccount(ctx, ResourceName(ctx, normalizedName, StorageAccountRTW), &storage.StorageAccountArgs{
+		AccessTier:        storage.AccessTierHot,
 		ResourceGroupName: p.ResourceGroup.Name,
-		AccountName:       p.StorageAccount.Name,
-		IndexDocument:     pulumi.String(rootWebsite.IndexDocument),
-		Error404Document:  pulumi.String(rootWebsite.ErrorDocument),
-	}, pulumi.DependsOn([]pulumi.Resource{p.StorageAccount}))
+		Kind:              pulumi.String("StorageV2"),
+		Sku: storage.SkuArgs{
+			Name: pulumi.String(storage.SkuName_Standard_LRS),
+		},
+	})
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
+	// double check default documents are set
+	if config.IndexDocument == "" {
+		config.IndexDocument = "index.html"
+	}
 
-func (p *NitricAzurePulumiProvider) getOriginId(profile pulumi.StringOutput, endpoint string, origin pulumi.StringOutput) pulumi.StringOutput {
-	return pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/origins/%s",
-		p.ClientConfig.SubscriptionId,
-		p.ResourceGroup.Name,
-		profile,
-		endpoint,
-		origin)
-}
+	if config.ErrorDocument == "" {
+		config.ErrorDocument = "404.html"
+	}
 
-func purgeCDNEndpoint(subscriptionID, resourceGroup, profileName, endpointName string, contentPaths []*string) error {
-	// Authenticate with Azure
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	p.WebsiteContainers[config.BasePath], err = storage.NewStorageAccountStaticWebsite(ctx, ResourceName(ctx, normalizedName, StorageContainerRTW), &storage.StorageAccountStaticWebsiteArgs{
+		ResourceGroupName: p.ResourceGroup.Name,
+		AccountName:       p.WebsiteStorageAccounts[config.BasePath].Name,
+		IndexDocument:     pulumi.String(config.IndexDocument),
+		Error404Document:  pulumi.String(config.ErrorDocument),
+	}, pulumi.DependsOn([]pulumi.Resource{p.WebsiteStorageAccounts[config.BasePath]}))
 	if err != nil {
-		return fmt.Errorf("failed to obtain a credential: %w", err)
+		return err
 	}
-
-	// Create a CDN endpoint client
-	client, err := armcdn.NewEndpointsClient(subscriptionID, cred, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create CDN endpoint client: %w", err)
-	}
-
-	// Call PurgeContent
-	_, err = client.BeginPurgeContent(
-		context.Background(),
-		resourceGroup,
-		profileName,
-		endpointName,
-		armcdn.PurgeParameters{
-			ContentPaths: contentPaths,
-		},
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to purge CDN endpoint: %w", err)
-	}
-
-	return nil
-}
-
-var (
-	blobClientInstance *azblob.ServiceURL
-	once               sync.Once
-)
-
-func getBlobServiceClient(subscriptionID, resourceGroupName, accountName string) (*azblob.ServiceURL, error) {
-	var err error
-
-	once.Do(func() {
-		// Authenticate using Default Azure Credentials
-		cred, e := azidentity.NewDefaultAzureCredential(nil)
-		if e != nil {
-			err = fmt.Errorf("failed to create Azure credential: %w", e)
-			return
-		}
-
-		clientFactory, e := armstorage.NewClientFactory(subscriptionID, cred, nil)
-		if e != nil {
-			err = fmt.Errorf("failed to create storage client factory: %w", e)
-			return
-		}
-
-		accountsClient := clientFactory.NewAccountsClient()
-
-		// Get the account keys for the Storage Account
-		result, e := accountsClient.ListKeys(context.Background(), resourceGroupName, accountName, nil)
-		if e != nil {
-			log.Fatalf("failed to get account keys: %v", e)
-			return
-		}
-
-		accountKey := *result.Keys[0].Value
-
-		// Create shared key credentials
-		sharedKeyCred, e := azblob.NewSharedKeyCredential(accountName, accountKey)
-		if e != nil {
-			err = fmt.Errorf("failed to create shared key credential: %w", e)
-			return
-		}
-
-		// Create a pipeline with the credentials
-		pipeline := azblob.NewPipeline(sharedKeyCred, azblob.PipelineOptions{})
-
-		// Build the storage account URL
-		urlStr := fmt.Sprintf("https://%s.blob.core.windows.net", accountName)
-
-		parsedUrl, e := url.Parse(urlStr)
-		if e != nil {
-			err = fmt.Errorf("failed to parse URL: %w", e)
-			return
-		}
-
-		// Create the service client with the URL and the pipeline
-		blobClient := azblob.NewServiceURL(*parsedUrl, pipeline)
-		blobClientInstance = &blobClient
-	})
-
-	return blobClientInstance, err
-}
-
-// Get MD5 hash of a blob (if it exists)
-func getBlobMD5(serviceURL *azblob.ServiceURL, containerName, blobName string) (string, error) {
-	containerURL := serviceURL.NewContainerURL(containerName)
-	blobURL := containerURL.NewBlobURL(blobName)
-
-	props, err := blobURL.GetProperties(context.TODO(), azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
-	if err != nil {
-		var storageErr azblob.StorageError
-
-		if errors.As(err, &storageErr) && storageErr.ServiceCode() == azblob.ServiceCodeBlobNotFound {
-			return "", nil // Return empty string if blob does not exist
-		}
-		return "", fmt.Errorf("failed to get blob properties: %w", err)
-	}
-
-	md5 := props.ContentMD5()
-	if md5 == nil {
-		return "", nil
-	}
-
-	// Convert the byte slice (MD5) to Base64
-	base64MD5 := base64.StdEncoding.EncodeToString(md5)
-
-	return base64MD5, nil
-}
-
-// Website - Implements the Website deployment method for the Azure provider
-func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{p.staticWebsite})}
 
 	localDir, ok := config.AssetSource.(*deploymentspb.Website_LocalDirectory)
 	if !ok {
@@ -211,12 +87,11 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 
 	cleanedPath := filepath.ToSlash(filepath.Clean(localDir.LocalDirectory))
 
-	if p.staticWebsite == nil {
-		return fmt.Errorf("website storage account not found")
-	}
+	// add the website contain as a dependency for uploads
+	opts = append(opts, pulumi.DependsOn([]pulumi.Resource{p.WebsiteContainers[config.BasePath]}))
 
 	// Walk the directory and upload each file to the storage account
-	err := filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(cleanedPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -248,36 +123,17 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 		filePath := path[len(cleanedPath):]
 
 		// If the base path is not the root, include it in the object key
-		if config.BasePath == "/" {
-			objectKey = filepath.ToSlash(filePath)
-		} else {
-			objectKey = filepath.ToSlash(filepath.Join(config.BasePath, filePath))
-		}
+		objectKey = filepath.ToSlash(filePath)
 
 		name := strings.TrimPrefix(objectKey, "/")
 
-		existingMd5Output := pulumi.All(p.ResourceGroup.Name, p.StorageAccount.Name, p.staticWebsite.ContainerName).ApplyT(func(args []interface{}) (string, error) {
-			resourceGroupName := args[0].(string)
-			accountName := args[1].(string)
-			containerName := args[2].(string)
+		uniqueName := fmt.Sprintf("%s-%s", normalizedName, name)
 
-			serviceClient, err := getBlobServiceClient(p.ClientConfig.SubscriptionId, resourceGroupName, accountName)
-			if err != nil {
-				return "", err
-			}
-
-			existingMd5, err := getBlobMD5(serviceClient, containerName, name)
-			if err != nil {
-				return "", err
-			}
-
-			return existingMd5, nil
-		}).(pulumi.StringOutput)
-
-		blob, err := storage.NewBlob(ctx, name, &storage.BlobArgs{
+		blob, err := storage.NewBlob(ctx, uniqueName, &storage.BlobArgs{
+			BlobName:          pulumi.String(name),
 			ResourceGroupName: p.ResourceGroup.Name,
-			AccountName:       p.StorageAccount.Name,
-			ContainerName:     p.staticWebsite.ContainerName,
+			AccountName:       p.WebsiteStorageAccounts[config.BasePath].Name,
+			ContainerName:     p.WebsiteContainers[config.BasePath].ContainerName,
 			Source:            pulumi.NewFileAsset(path),
 			ContentType:       pulumi.String(contentType),
 		}, opts...)
@@ -285,23 +141,8 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 			return err
 		}
 
-		keyToInvalidate := pulumi.All(blob.ContentMd5, existingMd5Output).ApplyT(func(args []any) (string, error) {
-			newMd5, newMd5Ok := args[0].(*string)
-			existingMd5, existingMd5Ok := args[1].(string)
-
-			if !newMd5Ok || !existingMd5Ok {
-				return "", fmt.Errorf("failed to assert md5 types")
-			}
-
-			// if an existing ETag is present and it is different from the new ETag, return the key to invalidate
-			if existingMd5 != "" && newMd5 != nil && *newMd5 != existingMd5 {
-				return objectKey, nil
-			}
-
-			return "", nil
-		}).(pulumi.StringOutput)
-
-		p.staticWebsiteChangedFileOutputs = append(p.staticWebsiteChangedFileOutputs, keyToInvalidate)
+		// Get the MD5 hash of the blob and store it in the outputs
+		p.websiteFileMd5Outputs = append(p.websiteFileMd5Outputs, blob.ContentMd5)
 
 		return nil
 	})
@@ -312,209 +153,604 @@ func (p *NitricAzurePulumiProvider) Website(ctx *pulumi.Context, parent pulumi.R
 	return nil
 }
 
+func ensureValidSubdomain(domain string, subdomain string) error {
+	domain = strings.ToLower(strings.TrimSuffix(domain, "."))
+	subdomain = strings.ToLower(strings.TrimSuffix(subdomain, "."))
+
+	if subdomain == domain || strings.HasSuffix(subdomain, "."+domain) {
+		return nil
+	}
+
+	return fmt.Errorf("%s is not a valid subdomain of %s", subdomain, domain)
+}
+
 // Deploy CDN
 func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	profile, err := cdn.NewProfile(ctx, "website-profile", &cdn.ProfileArgs{
 		ResourceGroupName: p.ResourceGroup.Name,
+		Location:          pulumi.String("Global"),
 		Sku: &cdn.SkuArgs{
-			Name: pulumi.String("Standard_Microsoft"),
+			// TODO could make this a config option, standard or premium
+			Name: cdn.SkuName_Standard_AzureFrontDoor,
 		},
 	})
 	if err != nil {
 		return err
 	}
 
-	// Pull the hostname out of the storage-account endpoint.
-	originHostname := p.StorageAccount.PrimaryEndpoints.ApplyT(func(endpoints storage.EndpointsResponse) (string, error) {
-		parsed, err := url.Parse(endpoints.Web)
-		if err != nil {
-			return "", err
-		}
-		return parsed.Hostname(), nil
-	}).(pulumi.StringOutput)
-
 	endpointName := fmt.Sprintf("%s-cdn", p.StackId)
 
-	deliveryRules := cdn.DeliveryRuleArray{}
-
-	origins := cdn.DeepCreatedOriginArray{
-		&cdn.DeepCreatedOriginArgs{
-			Name:             p.StorageAccount.Name,
-			HostName:         originHostname,
-			OriginHostHeader: originHostname,
-		},
-	}
-
-	defaultOriginGroupName := "website-origin-group"
-
-	originGroups := cdn.DeepCreatedOriginGroupArray{
-		&cdn.DeepCreatedOriginGroupArgs{
-			Name: pulumi.String(defaultOriginGroupName),
-			Origins: cdn.ResourceReferenceArray{
-				&cdn.ResourceReferenceArgs{
-					Id: p.getOriginId(profile.Name, endpointName, p.StorageAccount.Name),
-				},
-			},
-		},
-	}
-
-	ruleOrder := 1
-
-	// Sort the APIs by name
-	sortedApiKeys := lo.Keys(p.Apis)
-	slices.Sort(sortedApiKeys)
-
-	// For each API forward to the appropriate API gateway
-	for _, name := range sortedApiKeys {
-		api := p.Apis[name]
-
-		apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
-			parsed, err := url.Parse(gatewayUrl)
-			if err != nil {
-				return "", err
-			}
-
-			return parsed.Hostname(), nil
-		}).(pulumi.StringOutput)
-
-		apiOriginName := pulumi.Sprintf("api-origin-%s", name)
-
-		origins = append(origins, &cdn.DeepCreatedOriginArgs{
-			Name:             apiOriginName,
-			HostName:         apiHostName,
-			OriginHostHeader: apiHostName,
-			HttpPort:         pulumi.Int(80),
-			HttpsPort:        pulumi.Int(443),
-		})
-
-		apiOriginGroupName := fmt.Sprintf("api-origin-group-%s", name)
-
-		originGroups = append(originGroups, &cdn.DeepCreatedOriginGroupArgs{
-			Name: pulumi.String(apiOriginGroupName),
-			Origins: cdn.ResourceReferenceArray{
-				&cdn.ResourceReferenceArgs{
-					Id: p.getOriginId(profile.Name, endpointName, apiOriginName),
-				},
-			},
-		})
-
-		rule := &cdn.DeliveryRuleArgs{
-			Name:  pulumi.Sprintf("forward_%s", name),
-			Order: pulumi.Int(ruleOrder),
-			Conditions: pulumi.ToArray(
-				[]interface{}{
-					cdn.DeliveryRuleUrlPathConditionArgs{
-						Name: pulumi.String("UrlPath"),
-						Parameters: cdn.UrlPathMatchConditionParametersArgs{
-							MatchValues: pulumi.StringArray{
-								pulumi.Sprintf("/api/%s", name),
-							},
-							Transforms: pulumi.StringArray{
-								pulumi.String(cdn.TransformLowercase),
-							},
-							TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
-							Operator: pulumi.String(cdn.OperatorBeginsWith),
-						},
-					},
-				}),
-			Actions: pulumi.ToArray(
-				[]interface{}{
-					cdn.OriginGroupOverrideActionArgs{
-						Name: pulumi.String("OriginGroupOverride"),
-						Parameters: cdn.OriginGroupOverrideActionParametersArgs{
-							OriginGroup: cdn.ResourceReferenceArgs{
-								Id: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
-									p.ClientConfig.SubscriptionId,
-									p.ResourceGroup.Name,
-									profile.Name,
-									endpointName,
-									apiOriginGroupName),
-							},
-							TypeName: pulumi.String("DeliveryRuleOriginGroupOverrideActionParameters"),
-						},
-					},
-					cdn.UrlRewriteActionArgs{
-						Name: pulumi.String("UrlRewrite"),
-						Parameters: cdn.UrlRewriteActionParametersArgs{
-							Destination:   pulumi.String("/"),
-							SourcePattern: pulumi.String(fmt.Sprintf("/api/%s/", name)),
-							TypeName:      pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
-						},
-					},
-				},
-			),
-		}
-
-		ruleOrder++
-
-		deliveryRules = append(deliveryRules, rule)
-	}
-
-	endpoint, err := cdn.NewEndpoint(ctx, endpointName, &cdn.EndpointArgs{
-		EndpointName:         pulumi.String(endpointName),
-		ResourceGroupName:    p.ResourceGroup.Name,
-		ProfileName:          profile.Name,
-		IsHttpAllowed:        pulumi.Bool(false),
-		IsHttpsAllowed:       pulumi.Bool(true),
-		IsCompressionEnabled: pulumi.Bool(true),
-		ContentTypesToCompress: pulumi.StringArray{
-			pulumi.String("text/html"),
-			pulumi.String("text/css"),
-			pulumi.String("application/javascript"),
-			pulumi.String("application/json"),
-			pulumi.String("image/svg+xml"),
-			pulumi.String("font/woff"),
-			pulumi.String("font/woff2"),
-		},
-		OriginGroups: originGroups,
-		DefaultOriginGroup: cdn.ResourceReferenceArgs{
-			Id: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Cdn/profiles/%s/endpoints/%s/originGroups/%s",
-				p.ClientConfig.SubscriptionId,
-				p.ResourceGroup.Name,
-				profile.Name, endpointName,
-				defaultOriginGroupName),
-		},
-		Origins: origins,
-		DeliveryPolicy: &cdn.EndpointPropertiesUpdateParametersDeliveryPolicyArgs{
-			Description: pulumi.String("Default policy for the website endpoint"),
-			Rules:       deliveryRules,
-		},
+	endpoint, err := cdn.NewAFDEndpoint(ctx, endpointName, &cdn.AFDEndpointArgs{
+		EndpointName:      pulumi.String(endpointName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		Location:          profile.Location,
+		EnabledState:      cdn.EnabledStateEnabled,
 	}, pulumi.DependsOn([]pulumi.Resource{profile}))
 	if err != nil {
-		return fmt.Errorf("failed to create CDN endpoint: %w", err)
+		return fmt.Errorf("failed to create Frontdoor endpoint: %w", err)
 	}
 
-	// Purge the CDN endpoint if content has changed
-	pulumi.All(p.ResourceGroup.Name, profile.Name, p.staticWebsiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
-		resourceGroupName := args[0].(string)
-		profileName := args[1].(string)
-		websiteChangedFileKeys := []*string{}
+	customDomains := cdn.ActivatedResourceReferenceArray{}
 
-		for _, key := range args[2].([]string) {
-			if key != "" {
-				// require to purge the index.html file served at root of cdn
-				if strings.HasSuffix(key, "/index.html") {
-					key = strings.TrimSuffix(key, "index.html")
-				}
-
-				websiteChangedFileKeys = append(websiteChangedFileKeys, &key)
-			}
+	if p.AzureConfig.CdnDomain.DomainName != "" && p.AzureConfig.CdnDomain.ZoneName != "" {
+		// both are required if one is set
+		if p.AzureConfig.CdnDomain.ZoneName == "" {
+			return fmt.Errorf("zone-name is required for custom domain")
 		}
 
-		if len(websiteChangedFileKeys) > 0 {
-			err := purgeCDNEndpoint(p.ClientConfig.SubscriptionId, resourceGroupName, profileName, endpointName, websiteChangedFileKeys)
+		if p.AzureConfig.CdnDomain.DomainName == "" {
+			return fmt.Errorf("domain-name is required for custom domain")
+		}
+
+		if p.AzureConfig.CdnDomain.ZoneResourceGroup == "" {
+			return fmt.Errorf("zone-resource-group is required for custom domain")
+		}
+
+		dnsZone, err := network.LookupZone(ctx, &network.LookupZoneArgs{
+			ResourceGroupName: p.AzureConfig.CdnDomain.ZoneResourceGroup,
+			ZoneName:          p.AzureConfig.CdnDomain.ZoneName,
+		})
+		if err != nil {
+			return err
+		}
+
+		subDomain := strings.ToLower(p.AzureConfig.CdnDomain.DomainName)
+
+		// check if the domain name is a subdomain of the zone name
+		err = ensureValidSubdomain(p.AzureConfig.CdnDomain.ZoneName, subDomain)
+		if err != nil {
+			return err
+		}
+
+		// if it is a subdomain, remove the zone name from the subdomain
+		subDomain = strings.ReplaceAll(strings.TrimSuffix(subDomain, p.AzureConfig.CdnDomain.ZoneName), ".", "")
+
+		isApexDomain := subDomain == ""
+
+		// if domain is an apex domain, create a unique subdomain for naming purposes
+		if isApexDomain {
+			subDomain = fmt.Sprintf("%s-%s", p.StackId, strings.ReplaceAll(p.AzureConfig.CdnDomain.ZoneName, ".", "-"))
+		}
+
+		domain, err := cdn.NewAFDCustomDomain(ctx, p.AzureConfig.CdnDomain.DomainName, &cdn.AFDCustomDomainArgs{
+			ResourceGroupName: p.ResourceGroup.Name,
+			ProfileName:       profile.Name,
+			CustomDomainName:  pulumi.String(subDomain),
+			HostName:          pulumi.String(p.AzureConfig.CdnDomain.DomainName),
+			AzureDnsZone: &cdn.ResourceReferenceArgs{
+				Id: pulumi.String(dnsZone.Id),
+			},
+			TlsSettings: &cdn.AFDDomainHttpsParametersArgs{
+				CertificateType:   cdn.AfdCertificateTypeManagedCertificate,
+				MinimumTlsVersion: cdn.AfdMinimumTlsVersionTLS12,
+			},
+		}, pulumi.DependsOn([]pulumi.Resource{profile, endpoint}))
+		if err != nil {
+			return err
+		}
+
+		relativeRecordSetName := fmt.Sprintf("_dnsauth.%s", subDomain)
+
+		if isApexDomain {
+			relativeRecordSetName = "_dnsauth"
+		}
+
+		// Create a TXT record for domain validation
+		_, err = network.NewRecordSet(ctx, fmt.Sprintf("validate-%s", subDomain), &network.RecordSetArgs{
+			RecordType:            pulumi.String("TXT"),
+			RelativeRecordSetName: pulumi.String(relativeRecordSetName),
+			ResourceGroupName:     pulumi.String(p.AzureConfig.CdnDomain.ZoneResourceGroup),
+			Ttl:                   pulumi.Float64(3600), // Set TTL to one hour
+			TxtRecords: network.TxtRecordArray{
+				&network.TxtRecordArgs{
+					Value: pulumi.StringArray{
+						domain.ValidationProperties.ValidationToken(),
+					},
+				},
+			},
+			ZoneName: pulumi.String(dnsZone.Name),
+		}, pulumi.DependsOn([]pulumi.Resource{domain}))
+		if err != nil {
+			return err
+		}
+
+		if isApexDomain {
+			// Create an APEX record for the custom domain
+			_, err = network.NewRecordSet(ctx, fmt.Sprintf("cdn-%s", subDomain), &network.RecordSetArgs{
+				RecordType:            pulumi.String("A"),
+				RelativeRecordSetName: pulumi.String("@"),
+				TargetResource: &network.SubResourceArgs{
+					Id: endpoint.ID(),
+				},
+				ResourceGroupName: pulumi.String(p.AzureConfig.CdnDomain.ZoneResourceGroup),
+				Ttl:               pulumi.Float64(3600), // Set TTL to one hour
+				ZoneName:          pulumi.String(dnsZone.Name),
+			}, pulumi.DependsOn([]pulumi.Resource{domain, endpoint}))
+			if err != nil {
+				return err
+			}
+		} else {
+			// Create a CNAME record for the custom domain
+			_, err = network.NewRecordSet(ctx, fmt.Sprintf("cdn-%s", subDomain), &network.RecordSetArgs{
+				RecordType:            pulumi.String("CNAME"),
+				RelativeRecordSetName: pulumi.String(subDomain),
+				ResourceGroupName:     pulumi.String(p.AzureConfig.CdnDomain.ZoneResourceGroup),
+				Ttl:                   pulumi.Float64(3600), // Set TTL to one hour
+				CnameRecord: &network.CnameRecordArgs{
+					Cname: endpoint.HostName,
+				},
+				ZoneName: pulumi.String(dnsZone.Name),
+			}, pulumi.DependsOn([]pulumi.Resource{domain}))
 			if err != nil {
 				return err
 			}
 		}
 
-		return nil
+		customDomains = append(customDomains, &cdn.ActivatedResourceReferenceArgs{
+			Id: domain.ID(),
+		})
+	}
+
+	// Pull the hostname out of the root storage-account endpoint.
+	originHostname := getWebEndpointHostName(p.WebsiteStorageAccounts["/"])
+	defaultOriginGroupName := fmt.Sprintf("%s-default-origin-group", p.StackId)
+
+	defaultOriginName := fmt.Sprintf("%s-default-origin", p.StackId)
+
+	defaultOriginGroup, err := cdn.NewAFDOriginGroup(ctx, defaultOriginGroupName, &cdn.AFDOriginGroupArgs{
+		OriginGroupName:   pulumi.String(defaultOriginGroupName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		LoadBalancingSettings: &cdn.LoadBalancingSettingsParametersArgs{
+			AdditionalLatencyInMilliseconds: pulumi.Int(200), // Lower latency tolerance for faster failover
+			SampleSize:                      pulumi.Int(5),   // More samples for better decision-making
+			SuccessfulSamplesRequired:       pulumi.Int(3),   // Keep at 3 to maintain reliability
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{profile}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor origin group: %w", err)
+	}
+
+	_, err = cdn.NewAFDOrigin(ctx, defaultOriginName, &cdn.AFDOriginArgs{
+		OriginName:        pulumi.String(defaultOriginName),
+		OriginGroupName:   defaultOriginGroup.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+		HostName:          originHostname,
+		OriginHostHeader:  originHostname,
+		HttpPort:          pulumi.Int(80),
+		HttpsPort:         pulumi.Int(443),
+		EnabledState:      cdn.EnabledStateEnabled,
+	}, pulumi.DependsOn([]pulumi.Resource{defaultOriginGroup}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor origin: %w", err)
+	}
+
+	ruleSets := cdn.ResourceReferenceArray{}
+
+	// Create a default rule set for the CDN endpoint
+	ruleSetName := "default"
+	defaultRuleSet, err := cdn.NewRuleSet(ctx, ResourceName(ctx, ruleSetName, FrontDoorRuleSetRT), &cdn.RuleSetArgs{
+		RuleSetName:       pulumi.String(ruleSetName),
+		ResourceGroupName: p.ResourceGroup.Name,
+		ProfileName:       profile.Name,
+	}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor rule set: %w", err)
+	}
+
+	ruleSets = append(ruleSets, &cdn.ResourceReferenceArgs{
+		Id: defaultRuleSet.ID(),
 	})
+
+	// Create a rule for redirecting paths that end in a slash
+	_, err = cdn.NewRule(ctx, ResourceName(ctx, "redirectslash", FrontDoorRuleRT), &cdn.RuleArgs{
+		Order:             pulumi.Int(1),
+		RuleName:          pulumi.String("redirectslash"),
+		RuleSetName:       defaultRuleSet.Name,
+		ProfileName:       profile.Name,
+		ResourceGroupName: p.ResourceGroup.Name,
+		Conditions: pulumi.ToArray(
+			[]interface{}{
+				cdn.DeliveryRuleUrlPathConditionArgs{
+					Name: pulumi.String(cdn.MatchVariableUrlPath),
+					Parameters: cdn.UrlPathMatchConditionParametersArgs{
+						MatchValues: pulumi.StringArray{
+							pulumi.String(".*\\/$"),
+						},
+						TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
+						Operator: pulumi.String(cdn.OperatorRegEx),
+					},
+				},
+			}),
+		Actions: pulumi.ToArray([]interface{}{
+			cdn.UrlRedirectActionArgs{
+				Name: pulumi.String(cdn.DeliveryRuleActionUrlRedirect),
+				Parameters: cdn.UrlRedirectActionParametersArgs{
+					RedirectType:        pulumi.String(cdn.RedirectTypeFound),
+					DestinationProtocol: pulumi.String(cdn.DestinationProtocolMatchRequest),
+					CustomPath:          pulumi.String("/{url_path:0:-1}"),
+					TypeName:            pulumi.String("DeliveryRuleUrlRedirectActionParameters"),
+				},
+			},
+		}),
+	}, pulumi.DependsOn([]pulumi.Resource{defaultRuleSet}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor rule for redirecting paths: %w", err)
+	}
+
+	// Add origins, origin groups and rule for sub websites
+	if len(p.WebsiteStorageAccounts) > 1 {
+		// Sort the storage accounts by name
+		sortedStorageKeys := lo.Keys(p.WebsiteStorageAccounts)
+		slices.Sort(sortedStorageKeys)
+
+		// Create an origin group for each storage account
+		for _, basePath := range sortedStorageKeys {
+			// Skip the root storage account
+			if basePath == "/" {
+				continue
+			}
+
+			storageAccount := p.WebsiteStorageAccounts[basePath]
+
+			normalizedName := strings.ReplaceAll(basePath, "/", "")
+
+			originGroupName := fmt.Sprintf("%s-%s-origin-group", p.StackId, normalizedName)
+
+			subsiteOriginGroup, err := cdn.NewAFDOriginGroup(ctx, originGroupName, &cdn.AFDOriginGroupArgs{
+				OriginGroupName:   pulumi.String(originGroupName),
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				LoadBalancingSettings: &cdn.LoadBalancingSettingsParametersArgs{
+					AdditionalLatencyInMilliseconds: pulumi.Int(200), // Lower latency tolerance for faster failover
+					SampleSize:                      pulumi.Int(5),   // More samples for better decision-making
+					SuccessfulSamplesRequired:       pulumi.Int(3),   // Keep at 3 to maintain reliability
+				},
+			}, pulumi.DependsOn([]pulumi.Resource{profile}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin group for subsite: %w", err)
+			}
+
+			originName := fmt.Sprintf("%s-%s-origin", p.StackId, normalizedName)
+
+			originHostname := getWebEndpointHostName(storageAccount)
+
+			subsiteOrigin, err := cdn.NewAFDOrigin(ctx, originName, &cdn.AFDOriginArgs{
+				OriginName:        pulumi.String(originName),
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				HostName:          originHostname,
+				OriginHostHeader:  originHostname,
+				HttpPort:          pulumi.Int(80),
+				HttpsPort:         pulumi.Int(443),
+				EnabledState:      cdn.EnabledStateEnabled,
+				OriginGroupName:   subsiteOriginGroup.Name,
+			}, pulumi.DependsOn([]pulumi.Resource{subsiteOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin for subsite: %w", err)
+			}
+
+			ruleName := ResourceName(ctx, normalizedName, FrontDoorRuleRT)
+			// create a override rule for the subsite
+			_, err = cdn.NewRule(ctx, ruleName, &cdn.RuleArgs{
+				Order:             pulumi.Int(nameToUniqueNumber(normalizedName)),
+				RuleName:          pulumi.String(ruleName),
+				RuleSetName:       defaultRuleSet.Name,
+				ProfileName:       profile.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
+				Conditions: pulumi.ToArray(
+					[]interface{}{
+						cdn.DeliveryRuleUrlPathConditionArgs{
+							Name: pulumi.String(cdn.MatchVariableUrlPath),
+							Parameters: cdn.UrlPathMatchConditionParametersArgs{
+								MatchValues: pulumi.StringArray{
+									// Match the base path and any sub-paths, azure requires no leading slash
+									pulumi.Sprintf("%s(/.*)?$", strings.TrimPrefix(basePath, "/")),
+								},
+								Transforms: pulumi.StringArray{
+									pulumi.String(cdn.TransformLowercase),
+								},
+								TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
+								Operator: pulumi.String(cdn.OperatorRegEx),
+							},
+						},
+					}),
+				Actions: pulumi.ToArray([]interface{}{
+					cdn.DeliveryRuleRouteConfigurationOverrideActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionRouteConfigurationOverride),
+						Parameters: cdn.RouteConfigurationOverrideActionParametersArgs{
+							OriginGroupOverride: cdn.OriginGroupOverrideArgs{
+								ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
+								OriginGroup: &cdn.ResourceReferenceArgs{
+									Id: subsiteOriginGroup.ID(),
+								},
+							},
+							CacheConfiguration: cdn.CacheConfigurationArgs{
+								CacheBehavior:              pulumi.String(cdn.RuleCacheBehaviorHonorOrigin),
+								IsCompressionEnabled:       cdn.RuleIsCompressionEnabledEnabled,
+								QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorUseQueryString),
+							},
+							TypeName: pulumi.String("DeliveryRuleRouteConfigurationOverrideActionParameters"),
+						},
+					},
+					cdn.UrlRewriteActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionUrlRewrite),
+						Parameters: cdn.UrlRewriteActionParametersArgs{
+							Destination:           pulumi.String("/"),
+							SourcePattern:         pulumi.String(strings.TrimSuffix(basePath, "/")),
+							PreserveUnmatchedPath: pulumi.Bool(true),
+							TypeName:              pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
+						},
+					},
+				}),
+			}, pulumi.DependsOn([]pulumi.Resource{defaultRuleSet, subsiteOrigin, subsiteOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor rule for subsite: %w", err)
+			}
+		}
+	}
+
+	// Create a rule set for the CDN endpoint if there are APIs
+	if len(p.Apis) > 0 {
+		ruleSetName := ResourceName(ctx, "apis", FrontDoorRuleSetRT)
+
+		ruleSet, err := cdn.NewRuleSet(ctx, ResourceName(ctx, ruleSetName, FrontDoorRuleSetRT), &cdn.RuleSetArgs{
+			RuleSetName:       pulumi.String(ruleSetName),
+			ResourceGroupName: p.ResourceGroup.Name,
+			ProfileName:       profile.Name,
+		}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
+		if err != nil {
+			return fmt.Errorf("failed to create Frontdoor rule set: %w", err)
+		}
+
+		ruleSets = append(ruleSets, &cdn.ResourceReferenceArgs{
+			Id: ruleSet.ID(),
+		})
+
+		// Sort the APIs by name
+		sortedApiKeys := lo.Keys(p.Apis)
+		slices.Sort(sortedApiKeys)
+
+		// Create a delivery rule for each API
+		for _, apiName := range sortedApiKeys {
+			api := p.Apis[apiName]
+			ruleOrder := nameToUniqueNumber(apiName)
+
+			apiHostName := api.ApiManagementService.GatewayUrl.ApplyT(func(gatewayUrl string) (string, error) {
+				parsed, err := url.Parse(gatewayUrl)
+				if err != nil {
+					return "", err
+				}
+
+				return parsed.Hostname(), nil
+			}).(pulumi.StringOutput)
+
+			apiOriginGroupName := fmt.Sprintf("api-origin-group-%s", apiName)
+
+			apiOriginGroup, err := cdn.NewAFDOriginGroup(ctx, apiOriginGroupName, &cdn.AFDOriginGroupArgs{
+				OriginGroupName:   pulumi.String(apiOriginGroupName),
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				LoadBalancingSettings: &cdn.LoadBalancingSettingsParametersArgs{
+					AdditionalLatencyInMilliseconds: pulumi.Int(100), // Quick failover for API requests
+					SampleSize:                      pulumi.Int(5),   // More accurate health assessment
+					SuccessfulSamplesRequired:       pulumi.Int(2),   // Faster recovery for healthy endpoints
+				},
+			}, pulumi.DependsOn([]pulumi.Resource{ruleSet}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin group: %w", err)
+			}
+
+			apiOriginName := fmt.Sprintf("api-origin-%s", apiName)
+
+			origin, err := cdn.NewAFDOrigin(ctx, apiOriginName, &cdn.AFDOriginArgs{
+				OriginName:        pulumi.String(apiOriginName),
+				EnabledState:      cdn.EnabledStateEnabled,
+				OriginGroupName:   apiOriginGroup.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
+				ProfileName:       profile.Name,
+				HostName:          apiHostName,
+				OriginHostHeader:  apiHostName,
+				HttpPort:          pulumi.Int(80),
+				HttpsPort:         pulumi.Int(443),
+			}, pulumi.DependsOn([]pulumi.Resource{apiOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor origin: %w", err)
+			}
+
+			ruleName := ResourceName(ctx, fmt.Sprintf("api%s", apiName), FrontDoorRuleRT)
+
+			_, err = cdn.NewRule(ctx, ruleName, &cdn.RuleArgs{
+				Order:             pulumi.Int(ruleOrder),
+				RuleName:          pulumi.String(ruleName),
+				RuleSetName:       ruleSet.Name,
+				ProfileName:       profile.Name,
+				ResourceGroupName: p.ResourceGroup.Name,
+				Conditions: pulumi.ToArray(
+					[]interface{}{
+						cdn.DeliveryRuleUrlPathConditionArgs{
+							Name: pulumi.String(cdn.MatchVariableUrlPath),
+							Parameters: cdn.UrlPathMatchConditionParametersArgs{
+								MatchValues: pulumi.StringArray{
+									pulumi.Sprintf("/api/%s", apiName),
+								},
+								Transforms: pulumi.StringArray{
+									pulumi.String(cdn.TransformLowercase),
+								},
+								TypeName: pulumi.String("DeliveryRuleUrlPathMatchConditionParameters"),
+								Operator: pulumi.String(cdn.OperatorBeginsWith),
+							},
+						},
+					}),
+				Actions: pulumi.ToArray([]interface{}{
+					cdn.DeliveryRuleRouteConfigurationOverrideActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionRouteConfigurationOverride),
+						Parameters: cdn.RouteConfigurationOverrideActionParametersArgs{
+							OriginGroupOverride: cdn.OriginGroupOverrideArgs{
+								ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
+								OriginGroup: &cdn.ResourceReferenceArgs{
+									Id: apiOriginGroup.ID(),
+								},
+							},
+							CacheConfiguration: cdn.CacheConfigurationArgs{
+								CacheBehavior:              pulumi.String(cdn.RuleCacheBehaviorHonorOrigin),
+								IsCompressionEnabled:       cdn.RuleIsCompressionEnabledEnabled,
+								QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorUseQueryString),
+							},
+							TypeName: pulumi.String("DeliveryRuleRouteConfigurationOverrideActionParameters"),
+						},
+					},
+					cdn.UrlRewriteActionArgs{
+						Name: pulumi.String(cdn.DeliveryRuleActionUrlRewrite),
+						Parameters: cdn.UrlRewriteActionParametersArgs{
+							Destination:           pulumi.String("/"),
+							SourcePattern:         pulumi.String(fmt.Sprintf("/api/%s/", apiName)),
+							PreserveUnmatchedPath: pulumi.Bool(true),
+							TypeName:              pulumi.String("DeliveryRuleUrlRewriteActionParameters"),
+						},
+					},
+				}),
+			}, pulumi.DependsOn([]pulumi.Resource{ruleSet, origin, apiOriginGroup}))
+			if err != nil {
+				return fmt.Errorf("failed to create Frontdoor rule: %w", err)
+			}
+		}
+	}
+
+	routeName := fmt.Sprintf("%s-main-route", p.StackId)
+
+	_, err = cdn.NewRoute(ctx, routeName, &cdn.RouteArgs{
+		RouteName:         pulumi.String(routeName),
+		CustomDomains:     customDomains,
+		ResourceGroupName: p.ResourceGroup.Name,
+		// TODO make this a config option for custom domains
+		LinkToDefaultDomain: pulumi.String(cdn.LinkToDefaultDomainEnabled),
+		ProfileName:         profile.Name,
+		EndpointName:        endpoint.Name,
+		SupportedProtocols: pulumi.StringArray{
+			pulumi.String(cdn.AFDEndpointProtocolsHttps),
+		},
+		ForwardingProtocol: pulumi.String(cdn.ForwardingProtocolHttpsOnly),
+		HttpsRedirect:      pulumi.String(cdn.HttpsRedirectDisabled),
+		PatternsToMatch:    pulumi.ToStringArray([]string{"/*"}),
+		EnabledState:       cdn.EnabledStateEnabled,
+		OriginGroup: &cdn.ResourceReferenceArgs{
+			Id: defaultOriginGroup.ID(),
+		},
+		CacheConfiguration: &cdn.AfdRouteCacheConfigurationArgs{
+			CompressionSettings: &cdn.CompressionSettingsArgs{
+				ContentTypesToCompress: pulumi.StringArray{
+					pulumi.String("text/html"),
+					pulumi.String("text/css"),
+					pulumi.String("application/javascript"),
+					pulumi.String("application/json"),
+					pulumi.String("image/svg+xml"),
+					pulumi.String("font/woff"),
+					pulumi.String("font/woff2"),
+				},
+				IsCompressionEnabled: pulumi.Bool(true),
+			},
+			QueryStringCachingBehavior: pulumi.String(cdn.AfdQueryStringCachingBehaviorIgnoreQueryString),
+		},
+		RuleSets: ruleSets,
+	}, pulumi.DependsOn([]pulumi.Resource{defaultOriginGroup}))
+	if err != nil {
+		return fmt.Errorf("failed to create Frontdoor route: %w", err)
+	}
 
 	// Export the CDN endpoint hostname.
 	ctx.Export("cdn", pulumi.Sprintf("https://%s", endpoint.HostName))
 
 	p.Endpoint = endpoint
 
+	if p.AzureConfig.CdnDomain.SkipCacheInvalidation != nil && *p.AzureConfig.CdnDomain.SkipCacheInvalidation {
+		return nil
+	}
+
+	// Apply a function to sort the array
+	sortedMd5Result := p.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
+		// Convert each element to string
+		md5Strings := []string{}
+		for _, md5 := range arr {
+			if md5Str, ok := md5.(string); ok {
+				if md5Str != "" {
+					md5Strings = append(md5Strings, md5Str)
+				}
+			}
+		}
+
+		sort.Strings(md5Strings)
+
+		return strings.Join(md5Strings, "")
+	}).(pulumi.StringOutput)
+
+	// Purge the CDN endpoint if content has changed
+	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
+		Create: pulumi.Sprintf("MSYS_NO_PATHCONV=1 az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths '/*' --no-wait",
+			p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
+		Triggers: pulumi.Array{
+			sortedMd5Result,
+		},
+		Logging: local.LoggingStdoutAndStderr,
+		Interpreter: pulumi.StringArray{
+			pulumi.String("bash"),
+			pulumi.String("-c"),
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
+	if err != nil {
+		return fmt.Errorf("failed to create command to purge CDN endpoint: %w", err)
+	}
+
 	return nil
+}
+
+func getWebEndpointHostName(storageAccount *storage.StorageAccount) pulumi.StringOutput {
+	return storageAccount.PrimaryEndpoints.ApplyT(func(endpoints storage.EndpointsResponse) (string, error) {
+		parsed, err := url.Parse(endpoints.Web)
+		if err != nil {
+			return "", err
+		}
+		return parsed.Hostname(), nil
+	}).(pulumi.StringOutput)
+}
+
+// Convert a name to a unique number
+// This creates a number that's guaranteed unique for different strings
+// Required due to conflicts with Azure's rule order during updates/replacements
+// https://learn.microsoft.com/en-us/answers/questions/2103790/why-does-a-azure-front-door-rule-set-rule-has-an-o
+func nameToUniqueNumber(name string) int {
+	// Start at a high base to avoid conflicts with other rules
+	base := 10000
+
+	// Use character position and value to guarantee uniqueness
+	// This is essentially creating a custom numeric representation
+	for i, char := range name {
+		// Multiply by position+1 to weight characters differently
+		// Use prime number multiplier to reduce collision risk
+		base += int(char) * (i + 1) * 31
+	}
+
+	return base
 }

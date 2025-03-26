@@ -58,10 +58,12 @@ var (
 	ADServicePrincipalRT         = ResourceType{Abbreviation: "aad-sp", MaxLen: 64, UseName: true}
 	ADServicePrincipalPasswordRT = ResourceType{Abbreviation: "aad-spp", MaxLen: 64, UseName: true}
 	// Lowercase letters and numbers.
-	StorageAccountRT = ResourceType{Abbreviation: "st", MaxLen: 24}
+	StorageAccountRT  = ResourceType{Abbreviation: "st", MaxLen: 24}
+	StorageAccountRTW = ResourceType{Abbreviation: "stw", MaxLen: 24, UseName: true}
 	// 	Lowercase letters, numbers, and hyphens.
 	// Start with lowercase letter or number. Can't use consecutive hyphens.
-	StorageContainerRT = ResourceType{MaxLen: 63, AllowHyphen: true, UseName: true}
+	StorageContainerRT  = ResourceType{MaxLen: 63, AllowHyphen: true, UseName: true}
+	StorageContainerRTW = ResourceType{MaxLen: 63, AllowHyphen: true, UseName: true}
 	// Lowercase letters, numbers, and hyphens.
 	// Can't start or end with hyphen. Can't use consecutive hyphens.
 	StorageQueueRT = ResourceType{MaxLen: 63, AllowHyphen: true, UseName: true}
@@ -84,6 +86,10 @@ var (
 	ApiOperationPolicyRT = ResourceType{Abbreviation: "api-op-pol", MaxLen: 80, AllowUpperCase: true, AllowHyphen: true, UseName: true}
 	// Lowercase letters and numbers.
 	DatabaseServerRT = ResourceType{Abbreviation: "pg-svr", MaxLen: 24}
+	// Start with letter and no special characters.
+	FrontDoorRuleRT = ResourceType{Abbreviation: "rule", MaxLen: 80, UseName: true}
+	// Start with letter and no special characters.
+	FrontDoorRuleSetRT = ResourceType{Abbreviation: "ruleset", MaxLen: 80, UseName: true}
 )
 
 // cleanNameSegment removes all non-alphanumeric characters from a string.

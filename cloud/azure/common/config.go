@@ -38,12 +38,24 @@ type AzureApiConfig struct {
 	Description string
 }
 
+type CdnDomainConfig struct {
+	// Name of the managed zone in azure DNS zones
+	ZoneName string `mapstructure:"zone-name"`
+	// Resource group of the managed zone in azure DNS zones
+	ZoneResourceGroup string `mapstructure:"zone-resource-group"`
+	// Name of the domain name or sub domain to set for the CDN
+	DomainName string `mapstructure:"domain-name"`
+	// If true, CDN cache invalidation will not be run on deployment
+	SkipCacheInvalidation *bool `mapstructure:"skip-cache-invalidation"`
+}
+
 type AzureConfig struct {
 	Refresh                                 bool
 	ResourceGroup                           string `mapstructure:"resource-group"`
 	Org                                     string `mapstructure:"org"`
 	AdminEmail                              string `mapstructure:"adminemail"`
 	Apis                                    map[string]*AzureApiConfig
+	CdnDomain                               CdnDomainConfig `mapstructure:"cdn"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 
