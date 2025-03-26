@@ -21,6 +21,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "dependsOn", GoGetter: "DependsOn"},
 			_jsii_.MemberProperty{JsiiProperty: "errorDocument", GoGetter: "ErrorDocument"},
 			_jsii_.MemberProperty{JsiiProperty: "errorDocumentOutput", GoGetter: "ErrorDocumentOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "fileMd5SOutput", GoGetter: "FileMd5SOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "forEach", GoGetter: "ForEach"},
 			_jsii_.MemberProperty{JsiiProperty: "fqn", GoGetter: "Fqn"},
 			_jsii_.MemberProperty{JsiiProperty: "friendlyUniqueId", GoGetter: "FriendlyUniqueId"},

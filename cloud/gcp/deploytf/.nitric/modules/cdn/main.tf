@@ -149,15 +149,23 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
   target      = google_compute_target_https_proxy.https_proxy.self_link
 }
 
+locals {
+  all_bucket_md5s = merge(
+    var.website_buckets.*.website_file_md5s,
+  )
+}
+
 # Invalidate the CDN cache if files have changed
 resource "null_resource" "invalidate_cache" {
+  count = var.cdn_domain.skip_cache_invalidation ? 1 : 0
+
   provisioner "local-exec" {
     command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*' --project ${var.project_id}"
   }
 
-  triggers = {
+  triggers = merge({
     url_map = google_compute_url_map.https_url_map.self_link
-  }
+  }, local.all_bucket_md5s)
 
   depends_on = [ google_compute_global_forwarding_rule.https_forwarding_rule ]
 }

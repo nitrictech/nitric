@@ -25,6 +25,13 @@ module "template_files" {
   base_dir = var.local_directory
 }
 
+
+locals {
+  uploaded_files_md5 = {
+    for path, file in module.template_files.files : (path) => file.digests.md5
+  }
+}
+
 # Upload files from the local directory to the bucket
 resource "google_storage_bucket_object" "website_files" {
   for_each = module.template_files.files

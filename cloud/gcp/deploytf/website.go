@@ -11,10 +11,11 @@ import (
 )
 
 type CdnInput struct {
-	ZoneName   *string `json:"zone_name"`
-	DomainName *string `json:"domain_name"`
-	ClientTtl  *int    `json:"client_ttl"`
-	DefaultTtl *int    `json:"default_ttl"`
+	ZoneName              *string `json:"zone_name"`
+	DomainName            *string `json:"domain_name"`
+	ClientTtl             *int    `json:"client_ttl"`
+	DefaultTtl            *int    `json:"default_ttl"`
+	SkipCacheInvalidation *bool   `json:"skip_cache_invalidation"`
 }
 
 type ApiInput struct {
@@ -24,11 +25,12 @@ type ApiInput struct {
 }
 
 type WebsiteInput struct {
-	BasePath       *string `json:"base_path"`
-	BucketName     *string `json:"name"`
-	IndexDocument  *string `json:"index_document"`
-	ErrorDocument  *string `json:"error_document"`
-	LocalDirectory *string `json:"local_directory"`
+	BasePath        *string             `json:"base_path"`
+	BucketName      *string             `json:"name"`
+	IndexDocument   *string             `json:"index_document"`
+	ErrorDocument   *string             `json:"error_document"`
+	LocalDirectory  *string             `json:"local_directory"`
+	WebsiteFileMd5s *map[string]*string `json:"website_file_md5s"`
 }
 
 func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack) error {
@@ -44,10 +46,11 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 	websites := map[string]WebsiteInput{}
 
 	cdnInput := &CdnInput{
-		ZoneName:   jsii.String(a.GcpConfig.CdnDomain.ZoneName),
-		DomainName: jsii.String(a.GcpConfig.CdnDomain.DomainName),
-		ClientTtl:  a.GcpConfig.CdnDomain.ClientTtl,
-		DefaultTtl: a.GcpConfig.CdnDomain.DefaultTtl,
+		ZoneName:              jsii.String(a.GcpConfig.CdnDomain.ZoneName),
+		DomainName:            jsii.String(a.GcpConfig.CdnDomain.DomainName),
+		ClientTtl:             a.GcpConfig.CdnDomain.ClientTtl,
+		DefaultTtl:            a.GcpConfig.CdnDomain.DefaultTtl,
+		SkipCacheInvalidation: jsii.Bool(a.GcpConfig.CdnDomain.SkipCacheInvalidation),
 	}
 
 	for name, api := range a.Apis {
@@ -65,11 +68,12 @@ func (a *NitricGcpTerraformProvider) deployEntrypoint(stack cdktf.TerraformStack
 		}
 
 		websites[websiteName] = WebsiteInput{
-			BasePath:       website.BasePath(),
-			BucketName:     website.BucketNameOutput(),
-			IndexDocument:  website.IndexDocumentOutput(),
-			ErrorDocument:  website.ErrorDocumentOutput(),
-			LocalDirectory: website.LocalDirectoryOutput(),
+			BasePath:        website.BasePath(),
+			BucketName:      website.BucketNameOutput(),
+			IndexDocument:   website.IndexDocumentOutput(),
+			ErrorDocument:   website.ErrorDocumentOutput(),
+			LocalDirectory:  website.LocalDirectoryOutput(),
+			WebsiteFileMd5s: cdktf.Token_AsStringMap(website.FileMd5SOutput(), nil),
 		}
 	}
 

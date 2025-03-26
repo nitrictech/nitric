@@ -28,6 +28,7 @@ type Website interface {
 	ErrorDocument() *string
 	SetErrorDocument(val *string)
 	ErrorDocumentOutput() *string
+	FileMd5SOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -156,6 +157,16 @@ func (j *jsiiProxy_Website) ErrorDocumentOutput() *string {
 	_jsii_.Get(
 		j,
 		"errorDocumentOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Website) FileMd5SOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"fileMd5SOutput",
 		&returns,
 	)
 	return returns

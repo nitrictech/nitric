@@ -22,6 +22,7 @@ variable "website_buckets" {
     index_document  = string
     error_document  = string
     local_directory = string
+    website_file_md5s = map(string)
   }))
 }
 
@@ -41,5 +42,6 @@ variable "cdn_domain" {
     zone_name   = string
     client_ttl  = number
     default_ttl = number
+    skip_cache_invalidation = bool
   })
 }
