@@ -2,7 +2,7 @@ data "azurerm_subscription" "current" {}
 
 resource "azurerm_role_definition" "nitric_role_kv_read" {
   description = "keyvalue read access"
-  name        = "KeyValueStoreRead"
+  name        = "${var.stack_name}-KeyValueStoreRead"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -18,7 +18,7 @@ resource "azurerm_role_definition" "nitric_role_kv_read" {
 
 resource "azurerm_role_definition" "nitric_role_kv_write" {
   description = "nitric keyvalue write access"
-  name        = "KeyValueStoreWrite"
+  name        = "${var.stack_name}-KeyValueStoreWrite"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -35,7 +35,7 @@ resource "azurerm_role_definition" "nitric_role_kv_write" {
 
 resource "azurerm_role_definition" "nitric_role_kv_delete" {
   description = "nitric keyvalue delete access"
-  name        = "KeyValueStoreDelete"
+  name        = "${var.stack_name}-KeyValueStoreDelete"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -51,7 +51,7 @@ resource "azurerm_role_definition" "nitric_role_kv_delete" {
 
 resource "azurerm_role_definition" "nitric_role_queue_enqueue" {
   description = "nitric queue enqueue access"
-  name        = "QueueEnqueue"
+  name        = "${var.stack_name}-QueueEnqueue"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -69,7 +69,7 @@ resource "azurerm_role_definition" "nitric_role_queue_enqueue" {
 
 resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
   description = "nitric queue dequeue access"
-  name        = "QueueDequeue"
+  name        = "${var.stack_name}-QueueDequeue"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -88,7 +88,7 @@ resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_get" {
   description = "nitric bucket file get access"
-  name        = "BucketFileGet"
+  name        = "${var.stack_name}-BucketFileGet"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -106,7 +106,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_get" {
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_put" {
   description = "nitric bucket file put access"
-  name        = "BucketFilePut"
+  name        = "${var.stack_name}-BucketFilePut"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -122,7 +122,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_put" {
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_delete" {
   description = "nitric bucket file delete access"
-  name        = "BucketFileDelete"
+  name        = "${var.stack_name}-BucketFileDelete"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -138,7 +138,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_delete" {
 
 resource "azurerm_role_definition" "nitric_role_bucket_file_list" {
   description = "nitric bucket file list access"
-  name        = "BucketFileList"
+  name        = "${var.stack_name}-BucketFileList"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -154,7 +154,7 @@ resource "azurerm_role_definition" "nitric_role_bucket_file_list" {
 
 resource "azurerm_role_definition" "nitric_role_topic_publish" {
   description = "nitric topic publish access"
-  name        = "TopicPublish"
+  name        = "${var.stack_name}-TopicPublish"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -173,7 +173,7 @@ resource "azurerm_role_definition" "nitric_role_topic_publish" {
 
 resource "azurerm_role_definition" "nitric_role_secret_access" {
   description = "nitric secret access access"
-  name        = "SecretAccess"
+  name        = "${var.stack_name}-SecretAccess"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {
@@ -189,7 +189,7 @@ resource "azurerm_role_definition" "nitric_role_secret_access" {
 
 resource "azurerm_role_definition" "nitric_role_secret_put" {
   description = "nitric secret put access"
-  name        = "SecretPut"
+  name        = "${var.stack_name}-SecretPut"
   scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
 
   permissions {

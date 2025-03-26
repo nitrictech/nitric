@@ -98,6 +98,14 @@ func (j *jsiiProxy_Roles) validateSetResourceGroupNameParameters(val *string) er
 	return nil
 }
 
+func (j *jsiiProxy_Roles) validateSetStackNameParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func validateNewRolesParameters(scope constructs.Construct, id *string, config *RolesConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")

@@ -53,6 +53,8 @@ type Roles interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	StackName() *string
+	SetStackName(val *string)
 	TopicPublishOutput() *string
 	// Experimental.
 	Version() *string
@@ -317,6 +319,16 @@ func (j *jsiiProxy_Roles) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Roles) StackName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Roles) TopicPublishOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -388,6 +400,17 @@ func (j *jsiiProxy_Roles)SetResourceGroupName(val *string) {
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Roles)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackName",
 		val,
 	)
 }
