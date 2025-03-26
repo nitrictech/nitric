@@ -350,9 +350,13 @@ func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return err
 		}
 
-		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, relativePath), &storage.BucketObjectArgs{
+		// Clean the relative path to ensure it is URL-safe and cross platform
+		// This is important for GCP storage, as it doesn't support backslashes in paths
+		cleanedRelativePath := filepath.ToSlash(relativePath)
+
+		_, err = storage.NewBucketObject(ctx, fmt.Sprintf("%s-%s", name, cleanedRelativePath), &storage.BucketObjectArgs{
 			Bucket:      a.WebsiteBuckets[config.BasePath].Name,
-			Name:        pulumi.String(relativePath),
+			Name:        pulumi.String(cleanedRelativePath),
 			Source:      pulumi.NewFileAsset(path),
 			ContentType: pulumi.String(contentType),
 		})
