@@ -269,9 +269,8 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 
 	// Invalid the CDN Cache
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
-		// Only run on update, the cache is already empty on first creation
-		Create: pulumi.String(""),
-		Update: pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path \"/*\"", httpsUrlMap.Name),
+		Create:  pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path \"/*\"", httpsUrlMap.Name),
+		Logging: local.LoggingStdoutAndStderr,
 	})
 	if err != nil {
 		return err
