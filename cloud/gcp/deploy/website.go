@@ -268,10 +268,8 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return err
 	}
 
-	if a.GcpConfig.CdnDomain.SkipCacheInvalidation != nil {
-		if *a.GcpConfig.CdnDomain.SkipCacheInvalidation {
-			return nil
-		}
+	if a.GcpConfig.CdnDomain.SkipCacheInvalidation {
+		return nil
 	}
 
 	sortedMd5Result := a.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {

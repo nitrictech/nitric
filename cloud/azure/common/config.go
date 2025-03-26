@@ -46,7 +46,7 @@ type CdnDomainConfig struct {
 	// Name of the domain name or sub domain to set for the CDN
 	DomainName string `mapstructure:"domain-name"`
 	// If true, CDN cache invalidation will not be run on deployment
-	SkipCacheInvalidation *bool `mapstructure:"skip-cache-invalidation"`
+	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
 }
 
 type AzureConfig struct {
