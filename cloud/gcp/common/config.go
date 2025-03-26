@@ -64,9 +64,9 @@ type CdnDomainConfig struct {
 	// Name of the domain name to set for the CDN
 	DomainName string `mapstructure:"domain-name"`
 	// Specifies the TTL the CDN sends in the Cache-Control or Expires headers to clients
-	ClientTtl *int
+	ClientTtl *int `mapstructure:"client-ttl"`
 	// Specifies the TTL for content cached by the CDN when the origin server does not provide any caching directives
-	DefaultTtl *int
+	DefaultTtl *int `mapstructure:"default-ttl"`
 	// If true, CDN cache invalidation will not be run on deployment
 	SkipCacheInvalidation *bool `mapstructure:"skip-cache-invalidation"`
 }
