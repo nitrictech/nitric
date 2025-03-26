@@ -680,6 +680,15 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return fmt.Errorf("failed to create Frontdoor route: %w", err)
 	}
 
+	// Export the CDN endpoint hostname.
+	ctx.Export("cdn", pulumi.Sprintf("https://%s", endpoint.HostName))
+
+	p.Endpoint = endpoint
+
+	if p.AzureConfig.CdnDomain.SkipCacheInvalidation != nil && *p.AzureConfig.CdnDomain.SkipCacheInvalidation {
+		return nil
+	}
+
 	// Apply a function to sort the array
 	sortedMd5Result := p.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
 		// Convert each element to string
@@ -713,11 +722,6 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create command to purge CDN endpoint: %w", err)
 	}
-
-	// Export the CDN endpoint hostname.
-	ctx.Export("cdn", pulumi.Sprintf("https://%s", endpoint.HostName))
-
-	p.Endpoint = endpoint
 
 	return nil
 }
