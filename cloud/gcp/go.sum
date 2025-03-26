@@ -724,6 +724,8 @@ github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 h1:vkHw5I/plNdTr435
 github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231/go.mod h1:murToZ2N9hNJzewjHBgfFdXhZKjY3z5cYC1VXk+lbFE=
 github.com/pulumi/esc v0.11.1 h1:Ky07sE4lQmB6Ve2A3M3g+i0Y2No4nRVbDaCjTccuLII=
 github.com/pulumi/esc v0.11.1/go.mod h1:iCs5bP1xvleSzcMDwfNc1Ym/6EJ2P6xmrjy0iqb0ATs=
+github.com/pulumi/pulumi-command/sdk v1.0.2 h1:OhyVaUlE+kvx0NXU+wzf7xTA5OL2bHWvKWAHvyhi1uo=
+github.com/pulumi/pulumi-command/sdk v1.0.2/go.mod h1:BbcTHkvZtcJqyB7SeLDzP99dj8xyCbA8v/6WjixsuBA=
 github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0 h1:ONchALtJZs0usvRryQ2aIelS/2X/z0bSaiUxZADF/1U=
 github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0/go.mod h1:zZCDXSO99WbbrmsijAZkLQIdwkQYG8YaxDbq+wzzhn0=
 github.com/pulumi/pulumi-gcp/sdk/v8 v8.4.1 h1:6v3SMiPBWsnXKWdEJn9Cnk2FhZtNAT9OCU4YyUi+JVE=

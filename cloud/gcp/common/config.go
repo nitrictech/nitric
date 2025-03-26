@@ -58,6 +58,19 @@ type GcpApiConfig struct {
 	Description string
 }
 
+type CdnDomainConfig struct {
+	// Name of the managed zone in google cloud dns
+	ZoneName string `mapstructure:"zone-name"`
+	// Name of the domain name to set for the CDN
+	DomainName string `mapstructure:"domain-name"`
+	// Specifies the TTL the CDN sends in the Cache-Control or Expires headers to clients
+	ClientTtl *int `mapstructure:"client-ttl"`
+	// Specifies the TTL for content cached by the CDN when the origin server does not provide any caching directives
+	DefaultTtl *int `mapstructure:"default-ttl"`
+	// If true, CDN cache invalidation will not be run on deployment
+	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
+}
+
 type GcpConfig struct {
 	config.AbstractConfig[*GcpConfigItem] `mapstructure:"config,squash"`
 	Apis                                  map[string]*GcpApiConfig
@@ -67,6 +80,8 @@ type GcpConfig struct {
 	ProjectId                             string           `mapstructure:"gcp-project-id"`
 	GcpBatchCompute                       *GcpBatchCompute `mapstructure:"batch-compute"`
 	Refresh                               bool
+	// CDN domain to use for deployed websites
+	CdnDomain CdnDomainConfig `mapstructure:"cdn"`
 }
 
 var defaultCloudRunConfig = &GcpCloudRunConfig{

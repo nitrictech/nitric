@@ -685,7 +685,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 
 	p.Endpoint = endpoint
 
-	if p.AzureConfig.CdnDomain.SkipCacheInvalidation != nil && *p.AzureConfig.CdnDomain.SkipCacheInvalidation {
+	if p.AzureConfig.CdnDomain.SkipCacheInvalidation {
 		return nil
 	}
 

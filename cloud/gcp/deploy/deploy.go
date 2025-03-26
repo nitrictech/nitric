@@ -91,6 +91,11 @@ type NitricGcpPulumiProvider struct {
 	Secrets                map[string]*secretmanager.Secret
 	DatabaseMigrationBuild map[string]*cloudrunv2.Job
 
+	// files to upload to the website bucket
+	// The map key represents the baseUrl/directory in the bucket
+	WebsiteBuckets        map[string]*storage.Bucket
+	websiteFileMd5Outputs pulumi.Array
+
 	BatchServiceAccounts map[string]*GcpIamServiceAccount
 	masterDb             *sql.DatabaseInstance
 	dbMasterPassword     *random.RandomPassword
@@ -390,7 +395,7 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 }
 
 func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
-	return nil
+	return a.deployEntrypoint(ctx)
 }
 
 func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
@@ -402,6 +407,14 @@ func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutp
 		for apiName, api := range a.ApiGateways {
 			outputs = append(outputs, pulumi.Sprintf("%s: https://%s", apiName, api.DefaultHostname))
 		}
+	}
+
+	if len(a.WebsiteBuckets) > 0 {
+		if len(outputs) > 0 {
+			outputs = append(outputs, "\n")
+		}
+		outputs = append(outputs, pulumi.Sprintf("CDN:\n──────────────"))
+		outputs = append(outputs, pulumi.Sprintf("https://%s", a.GcpConfig.CdnDomain.DomainName))
 	}
 
 	// Add HTTP Proxy outputs
@@ -445,6 +458,7 @@ func NewNitricGcpProvider() *NitricGcpPulumiProvider {
 		QueueSubscriptions:     make(map[string]*pubsub.Subscription),
 		Secrets:                make(map[string]*secretmanager.Secret),
 		DatabaseMigrationBuild: make(map[string]*cloudrunv2.Job),
+		WebsiteBuckets:         make(map[string]*storage.Bucket),
 	}
 }
 
