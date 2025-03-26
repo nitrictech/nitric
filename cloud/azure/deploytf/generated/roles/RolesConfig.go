@@ -15,5 +15,7 @@ type RolesConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The name of the resource group.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
+	// The name of the stack.
+	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 }
 

@@ -36,6 +36,10 @@ func (j *jsiiProxy_Roles) validateSetResourceGroupNameParameters(val *string) er
 	return nil
 }
 
+func (j *jsiiProxy_Roles) validateSetStackNameParameters(val *string) error {
+	return nil
+}
+
 func validateNewRolesParameters(scope constructs.Construct, id *string, config *RolesConfig) error {
 	return nil
 }
