@@ -704,6 +704,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		Triggers: pulumi.Array{
 			sortedMd5Result,
 		},
+		Logging: local.LoggingStdoutAndStderr,
 		Interpreter: pulumi.StringArray{
 			pulumi.String("bash"),
 			pulumi.String("-c"),
