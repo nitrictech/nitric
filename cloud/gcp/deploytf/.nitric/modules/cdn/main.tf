@@ -98,6 +98,7 @@ resource "google_dns_record_set" "cdn_dns_record" {
   managed_zone = data.google_dns_managed_zone.cdn_zone.name
   type         = "A"
   rrdatas      = [google_compute_global_address.cdn_ip.address]
+  ttl = 300
 }
 
 resource "google_dns_record_set" "www_cdn_dns_record" {
@@ -105,6 +106,7 @@ resource "google_dns_record_set" "www_cdn_dns_record" {
   managed_zone = data.google_dns_managed_zone.cdn_zone.name
   type         = "A"
   rrdatas      = [google_compute_global_address.cdn_ip.address]
+  ttl = 300
 }
 
 resource "google_certificate_manager_certificate" "cdn_cert" {
