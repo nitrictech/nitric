@@ -274,7 +274,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		if website.basePath != "/" {
 			orderedCacheBehaviors = append(orderedCacheBehaviors,
 				&cloudfront.DistributionOrderedCacheBehaviorArgs{
-					PathPattern: pulumi.Sprintf("%s/*", strings.TrimPrefix(website.basePath, "/")),
+					PathPattern: pulumi.Sprintf("%s*", strings.TrimPrefix(website.basePath, "/")),
 					// rewrite the URL to the nitric service
 
 					TargetOriginId:       pulumi.String(websiteName),
