@@ -31,14 +31,17 @@ resource "azurerm_cdn_frontdoor_custom_domain" "custom_domain" {
   dns_zone_id              = data.azurerm_dns_zone.dns_zone[0].id
   host_name                = var.custom_domain_host_name
 
-  lifecycle {
-    # allows any previous custom domain to be disassociated before destroyed
-    create_before_destroy = true
-  }
-
   tls {
     certificate_type    = "ManagedCertificate"
   }
+}
+
+resource "azurerm_cdn_frontdoor_custom_domain_association" "custom_domain_association" {
+  count                          = var.enable_custom_domain ? 1 : 0
+  cdn_frontdoor_custom_domain_id = azurerm_cdn_frontdoor_custom_domain.custom_domain[0].id
+  cdn_frontdoor_route_ids        = [
+    azurerm_cdn_frontdoor_route.main_route.id
+  ]
 }
 
 resource "azurerm_dns_txt_record" "validate_domain" {
