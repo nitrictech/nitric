@@ -167,7 +167,7 @@ resource "null_resource" "invalidate_cache" {
   count = var.cdn_domain.skip_cache_invalidation ? 0 : 1
 
   provisioner "local-exec" {
-    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*' --project ${var.project_id}"
+    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*' --project ${var.project_id} --async"
   }
 
   triggers = merge({
