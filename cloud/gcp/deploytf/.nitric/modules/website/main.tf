@@ -28,7 +28,7 @@ module "template_files" {
 
 locals {
   uploaded_files_md5 = {
-    for path, file in module.template_files.files : ("${var.var.website_name}/${path}") => file.digests.md5
+    for path, file in module.template_files.files : ("${var.website_name}/${path}") => file.digests.md5
   }
 }
 
