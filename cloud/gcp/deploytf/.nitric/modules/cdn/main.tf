@@ -151,7 +151,7 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
   ip_protocol = "TCP"
   port_range  = "443"
   target      = google_compute_target_https_proxy.https_proxy.self_link
-  load_balancing_scheme = "EXTERNAL_MANAGED"
+  # load_balancing_scheme = "EXTERNAL_MANAGED"
 }
 
 locals {
