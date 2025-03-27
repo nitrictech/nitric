@@ -22,5 +22,5 @@ import (
 )
 
 func (a *NitricAwsTerraformProvider) Website(stack cdktf.TerraformStack, name string, config *deploymentspb.Website) error {
-	return fmt.Errorf("websites aren't yet supported by Nitric on Terraform AWS, remove the websites from your project and try again or run `nitric down` to destroy this stack")
+	return fmt.Errorf("websites aren't yet supported by nitric/awstf")
 }
