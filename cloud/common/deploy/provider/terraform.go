@@ -27,6 +27,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/iancoleman/strcase"
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -119,9 +120,12 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 type BackendConstructor[Config any, Backend any] func(stack constructs.Construct, config Config) Backend
 
 func configureTfBackend[Config any, BackendType any](stack cdktf.TerraformStack, backend map[string]interface{}, constructor BackendConstructor[Config, BackendType]) error {
-	backendType := lo.Keys(backend)[0]
-	config := backend[backendType].(map[string]interface{})
-	jsonMap, err := json.Marshal(config)
+	// Convert backend keys to lower camel case
+	backend = lo.MapKeys(backend, func(val any, key string) string {
+		return strcase.ToLowerCamel(key)
+	})
+
+	jsonMap, err := json.Marshal(backend)
 	if err != nil {
 		return err
 	}
