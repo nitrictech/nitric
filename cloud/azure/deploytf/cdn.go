@@ -57,7 +57,6 @@ func ensureValidSubdomain(domain string, subdomain string) error {
 	return fmt.Errorf("%s is not a valid subdomain of %s", subdomain, domain)
 }
 
-// function to create a new cdn
 func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) error {
 	dependsOn := []cdktf.ITerraformDependable{n.Stack}
 
