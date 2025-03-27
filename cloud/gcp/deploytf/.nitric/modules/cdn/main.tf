@@ -76,7 +76,9 @@ resource "google_compute_url_map" "https_url_map" {
 
       content {
         service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
-        paths   = [startswith(path_rule.value.base_path, "/") ? "${path_rule.value.base_path}/*" : "/${path_rule.value.base_path}/*"]
+        paths   = [
+          startswith(path_rule.value.base_path, "/") ? "${path_rule.value.base_path}/*" : "/${path_rule.value.base_path}/*", 
+          startswith(path_rule.value.base_path, "/") ? "${path_rule.value.base_path}" : "/${path_rule.value.base_path}"]
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -149,6 +151,7 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
   ip_protocol = "TCP"
   port_range  = "443"
   target      = google_compute_target_https_proxy.https_proxy.self_link
+  load_balancing_scheme = "EXTERNAL_MANAGED"
 }
 
 locals {
