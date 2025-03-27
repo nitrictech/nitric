@@ -40,8 +40,8 @@ variable "cdn_domain" {
   type = object({
     domain_name = string
     zone_name   = string
-    client_ttl  = number
-    default_ttl = number
-    skip_cache_invalidation = bool
+    client_ttl  = optional(number)
+    default_ttl = optional(number)
+    skip_cache_invalidation = optional(bool, false)
   })
 }
