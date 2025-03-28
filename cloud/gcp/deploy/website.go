@@ -22,6 +22,7 @@ import (
 	"mime"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -285,10 +286,22 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 		return strings.Join(md5Strings, "")
 	}).(pulumi.StringOutput)
 
+	var interpreter pulumi.StringArrayInput
+
+	// change the interpreter to PowerShell if running on Windows due to issues regarding double quotes
+	// https://github.com/pulumi/pulumi-command/issues/271
+	if runtime.GOOS == "windows" {
+		interpreter = pulumi.StringArray{
+			pulumi.String("powershell"),
+			pulumi.String("-Command"),
+		}
+	}
+
 	// Invalidate the CDN Cache
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
-		Create:  pulumi.Sprintf("gcloud compute url-maps invalidate-cdn-cache %s --path '/*' --async", httpsUrlMap.Name),
-		Logging: local.LoggingStdoutAndStderr,
+		Create:      pulumi.Sprintf(`gcloud compute url-maps invalidate-cdn-cache %s --path="/*" --async`, httpsUrlMap.Name),
+		Logging:     local.LoggingStdoutAndStderr,
+		Interpreter: interpreter,
 		Triggers: pulumi.Array{
 			sortedMd5Result,
 		},
