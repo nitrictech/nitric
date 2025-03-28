@@ -24,8 +24,10 @@ import (
 
 	goruntime "runtime"
 
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/iancoleman/strcase"
 	"github.com/nitrictech/nitric/cloud/common/deploy/env"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -113,6 +115,30 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 		provider: provider,
 		runtime:  runtime,
 	}
+}
+
+type BackendConstructor[Config any, Backend any] func(stack constructs.Construct, config Config) Backend
+
+func configureTfBackend[Config any, BackendType any](stack cdktf.TerraformStack, backend map[string]interface{}, constructor BackendConstructor[Config, BackendType]) error {
+	// Convert backend keys to lower camel case
+	backend = lo.MapKeys(backend, func(val any, key string) string {
+		return strcase.ToLowerCamel(key)
+	})
+
+	jsonMap, err := json.Marshal(backend)
+	if err != nil {
+		return err
+	}
+
+	var cfg Config
+	err = json.Unmarshal(jsonMap, &cfg)
+	if err != nil {
+		return err
+	}
+
+	constructor(stack, cfg)
+
+	return nil
 }
 
 func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpRequest, nitricProvider NitricTerraformProvider, runtime RuntimeProvider) (err error) {
@@ -241,7 +267,6 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	if ok && len(backend) == 1 {
 		backendType := lo.Keys(backend)[0]
 		config := backend[backendType].(map[string]interface{})
-		jsonMap, err := json.Marshal(config)
 		if err != nil {
 			logger.Fatalf("Failed to serialize backend config %v", err)
 			return err
@@ -249,23 +274,31 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 
 		switch backendType {
 		case "gcs":
-			gcsConfig := &cdktf.GcsBackendConfig{}
-			// serialize the backend config
-			err := json.Unmarshal(jsonMap, gcsConfig)
-			if err != nil {
-				return err
-			}
-			cdktf.NewGcsBackend(stack, gcsConfig)
+			err = configureTfBackend(stack, config, cdktf.NewGcsBackend)
 		case "s3":
-			s3Config := &cdktf.S3BackendConfig{}
-			// serialize the backend config
-			err := json.Unmarshal(jsonMap, s3Config)
-			if err != nil {
-				return err
-			}
-			cdktf.NewS3Backend(stack, s3Config)
+			err = configureTfBackend(stack, config, cdktf.NewS3Backend)
+		case "azurerm":
+			err = configureTfBackend(stack, config, cdktf.NewAzurermBackend)
+		case "http":
+			err = configureTfBackend(stack, config, cdktf.NewHttpBackend)
+		case "remote":
+			err = configureTfBackend(stack, config, cdktf.NewRemoteBackend)
+		case "local":
+			err = configureTfBackend(stack, config, cdktf.NewLocalBackend)
+		case "consul":
+			err = configureTfBackend(stack, config, cdktf.NewConsulBackend)
+		case "cos":
+			err = configureTfBackend(stack, config, cdktf.NewCosBackend)
+		case "oss":
+			err = configureTfBackend(stack, config, cdktf.NewOssBackend)
+		case "pg":
+			err = configureTfBackend(stack, config, cdktf.NewPgBackend)
 		default:
 			logger.Fatalf("Unsupported backend type %s", backendType)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 

@@ -64,16 +64,6 @@ github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0 h1:ONYihl/vbwtVAmEmqo
 github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0/go.mod h1:PMB5kQ1apg/irrvpPryVdchapVIYP+VV9iHJQ2CHwG8=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 h1:ywEEhmNahHBihViHepv3xPBn1663uRv2t2q/ESv9seY=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0/go.mod h1:iZDifYGJTIgIIkYRNWPENUnqx6bJ2xnSDFI2tjwZNuY=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/cdn/armcdn v1.1.1 h1:CtE6GCP9YEDF6DjpFxl7xQBqklqfyCC/xkBKUGa/IAc=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/cdn/armcdn v1.1.1/go.mod h1:b9yk+8vyxSsBsiEjk9kzrwxgyn+7+J4HzDOYUPznES4=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal v1.1.2 h1:mLY+pNLjCUeKhgnAJWAKhEUQM+RJQo2H1fuGSw1Ky1E=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal v1.1.2/go.mod h1:FbdwsQ2EzwvXxOPcMFYO8ogEc9uMMIj3YkmCdXdAFmk=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal/v3 v3.0.0 h1:Kb8eVvjdP6kZqYnER5w/PiGCFp91yVgaxve3d7kCEpY=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal/v3 v3.0.0/go.mod h1:lYq15QkJyEsNegz5EhI/0SXQ6spvGfgwBH/Qyzkoc/s=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0 h1:Dd+RhdJn0OTtVGaeDLZpcumkIVCtA/3/Fo42+eoYvVM=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0/go.mod h1:5kakwfW5CjC9KK+Q4wjXAg+ShuIm2mBMua0ZFj2C8PE=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.6.0 h1:PiSrjRPpkQNjrM8H0WwKMnZUdu1RGMtd/LdGKUrOo+c=
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.6.0/go.mod h1:oDrbWx4ewMylP7xHivfgixbfGBT6APAwsSoHRKotnIc=
 github.com/Azure/azure-storage-blob-go v0.15.0 h1:rXtgp8tN1p29GvpGgfJetavIG0V7OgcSXPpwp3tx6qk=
 github.com/Azure/azure-storage-blob-go v0.15.0/go.mod h1:vbjsVbX0dlxnRc4FFMPsS9BsJWPcne7GB7onqlPvz58=
 github.com/Azure/azure-storage-queue-go v0.0.0-20230927153703-648530c9aaf2 h1:G6pzVaX36QLfGvbLSAt8Leb81MiONYT0L03lhABjrPg=
@@ -515,6 +505,7 @@ github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11/go.mod h1:1qQeNydHdUQESUQoV
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSASxEI=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.15 h1:M8XP7IuFNsqUx6VPK2P9OSmsYsI/YFaGil0uD21V3dM=
 github.com/imdario/mergo v0.3.15/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=

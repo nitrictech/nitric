@@ -9,8 +9,6 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/cdn/armcdn v1.1.1
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.6.0
 	github.com/Azure/azure-storage-blob-go v0.15.0
 	github.com/Azure/azure-storage-queue-go v0.0.0-20230927153703-648530c9aaf2
 	github.com/Azure/go-autorest/autorest v0.11.28
@@ -52,6 +50,7 @@ require (
 	github.com/pulumi/pulumi-azure-native-sdk/resources v1.92.0
 	github.com/pulumi/pulumi-azure-native-sdk/storage v1.92.0
 	github.com/pulumi/pulumi-azuread/sdk/v5 v5.53.5
+	github.com/pulumi/pulumi-command/sdk v1.0.2
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
 	github.com/pulumi/pulumi/sdk/v3 v3.150.0
@@ -199,6 +198,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/yaml v0.1.0 // indirect
 	github.com/iwdgo/sigintwindows v0.2.2 // indirect
@@ -275,7 +275,6 @@ require (
 	github.com/pulumi/esc v0.11.1 // indirect
 	github.com/pulumi/pulumi-azure-native-sdk v1.104.0 // indirect
 	github.com/pulumi/pulumi-azure-native-sdk/v2 v2.88.0 // indirect
-	github.com/pulumi/pulumi-command/sdk v1.0.2 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.3-0.20240823090925-0fe6f58b47b1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
