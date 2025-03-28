@@ -160,6 +160,9 @@ locals {
       for bucket in values(var.website_buckets) : bucket.website_file_md5s
     ]...
   )
+
+  // Check if the current OS is Windows by checking the drive letter in the path
+  is_windows = can(regex("^[A-Za-z]:/", abspath(path.root)))
 }
 
 # Invalidate the CDN cache if files have changed
@@ -167,8 +170,8 @@ resource "null_resource" "invalidate_cache" {
   count = var.cdn_domain.skip_cache_invalidation ? 0 : 1
 
   provisioner "local-exec" {
-    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path '/*' --project ${var.project_id} --async"
-    interpreter = ["bash", "-c"]
+    command = "gcloud compute url-maps invalidate-cdn-cache ${google_compute_url_map.https_url_map.name} --path=\"/*\" --project ${var.project_id} --async"
+    interpreter = local.is_windows ? ["powershell", "-Command"] : null
   }
 
   triggers = merge({
