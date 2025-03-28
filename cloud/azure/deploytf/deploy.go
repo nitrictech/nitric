@@ -70,6 +70,18 @@ type NitricAzureTerraformProvider struct {
 
 var _ provider.NitricTerraformProvider = (*NitricAzureTerraformProvider)(nil)
 
+func (a *NitricAzureTerraformProvider) GetGlobalTags() *map[string]*string {
+	commonTags := a.CommonStackDetails.Tags
+
+	// merge resourceTags and common tags
+	combinedTags := make(map[string]*string)
+	for k, v := range commonTags {
+		combinedTags[k] = jsii.String(v)
+	}
+
+	return &combinedTags
+}
+
 func (a *NitricAzureTerraformProvider) GetTags(stackID string, resourceName string, resourceType resources.ResourceType) *map[string]*string {
 	resourceTags := tags.Tags(stackID, resourceName, resourceType)
 	// Augment with common tags
@@ -164,6 +176,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		EnableDatabase: jsii.Bool(enableDatabase),
 		Location:       jsii.String(a.Region),
 		StackName:      jsii.String(a.StackName),
+		Tags:           a.GetGlobalTags(),
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
