@@ -35,6 +35,7 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
+	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/apigateway"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/artifactregistry"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/cloudrunv2"
@@ -202,6 +203,14 @@ func (a *NitricGcpPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 	})
 
 	a.StackId = <-stackIdChan
+
+	_, err = gcp.NewProvider(ctx, "gcp", &gcp.ProviderArgs{
+		Region:        pulumi.String(a.Region),
+		DefaultLabels: pulumi.ToStringMap(a.CommonStackDetails.Tags),
+	})
+	if err != nil {
+		return err
+	}
 
 	project, err := organizations.LookupProject(ctx, &organizations.LookupProjectArgs{
 		ProjectId: &a.GcpConfig.ProjectId,
