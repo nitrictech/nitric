@@ -14,6 +14,7 @@ func init() {
 		[]_jsii_.Member{
 			_jsii_.MemberMethod{JsiiMethod: "addOverride", GoMethod: "AddOverride"},
 			_jsii_.MemberMethod{JsiiMethod: "addProvider", GoMethod: "AddProvider"},
+			_jsii_.MemberProperty{JsiiProperty: "apiGatewayUrlOutput", GoGetter: "ApiGatewayUrlOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "appIdentity", GoGetter: "AppIdentity"},
 			_jsii_.MemberProperty{JsiiProperty: "cdktfStack", GoGetter: "CdktfStack"},
 			_jsii_.MemberProperty{JsiiProperty: "constructNodeMetadata", GoGetter: "ConstructNodeMetadata"},

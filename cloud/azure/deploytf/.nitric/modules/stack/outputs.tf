@@ -42,6 +42,10 @@ output "storage_account_id" {
   value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).id : null
 }
 
+output "storage_account_connection_string" {
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_connection_string : null
+}
+
 output "storage_account_blob_endpoint" {
   value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_blob_endpoint : null
 }

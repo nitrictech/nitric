@@ -15,12 +15,26 @@
 package deploytf
 
 import (
-	"fmt"
-
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/website"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
-func (a *NitricAzureTerraformProvider) Website(stack cdktf.TerraformStack, name string, config *deploymentspb.Website) error {
-	return fmt.Errorf("not implemented")
+// Website - Deploy a Website
+func (n *NitricAzureTerraformProvider) Website(stack cdktf.TerraformStack, name string, config *deploymentspb.Website) error {
+	allDependants := []cdktf.ITerraformDependable{n.Stack}
+
+	n.Websites[name] = website.NewWebsite(stack, jsii.String(name), &website.WebsiteConfig{
+		LocalDirectory:    jsii.String(config.GetLocalDirectory()),
+		StackName:         n.Stack.StackNameOutput(),
+		Location:          n.Stack.Location(),
+		BasePath:          jsii.String(config.GetBasePath()),
+		IndexDocument:     jsii.String(config.GetIndexDocument()),
+		ErrorDocument:     jsii.String(config.GetErrorDocument()),
+		ResourceGroupName: n.Stack.ResourceGroupNameOutput(),
+		DependsOn:         &allDependants,
+	})
+
+	return nil
 }
