@@ -194,6 +194,11 @@ resource "azurerm_dns_a_record" "add_apex_record" {
 
 data "azurerm_subscription" "current" {}
 
+locals {
+  // Check if the current OS is Windows by checking the drive letter in the path
+  is_windows = can(regex("^[A-Za-z]:/", abspath(path.root)))
+}
+
 resource "terraform_data" "endpoint_purge" {
   count = var.skip_cache_invalidation ? 0 : 1
 
@@ -204,17 +209,8 @@ resource "terraform_data" "endpoint_purge" {
   ]
   
   provisioner "local-exec" {
-    interpreter = ["bash", "-c"]
-    command     = <<EOF
-      # Purge the endpoint if local.transformed_paths isn't empty
-      MSYS_NO_PATHCONV=1 az afd endpoint purge \
-        --resource-group ${var.resource_group_name} \
-        --profile-name ${sensitive(azurerm_cdn_frontdoor_profile.cdn_profile.name)} \
-        --subscription ${sensitive(data.azurerm_subscription.current.subscription_id)} \
-        --endpoint-name ${sensitive(local.endpoint_name)} \
-        --content-paths '/*' \
-        --no-wait
-    EOF
+    command     = "az afd endpoint purge -g ${var.resource_group_name} --profile-name ${sensitive(azurerm_cdn_frontdoor_profile.cdn_profile.name)} --endpoint-name ${sensitive(local.endpoint_name)} --subscription ${sensitive(data.azurerm_subscription.current.subscription_id)} --content-paths \"/*\" --no-wait"
+    interpreter = local.is_windows ? ["powershell", "-Command"] : null
   }
 
   depends_on = [azurerm_cdn_frontdoor_endpoint.cdn_endpoint]
