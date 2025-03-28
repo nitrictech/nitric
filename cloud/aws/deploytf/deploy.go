@@ -103,6 +103,18 @@ func (a *NitricAwsTerraformProvider) RequiredProviders() map[string]interface{} 
 	return map[string]interface{}{}
 }
 
+func (a *NitricAwsTerraformProvider) GetGlobalTags() *map[string]*string {
+	commonTags := a.CommonStackDetails.Tags
+
+	// merge resourceTags and common tags
+	combinedTags := make(map[string]*string)
+	for k, v := range commonTags {
+		combinedTags[k] = jsii.String(v)
+	}
+
+	return &combinedTags
+}
+
 func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources []*deploymentspb.Resource) error {
 	tfRegion := cdktf.NewTerraformVariable(stack, jsii.String("region"), &cdktf.TerraformVariableConfig{
 		Type:        jsii.String("string"),
@@ -112,6 +124,9 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 
 	awsprovider.NewAwsProvider(stack, jsii.String("aws"), &awsprovider.AwsProviderConfig{
 		Region: tfRegion.StringValue(),
+		DefaultTags: awsprovider.AwsProviderDefaultTags{
+			Tags: a.GetGlobalTags(),
+		},
 	})
 
 	ecrAuthConfig := ecrauth.NewDataAwsEcrAuthorizationToken(stack, jsii.String("ecr_auth"), &ecrauth.DataAwsEcrAuthorizationTokenConfig{})
