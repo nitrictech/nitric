@@ -22,6 +22,7 @@ import (
 	"mime"
 	"net/url"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -706,21 +707,29 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		return strings.Join(md5Strings, "")
 	}).(pulumi.StringOutput)
 
-	// Purge the CDN endpoint if content has changed
+	var interpreter pulumi.StringArrayInput
+
+	// change the interpreter to PowerShell if running on Windows due to issues regarding double quotes
+	// https://github.com/pulumi/pulumi-command/issues/271
+	if runtime.GOOS == "windows" {
+		interpreter = pulumi.StringArray{
+			pulumi.String("powershell"),
+			pulumi.String("-Command"),
+		}
+	}
+
+	// Invalidate the CDN Cache
 	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
-		Create: pulumi.Sprintf("MSYS_NO_PATHCONV=1 az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths '/*' --no-wait",
+		Create: pulumi.Sprintf(`az afd endpoint purge -g %s --profile-name %s --endpoint-name %s --subscription %s --content-paths "/*" --no-wait`,
 			p.ResourceGroup.Name, profile.Name, endpointName, p.ClientConfig.SubscriptionId),
 		Triggers: pulumi.Array{
 			sortedMd5Result,
 		},
-		Logging: local.LoggingStdoutAndStderr,
-		Interpreter: pulumi.StringArray{
-			pulumi.String("bash"),
-			pulumi.String("-c"),
-		},
+		Logging:     local.LoggingStdoutAndStderr,
+		Interpreter: interpreter,
 	}, pulumi.DependsOn([]pulumi.Resource{endpoint}))
 	if err != nil {
-		return fmt.Errorf("failed to create command to purge CDN endpoint: %w", err)
+		return err
 	}
 
 	return nil
