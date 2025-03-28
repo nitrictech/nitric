@@ -210,6 +210,8 @@ resource "azurerm_container_app" "container_app" {
     }
   }
   depends_on = [docker_registry_image.push]
+
+  tags = var.tags
 }
 
 resource "azapi_resource_action" "my_app_auth" {

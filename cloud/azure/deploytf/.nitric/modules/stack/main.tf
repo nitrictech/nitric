@@ -17,10 +17,10 @@ data "azurerm_client_config" "current" {}
 resource "azurerm_resource_group" "resource_group" {
   name     = "${var.stack_name}-rg${random_string.stack_id.result}"
   location = var.location
-  tags = {
+  tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
-  }
+  })
 }
 
 # Create an azure storage account
@@ -34,10 +34,10 @@ resource "azurerm_storage_account" "storage" {
   # TODO: Make configurable  
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
-  tags = {
+  tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
-  }
+  })
 }
 
 # Create a keyvault if secrets are enabled
@@ -52,10 +52,10 @@ resource "azurerm_key_vault" "keyvault" {
   tenant_id                  = data.azurerm_client_config.current.tenant_id
   enable_rbac_authorization  = true
 
-  tags = {
+  tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
-  }
+  })
 }
 
 # Create a User assigned managed identity
@@ -72,10 +72,10 @@ resource "azurerm_container_registry" "container_registry" {
   location            = azurerm_resource_group.resource_group.location
   sku                 = "Basic"
   admin_enabled       = true
-  tags = {
+  tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
-  }
+  })
 }
 
 # Create an operational insights workspace
@@ -85,10 +85,10 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
   location            = azurerm_resource_group.resource_group.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
-  tags = {
+  tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
-  }
+  })
 }
 
 

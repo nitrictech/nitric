@@ -45,6 +45,8 @@ type Queue interface {
 	Source() *string
 	StorageAccountName() *string
 	SetStorageAccountName(val *string)
+	Tags() *map[string]*string
+	SetTags(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -218,6 +220,16 @@ func (j *jsiiProxy_Queue) StorageAccountName() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Queue) Tags() *map[string]*string {
+	var returns *map[string]*string
+	_jsii_.Get(
+		j,
+		"tags",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Queue) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -290,6 +302,17 @@ func (j *jsiiProxy_Queue)SetStorageAccountName(val *string) {
 	_jsii_.Set(
 		j,
 		"storageAccountName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Queue)SetTags(val *map[string]*string) {
+	if err := j.validateSetTagsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"tags",
 		val,
 	)
 }

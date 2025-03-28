@@ -17,6 +17,7 @@ package tags
 import (
 	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 )
 
@@ -44,4 +45,23 @@ func GetResourceTypeKey(stackID string) string {
 		panic("blank stack ID, resource mapping isn't possible")
 	}
 	return fmt.Sprintf("x-nitric-%s-type", stackID)
+}
+
+type TagsConfig struct {
+	Tags map[string]string `mapstructure:"tags"`
+}
+
+type GetGlobalTagsFunc func() map[string]string
+
+func CreateGlobalTagsFromAttributes(attributes map[string]interface{}) (GetGlobalTagsFunc, error) {
+	config := new(TagsConfig)
+
+	err := mapstructure.Decode(attributes, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return func() map[string]string {
+		return config.Tags
+	}, nil
 }

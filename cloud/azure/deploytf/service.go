@@ -22,6 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
@@ -79,6 +80,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		DependsOn:   &[]cdktf.ITerraformDependable{a.Stack},
 		MinReplicas: jsii.Number(serviceConfig.ContainerApps.MinReplicas),
 		MaxReplicas: jsii.Number(serviceConfig.ContainerApps.MaxReplicas),
+		Tags:        a.GetTags(*a.Stack.StackIdOutput(), name, resources.Service),
 	})
 
 	return nil

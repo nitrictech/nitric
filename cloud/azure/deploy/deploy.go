@@ -133,6 +133,23 @@ func (a *NitricAzurePulumiProvider) Init(attributes map[string]interface{}) erro
 	return nil
 }
 
+func (a *NitricAzurePulumiProvider) GetTags(stackID string, resourceName string, resourceType commonresources.ResourceType) map[string]string {
+	resourceTags := tags.Tags(stackID, resourceName, resourceType)
+	// Augment with common tags
+	commonTags := a.CommonStackDetails.Tags
+
+	// merge resourceTags and common tags
+	combinedTags := make(map[string]string)
+	for k, v := range commonTags {
+		combinedTags[k] = v
+	}
+	for k, v := range resourceTags {
+		combinedTags[k] = v
+	}
+
+	return combinedTags
+}
+
 func createKeyVault(ctx *pulumi.Context, group *resources.ResourceGroup, tenantId string, tags map[string]string) (*keyvault.Vault, error) {
 	// Create a stack level keyvault if secrets are enabled
 	// At the moment secrets have no config level setting
@@ -352,7 +369,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	} else {
 		a.ResourceGroup, err = resources.NewResourceGroup(ctx, ResourceName(ctx, "", ResourceGroupRT), &resources.ResourceGroupArgs{
 			Location: pulumi.String(a.Region),
-			Tags:     pulumi.ToStringMap(tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack)),
+			Tags:     pulumi.ToStringMap(a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack)),
 		})
 	}
 
@@ -362,7 +379,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 
 	if hasResourceType(nitricResources, resourcespb.ResourceType_SqlDatabase) {
 		logger.Info("Stack declares one or more databases, creating stack level PostgreSQL Database Server")
-		err := a.createDatabaseServer(ctx, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
+		err := a.createDatabaseServer(ctx, a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "create azure sql flexible server")
 		}
@@ -373,7 +390,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// This means we need to create a keyvault for each stack.
 	if hasResourceType(nitricResources, resourcespb.ResourceType_Secret) {
 		logger.Info("Stack declares one or more secrets, creating stack level Azure Key Vault")
-		a.KeyVault, err = createKeyVault(ctx, a.ResourceGroup, a.ClientConfig.TenantId, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
+		a.KeyVault, err = createKeyVault(ctx, a.ResourceGroup, a.ClientConfig.TenantId, a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "keyvault create")
 		}
@@ -388,7 +405,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// This means we need to create a storage account for each stack, before buckets can be created.
 	if hasBuckets || hasKvStores || hasQueues {
 		logger.Info("Stack declares bucket(s), key/value store(s) or queue(s), creating stack level Azure Storage Account")
-		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, tags.Tags(a.StackId, ctx.Stack(), commonresources.Stack))
+		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "storage account create")
 		}

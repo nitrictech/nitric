@@ -21,6 +21,8 @@ resource "azurerm_api_management" "api" {
     type         = "UserAssigned"
     identity_ids = [var.app_identity]
   }
+
+  tags = var.tags
 }
 
 

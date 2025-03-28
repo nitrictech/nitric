@@ -21,5 +21,7 @@ type BucketConfig struct {
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 	// The id of the storage account.
 	StorageAccountId *string `field:"required" json:"storageAccountId" yaml:"storageAccountId"`
+	// The tags to apply to the bucket The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 }
 

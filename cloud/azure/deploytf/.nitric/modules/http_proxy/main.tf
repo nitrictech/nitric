@@ -17,6 +17,8 @@ resource "azurerm_api_management" "api" {
   publisher_name      = var.publisher_name
   publisher_email     = var.publisher_email
   sku_name            = "Consumption_0"
+
+  tags = var.tags
   identity {
     type         = "UserAssigned"
     identity_ids = [var.app_identity]

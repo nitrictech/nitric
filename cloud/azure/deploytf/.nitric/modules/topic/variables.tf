@@ -31,3 +31,9 @@ variable "listeners" {
   }))
 }
 
+variable "tags" {
+  description = "The tags to apply to the topic"
+  type        = map(string)
+  nullable    = true
+}
+

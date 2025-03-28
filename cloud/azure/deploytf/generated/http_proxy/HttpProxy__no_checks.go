@@ -68,6 +68,10 @@ func (j *jsiiProxy_HttpProxy) validateSetResourceGroupNameParameters(val *string
 	return nil
 }
 
+func (j *jsiiProxy_HttpProxy) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
 func validateNewHttpProxyParameters(scope constructs.Construct, id *string, config *HttpProxyConfig) error {
 	return nil
 }

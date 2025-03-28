@@ -45,3 +45,8 @@ variable "operation_policy_templates" {
   type        = map(string)
 }
 
+variable "tags" {
+  description = "The tags to apply to the API"
+  type        = map(string)
+  nullable    = true
+}

@@ -22,6 +22,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/api"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -175,6 +176,7 @@ func (n *NitricAzureTerraformProvider) Api(stack cdktf.TerraformStack, name stri
 		// No need to transform the openapi spec, we can just pass it directly
 		// We provide a separate array for the creation of operation policies for the API
 		OpenapiSpec: jsii.String(config.GetOpenapi()),
+		Tags:        n.GetTags(*n.Stack.StackIdOutput(), name, resources.API),
 	})
 
 	// For all paths

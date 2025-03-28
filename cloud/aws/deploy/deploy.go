@@ -34,6 +34,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	pulumiAws "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/batch"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
@@ -149,6 +150,16 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		Keepers: pulumi.ToMap(map[string]interface{}{
 			"stack-name": ctx.Stack(),
 		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = pulumiAws.NewProvider(ctx, "aws", &pulumiAws.ProviderArgs{
+		Region: pulumi.String(a.Region),
+		DefaultTags: pulumiAws.ProviderDefaultTagsArgs{
+			Tags: pulumi.ToStringMap(a.CommonStackDetails.Tags),
+		},
 	})
 	if err != nil {
 		return err

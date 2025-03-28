@@ -52,6 +52,10 @@ func (j *jsiiProxy_Topic) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Topic) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
 func validateNewTopicParameters(scope constructs.Construct, id *string, config *TopicConfig) error {
 	return nil
 }

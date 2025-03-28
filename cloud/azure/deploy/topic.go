@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	nitricresources "github.com/nitrictech/nitric/cloud/common/deploy/resources"
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
@@ -84,7 +83,7 @@ func (p *NitricAzurePulumiProvider) Topic(ctx *pulumi.Context, parent pulumi.Res
 	p.Topics[name], err = eventgrid.NewTopic(ctx, ResourceName(ctx, name, EventGridRT), &eventgrid.TopicArgs{
 		ResourceGroupName: p.ResourceGroup.Name,
 		Location:          p.ResourceGroup.Location,
-		Tags:              pulumi.ToStringMap(tags.Tags(p.StackId, name, nitricresources.Topic)),
+		Tags:              pulumi.ToStringMap(p.GetTags(p.StackId, name, nitricresources.Topic)),
 	}, opts...)
 	if err != nil {
 		return err
