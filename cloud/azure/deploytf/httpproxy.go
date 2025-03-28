@@ -22,6 +22,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/http_proxy"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
@@ -96,6 +97,7 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 		// No need to transform the openapi spec, we can just pass it directly
 		// We provide a separate array for the creation of operation policies for the API
 		OpenapiSpec: jsii.String(string(b)),
+		Tags:        n.GetTags(*n.Stack.StackIdOutput(), name, resources.HttpProxy),
 	})
 
 	return nil

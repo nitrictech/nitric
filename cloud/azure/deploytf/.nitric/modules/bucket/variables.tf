@@ -23,3 +23,9 @@ variable "listeners" {
     event_type                     = list(string)
   }))
 }
+
+variable "tags" {
+  description = "The tags to apply to the bucket"
+  type        = map(string)
+  nullable    = true
+}

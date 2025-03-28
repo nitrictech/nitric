@@ -74,6 +74,8 @@ type Stack interface {
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
 	SubscriptionIdOutput() *string
+	Tags() *map[string]*string
+	SetTags(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -497,6 +499,16 @@ func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) Tags() *map[string]*string {
+	var returns *map[string]*string
+	_jsii_.Get(
+		j,
+		"tags",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -601,6 +613,17 @@ func (j *jsiiProxy_Stack)SetStackName(val *string) {
 	_jsii_.Set(
 		j,
 		"stackName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetTags(val *map[string]*string) {
+	if err := j.validateSetTagsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"tags",
 		val,
 	)
 }

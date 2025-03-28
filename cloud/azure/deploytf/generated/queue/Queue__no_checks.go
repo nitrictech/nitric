@@ -40,6 +40,10 @@ func (j *jsiiProxy_Queue) validateSetStorageAccountNameParameters(val *string) e
 	return nil
 }
 
+func (j *jsiiProxy_Queue) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
 func validateNewQueueParameters(scope constructs.Construct, id *string, config *QueueConfig) error {
 	return nil
 }

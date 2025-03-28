@@ -17,5 +17,7 @@ type QueueConfig struct {
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// the name of the storage account.
 	StorageAccountName *string `field:"required" json:"storageAccountName" yaml:"storageAccountName"`
+	// the tags to apply to the queue The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 }
 

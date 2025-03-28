@@ -33,3 +33,9 @@ variable "infrastructure_subnet_id" {
 
   default = ""
 }
+
+variable "tags" {
+  description = "The tags to apply to the stack"
+  type        = map(string)
+  nullable    = true
+}

@@ -37,7 +37,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
 
-	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploy "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -361,7 +360,7 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 				},
 			},
 		},
-		Tags: pulumi.ToStringMap(tags.Tags(p.StackId, name, resources.Service)),
+		Tags: pulumi.ToStringMap(p.GetTags(p.StackId, name, resources.Service)),
 		Template: app.TemplateArgs{
 			Scale: app.ScaleArgs{
 				MaxReplicas: pulumi.Int(serviceConfig.ContainerApps.MaxReplicas),

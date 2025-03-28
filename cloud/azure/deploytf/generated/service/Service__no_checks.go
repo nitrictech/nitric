@@ -84,6 +84,10 @@ func (j *jsiiProxy_Service) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Service) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
 func validateNewServiceParameters(scope constructs.Construct, id *string, config *ServiceConfig) error {
 	return nil
 }

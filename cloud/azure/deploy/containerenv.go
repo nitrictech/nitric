@@ -27,8 +27,6 @@ import (
 	"github.com/pulumi/pulumi-azure-native-sdk/operationalinsights"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-
-	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
 
 type ContainerEnvArgs struct {
@@ -150,7 +148,7 @@ func (p *NitricAzurePulumiProvider) newContainerEnv(ctx *pulumi.Context, name st
 				CustomerId: aw.CustomerId,
 			},
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.StackId, ctx.Stack()+"Kube", resources.Service)),
+		Tags: pulumi.ToStringMap(p.GetTags(p.StackId, ctx.Stack()+"Kube", resources.Service)),
 	}
 
 	if p.InfrastructureSubnet != nil {

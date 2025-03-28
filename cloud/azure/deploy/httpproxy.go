@@ -25,8 +25,6 @@ import (
 	apimanagement "github.com/pulumi/pulumi-azure-native-sdk/apimanagement/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/managedidentity"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-
-	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 )
 
 type AzureHttpProxyArgs struct {
@@ -88,7 +86,7 @@ func (p *NitricAzurePulumiProvider) Http(ctx *pulumi.Context, parent pulumi.Reso
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.HttpProxy)),
+		Tags: pulumi.ToStringMap(p.GetTags(p.StackId, name, resources.HttpProxy)),
 	}, opts...)
 	if err != nil {
 		return err

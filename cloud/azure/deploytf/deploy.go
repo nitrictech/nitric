@@ -37,6 +37,8 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/website"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
+	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
 	"github.com/samber/lo"
@@ -71,6 +73,35 @@ type NitricAzureTerraformProvider struct {
 }
 
 var _ provider.NitricTerraformProvider = (*NitricAzureTerraformProvider)(nil)
+
+func (a *NitricAzureTerraformProvider) GetGlobalTags() *map[string]*string {
+	commonTags := a.CommonStackDetails.Tags
+
+	// merge resourceTags and common tags
+	combinedTags := make(map[string]*string)
+	for k, v := range commonTags {
+		combinedTags[k] = jsii.String(v)
+	}
+
+	return &combinedTags
+}
+
+func (a *NitricAzureTerraformProvider) GetTags(stackID string, resourceName string, resourceType resources.ResourceType) *map[string]*string {
+	resourceTags := tags.Tags(stackID, resourceName, resourceType)
+	// Augment with common tags
+	commonTags := a.CommonStackDetails.Tags
+
+	// merge resourceTags and common tags
+	combinedTags := make(map[string]*string)
+	for k, v := range commonTags {
+		combinedTags[k] = jsii.String(v)
+	}
+	for k, v := range resourceTags {
+		combinedTags[k] = jsii.String(v)
+	}
+
+	return &combinedTags
+}
 
 func (a *NitricAzureTerraformProvider) Init(attributes map[string]interface{}) error {
 	var err error
@@ -149,6 +180,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		EnableDatabase: jsii.Bool(enableDatabase),
 		Location:       jsii.String(a.Region),
 		StackName:      jsii.String(a.StackName),
+		Tags:           a.GetGlobalTags(),
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{

@@ -109,6 +109,16 @@ func (a *NitricGcpTerraformProvider) CdkTfModules() ([]provider.ModuleDirectory,
 	}, nil
 }
 
+func (a *NitricGcpTerraformProvider) GetGlobalTags() *map[string]*string {
+	commonTags := a.CommonStackDetails.Tags
+
+	combinedTags := make(map[string]*string)
+	for k, v := range commonTags {
+		combinedTags[k] = jsii.String(v)
+	}
+	return &combinedTags
+}
+
 func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformStack) {
 	impersonateSa, impersonateOk := a.RawAttributes["impersonate"].(string)
 
@@ -123,22 +133,26 @@ func (a *NitricGcpTerraformProvider) prepareGcpProviders(stack cdktf.TerraformSt
 			Region:                    tfRegion.StringValue(),
 			Project:                   jsii.String(a.GcpConfig.ProjectId),
 			ImpersonateServiceAccount: jsii.String(impersonateSa),
+			DefaultLabels:             a.GetGlobalTags(),
 		})
 
 		gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
 			Region:                    tfRegion.StringValue(),
 			Project:                   jsii.String(a.GcpConfig.ProjectId),
 			ImpersonateServiceAccount: jsii.String(impersonateSa),
+			DefaultLabels:             a.GetGlobalTags(),
 		})
 	} else {
 		gcpprovider.NewGoogleProvider(stack, jsii.String("gcp"), &gcpprovider.GoogleProviderConfig{
-			Region:  tfRegion.StringValue(),
-			Project: jsii.String(a.GcpConfig.ProjectId),
+			Region:        tfRegion.StringValue(),
+			Project:       jsii.String(a.GcpConfig.ProjectId),
+			DefaultLabels: a.GetGlobalTags(),
 		})
 
 		gcpbetaprovider.NewGoogleBetaProvider(stack, jsii.String("gcp_beta"), &gcpbetaprovider.GoogleBetaProviderConfig{
-			Region:  tfRegion.StringValue(),
-			Project: jsii.String(a.GcpConfig.ProjectId),
+			Region:        tfRegion.StringValue(),
+			Project:       jsii.String(a.GcpConfig.ProjectId),
+			DefaultLabels: a.GetGlobalTags(),
 		})
 	}
 }
