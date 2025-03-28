@@ -18,7 +18,7 @@ variable "app_identity" {
   type        = string
 }
 
-variable openapi_spec {
+variable "openapi_spec" {
   description = "The openapi spec to deploy"
   type        = string
 }
@@ -43,5 +43,11 @@ variable "resource_group_name" {
 variable "operation_policy_templates" {
   description = "The policy templates to apply"
   type        = map(string)
+}
+
+variable "tags" {
+  description = "The tags to apply to the API"
+  type        = map(string)
+  nullable    = true
 }
 

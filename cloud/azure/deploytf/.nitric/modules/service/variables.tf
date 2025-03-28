@@ -62,3 +62,9 @@ variable "max_replicas" {
   description = "Maximum number of replicas for the service"
   type        = number
 }
+
+variable "tags" {
+  description = "The tags to apply to the service"
+  type        = map(string)
+  nullable    = true
+}
