@@ -181,6 +181,7 @@ func (n *NitricGcpTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		OpenapiSpec:    jsii.String(string(b)),
 		TargetServices: &serviceNames,
 		StackId:        n.Stack.StackIdOutput(),
+		Region:         jsii.String(n.Region),
 		// DependsOn:      &dependableServices,
 	})
 

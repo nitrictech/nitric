@@ -59,9 +59,20 @@ resource "google_api_gateway_gateway" "gateway" {
   }
 }
 
+# Create a random id for the service account to prevent name collisions on update
+resource "random_string" "service_account_id" {
+  length = 4
+  special = false
+  upper   = false
+
+  keepers = {
+    name: var.name
+  }
+}
+
 resource "google_service_account" "service_account" {
   provider   = google-beta
-  account_id = "${var.name}-api"
+  account_id = "${var.name}-api-${random_string.service_account_id.result}"
 }
 
 resource "google_cloud_run_service_iam_member" "member" {

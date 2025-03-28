@@ -35,6 +35,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/service"
 	tfstack "github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/topic"
+	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/website"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/websocket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"google.golang.org/grpc/codes"
@@ -54,6 +55,7 @@ type NitricGcpTerraformProvider struct {
 	Secrets        map[string]secret.Secret
 	Queues         map[string]queue.Queue
 	KeyValueStores map[string]keyvalue.Keyvalue
+	Websites       map[string]website.Website
 	Websockets     map[string]websocket.Websocket
 	RawAttributes  map[string]interface{}
 
@@ -167,6 +169,12 @@ func (a *NitricGcpTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 }
 
 func (a *NitricGcpTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	if len(a.Websites) > 0 {
+		err := a.deployEntrypoint(stack)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -183,6 +191,7 @@ func NewNitricGcpProvider() *NitricGcpTerraformProvider {
 		Secrets:        make(map[string]secret.Secret),
 		Queues:         make(map[string]queue.Queue),
 		KeyValueStores: make(map[string]keyvalue.Keyvalue),
+		Websites:       make(map[string]website.Website),
 		Websockets:     make(map[string]websocket.Websocket),
 	}
 }

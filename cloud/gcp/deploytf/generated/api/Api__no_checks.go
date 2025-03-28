@@ -40,6 +40,10 @@ func (j *jsiiProxy_Api) validateSetOpenapiSpecParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Api) validateSetRegionParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 	return nil
 }

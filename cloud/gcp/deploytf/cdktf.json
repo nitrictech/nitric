@@ -45,6 +45,14 @@
     {
       "name": "stack",
       "source": "./.nitric/modules/stack"
+    },
+    {
+      "name": "website",
+      "source": "./.nitric/modules/website"
+    },
+    {
+      "name": "cdn",
+      "source": "./.nitric/modules/cdn"
     }
   ],
   "context": {}

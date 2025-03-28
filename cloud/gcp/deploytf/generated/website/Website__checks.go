@@ -1,6 +1,6 @@
 //go:build !no_runtime_type_checking
 
-package api
+package website
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
 
-func (a *jsiiProxy_Api) validateAddOverrideParameters(path *string, value interface{}) error {
+func (w *jsiiProxy_Website) validateAddOverrideParameters(path *string, value interface{}) error {
 	if path == nil {
 		return fmt.Errorf("parameter path is required, but nil was provided")
 	}
@@ -23,7 +23,7 @@ func (a *jsiiProxy_Api) validateAddOverrideParameters(path *string, value interf
 	return nil
 }
 
-func (a *jsiiProxy_Api) validateAddProviderParameters(provider interface{}) error {
+func (w *jsiiProxy_Website) validateAddProviderParameters(provider interface{}) error {
 	if provider == nil {
 		return fmt.Errorf("parameter provider is required, but nil was provided")
 	}
@@ -50,7 +50,7 @@ func (a *jsiiProxy_Api) validateAddProviderParameters(provider interface{}) erro
 	return nil
 }
 
-func (a *jsiiProxy_Api) validateGetStringParameters(output *string) error {
+func (w *jsiiProxy_Website) validateGetStringParameters(output *string) error {
 	if output == nil {
 		return fmt.Errorf("parameter output is required, but nil was provided")
 	}
@@ -58,7 +58,7 @@ func (a *jsiiProxy_Api) validateGetStringParameters(output *string) error {
 	return nil
 }
 
-func (a *jsiiProxy_Api) validateInterpolationForOutputParameters(moduleOutput *string) error {
+func (w *jsiiProxy_Website) validateInterpolationForOutputParameters(moduleOutput *string) error {
 	if moduleOutput == nil {
 		return fmt.Errorf("parameter moduleOutput is required, but nil was provided")
 	}
@@ -66,7 +66,7 @@ func (a *jsiiProxy_Api) validateInterpolationForOutputParameters(moduleOutput *s
 	return nil
 }
 
-func (a *jsiiProxy_Api) validateOverrideLogicalIdParameters(newLogicalId *string) error {
+func (w *jsiiProxy_Website) validateOverrideLogicalIdParameters(newLogicalId *string) error {
 	if newLogicalId == nil {
 		return fmt.Errorf("parameter newLogicalId is required, but nil was provided")
 	}
@@ -74,7 +74,7 @@ func (a *jsiiProxy_Api) validateOverrideLogicalIdParameters(newLogicalId *string
 	return nil
 }
 
-func validateApi_IsConstructParameters(x interface{}) error {
+func validateWebsite_IsConstructParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -82,7 +82,7 @@ func validateApi_IsConstructParameters(x interface{}) error {
 	return nil
 }
 
-func validateApi_IsTerraformElementParameters(x interface{}) error {
+func validateWebsite_IsTerraformElementParameters(x interface{}) error {
 	if x == nil {
 		return fmt.Errorf("parameter x is required, but nil was provided")
 	}
@@ -90,7 +90,7 @@ func validateApi_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetNameParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetBasePathParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -98,7 +98,7 @@ func (j *jsiiProxy_Api) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetOpenapiSpecParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetLocalDirectoryParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -106,7 +106,7 @@ func (j *jsiiProxy_Api) validateSetOpenapiSpecParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetRegionParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetRegionParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -114,7 +114,7 @@ func (j *jsiiProxy_Api) validateSetRegionParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
+func (j *jsiiProxy_Website) validateSetStackIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -122,7 +122,7 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetTargetServicesParameters(val *map[string]*string) error {
+func (j *jsiiProxy_Website) validateSetWebsiteNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -130,7 +130,7 @@ func (j *jsiiProxy_Api) validateSetTargetServicesParameters(val *map[string]*str
 	return nil
 }
 
-func validateNewApiParameters(scope constructs.Construct, id *string, config *ApiConfig) error {
+func validateNewWebsiteParameters(scope constructs.Construct, id *string, config *WebsiteConfig) error {
 	if scope == nil {
 		return fmt.Errorf("parameter scope is required, but nil was provided")
 	}

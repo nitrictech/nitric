@@ -3,6 +3,11 @@ variable "name" {
   type = string
 }
 
+variable "region" {
+  description = "The region where the API Gateway will be created"
+  type = string
+}
+
 variable "stack_id" {
   description = "The ID of the stack"
   type = string
