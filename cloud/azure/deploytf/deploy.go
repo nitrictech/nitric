@@ -34,6 +34,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/sql"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/stack"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/website"
 	"github.com/nitrictech/nitric/cloud/common/deploy"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -57,6 +58,9 @@ type NitricAzureTerraformProvider struct {
 	KvStores  map[string]keyvalue.Keyvalue
 	Topics    map[string]topic.Topic
 	Databases map[string]sql.Sql
+	Websites  map[string]website.Website
+
+	EnableWebsites bool
 
 	SubscriptionId string
 	AzureConfig    *common.AzureConfig
@@ -169,6 +173,11 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 }
 
 func (a *NitricAzureTerraformProvider) Post(stack cdktf.TerraformStack) error {
+	// Create a CDN for the stack if we have a website
+	if len(a.Websites) > 0 {
+		return a.NewCdn(stack)
+	}
+
 	return nil
 }
 
@@ -182,5 +191,6 @@ func NewNitricAzureProvider() *NitricAzureTerraformProvider {
 		Topics:    make(map[string]topic.Topic),
 		KvStores:  make(map[string]keyvalue.Keyvalue),
 		Databases: make(map[string]sql.Sql),
+		Websites:  make(map[string]website.Website),
 	}
 }

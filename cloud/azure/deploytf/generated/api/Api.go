@@ -14,6 +14,7 @@ import (
 // Source at ./.nitric/modules/api
 type Api interface {
 	cdktf.TerraformModule
+	ApiGatewayUrlOutput() *string
 	AppIdentity() *string
 	SetAppIdentity(val *string)
 	// Experimental.
@@ -89,6 +90,16 @@ type Api interface {
 // The jsii proxy struct for Api
 type jsiiProxy_Api struct {
 	internal.Type__cdktfTerraformModule
+}
+
+func (j *jsiiProxy_Api) ApiGatewayUrlOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"apiGatewayUrlOutput",
+		&returns,
+	)
+	return returns
 }
 
 func (j *jsiiProxy_Api) AppIdentity() *string {

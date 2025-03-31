@@ -53,6 +53,22 @@
     {
       "name": "sql",
       "source": "./.nitric/modules/sql"
+    },
+    {
+      "name": "website",
+      "source": "./.nitric/modules/website"
+    },
+    {
+      "name": "cdn",
+      "source": "./.nitric/modules/cdn"
+    },
+    {
+      "name": "cdn_api_rewrites",
+      "source": "./.nitric/modules/cdn_api_rewrites"
+    },
+    {
+      "name": "cdn_subsites",
+      "source": "./.nitric/modules/cdn_subsites"
     }
   ],
   "context": {}
