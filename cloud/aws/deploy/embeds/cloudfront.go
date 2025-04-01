@@ -23,11 +23,18 @@ import (
 //go:embed api-url-rewrite.js
 var cloudfront_ApiUrlRewriteFunction string
 
+//go:embed ws-url-rewrite.js
+var cloudfront_WsUrlRewriteFunction string
+
 //go:embed url-rewrite.js
 var cloudfront_UrlRewriteFunctionName string
 
 func GetApiUrlRewriteFunction() pulumi.StringInput {
 	return pulumi.String(cloudfront_ApiUrlRewriteFunction)
+}
+
+func GetWsUrlRewriteFunction() pulumi.StringInput {
+	return pulumi.String(cloudfront_WsUrlRewriteFunction)
 }
 
 func GetUrlRewriteFunction() pulumi.StringInput {
