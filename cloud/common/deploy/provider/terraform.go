@@ -348,12 +348,6 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		return err
 	}
 
-	app.ToString()
-
-	// result, err := nitricProvider.Result(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	app.Synth()
 
 	return nil
