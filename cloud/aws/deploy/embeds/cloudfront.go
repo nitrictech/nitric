@@ -28,8 +28,15 @@ var cloudfront_ApiUrlRewriteFunction string
 //go:embed url-rewrite.tmpl.js
 var cloudfront_UrlRewriteFunctionName string
 
+//go:embed ws-url-rewrite.js
+var cloudfront_WsUrlRewriteFunction string
+
 func GetApiUrlRewriteFunction() pulumi.StringInput {
 	return pulumi.String(cloudfront_ApiUrlRewriteFunction)
+}
+
+func GetWsUrlRewriteFunction() pulumi.StringInput {
+	return pulumi.String(cloudfront_WsUrlRewriteFunction)
 }
 
 func GetUrlRewriteFunction(basePath string) (pulumi.StringInput, error) {
