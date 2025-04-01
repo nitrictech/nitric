@@ -283,6 +283,9 @@ message Website {
     // The production website output directory
     string local_directory = 4;
   }
+
+  // Add custom response headers
+  map<string, string> response_headers = 10;
 }
 
 message ScheduleTarget {
