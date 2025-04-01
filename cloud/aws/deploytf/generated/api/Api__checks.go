@@ -90,7 +90,7 @@ func validateApi_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetDomainsParameters(val *[]*string) error {
+func (j *jsiiProxy_Api) validateSetDomainNamesParameters(val *[]*string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
@@ -123,6 +123,14 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 }
 
 func (j *jsiiProxy_Api) validateSetTargetLambdaFunctionsParameters(val *map[string]*string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Api) validateSetZoneIdsParameters(val *map[string]*string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

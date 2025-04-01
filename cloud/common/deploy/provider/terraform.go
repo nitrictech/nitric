@@ -86,8 +86,6 @@ type NitricTerraformProvider interface {
 	KeyValueStore(stack cdktf.TerraformStack, name string, config *deploymentspb.KeyValueStore) error
 	// SqlDatabase - Deploy a SQL Database
 	SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error
-	// Website - Deploy a Website
-	Website(stack cdktf.TerraformStack, name string, config *deploymentspb.Website) error
 
 	// Post - Called after all resources have been created, before the stack is concluded
 	Post(stack cdktf.TerraformStack) error
@@ -339,8 +337,6 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 			err = nitricProvider.KeyValueStore(stack, res.Id.Name, t.KeyValueStore)
 		case *deploymentspb.Resource_SqlDatabase:
 			err = nitricProvider.SqlDatabase(stack, res.Id.Name, t.SqlDatabase)
-		case *deploymentspb.Resource_Website:
-			err = nitricProvider.Website(stack, res.Id.Name, t.Website)
 		}
 		if err != nil {
 			return err

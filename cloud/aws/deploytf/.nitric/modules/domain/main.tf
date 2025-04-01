@@ -4,7 +4,6 @@ locals {
   base_name      = local.domain_parts[0]
 }
 
-
 # Try to find hosted zone by full domain first
 data "aws_route53_zone" "primary" {
   name         = var.domain_name
@@ -18,7 +17,7 @@ data "aws_route53_zone" "parent" {
 }
 
 locals {
-  zone_id = data.aws_route53_zone.primary.id != "" ? data.aws_route53_zone.primary.id : data.aws_route53_zone.parent.id
+  zone_id = try(data.aws_route53_zone.primary.id, data.aws_route53_zone.parent.id)
 }
 
 resource "aws_acm_certificate" "website-cert" {
@@ -27,16 +26,18 @@ resource "aws_acm_certificate" "website-cert" {
 }
 
 resource "aws_route53_record" "cert-validation-dns" {
+  for_each = { for dvo in aws_acm_certificate.website-cert.domain_validation_options : dvo.resource_record_name => dvo }
+
   zone_id = local.zone_id
-  name    = aws_acm_certificate.website-cert.domain_validation_options[0].resource_record_name
-  type    = aws_acm_certificate.website-cert.domain_validation_options[0].resource_record_type
-  records = [aws_acm_certificate.website-cert.domain_validation_options[0].resource_record_value]
+  name    = each.value.resource_record_name
+  type    = each.value.resource_record_type
+  records = [each.value.resource_record_value]
   ttl     = "600"
 }
 
 resource "aws_acm_certificate_validation" "cert-validation" {
   certificate_arn         = aws_acm_certificate.website-cert.arn
-  validation_record_fqdns = [aws_route53_record.cert-validation-dns.fqdn]
+  validation_record_fqdns = [for r in aws_route53_record.cert-validation-dns : r.fqdn]
 }
 
 resource "aws_apigatewayv2_domain_name" "api_domain_name" {
@@ -59,6 +60,7 @@ resource "aws_route53_record" "api-dnsrecord" {
   zone_id = local.zone_id
   name    = local.base_name
   type    = "A"
+
   alias {
     name = aws_apigatewayv2_domain_name.api_domain_name.domain_name_configuration[0].target_domain_name
     zone_id = aws_apigatewayv2_domain_name.api_domain_name.domain_name_configuration[0].hosted_zone_id
