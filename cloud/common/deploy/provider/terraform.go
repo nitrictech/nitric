@@ -97,18 +97,10 @@ type TerraformProviderServer struct {
 }
 
 func (s *TerraformProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream deploymentspb.Deployment_UpServer) error {
-	if beta, err := env.BETA_PROVIDERS.Bool(); err != nil || !beta {
-		return status.Error(codes.FailedPrecondition, "Nitric terraform providers are currently in beta, please add beta-providers to the preview field of your nitric.yaml to enable")
-	}
-
 	return createTerraformStackForNitricProvider(req, s.provider, s.runtime)
 }
 
 func (s *TerraformProviderServer) Down(req *deploymentspb.DeploymentDownRequest, stream deploymentspb.Deployment_DownServer) error {
-	if beta, err := env.BETA_PROVIDERS.Bool(); err != nil || !beta {
-		return status.Error(codes.FailedPrecondition, "Nitric terraform providers are currently in beta, please add beta-providers to the preview field of your nitric.yaml to enable")
-	}
-
 	return status.Error(codes.Unimplemented, "Down not implemented for Terraform providers, please run terraform destroy against your stack state")
 }
 
@@ -122,7 +114,6 @@ func NewTerraformProviderServer(provider NitricTerraformProvider, runtime Runtim
 type BackendConstructor[Config any, Backend any] func(stack constructs.Construct, config Config) Backend
 
 func configureTfBackend[Config any, BackendType any](stack cdktf.TerraformStack, backend map[string]interface{}, constructor BackendConstructor[Config, BackendType]) error {
-	// Convert backend keys to lower camel case
 	backend = lo.MapKeys(backend, func(val any, key string) string {
 		return strcase.ToLowerCamel(key)
 	})
@@ -349,6 +340,9 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 	}
 
 	app.Synth()
+
+	fmt.Println("Nitric's Terraform providers are currently in Preview.")
+	fmt.Println("\nGenerated Terraform should be reviewed before deployment to Production environments.")
 
 	return nil
 }
