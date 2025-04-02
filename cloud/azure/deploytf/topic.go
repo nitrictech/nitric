@@ -20,6 +20,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/topic"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 )
 
@@ -60,6 +61,7 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 		Location:          jsii.String(a.Region),
 		Listeners:         listeners,
+		Tags:              a.GetTags(*a.Stack.StackIdOutput(), name, resources.Topic),
 		DependsOn:         &allDependants,
 	})
 

@@ -17,6 +17,8 @@ type StackConfig struct {
 	Location *string `field:"required" json:"location" yaml:"location"`
 	// The name of the stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The tags to apply to the stack The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 	// Enable the creation of a database.
 	EnableDatabase *bool `field:"optional" json:"enableDatabase" yaml:"enableDatabase"`
 	// Enable the creation of a keyvault.

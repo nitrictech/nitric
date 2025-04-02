@@ -14,46 +14,51 @@
 
 package deploy
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mitchellh/mapstructure"
+)
 
 type CommonStackDetails struct {
-	ProjectName   string
-	FullStackName string
-	StackName     string
-	Region        string
+	ProjectName   string            `mapstructure:"project"`
+	FullStackName string            `mapstructure:"-"`
+	StackName     string            `mapstructure:"stack"`
+	Region        string            `mapstructure:"region"`
+	Tags          map[string]string `mapstructure:"tags"`
 }
 
 // Read nitric attributes from the provided deployment attributes
 func CommonStackDetailsFromAttributes(attributes map[string]interface{}) (*CommonStackDetails, error) {
-	iProject, hasProject := attributes["project"]
-	project, isString := iProject.(string)
-	if !hasProject || !isString || project == "" {
-		// need a valid project name
+	commonStackDetails := new(CommonStackDetails)
+
+	err := mapstructure.Decode(attributes, commonStackDetails)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode attributes: %w", err)
+	}
+
+	if commonStackDetails.ProjectName == "" {
 		return nil, fmt.Errorf("project is not set or invalid")
 	}
 
-	iStack, hasStack := attributes["stack"]
-	stack, isString := iStack.(string)
-	if !hasStack || !isString || stack == "" {
-		// need a valid stack name
+	if commonStackDetails.StackName == "" {
 		return nil, fmt.Errorf("stack is not set or invalid")
 	}
 
-	iRegion, hasRegion := attributes["region"]
-	region, isString := iRegion.(string)
-	if !hasRegion || !isString || stack == "" {
-		// need a valid stack name
+	if commonStackDetails.Region == "" {
 		return nil, fmt.Errorf("region is not set or invalid")
 	}
+
+	if commonStackDetails.Tags == nil {
+		commonStackDetails.Tags = make(map[string]string)
+	}
+
 	// Backwards compatible stack name
 	// The existing providers in the CLI
 	// Use the combined project and stack name
-	fullStackName := fmt.Sprintf("%s-%s", project, stack)
+	fullStackName := fmt.Sprintf("%s-%s", commonStackDetails.ProjectName, commonStackDetails.StackName)
 
-	return &CommonStackDetails{
-		ProjectName:   project,
-		FullStackName: fullStackName,
-		Region:        region,
-		StackName:     stack,
-	}, nil
+	commonStackDetails.FullStackName = fullStackName
+
+	return commonStackDetails, nil
 }

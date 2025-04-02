@@ -3,10 +3,7 @@ resource "azurerm_eventgrid_topic" "topic" {
   name                = var.name
   resource_group_name = var.resource_group_name
   location            = var.location
-  tags = {
-    "x-nitric-${var.stack_name}-name" = var.name
-    "x-nitric-${var.stack_name}-type" = "topic"
-  }
+  tags = var.tags
 }
 
 # Create an event subscription per listener

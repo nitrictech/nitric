@@ -31,5 +31,7 @@ type ApiConfig struct {
 	PublisherName *string `field:"required" json:"publisherName" yaml:"publisherName"`
 	// The name of the resource group.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
+	// The tags to apply to the API The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
+	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 }
 

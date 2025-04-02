@@ -58,6 +58,8 @@ type HttpProxy interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
+	Tags() *map[string]*string
+	SetTags(val *map[string]*string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -291,6 +293,16 @@ func (j *jsiiProxy_HttpProxy) Source() *string {
 	return returns
 }
 
+func (j *jsiiProxy_HttpProxy) Tags() *map[string]*string {
+	var returns *map[string]*string
+	_jsii_.Get(
+		j,
+		"tags",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_HttpProxy) Version() *string {
 	var returns *string
 	_jsii_.Get(
@@ -440,6 +452,17 @@ func (j *jsiiProxy_HttpProxy)SetResourceGroupName(val *string) {
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_HttpProxy)SetTags(val *map[string]*string) {
+	if err := j.validateSetTagsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"tags",
 		val,
 	)
 }

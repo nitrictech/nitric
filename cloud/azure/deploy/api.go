@@ -29,7 +29,6 @@ import (
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 
-	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	commonutils "github.com/nitrictech/nitric/cloud/common/deploy/utils"
 )
 
@@ -120,7 +119,7 @@ func (p *NitricAzurePulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resou
 			Type:                   pulumi.String("UserAssigned"),
 			UserAssignedIdentities: managedIdentities,
 		},
-		Tags: pulumi.ToStringMap(common.Tags(p.StackId, name, resources.API)),
+		Tags: pulumi.ToStringMap(p.GetTags(p.StackId, name, resources.API)),
 	}, opts...)
 	if err != nil {
 		return err

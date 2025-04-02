@@ -18,6 +18,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
+	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
@@ -68,6 +69,7 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 		StorageAccountId: n.Stack.StorageAccountIdOutput(),
 		Listeners:        listeners,
 		DependsOn:        &allDependants,
+		Tags:             n.GetTags(*n.Stack.StackIdOutput(), name, resources.Bucket),
 	})
 
 	return nil

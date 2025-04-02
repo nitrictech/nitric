@@ -68,6 +68,10 @@ func (j *jsiiProxy_Api) validateSetResourceGroupNameParameters(val *string) erro
 	return nil
 }
 
+func (j *jsiiProxy_Api) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
 func validateNewApiParameters(scope constructs.Construct, id *string, config *ApiConfig) error {
 	return nil
 }
