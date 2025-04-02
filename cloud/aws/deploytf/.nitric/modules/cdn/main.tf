@@ -45,7 +45,7 @@ resource "aws_cloudfront_function" "url-rewrite-function" {
   runtime = "cloudfront-js-1.0"
   comment = "Rewrite URLs to default index document"
   publish = true
-  code    = templatefile("${path.module}/scripts/url-rewrite.tpl.js", {
+  code    = templatefile("${path.module}/scripts/url-rewrite.tmpl.js", {
     base_path = each.value.base_path
   })
 }
