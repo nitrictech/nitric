@@ -106,7 +106,7 @@ func (a *NitricAwsTerraformProvider) RequiredProviders() map[string]interface{} 
 func (a *NitricAwsTerraformProvider) GetGlobalTags() *map[string]*string {
 	commonTags := a.CommonStackDetails.Tags
 
-	// merge resourceTags and common tags
+	// convert common tags to Terraform variable typing
 	combinedTags := make(map[string]*string)
 	for k, v := range commonTags {
 		combinedTags[k] = jsii.String(v)
