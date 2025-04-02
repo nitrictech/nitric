@@ -16,7 +16,7 @@ resource "azurerm_storage_container" "container" {
   storage_account_id    = var.storage_account_id
   container_access_type = "private"
   
-  metadata = var.tags
+  # metadata = var.tags
 }
 
 # Create an event subscription
