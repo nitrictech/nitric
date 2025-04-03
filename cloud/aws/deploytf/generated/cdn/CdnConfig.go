@@ -21,5 +21,13 @@ type CdnConfig struct {
 	Websites interface{} `field:"required" json:"websites" yaml:"websites"`
 	// Map of APIs and their gateway information.
 	Apis interface{} `field:"optional" json:"apis" yaml:"apis"`
+	// Certificate ARN for us-east-1 specific certificate.
+	CertificateArn *string `field:"optional" json:"certificateArn" yaml:"certificateArn"`
+	// Custom domain for distribution.
+	DomainName *string `field:"optional" json:"domainName" yaml:"domainName"`
+	// Skip invalidating the cache.
+	//
+	// Defaults to false.
+	SkipCacheInvalidation *bool `field:"optional" json:"skipCacheInvalidation" yaml:"skipCacheInvalidation"`
 }
 

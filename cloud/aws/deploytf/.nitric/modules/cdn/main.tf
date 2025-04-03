@@ -51,6 +51,8 @@ resource "aws_cloudfront_function" "url-rewrite-function" {
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
+  aliases = var.domain_name != "" ? [var.domain_name] : []
+
   default_root_object = var.root_website.index_document
   enabled = true
 
@@ -164,7 +166,10 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = var.domain_name != "" ? var.certificate_arn : null
+    cloudfront_default_certificate = var.domain_name == "" ? true : false
+    ssl_support_method       = var.domain_name != "" ? "sni-only" : null
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   custom_error_response {
@@ -181,7 +186,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 }
 
 resource "terraform_data" "invalidate_cache" {
-  count = length(local.website_files) > 0 ? 1 : 0
+  count = length(local.website_files) > 0 && !var.skip_cache_invalidation ? 1 : 0
   provisioner "local-exec" {
     command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*'"
   }

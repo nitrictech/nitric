@@ -31,3 +31,21 @@ variable "apis" {
   }))
   default = {}
 }
+
+variable "domain_name" {
+  description = "Custom domain for distribution"
+  type = string
+  default = ""
+}
+
+variable "certificate_arn" {
+  description = "Certificate ARN for us-east-1 specific certificate"
+  type = string
+  default = ""
+}
+
+variable "skip_cache_invalidation" {
+  description = "Skip invalidating the cache. Defaults to false."
+  type = bool
+  default = false
+}

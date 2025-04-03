@@ -18,12 +18,16 @@ type Cdn interface {
 	SetApis(val interface{})
 	// Experimental.
 	CdktfStack() cdktf.TerraformStack
+	CertificateArn() *string
+	SetCertificateArn(val *string)
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	DomainName() *string
+	SetDomainName(val *string)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -42,6 +46,8 @@ type Cdn interface {
 	SetRootWebsite(val interface{})
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
+	SkipCacheInvalidation() *bool
+	SetSkipCacheInvalidation(val *bool)
 	// Experimental.
 	Source() *string
 	StackName() *string
@@ -101,6 +107,16 @@ func (j *jsiiProxy_Cdn) CdktfStack() cdktf.TerraformStack {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) CertificateArn() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"certificateArn",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) ConstructNodeMetadata() *map[string]interface{} {
 	var returns *map[string]interface{}
 	_jsii_.Get(
@@ -116,6 +132,16 @@ func (j *jsiiProxy_Cdn) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Cdn) DomainName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"domainName",
 		&returns,
 	)
 	return returns
@@ -201,6 +227,16 @@ func (j *jsiiProxy_Cdn) SkipAssetCreationFromLocalModules() *bool {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) SkipCacheInvalidation() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"skipCacheInvalidation",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) Source() *string {
 	var returns *string
 	_jsii_.Get(
@@ -280,10 +316,26 @@ func (j *jsiiProxy_Cdn)SetApis(val interface{}) {
 	)
 }
 
+func (j *jsiiProxy_Cdn)SetCertificateArn(val *string) {
+	_jsii_.Set(
+		j,
+		"certificateArn",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Cdn)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetDomainName(val *string) {
+	_jsii_.Set(
+		j,
+		"domainName",
 		val,
 	)
 }
@@ -303,6 +355,14 @@ func (j *jsiiProxy_Cdn)SetRootWebsite(val interface{}) {
 	_jsii_.Set(
 		j,
 		"rootWebsite",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetSkipCacheInvalidation(val *bool) {
+	_jsii_.Set(
+		j,
+		"skipCacheInvalidation",
 		val,
 	)
 }
