@@ -189,7 +189,7 @@ resource "aws_route53_record" "cdn-dnsrecord" {
   count = var.domain_name != "" ? 1 : 0
 
   zone_id = var.zone_id
-  name    = split(".", var.domain_name)[0]
+  name    = var.domain_name
   type    = "A"
 
   alias {
