@@ -44,6 +44,12 @@ variable "certificate_arn" {
   default = ""
 }
 
+variable "zone_id" {
+  description = "The ID of the hosted zone to store route53 records"
+  type = string
+  default = ""
+}
+
 variable "skip_cache_invalidation" {
   description = "Skip invalidating the cache. Defaults to false."
   type = bool

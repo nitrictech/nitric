@@ -185,6 +185,20 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 }
 
+resource "aws_route53_record" "cdn-dnsrecord" {
+  count = var.domain_name != "" ? 1 : 0
+
+  zone_id = var.zone_id
+  name    = split(".", var.domain_name)[0]
+  type    = "A"
+
+  alias {
+    name = aws_cloudfront_distribution.s3_distribution.domain_name
+    zone_id = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 resource "terraform_data" "invalidate_cache" {
   count = length(local.website_files) > 0 && !var.skip_cache_invalidation ? 1 : 0
   provisioner "local-exec" {

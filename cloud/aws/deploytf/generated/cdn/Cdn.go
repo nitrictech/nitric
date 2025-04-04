@@ -56,6 +56,8 @@ type Cdn interface {
 	Version() *string
 	Websites() interface{}
 	SetWebsites(val interface{})
+	ZoneId() *string
+	SetZoneId(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -277,6 +279,16 @@ func (j *jsiiProxy_Cdn) Websites() interface{} {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) ZoneId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"zoneId",
+		&returns,
+	)
+	return returns
+}
+
 
 func NewCdn(scope constructs.Construct, id *string, config *CdnConfig) Cdn {
 	_init_.Initialize()
@@ -385,6 +397,14 @@ func (j *jsiiProxy_Cdn)SetWebsites(val interface{}) {
 	_jsii_.Set(
 		j,
 		"websites",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetZoneId(val *string) {
+	_jsii_.Set(
+		j,
+		"zoneId",
 		val,
 	)
 }

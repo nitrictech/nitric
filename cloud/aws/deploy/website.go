@@ -406,6 +406,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 	domainName := a.AwsConfig.Cdn.Domain
 	aliases := []string{}
+	hostedZoneId := ""
 	var viewerCertificate *cloudfront.DistributionViewerCertificateArgs
 
 	if domainName != "" {
@@ -449,6 +450,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				return fmt.Errorf("unable to find Route53 hosted zone to create records in: %w", err)
 			}
 		}
+
+		hostedZoneId = hostedZone.ZoneId
 
 		record, err := route53.NewRecord(ctx, fmt.Sprintf("cdn-record-%s", a.StackId), &route53.RecordArgs{
 			ZoneId: pulumi.String(hostedZone.ZoneId),
@@ -520,6 +523,25 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	})
 	if err != nil {
 		return err
+	}
+
+	if domainName != "" {
+		_, err = route53.NewRecord(ctx, fmt.Sprintf("cdn-alias-record-%s", a.StackId), &route53.RecordArgs{
+			ZoneId: pulumi.String(hostedZoneId),
+			Type:   pulumi.String("A"),
+			Name:   pulumi.String(strings.Split(".", domainName)[0]),
+
+			Aliases: route53.RecordAliasArray{
+				route53.RecordAliasArgs{
+					Name:                 a.Distribution.DomainName,
+					ZoneId:               a.Distribution.HostedZoneId,
+					EvaluateTargetHealth: pulumi.Bool(false),
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	if !a.AwsConfig.Cdn.SkipCacheInvalidation {

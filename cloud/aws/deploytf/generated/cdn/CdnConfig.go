@@ -29,5 +29,7 @@ type CdnConfig struct {
 	//
 	// Defaults to false.
 	SkipCacheInvalidation *bool `field:"optional" json:"skipCacheInvalidation" yaml:"skipCacheInvalidation"`
+	// The ID of the hosted zone to store route53 records.
+	ZoneId *string `field:"optional" json:"zoneId" yaml:"zoneId"`
 }
 
