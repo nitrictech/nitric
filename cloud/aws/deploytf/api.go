@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/jsii-runtime-go"
+	"github.com/cdktf/cdktf-provider-aws-go/aws/v19/dataawsroute53zone"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
@@ -60,10 +62,42 @@ func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Op
 	return op
 }
 
+func getZoneIds(stack cdktf.TerraformStack, domainNames []string) map[string]*string {
+	zoneIDs := make(map[string]*string)
+
+	for _, domain := range domainNames {
+		primaryZone := dataawsroute53zone.NewDataAwsRoute53Zone(stack, jsii.String("primary_"+domain), &dataawsroute53zone.DataAwsRoute53ZoneConfig{
+			Name:        jsii.String(domain),
+			PrivateZone: jsii.Bool(false),
+		})
+		if primaryZone != nil {
+			zoneIDs[domain] = primaryZone.ZoneId()
+			continue
+		}
+
+		parts := strings.SplitN(domain, ".", 2)
+		if len(parts) < 2 {
+			continue
+		}
+
+		parentZone := dataawsroute53zone.NewDataAwsRoute53Zone(stack, jsii.String("parent_"+domain), &dataawsroute53zone.DataAwsRoute53ZoneConfig{
+			Name:        jsii.String(parts[1]),
+			PrivateZone: jsii.Bool(false),
+		})
+		if parentZone != nil {
+			zoneIDs[domain] = parentZone.ZoneId()
+		}
+	}
+
+	return zoneIDs
+}
+
 func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string, config *deploymentspb.Api) error {
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
 	}
+
+	additionalApiConfig := n.AwsConfig.Apis[name]
 
 	openapiDoc := &openapi3.T{}
 	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
@@ -172,17 +206,23 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	templateFile := cdktf.Fn_Templatefile(asset.Path(), nameArnPairs)
 
 	domains := []string{}
-	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
-		domains = n.AwsConfig.Apis[name].Domains
+	zoneIds := make(map[string]*string)
+
+	if additionalApiConfig != nil {
+		domains = additionalApiConfig.Domains
+		zoneIds = getZoneIds(stack, additionalApiConfig.Domains)
 	}
 
-	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
+	api := api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
 		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
-		Domains:               jsii.Strings(domains...),
 		StackId:               n.Stack.StackIdOutput(),
+		DomainNames:           jsii.Strings(domains...),
+		ZoneIds:               &zoneIds,
 	})
+
+	n.Apis[name] = api
 
 	return nil
 }
