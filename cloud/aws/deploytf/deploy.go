@@ -122,16 +122,13 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		Description: jsii.String("The AWS region to deploy resources to"),
 	})
 
-	tags := a.GetGlobalTags()
-	defaultTags := []*awsprovider.AwsProviderDefaultTags{
-		{
-			Tags: tags,
-		},
-	}
-
 	awsprovider.NewAwsProvider(stack, jsii.String("aws"), &awsprovider.AwsProviderConfig{
-		Region:      tfRegion.StringValue(),
-		DefaultTags: &defaultTags,
+		Region: tfRegion.StringValue(),
+		DefaultTags: &[]*awsprovider.AwsProviderDefaultTags{
+			{
+				Tags: a.GetGlobalTags(),
+			},
+		},
 	})
 
 	ecrAuthConfig := ecrauth.NewDataAwsEcrAuthorizationToken(stack, jsii.String("ecr_auth"), &ecrauth.DataAwsEcrAuthorizationTokenConfig{})
