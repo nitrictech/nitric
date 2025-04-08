@@ -25,7 +25,6 @@ import (
 type AzureConfigItem struct {
 	ContainerApps *AzureContainerAppsConfig `mapstructure:"containerapps,omitempty"`
 	Telemetry     int
-	Storage       *AzureStorageConfig `mapstructure:"storage,omitempty"`
 }
 
 type AzureContainerAppsConfig struct {
@@ -60,7 +59,8 @@ type AzureConfig struct {
 	Org                                     string `mapstructure:"org"`
 	AdminEmail                              string `mapstructure:"adminemail"`
 	Apis                                    map[string]*AzureApiConfig
-	CdnDomain                               CdnDomainConfig `mapstructure:"cdn"`
+	CdnDomain                               CdnDomainConfig    `mapstructure:"cdn"`
+	Storage                                 AzureStorageConfig `mapstructure:"storage"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 

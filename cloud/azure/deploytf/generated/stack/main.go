@@ -57,7 +57,6 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountIdOutput", GoGetter: "StorageAccountIdOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountNameOutput", GoGetter: "StorageAccountNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountQueueEndpointOutput", GoGetter: "StorageAccountQueueEndpointOutput"},
-			_jsii_.MemberProperty{JsiiProperty: "storagePrivateEndpointIpOutput", GoGetter: "StoragePrivateEndpointIpOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "subscriptionIdOutput", GoGetter: "SubscriptionIdOutput"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeAttributes", GoMethod: "SynthesizeAttributes"},
 			_jsii_.MemberMethod{JsiiMethod: "synthesizeHclAttributes", GoMethod: "SynthesizeHclAttributes"},

@@ -75,7 +75,6 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
-	StoragePrivateEndpointIpOutput() *string
 	SubscriptionIdOutput() *string
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
@@ -497,16 +496,6 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	_jsii_.Get(
 		j,
 		"storageAccountQueueEndpointOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Stack) StoragePrivateEndpointIpOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"storagePrivateEndpointIpOutput",
 		&returns,
 	)
 	return returns

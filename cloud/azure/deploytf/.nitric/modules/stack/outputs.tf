@@ -54,11 +54,6 @@ output "storage_account_queue_endpoint" {
   value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_queue_endpoint : null
 }
 
-output "storage_private_endpoint_ip" {
-  description = "The private IP address of the storage account private endpoint"
-  value       = var.enable_storage && var.enable_storage_private_endpoints ? azurerm_private_endpoint.storage_endpoint[0].private_service_connection[0].private_ip_address : null
-}
-
 output "registry_username" {
   value = azurerm_container_registry.container_registry.admin_username
 }
@@ -68,7 +63,7 @@ output "registry_password" {
 }
 
 output "infrastructure_subnet_id" {
-  value = one(azurerm_subnet.database_infrastructure_subnet) != null ? one(azurerm_subnet.database_infrastructure_subnet).id : null
+  value = one(azurerm_subnet.infrastructure_subnet) != null ? one(azurerm_subnet.infrastructure_subnet).id : null
 }
 
 output "container_app_subnet_id" {
