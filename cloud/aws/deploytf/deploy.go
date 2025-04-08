@@ -124,8 +124,10 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 
 	awsprovider.NewAwsProvider(stack, jsii.String("aws"), &awsprovider.AwsProviderConfig{
 		Region: tfRegion.StringValue(),
-		DefaultTags: awsprovider.AwsProviderDefaultTags{
-			Tags: a.GetGlobalTags(),
+		DefaultTags: &[]*awsprovider.AwsProviderDefaultTags{
+			{
+				Tags: a.GetGlobalTags(),
+			},
 		},
 	})
 
