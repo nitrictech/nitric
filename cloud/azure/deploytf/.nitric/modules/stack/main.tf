@@ -102,7 +102,7 @@ resource "random_password" "database_master_password" {
   special = true
   upper   = true
   lower   = true
-  number  = true
+  numeric  = true
 }
 
 # Create a database server if enabled
