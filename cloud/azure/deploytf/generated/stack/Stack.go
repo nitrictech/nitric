@@ -36,6 +36,8 @@ type Stack interface {
 	SetEnableKeyvault(val *bool)
 	EnableStorage() *bool
 	SetEnableStorage(val *bool)
+	EnableStoragePrivateEndpoints() *bool
+	SetEnableStoragePrivateEndpoints(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -73,6 +75,7 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
+	StoragePrivateEndpointIpOutput() *string
 	SubscriptionIdOutput() *string
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
@@ -244,6 +247,16 @@ func (j *jsiiProxy_Stack) EnableStorage() *bool {
 	_jsii_.Get(
 		j,
 		"enableStorage",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) EnableStoragePrivateEndpoints() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"enableStoragePrivateEndpoints",
 		&returns,
 	)
 	return returns
@@ -489,6 +502,16 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) StoragePrivateEndpointIpOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storagePrivateEndpointIpOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -575,6 +598,14 @@ func (j *jsiiProxy_Stack)SetEnableStorage(val *bool) {
 	_jsii_.Set(
 		j,
 		"enableStorage",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetEnableStoragePrivateEndpoints(val *bool) {
+	_jsii_.Set(
+		j,
+		"enableStoragePrivateEndpoints",
 		val,
 	)
 }

@@ -25,6 +25,7 @@ import (
 type AzureConfigItem struct {
 	ContainerApps *AzureContainerAppsConfig `mapstructure:"containerapps,omitempty"`
 	Telemetry     int
+	Storage       *AzureStorageConfig `mapstructure:"storage,omitempty"`
 }
 
 type AzureContainerAppsConfig struct {
@@ -47,6 +48,10 @@ type CdnDomainConfig struct {
 	DomainName string `mapstructure:"domain-name"`
 	// If true, CDN cache invalidation will not be run on deployment
 	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
+}
+
+type AzureStorageConfig struct {
+	EnablePrivateEndpoints bool `mapstructure:"enable-private-endpoints"`
 }
 
 type AzureConfig struct {

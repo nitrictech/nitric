@@ -25,6 +25,8 @@ type StackConfig struct {
 	EnableKeyvault *bool `field:"optional" json:"enableKeyvault" yaml:"enableKeyvault"`
 	// Enable the creation of a storage account.
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
+	// Enable private endpoints for the storage account.
+	EnableStoragePrivateEndpoints *bool `field:"optional" json:"enableStoragePrivateEndpoints" yaml:"enableStoragePrivateEndpoints"`
 	// The id of the subnet to deploy the infrastructure resources.
 	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
 }

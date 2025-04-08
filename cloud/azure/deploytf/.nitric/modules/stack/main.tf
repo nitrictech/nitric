@@ -1,4 +1,3 @@
-
 # Create a random string for the stack id
 resource "random_string" "stack_id" {
   length  = 8
@@ -34,6 +33,12 @@ resource "azurerm_storage_account" "storage" {
   # TODO: Make configurable  
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
+
+  network_rules {
+    default_action = var.enable_storage_private_endpoints ? "Deny" : "Allow"
+    bypass         = ["AzureServices"]
+  }
+
   tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"
@@ -91,155 +96,46 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
   })
 }
 
-
-
-
-
-
-
-
-
-
-# Create a virtual network for the database server
-resource "azurerm_virtual_network" "database_network" {
-  count               = var.enable_database ? 1 : 0
-  name                = "nitric-database-vnet"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = var.location
-  address_space       = ["10.0.0.0/16"]
-
-  flow_timeout_in_minutes = 10
-}
-
-# Create a subnet for the database server
-resource "azurerm_subnet" "database_subnet" {
-  count                = var.enable_database ? 1 : 0
-  name                 = "nitric-database-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network[0].name
-  address_prefixes     = ["10.0.0.0/18"]
-
-  service_endpoints = ["Microsoft.Storage"]
-
-  delegation {
-    name = "db-delegation"
-    service_delegation {
-      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-    }
-  }
-}
-
-# Create an infrastructure subnet for the database server
-resource "azurerm_subnet" "database_infrastructure_subnet" {
-  count                = var.enable_database ? 1 : 0
-  name                 = "nitric-database-infrastructure-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network[0].name
-  address_prefixes     = ["10.0.64.0/18"]
-
-  depends_on = [azurerm_subnet.database_subnet]
-}
-
-# Create a subnet for containers to connect to the database
-resource "azurerm_subnet" "database_client_subnet" {
-  count                = var.enable_database ? 1 : 0
-  name                 = "nitric-database-client-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.database_network[0].name
-  address_prefixes     = ["10.0.192.0/18"]
-
-  delegation {
-    name = "container-instance-delegation"
-    service_delegation {
-      name    = "Microsoft.ContainerInstance/containerGroups"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
-    }
-  }
-
-  depends_on = [azurerm_subnet.database_infrastructure_subnet]
-}
-
-# Create a private zone for the database server
-resource "azurerm_private_dns_zone" "database_dns_zone" {
-  count               = var.enable_database ? 1 : 0
-  name                = "db-private-dns.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.resource_group.name
-}
-
-# Create a private link service for the database server
-resource "azurerm_private_dns_zone_virtual_network_link" "database_link_service" {
-  count                 = var.enable_database ? 1 : 0
-  name                  = "nitric-database-link-service"
-  private_dns_zone_name = azurerm_private_dns_zone.database_dns_zone[0].name
-  resource_group_name   = azurerm_resource_group.resource_group.name
-  virtual_network_id    = azurerm_virtual_network.database_network[0].id
-  registration_enabled  = false
-
-  tags = {
-    "x-nitric-${var.stack_name}-name" = var.stack_name
-    "x-nitric-${var.stack_name}-type" = "stack"
-  }
-}
-
 # Create a random master password for the database server
 resource "random_password" "database_master_password" {
-  count   = var.enable_database ? 1 : 0
-  length  = 16
-  special = false
+  length  = 32
+  special = true
+  upper   = true
+  lower   = true
+  number  = true
 }
 
-# Create a database service if required
+# Create a database server if enabled
 resource "azurerm_postgresql_flexible_server" "database" {
-  count                  = var.enable_database ? 1 : 0
-  name                   = "nitric-db-${random_string.stack_id.result}"
-  resource_group_name    = azurerm_resource_group.resource_group.name
-  location               = var.location
-  version                = "14"
-  administrator_login    = "nitric"
-  administrator_password = random_password.database_master_password[0].result
+  count = var.enable_database ? 1 : 0
 
-  zone = "1"
+  name                = "${var.stack_name}db${random_string.stack_id.result}"
+  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = azurerm_resource_group.resource_group.location
+  version             = "13"
+  administrator_login = "postgres"
+  administrator_password = random_password.database_master_password.result
+  zone                = "1"
+  storage_mb          = 32768
+  sku_name            = "B_Standard_B1ms"
 
-  public_network_access_enabled = false
-
-  delegated_subnet_id = azurerm_subnet.database_subnet[0].id
-  private_dns_zone_id = azurerm_private_dns_zone.database_dns_zone[0].id
-
-  # default to 32Gb storage
-  # TODO: Make configurable   
-  storage_mb = 32768
-
-  # TODO: Make configurable  
-  sku_name = "B_Standard_B1ms"
-
-  tags = {
-    "x-nitric-${var.stack_name}-name" = var.stack_name
-    "x-nitric-${var.stack_name}-type" = "stack"
-  }
-
-  depends_on = [
-    azurerm_subnet.database_subnet,
-    azurerm_private_dns_zone.database_dns_zone,
-    azurerm_private_dns_zone_virtual_network_link.database_link_service
-  ]
+  tags = merge(var.tags, {
+    "x-nitric-${local.stack_name}-name" = var.stack_name
+    "x-nitric-${local.stack_name}-type" = "stack"
+  })
 }
 
+# Create a database if enabled
+resource "azurerm_postgresql_flexible_server_database" "database" {
+  count = var.enable_database ? 1 : 0
 
+  name      = "nitric"
+  server_id = azurerm_postgresql_flexible_server.database[0].id
+  collation = "en_US.utf8"
+  charset   = "utf8"
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-# Create a new container app managed environment
+# Create a container app environment
 resource "azurerm_container_app_environment" "environment" {
   name                       = "${var.stack_name}kube${random_string.stack_id.result}"
   resource_group_name        = azurerm_resource_group.resource_group.name
@@ -250,5 +146,5 @@ resource "azurerm_container_app_environment" "environment" {
     "x-nitric-${local.stack_name}-type" = "stack"
   }
 
-  infrastructure_subnet_id = var.enable_database ? azurerm_subnet.database_infrastructure_subnet[0].id : null
+  infrastructure_subnet_id = (var.enable_database || var.enable_storage_private_endpoints) ? azurerm_subnet.infrastructure_subnet[0].id : null
 }

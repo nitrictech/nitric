@@ -175,13 +175,21 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
-		EnableStorage:  jsii.Bool(enableStorage),
-		EnableKeyvault: jsii.Bool(enableKeyvault),
-		EnableDatabase: jsii.Bool(enableDatabase),
-		Location:       jsii.String(a.Region),
-		StackName:      jsii.String(a.StackName),
-		Tags:           a.GetGlobalTags(),
+		EnableStorage:                 jsii.Bool(enableStorage),
+		EnableKeyvault:                jsii.Bool(enableKeyvault),
+		EnableDatabase:                jsii.Bool(enableDatabase),
+		Location:                      jsii.String(a.Region),
+		StackName:                     jsii.String(a.StackName),
+		Tags:                          a.GetGlobalTags(),
+		EnableStoragePrivateEndpoints: jsii.Bool(a.AzureConfig.Config["storage"].Storage.EnablePrivateEndpoints),
 	})
+
+	// If storage is enabled and private endpoints are configured, update the stack configuration
+	if enableStorage && a.AzureConfig.Config != nil {
+		if storageConfig, ok := a.AzureConfig.Config["storage"]; ok && storageConfig != nil && storageConfig.Storage != nil {
+			a.Stack.SetEnableStoragePrivateEndpoints(jsii.Bool(storageConfig.Storage.EnablePrivateEndpoints))
+		}
+	}
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
