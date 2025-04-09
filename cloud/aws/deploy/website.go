@@ -390,7 +390,6 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
 						Forward: pulumi.String("all"),
 					},
-					// Headers: pulumi.ToStringArray([]string{"*"}),
 				},
 				ViewerProtocolPolicy: pulumi.String("allow-all"),
 			},
