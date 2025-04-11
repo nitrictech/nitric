@@ -17,3 +17,8 @@ variable "target_lambda_functions" {
   description = "The names of the target lambda functions"
   type = map(string)
 }
+
+variable "domains" {
+  description = "The domains to associate with the API Gateway"
+  type = set(string)
+}

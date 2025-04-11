@@ -171,14 +171,18 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	templateFile := cdktf.Fn_Templatefile(asset.Path(), nameArnPairs)
 
-	api := api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
+	domains := []string{}
+	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
+		domains = n.AwsConfig.Apis[name].Domains
+	}
+
+	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
 		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
+		Domains:               jsii.Strings(domains...),
 		StackId:               n.Stack.StackIdOutput(),
 	})
-
-	n.Apis[name] = api
 
 	return nil
 }

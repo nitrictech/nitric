@@ -23,6 +23,8 @@ type Api interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	Domains() *[]*string
+	SetDomains(val *[]*string)
 	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
@@ -120,6 +122,16 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) Domains() *[]*string {
+	var returns *[]*string
+	_jsii_.Get(
+		j,
+		"domains",
 		&returns,
 	)
 	return returns
@@ -317,6 +329,17 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Api)SetDomains(val *[]*string) {
+	if err := j.validateSetDomainsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"domains",
 		val,
 	)
 }

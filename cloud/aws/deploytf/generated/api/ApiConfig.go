@@ -13,6 +13,8 @@ type ApiConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// The domains to associate with the API Gateway.
+	Domains *[]*string `field:"required" json:"domains" yaml:"domains"`
 	// The name of the API Gateway.
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// Open API spec.
