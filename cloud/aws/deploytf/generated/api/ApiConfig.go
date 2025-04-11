@@ -13,10 +13,6 @@ type ApiConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
-	// The name of the domain.
-	//
-	// This must be globally unique.
-	DomainNames *[]*string `field:"required" json:"domainNames" yaml:"domainNames"`
 	// The name of the API Gateway.
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// Open API spec.
@@ -25,9 +21,5 @@ type ApiConfig struct {
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The names of the target lambda functions The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	TargetLambdaFunctions *map[string]*string `field:"required" json:"targetLambdaFunctions" yaml:"targetLambdaFunctions"`
-	// The id of the hosted zone mapped to the domain name.
-	//
-	// The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}
-	ZoneIds *map[string]*string `field:"required" json:"zoneIds" yaml:"zoneIds"`
 }
 

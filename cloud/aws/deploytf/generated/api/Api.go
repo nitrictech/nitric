@@ -23,8 +23,6 @@ type Api interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
-	DomainNames() *[]*string
-	SetDomainNames(val *[]*string)
 	EndpointOutput() *string
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
@@ -56,8 +54,6 @@ type Api interface {
 	SetTargetLambdaFunctions(val *map[string]*string)
 	// Experimental.
 	Version() *string
-	ZoneIds() *map[string]*string
-	SetZoneIds(val *map[string]*string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -124,16 +120,6 @@ func (j *jsiiProxy_Api) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Api) DomainNames() *[]*string {
-	var returns *[]*string
-	_jsii_.Get(
-		j,
-		"domainNames",
 		&returns,
 	)
 	return returns
@@ -299,16 +285,6 @@ func (j *jsiiProxy_Api) Version() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Api) ZoneIds() *map[string]*string {
-	var returns *map[string]*string
-	_jsii_.Get(
-		j,
-		"zoneIds",
-		&returns,
-	)
-	return returns
-}
-
 
 func NewApi(scope constructs.Construct, id *string, config *ApiConfig) Api {
 	_init_.Initialize()
@@ -341,17 +317,6 @@ func (j *jsiiProxy_Api)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetDomainNames(val *[]*string) {
-	if err := j.validateSetDomainNamesParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"domainNames",
 		val,
 	)
 }
@@ -404,17 +369,6 @@ func (j *jsiiProxy_Api)SetTargetLambdaFunctions(val *map[string]*string) {
 	_jsii_.Set(
 		j,
 		"targetLambdaFunctions",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Api)SetZoneIds(val *map[string]*string) {
-	if err := j.validateSetZoneIdsParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"zoneIds",
 		val,
 	)
 }

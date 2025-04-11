@@ -32,10 +32,6 @@ func validateApi_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
-func (j *jsiiProxy_Api) validateSetDomainNamesParameters(val *[]*string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Api) validateSetNameParameters(val *string) error {
 	return nil
 }
@@ -49,10 +45,6 @@ func (j *jsiiProxy_Api) validateSetStackIdParameters(val *string) error {
 }
 
 func (j *jsiiProxy_Api) validateSetTargetLambdaFunctionsParameters(val *map[string]*string) error {
-	return nil
-}
-
-func (j *jsiiProxy_Api) validateSetZoneIdsParameters(val *map[string]*string) error {
 	return nil
 }
 

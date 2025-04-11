@@ -205,7 +205,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 		return err
 	}
 
-	apiStage, err := apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
+	_, err = apigatewayv2.NewStage(ctx, name+"DefaultStage", &apigatewayv2.StageArgs{
 		AutoDeploy: pulumi.BoolPtr(true),
 		Name:       pulumi.String("$default"),
 		ApiId:      a.Apis[name].ID(),
@@ -231,20 +231,6 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	endPoint := a.Apis[name].ApiEndpoint.ApplyT(func(ep string) string {
 		return ep
 	}).(pulumi.StringInput)
-
-	if additionalApiConfig != nil {
-		// For each specified domain name
-		for _, domainName := range a.AwsConfig.Apis[name].Domains {
-			_, err := newDomainName(ctx, name, domainNameArgs{
-				domainName: domainName,
-				api:        a.Apis[name],
-				stage:      apiStage,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	ctx.Export("api:"+name, endPoint)
 

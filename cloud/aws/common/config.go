@@ -28,7 +28,6 @@ type AwsApiConfig struct {
 }
 
 type AwsCdnConfig struct {
-	Domain                string
 	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
 }
 
@@ -111,7 +110,6 @@ var defaultAuroraRdsClusterConfig = &AuroraRdsClusterConfig{
 }
 
 var defaultCdnConfig = &AwsCdnConfig{
-	Domain:                "",
 	SkipCacheInvalidation: false,
 }
 
