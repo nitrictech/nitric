@@ -171,7 +171,6 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		ResourceGroupName: p.ResourceGroup.Name,
 		Location:          pulumi.String("Global"),
 		Sku: &cdn.SkuArgs{
-			// TODO could make this a config option, standard or premium
 			Name: cdn.SkuName_Standard_AzureFrontDoor,
 		},
 	})
@@ -643,10 +642,9 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 	routeName := fmt.Sprintf("%s-main-route", p.StackId)
 
 	_, err = cdn.NewRoute(ctx, routeName, &cdn.RouteArgs{
-		RouteName:         pulumi.String(routeName),
-		CustomDomains:     customDomains,
-		ResourceGroupName: p.ResourceGroup.Name,
-		// TODO make this a config option for custom domains
+		RouteName:           pulumi.String(routeName),
+		CustomDomains:       customDomains,
+		ResourceGroupName:   p.ResourceGroup.Name,
 		LinkToDefaultDomain: pulumi.String(cdn.LinkToDefaultDomainEnabled),
 		ProfileName:         profile.Name,
 		EndpointName:        endpoint.Name,

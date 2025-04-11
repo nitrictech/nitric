@@ -30,7 +30,6 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	imageId, err := image.BuildWrappedImage(&image.BuildWrappedImageArgs{
 		ServiceName: name,
 		SourceImage: config.GetImage().Uri,
-		// TODO: Use correct image uri
 		TargetImage: name,
 		Runtime:     runtimeProvider(),
 	})

@@ -125,7 +125,6 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	listActions := []string{
-		// TODO: test that all resources still work without these permissions
 		"sns:ListTopics",
 		"sqs:ListQueues",
 		"dynamodb:ListTables",

@@ -157,8 +157,8 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 		outdir = "cdktf.out"
 	}
 
-	// TODO: This setting currently doesn't work
-	// actually needs an env variable to be set, but output is broken
+	// This setting currently doesn't work due to an issue with TFCDK
+	// needs to be set with an env variable for now, leaving this here incase the TFCDK issue is fixed in future
 	hcl, ok := attributesMap["hcl"].(bool)
 	if !ok {
 		hcl = false
