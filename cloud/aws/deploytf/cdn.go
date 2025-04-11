@@ -68,12 +68,20 @@ func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cd
 		}
 	}
 
+	domain := &Domain{}
+	if a.AwsConfig.Cdn.Domain != "" {
+		domain = newDomain(tfstack, a.AwsConfig.Cdn.Domain)
+	}
+
 	return cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
 		StackName:             a.Stack.StackIdOutput(),
 		Websites:              websites,
 		Apis:                  apiGateways,
 		RootWebsite:           &a.RootWebsite,
+		CertificateArn:        domain.CertificateArn,
+		DomainName:            jsii.String(domain.Name),
 		SkipCacheInvalidation: jsii.Bool(a.AwsConfig.Cdn.SkipCacheInvalidation),
+		ZoneId:                domain.ZoneId,
 		DependsOn:             &[]cdktf.ITerraformDependable{a.Stack},
 	})
 }
