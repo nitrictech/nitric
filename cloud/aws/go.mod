@@ -59,7 +59,11 @@ require (
 	google.golang.org/protobuf v1.36.3
 )
 
+<<<<<<< HEAD
 require github.com/aws/aws-sdk-go-v2/service/route53 v1.51.0 // indirect
+=======
+require github.com/aws/aws-sdk-go-v2/service/route53 v1.51.1 // indirect
+>>>>>>> 0c3f796a8 (add awstf domains)
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect

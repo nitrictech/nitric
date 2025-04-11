@@ -15,11 +15,16 @@
 package deploytf
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/route53"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
@@ -60,10 +65,70 @@ func awsOperation(op *openapi3.Operation, funcs map[string]*string) *openapi3.Op
 	return op
 }
 
+func getZoneIds(domainNames []string) map[string]*string {
+	ctx := context.TODO()
+
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-west-2"))
+	if err != nil {
+		return nil
+	}
+
+	client := route53.NewFromConfig(cfg)
+
+	zoneMap := make(map[string]*string)
+
+	normalizedDomains := make(map[string]string)
+	for _, d := range domainNames {
+		d = strings.ToLower(strings.TrimSuffix(d, "."))
+		normalizedDomains[d] = d + "."
+	}
+
+	paginator := route53.NewListHostedZonesPaginator(client, &route53.ListHostedZonesInput{})
+	hostedZones := make(map[string]string) // map of zone name -> zone ID
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil
+		}
+
+		for _, hz := range page.HostedZones {
+			name := strings.ToLower(strings.TrimSuffix(*hz.Name, "."))
+			hostedZones[name] = strings.TrimPrefix(*hz.Id, "/hostedzone/")
+		}
+	}
+
+	// Resolve each domain name
+	for domain, normalized := range normalizedDomains {
+		// Check full domain
+		if id, ok := hostedZones[strings.TrimSuffix(normalized, ".")]; ok {
+			zoneMap[domain] = aws.String(id)
+			continue
+		}
+
+		// Try parent/root domain
+		parts := strings.Split(domain, ".")
+		if len(parts) > 2 {
+			root := strings.Join(parts[len(parts)-2:], ".")
+			if id, ok := hostedZones[root]; ok {
+				zoneMap[domain] = aws.String(id)
+				continue
+			}
+		}
+
+		// No match
+		zoneMap[domain] = nil
+	}
+
+	return zoneMap
+}
+
 func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string, config *deploymentspb.Api) error {
 	if config.GetOpenapi() == "" {
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
 	}
+
+	additionalApiConfig := n.AwsConfig.Apis[name]
 
 	openapiDoc := &openapi3.T{}
 	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
@@ -172,16 +237,20 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	templateFile := cdktf.Fn_Templatefile(asset.Path(), nameArnPairs)
 
 	domains := []string{}
-	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
-		domains = n.AwsConfig.Apis[name].Domains
+	zoneIds := make(map[string]*string)
+
+	if additionalApiConfig != nil {
+		domains = additionalApiConfig.Domains
+		zoneIds = getZoneIds(additionalApiConfig.Domains)
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
 		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
-		Domains:               jsii.Strings(domains...),
 		StackId:               n.Stack.StackIdOutput(),
+		DomainNames:           jsii.Strings(domains...),
+		ZoneIds:               &zoneIds,
 	})
 
 	return nil
