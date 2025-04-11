@@ -34,6 +34,7 @@ type Api interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
+	IdOutput() *string
 	Name() *string
 	SetName(val *string)
 	// The tree node.
@@ -50,6 +51,7 @@ type Api interface {
 	SetSpec(val *string)
 	StackId() *string
 	SetStackId(val *string)
+	StageNameOutput() *string
 	TargetLambdaFunctions() *map[string]*string
 	SetTargetLambdaFunctions(val *map[string]*string)
 	// Experimental.
@@ -175,6 +177,16 @@ func (j *jsiiProxy_Api) FriendlyUniqueId() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Api) IdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"idOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Api) Name() *string {
 	var returns *string
 	_jsii_.Get(
@@ -250,6 +262,16 @@ func (j *jsiiProxy_Api) StackId() *string {
 	_jsii_.Get(
 		j,
 		"stackId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Api) StageNameOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stageNameOutput",
 		&returns,
 	)
 	return returns
