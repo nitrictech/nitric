@@ -15,21 +15,23 @@ type StackConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The location/region where the resources will be created.
 	Location *string `field:"required" json:"location" yaml:"location"`
+	// Deploy compatible services with private endpoints.
+	PrivateEndpoints *bool `field:"required" json:"privateEndpoints" yaml:"privateEndpoints"`
 	// The name of the resource group to reuse.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
 	// The name of the stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the subnet to deploy the infrastructure resources.
+	SubnetId *string `field:"required" json:"subnetId" yaml:"subnetId"`
 	// The tags to apply to the stack The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
+	// The name of the vnet to deploy the infrastructure resources.
+	VnetName *string `field:"required" json:"vnetName" yaml:"vnetName"`
 	// Enable the creation of a database.
 	EnableDatabase *bool `field:"optional" json:"enableDatabase" yaml:"enableDatabase"`
 	// Enable the creation of a keyvault.
 	EnableKeyvault *bool `field:"optional" json:"enableKeyvault" yaml:"enableKeyvault"`
 	// Enable the creation of a storage account.
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
-	// The id of the subnet to deploy the infrastructure resources.
-	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
-	// The name of the resource group to reuse.
-	ResourceGroupName *string `field:"optional" json:"resourceGroupName" yaml:"resourceGroupName"`
 }
 

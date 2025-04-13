@@ -36,6 +36,10 @@ func (j *jsiiProxy_Stack) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetPrivateEndpointsParameters(val *bool) error {
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetResourceGroupNameParameters(val *string) error {
 	return nil
 }
@@ -44,7 +48,15 @@ func (j *jsiiProxy_Stack) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetSubnetIdParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetTagsParameters(val *map[string]*string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Stack) validateSetVnetNameParameters(val *string) error {
 	return nil
 }
 

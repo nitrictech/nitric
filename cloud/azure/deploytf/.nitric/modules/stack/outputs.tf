@@ -62,12 +62,8 @@ output "registry_password" {
   value = azurerm_container_registry.container_registry.admin_password
 }
 
-output "infrastructure_subnet_id" {
-  value = one(azurerm_subnet.database_infrastructure_subnet) != null ? one(azurerm_subnet.database_infrastructure_subnet).id : null
-}
-
-output "container_app_subnet_id" {
-  value = one(azurerm_subnet.database_client_subnet) != null ? one(azurerm_subnet.database_client_subnet).id : null
+output "subnet_id" {
+  value = local.subnet_id
 }
 
 output "database_master_password" {

@@ -98,6 +98,14 @@ func (j *jsiiProxy_Stack) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetPrivateEndpointsParameters(val *bool) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetResourceGroupNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
@@ -114,7 +122,23 @@ func (j *jsiiProxy_Stack) validateSetStackNameParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetSubnetIdParameters(val *string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetTagsParameters(val *map[string]*string) error {
+	if val == nil {
+		return fmt.Errorf("parameter val is required, but nil was provided")
+	}
+
+	return nil
+}
+
+func (j *jsiiProxy_Stack) validateSetVnetNameParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

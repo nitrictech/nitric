@@ -33,11 +33,22 @@ variable "location" {
   type        = string
 }
 
-variable "infrastructure_subnet_id" {
+variable "vnet_name" {
+  description = "The name of the vnet to deploy the infrastructure resources"
+  type        = string
+  nullable    = true
+}
+
+variable "subnet_id" {
   description = "The id of the subnet to deploy the infrastructure resources"
   type        = string
+  nullable    = true
+}
 
-  default = ""
+variable "private_endpoints" {
+  description = "Deploy compatible services with private endpoints"
+  type        = bool
+  nullable    = true
 }
 
 variable "tags" {

@@ -21,7 +21,6 @@ type Stack interface {
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	ContainerAppEnvironmentIdOutput() *string
-	ContainerAppSubnetIdOutput() *string
 	DatabaseMasterPasswordOutput() *string
 	DatabaseServerFqdnOutput() *string
 	DatabaseServerIdOutput() *string
@@ -44,14 +43,13 @@ type Stack interface {
 	Fqn() *string
 	// Experimental.
 	FriendlyUniqueId() *string
-	InfrastructureSubnetId() *string
-	SetInfrastructureSubnetId(val *string)
-	InfrastructureSubnetIdOutput() *string
 	KeyvaultNameOutput() *string
 	Location() *string
 	SetLocation(val *string)
 	// The tree node.
 	Node() constructs.Node
+	PrivateEndpoints() *bool
+	SetPrivateEndpoints(val *bool)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -75,11 +73,16 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
+	SubnetId() *string
+	SetSubnetId(val *string)
+	SubnetIdOutput() *string
 	SubscriptionIdOutput() *string
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
 	// Experimental.
 	Version() *string
+	VnetName() *string
+	SetVnetName(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -156,16 +159,6 @@ func (j *jsiiProxy_Stack) ContainerAppEnvironmentIdOutput() *string {
 	_jsii_.Get(
 		j,
 		"containerAppEnvironmentIdOutput",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Stack) ContainerAppSubnetIdOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"containerAppSubnetIdOutput",
 		&returns,
 	)
 	return returns
@@ -281,26 +274,6 @@ func (j *jsiiProxy_Stack) FriendlyUniqueId() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Stack) InfrastructureSubnetId() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"infrastructureSubnetId",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Stack) InfrastructureSubnetIdOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"infrastructureSubnetIdOutput",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Stack) KeyvaultNameOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -326,6 +299,16 @@ func (j *jsiiProxy_Stack) Node() constructs.Node {
 	_jsii_.Get(
 		j,
 		"node",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) PrivateEndpoints() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"privateEndpoints",
 		&returns,
 	)
 	return returns
@@ -501,6 +484,26 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) SubnetId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"subnetId",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) SubnetIdOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"subnetIdOutput",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -526,6 +529,16 @@ func (j *jsiiProxy_Stack) Version() *string {
 	_jsii_.Get(
 		j,
 		"version",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) VnetName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"vnetName",
 		&returns,
 	)
 	return returns
@@ -599,14 +612,6 @@ func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	)
 }
 
-func (j *jsiiProxy_Stack)SetInfrastructureSubnetId(val *string) {
-	_jsii_.Set(
-		j,
-		"infrastructureSubnetId",
-		val,
-	)
-}
-
 func (j *jsiiProxy_Stack)SetLocation(val *string) {
 	if err := j.validateSetLocationParameters(val); err != nil {
 		panic(err)
@@ -614,6 +619,17 @@ func (j *jsiiProxy_Stack)SetLocation(val *string) {
 	_jsii_.Set(
 		j,
 		"location",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetPrivateEndpoints(val *bool) {
+	if err := j.validateSetPrivateEndpointsParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"privateEndpoints",
 		val,
 	)
 }
@@ -640,6 +656,17 @@ func (j *jsiiProxy_Stack)SetStackName(val *string) {
 	)
 }
 
+func (j *jsiiProxy_Stack)SetSubnetId(val *string) {
+	if err := j.validateSetSubnetIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"subnetId",
+		val,
+	)
+}
+
 func (j *jsiiProxy_Stack)SetTags(val *map[string]*string) {
 	if err := j.validateSetTagsParameters(val); err != nil {
 		panic(err)
@@ -647,6 +674,17 @@ func (j *jsiiProxy_Stack)SetTags(val *map[string]*string) {
 	_jsii_.Set(
 		j,
 		"tags",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetVnetName(val *string) {
+	if err := j.validateSetVnetNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"vnetName",
 		val,
 	)
 }

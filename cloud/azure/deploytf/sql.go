@@ -34,7 +34,7 @@ func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, n
 		ServerId:                   n.Stack.DatabaseServerIdOutput(),
 		DatabaseServerFqdn:         n.Stack.DatabaseServerFqdnOutput(),
 		DatabaseMasterPassword:     n.Stack.DatabaseMasterPasswordOutput(),
-		MigrationContainerSubnetId: n.Stack.ContainerAppSubnetIdOutput(),
+		MigrationContainerSubnetId: n.Stack.SubnetIdOutput(),
 		DependsOn:                  &[]cdktf.ITerraformDependable{n.Stack},
 	}
 
