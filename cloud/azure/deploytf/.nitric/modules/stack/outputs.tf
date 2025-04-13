@@ -15,7 +15,7 @@ output "keyvault_name" {
 }
 
 output "resource_group_name" {
-  value = azurerm_resource_group.resource_group.name
+  value = local.resource_group_name
 }
 
 output "app_identity" {
