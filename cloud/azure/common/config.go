@@ -38,6 +38,11 @@ type AzureApiConfig struct {
 	Description string
 }
 
+type PrivateEndpointsConfig struct {
+	VnetName string `mapstructure:"vnet-name"`
+	SubnetId string `mapstructure:"subnet-id"`
+}
+
 type CdnDomainConfig struct {
 	// Name of the managed zone in azure DNS zones
 	ZoneName string `mapstructure:"zone-name"`
@@ -55,7 +60,8 @@ type AzureConfig struct {
 	Org                                     string `mapstructure:"org"`
 	AdminEmail                              string `mapstructure:"adminemail"`
 	Apis                                    map[string]*AzureApiConfig
-	CdnDomain                               CdnDomainConfig `mapstructure:"cdn"`
+	CdnDomain                               CdnDomainConfig        `mapstructure:"cdn"`
+	PrivateEndpoints                        PrivateEndpointsConfig `mapstructure:"private-endpoints"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 
