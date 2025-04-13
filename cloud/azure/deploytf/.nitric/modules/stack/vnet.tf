@@ -20,7 +20,7 @@ resource "azurerm_subnet" "database_infrastructure_subnet" {
   name                 = "nitric-database-infrastructure-subnet"
   resource_group_name  = local.resource_group_name
   virtual_network_name = local.vnet_name
-  address_prefixes     = ["10.0.0.0/18"]
+  address_prefixes     = ["10.0.0.0/16"]
 
   service_endpoints = [
     "Microsoft.Storage", 
