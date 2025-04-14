@@ -129,8 +129,8 @@ resource "azurerm_postgresql_flexible_server" "database" {
 
   public_network_access_enabled = false
 
-  delegated_subnet_id = azurerm_subnet.database_subnet[0].id
-  private_dns_zone_id = azurerm_private_dns_zone.database_dns_zone[0].id
+  delegated_subnet_id = local.subnet_id
+  private_dns_zone_id = one(azurerm_private_dns_zone.database_dns_zone[0]) != null ? one(azurerm_private_dns_zone.database_dns_zone[0]).id : null
 
   # default to 32Gb storage
   # TODO: Make configurable   
@@ -145,7 +145,7 @@ resource "azurerm_postgresql_flexible_server" "database" {
   }
 
   depends_on = [
-    azurerm_subnet.database_subnet,
+    local.subnet_id,
     azurerm_private_dns_zone.database_dns_zone,
     azurerm_private_dns_zone_virtual_network_link.database_link_service
   ]
@@ -162,5 +162,5 @@ resource "azurerm_container_app_environment" "environment" {
     "x-nitric-${local.stack_name}-type" = "stack"
   }
 
-  infrastructure_subnet_id = var.enable_database ? azurerm_subnet.database_infrastructure_subnet[0].id : null
+  infrastructure_subnet_id = var.enable_database ? local.subnet_id: null
 }

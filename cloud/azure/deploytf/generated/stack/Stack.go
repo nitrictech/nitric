@@ -21,6 +21,8 @@ type Stack interface {
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
 	ContainerAppEnvironmentIdOutput() *string
+	CreateDnsZones() *bool
+	SetCreateDnsZones(val *bool)
 	DatabaseMasterPasswordOutput() *string
 	DatabaseServerFqdnOutput() *string
 	DatabaseServerIdOutput() *string
@@ -76,6 +78,8 @@ type Stack interface {
 	SubnetId() *string
 	SetSubnetId(val *string)
 	SubnetIdOutput() *string
+	SubscriptionId() *string
+	SetSubscriptionId(val *string)
 	SubscriptionIdOutput() *string
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
@@ -159,6 +163,16 @@ func (j *jsiiProxy_Stack) ContainerAppEnvironmentIdOutput() *string {
 	_jsii_.Get(
 		j,
 		"containerAppEnvironmentIdOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) CreateDnsZones() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"createDnsZones",
 		&returns,
 	)
 	return returns
@@ -504,6 +518,16 @@ func (j *jsiiProxy_Stack) SubnetIdOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) SubscriptionId() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"subscriptionId",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -569,6 +593,14 @@ func NewStack_Override(s Stack, scope constructs.Construct, id *string, config *
 		"stack.Stack",
 		[]interface{}{scope, id, config},
 		s,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetCreateDnsZones(val *bool) {
+	_jsii_.Set(
+		j,
+		"createDnsZones",
+		val,
 	)
 }
 
@@ -663,6 +695,17 @@ func (j *jsiiProxy_Stack)SetSubnetId(val *string) {
 	_jsii_.Set(
 		j,
 		"subnetId",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetSubscriptionId(val *string) {
+	if err := j.validateSetSubscriptionIdParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"subscriptionId",
 		val,
 	)
 }

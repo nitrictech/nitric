@@ -52,6 +52,10 @@ func (j *jsiiProxy_Stack) validateSetSubnetIdParameters(val *string) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetSubscriptionIdParameters(val *string) error {
+	return nil
+}
+
 func (j *jsiiProxy_Stack) validateSetTagsParameters(val *map[string]*string) error {
 	return nil
 }

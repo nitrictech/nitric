@@ -23,10 +23,14 @@ type StackConfig struct {
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 	// The id of the subnet to deploy the infrastructure resources.
 	SubnetId *string `field:"required" json:"subnetId" yaml:"subnetId"`
+	// The id of the subscription to deploy the stack.
+	SubscriptionId *string `field:"required" json:"subscriptionId" yaml:"subscriptionId"`
 	// The tags to apply to the stack The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 	// The name of the vnet to deploy the infrastructure resources.
 	VnetName *string `field:"required" json:"vnetName" yaml:"vnetName"`
+	// Whether to create private DNS zones for private endpoints.
+	CreateDnsZones *bool `field:"optional" json:"createDnsZones" yaml:"createDnsZones"`
 	// Enable the creation of a database.
 	EnableDatabase *bool `field:"optional" json:"enableDatabase" yaml:"enableDatabase"`
 	// Enable the creation of a keyvault.

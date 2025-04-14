@@ -11,7 +11,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "storage_link" {
   name                  = "${local.stack_name}-storage-link"
   resource_group_name   = local.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.storage[0].name
-  virtual_network_id    = var.subnet_id != null ? join("/", slice(split("/", var.subnet_id), 0, 9)) : azurerm_virtual_network.stack_network[0].id
+  virtual_network_id    = local.vnet_id
   registration_enabled  = false
 }
 
@@ -21,7 +21,7 @@ resource "azurerm_private_endpoint" "storage" {
   name                = "${local.stack_name}-storage-pe"
   location            = var.location
   resource_group_name = local.resource_group_name
-  subnet_id           = var.subnet_id
+  subnet_id           = local.subnet_id
 
   private_service_connection {
     name                           = "${local.stack_name}-storage-connection"

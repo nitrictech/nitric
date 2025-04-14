@@ -1,3 +1,7 @@
+variable "subscription_id" {
+  description = "The id of the subscription to deploy the stack"
+  type        = string
+}
 variable "stack_name" {
   description = "The name of the stack"
   type        = string
