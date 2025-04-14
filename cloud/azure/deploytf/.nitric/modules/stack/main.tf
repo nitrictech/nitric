@@ -1,4 +1,3 @@
-
 # Create a random string for the stack id
 resource "random_string" "stack_id" {
   length  = 8
@@ -40,6 +39,18 @@ resource "azurerm_storage_account" "storage" {
   # TODO: Make configurable  
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
+  dynamic "network_rules" {
+    for_each = var.private_endpoints ? [1] : []
+    content {
+      default_action = "Deny"
+      virtual_network_subnet_ids = [
+        local.subnet_id
+      ]
+    }
+  }
+
+  public_network_access_enabled = !var.private_endpoints
+  
   tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name
     "x-nitric-${local.stack_name}-type" = "stack"

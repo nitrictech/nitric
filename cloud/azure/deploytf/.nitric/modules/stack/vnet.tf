@@ -11,13 +11,13 @@ resource "azurerm_virtual_network" "stack_network" {
 
 locals {
   vnet_name = var.vnet_name == null ? one(azurerm_virtual_network.stack_network).name : var.vnet_name
-  subnet_id = var.subnet_id == null ? one(azurerm_subnet.database_infrastructure_subnet).id : var.subnet_id
+  subnet_id = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).id : var.subnet_id
 }
 
 # Create an infrastructure subnet for the database server
-resource "azurerm_subnet" "database_infrastructure_subnet" {
+resource "azurerm_subnet" "stack_infrastructure_subnet" {
   count                = var.subnet_id == null && var.enable_database ? 1 : 0
-  name                 = "nitric-database-infrastructure-subnet"
+  name                 = "nitric-stack-infrastructure-subnet"
   resource_group_name  = local.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = ["10.0.0.0/16"]
@@ -28,8 +28,6 @@ resource "azurerm_subnet" "database_infrastructure_subnet" {
     "Microsoft.KeyVault",
     "Microsoft.ContainerRegistry"
   ]
-
-  depends_on = [azurerm_subnet.database_subnet]
 
   delegation {
     name = "container-instance-delegation"
