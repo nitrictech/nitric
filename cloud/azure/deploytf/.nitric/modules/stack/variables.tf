@@ -45,6 +45,12 @@ variable "subnet_id" {
   nullable    = true
 }
 
+variable "create_dns_zones" {
+  description = "Whether to create private DNS zones for private endpoints"
+  type        = bool
+  default     = false
+}
+
 variable "private_endpoints" {
   description = "Deploy compatible services with private endpoints"
   type        = bool

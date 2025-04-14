@@ -178,6 +178,17 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		resourceGroupImport = jsii.String(a.AzureConfig.ResourceGroup)
 	}
 
+	enablePrivateEndpoints := a.AzureConfig.Network.PrivateEndpoints
+	var subnetId *string = nil
+	if a.AzureConfig.Network.SubnetId != "" {
+		subnetId = jsii.String(a.AzureConfig.Network.SubnetId)
+	}
+
+	var vnetName *string = nil
+	if a.AzureConfig.Network.VnetName != "" {
+		vnetName = jsii.String(a.AzureConfig.Network.VnetName)
+	}
+
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
 		EnableStorage:     jsii.Bool(enableStorage),
@@ -187,6 +198,9 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		StackName:         jsii.String(a.StackName),
 		Tags:              a.GetGlobalTags(),
 		ResourceGroupName: resourceGroupImport,
+		PrivateEndpoints:  jsii.Bool(enablePrivateEndpoints),
+		SubnetId:          subnetId,
+		VnetName:          vnetName,
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
