@@ -118,7 +118,37 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
 
     content {
-      path_pattern = "${trimprefix(ordered_cache_behavior.value.base_path, "/")}*"
+      path_pattern = trimprefix(ordered_cache_behavior.value.base_path, "/")
+
+      function_association {
+        event_type = "viewer-request"
+        function_arn = aws_cloudfront_function.url-rewrite-function[ordered_cache_behavior.key].arn
+      }
+
+      allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+      cached_methods   = ["GET", "HEAD", "OPTIONS"]
+      target_origin_id = ordered_cache_behavior.key
+
+      forwarded_values {
+        query_string = false
+        cookies {
+          forward = "none"
+        }
+      }
+
+      viewer_protocol_policy = "redirect-to-https"
+    }
+  }
+
+  # second subsite cache behavior required for sub paths
+  dynamic "ordered_cache_behavior" {
+    for_each = {
+      for name, website in var.websites : name => website
+      if website.base_path != "/"
+    }
+
+    content {
+      path_pattern = "${trimprefix(ordered_cache_behavior.value.base_path, "/")}/*"
 
       function_association {
         event_type = "viewer-request"
