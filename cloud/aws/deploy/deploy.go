@@ -68,9 +68,9 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
-	websiteChangedFileOutputs pulumi.StringArray
-	websiteIndexDocument      string
-	websiteErrorDocument      string
+	websiteFileMd5Outputs pulumi.Array
+	websiteIndexDocument  string
+	websiteErrorDocument  string
 
 	DockerProvider     *docker.Provider
 	RegistryArgs       *docker.RegistryArgs
