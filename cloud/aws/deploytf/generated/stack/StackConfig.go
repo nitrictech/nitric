@@ -13,5 +13,7 @@ type StackConfig struct {
 	Providers *[]interface{} `field:"optional" json:"providers" yaml:"providers"`
 	// Experimental.
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
+	// Enable the creation of a website.
+	EnableWebsite *bool `field:"optional" json:"enableWebsite" yaml:"enableWebsite"`
 }
 

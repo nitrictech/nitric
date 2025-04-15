@@ -21,7 +21,7 @@ data "docker_image" "latest" {
 
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
-  source_image = data.docker_image.latest.repo_digest
+  source_image = length(data.docker_image.latest.repo_digest) > 0 ? data.docker_image.latest.repo_digest : data.docker_image.latest.id
   target_image = aws_ecr_repository.repo.repository_url
 }
 

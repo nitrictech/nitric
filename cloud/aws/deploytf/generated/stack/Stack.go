@@ -22,6 +22,8 @@ type Stack interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	EnableWebsite() *bool
+	SetEnableWebsite(val *bool)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -99,6 +101,16 @@ func (j *jsiiProxy_Stack) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) EnableWebsite() *bool {
+	var returns *bool
+	_jsii_.Get(
+		j,
+		"enableWebsite",
 		&returns,
 	)
 	return returns
@@ -236,6 +248,14 @@ func (j *jsiiProxy_Stack)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetEnableWebsite(val *bool) {
+	_jsii_.Set(
+		j,
+		"enableWebsite",
 		val,
 	)
 }

@@ -68,11 +68,9 @@ type NitricAwsPulumiProvider struct {
 
 	SqlDatabases map[string]*RdsDatabase
 
-	websiteBucketName         string
-	publicWebsiteBucket       *s3.Bucket
-	websiteChangedFileOutputs pulumi.StringArray
-	websiteIndexDocument      string
-	websiteErrorDocument      string
+	websiteFileMd5Outputs pulumi.Array
+	websiteIndexDocument  string
+	websiteErrorDocument  string
 
 	DockerProvider     *docker.Provider
 	RegistryArgs       *docker.RegistryArgs
@@ -104,6 +102,7 @@ type NitricAwsPulumiProvider struct {
 	Topics                map[string]*topic
 	Queues                map[string]*sqs.Queue
 	Websockets            map[string]*apigatewayv2.Api
+	Websites              map[string]*website
 	KeyValueStores        map[string]*dynamodb.Table
 	JobDefinitions        map[string]*batch.JobDefinition
 	Schedules             map[string]*scheduler.Schedule
@@ -247,20 +246,6 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		}
 	}
 
-	websites := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
-		return item.Id.Type == resourcespb.ResourceType_Website
-	})
-
-	if len(websites) > 0 {
-		// ensure name is unique for no conflicting bucket names
-		a.websiteBucketName = fmt.Sprintf("website-bucket-%s", a.StackId)
-
-		err := a.createWebsiteBucket(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
 	return err
 }
 
@@ -270,7 +255,7 @@ func (a *NitricAwsPulumiProvider) Post(ctx *pulumi.Context) error {
 		return err
 	}
 
-	if a.publicWebsiteBucket != nil {
+	if len(a.Websites) > 0 {
 		err = a.deployCloudfrontDistribution(ctx)
 		if err != nil {
 			return err
@@ -364,5 +349,6 @@ func NewNitricAwsProvider() *NitricAwsPulumiProvider {
 		DatabaseMigrationJobs: make(map[string]*codebuild.Project),
 		SqlDatabases:          make(map[string]*RdsDatabase),
 		JobDefinitions:        make(map[string]*batch.JobDefinition),
+		Websites:              make(map[string]*website),
 	}
 }

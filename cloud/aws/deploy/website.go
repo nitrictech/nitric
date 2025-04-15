@@ -17,16 +17,15 @@
 package deploy
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"math"
 	"mime"
 	"path/filepath"
+	"runtime"
 	"slices"
+	"sort"
 	"strings"
-	"time"
 
 	"github.com/nitrictech/nitric/cloud/aws/deploy/embeds"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
@@ -34,70 +33,19 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
+	"github.com/pulumi/pulumi-command/sdk/go/command/local"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/samber/lo"
-
-	"github.com/aws/aws-sdk-go-v2/config"
-	awscloudfront "github.com/aws/aws-sdk-go-v2/service/cloudfront"
-	awscloudfronttypes "github.com/aws/aws-sdk-go-v2/service/cloudfront/types"
-	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
-	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/aws/aws-sdk-go/aws"
 )
 
-// createBucket - creates a new S3 bucket in AWS and tags it.
-func (a *NitricAwsPulumiProvider) createWebsiteBucket(ctx *pulumi.Context) error {
-	var err error
-
-	tags := common.Tags(a.StackId, a.websiteBucketName, resources.Website)
-
-	a.publicWebsiteBucket, err = s3.NewBucket(ctx, a.websiteBucketName, &s3.BucketArgs{
-		Tags: pulumi.ToStringMap(tags),
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func fileETag(ctx context.Context, client *awss3.Client, bucketName, key string) (string, error) {
-	headObjectOutput, err := client.HeadObject(ctx, &awss3.HeadObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		var notFound *s3types.NotFound
-
-		// If the file does not exist, return an empty string so we can ignore checking it
-		if errors.As(err, &notFound) {
-			return "", nil
-		}
-
-		// Otherwise, return the error
-		return "", err
-	}
-
-	// Trim the ETag to remove the quotes
-	etag := strings.Trim(*headObjectOutput.ETag, "\"")
-
-	return etag, nil
-}
-
-func (a *NitricAwsPulumiProvider) getS3Client() (*awss3.Client, error) {
-	// Load the AWS configuration
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(a.Region))
-	if err != nil {
-		return nil, fmt.Errorf("failed to load AWS config: %w", err)
-	}
-
-	// Create an S3 client
-	return awss3.NewFromConfig(cfg), nil
+type website struct {
+	bucket   *s3.Bucket
+	basePath string
 }
 
 // Website - Implements the Website deployment method for the AWS provider
 func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
-	opts := []pulumi.ResourceOption{pulumi.Parent(parent), pulumi.DependsOn([]pulumi.Resource{a.publicWebsiteBucket})}
+	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
 	localDir, ok := config.AssetSource.(*deploymentspb.Website_LocalDirectory)
 	if !ok {
@@ -111,8 +59,10 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		a.websiteErrorDocument = config.ErrorDocument
 	}
 
-	// get the S3 client for reading the ETag of existing files
-	client, err := a.getS3Client()
+	websiteBucketName := fmt.Sprintf("%s-website-bucket", name)
+	websiteBucket, err := s3.NewBucket(ctx, websiteBucketName, &s3.BucketArgs{
+		Tags: pulumi.ToStringMap(common.Tags(a.StackId, websiteBucketName, resources.Website)),
+	})
 	if err != nil {
 		return err
 	}
@@ -153,24 +103,10 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 		arn := filepath.ToSlash(filepath.Join(name, filePath))
 
 		// If the base path is not the root, include it in the object key
-		if config.BasePath == "/" {
-			objectKey = filepath.ToSlash(filePath)
-		} else {
-			objectKey = filepath.ToSlash(filepath.Join(config.BasePath, filePath))
-		}
-
-		existingTag := a.publicWebsiteBucket.Bucket.ApplyT(func(bucket string) (string, error) {
-			// Check if the object already exists
-			existingETag, err := fileETag(context.TODO(), client, bucket, strings.TrimPrefix(objectKey, "/"))
-			if err != nil {
-				return "", err
-			}
-
-			return existingETag, nil
-		})
+		objectKey = filepath.ToSlash(filePath)
 
 		obj, err := s3.NewBucketObject(ctx, arn, &s3.BucketObjectArgs{
-			Bucket:      a.publicWebsiteBucket.Bucket,
+			Bucket:      websiteBucket.Bucket,
 			Source:      pulumi.NewFileAsset(path),
 			ContentType: pulumi.String(contentType),
 			Key:         pulumi.String(objectKey),
@@ -179,28 +115,17 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 			return err
 		}
 
-		keyToInvalidate := pulumi.All(obj.Etag, existingTag).ApplyT(func(args []any) (string, error) {
-			newEtag, newEtagOk := args[0].(string)
-			existingEtag, existingEtagOk := args[1].(string)
-
-			if !newEtagOk || !existingEtagOk {
-				return "", fmt.Errorf("failed to assert ETag types")
-			}
-
-			// if an existing ETag is present and it is different from the new ETag, return the key to invalidate
-			if existingEtag != "" && newEtag != existingEtag {
-				return objectKey, nil
-			}
-
-			return "", nil
-		}).(pulumi.StringOutput)
-
-		a.websiteChangedFileOutputs = append(a.websiteChangedFileOutputs, keyToInvalidate)
+		a.websiteFileMd5Outputs = append(a.websiteFileMd5Outputs, obj.Etag)
 
 		return nil
 	})
 	if err != nil {
 		return err
+	}
+
+	a.Websites[name] = &website{
+		bucket:   websiteBucket,
+		basePath: config.BasePath,
 	}
 
 	return nil
@@ -209,6 +134,7 @@ func (a *NitricAwsPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Res
 func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Context) error {
 	origins := cloudfront.DistributionOriginArray{}
 	orderedCacheBehaviors := cloudfront.DistributionOrderedCacheBehaviorArray{}
+	var defaultCacheBehavior cloudfront.DistributionDefaultCacheBehaviorArgs
 
 	oai, err := cloudfront.NewOriginAccessIdentity(ctx, "oai", &cloudfront.OriginAccessIdentityArgs{
 		Comment: pulumi.String("OAI for accessing S3 bucket"),
@@ -217,33 +143,137 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	policy := pulumi.All(a.publicWebsiteBucket.Arn, oai.IamArn).ApplyT(func(args []interface{}) (string, error) {
-		bucketID, bucketIdOk := args[0].(string)
-		oaiPath, oaiPathOk := args[1].(string)
-		if !bucketIdOk || !oaiPathOk {
-			return "", fmt.Errorf("failed to get bucket ID or OAI path")
-		}
-		return fmt.Sprintf(`{
-			"Version": "2012-10-17",
-			"Statement": [
-				{
-					"Effect": "Allow",
-					"Principal": {
-						"AWS": "%s"
-					},
-					"Action": "s3:GetObject",
-					"Resource": "%s/*"
-				}
-			]
-		}`, oaiPath, bucketID), nil
-	}).(pulumi.StringOutput)
+	for websiteName, website := range a.Websites {
+		policy := pulumi.All(website.bucket.Arn, oai.IamArn).ApplyT(func(args []interface{}) (string, error) {
+			bucketID, bucketIdOk := args[0].(string)
+			oaiPath, oaiPathOk := args[1].(string)
 
-	_, err = s3.NewBucketPolicy(ctx, "publicBucketPolicy", &s3.BucketPolicyArgs{
-		Bucket: a.publicWebsiteBucket.Bucket,
-		Policy: policy,
-	})
-	if err != nil {
-		return err
+			if !bucketIdOk || !oaiPathOk {
+				return "", fmt.Errorf("failed to get bucket ID or OAI path")
+			}
+
+			return fmt.Sprintf(`{
+				"Version": "2012-10-17",
+				"Statement": [
+					{
+						"Effect": "Allow",
+						"Principal": {
+							"AWS": "%s"
+						},
+						"Action": "s3:GetObject",
+						"Resource": "%s/*"
+					}
+				]
+			}`, oaiPath, bucketID), nil
+		}).(pulumi.StringOutput)
+
+		_, err = s3.NewBucketPolicy(ctx, fmt.Sprintf("bucket-policy-%s", websiteName), &s3.BucketPolicyArgs{
+			Bucket: website.bucket.Bucket,
+			Policy: policy,
+		})
+		if err != nil {
+			return err
+		}
+
+		origins = append(origins, &cloudfront.DistributionOriginArgs{
+			DomainName: website.bucket.BucketRegionalDomainName,
+			OriginId:   pulumi.String(websiteName),
+			S3OriginConfig: cloudfront.DistributionOriginS3OriginConfigArgs{
+				OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
+			},
+		})
+
+		code, err := embeds.GetUrlRewriteFunction(website.basePath)
+		if err != nil {
+			return err
+		}
+
+		rewriteFun, err := cloudfront.NewFunction(ctx, fmt.Sprintf("url-rewrite-function-%s", websiteName), &cloudfront.FunctionArgs{
+			Comment: pulumi.String("Rewrite URLs to default index document"),
+			Code:    code,
+			Runtime: pulumi.String("cloudfront-js-1.0"),
+		})
+		if err != nil {
+			return err
+		}
+
+		// Make cache behaviour for all but the root origin. The root origin uses the default cache behaviour
+		if website.basePath != "/" {
+			rootCacheBehavior := &cloudfront.DistributionOrderedCacheBehaviorArgs{
+				PathPattern:          pulumi.String(strings.TrimPrefix(website.basePath, "/")),
+				TargetOriginId:       pulumi.String(websiteName),
+				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
+				AllowedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
+				},
+				CachedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
+				},
+				ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
+					QueryString: pulumi.Bool(false),
+					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
+						Forward: pulumi.String("none"),
+					},
+					Headers: pulumi.StringArray{
+						pulumi.String("x-nitric-cache-key"),
+					},
+				},
+				FunctionAssociations: cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArray{
+					&cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs{
+						EventType:   pulumi.String("viewer-request"),
+						FunctionArn: rewriteFun.Arn,
+					},
+				},
+				// could be added to stack config in the future
+				MinTtl:     pulumi.Int(0),
+				DefaultTtl: pulumi.Int(3600),
+				MaxTtl:     pulumi.Int(86400),
+			}
+
+			orderedCacheBehaviors = append(orderedCacheBehaviors, rootCacheBehavior)
+
+			// Create a new cache behavior for subpaths rather than modifying the root one
+			subpathCacheBehavior := &cloudfront.DistributionOrderedCacheBehaviorArgs{}
+			*subpathCacheBehavior = *rootCacheBehavior // Copy all fields
+			subpathCacheBehavior.PathPattern = pulumi.Sprintf("%s/*", strings.TrimPrefix(website.basePath, "/"))
+
+			orderedCacheBehaviors = append(orderedCacheBehaviors, subpathCacheBehavior)
+		} else {
+			defaultCacheBehavior = cloudfront.DistributionDefaultCacheBehaviorArgs{
+				TargetOriginId:       pulumi.String(websiteName),
+				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
+				AllowedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
+				},
+				CachedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
+				},
+				ForwardedValues: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesArgs{
+					QueryString: pulumi.Bool(false),
+					Cookies: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs{
+						Forward: pulumi.String("none"),
+					},
+				},
+				FunctionAssociations: cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArray{
+					&cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs{
+						EventType:   pulumi.String("viewer-request"),
+						FunctionArn: rewriteFun.Arn,
+					},
+				},
+				// could be added to stack config in the future
+				MinTtl:     pulumi.Int(0),
+				DefaultTtl: pulumi.Int(3600),
+				MaxTtl:     pulumi.Int(86400),
+			}
+		}
 	}
 
 	// We conventionally route to nitric resources from this distribution to create a single entry point
@@ -255,56 +285,6 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	})
 	if err != nil {
 		return err
-	}
-
-	rewriteFun, err := cloudfront.NewFunction(ctx, "url-rewrite-function", &cloudfront.FunctionArgs{
-		Comment: pulumi.String("Rewrite URLs to default index document"),
-		Code:    embeds.GetUrlRewriteFunction(),
-		Runtime: pulumi.String("cloudfront-js-1.0"),
-	})
-	if err != nil {
-		return err
-	}
-
-	// Add the public bucket as an origin
-	origins = append(origins, &cloudfront.DistributionOriginArgs{
-		DomainName: a.publicWebsiteBucket.BucketRegionalDomainName,
-		OriginId:   pulumi.String("publicOrigin"),
-		S3OriginConfig: &cloudfront.DistributionOriginS3OriginConfigArgs{
-			OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
-		},
-	})
-
-	// Default cache behavior for the public bucket
-	defaultCacheBehavior := &cloudfront.DistributionDefaultCacheBehaviorArgs{
-		TargetOriginId:       pulumi.String("publicOrigin"),
-		ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
-		AllowedMethods: pulumi.StringArray{
-			pulumi.String("GET"),
-			pulumi.String("HEAD"),
-			pulumi.String("OPTIONS"),
-		},
-		CachedMethods: pulumi.StringArray{
-			pulumi.String("GET"),
-			pulumi.String("HEAD"),
-			pulumi.String("OPTIONS"),
-		},
-		ForwardedValues: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesArgs{
-			QueryString: pulumi.Bool(false),
-			Cookies: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs{
-				Forward: pulumi.String("none"),
-			},
-		},
-		// could be added to stack config in the future
-		MinTtl:     pulumi.Int(0),
-		DefaultTtl: pulumi.Int(3600),
-		MaxTtl:     pulumi.Int(86400),
-		FunctionAssociations: cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArray{
-			&cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs{
-				EventType:   pulumi.String("viewer-request"),
-				FunctionArn: rewriteFun.Arn,
-			},
-		},
 	}
 
 	// Sort the APIs by name
@@ -352,7 +332,6 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
 						Forward: pulumi.String("all"),
 					},
-					// Headers: pulumi.ToStringArray([]string{"*"}),
 				},
 				ViewerProtocolPolicy: pulumi.String("https-only"),
 			},
@@ -397,53 +376,53 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
-	// apply invalidation on the distribution when files change
-	pulumi.All(a.Distribution.ID().ToStringOutput(), a.websiteChangedFileOutputs.ToStringArrayOutput()).ApplyT(func(args []interface{}) error {
-		cdnID := args[0].(string)
-		websiteChangedFileKeys := []string{}
-
-		// Filter out empty strings from the array
-		for _, key := range args[1].([]string) {
-			if key != "" {
-				websiteChangedFileKeys = append(websiteChangedFileKeys, key)
-			}
-		}
-
-		if len(websiteChangedFileKeys) > 0 {
-			cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(a.Region))
-			if err != nil {
-				return fmt.Errorf("failed to load AWS config: %w", err)
-			}
-
-			// Create CloudFront client
-			client := awscloudfront.NewFromConfig(cfg)
-
-			quantity, err := SafeInt32(len(websiteChangedFileKeys))
-			if err != nil {
-				return err
-			}
-
-			input := awscloudfront.CreateInvalidationInput{
-				DistributionId: &cdnID,
-				InvalidationBatch: &awscloudfronttypes.InvalidationBatch{
-					CallerReference: aws.String(time.Now().Format("2006-01-02 15:04:05")),
-					Paths: &awscloudfronttypes.Paths{
-						Quantity: aws.Int32(quantity),
-						Items:    websiteChangedFileKeys,
-					},
-				},
-			}
-
-			_, err = client.CreateInvalidation(context.TODO(), &input)
-			if err != nil {
-				return fmt.Errorf("failed to create CloudFront invalidation: %w", err)
-			}
-		}
-
-		return nil
-	})
-
 	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.Distribution.DomainName))
+
+	if a.AwsConfig.Cdn.SkipCacheInvalidation {
+		return nil
+	}
+
+	// Apply a function to sort the array
+	sortedMd5Result := a.websiteFileMd5Outputs.ToArrayOutput().ApplyT(func(arr []interface{}) string {
+		// Convert each element to string
+		md5Strings := []string{}
+		for _, md5 := range arr {
+			if md5Str, ok := md5.(string); ok {
+				if md5Str != "" {
+					md5Strings = append(md5Strings, md5Str)
+				}
+			}
+		}
+
+		sort.Strings(md5Strings)
+
+		return strings.Join(md5Strings, "")
+	}).(pulumi.StringOutput)
+
+	var interpreter pulumi.StringArrayInput
+
+	// change the interpreter to PowerShell if running on Windows due to issues regarding double quotes
+	// https://github.com/pulumi/pulumi-command/issues/271
+	if runtime.GOOS == "windows" {
+		interpreter = pulumi.StringArray{
+			pulumi.String("powershell"),
+			pulumi.String("-Command"),
+		}
+	}
+
+	// Invalidate the CDN Cache
+	_, err = local.NewCommand(ctx, "invalidate-cache", &local.CommandArgs{
+		Create: pulumi.Sprintf(`aws cloudfront create-invalidation --distribution-id %s --paths "/*"`,
+			a.Distribution.ID().ToStringOutput()),
+		Triggers: pulumi.Array{
+			sortedMd5Result,
+		},
+		Logging:     local.LoggingStdoutAndStderr,
+		Interpreter: interpreter,
+	}, pulumi.DependsOn([]pulumi.Resource{a.Distribution}))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
