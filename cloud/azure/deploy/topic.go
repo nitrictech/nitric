@@ -21,6 +21,7 @@ import (
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	eventgrid "github.com/pulumi/pulumi-azure-native-sdk/eventgrid/v2"
 	"github.com/pulumi/pulumi-azure-native-sdk/resources"
+	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -58,8 +59,18 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 
 	subName := topicName + "-" + config.GetService()
 
-	_, err = eventgrid.NewEventSubscription(ctx, ResourceName(ctx, subName, EventSubscriptionRT), &eventgrid.EventSubscriptionArgs{
-		Scope: topic.ID(),
+	subscriptionId, err := random.NewRandomId(ctx, subName+"-ID", &random.RandomIdArgs{
+		Prefix:     pulumi.String("sub"),
+		ByteLength: pulumi.Int(EventSubscriptionRT.MaxLen - 3),
+		Keepers:    pulumi.Map{"subName": pulumi.String(subName)},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = eventgrid.NewEventSubscription(ctx, subName, &eventgrid.EventSubscriptionArgs{
+		EventSubscriptionName: subscriptionId.ID(),
+		Scope:                 topic.ID(),
 		RetryPolicy: eventgrid.RetryPolicyArgs{
 			MaxDeliveryAttempts:      pulumi.Int(30),
 			EventTimeToLiveInMinutes: pulumi.Int(5),
