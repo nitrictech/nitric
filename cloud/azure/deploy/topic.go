@@ -59,17 +59,20 @@ func (p *NitricAzurePulumiProvider) newEventGridTopicSubscription(ctx *pulumi.Co
 
 	subName := topicName + "-" + config.GetService()
 
-	subscriptionId, err := random.NewRandomId(ctx, subName+"-ID", &random.RandomIdArgs{
-		Prefix:     pulumi.String("sub"),
-		ByteLength: pulumi.Int(EventSubscriptionRT.MaxLen - 3),
-		Keepers:    pulumi.Map{"subName": pulumi.String(subName)},
+	subscriptionId, err := random.NewRandomString(ctx, subName+"-ID", &random.RandomStringArgs{
+		Length:  pulumi.Int(EventSubscriptionRT.MaxLen),
+		Keepers: pulumi.Map{"subName": pulumi.String(subName)},
+		Upper:   pulumi.Bool(true),
+		Lower:   pulumi.Bool(true),
+		Special: pulumi.Bool(false),
+		Number:  pulumi.Bool(false),
 	})
 	if err != nil {
 		return err
 	}
 
 	_, err = eventgrid.NewEventSubscription(ctx, subName, &eventgrid.EventSubscriptionArgs{
-		EventSubscriptionName: subscriptionId.ID(),
+		EventSubscriptionName: subscriptionId.Result,
 		Scope:                 topic.ID(),
 		RetryPolicy: eventgrid.RetryPolicyArgs{
 			MaxDeliveryAttempts:      pulumi.Int(30),
