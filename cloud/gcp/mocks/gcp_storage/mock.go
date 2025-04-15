@@ -102,6 +102,20 @@ func (mr *MockWriterMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockWriter)(nil).Close))
 }
 
+// ObjectAttrs mocks base method.
+func (m *MockWriter) ObjectAttrs() *storage.ObjectAttrs {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObjectAttrs")
+	ret0, _ := ret[0].(*storage.ObjectAttrs)
+	return ret0
+}
+
+// ObjectAttrs indicates an expected call of ObjectAttrs.
+func (mr *MockWriterMockRecorder) ObjectAttrs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectAttrs", reflect.TypeOf((*MockWriter)(nil).ObjectAttrs))
+}
+
 // Write mocks base method.
 func (m *MockWriter) Write(arg0 []byte) (int, error) {
 	m.ctrl.T.Helper()
