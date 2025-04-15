@@ -8,6 +8,9 @@ function handler(event) {
     basePath !== "/" &&
     (uri === basePath || uri.startsWith(basePath + "/"))
   ) {
+    // Inject a custom header to isolate cache keys
+    request.headers["x-nitric-cache-key"] = { value: basePath };
+
     uri = uri.replace(new RegExp("^" + basePath + "[/]*"), "/");
   }
 

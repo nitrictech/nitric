@@ -218,6 +218,9 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
 						Forward: pulumi.String("none"),
 					},
+					Headers: pulumi.StringArray{
+						pulumi.String("x-nitric-cache-key"),
+					},
 				},
 				FunctionAssociations: cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArray{
 					&cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs{

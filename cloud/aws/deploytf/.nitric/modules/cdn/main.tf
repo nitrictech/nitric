@@ -134,6 +134,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
         cookies {
           forward = "none"
         }
+
+        // a custom header to isolate cache keys
+        headers = ["x-nitric-cache-key"]
       }
 
       viewer_protocol_policy = "redirect-to-https"
@@ -164,6 +167,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
         cookies {
           forward = "none"
         }
+
+        // a custom header to isolate cache keys
+        headers = ["x-nitric-cache-key"]
       }
 
       viewer_protocol_policy = "redirect-to-https"
