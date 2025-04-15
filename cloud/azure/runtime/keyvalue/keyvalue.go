@@ -334,7 +334,7 @@ func (s *AzureStorageTableKeyValueService) ScanKeys(req *kvstorepb.KvStoreScanKe
 
 type AzureStorageClientFactory func(tableName string) (*aztables.Client, error)
 
-func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, storageAccountName string) AzureStorageClientFactory {
+func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, storageTableEndpoint string) AzureStorageClientFactory {
 	return func(tableName string) (*aztables.Client, error) {
 		if tableName == "" {
 			return nil, fmt.Errorf("table name is required")
@@ -342,7 +342,7 @@ func newStorageTablesClientFactory(creds *azidentity.DefaultAzureCredential, sto
 		// Hyphens not supported by azure storage tables
 		normalizedTableName := strings.Replace(tableName, "-", "", -1)
 
-		serviceURL := fmt.Sprintf("https://%s.table.core.windows.net/%s", storageAccountName, normalizedTableName)
+		serviceURL := fmt.Sprintf("%s/%s", storageTableEndpoint, normalizedTableName)
 		return aztables.NewClient(serviceURL, creds, nil)
 	}
 }

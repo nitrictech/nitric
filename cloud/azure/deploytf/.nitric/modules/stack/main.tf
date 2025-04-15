@@ -49,7 +49,7 @@ resource "azurerm_storage_account" "storage" {
     }
   }
 
-  public_network_access_enabled = !var.private_endpoints
+  # public_network_access_enabled = !var.private_endpoints
   
   tags = merge(var.tags, {
     "x-nitric-${local.stack_name}-name" = var.stack_name

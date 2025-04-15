@@ -56,6 +56,7 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountIdOutput", GoGetter: "StorageAccountIdOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountNameOutput", GoGetter: "StorageAccountNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountQueueEndpointOutput", GoGetter: "StorageAccountQueueEndpointOutput"},
+			_jsii_.MemberProperty{JsiiProperty: "storageAccountTableEndpointOutput", GoGetter: "StorageAccountTableEndpointOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "subnetId", GoGetter: "SubnetId"},
 			_jsii_.MemberProperty{JsiiProperty: "subnetIdOutput", GoGetter: "SubnetIdOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "subscriptionId", GoGetter: "SubscriptionId"},

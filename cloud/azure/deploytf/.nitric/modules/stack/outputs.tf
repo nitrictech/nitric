@@ -54,6 +54,10 @@ output "storage_account_queue_endpoint" {
   value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_queue_endpoint : null
 }
 
+output "storage_account_table_endpoint" {
+  value = one(azurerm_storage_account.storage) != null ? one(azurerm_storage_account.storage).primary_table_endpoint : null
+}
+
 output "registry_username" {
   value = azurerm_container_registry.container_registry.admin_username
 }

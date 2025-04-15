@@ -12,7 +12,7 @@ resource "azurerm_virtual_network" "stack_network" {
 locals {
   vnet_name = var.vnet_name == null ? one(azurerm_virtual_network.stack_network).name : var.vnet_name
   vnet_id = var.vnet_name == null ? one(azurerm_virtual_network.stack_network).id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${var.vnet_name}"
-  subnet_id = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${local.vnet_name}/subnets/${var.subnet_id}}"
+  subnet_id = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${local.vnet_name}/subnets/${var.subnet_id}"
   subnet_name = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).name : var.subnet_id
 }
 

@@ -75,6 +75,7 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
+	StorageAccountTableEndpointOutput() *string
 	SubnetId() *string
 	SetSubnetId(val *string)
 	SubnetIdOutput() *string
@@ -493,6 +494,16 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	_jsii_.Get(
 		j,
 		"storageAccountQueueEndpointOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) StorageAccountTableEndpointOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageAccountTableEndpointOutput",
 		&returns,
 	)
 	return returns
