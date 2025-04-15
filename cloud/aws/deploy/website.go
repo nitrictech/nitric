@@ -256,55 +256,62 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			},
 		})
 
+		code, err := embeds.GetUrlRewriteFunction(website.basePath)
+		if err != nil {
+			return err
+		}
+
+		rewriteFun, err := cloudfront.NewFunction(ctx, fmt.Sprintf("url-rewrite-function-%s", websiteName), &cloudfront.FunctionArgs{
+			Comment: pulumi.String("Rewrite URLs to default index document"),
+			Code:    code,
+			Runtime: pulumi.String("cloudfront-js-1.0"),
+		})
+		if err != nil {
+			return err
+		}
+
 		// Make cache behaviour for all but the root origin. The root origin uses the default cache behaviour
 		if website.basePath != "/" {
-			code, err := embeds.GetUrlRewriteFunction(website.basePath)
-			if err != nil {
-				return err
-			}
-
-			rewriteFun, err := cloudfront.NewFunction(ctx, fmt.Sprintf("url-rewrite-function-%s", websiteName), &cloudfront.FunctionArgs{
-				Comment: pulumi.String("Rewrite URLs to default index document"),
-				Code:    code,
-				Runtime: pulumi.String("cloudfront-js-1.0"),
-			})
-			if err != nil {
-				return err
-			}
-
-			orderedCacheBehaviors = append(orderedCacheBehaviors,
-				&cloudfront.DistributionOrderedCacheBehaviorArgs{
-					PathPattern:          pulumi.Sprintf("%s*", strings.TrimPrefix(website.basePath, "/")),
-					TargetOriginId:       pulumi.String(websiteName),
-					ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
-					AllowedMethods: pulumi.StringArray{
-						pulumi.String("GET"),
-						pulumi.String("HEAD"),
-						pulumi.String("OPTIONS"),
-					},
-					CachedMethods: pulumi.StringArray{
-						pulumi.String("GET"),
-						pulumi.String("HEAD"),
-						pulumi.String("OPTIONS"),
-					},
-					ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
-						QueryString: pulumi.Bool(false),
-						Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
-							Forward: pulumi.String("none"),
-						},
-					},
-					FunctionAssociations: cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArray{
-						&cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs{
-							EventType:   pulumi.String("viewer-request"),
-							FunctionArn: rewriteFun.Arn,
-						},
-					},
-					// could be added to stack config in the future
-					MinTtl:     pulumi.Int(0),
-					DefaultTtl: pulumi.Int(3600),
-					MaxTtl:     pulumi.Int(86400),
+			rootCacheBehavior := &cloudfront.DistributionOrderedCacheBehaviorArgs{
+				PathPattern:          pulumi.String(strings.TrimPrefix(website.basePath, "/")),
+				TargetOriginId:       pulumi.String(websiteName),
+				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
+				AllowedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
 				},
-			)
+				CachedMethods: pulumi.StringArray{
+					pulumi.String("GET"),
+					pulumi.String("HEAD"),
+					pulumi.String("OPTIONS"),
+				},
+				ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
+					QueryString: pulumi.Bool(false),
+					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
+						Forward: pulumi.String("none"),
+					},
+				},
+				FunctionAssociations: cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArray{
+					&cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs{
+						EventType:   pulumi.String("viewer-request"),
+						FunctionArn: rewriteFun.Arn,
+					},
+				},
+				// could be added to stack config in the future
+				MinTtl:     pulumi.Int(0),
+				DefaultTtl: pulumi.Int(3600),
+				MaxTtl:     pulumi.Int(86400),
+			}
+
+			orderedCacheBehaviors = append(orderedCacheBehaviors, rootCacheBehavior)
+
+			// Create a new cache behavior for subpaths rather than modifying the root one
+			subpathCacheBehavior := &cloudfront.DistributionOrderedCacheBehaviorArgs{}
+			*subpathCacheBehavior = *rootCacheBehavior // Copy all fields
+			subpathCacheBehavior.PathPattern = pulumi.Sprintf("%s/*", strings.TrimPrefix(website.basePath, "/"))
+
+			orderedCacheBehaviors = append(orderedCacheBehaviors, subpathCacheBehavior)
 		} else {
 			defaultCacheBehavior = cloudfront.DistributionDefaultCacheBehaviorArgs{
 				TargetOriginId:       pulumi.String(websiteName),
@@ -323,6 +330,12 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 					QueryString: pulumi.Bool(false),
 					Cookies: &cloudfront.DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs{
 						Forward: pulumi.String("none"),
+					},
+				},
+				FunctionAssociations: cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArray{
+					&cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs{
+						EventType:   pulumi.String("viewer-request"),
+						FunctionArn: rewriteFun.Arn,
 					},
 				},
 				// could be added to stack config in the future
