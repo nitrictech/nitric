@@ -25,13 +25,12 @@ resource "azurerm_resource_group" "resource_group" {
 
 # Create an azure storage account
 resource "azurerm_storage_account" "storage" {
-  count               = var.enable_storage ? 1 : 0
-  name                = "${var.stack_name}sa${random_string.stack_id.result}"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
-  account_tier        = "Standard"
-  access_tier         = "Hot"
-  # TODO: Make configurable  
+  count                    = var.enable_storage ? 1 : 0
+  name                     = "${var.stack_name}sa${random_string.stack_id.result}"
+  resource_group_name      = azurerm_resource_group.resource_group.name
+  location                 = azurerm_resource_group.resource_group.location
+  account_tier             = "Standard"
+  access_tier              = "Hot"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   tags = merge(var.tags, {

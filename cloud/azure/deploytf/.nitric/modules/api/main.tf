@@ -28,14 +28,13 @@ resource "azurerm_api_management" "api" {
 
 # Deploy a new azure api management api
 resource "azurerm_api_management_api" "api" {
-  name                = local.api_name
-  resource_group_name = var.resource_group_name
-  api_management_name = azurerm_api_management.api.name
-  # TODO: This may need to increment if the api changes   
-  revision     = "1"
-  display_name = "${var.name}-api"
-  protocols   = ["https"]
-  description = var.description
+  name                  = local.api_name
+  resource_group_name   = var.resource_group_name
+  api_management_name   = azurerm_api_management.api.name
+  revision              = "1"
+  display_name          = "${var.name}-api"
+  protocols             = ["https"]
+  description           = var.description
   subscription_required = false
   import {
     content_format = "openapi+json"
