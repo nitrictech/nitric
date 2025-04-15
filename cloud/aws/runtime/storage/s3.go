@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -33,6 +32,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
 	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	content "github.com/nitrictech/nitric/cloud/common/runtime/storage"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
@@ -130,7 +130,7 @@ func (s *S3StorageService) Write(ctx context.Context, req *storagepb.StorageWrit
 	newErr := grpc_errors.ErrorsWithScope("S3StorageService.Write")
 
 	if b, err := s.getS3BucketName(ctx, req.BucketName); err == nil {
-		contentType := http.DetectContentType(req.Body)
+		contentType := content.DetectContentType(req.Key, req.Body)
 
 		if _, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      b,

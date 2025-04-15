@@ -30,6 +30,7 @@ import (
 	"github.com/nitrictech/nitric/cloud/azure/runtime/env"
 	azblob_service_iface "github.com/nitrictech/nitric/cloud/azure/runtime/storage/iface"
 	azureutils "github.com/nitrictech/nitric/cloud/azure/runtime/utils"
+	content "github.com/nitrictech/nitric/cloud/common/runtime/storage"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	"github.com/nitrictech/nitric/core/pkg/logger"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -90,12 +91,16 @@ func (a *AzblobStorageService) Read(ctx context.Context, req *storagepb.StorageR
 func (a *AzblobStorageService) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
 	newErr := grpc_errors.ErrorsWithScope("AzblobStorageService.Write")
 
+	contentType := content.DetectContentType(req.Key, req.Body)
+
 	blob := a.getBlobUrl(req.BucketName, req.Key)
 
 	if _, err := blob.Upload(
 		ctx,
 		bytes.NewReader(req.Body),
-		azblob.BlobHTTPHeaders{},
+		azblob.BlobHTTPHeaders{
+			ContentType: contentType,
+		},
 		azblob.Metadata{},
 		azblob.BlobAccessConditions{},
 		azblob.DefaultAccessTier,

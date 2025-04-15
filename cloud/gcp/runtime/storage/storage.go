@@ -33,6 +33,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 
+	content "github.com/nitrictech/nitric/cloud/common/runtime/storage"
 	ifaces_gcloud_storage "github.com/nitrictech/nitric/cloud/gcp/ifaces/gcloud_storage"
 	grpc_errors "github.com/nitrictech/nitric/core/pkg/grpc/errors"
 	storagePb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
@@ -153,6 +154,7 @@ func (s *StorageStorageService) Write(ctx context.Context, req *storagePb.Storag
 	}
 
 	writer := bucketHandle.Object(req.Key).NewWriter(ctx)
+	writer.ObjectAttrs().ContentType = content.DetectContentType(req.Key, req.Body)
 
 	if _, err := writer.Write(req.Body); err != nil {
 		if isPermissionDenied(err) {
