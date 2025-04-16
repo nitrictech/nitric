@@ -88,7 +88,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 	// Required for pre-signed file access URLs
 	policy.NewPolicy(stack, jsii.String(name+"Policy"), &policy.PolicyConfig{
 		ServicePrincipalId: a.Services[name].ServicePrincipalIdOutput(),
-		Scope:              a.Stack.ResourceGroupNameOutput(),
+		Scope:              jsii.Sprintf("/subscriptions/%s/resourceGroups/%s", *a.Stack.SubscriptionIdOutput(), *a.Stack.ResourceGroupNameOutput()),
 		RoleDefinitionId:   a.Roles.AllowUserDelegationKeyGenerationOutput(),
 		DependsOn:          &[]cdktf.ITerraformDependable{a.Roles},
 	})
