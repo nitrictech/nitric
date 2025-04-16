@@ -298,11 +298,11 @@ func createUserDelegationKeyRole(ctx *pulumi.Context, stackId string, subscripti
 		Description:      pulumi.String("Allow user delegation key generation, enabling actions such as pre-signed file access URLs"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{},
-				DataActions: pulumi.StringArray{
+				Actions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"),
 				},
-				NotActions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{},
+				NotActions:  pulumi.StringArray{},
 			},
 		},
 		Scope: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s", subscriptionId, rgName),
