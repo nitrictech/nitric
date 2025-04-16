@@ -14,6 +14,7 @@ func init() {
 		[]_jsii_.Member{
 			_jsii_.MemberMethod{JsiiMethod: "addOverride", GoMethod: "AddOverride"},
 			_jsii_.MemberMethod{JsiiMethod: "addProvider", GoMethod: "AddProvider"},
+			_jsii_.MemberProperty{JsiiProperty: "allowUserDelegationKeyGenerationOutput", GoGetter: "AllowUserDelegationKeyGenerationOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "bucketDeleteOutput", GoGetter: "BucketDeleteOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "bucketListOutput", GoGetter: "BucketListOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "bucketReadOutput", GoGetter: "BucketReadOutput"},

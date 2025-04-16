@@ -8,6 +8,11 @@ output "topic_publish" {
   description = "The role ID for the Nitric topic publish role"
 }
 
+output "allow_user_delegation_key_generation" {
+  value       = azurerm_role_definition.nitric_role_allow_user_delegation_key_generation.role_definition_resource_id
+  description = "The role ID for the Nitric allow user delegation key generation role"
+}
+
 output "bucket_write" {
   value       = azurerm_role_definition.nitric_role_bucket_file_put.role_definition_resource_id
   description = "The role ID for the Nitric bucket write role"

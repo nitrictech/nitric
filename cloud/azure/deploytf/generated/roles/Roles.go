@@ -14,6 +14,7 @@ import (
 // Source at ./.nitric/modules/roles
 type Roles interface {
 	cdktf.TerraformModule
+	AllowUserDelegationKeyGenerationOutput() *string
 	BucketDeleteOutput() *string
 	BucketListOutput() *string
 	BucketReadOutput() *string
@@ -87,6 +88,16 @@ type Roles interface {
 // The jsii proxy struct for Roles
 type jsiiProxy_Roles struct {
 	internal.Type__cdktfTerraformModule
+}
+
+func (j *jsiiProxy_Roles) AllowUserDelegationKeyGenerationOutput() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"allowUserDelegationKeyGenerationOutput",
+		&returns,
+	)
+	return returns
 }
 
 func (j *jsiiProxy_Roles) BucketDeleteOutput() *string {
