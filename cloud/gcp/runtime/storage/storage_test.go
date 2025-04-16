@@ -73,6 +73,9 @@ var _ = Describe("Storage", func() {
 
 					By("The bytes being written")
 					mockWriter.EXPECT().Write(testPayload).Times(1)
+					mockWriter.EXPECT().ObjectAttrs().Times(1).Return(&storage.ObjectAttrs{
+						ContentType: "application/octet-stream",
+					})
 					mockWriter.EXPECT().Close().Times(1)
 
 					_, err := mockStorageServer.Write(context.TODO(), &storagePb.StorageWriteRequest{
@@ -143,6 +146,9 @@ var _ = Describe("Storage", func() {
 					mockBucket.EXPECT().Object("test-file").Return(mockObject)
 
 					mockObject.EXPECT().NewWriter(gomock.Any()).Return(mockWriter)
+					mockWriter.EXPECT().ObjectAttrs().Times(1).Return(&storage.ObjectAttrs{
+						ContentType: "application/octet-stream",
+					})
 					mockWriter.EXPECT().Write(gomock.Any()).Return(0, &googleapi.Error{Code: 403, Message: "insufficient permissions"})
 
 					_, err := mockStorageServer.Write(context.TODO(), &storagePb.StorageWriteRequest{
