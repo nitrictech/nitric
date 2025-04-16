@@ -25,6 +25,7 @@ variable "resource_group_name" {
   description = "The name of the resource group to reuse"
   type        = string
   nullable    = true
+  default     = null
 }
 
 variable "location" {

@@ -36,10 +36,6 @@ func (j *jsiiProxy_Stack) validateSetLocationParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Stack) validateSetResourceGroupNameParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Stack) validateSetStackNameParameters(val *string) error {
 	return nil
 }

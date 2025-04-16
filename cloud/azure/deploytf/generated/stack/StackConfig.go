@@ -15,8 +15,6 @@ type StackConfig struct {
 	SkipAssetCreationFromLocalModules *bool `field:"optional" json:"skipAssetCreationFromLocalModules" yaml:"skipAssetCreationFromLocalModules"`
 	// The location/region where the resources will be created.
 	Location *string `field:"required" json:"location" yaml:"location"`
-	// The name of the resource group to reuse.
-	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
 	// The name of the stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 	// The tags to apply to the stack The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
@@ -29,5 +27,7 @@ type StackConfig struct {
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
 	// The id of the subnet to deploy the infrastructure resources.
 	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
+	// The name of the resource group to reuse.
+	ResourceGroupName *string `field:"optional" json:"resourceGroupName" yaml:"resourceGroupName"`
 }
 
