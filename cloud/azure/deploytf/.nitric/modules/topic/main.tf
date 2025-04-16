@@ -3,14 +3,23 @@ resource "azurerm_eventgrid_topic" "topic" {
   name                = var.name
   resource_group_name = var.resource_group_name
   location            = var.location
-  tags = var.tags
+  tags                = var.tags
+}
+
+# Generate random string for each event subscription name
+resource "random_string" "event_subscription_name" {
+  for_each = var.listeners
+
+  length  = 24
+  special = false
+  upper   = false
 }
 
 # Create an event subscription per listener
 resource "azurerm_eventgrid_event_subscription" "subscription" {
   for_each = var.listeners
 
-  name  = each.key
+  name  = random_string.event_subscription_name[each.key].result
   scope = azurerm_eventgrid_topic.topic.id
 
   retry_policy {
