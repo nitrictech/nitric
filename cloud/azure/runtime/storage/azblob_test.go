@@ -148,7 +148,9 @@ var _ = Describe("Azblob", func() {
 				mockBlob.EXPECT().Upload(
 					gomock.Any(),
 					bytes.NewReader([]byte("test")),
-					azblob.BlobHTTPHeaders{},
+					azblob.BlobHTTPHeaders{
+						ContentType: "text/plain; charset=utf-8",
+					},
 					azblob.Metadata{},
 					azblob.BlobAccessConditions{},
 					azblob.DefaultAccessTier,
@@ -190,7 +192,9 @@ var _ = Describe("Azblob", func() {
 				mockBlob.EXPECT().Upload(
 					gomock.Any(),
 					bytes.NewReader([]byte("test")),
-					azblob.BlobHTTPHeaders{},
+					azblob.BlobHTTPHeaders{
+						ContentType: "text/plain; charset=utf-8",
+					},
 					azblob.Metadata{},
 					azblob.BlobAccessConditions{},
 					azblob.DefaultAccessTier,
