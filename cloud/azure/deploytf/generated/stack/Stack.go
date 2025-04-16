@@ -59,6 +59,8 @@ type Stack interface {
 	RegistryLoginServerOutput() *string
 	RegistryPasswordOutput() *string
 	RegistryUsernameOutput() *string
+	ResourceGroupName() *string
+	SetResourceGroupName(val *string)
 	ResourceGroupNameOutput() *string
 	// Experimental.
 	SkipAssetCreationFromLocalModules() *bool
@@ -379,6 +381,16 @@ func (j *jsiiProxy_Stack) RegistryUsernameOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) ResourceGroupName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"resourceGroupName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) ResourceGroupNameOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -602,6 +614,14 @@ func (j *jsiiProxy_Stack)SetLocation(val *string) {
 	_jsii_.Set(
 		j,
 		"location",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetResourceGroupName(val *string) {
+	_jsii_.Set(
+		j,
+		"resourceGroupName",
 		val,
 	)
 }

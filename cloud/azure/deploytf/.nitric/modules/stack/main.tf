@@ -15,6 +15,8 @@ data "azurerm_client_config" "current" {}
 
 # Create an azure resource group
 resource "azurerm_resource_group" "resource_group" {
+  count = var.resource_group_name == null ? 1 : 0
+
   name     = "${var.stack_name}-rg${random_string.stack_id.result}"
   location = var.location
   tags = merge(var.tags, {
@@ -23,12 +25,16 @@ resource "azurerm_resource_group" "resource_group" {
   })
 }
 
+locals {
+  resource_group_name = var.resource_group_name == null ? one(azurerm_resource_group.resource_group).name : var.resource_group_name
+}
+
 # Create an azure storage account
 resource "azurerm_storage_account" "storage" {
   count               = var.enable_storage ? 1 : 0
   name                = "${var.stack_name}sa${random_string.stack_id.result}"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = local.resource_group_name
+  location            = var.location
   account_tier        = "Standard"
   access_tier         = "Hot"
   # TODO: Make configurable  
@@ -45,8 +51,8 @@ resource "azurerm_key_vault" "keyvault" {
   count = var.enable_keyvault ? 1 : 0
 
   name                       = "${var.stack_name}kv${random_string.stack_id.result}"
-  resource_group_name        = azurerm_resource_group.resource_group.name
-  location                   = azurerm_resource_group.resource_group.location
+  resource_group_name        = local.resource_group_name
+  location                   = var.location
   sku_name                   = "standard"
   soft_delete_retention_days = 7
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -61,15 +67,15 @@ resource "azurerm_key_vault" "keyvault" {
 # Create a User assigned managed identity
 resource "azurerm_user_assigned_identity" "managed_identity" {
   name                = "managed-identity-${local.stack_name}"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = local.resource_group_name
+  location            = var.location
 }
 
 # Create a container registry for storing images
 resource "azurerm_container_registry" "container_registry" {
   name                = "${var.stack_name}cr${random_string.stack_id.result}"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = local.resource_group_name
+  location            = var.location
   sku                 = "Basic"
   admin_enabled       = true
   tags = merge(var.tags, {
@@ -81,8 +87,8 @@ resource "azurerm_container_registry" "container_registry" {
 # Create an operational insights workspace
 resource "azurerm_log_analytics_workspace" "log_analytics" {
   name                = "${var.stack_name}log${random_string.stack_id.result}"
-  resource_group_name = azurerm_resource_group.resource_group.name
-  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = local.resource_group_name
+  location            = var.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
   tags = merge(var.tags, {
@@ -91,20 +97,11 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
   })
 }
 
-
-
-
-
-
-
-
-
-
 # Create a virtual network for the database server
 resource "azurerm_virtual_network" "database_network" {
   count               = var.enable_database ? 1 : 0
   name                = "nitric-database-vnet"
-  resource_group_name = azurerm_resource_group.resource_group.name
+  resource_group_name = local.resource_group_name
   location            = var.location
   address_space       = ["10.0.0.0/16"]
 
@@ -115,7 +112,7 @@ resource "azurerm_virtual_network" "database_network" {
 resource "azurerm_subnet" "database_subnet" {
   count                = var.enable_database ? 1 : 0
   name                 = "nitric-database-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
+  resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.0.0/18"]
 
@@ -134,7 +131,7 @@ resource "azurerm_subnet" "database_subnet" {
 resource "azurerm_subnet" "database_infrastructure_subnet" {
   count                = var.enable_database ? 1 : 0
   name                 = "nitric-database-infrastructure-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
+  resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.64.0/18"]
 
@@ -145,7 +142,7 @@ resource "azurerm_subnet" "database_infrastructure_subnet" {
 resource "azurerm_subnet" "database_client_subnet" {
   count                = var.enable_database ? 1 : 0
   name                 = "nitric-database-client-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
+  resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.database_network[0].name
   address_prefixes     = ["10.0.192.0/18"]
 
@@ -164,7 +161,7 @@ resource "azurerm_subnet" "database_client_subnet" {
 resource "azurerm_private_dns_zone" "database_dns_zone" {
   count               = var.enable_database ? 1 : 0
   name                = "db-private-dns.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.resource_group.name
+  resource_group_name = local.resource_group_name
 }
 
 # Create a private link service for the database server
@@ -172,7 +169,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "database_link_service"
   count                 = var.enable_database ? 1 : 0
   name                  = "nitric-database-link-service"
   private_dns_zone_name = azurerm_private_dns_zone.database_dns_zone[0].name
-  resource_group_name   = azurerm_resource_group.resource_group.name
+  resource_group_name   = local.resource_group_name
   virtual_network_id    = azurerm_virtual_network.database_network[0].id
   registration_enabled  = false
 
@@ -193,7 +190,7 @@ resource "random_password" "database_master_password" {
 resource "azurerm_postgresql_flexible_server" "database" {
   count                  = var.enable_database ? 1 : 0
   name                   = "nitric-db-${random_string.stack_id.result}"
-  resource_group_name    = azurerm_resource_group.resource_group.name
+  resource_group_name    = local.resource_group_name
   location               = var.location
   version                = "14"
   administrator_login    = "nitric"
@@ -225,25 +222,11 @@ resource "azurerm_postgresql_flexible_server" "database" {
   ]
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Create a new container app managed environment
 resource "azurerm_container_app_environment" "environment" {
   name                       = "${var.stack_name}kube${random_string.stack_id.result}"
-  resource_group_name        = azurerm_resource_group.resource_group.name
-  location                   = azurerm_resource_group.resource_group.location
+  resource_group_name        = local.resource_group_name
+  location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics.id
   tags = {
     "x-nitric-${local.stack_name}-name" = var.stack_name

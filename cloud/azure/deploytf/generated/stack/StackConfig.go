@@ -27,5 +27,7 @@ type StackConfig struct {
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
 	// The id of the subnet to deploy the infrastructure resources.
 	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
+	// The name of the resource group to reuse.
+	ResourceGroupName *string `field:"optional" json:"resourceGroupName" yaml:"resourceGroupName"`
 }
 
