@@ -36,9 +36,8 @@ type StackRoles struct {
 }
 
 type RoleDefinition struct {
-	Description      pulumi.StringInput
-	Permissions      authorization.PermissionArray
-	AssignableScopes pulumi.StringArray
+	Description pulumi.StringInput
+	Permissions authorization.PermissionArray
 }
 
 var roleDefinitions = map[resourcespb.Action]RoleDefinition{
@@ -53,9 +52,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_QueueEnqueue: {
 		Description: pulumi.String("queue send access"),
@@ -70,9 +66,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_QueueDequeue: {
 		Description: pulumi.String("queue receive access"),
@@ -89,9 +82,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_KeyValueStoreWrite: {
 		Description: pulumi.String("keyvalue write access"),
@@ -106,9 +96,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_KeyValueStoreDelete: {
 		Description: pulumi.String("keyvalue delete access"),
@@ -121,9 +108,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_BucketFileGet: {
 		Description: pulumi.String("bucket read access"),
@@ -138,53 +122,48 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_BucketFilePut: {
 		Description: pulumi.String("bucket file write access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{},
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/read"),
+				},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write"),
 				},
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_BucketFileList: {
 		Description: pulumi.String("bucket file list access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/read"),
+				},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"),
 				},
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_BucketFileDelete: {
 		Description: pulumi.String("bucket file delete access"),
 		Permissions: authorization.PermissionArray{
 			authorization.PermissionArgs{
-				Actions: pulumi.StringArray{},
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/read"),
+				},
 				DataActions: pulumi.StringArray{
 					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete"),
 				},
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_TopicPublish: {
 		Description: pulumi.String("topic event publish access"),
@@ -200,9 +179,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_SecretAccess: {
 		Description: pulumi.String("keyvault secret read access"),
@@ -215,9 +191,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 	resourcespb.Action_SecretPut: {
 		Description: pulumi.String("keyvault secret write access"),
@@ -232,9 +205,6 @@ var roleDefinitions = map[resourcespb.Action]RoleDefinition{
 				NotActions: pulumi.StringArray{},
 			},
 		},
-		AssignableScopes: pulumi.ToStringArray([]string{
-			"/",
-		}),
 	},
 }
 
@@ -260,7 +230,7 @@ var actionNames = map[resourcespb.Action]string{
 	resourcespb.Action_QueueDequeue:        "QueueDequeue",
 }
 
-func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {
+func (p *NitricAzurePulumiProvider) CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {
 	res := &Roles{Name: "nitric-roles", RoleDefinitions: map[resourcespb.Action]*authorization.RoleDefinition{}}
 
 	err := ctx.RegisterComponentResource("nitricazure:AzureADRoles", "nitric-roles", res)
@@ -299,5 +269,45 @@ func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgN
 		res.RoleDefinitions[id] = createdRole
 	}
 
+	delegationRole, err := createUserDelegationKeyRole(ctx, stackId, subscriptionId, rgName, res)
+	if err != nil {
+		return nil, err
+	}
+
+	p.UserDelegationKeyRole = delegationRole
+
 	return res, nil
+}
+
+// createUserDelegationKeyRole - creates a role that allow user delegation key generation
+func createUserDelegationKeyRole(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput, parent pulumi.Resource) (*authorization.RoleDefinition, error) {
+	name := fmt.Sprintf("GenerateUserDelegationKey-%s", stackId)
+
+	roleUuid, err := random.NewRandomUuid(ctx, name, &random.RandomUuidArgs{
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"subscriptionId": subscriptionId,
+		}),
+	}, pulumi.Parent(parent))
+	if err != nil {
+		return nil, err
+	}
+
+	return authorization.NewRoleDefinition(ctx, name, &authorization.RoleDefinitionArgs{
+		RoleDefinitionId: roleUuid.Result,
+		RoleName:         pulumi.String(fmt.Sprintf("%s-UserDelegationKeyGenerator", stackId)),
+		Description:      pulumi.String("Allow user delegation key generation, enabling actions such as pre-signed file access URLs"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"),
+				},
+				DataActions: pulumi.StringArray{},
+				NotActions:  pulumi.StringArray{},
+			},
+		},
+		Scope: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s", subscriptionId, rgName),
+		AssignableScopes: pulumi.StringArray{
+			pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s", subscriptionId, rgName),
+		},
+	}, pulumi.Parent(parent))
 }

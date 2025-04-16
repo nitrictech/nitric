@@ -91,12 +91,6 @@ func (p *NitricAzurePulumiProvider) scopeFromResource(resource *deploymentspb.Re
 			return nil, fmt.Errorf("bucket %s not found", resource.Id.Name)
 		}
 
-		// return pulumi.Sprintf(
-		// 	"/subscriptions/%s/resourceGroups/%s",
-		// 	deployedResources.SubscriptionId,
-		// 	bucket.ResourceGroup.Name,
-		// ), nil
-
 		return &resourceScope{
 			scope: pulumi.Sprintf(
 				"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s",

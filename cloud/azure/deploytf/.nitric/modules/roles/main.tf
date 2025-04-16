@@ -86,6 +86,22 @@ resource "azurerm_role_definition" "nitric_role_queue_dequeue" {
   assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
 }
 
+resource "azurerm_role_definition" "nitric_role_allow_user_delegation_key_generation" {
+  description = "Allow user delegation key generation, enabling actions such as pre-signed file access URLs"
+  name        = "${var.stack_name}-AllowUserDelegationKeyGeneration"
+  scope       = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+
+  permissions {
+    actions = [
+      "Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"
+    ]
+    data_actions = []
+    not_actions  = []
+  }
+
+  assignable_scopes = ["/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"]
+}
+
 resource "azurerm_role_definition" "nitric_role_bucket_file_get" {
   description = "nitric bucket file get access"
   name        = "${var.stack_name}-BucketFileGet"

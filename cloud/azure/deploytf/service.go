@@ -19,6 +19,7 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/policy"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -81,6 +82,15 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 		MinReplicas: jsii.Number(serviceConfig.ContainerApps.MinReplicas),
 		MaxReplicas: jsii.Number(serviceConfig.ContainerApps.MaxReplicas),
 		Tags:        a.GetTags(*a.Stack.StackIdOutput(), name, resources.Service),
+	})
+
+	// Assign the allow user delegation key generation role to the service principal
+	// Required for pre-signed file access URLs
+	policy.NewPolicy(stack, jsii.String(name+"Policy"), &policy.PolicyConfig{
+		ServicePrincipalId: a.Services[name].ServicePrincipalIdOutput(),
+		Scope:              jsii.Sprintf("/subscriptions/%s/resourceGroups/%s", *a.Stack.SubscriptionIdOutput(), *a.Stack.ResourceGroupNameOutput()),
+		RoleDefinitionId:   a.Roles.AllowUserDelegationKeyGenerationOutput(),
+		DependsOn:          &[]cdktf.ITerraformDependable{a.Roles},
 	})
 
 	return nil
