@@ -41,9 +41,9 @@ type AzureApiConfig struct {
 type NetworkConfig struct {
 	// Enable private endpoints for the stack
 	PrivateEndpoints bool `mapstructure:"private-endpoints"`
-	// Reuse an existing vnet for the stack (must be in the same resource group)
-	VnetName string `mapstructure:"vnet-name"`
-	// Reuse an existing subnet for the stack (must be in the same resource group)
+	// Reuse an existing vnet for the stack (must be fully qualified id)
+	VnetId string `mapstructure:"vnet-id"`
+	// Reuse an existing subnet for the stack (must be fully qualified id)
 	SubnetId string `mapstructure:"subnet-id"`
 	// Automatically create dns zones (only needed if not already created by cloud policy)
 	CreateDnsZones bool `mapstructure:"create-dns-zones"`

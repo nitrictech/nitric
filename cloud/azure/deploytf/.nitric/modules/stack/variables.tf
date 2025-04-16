@@ -37,7 +37,7 @@ variable "location" {
   type        = string
 }
 
-variable "vnet_name" {
+variable "vnet_id" {
   description = "The name of the vnet to deploy the infrastructure resources"
   type        = string
   nullable    = true

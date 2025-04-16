@@ -1,6 +1,6 @@
 # Create a virtual network for the database server
 resource "azurerm_virtual_network" "stack_network" {
-  count               = var.vnet_name == null && var.enable_database ? 1 : 0
+  count               = var.vnet_id == null && var.enable_database ? 1 : 0
   name                = "nitric-database-vnet"
   resource_group_name = local.resource_group_name
   location            = var.location
@@ -10,17 +10,18 @@ resource "azurerm_virtual_network" "stack_network" {
 }
 
 locals {
-  vnet_name = var.vnet_name == null ? one(azurerm_virtual_network.stack_network).name : var.vnet_name
-  vnet_id = var.vnet_name == null ? one(azurerm_virtual_network.stack_network).id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${var.vnet_name}"
-  subnet_id = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${local.vnet_name}/subnets/${var.subnet_id}"
-  subnet_name = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).name : var.subnet_id
+  vnet_resource_group = var.vnet_id == null ? local.resource_group_name : split("/", var.vnet_id)[4]
+  vnet_name = var.vnet_id == null ? one(azurerm_virtual_network.stack_network).name : split("/", var.vnet_id)[8]
+  vnet_id = var.vnet_id == null ? one(azurerm_virtual_network.stack_network).id : var.vnet_id
+  subnet_id = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).id : var.subnet_id
+  subnet_name = var.subnet_id == null ? one(azurerm_subnet.stack_infrastructure_subnet).name : split("/", var.subnet_id)[10]
 }
 
 # Create an infrastructure subnet for the database server
 resource "azurerm_subnet" "stack_infrastructure_subnet" {
   count                = var.subnet_id == null && var.enable_database ? 1 : 0
   name                 = "nitric-stack-infrastructure-subnet"
-  resource_group_name  = local.resource_group_name
+  resource_group_name  = local.vnet_resource_group
   virtual_network_name = local.vnet_name
   address_prefixes     = ["10.0.0.0/16"]
 
