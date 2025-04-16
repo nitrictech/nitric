@@ -185,8 +185,8 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 	}
 
 	var vnetName *string = nil
-	if a.AzureConfig.Network.VnetName != "" {
-		vnetName = jsii.String(a.AzureConfig.Network.VnetName)
+	if a.AzureConfig.Network.VnetId != "" {
+		vnetName = jsii.String(a.AzureConfig.Network.VnetId)
 	}
 
 	createDnsZones := a.AzureConfig.Network.CreateDnsZones
@@ -203,7 +203,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 		ResourceGroupName: resourceGroupImport,
 		PrivateEndpoints:  jsii.Bool(enablePrivateEndpoints),
 		SubnetId:          subnetId,
-		VnetName:          vnetName,
+		VnetId:            vnetName,
 		CreateDnsZones:    jsii.Bool(createDnsZones),
 	})
 

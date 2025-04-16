@@ -86,8 +86,8 @@ type Stack interface {
 	SetTags(val *map[string]*string)
 	// Experimental.
 	Version() *string
-	VnetName() *string
-	SetVnetName(val *string)
+	VnetId() *string
+	SetVnetId(val *string)
 	// Experimental.
 	AddOverride(path *string, value interface{})
 	// Experimental.
@@ -569,11 +569,11 @@ func (j *jsiiProxy_Stack) Version() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Stack) VnetName() *string {
+func (j *jsiiProxy_Stack) VnetId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"vnetName",
+		"vnetId",
 		&returns,
 	)
 	return returns
@@ -732,13 +732,13 @@ func (j *jsiiProxy_Stack)SetTags(val *map[string]*string) {
 	)
 }
 
-func (j *jsiiProxy_Stack)SetVnetName(val *string) {
-	if err := j.validateSetVnetNameParameters(val); err != nil {
+func (j *jsiiProxy_Stack)SetVnetId(val *string) {
+	if err := j.validateSetVnetIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"vnetName",
+		"vnetId",
 		val,
 	)
 }

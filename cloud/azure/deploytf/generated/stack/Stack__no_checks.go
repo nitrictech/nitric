@@ -60,7 +60,7 @@ func (j *jsiiProxy_Stack) validateSetTagsParameters(val *map[string]*string) err
 	return nil
 }
 
-func (j *jsiiProxy_Stack) validateSetVnetNameParameters(val *string) error {
+func (j *jsiiProxy_Stack) validateSetVnetIdParameters(val *string) error {
 	return nil
 }
 

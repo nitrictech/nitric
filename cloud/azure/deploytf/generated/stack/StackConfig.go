@@ -28,7 +28,7 @@ type StackConfig struct {
 	// The tags to apply to the stack The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 	// The name of the vnet to deploy the infrastructure resources.
-	VnetName *string `field:"required" json:"vnetName" yaml:"vnetName"`
+	VnetId *string `field:"required" json:"vnetId" yaml:"vnetId"`
 	// Whether to create private DNS zones for private endpoints.
 	CreateDnsZones *bool `field:"optional" json:"createDnsZones" yaml:"createDnsZones"`
 	// Enable the creation of a database.

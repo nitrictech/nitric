@@ -69,7 +69,7 @@ func init() {
 			_jsii_.MemberMethod{JsiiMethod: "toString", GoMethod: "ToString"},
 			_jsii_.MemberMethod{JsiiMethod: "toTerraform", GoMethod: "ToTerraform"},
 			_jsii_.MemberProperty{JsiiProperty: "version", GoGetter: "Version"},
-			_jsii_.MemberProperty{JsiiProperty: "vnetName", GoGetter: "VnetName"},
+			_jsii_.MemberProperty{JsiiProperty: "vnetId", GoGetter: "VnetId"},
 		},
 		func() interface{} {
 			j := jsiiProxy_Stack{}

@@ -146,7 +146,7 @@ func (j *jsiiProxy_Stack) validateSetTagsParameters(val *map[string]*string) err
 	return nil
 }
 
-func (j *jsiiProxy_Stack) validateSetVnetNameParameters(val *string) error {
+func (j *jsiiProxy_Stack) validateSetVnetIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
