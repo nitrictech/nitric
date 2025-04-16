@@ -216,6 +216,17 @@ func (p *NitricAzurePulumiProvider) Service(ctx *pulumi.Context, parent pulumi.R
 		}
 	}
 
+	// Assign role required to generate user delegation keys
+	_, err = authorization.NewRoleAssignment(ctx, ResourceName(ctx, name+"UserDelegation", AssignmentRT), &authorization.RoleAssignmentArgs{
+		PrincipalId:      res.Sp.ServicePrincipalId,
+		PrincipalType:    pulumi.StringPtr("ServicePrincipal"),
+		RoleDefinitionId: p.UserDelegationKeyRole.ID(),
+		Scope:            scope,
+	}, pulumi.Parent(res))
+	if err != nil {
+		return err
+	}
+
 	env := app.EnvironmentVarArray{
 		app.EnvironmentVarArgs{
 			Name:  pulumi.String("EVENT_TOKEN"),

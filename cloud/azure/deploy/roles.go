@@ -230,7 +230,7 @@ var actionNames = map[resourcespb.Action]string{
 	resourcespb.Action_QueueDequeue:        "QueueDequeue",
 }
 
-func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {
+func (p *NitricAzurePulumiProvider) CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput) (*Roles, error) {
 	res := &Roles{Name: "nitric-roles", RoleDefinitions: map[resourcespb.Action]*authorization.RoleDefinition{}}
 
 	err := ctx.RegisterComponentResource("nitricazure:AzureADRoles", "nitric-roles", res)
@@ -269,5 +269,45 @@ func CreateRoles(ctx *pulumi.Context, stackId string, subscriptionId string, rgN
 		res.RoleDefinitions[id] = createdRole
 	}
 
+	delegationRole, err := createUserDelegationKeyRole(ctx, stackId, subscriptionId, rgName, res)
+	if err != nil {
+		return nil, err
+	}
+
+	p.UserDelegationKeyRole = delegationRole
+
 	return res, nil
+}
+
+// createUserDelegationKeyRole - creates a role that allow user delegation key generation
+func createUserDelegationKeyRole(ctx *pulumi.Context, stackId string, subscriptionId string, rgName pulumi.StringInput, parent pulumi.Resource) (*authorization.RoleDefinition, error) {
+	name := fmt.Sprintf("GenerateUserDelegationKey-%s", stackId)
+
+	roleUuid, err := random.NewRandomUuid(ctx, name, &random.RandomUuidArgs{
+		Keepers: pulumi.ToMap(map[string]interface{}{
+			"subscriptionId": subscriptionId,
+		}),
+	}, pulumi.Parent(parent))
+	if err != nil {
+		return nil, err
+	}
+
+	return authorization.NewRoleDefinition(ctx, name, &authorization.RoleDefinitionArgs{
+		RoleDefinitionId: roleUuid.Result,
+		RoleName:         pulumi.String(fmt.Sprintf("%s-UserDelegationKeyGenerator", stackId)),
+		Description:      pulumi.String("Allow user delegation key generation, enabling actions such as pre-signed file access URLs"),
+		Permissions: authorization.PermissionArray{
+			authorization.PermissionArgs{
+				Actions: pulumi.StringArray{},
+				DataActions: pulumi.StringArray{
+					pulumi.String("Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"),
+				},
+				NotActions: pulumi.StringArray{},
+			},
+		},
+		Scope: pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s", subscriptionId, rgName),
+		AssignableScopes: pulumi.StringArray{
+			pulumi.Sprintf("/subscriptions/%s/resourceGroups/%s", subscriptionId, rgName),
+		},
+	}, pulumi.Parent(parent))
 }

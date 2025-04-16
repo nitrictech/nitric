@@ -74,9 +74,10 @@ type NitricAzurePulumiProvider struct {
 
 	ContainerEnv *ContainerEnv
 
-	Apis        map[string]ApiResources
-	HttpProxies map[string]ApiResources
-	Buckets     map[string]*storage.BlobContainer
+	Apis                  map[string]ApiResources
+	HttpProxies           map[string]ApiResources
+	Buckets               map[string]*storage.BlobContainer
+	UserDelegationKeyRole *authorization.RoleDefinition
 
 	Queues map[string]*storage.Queue
 
@@ -417,7 +418,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	}
 
 	// Greedily create all the roles for consistency. Could be reduced to required roles only in future.
-	a.Roles, err = CreateRoles(ctx, a.StackId, a.ClientConfig.SubscriptionId, a.ResourceGroup.Name)
+	a.Roles, err = a.CreateRoles(ctx, a.StackId, a.ClientConfig.SubscriptionId, a.ResourceGroup.Name)
 	if err != nil {
 		return err
 	}
