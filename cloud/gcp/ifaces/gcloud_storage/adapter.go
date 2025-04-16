@@ -68,6 +68,10 @@ func (o objectHandle) NewWriter(ctx context.Context) Writer {
 	return writer{o.ObjectHandle.NewWriter(ctx)}
 }
 
+func (w writer) ObjectAttrs() *storage.ObjectAttrs {
+	return &w.Writer.ObjectAttrs
+}
+
 func (o objectHandle) NewReader(ctx context.Context) (Reader, error) {
 	newReader, err := o.ObjectHandle.NewReader(ctx)
 	return reader{newReader}, err

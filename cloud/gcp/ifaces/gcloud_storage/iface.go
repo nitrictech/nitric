@@ -23,6 +23,7 @@ import (
 
 type Writer interface {
 	io.WriteCloser
+	ObjectAttrs() *storage.ObjectAttrs
 }
 
 type Reader interface {
