@@ -17,8 +17,6 @@ type StackConfig struct {
 	Location *string `field:"required" json:"location" yaml:"location"`
 	// Deploy compatible services with private endpoints.
 	PrivateEndpoints *bool `field:"required" json:"privateEndpoints" yaml:"privateEndpoints"`
-	// The name of the resource group to reuse.
-	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
 	// The name of the stack.
 	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
 	// The id of the subnet to deploy the infrastructure resources.
@@ -37,5 +35,7 @@ type StackConfig struct {
 	EnableKeyvault *bool `field:"optional" json:"enableKeyvault" yaml:"enableKeyvault"`
 	// Enable the creation of a storage account.
 	EnableStorage *bool `field:"optional" json:"enableStorage" yaml:"enableStorage"`
+	// The name of the resource group to reuse.
+	ResourceGroupName *string `field:"optional" json:"resourceGroupName" yaml:"resourceGroupName"`
 }
 

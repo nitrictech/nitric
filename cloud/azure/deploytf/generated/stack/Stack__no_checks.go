@@ -40,10 +40,6 @@ func (j *jsiiProxy_Stack) validateSetPrivateEndpointsParameters(val *bool) error
 	return nil
 }
 
-func (j *jsiiProxy_Stack) validateSetResourceGroupNameParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Stack) validateSetStackNameParameters(val *string) error {
 	return nil
 }

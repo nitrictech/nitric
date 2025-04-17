@@ -678,9 +678,6 @@ func (j *jsiiProxy_Stack)SetPrivateEndpoints(val *bool) {
 }
 
 func (j *jsiiProxy_Stack)SetResourceGroupName(val *string) {
-	if err := j.validateSetResourceGroupNameParameters(val); err != nil {
-		panic(err)
-	}
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
