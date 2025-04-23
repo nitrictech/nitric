@@ -15,7 +15,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi v1.19.1
 	github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1
 	github.com/aws/aws-sdk-go-v2/service/batch v1.44.1
-	github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1
 	github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.21.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
@@ -37,7 +36,7 @@ require (
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20250416075450-959094cfd18a
 	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
@@ -45,6 +44,7 @@ require (
 	github.com/pulumi/pulumi-aws/sdk/v5 v5.43.0
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.67.0
 	github.com/pulumi/pulumi-awsx/sdk v1.0.6
+	github.com/pulumi/pulumi-command/sdk v1.0.2
 	github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0
 	github.com/pulumi/pulumi-random/sdk/v4 v4.8.2
 	github.com/pulumi/pulumi/sdk/v3 v3.150.0
@@ -59,11 +59,10 @@ require (
 	google.golang.org/protobuf v1.36.3
 )
 
-<<<<<<< HEAD
-require github.com/aws/aws-sdk-go-v2/service/route53 v1.51.0 // indirect
-=======
-require github.com/aws/aws-sdk-go-v2/service/route53 v1.51.1 // indirect
->>>>>>> 0c3f796a8 (add awstf domains)
+require (
+	github.com/aws/aws-sdk-go-v2/service/route53 v1.51.1
+	github.com/iancoleman/strcase v0.3.0 // indirect
+)
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect

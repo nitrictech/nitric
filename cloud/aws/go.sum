@@ -120,8 +120,6 @@ github.com/aws/aws-lambda-go v1.34.1 h1:M3a/uFYBjii+tDcOJ0wL/WyFi2550FHoECdPf27z
 github.com/aws/aws-lambda-go v1.34.1/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/aws/aws-sdk-go v1.50.36 h1:PjWXHwZPuTLMR1NIb8nEjLucZBMzmf84TLoLbD8BZqk=
 github.com/aws/aws-sdk-go v1.50.36/go.mod h1:LF8svs817+Nz+DmiMQKTO3ubZ/6IaTpq3TjupRn3Eqk=
-github.com/aws/aws-sdk-go-v2 v1.34.0 h1:9iyL+cjifckRGEVpRKZP3eIxVlL06Qk1Tk13vreaVQU=
-github.com/aws/aws-sdk-go-v2 v1.34.0/go.mod h1:JgstGg0JjWU1KpVJjD5H0y0yyAIpSdKEq556EI6yOOM=
 github.com/aws/aws-sdk-go-v2 v1.36.3 h1:mJoei2CxPutQVxaATCzDUjcZEjVRdpsiiXi2o38yqWM=
 github.com/aws/aws-sdk-go-v2 v1.36.3/go.mod h1:LLXuLpgzEbD766Z5ECcRmi8AzSwfZItDtmABVkRLGzg=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 h1:x6xsQXGSmW6frevwDA+vi/wqhp1ct18mVXYN08/93to=
@@ -136,12 +134,8 @@ github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.6 h1:pdQFFfM/L8P3V
 github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.6/go.mod h1:M4qwQnA4Bajt0AGOx47oHHD83jqIN5MZtsNELZsS4FE=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.1 h1:FVJ0r5XTHSmIHJV6KuDmdYhEpvlHpiSd38RQWhut5J4=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.1/go.mod h1:zusuAeqezXzAB24LGuzuekqMAEgWkVYukBec3kr3jUg=
-github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.29 h1:Ej0Rf3GMv50Qh4G4852j2djtoDb7AzQ7MuQeFHa3D70=
-github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.29/go.mod h1:oeNTC7PwJNoM5AznVr23wxhLnuJv0ZDe5v7w0wqIs9M=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 h1:ZK5jHhnrioRkUNOc+hOgQKlUL5JeC3S6JgLxtQ+Rm0Q=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34/go.mod h1:p4VfIceZokChbA9FzMbRGz5OV+lekcVtHlPKEO0gSZY=
-github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.29 h1:6e8a71X+9GfghragVevC5bZqvATtc3mAMgxpSNbgzF0=
-github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.29/go.mod h1:c4jkZiQ+BWpNqq7VtrxjwISrLrt/VvPq3XiopkUIolI=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 h1:SZwFm17ZUNNg5Np0ioo/gq8Mn6u9w19Mri8DnJ15Jf0=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34/go.mod h1:dFZsC0BLo346mvKQLWmoJxT+Sjp+qcVR1tRVHQGOH9Q=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 h1:hT8rVHwugYE2lEfdFE0QWVo81lF7jMrYJVDWI+f+VxU=
@@ -154,8 +148,6 @@ github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1 h1:nOJwQpU2wDe2qtw+vwk
 github.com/aws/aws-sdk-go-v2/service/apigatewayv2 v1.20.1/go.mod h1:A95FM8hxO6umoiROudoYtTmZYl7KN9nbez8deLDOCnA=
 github.com/aws/aws-sdk-go-v2/service/batch v1.44.1 h1:078c62Zp/bQx7C9OJ0xS7ISitV046XrwSylWIXt0Nno=
 github.com/aws/aws-sdk-go-v2/service/batch v1.44.1/go.mod h1:ELBM9CH29I8N+OxY5/M5bBs3YQ1rd+S6mmSJKiCiJv0=
-github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6 h1:h1g8lxLhRRIOJKx0hCuTkeDCYOV/DnP8OGugmgvVihY=
-github.com/aws/aws-sdk-go-v2/service/cloudfront v1.44.6/go.mod h1:B0VXbI7WDpoR4kvqKBf4i43tdzrKxp31/MqWV7KtVEk=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1 h1:haLXE5R07oaq/UnvSyE43V4jp9gA2XRMYcxkFYHEpdU=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1/go.mod h1:mM51J0CILKQjqIawPDM4g6E1nyxdlvk/qaCDyJkx0II=
 github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.20.1 h1:kZR1TZ0VYcRK2LFiFt61EReplssCq9SZO4gVSYV1Aww=
@@ -172,13 +164,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.5 h1:f9RyWNtS8oH7cZ
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.5/go.mod h1:h5CoMZV2VF297/VLhRhO1WF+XYWOzXo+4HsObA4HjBQ=
 github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.21.1 h1:ADhzQ6eCjR2jkcrxKcjZl0lumL3QIiWSu94ZcxEYOHU=
 github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.21.1/go.mod h1:EYr+WnZlEA4LQXZdz76eBP1sOmXedhzE/KJ+QXellgA=
-<<<<<<< HEAD
-github.com/aws/aws-sdk-go-v2/service/route53 v1.51.0 h1:pK3YJIgOzYqctprqQ67kGSjeL+77r9Ue/4/gBonsGNc=
-github.com/aws/aws-sdk-go-v2/service/route53 v1.51.0/go.mod h1:kGYOjvTa0Vw0qxrqrOLut1vMnui6qLxqv/SX3vYeM8Y=
-=======
 github.com/aws/aws-sdk-go-v2/service/route53 v1.51.1 h1:41HrH51fydStW2Tah74zkqZlJfyx4gXeuGOdsIFuckY=
 github.com/aws/aws-sdk-go-v2/service/route53 v1.51.1/go.mod h1:kGYOjvTa0Vw0qxrqrOLut1vMnui6qLxqv/SX3vYeM8Y=
->>>>>>> 0c3f796a8 (add awstf domains)
 github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1 h1:6cnno47Me9bRykw9AEv9zkXE+5or7jz8TsskTTccbgc=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1/go.mod h1:qmdkIIAC+GCLASF7R2whgNrJADz0QZPX+Seiw/i4S3o=
 github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.28.2 h1:WrqqLhD5St2cbXsvR0yuY43pdhXsUL0yjQepBJIpTvI=
@@ -558,6 +545,8 @@ github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11/go.mod h1:1qQeNydHdUQESUQoV
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSASxEI=
+github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.15 h1:M8XP7IuFNsqUx6VPK2P9OSmsYsI/YFaGil0uD21V3dM=
 github.com/imdario/mergo v0.3.15/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=
@@ -723,8 +712,8 @@ github.com/nishanths/exhaustive v0.12.0 h1:vIY9sALmw6T/yxiASewa4TQcFsVYZQQRUQJhK
 github.com/nishanths/exhaustive v0.12.0/go.mod h1:mEZ95wPIZW+x8kC4TgC+9YCUgiST7ecevsVDTgc2obs=
 github.com/nishanths/predeclared v0.2.2 h1:V2EPdZPliZymNAn79T8RkNApBjMmVKh5XRpLm/w98Vk=
 github.com/nishanths/predeclared v0.2.2/go.mod h1:RROzoN6TnGQupbC+lqggsOlcgysk3LMK/HI84Mp280c=
-github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5 h1:3o6h64DQw0tcyrdGyASDWy2Qc5ZmCPLNERIOhn3xDrc=
-github.com/nitrictech/nitric/cloud/common v0.0.0-20250130232617-f68a2d448cc5/go.mod h1:qrW1sRHW2+pCU8jQ5O7qonjmbK85DYTfZP+MQKLmHA4=
+github.com/nitrictech/nitric/cloud/common v0.0.0-20250416075450-959094cfd18a h1:ywXLx6DQqimIe3+d9HVOWvbxWk1TzQnONGKnNKzNP4M=
+github.com/nitrictech/nitric/cloud/common v0.0.0-20250416075450-959094cfd18a/go.mod h1:bohQexMAaCbpuZalfYgQX85xM1E7vA3YrmHtUFZKl/A=
 github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce h1:i1uOqaOVasUjPhn3kkSWDbbOynAE7n9EVsNqNm7NeKQ=
 github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce/go.mod h1:3kPpyO2oZEGfurDVsTh9XTg43b/4JAIbLkaktEvRF58=
 github.com/nunnatsa/ginkgolinter v0.16.2 h1:8iLqHIZvN4fTLDC0Ke9tbSZVcyVHoBs0HIbnVSxfHJk=
@@ -830,6 +819,8 @@ github.com/pulumi/pulumi-aws/sdk/v6 v6.67.0 h1:Clb/OOb2gcMeGGLixmeGVav9JQ6wUY4Qw
 github.com/pulumi/pulumi-aws/sdk/v6 v6.67.0/go.mod h1:WSA4oz7YvZxNNjolk2yKaQR3PvT8KsPgCga0KyCqxBc=
 github.com/pulumi/pulumi-awsx/sdk v1.0.6 h1:oUan8VgA/pqEmbS2vXhh5Zbn7Lhs6yX5bPMzM03QuMI=
 github.com/pulumi/pulumi-awsx/sdk v1.0.6/go.mod h1:2H8uPHxZbfsIg9qr6yAfiIuvNnhBUqyhxw/8mXNLDFg=
+github.com/pulumi/pulumi-command/sdk v1.0.2 h1:OhyVaUlE+kvx0NXU+wzf7xTA5OL2bHWvKWAHvyhi1uo=
+github.com/pulumi/pulumi-command/sdk v1.0.2/go.mod h1:BbcTHkvZtcJqyB7SeLDzP99dj8xyCbA8v/6WjixsuBA=
 github.com/pulumi/pulumi-docker/sdk/v3 v3.2.0 h1:7liqzpMLCmk7BIO7w6f6JCh9IdtwCp0a//jA12i6eyo=
 github.com/pulumi/pulumi-docker/sdk/v3 v3.2.0/go.mod h1:TACDfD6SWGyaHmWLrtHAuGiZ+pTBD4OYYFb5kTyxdtQ=
 github.com/pulumi/pulumi-docker/sdk/v4 v4.1.0 h1:ONchALtJZs0usvRryQ2aIelS/2X/z0bSaiUxZADF/1U=
