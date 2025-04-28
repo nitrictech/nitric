@@ -177,7 +177,7 @@ func (a *NitricAzureTerraformProvider) Policy(stack cdktf.TerraformStack, name s
 					return err
 				}
 
-				policy.NewPolicy(stack, jsii.Sprintf("%s-%s", principal.Id.Name, roleName), &policy.PolicyConfig{
+				policy.NewPolicy(stack, jsii.Sprintf("%s-%s-%s", principal.Id.Name, roleName, resource.Id.Name), &policy.PolicyConfig{
 					ServicePrincipalId: spId,
 					Scope:              scope.Scope,
 					RoleDefinitionId:   role,
