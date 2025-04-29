@@ -60,8 +60,8 @@ type Cdn interface {
 	SetSkipCacheInvalidation(val *bool)
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
+	StackId() *string
+	SetStackId(val *string)
 	UploadedFiles() *map[string]*string
 	SetUploadedFiles(val *map[string]*string)
 	// Experimental.
@@ -331,11 +331,11 @@ func (j *jsiiProxy_Cdn) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Cdn) StackName() *string {
+func (j *jsiiProxy_Cdn) StackId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"stackName",
+		"stackId",
 		&returns,
 	)
 	return returns
@@ -501,13 +501,13 @@ func (j *jsiiProxy_Cdn)SetSkipCacheInvalidation(val *bool) {
 	)
 }
 
-func (j *jsiiProxy_Cdn)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
+func (j *jsiiProxy_Cdn)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"stackName",
+		"stackId",
 		val,
 	)
 }

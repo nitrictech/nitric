@@ -35,7 +35,7 @@ type SqlConfig struct {
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
 	// The id of the postgresql flexible server.
 	ServerId *string `field:"required" json:"serverId" yaml:"serverId"`
-	// The name of the stack.
-	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 }
 

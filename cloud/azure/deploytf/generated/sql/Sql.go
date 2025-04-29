@@ -62,8 +62,8 @@ type Sql interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
+	StackId() *string
+	SetStackId(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -317,11 +317,11 @@ func (j *jsiiProxy_Sql) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Sql) StackName() *string {
+func (j *jsiiProxy_Sql) StackId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"stackName",
+		"stackId",
 		&returns,
 	)
 	return returns
@@ -502,13 +502,13 @@ func (j *jsiiProxy_Sql)SetServerId(val *string) {
 	)
 }
 
-func (j *jsiiProxy_Sql)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
+func (j *jsiiProxy_Sql)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"stackName",
+		"stackId",
 		val,
 	)
 }

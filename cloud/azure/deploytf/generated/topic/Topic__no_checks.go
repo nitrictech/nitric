@@ -48,10 +48,6 @@ func (j *jsiiProxy_Topic) validateSetResourceGroupNameParameters(val *string) er
 	return nil
 }
 
-func (j *jsiiProxy_Topic) validateSetStackNameParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Topic) validateSetTagsParameters(val *map[string]*string) error {
 	return nil
 }

@@ -19,7 +19,7 @@ locals {
 
 
 resource "azurerm_storage_account" "storage_website_account" {
-  name                = replace("${var.stack_name}st${local.normalized_base_path}", "-", "")
+  name                = replace("${var.stack_id}st${local.normalized_base_path}", "-", "")
   resource_group_name = var.resource_group_name
   location            = var.location
   account_tier        = "Standard"

@@ -123,7 +123,7 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) erro
 	enableApiRewrites := len(n.Apis) > 0
 
 	afdCDN := cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
-		StackName:             n.Stack.StackNameOutput(),
+		StackId:               n.Stack.StackIdOutput(),
 		ResourceGroupName:     n.Stack.ResourceGroupNameOutput(),
 		UploadedFiles:         uploadedFiles,
 		PrimaryWebHost:        primaryWebHost,
@@ -152,7 +152,7 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) erro
 
 			cdn_subsites.NewCdnSubsites(tfstack, jsii.String(fmt.Sprintf("cdn_subsite_%s", normalizedName)), &cdn_subsites.CdnSubsitesConfig{
 				Name:                         jsii.String(normalizedName),
-				StackName:                    n.Stack.StackNameOutput(),
+				StackId:                      n.Stack.StackIdOutput(),
 				BasePath:                     ws.BasePath(),
 				RuleOrder:                    jsii.Number(nameToUniqueNumber(normalizedName)),
 				CdnDefaultFrontdoorRuleSetId: afdCDN.CdnFrontdoorDefaultRuleSetIdOutput(),

@@ -1,6 +1,6 @@
 locals {
-  subsite_origin_group_name = "${var.stack_name}-${var.name}-origin-group"
-  subsite_origin_name       = "${var.stack_name}-${var.name}-origin"
+  subsite_origin_group_name = "${var.stack_id}-${var.name}-origin-group"
+  subsite_origin_name       = "${var.stack_id}-${var.name}-origin"
   subsite_rule_name         = "subsiterule${var.name}"
 }
 

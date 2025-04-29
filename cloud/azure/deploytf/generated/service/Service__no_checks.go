@@ -80,7 +80,7 @@ func (j *jsiiProxy_Service) validateSetResourceGroupNameParameters(val *string) 
 	return nil
 }
 
-func (j *jsiiProxy_Service) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_Service) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

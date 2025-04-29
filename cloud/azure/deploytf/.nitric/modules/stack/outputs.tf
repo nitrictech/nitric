@@ -1,9 +1,5 @@
-output "stack_name" {
-  value = local.stack_name
-}
-
 output "stack_id" {
-  value = random_string.stack_id.result
+  value = local.stack_id
 }
 
 output "subscription_id" {

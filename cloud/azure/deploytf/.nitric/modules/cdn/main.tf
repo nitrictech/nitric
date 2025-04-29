@@ -1,14 +1,14 @@
 locals {
-  endpoint_name               = "${var.stack_name}-cdn"
-  default_origin_group_name   = "${var.stack_name}-default-origin-group"
-  default_origin_name         = "${var.stack_name}-default-origin"
+  endpoint_name               = "${var.stack_id}-cdn"
+  default_origin_group_name   = "${var.stack_id}-default-origin-group"
+  default_origin_name         = "${var.stack_id}-default-origin"
 
   changed_path_md5_hashes     = join("", sort(values(var.uploaded_files)))
 }
 
 # Create the CDN profile for the website
 resource "azurerm_cdn_frontdoor_profile" "cdn_profile" {
-  name                = "${var.stack_name}-cdn-profile"
+  name                = "${var.stack_id}-cdn-profile"
   resource_group_name = var.resource_group_name
   sku_name            = "Standard_AzureFrontDoor"
 }
@@ -126,7 +126,7 @@ resource "azurerm_cdn_frontdoor_rule_set" "api_ruleset" {
 
 # Create the CDN route
 resource "azurerm_cdn_frontdoor_route" "main_route" {
-  name                       = "${var.stack_name}-main-route"
+  name                       = "${var.stack_id}-main-route"
   cdn_frontdoor_endpoint_id =  azurerm_cdn_frontdoor_endpoint.cdn_endpoint.id
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.default_origin_group.id
   cdn_frontdoor_origin_ids = [

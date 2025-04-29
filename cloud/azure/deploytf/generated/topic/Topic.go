@@ -48,8 +48,6 @@ type Topic interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
 	// Experimental.
@@ -235,16 +233,6 @@ func (j *jsiiProxy_Topic) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Topic) StackName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackName",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Topic) Tags() *map[string]*string {
 	var returns *map[string]*string
 	_jsii_.Get(
@@ -349,17 +337,6 @@ func (j *jsiiProxy_Topic)SetResourceGroupName(val *string) {
 	_jsii_.Set(
 		j,
 		"resourceGroupName",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Topic)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"stackName",
 		val,
 	)
 }

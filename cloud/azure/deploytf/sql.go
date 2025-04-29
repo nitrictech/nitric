@@ -25,7 +25,7 @@ import (
 func (n *NitricAzureTerraformProvider) SqlDatabase(stack cdktf.TerraformStack, name string, config *deploymentspb.SqlDatabase) error {
 	sqlConfig := &sql.SqlConfig{
 		Name:                       jsii.String(name),
-		StackName:                  n.Stack.StackNameOutput(),
+		StackId:                    n.Stack.StackIdOutput(),
 		ResourceGroupName:          n.Stack.ResourceGroupNameOutput(),
 		Location:                   jsii.String(n.Region),
 		ImageRegistryServer:        n.Stack.RegistryLoginServerOutput(),

@@ -106,14 +106,6 @@ func (j *jsiiProxy_Bucket) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetStackNameParameters(val *string) error {
-	if val == nil {
-		return fmt.Errorf("parameter val is required, but nil was provided")
-	}
-
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetStorageAccountIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")

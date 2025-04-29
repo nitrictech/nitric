@@ -18,7 +18,7 @@ resource "azurerm_postgresql_flexible_server_database" "db" {
 locals {
   count = var.migration_image_uri != "" ? 1 : 0
 
-  remote_image_name = "${var.image_registry_server}/${var.stack_name}-${var.name}:latest"
+  remote_image_name = "${var.image_registry_server}/${var.stack_id}-${var.name}:latest"
 
   db_url = "postgres://nitric:${var.database_master_password}@${var.database_server_fqdn}:5432/${var.name}"
 }
@@ -66,7 +66,7 @@ resource "azurerm_container_group" "migration" {
   container {
     name   = "${var.name}-migration"
     # point to the pushed image sha256 digest to ensure container is updated when image changes
-    image  = "${var.image_registry_server}/${var.stack_name}-${var.name}@${docker_registry_image.push[count.index].sha256_digest}"
+    image  = "${var.image_registry_server}/${var.stack_id}-${var.name}@${docker_registry_image.push[count.index].sha256_digest}"
     cpu    = 1
     memory = 1
     

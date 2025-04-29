@@ -65,7 +65,6 @@ func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name s
 
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.String(name), &bucket.BucketConfig{
 		Name:             jsii.String(name),
-		StackName:        n.Stack.StackNameOutput(),
 		StorageAccountId: n.Stack.StorageAccountIdOutput(),
 		Listeners:        listeners,
 		DependsOn:        &allDependants,

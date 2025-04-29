@@ -191,7 +191,7 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
-		StackName:         a.Stack.StackNameOutput(),
+		StackId:           a.Stack.StackIdOutput(),
 	})
 
 	auths := []dockerprovider.DockerProviderRegistryAuth{

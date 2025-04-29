@@ -17,7 +17,7 @@ terraform {
 # }
 
 locals {
-  remote_image_name = "${var.registry_login_server}/${var.stack_name}-${var.name}"
+  remote_image_name = "${var.registry_login_server}/${var.stack_id}-${var.name}"
 }
 
 # Tag the provided docker image with the ECR repository url
@@ -45,7 +45,7 @@ data "azurerm_client_config" "current" {}
 
 locals {
   app_role_id    = "4962773b-9cdb-44cf-a8bf-237846a00ab7"
-  repository_url = "${var.registry_login_server}/${var.stack_name}-${var.name}"
+  repository_url = "${var.registry_login_server}/${var.stack_id}-${var.name}"
   role_definitions = {
     "TagContributor" = "4a9ae827-6dc8-4573-8ac7-8239d42aa03f"
   }
@@ -168,7 +168,7 @@ resource "azurerm_container_app" "container_app" {
 
       env {
         name  = "NITRIC_STACK_ID"
-        value = var.stack_name
+        value = var.stack_id
       }
 
       env {

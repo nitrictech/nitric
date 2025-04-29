@@ -23,8 +23,8 @@ type CdnSubsitesConfig struct {
 	Name *string `field:"required" json:"name" yaml:"name"`
 	// The primary host for the website.
 	PrimaryWebHost *string `field:"required" json:"primaryWebHost" yaml:"primaryWebHost"`
-	// The name of the stack.
-	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The order of the rule to use for the cdn 1.
 	RuleOrder *float64 `field:"optional" json:"ruleOrder" yaml:"ruleOrder"`
 }

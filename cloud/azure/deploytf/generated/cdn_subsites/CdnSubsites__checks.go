@@ -130,7 +130,7 @@ func (j *jsiiProxy_CdnSubsites) validateSetPrimaryWebHostParameters(val *string)
 	return nil
 }
 
-func (j *jsiiProxy_CdnSubsites) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetStackIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}
