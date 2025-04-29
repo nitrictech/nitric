@@ -40,10 +40,6 @@ func (j *jsiiProxy_Bucket) validateSetNameParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Bucket) validateSetStackNameParameters(val *string) error {
-	return nil
-}
-
 func (j *jsiiProxy_Bucket) validateSetStorageAccountIdParameters(val *string) error {
 	return nil
 }

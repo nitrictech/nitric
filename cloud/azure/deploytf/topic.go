@@ -57,7 +57,6 @@ func (a *NitricAzureTerraformProvider) Topic(stack cdktf.TerraformStack, name st
 
 	a.Topics[name] = topic.NewTopic(stack, jsii.String(name), &topic.TopicConfig{
 		Name:              jsii.String(name),
-		StackName:         a.Stack.StackNameOutput(),
 		ResourceGroupName: a.Stack.ResourceGroupNameOutput(),
 		Location:          jsii.String(a.Region),
 		Listeners:         listeners,

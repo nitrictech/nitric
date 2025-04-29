@@ -76,7 +76,7 @@ func (j *jsiiProxy_Sql) validateSetServerIdParameters(val *string) error {
 	return nil
 }
 
-func (j *jsiiProxy_Sql) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_Sql) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

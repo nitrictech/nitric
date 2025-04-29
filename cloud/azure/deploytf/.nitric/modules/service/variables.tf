@@ -3,8 +3,8 @@ variable "name" {
   type        = string
 }
 
-variable "stack_name" {
-  description = "The name of the stack"
+variable "stack_id" {
+  description = "The id of the stack"
   type        = string
 }
 

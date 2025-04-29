@@ -66,7 +66,7 @@ func (a *NitricAzureTerraformProvider) Service(stack cdktf.TerraformStack, name 
 
 	a.Services[name] = service.NewService(stack, jsii.String(name), &service.ServiceConfig{
 		Name:                      jsii.String(name),
-		StackName:                 a.Stack.StackNameOutput(),
+		StackId:                   a.Stack.StackIdOutput(),
 		ImageUri:                  jsii.String(imageId),
 		ContainerAppEnvironmentId: a.Stack.ContainerAppEnvironmentIdOutput(),
 		Env:                       &jsiiEnv,

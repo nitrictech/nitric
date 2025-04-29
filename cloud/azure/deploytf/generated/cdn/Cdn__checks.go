@@ -122,7 +122,7 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_Cdn) validateSetStackIdParameters(val *string) error {
 	if val == nil {
 		return fmt.Errorf("parameter val is required, but nil was provided")
 	}

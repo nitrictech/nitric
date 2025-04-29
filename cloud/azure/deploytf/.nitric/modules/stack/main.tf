@@ -8,7 +8,7 @@ resource "random_string" "stack_id" {
 }
 
 locals {
-  stack_name = "${var.stack_name}-${random_string.stack_id.result}"
+  stack_id = "${var.stack_name}-${random_string.stack_id.result}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -20,8 +20,8 @@ resource "azurerm_resource_group" "resource_group" {
   name     = "${var.stack_name}-rg${random_string.stack_id.result}"
   location = var.location
   tags = merge(var.tags, {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   })
 }
 
@@ -41,8 +41,8 @@ resource "azurerm_storage_account" "storage" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   tags = merge(var.tags, {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   })
 }
 
@@ -59,14 +59,14 @@ resource "azurerm_key_vault" "keyvault" {
   enable_rbac_authorization  = true
 
   tags = merge(var.tags, {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   })
 }
 
 # Create a User assigned managed identity
 resource "azurerm_user_assigned_identity" "managed_identity" {
-  name                = "managed-identity-${local.stack_name}"
+  name                = "managed-identity-${local.stack_id}"
   resource_group_name = local.resource_group_name
   location            = var.location
 }
@@ -79,8 +79,8 @@ resource "azurerm_container_registry" "container_registry" {
   sku                 = "Basic"
   admin_enabled       = true
   tags = merge(var.tags, {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   })
 }
 
@@ -92,8 +92,8 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
   tags = merge(var.tags, {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   })
 }
 
@@ -229,8 +229,8 @@ resource "azurerm_container_app_environment" "environment" {
   location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics.id
   tags = {
-    "x-nitric-${local.stack_name}-name" = var.stack_name
-    "x-nitric-${local.stack_name}-type" = "stack"
+    "x-nitric-${local.stack_id}-name" = var.stack_name
+    "x-nitric-${local.stack_id}-type" = "stack"
   }
 
   infrastructure_subnet_id = var.enable_database ? azurerm_subnet.database_infrastructure_subnet[0].id : null

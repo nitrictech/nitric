@@ -3,11 +3,6 @@ variable "name" {
   type        = string
 }
 
-variable "stack_name" {
-  description = "The name of the stack"
-  type        = string
-}
-
 variable "resource_group_name" {
   description = "The name of the resource group"
   type        = string

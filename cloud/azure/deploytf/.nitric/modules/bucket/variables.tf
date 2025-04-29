@@ -3,11 +3,6 @@ variable "name" {
   type        = string
 }
 
-variable "stack_name" {
-  description = "The name of the stack"
-  type        = string
-}
-
 variable "storage_account_id" {
   description = "The id of the storage account"
   type        = string

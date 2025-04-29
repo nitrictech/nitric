@@ -90,7 +90,7 @@ func (n *NitricAzureTerraformProvider) Http(stack cdktf.TerraformStack, name str
 		Location:                 jsii.String(n.Region),
 		ResourceGroupName:        n.Stack.ResourceGroupNameOutput(),
 		AppIdentity:              n.Stack.AppIdentityOutput(),
-		Description:              jsii.Sprintf("Nitric HTTP Proxy for %s", *n.Stack.StackNameOutput()),
+		Description:              jsii.Sprintf("Nitric HTTP Proxy for %s", *n.Stack.StackIdOutput()),
 		OperationPolicyTemplates: &operationPolicyTemplate,
 		DependsOn:                &dependsOn,
 

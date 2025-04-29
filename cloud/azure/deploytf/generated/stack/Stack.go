@@ -69,7 +69,6 @@ type Stack interface {
 	StackIdOutput() *string
 	StackName() *string
 	SetStackName(val *string)
-	StackNameOutput() *string
 	StorageAccountBlobEndpointOutput() *string
 	StorageAccountConnectionStringOutput() *string
 	StorageAccountIdOutput() *string
@@ -436,16 +435,6 @@ func (j *jsiiProxy_Stack) StackName() *string {
 	_jsii_.Get(
 		j,
 		"stackName",
-		&returns,
-	)
-	return returns
-}
-
-func (j *jsiiProxy_Stack) StackNameOutput() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackNameOutput",
 		&returns,
 	)
 	return returns

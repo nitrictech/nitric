@@ -21,8 +21,8 @@ type WebsiteConfig struct {
 	Location *string `field:"required" json:"location" yaml:"location"`
 	// The name of the resource group to use for the cdn.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
-	// The name of the stack.
-	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The error document for the website 404.html.
 	ErrorDocument *string `field:"optional" json:"errorDocument" yaml:"errorDocument"`
 	// The index document for the website index.html.

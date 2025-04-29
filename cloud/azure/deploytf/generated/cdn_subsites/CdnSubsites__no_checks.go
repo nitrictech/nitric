@@ -52,7 +52,7 @@ func (j *jsiiProxy_CdnSubsites) validateSetPrimaryWebHostParameters(val *string)
 	return nil
 }
 
-func (j *jsiiProxy_CdnSubsites) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_CdnSubsites) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

@@ -36,7 +36,7 @@ func (j *jsiiProxy_Roles) validateSetResourceGroupNameParameters(val *string) er
 	return nil
 }
 
-func (j *jsiiProxy_Roles) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_Roles) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

@@ -37,8 +37,8 @@ type ServiceConfig struct {
 	RegistryUsername *string `field:"required" json:"registryUsername" yaml:"registryUsername"`
 	// The name of the resource group.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
-	// The name of the stack.
-	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The tags to apply to the service The property type contains a map, they have special handling, please see {@link cdk.tf /module-map-inputs the docs}.
 	Tags *map[string]*string `field:"required" json:"tags" yaml:"tags"`
 }

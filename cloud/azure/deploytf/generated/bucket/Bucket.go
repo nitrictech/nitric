@@ -44,8 +44,6 @@ type Bucket interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
 	StorageAccountId() *string
 	SetStorageAccountId(val *string)
 	Tags() *map[string]*string
@@ -213,16 +211,6 @@ func (j *jsiiProxy_Bucket) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_Bucket) StackName() *string {
-	var returns *string
-	_jsii_.Get(
-		j,
-		"stackName",
-		&returns,
-	)
-	return returns
-}
-
 func (j *jsiiProxy_Bucket) StorageAccountId() *string {
 	var returns *string
 	_jsii_.Get(
@@ -315,17 +303,6 @@ func (j *jsiiProxy_Bucket)SetName(val *string) {
 	_jsii_.Set(
 		j,
 		"name",
-		val,
-	)
-}
-
-func (j *jsiiProxy_Bucket)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
-		panic(err)
-	}
-	_jsii_.Set(
-		j,
-		"stackName",
 		val,
 	)
 }

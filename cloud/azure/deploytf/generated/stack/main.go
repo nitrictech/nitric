@@ -51,7 +51,6 @@ func init() {
 			_jsii_.MemberProperty{JsiiProperty: "source", GoGetter: "Source"},
 			_jsii_.MemberProperty{JsiiProperty: "stackIdOutput", GoGetter: "StackIdOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "stackName", GoGetter: "StackName"},
-			_jsii_.MemberProperty{JsiiProperty: "stackNameOutput", GoGetter: "StackNameOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountBlobEndpointOutput", GoGetter: "StorageAccountBlobEndpointOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountConnectionStringOutput", GoGetter: "StorageAccountConnectionStringOutput"},
 			_jsii_.MemberProperty{JsiiProperty: "storageAccountIdOutput", GoGetter: "StorageAccountIdOutput"},

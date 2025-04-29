@@ -27,7 +27,7 @@ func (n *NitricAzureTerraformProvider) Website(stack cdktf.TerraformStack, name 
 
 	n.Websites[name] = website.NewWebsite(stack, jsii.String(name), &website.WebsiteConfig{
 		LocalDirectory:    jsii.String(config.GetLocalDirectory()),
-		StackName:         n.Stack.StackNameOutput(),
+		StackId:           n.Stack.StackIdOutput(),
 		Location:          n.Stack.Location(),
 		BasePath:          jsii.String(config.GetBasePath()),
 		IndexDocument:     jsii.String(config.GetIndexDocument()),

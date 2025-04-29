@@ -52,8 +52,8 @@ type CdnSubsites interface {
 	SkipAssetCreationFromLocalModules() *bool
 	// Experimental.
 	Source() *string
-	StackName() *string
-	SetStackName(val *string)
+	StackId() *string
+	SetStackId(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -257,11 +257,11 @@ func (j *jsiiProxy_CdnSubsites) Source() *string {
 	return returns
 }
 
-func (j *jsiiProxy_CdnSubsites) StackName() *string {
+func (j *jsiiProxy_CdnSubsites) StackId() *string {
 	var returns *string
 	_jsii_.Get(
 		j,
-		"stackName",
+		"stackId",
 		&returns,
 	)
 	return returns
@@ -384,13 +384,13 @@ func (j *jsiiProxy_CdnSubsites)SetRuleOrder(val *float64) {
 	)
 }
 
-func (j *jsiiProxy_CdnSubsites)SetStackName(val *string) {
-	if err := j.validateSetStackNameParameters(val); err != nil {
+func (j *jsiiProxy_CdnSubsites)SetStackId(val *string) {
+	if err := j.validateSetStackIdParameters(val); err != nil {
 		panic(err)
 	}
 	_jsii_.Set(
 		j,
-		"stackName",
+		"stackId",
 		val,
 	)
 }

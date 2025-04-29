@@ -48,7 +48,7 @@ func (j *jsiiProxy_Cdn) validateSetResourceGroupNameParameters(val *string) erro
 	return nil
 }
 
-func (j *jsiiProxy_Cdn) validateSetStackNameParameters(val *string) error {
+func (j *jsiiProxy_Cdn) validateSetStackIdParameters(val *string) error {
 	return nil
 }
 

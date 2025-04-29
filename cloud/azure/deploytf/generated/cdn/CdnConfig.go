@@ -21,8 +21,8 @@ type CdnConfig struct {
 	PrimaryWebHost *string `field:"required" json:"primaryWebHost" yaml:"primaryWebHost"`
 	// The name of the resource group to use for the cdn.
 	ResourceGroupName *string `field:"required" json:"resourceGroupName" yaml:"resourceGroupName"`
-	// The name of the stack.
-	StackName *string `field:"required" json:"stackName" yaml:"stackName"`
+	// The id of the stack.
+	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
 	// The name of the CDN zone.
 	ZoneName *string `field:"required" json:"zoneName" yaml:"zoneName"`
 	// The name of the resource group for the CDN zone.
