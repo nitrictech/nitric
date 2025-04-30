@@ -152,7 +152,10 @@ func (a *NitricAwsTerraformProvider) Pre(stack cdktf.TerraformStack, resources [
 		return item.Id.GetType() == resourcespb.ResourceType_Website
 	})
 
-	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{})
+	a.Stack = tfstack.NewStack(stack, jsii.String("stack"), &tfstack.StackConfig{
+		StackName:   jsii.String(a.StackName),
+		ProjectName: jsii.String(a.ProjectName),
+	})
 
 	databases := lo.Filter(resources, func(item *deploymentspb.Resource, idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
