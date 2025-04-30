@@ -19,7 +19,7 @@ variable "target_lambda_functions" {
 }
 
 variable "domain_names" {
-  description = "The name of the domain. This must be globally unique."
+  description = "A set of each domain name."
   type        = set(string)
 }
 
