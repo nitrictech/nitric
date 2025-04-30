@@ -32,6 +32,14 @@ func validateStack_IsTerraformElementParameters(x interface{}) error {
 	return nil
 }
 
+func (j *jsiiProxy_Stack) validateSetProjectNameParameters(val *string) error {
+	return nil
+}
+
+func (j *jsiiProxy_Stack) validateSetStackNameParameters(val *string) error {
+	return nil
+}
+
 func validateNewStackParameters(scope constructs.Construct, id *string, config *StackConfig) error {
 	return nil
 }

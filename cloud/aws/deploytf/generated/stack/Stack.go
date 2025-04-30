@@ -34,6 +34,8 @@ type Stack interface {
 	FriendlyUniqueId() *string
 	// The tree node.
 	Node() constructs.Node
+	ProjectName() *string
+	SetProjectName(val *string)
 	// Experimental.
 	Providers() *[]interface{}
 	// Experimental.
@@ -43,6 +45,8 @@ type Stack interface {
 	// Experimental.
 	Source() *string
 	StackIdOutput() *string
+	StackName() *string
+	SetStackName(val *string)
 	// Experimental.
 	Version() *string
 	// Experimental.
@@ -156,6 +160,16 @@ func (j *jsiiProxy_Stack) Node() constructs.Node {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) ProjectName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"projectName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) Providers() *[]interface{} {
 	var returns *[]interface{}
 	_jsii_.Get(
@@ -201,6 +215,16 @@ func (j *jsiiProxy_Stack) StackIdOutput() *string {
 	_jsii_.Get(
 		j,
 		"stackIdOutput",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Stack) StackName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"stackName",
 		&returns,
 	)
 	return returns
@@ -264,6 +288,28 @@ func (j *jsiiProxy_Stack)SetForEach(val cdktf.ITerraformIterator) {
 	_jsii_.Set(
 		j,
 		"forEach",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetProjectName(val *string) {
+	if err := j.validateSetProjectNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"projectName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetStackName(val *string) {
+	if err := j.validateSetStackNameParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"stackName",
 		val,
 	)
 }
