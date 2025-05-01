@@ -287,6 +287,15 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		return err
 	}
 
+	wsRewriteFun, err := cloudfront.NewFunction(ctx, "ws-url-rewrite-function", &cloudfront.FunctionArgs{
+		Comment: pulumi.String("Rewrite Websocket URLs routed to nitric services"),
+		Code:    embeds.GetWsUrlRewriteFunction(),
+		Runtime: pulumi.String("cloudfront-js-1.0"),
+	})
+	if err != nil {
+		return err
+	}
+
 	// Sort the APIs by name
 	sortedApiKeys := lo.Keys(a.Apis)
 	slices.Sort(sortedApiKeys)
@@ -334,6 +343,55 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 					},
 				},
 				ViewerProtocolPolicy: pulumi.String("https-only"),
+			},
+		)
+	}
+
+	// Sort the websocket keys by name
+	sortedWsKeys := lo.Keys(a.Websockets)
+	slices.Sort(sortedWsKeys)
+	for _, name := range sortedWsKeys {
+		ws := a.Websockets[name]
+
+		websocketDomainName := ws.ApiEndpoint.ApplyT(func(endpoint string) string {
+			return strings.Replace(endpoint, "wss://", "", 1)
+		}).(pulumi.StringOutput)
+
+		origins = append(origins, &cloudfront.DistributionOriginArgs{
+			DomainName: websocketDomainName,
+			OriginId:   pulumi.Sprintf("ws-%s", name),
+			CustomOriginConfig: &cloudfront.DistributionOriginCustomOriginConfigArgs{
+				OriginReadTimeout:    pulumi.Int(30),
+				OriginProtocolPolicy: pulumi.String("match-viewer"),
+				OriginSslProtocols: pulumi.StringArray{
+					pulumi.String("TLSv1.2"),
+					pulumi.String("SSLv3"),
+				},
+				HttpPort:  pulumi.Int(80),
+				HttpsPort: pulumi.Int(443),
+			},
+		})
+
+		orderedCacheBehaviors = append(orderedCacheBehaviors,
+			&cloudfront.DistributionOrderedCacheBehaviorArgs{
+				PathPattern: pulumi.Sprintf("ws/%s", name),
+				// rewrite the URL to the nitric service
+				FunctionAssociations: cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArray{
+					&cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs{
+						EventType:   pulumi.String("viewer-request"),
+						FunctionArn: wsRewriteFun.Arn,
+					},
+				},
+				AllowedMethods: pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"}),
+				CachedMethods:  pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS"}),
+				TargetOriginId: pulumi.Sprintf("ws-%s", name),
+				ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
+					QueryString: pulumi.Bool(true),
+					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
+						Forward: pulumi.String("all"),
+					},
+				},
+				ViewerProtocolPolicy: pulumi.String("allow-all"),
 			},
 		)
 	}
