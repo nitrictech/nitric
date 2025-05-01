@@ -359,7 +359,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 		origins = append(origins, &cloudfront.DistributionOriginArgs{
 			DomainName: websocketDomainName,
-			OriginId:   pulumi.String(name),
+			OriginId:   pulumi.Sprintf("ws-%s", name),
 			CustomOriginConfig: &cloudfront.DistributionOriginCustomOriginConfigArgs{
 				OriginReadTimeout:    pulumi.Int(30),
 				OriginProtocolPolicy: pulumi.String("match-viewer"),
@@ -384,7 +384,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				},
 				AllowedMethods: pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"}),
 				CachedMethods:  pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS"}),
-				TargetOriginId: pulumi.String(name),
+				TargetOriginId: pulumi.Sprintf("ws-%s", name),
 				ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
 					QueryString: pulumi.Bool(true),
 					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
