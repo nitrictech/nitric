@@ -177,7 +177,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 		origins = append(origins, &cloudfront.DistributionOriginArgs{
 			DomainName: website.bucket.BucketRegionalDomainName,
-			OriginId:   pulumi.String(websiteName),
+			OriginId:   pulumi.Sprintf("website-%s", websiteName),
 			S3OriginConfig: cloudfront.DistributionOriginS3OriginConfigArgs{
 				OriginAccessIdentity: oai.CloudfrontAccessIdentityPath,
 			},
@@ -201,7 +201,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 		if website.basePath != "/" {
 			rootCacheBehavior := &cloudfront.DistributionOrderedCacheBehaviorArgs{
 				PathPattern:          pulumi.String(strings.TrimPrefix(website.basePath, "/")),
-				TargetOriginId:       pulumi.String(websiteName),
+				TargetOriginId:       pulumi.Sprintf("website-%s", websiteName),
 				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
 				AllowedMethods: pulumi.StringArray{
 					pulumi.String("GET"),
@@ -244,7 +244,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			orderedCacheBehaviors = append(orderedCacheBehaviors, subpathCacheBehavior)
 		} else {
 			defaultCacheBehavior = cloudfront.DistributionDefaultCacheBehaviorArgs{
-				TargetOriginId:       pulumi.String(websiteName),
+				TargetOriginId:       pulumi.Sprintf("website-%s", websiteName),
 				ViewerProtocolPolicy: pulumi.String("redirect-to-https"),
 				AllowedMethods: pulumi.StringArray{
 					pulumi.String("GET"),
@@ -310,7 +310,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 		origins = append(origins, &cloudfront.DistributionOriginArgs{
 			DomainName: apiDomainName,
-			OriginId:   pulumi.String(name),
+			OriginId:   pulumi.Sprintf("api-%s", name),
 			CustomOriginConfig: &cloudfront.DistributionOriginCustomOriginConfigArgs{
 				OriginReadTimeout:    pulumi.Int(30),
 				OriginProtocolPolicy: pulumi.String("https-only"),
@@ -335,7 +335,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				},
 				AllowedMethods: pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"}),
 				CachedMethods:  pulumi.ToStringArray([]string{"GET", "HEAD", "OPTIONS"}),
-				TargetOriginId: pulumi.String(name),
+				TargetOriginId: pulumi.Sprintf("api-%s", name),
 				ForwardedValues: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesArgs{
 					QueryString: pulumi.Bool(true),
 					Cookies: &cloudfront.DistributionOrderedCacheBehaviorForwardedValuesCookiesArgs{
