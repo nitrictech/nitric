@@ -18,7 +18,12 @@ variable "target_lambda_functions" {
   type = map(string)
 }
 
-variable "domains" {
-  description = "The domains to associate with the API Gateway"
-  type = set(string)
+variable "domain_names" {
+  description = "A set of each domain name."
+  type        = set(string)
+}
+
+variable "zone_ids" {
+  description = "The id of the hosted zone mapped to the domain name."
+  type = map(string)
 }

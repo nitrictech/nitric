@@ -24,20 +24,3 @@ resource "aws_lambda_permission" "apigw_lambda" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/*/*"
 }
-
-# look up existing certificate for domains
-data "aws_acm_certificate" "cert" {
-  for_each = var.domains
-  domain = each.value
-}
-
-# deploy custom domain names
-resource "aws_apigatewayv2_domain_name" "domain" {
-  for_each = var.domains
-  domain_name = each.value
-  domain_name_configuration {
-    certificate_arn = data.aws_acm_certificate.cert[each.key].arn
-    endpoint_type = "REGIONAL"
-    security_policy = "TLS_1_2"
-  }
-}

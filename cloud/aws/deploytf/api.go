@@ -65,6 +65,8 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		return fmt.Errorf("aws provider can only deploy OpenAPI specs")
 	}
 
+	additionalApiConfig := n.AwsConfig.Apis[name]
+
 	openapiDoc := &openapi3.T{}
 	err := openapiDoc.UnmarshalJSON([]byte(config.GetOpenapi()))
 	if err != nil {
@@ -172,16 +174,20 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 	templateFile := cdktf.Fn_Templatefile(asset.Path(), nameArnPairs)
 
 	domains := []string{}
-	if n.AwsConfig != nil && n.AwsConfig.Apis != nil && n.AwsConfig.Apis[name] != nil {
-		domains = n.AwsConfig.Apis[name].Domains
+	zoneIds := make(map[string]*string)
+
+	if additionalApiConfig != nil {
+		domains = additionalApiConfig.Domains
+		zoneIds = getZoneIds(additionalApiConfig.Domains)
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{
 		Name:                  jsii.String(name),
 		Spec:                  cdktf.Token_AsString(templateFile, &cdktf.EncodingOptions{}),
 		TargetLambdaFunctions: &targetNames,
-		Domains:               jsii.Strings(domains...),
 		StackId:               n.Stack.StackIdOutput(),
+		DomainNames:           jsii.Strings(domains...),
+		ZoneIds:               &zoneIds,
 	})
 
 	return nil
