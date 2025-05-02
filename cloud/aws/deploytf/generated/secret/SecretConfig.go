@@ -17,5 +17,7 @@ type SecretConfig struct {
 	SecretName *string `field:"required" json:"secretName" yaml:"secretName"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// The ARN of the existing secret to import.
+	ExistingSecretArn *string `field:"optional" json:"existingSecretArn" yaml:"existingSecretArn"`
 }
 

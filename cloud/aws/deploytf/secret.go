@@ -23,9 +23,15 @@ import (
 
 // // Secret - Deploy a Secret
 func (a *NitricAwsTerraformProvider) Secret(stack cdktf.TerraformStack, name string, config *deploymentspb.Secret) error {
+	existingSecretArn, exists := a.AwsConfig.Import.Secrets[name]
+	if !exists {
+		existingSecretArn = ""
+	}
+
 	a.Secrets[name] = secret.NewSecret(stack, jsii.Sprintf("secret_%s", name), &secret.SecretConfig{
-		SecretName: jsii.String(name),
-		StackId:    a.Stack.StackIdOutput(),
+		SecretName:        jsii.String(name),
+		StackId:           a.Stack.StackIdOutput(),
+		ExistingSecretArn: jsii.String(existingSecretArn),
 	})
 
 	return nil

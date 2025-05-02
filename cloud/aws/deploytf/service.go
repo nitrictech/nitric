@@ -51,7 +51,6 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 		"NITRIC_ENVIRONMENT":     jsii.String("cloud"),
 		"MIN_WORKERS":            jsii.String(fmt.Sprint(config.Workers)),
 		"NITRIC_HTTP_PROXY_PORT": jsii.String(fmt.Sprint(3000)),
-		// "NITRIC_AWS_RESOURCE_RESOLVER": jsii.String("tagging"),
 	}
 
 	// TODO: Only apply to requesting services

@@ -22,6 +22,8 @@ type Secret interface {
 	DependsOn() *[]*string
 	// Experimental.
 	SetDependsOn(val *[]*string)
+	ExistingSecretArn() *string
+	SetExistingSecretArn(val *string)
 	// Experimental.
 	ForEach() cdktf.ITerraformIterator
 	// Experimental.
@@ -103,6 +105,16 @@ func (j *jsiiProxy_Secret) DependsOn() *[]*string {
 	_jsii_.Get(
 		j,
 		"dependsOn",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Secret) ExistingSecretArn() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"existingSecretArn",
 		&returns,
 	)
 	return returns
@@ -260,6 +272,14 @@ func (j *jsiiProxy_Secret)SetDependsOn(val *[]*string) {
 	_jsii_.Set(
 		j,
 		"dependsOn",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Secret)SetExistingSecretArn(val *string) {
+	_jsii_.Set(
+		j,
+		"existingSecretArn",
 		val,
 	)
 }
