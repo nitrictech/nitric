@@ -60,7 +60,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
     content {
       domain_name = origin.value.bucket_domain_name
-      origin_id = origin.key
+      origin_id = "website-${origin.key}"
 
       s3_origin_config {
         origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
@@ -73,7 +73,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
     content {
       domain_name = replace(origin.value.gateway_url, "https://", "")
-      origin_id = origin.key
+      origin_id = "api-${origin.key}"
 
       custom_origin_config {
         origin_read_timeout = 30
@@ -98,7 +98,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
       allowed_methods = ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"]
       cached_methods = ["GET","HEAD","OPTIONS"]
-      target_origin_id = ordered_cache_behavior.key
+      target_origin_id = "api-${ordered_cache_behavior.key}"
 
       forwarded_values {
         query_string = true
@@ -127,7 +127,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
       allowed_methods  = ["GET", "HEAD", "OPTIONS"]
       cached_methods   = ["GET", "HEAD", "OPTIONS"]
-      target_origin_id = ordered_cache_behavior.key
+      target_origin_id = "website-${ordered_cache_behavior.key}"
 
       forwarded_values {
         query_string = false
@@ -160,7 +160,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
       allowed_methods  = ["GET", "HEAD", "OPTIONS"]
       cached_methods   = ["GET", "HEAD", "OPTIONS"]
-      target_origin_id = ordered_cache_behavior.key
+      target_origin_id = "website-${ordered_cache_behavior.key}"
 
       forwarded_values {
         query_string = false
@@ -179,7 +179,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = var.root_website.name
+    target_origin_id = "website-${var.root_website.name}"
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
     default_ttl            = 3600
