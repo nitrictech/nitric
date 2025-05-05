@@ -31,7 +31,10 @@ import (
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	awsprovider "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/acm"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/cloudfront"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/route53"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/s3"
 	"github.com/pulumi/pulumi-command/sdk/go/command/local"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -400,10 +403,99 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 	tags := common.Tags(a.StackId, name, resources.Website)
 
+	domainName := a.AwsConfig.Cdn.Domain
+	aliases := []string{}
+	hostedZoneId := ""
+	var viewerCertificate *cloudfront.DistributionViewerCertificateArgs
+
+	if domainName != "" {
+		aliases = []string{domainName}
+
+		// Create an AWS provider for the us-east-1 region as the acm certificates require being deployed in us-east-1 region
+		useast1, err := awsprovider.NewProvider(ctx, "us-east-1", &awsprovider.ProviderArgs{
+			Region: pulumi.String("us-east-1"),
+		})
+		if err != nil {
+			return err
+		}
+
+		cert, err := acm.NewCertificate(ctx, fmt.Sprintf("cert-%s", a.StackId), &acm.CertificateArgs{
+			DomainName:       pulumi.String(domainName),
+			ValidationMethod: pulumi.String("DNS"),
+		}, pulumi.Provider(useast1))
+		if err != nil {
+			return err
+		}
+
+		domainValidationOption := cert.DomainValidationOptions.ApplyT(func(options []acm.CertificateDomainValidationOption) interface{} {
+			return options[0]
+		})
+
+		domainParts := strings.Split(domainName, ".")
+
+		// attempt to find hosted zone as the root domain name
+		hostedZone, err := route53.LookupZone(ctx, &route53.LookupZoneArgs{
+			// The name is the base name for the domain
+			Name: &domainName,
+		})
+		if err != nil {
+			// try by parent domain instead
+			parentDomain := strings.Join(domainParts[1:], ".")
+			hostedZone, err = route53.LookupZone(ctx, &route53.LookupZoneArgs{
+				// The name is the base name for the domain
+				Name: &parentDomain,
+			})
+			if err != nil {
+				return fmt.Errorf("unable to find Route53 hosted zone to create records in: %w", err)
+			}
+		}
+
+		hostedZoneId = hostedZone.ZoneId
+
+		record, err := route53.NewRecord(ctx, fmt.Sprintf("cdn-record-%s", a.StackId), &route53.RecordArgs{
+			ZoneId: pulumi.String(hostedZone.ZoneId),
+			Name: domainValidationOption.ApplyT(func(option interface{}) string {
+				return *option.(acm.CertificateDomainValidationOption).ResourceRecordName
+			}).(pulumi.StringOutput),
+			Type: domainValidationOption.ApplyT(func(option interface{}) string {
+				return *option.(acm.CertificateDomainValidationOption).ResourceRecordType
+			}).(pulumi.StringOutput),
+			Records: pulumi.StringArray{
+				domainValidationOption.ApplyT(func(option interface{}) string {
+					return *option.(acm.CertificateDomainValidationOption).ResourceRecordValue
+				}).(pulumi.StringOutput),
+			},
+			Ttl: pulumi.Int(600),
+		})
+		if err != nil {
+			return err
+		}
+
+		acmCertValidation, err := acm.NewCertificateValidation(ctx, fmt.Sprintf("cert-validation-%s", a.StackId), &acm.CertificateValidationArgs{
+			CertificateArn:        cert.Arn,
+			ValidationRecordFqdns: pulumi.ToStringArrayOutput([]pulumi.StringOutput{record.Fqdn}),
+		}, pulumi.Provider(useast1))
+		if err != nil {
+			return err
+		}
+
+		viewerCertificate = &cloudfront.DistributionViewerCertificateArgs{
+			CloudfrontDefaultCertificate: pulumi.Bool(false),
+			AcmCertificateArn:            acmCertValidation.CertificateArn,
+			SslSupportMethod:             pulumi.String("sni-only"),
+			MinimumProtocolVersion:       pulumi.String("TLSv1.2_2021"),
+		}
+	} else {
+		viewerCertificate = &cloudfront.DistributionViewerCertificateArgs{
+			CloudfrontDefaultCertificate: pulumi.Bool(true),
+		}
+	}
+
 	// Deploy a CloudFront distribution for the S3 bucket
 	a.Distribution, err = cloudfront.NewDistribution(ctx, name, &cloudfront.DistributionArgs{
 		Origins:               origins,
 		Enabled:               pulumi.Bool(true),
+		Aliases:               pulumi.ToStringArray(aliases),
 		DefaultCacheBehavior:  defaultCacheBehavior,
 		DefaultRootObject:     pulumi.String(a.websiteIndexDocument),
 		OrderedCacheBehaviors: orderedCacheBehaviors,
@@ -412,10 +504,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 				RestrictionType: pulumi.String("none"),
 			},
 		},
-		Tags: pulumi.ToStringMap(tags),
-		ViewerCertificate: &cloudfront.DistributionViewerCertificateArgs{
-			CloudfrontDefaultCertificate: pulumi.Bool(true),
-		},
+		Tags:              pulumi.ToStringMap(tags),
+		ViewerCertificate: viewerCertificate,
 		CustomErrorResponses: cloudfront.DistributionCustomErrorResponseArray{
 			&cloudfront.DistributionCustomErrorResponseArgs{
 				ErrorCode:        pulumi.Int(404),
@@ -432,6 +522,31 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	})
 	if err != nil {
 		return err
+	}
+
+	if domainName != "" {
+		recordBaseName := ""
+		domainParts := strings.Split(domainName, ".")
+		if len(domainParts) > 2 {
+			recordBaseName = domainParts[0]
+		}
+
+		_, err = route53.NewRecord(ctx, fmt.Sprintf("cdn-alias-record-%s", a.StackId), &route53.RecordArgs{
+			ZoneId: pulumi.String(hostedZoneId),
+			Type:   pulumi.String("A"),
+			Name:   pulumi.String(recordBaseName),
+
+			Aliases: route53.RecordAliasArray{
+				route53.RecordAliasArgs{
+					Name:                 a.Distribution.DomainName,
+					ZoneId:               a.Distribution.HostedZoneId,
+					EvaluateTargetHealth: pulumi.Bool(false),
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	ctx.Export("cdn", pulumi.Sprintf("https://%s", a.Distribution.DomainName))

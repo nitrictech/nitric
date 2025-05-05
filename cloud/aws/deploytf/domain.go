@@ -21,7 +21,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/jsii-runtime-go"
+	"github.com/cdktf/cdktf-provider-aws-go/aws/v19/acmcertificate"
+	"github.com/cdktf/cdktf-provider-aws-go/aws/v19/acmcertificatevalidation"
+	awsprovider "github.com/cdktf/cdktf-provider-aws-go/aws/v19/provider"
+	"github.com/cdktf/cdktf-provider-aws-go/aws/v19/route53record"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 )
+
+type Domain struct {
+	Name           string
+	ZoneId         *string
+	CertificateArn *string
+}
 
 func getZoneIds(domainNames []string) map[string]*string {
 	ctx := context.TODO()
@@ -79,4 +91,53 @@ func getZoneIds(domainNames []string) map[string]*string {
 	}
 
 	return zoneMap
+}
+
+func newDomain(tfstack cdktf.TerraformStack, domainName string) *Domain {
+	zoneId := getZoneIds([]string{domainName})[domainName]
+
+	// ACM Provider in us-east-1
+	acmProvider := awsprovider.NewAwsProvider(tfstack, jsii.String("AWSUsEast1"), &awsprovider.AwsProviderConfig{
+		Region: jsii.String("us-east-1"),
+		Alias:  jsii.String("us-east-1"),
+	})
+
+	// ACM Certificate (must be in us-east-1)
+	cert := acmcertificate.NewAcmCertificate(tfstack, jsii.String("CdnCert"), &acmcertificate.AcmCertificateConfig{
+		DomainName:       jsii.String(domainName),
+		ValidationMethod: jsii.String("DNS"),
+		Provider:         acmProvider, // Ensure ACM is deployed in us-east-1
+		Lifecycle: &cdktf.TerraformResourceLifecycle{
+			CreateBeforeDestroy: jsii.Bool(true),
+		},
+	})
+
+	// Route 53 Record for DNS validation (remains in the main region)
+	validationRecord := route53record.NewRoute53Record(tfstack, jsii.String("CdnCertValidation"), &route53record.Route53RecordConfig{
+		ZoneId: zoneId,
+		Name:   cert.DomainValidationOptions().Get(jsii.Number(0)).ResourceRecordName(),
+		Type:   cert.DomainValidationOptions().Get(jsii.Number(0)).ResourceRecordType(),
+		Records: &[]*string{
+			cert.DomainValidationOptions().Get(jsii.Number(0)).ResourceRecordValue(),
+		},
+		Ttl: jsii.Number(600),
+		DependsOn: &[]cdktf.ITerraformDependable{
+			cert,
+		},
+	})
+
+	// ACM Certificate Validation (must be in us-east-1)
+	validation := acmcertificatevalidation.NewAcmCertificateValidation(tfstack, jsii.String("CertValidation"), &acmcertificatevalidation.AcmCertificateValidationConfig{
+		CertificateArn: cert.Arn(),
+		ValidationRecordFqdns: &[]*string{
+			validationRecord.Fqdn(),
+		},
+		Provider: acmProvider, // Use us-east-1 provider
+	})
+
+	return &Domain{
+		Name:           domainName,
+		ZoneId:         zoneId,
+		CertificateArn: validation.CertificateArn(),
+	}
 }
