@@ -23,6 +23,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	common "github.com/nitrictech/nitric/cloud/aws/common/resources"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/api"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
@@ -178,7 +179,10 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 
 	if additionalApiConfig != nil {
 		domains = additionalApiConfig.Domains
-		zoneIds = getZoneIds(additionalApiConfig.Domains)
+		rawZoneIds := common.GetZoneIDs(additionalApiConfig.Domains)
+		for k, v := range rawZoneIds {
+			zoneIds[k] = jsii.String(v)
+		}
 	}
 
 	n.Apis[name] = api.NewApi(stack, jsii.Sprintf("api_%s", name), &api.ApiConfig{

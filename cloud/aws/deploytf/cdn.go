@@ -42,7 +42,8 @@ type RootWebsite struct {
 }
 
 // function to create a new cdn
-func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cdn {
+func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) (cdn.Cdn, error) {
+	var err error
 	apiGateways := make(map[string]ApiGateway)
 
 	sortedApiKeys := lo.Keys(a.Apis)
@@ -68,9 +69,12 @@ func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cd
 		}
 	}
 
-	domain := &Domain{}
+	var domain *Domain
 	if a.AwsConfig.Cdn.Domain != "" {
-		domain = newDomain(tfstack, a.AwsConfig.Cdn.Domain)
+		domain, err = newTerraformDomain(tfstack, a.AwsConfig.Cdn.Domain)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cdn.NewCdn(tfstack, jsii.String("cdn"), &cdn.CdnConfig{
@@ -81,7 +85,7 @@ func (a *NitricAwsTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) cdn.Cd
 		CertificateArn:        domain.CertificateArn,
 		DomainName:            jsii.String(domain.Name),
 		SkipCacheInvalidation: jsii.Bool(a.AwsConfig.Cdn.SkipCacheInvalidation),
-		ZoneId:                domain.ZoneId,
+		ZoneId:                jsii.String(domain.ZoneId),
 		DependsOn:             &[]cdktf.ITerraformDependable{a.Stack},
-	})
+	}), nil
 }
