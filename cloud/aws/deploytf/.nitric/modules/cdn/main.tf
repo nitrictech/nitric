@@ -209,7 +209,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     acm_certificate_arn      = var.domain_name != "" ? var.certificate_arn : null
     cloudfront_default_certificate = var.domain_name == "" ? true : false
     ssl_support_method       = var.domain_name != "" ? "sni-only" : null
-    minimum_protocol_version = "TLSv1.2"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   custom_error_response {
