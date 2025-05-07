@@ -92,6 +92,7 @@ type NitricGcpPulumiProvider struct {
 	Secrets                map[string]*secretmanager.Secret
 	DatabaseMigrationBuild map[string]*cloudrunv2.Job
 
+	EntrypointRequired bool
 	// files to upload to the website bucket
 	// The map key represents the baseUrl/directory in the bucket
 	WebsiteBuckets        map[string]*storage.Bucket
@@ -404,7 +405,10 @@ func getGCPToken(ctx *pulumi.Context) (*oauth2.Token, error) {
 }
 
 func (a *NitricGcpPulumiProvider) Post(ctx *pulumi.Context) error {
-	return a.deployEntrypoint(ctx)
+	if a.EntrypointRequired {
+		return a.deployEntrypoint(ctx)
+	}
+	return nil
 }
 
 func (a *NitricGcpPulumiProvider) Result(ctx *pulumi.Context) (pulumi.StringOutput, error) {
