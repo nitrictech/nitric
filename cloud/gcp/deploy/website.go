@@ -315,6 +315,8 @@ func (a *NitricGcpPulumiProvider) deployEntrypoint(ctx *pulumi.Context) error {
 
 // Website - Implements the Website deployment method for the GCP provider
 func (a *NitricGcpPulumiProvider) Website(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Website) error {
+	a.EntrypointRequired = true
+
 	if a.GcpConfig.CdnDomain.DomainName == "" {
 		return fmt.Errorf("website deployments to GCP require a domain name to be configured in the stack file.")
 	}
