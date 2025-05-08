@@ -212,7 +212,10 @@ func (a *NitricAwsTerraformProvider) Post(stack cdktf.TerraformStack) error {
 	}
 
 	if a.EnableWebsites {
-		a.NewCdn(stack)
+		_, err := a.NewCdn(stack)
+		if err != nil {
+			return err
+		}
 	}
 
 	return a.ResourcesStore(stack, accessRoleNames)

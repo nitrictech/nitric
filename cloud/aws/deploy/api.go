@@ -21,12 +21,14 @@ import (
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	common_domain "github.com/nitrictech/nitric/cloud/aws/common/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
 	"github.com/nitrictech/nitric/core/pkg/help"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/apigatewayv2"
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/lambda"
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/route53"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -235,11 +237,7 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	if additionalApiConfig != nil {
 		// For each specified domain name
 		for _, domainName := range a.AwsConfig.Apis[name].Domains {
-			_, err := newDomainName(ctx, name, domainNameArgs{
-				domainName: domainName,
-				api:        a.Apis[name],
-				stage:      apiStage,
-			})
+			err = a.createApiDomainName(ctx, name, domainName, apiStage, a.Apis[name])
 			if err != nil {
 				return err
 			}
@@ -247,6 +245,59 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 	}
 
 	ctx.Export("api:"+name, endPoint)
+
+	return nil
+}
+
+func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name string, domainName string, stage *apigatewayv2.Stage, api *apigatewayv2.Api) error {
+	domain, err := a.newPulumiDomainName(ctx, domainName)
+	if err != nil {
+		return err
+	}
+
+	// Create a domain name if one has been requested
+	apiDomainName, err := apigatewayv2.NewDomainName(ctx, fmt.Sprintf("%s-%s", name, domainName), &apigatewayv2.DomainNameArgs{
+		DomainName: pulumi.String(domainName),
+		DomainNameConfiguration: &apigatewayv2.DomainNameDomainNameConfigurationArgs{
+			EndpointType:   pulumi.String("REGIONAL"),
+			SecurityPolicy: pulumi.String("TLS_1_2"),
+			CertificateArn: domain.CertificateValidation.CertificateArn,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Create an API mapping for the new domain name
+	_, err = apigatewayv2.NewApiMapping(ctx, fmt.Sprintf("%s-%s", name, domainName), &apigatewayv2.ApiMappingArgs{
+		ApiId:      api.ID(),
+		DomainName: apiDomainName.DomainName,
+		Stage:      stage.Name,
+	}, pulumi.DependsOn([]pulumi.Resource{stage}))
+	if err != nil {
+		return err
+	}
+
+	subdomainName := common_domain.GetARecordLabel(domain.ZoneLookup)
+
+	// Create a DNS record for the domain name that maps to the APIs
+	// regional endpoint
+	_, err = route53.NewRecord(ctx, fmt.Sprintf("%s-%s-dnsrecord", name, domainName), &route53.RecordArgs{
+		ZoneId: pulumi.String(domain.ZoneLookup.ZoneID),
+		Type:   pulumi.String("A"),
+		Name:   pulumi.String(subdomainName),
+		Aliases: &route53.RecordAliasArray{
+			&route53.RecordAliasArgs{
+				// The target of the A record
+				Name:                 apiDomainName.DomainNameConfiguration.TargetDomainName().Elem(),
+				ZoneId:               apiDomainName.DomainNameConfiguration.HostedZoneId().Elem(),
+				EvaluateTargetHealth: pulumi.Bool(false),
+			},
+		},
+	}, pulumi.DependsOn([]pulumi.Resource{domain}))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
