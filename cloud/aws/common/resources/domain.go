@@ -106,7 +106,7 @@ func GetZoneIDs(domainNames []string) map[string]*ZoneLookup {
 		// Try parent/root domain
 		parts := strings.Split(domain, ".")
 		if len(parts) > 2 {
-			root := strings.Join(parts[len(parts)-2:], ".")
+			root := strings.Join(parts[1:], ".")
 			if id, ok := hostedZones[root]; ok {
 				zoneMap[domain] = &ZoneLookup{
 					Domain:   domain,
