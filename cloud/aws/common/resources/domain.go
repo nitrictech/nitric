@@ -23,8 +23,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 )
 
-func GetSubdomainNameLabel(domainName string) string {
-	domainParts := strings.Split(domainName, ".")
+type ZoneLookup struct {
+	// The domain that matched the Hosted Zone lookup
+	Domain string
+	// The Hosted Zone ID
+	ZoneID string
+	// If the zone matched the domain (false) or matched the parent (true)
+	IsParent bool
+}
+
+func GetARecordLabel(zoneLookup *ZoneLookup) string {
+	if !zoneLookup.IsParent {
+		return ""
+	}
+
+	return getSubdomainLabel(zoneLookup.Domain)
+}
+
+func getSubdomainLabel(domain string) string {
+	domainParts := strings.Split(domain, ".")
 	if len(domainParts) > 2 {
 		return domainParts[0]
 	}
@@ -32,16 +49,16 @@ func GetSubdomainNameLabel(domainName string) string {
 	return ""
 }
 
-func GetZoneID(domainName string) (string, error) {
+func GetZoneID(domainName string) (*ZoneLookup, error) {
 	zoneIds := GetZoneIDs([]string{domainName})
-	if zoneIds[domainName] == "" {
-		return "", fmt.Errorf("zone ID not found for domain name: %s", domainName)
+	if zoneIds[domainName] == nil {
+		return nil, fmt.Errorf("zone ID not found for domain name: %s", domainName)
 	}
 
 	return zoneIds[domainName], nil
 }
 
-func GetZoneIDs(domainNames []string) map[string]string {
+func GetZoneIDs(domainNames []string) map[string]*ZoneLookup {
 	ctx := context.TODO()
 
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-west-2"))
@@ -51,7 +68,7 @@ func GetZoneIDs(domainNames []string) map[string]string {
 
 	client := route53.NewFromConfig(cfg)
 
-	zoneMap := make(map[string]string)
+	zoneMap := make(map[string]*ZoneLookup)
 
 	normalizedDomains := make(map[string]string)
 	for _, d := range domainNames {
@@ -78,7 +95,11 @@ func GetZoneIDs(domainNames []string) map[string]string {
 	for domain, normalized := range normalizedDomains {
 		// Check full domain
 		if id, ok := hostedZones[strings.TrimSuffix(normalized, ".")]; ok {
-			zoneMap[domain] = id
+			zoneMap[domain] = &ZoneLookup{
+				Domain:   domain,
+				ZoneID:   id,
+				IsParent: false,
+			}
 			continue
 		}
 
@@ -87,10 +108,16 @@ func GetZoneIDs(domainNames []string) map[string]string {
 		if len(parts) > 2 {
 			root := strings.Join(parts[len(parts)-2:], ".")
 			if id, ok := hostedZones[root]; ok {
-				zoneMap[domain] = id
+				zoneMap[domain] = &ZoneLookup{
+					Domain:   domain,
+					ZoneID:   id,
+					IsParent: true,
+				}
 				continue
 			}
 		}
+
+		zoneMap[domain] = nil
 	}
 
 	return zoneMap

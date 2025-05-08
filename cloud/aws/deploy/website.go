@@ -329,7 +329,8 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 
 	domainName := a.AwsConfig.Cdn.Domain
 	aliases := []string{}
-	hostedZoneId := ""
+	var zoneLookup *common_domain.ZoneLookup
+
 	var viewerCertificate *cloudfront.DistributionViewerCertificateArgs
 	if domainName != "" {
 		aliases = []string{domainName}
@@ -339,7 +340,7 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 			return err
 		}
 
-		hostedZoneId = domain.ZoneId
+		zoneLookup = domain.ZoneLookup
 
 		viewerCertificate = &cloudfront.DistributionViewerCertificateArgs{
 			CloudfrontDefaultCertificate: pulumi.Bool(false),
@@ -387,10 +388,10 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	}
 
 	if domainName != "" {
-		subdomainName := common_domain.GetSubdomainNameLabel(domainName)
+		subdomainName := common_domain.GetARecordLabel(zoneLookup)
 
 		_, err = route53.NewRecord(ctx, fmt.Sprintf("cdn-alias-record-%s", a.StackId), &route53.RecordArgs{
-			ZoneId: pulumi.String(hostedZoneId),
+			ZoneId: pulumi.String(zoneLookup.ZoneID),
 			Type:   pulumi.String("A"),
 			Name:   pulumi.String(subdomainName),
 

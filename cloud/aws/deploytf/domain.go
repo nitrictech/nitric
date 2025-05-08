@@ -31,7 +31,7 @@ type Domain struct {
 }
 
 func newTerraformDomain(tfstack cdktf.TerraformStack, domainName string) (*Domain, error) {
-	zoneId, err := resources.GetZoneID(domainName)
+	zoneLookup, err := resources.GetZoneID(domainName)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func newTerraformDomain(tfstack cdktf.TerraformStack, domainName string) (*Domai
 
 	// Route 53 Record for DNS validation (remains in the main region)
 	validationRecord := route53record.NewRoute53Record(tfstack, jsii.String("CdnCertValidation"), &route53record.Route53RecordConfig{
-		ZoneId: jsii.String(zoneId),
+		ZoneId: jsii.String(zoneLookup.ZoneID),
 		Name:   cert.DomainValidationOptions().Get(jsii.Number(0)).ResourceRecordName(),
 		Type:   cert.DomainValidationOptions().Get(jsii.Number(0)).ResourceRecordType(),
 		Records: &[]*string{
@@ -77,7 +77,7 @@ func newTerraformDomain(tfstack cdktf.TerraformStack, domainName string) (*Domai
 
 	return &Domain{
 		Name:           domainName,
-		ZoneId:         zoneId,
+		ZoneId:         zoneLookup.ZoneID,
 		CertificateArn: validation.CertificateArn(),
 	}, nil
 }

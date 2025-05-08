@@ -278,12 +278,12 @@ func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name 
 		return err
 	}
 
-	subdomainName := common_domain.GetSubdomainNameLabel(domainName)
+	subdomainName := common_domain.GetARecordLabel(domain.ZoneLookup)
 
 	// Create a DNS record for the domain name that maps to the APIs
 	// regional endpoint
 	_, err = route53.NewRecord(ctx, fmt.Sprintf("%s-%s-dnsrecord", name, domainName), &route53.RecordArgs{
-		ZoneId: pulumi.String(domain.ZoneId),
+		ZoneId: pulumi.String(domain.ZoneLookup.ZoneID),
 		Type:   pulumi.String("A"),
 		Name:   pulumi.String(subdomainName),
 		Aliases: &route53.RecordAliasArray{

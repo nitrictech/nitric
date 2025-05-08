@@ -181,7 +181,7 @@ func (n *NitricAwsTerraformProvider) Api(stack cdktf.TerraformStack, name string
 		domains = additionalApiConfig.Domains
 		rawZoneIds := common.GetZoneIDs(additionalApiConfig.Domains)
 		for k, v := range rawZoneIds {
-			zoneIds[k] = jsii.String(v)
+			zoneIds[k] = jsii.String(v.ZoneID)
 		}
 	}
 

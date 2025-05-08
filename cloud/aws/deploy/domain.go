@@ -31,7 +31,7 @@ type Domain struct {
 	pulumi.ResourceState
 
 	Name                  string
-	ZoneId                string
+	ZoneLookup            *resources.ZoneLookup
 	CertificateValidation *acm.CertificateValidation
 }
 
@@ -39,7 +39,7 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 	var err error
 	res := &Domain{Name: domainName}
 
-	res.ZoneId, err = resources.GetZoneID(domainName)
+	res.ZoneLookup, err = resources.GetZoneID(domainName)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 			}).(pulumi.StringOutput),
 		},
 		Ttl:    pulumi.Int(10 * 60),
-		ZoneId: pulumi.String(res.ZoneId),
+		ZoneId: pulumi.String(res.ZoneLookup.ZoneID),
 	}, []pulumi.ResourceOption{pulumi.Parent(res)}...)
 	if err != nil {
 		return nil, err
