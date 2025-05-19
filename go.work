@@ -9,5 +9,6 @@ use (
 	./cloud/common
 	./cloud/gcp
 	./core
+	./engines
 	./test
 )

@@ -25,8 +25,8 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nitrictech/nitric/cloud/common v0.0.0-20241003062412-76ea6275fb0b
-	github.com/nitrictech/nitric/core v0.0.0-20240903041359-ff0d375e8b73
+	github.com/nitrictech/nitric/cloud/common v0.0.0-20250508230623-64e9d906b932
+	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce
 	github.com/nitrictech/nitric/test v0.0.0-20240614052744-71e6e05bc47e
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
@@ -114,7 +114,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
-	github.com/alecthomas/assert/v2 v2.6.0 // indirect
 	github.com/alecthomas/go-check-sumtype v0.1.4 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.4 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
@@ -140,7 +139,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.20.0 // indirect
-	github.com/charmbracelet/bubbletea v1.2.4 // indirect
+	github.com/charmbracelet/bubbletea v1.3.5 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
@@ -212,6 +211,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iwdgo/sigintwindows v0.2.2 // indirect
 	github.com/jgautheron/goconst v1.7.1 // indirect
@@ -343,7 +343,7 @@ require (
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect

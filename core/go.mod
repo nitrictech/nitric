@@ -23,7 +23,7 @@ require (
 require (
 	github.com/valyala/fasthttp v1.55.0
 	github.com/yoheimuta/protolint v0.47.6
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.13.0
 )
 
 require (

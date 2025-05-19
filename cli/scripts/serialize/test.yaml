@@ -1,0 +1,78 @@
+platform: nitric/aws@latest
+
+name: ExpressJS Microservice
+description: An example of a service built with Nitric v2 and ExpressJS
+
+resources:
+  orders:
+    type: service
+    port: 3000
+    # subtype: serverless
+    env:
+      PORT: "3000"
+      DATABASE_URL: ${database.url}
+      VPC_ID: ${vpc.id}
+      SNS_ARN: ${order-events.arn}
+      STRIPE_API_KEY: ${stage.STRIPE_API_KEY}
+    container:
+      docker:
+        context: ./orders
+      # image:
+      #   id: test
+  ingress:
+    type: entrypoint
+    routes:
+      /:
+        type: service
+        name: orders
+
+  # orders-lock:
+  #   type: lock
+
+  # database:
+  #   type: database
+  #   subtype: postgres
+
+  # order-events:
+  #   type: pubsub.sns
+
+  # order-sub:
+  #   type: subscriptions
+  #   source: order-events
+  #   target: receipts
+  #   path: /orders
+
+  # daily-cleanup:
+  #   type: schedule
+  #   every: 1 day
+  #   target: receipts
+  #   path: /cleanup
+
+  # receipts:
+  #   type: service
+  #   container:
+  #     docker:
+  #       context: ./receipts
+  #       # dockerfile: ./path/to/test.dockerfile (Dockerfile by default)
+  #       port: 3000
+  #     env:
+  #       PORT: 3000
+  #   subscriptions:
+  #     topic: orders
+  #     route: /orders
+
+  # state:
+  #   type: state
+
+  # ingress:
+  #   type: entrypoint
+  #   public:
+  #     cdn:
+  #       enabled: true
+  #   routes:
+  #     /:
+  #       type: bucket
+  #       name: website
+  #     /orders:
+  #       type: service
+  #       name: orders
