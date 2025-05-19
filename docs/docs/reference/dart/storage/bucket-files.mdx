@@ -1,0 +1,46 @@
+---
+description: "Reference for Nitric's Dart library - Get a list of file references for files that exist in the bucket."
+---
+
+# Dart - bucket.files()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Get a list of file references for files that exist in the bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+  BucketPermission.delete,
+]);
+
+final files = await assets.files();
+```
+
+## Examples
+
+delete all files in a bucket
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+  BucketPermission.delete,
+]);
+
+final files = await assets.files();
+
+await Future.wait(files.map((file) async {
+  await file.delete();
+}));
+```
+
+## Notes
+
+This method returns a list of [File](./bucket-file) references that exist on the bucket.

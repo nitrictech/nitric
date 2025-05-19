@@ -1,0 +1,78 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Send tasks to a queue."
+---
+
+# Node.js - queue.send()
+
+Send tasks to a queue.
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const batchQueue = queue('batch').for('sending')
+
+const payload = {}
+await batchQueue.send({ payload })
+```
+
+## Parameters
+
+<Properties>
+  <Property name="tasks" required type="Task or Task[]">
+    A task or an array of tasks to send to the queue.
+  </Property>
+</Properties>
+
+## Examples
+
+### Send a task to a queue
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const batchQueue = queue('batch').for('sending')
+
+const payload = { message: 'payloads can be any serializable object' }
+
+await batchQueue.send([{ payload }])
+```
+
+### Send multiple tasks to a queue
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const batchQueue = queue('batch').for('sending')
+
+const tasks = [
+  {
+    payload: {
+      type: 'Email',
+      to: 'hello@example.com',
+      subject: 'Notification',
+      message: 'A notification from Nitric',
+    },
+  },
+  {
+    payload: {
+      type: 'SMS',
+      to: '+17200000000',
+      message: 'A text message from Nitric',
+    },
+  },
+]
+
+await batchQueue.send(tasks)
+```
+
+### Dealing with failures
+
+In rare cases when sending tasks to a queue some tasks might fail to be sent. The response from `send()` will include an array of any tasks that failed to send. You can process this array to retry or log the error.
+
+```javascript
+const failed = await batchQueue.send(tasks)
+
+for (const task in failed) {
+  console.log(task)
+}
+```

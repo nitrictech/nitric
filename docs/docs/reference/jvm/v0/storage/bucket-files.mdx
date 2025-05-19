@@ -1,0 +1,99 @@
+---
+description: "Reference for Nitric's v0 JVM library - Get a list of file references for files that exist in the bucket"
+---
+
+# JVM - bucket.files()
+
+Get a list of file references for files that exist in the bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Read);
+
+    var files = bucket.files();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Read)
+
+  var files = bucket.files()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Examples
+
+Deleting all files in a bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("bucket").with(BucketPermission.Read);
+
+    var files = bucket.files();
+
+    files.forEach((file) -> file.delete());
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("bucket").with(BucketPermission.Read)
+
+  val files = bucket.files()
+
+  files.forEach { file -> file.delete() }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Notes
+
+This method returns a list of [File](./bucket-file) references that exist on the bucket.

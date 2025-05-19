@@ -1,0 +1,70 @@
+---
+description: "Reference for Nitric's Go library - Write a file to a bucket."
+---
+
+# Go - Bucket.File.Write()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Storage
+  and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Write a file to a bucket.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  bucket := nitric.NewBucket("bucket-name").Allow(storage.BucketWrite)
+
+  err := bucket.Write(context.TODO(), "cat.png", []byte("contents"))
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="key" required type="string">
+    The key of the file to write.
+  </Property>
+  <Property name="data" required type="[]byte">
+    The data to write to the file.
+  </Property>
+</Properties>
+
+## Examples
+
+### Write a file
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  bucket := nitric.NewBucket("bucket-name").Allow(storage.BucketWrite)
+
+  err := bucket.Write(context.TODO(), "cat.png", []byte("contents"))
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```

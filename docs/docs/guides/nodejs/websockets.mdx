@@ -1,0 +1,191 @@
+---
+description: 'Getting started building realtime applications on Nitric'
+tags:
+  - Realtime & Websockets
+languages:
+  - typescript
+  - javascript
+published_at: 2023-07-17
+updated_at: 2024-10-11
+---
+
+# Websockets guide
+
+In this guide we'll be creating a simple realtime application using Nitric websockets.
+
+<Note>
+  This guide relies on the Websocket feature of Nitric which is currently in
+  preview. See the docs for this feature to [see how to enable it](/websockets).
+</Note>
+
+## Prerequisites
+
+To complete this guide you'll need the following:
+
+- [Node.js](https://nodejs.org/en/) installed locally
+- [Nitric CLI](/get-started/installation) installed
+- _(optional)_ Your choice of an [AWS](https://aws.amazon.com), [GCP](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account
+
+## Getting Started
+
+Let's start by setting up a Nitric project:
+
+```bash
+nitric new websocket-example ts-starter
+```
+
+Install dependencies:
+
+```bash
+cd websocket-example
+yarn install
+```
+
+You can go ahead and open this new project in your editor of choice. You should see a project structure similar to:
+
+```txt
+├── services
+│   ├── hello.ts
+├── node_modules
+│   ├── ...
+├── .gitignore
+├── nitric.yaml
+├── package.json
+├── tsconfig.json
+├── README.md
+└── yarn.lock
+```
+
+In this structure you'll notice the `services` folder. By default, this is where Nitric expects the entrypoint code for your application. However, that's just a convention, we can change that to anything else that suits our needs.
+
+Let's update our `hello.ts` file with some websocket code to get started.
+
+```typescript title:services/hello.ts
+import { websocket } from '@nitric/sdk'
+const socket = websocket('example-websocket')
+
+socket.on('connect', async (ctx) => {
+  console.log(`connecting: ${ctx.req.connectionId}`)
+})
+
+socket.on('disconnect', async (ctx) => {
+  console.log(`disconnecting: ${ctx.req.connectionId}`)
+})
+
+socket.on('message', async (ctx) => {
+  const message = ctx.req.text()
+  console.log(`got message from  ${ctx.req.connectionId}: ${message}`)
+})
+```
+
+At this point, we're ready to start testing locally. Let's start the local Nitric environment.
+
+```bash
+nitric start
+```
+
+Your websocket will now be running with Nitric acting as a proxy, in this case it's available on port `4001`.
+
+In this guide we'll test this using [Insomnia](https://insomnia.rest/), however feel free to use any websocket capable testing client you like.
+
+When you send messages you will start seeing your server log messages.
+
+![websocket testing](/docs/images/guides/websocket-starter/first-test.png)
+
+## Sending messages from server to clients
+
+Websockets only make sense when communication is bi-directional, now we've confirmed that the client can talk to our server lets get our server talking to the client.
+
+To do this we'll need to add some connection management.
+
+You can update the `hello.ts` file like so:
+
+```typescript title:services/hello.ts
+import { websocket, kv } from '@nitric/sdk'
+
+// Initialize KV store for connections and a WebSocket
+const kvStore = kv('connections').allow('get', 'set', 'delete')
+const socket = websocket('example-websocket')
+
+// Handle new connections
+socket.on('connect', async (ctx) => {
+  console.log(`connecting: ${ctx.req.connectionId}`)
+
+  await kvStore.set(ctx.req.connectionId, {
+    /* connection meta data here */
+  })
+})
+
+// Handle disconnections
+socket.on('disconnect', async (ctx) => {
+  console.log(`disconnecting: ${ctx.req.connectionId}`)
+
+  await kvStore.delete(ctx.req.connectionId)
+})
+
+// Send messages
+socket.on('message', async (ctx) => {
+  const message = ctx.req.text()
+  const connections = kvStore.keys()
+
+  console.log(`got message from  ${ctx.req.connectionId}: ${message}`)
+
+  // Send the message to each connection
+  try {
+    for await (const connectionId of connections) {
+      await socket.send(connectionId, message)
+    }
+  } catch (error) {
+    console.error('Error during message broadcasting:', error)
+  }
+})
+```
+
+If you connect multiple clients using your preferred client and send messages each client should receive messages from other clients:
+
+![multiple clients test](/docs/images/guides/websocket-starter/second-test.png)
+
+## Deploy to the cloud
+
+<Note>Nitric only supports AWS for websockets at this time</Note>
+
+To perform the deployment we'll create a `stack`, stacks give Nitric the configuration needed for a specific cloud instance of this project, such as the provider and region.
+
+The new stack command can help you create the stack by following prompts.
+
+```txt
+nitric stack new
+```
+
+This command will create a file named `nitric.dev.yaml`, with contents like this:
+
+```yaml title:nitric.dev.yaml
+provider: nitric/aws@1.1.0
+region: us-east-1
+```
+
+With the stack file in place we can run the deployment:
+
+```bash
+nitric up
+```
+
+Go ahead and test your app in the cloud, you can start by connecting `wscat` to the websocket endpoint printed in the output for `up`.
+
+> You'll need to add `$default` to the URL provided to hit the deployed stage. This will be simplified in future versions of the AWS provider.
+
+<Note>
+  When you're done with the cloud deployment you can tear it down using the
+  `nitric down` command.
+</Note>
+
+## What next?
+
+Now that you have the basics down, try exploring other Nitric resources available to enhance your app.
+
+- [HTTP](/http)
+- [Key Value Stores](/keyvalue)
+- [Schedules](/schedules)
+- [Storage](/storage)
+- [Messages](/messaging)
+- [Secrets](/secrets)

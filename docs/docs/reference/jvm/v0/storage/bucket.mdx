@@ -1,0 +1,89 @@
+---
+description: "Reference for Nitric's v0 JVM library - Create a new bucket for storing and retrieving files."
+---
+
+# JVM - bucket()
+
+Create a new bucket for storing and retrieving files.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Read, BucketPermission.Write, BucketPermission.Delete);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Read, BucketPermission.Write, BucketPermission.Delete)
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this bucket within the app. Subsequent calls to
+    `bucket()` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**BucketPermission.Read**
+
+This permission allows your function to read files from the bucket
+
+---
+
+**BucketPermission.Write**
+
+This permission allows your function to write files to the bucket
+
+---
+
+**BucketPermission.Delete**
+
+This permission allows your function to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [file()](./bucket-file)
+- [file.get()](./bucket-file-read)
+- [file.write()](./bucket-file-write)
+- [file.delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-uploadurl)
+- [file.getUploadUrl()](./bucket-file-downloadurl)

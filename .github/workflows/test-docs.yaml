@@ -1,0 +1,123 @@
+name: Test Docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      NEXT_PUBLIC_VERCEL_URL: nitric.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install dependencies
+        uses: cypress-io/github-action@v6
+        with:
+          runTests: false
+          install-command: yarn --frozen-lockfile
+          working-directory: docs
+      - name: Run format linting
+        run: yarn format:check
+      - name: Run spellcheck test
+        run: yarn test:spellcheck
+
+  test-broken-links:
+    runs-on: ubuntu-latest
+    needs: [tests]
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cypress tests 🧪
+        uses: cypress-io/github-action@v6
+        with:
+          headless: true
+          config: video=false
+          browser: chrome
+          spec: cypress/e2e/broken-links.cy.ts
+          build: yarn cypress:build
+          start: yarn start
+          wait-on: "http://localhost:3000"
+          working-directory: docs
+        env:
+          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-broken-links
+          path: docs/cypress/screenshots
+
+  test-a11y:
+    runs-on: ubuntu-latest
+    needs: [tests]
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cypress tests 🧪
+        uses: cypress-io/github-action@v6
+        with:
+          headless: true
+          config: video=false
+          browser: chrome
+          spec: cypress/e2e/a11y.cy.ts
+          build: yarn cypress:build
+          start: yarn start
+          wait-on: "http://localhost:3000"
+          working-directory: docs
+        env:
+          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-a11y
+          path: docs/cypress/screenshots
+
+  test-seo:
+    runs-on: ubuntu-latest
+    needs: [tests]
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cypress tests 🧪
+        uses: cypress-io/github-action@v6
+        with:
+          headless: true
+          config: video=false
+          browser: chrome
+          spec: cypress/e2e/seo.cy.ts
+          build: yarn cypress:build
+          start: yarn start
+          wait-on: "http://localhost:3000"
+          working-directory: docs
+        env:
+          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-seo
+          path: docs/cypress/screenshots

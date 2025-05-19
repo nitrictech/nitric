@@ -1,0 +1,244 @@
+---
+description: 'Server-side validation with Zod across APIs, Schedules and Queues'
+tags:
+  - API
+  - Realtime & Websockets
+languages:
+  - typescript
+  - javascript
+published_at: 2025-03-24
+updated_at: 2025-03-24
+---
+
+# A Unified Approach to validation across APIs, Queues & Jobs with Zod
+
+Validation can help users enter data in the correct format when interacting with front-end applications. This prevents them from providing empty values, invalid emails, or other common input mistakes.
+
+Once data leaves the browser we still need to ensure that the data remains valid:
+
+- What happens when services communicate asynchronously?
+- How do we prevent bad data from breaking downstream systems?
+
+Cloud applications don’t just receive requests from web forms. Data comes from APIs, message queues, scheduled tasks, or WebSockets—each introducing the risk of incomplete, malformed, or even malicious data.
+
+Server-side validation is critical—not just for security, but for maintaining data integrity across the system.
+
+With [Zod](https://zod.dev/), we can define strict validation rules once and enforce them across APIs, events, and background jobs.
+
+## Defining a validation schema with Zod
+
+A Zod schema acts as a contract for how data should look. The example below defines a `userSchema`, which establishes clear rules for incoming user data.
+
+```ts
+import { z } from 'zod'
+
+const userSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email format'),
+  age: z.number().min(18, 'Must be at least 18 years old'),
+})
+```
+
+
+This schema ensures that any user data passed into the application follows these strict rules.
+
+## Validating data
+
+Once the schema is defined, we can use `.safeParse()` to validate incoming data before using it in our application.
+
+```ts
+const validUser = userSchema.safeParse({
+  name: 'Alice',
+  email: 'alice@example.com',
+  age: 25,
+})
+```
+
+### What happens here?
+
+- The `safeParse()` method checks if the input matches the `userSchema`.
+- If validation **passes**, the `validUser` object will contain the parsed data.
+- If validation **fails**, Zod returns an object containing detailed error messages instead of throwing an exception.
+
+<Note>
+  Alternatively, use .parse(), which throws an error that can be handled
+  appropriately.
+</Note>{' '}
+
+## Applying validation to an API endpoint
+
+Now, let’s use our schema apply server-side validation to an API.
+
+The following API route:
+
+1. Extracts the request body from the incoming request
+2. Validates the data against `userSchema`
+3. Returns a 400 error if validation fails
+
+```ts
+import { api } from '@nitric/sdk'
+import { z } from 'zod'
+
+const userSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email format'),
+  age: z.number().min(18, 'Must be at least 18 years old'),
+})
+
+const usersApi = api('users')
+
+usersApi.post('/', async (ctx) => {
+  const result = userSchema.safeParse(ctx.req.json()) // Validate request
+  if (result.success) {
+    ctx.res.json({ message: 'User validated.', result })
+  } else {
+    ctx.res.status = 400
+    ctx.res.json(result.error)
+  }
+})
+```
+
+### Why this matters:
+
+- If the request body is **valid**, the API processes the request as usual.
+- If **invalid**, the response includes detailed validation errors, ensuring that only properly formatted data is accepted.
+
+### Example invalid request:
+
+```json
+{
+  "name": "test",
+  "email": "test@test.com",
+  "age": 12
+}
+```
+
+### Expected response:
+
+```json
+{
+  "issues": [
+    {
+      "code": "too_small",
+      "minimum": 18,
+      "type": "number",
+      "inclusive": true,
+      "exact": false,
+      "message": "Must be at least 18 years old",
+      "path": ["age"]
+    }
+  ],
+  "name": "ZodError"
+}
+```
+
+APIs aren’t the only place validation matters. Cloud applications move data through multiple services—including message queues and scheduled tasks.
+
+## Validating and processing messages in a queue
+
+If we don’t validate messages before processing them, bad data can propagate throughout the system.
+
+Let’s say we have an `orders` queue where payment services publish transaction messages. To maintain integrity, we must validate each order before processing it.
+
+### Defining the validation schema
+
+```ts
+import { api, queue, schedule } from '@nitric/sdk'
+import { z } from 'zod'
+
+const orderSchema = z.object({
+  orderId: z.string().uuid(),
+  amount: z.number().positive(),
+  userId: z.string().min(1),
+})
+```
+
+### Key Rules:
+
+- `orderId` must be a valid UUID
+- `amount` must be a positive number
+- `userId` must be a string with at least one character
+
+This schema ensures that invalid orders never enter the system.
+
+## Applying validation in a queue handler
+
+Next, we define an API that accepts orders and enqueues them only if they pass validation.
+
+```ts
+const orderApi = api('orders')
+const ordersQueue = queue('orders').allow('dequeue', 'enqueue')
+
+const orderSchema = z.object({
+  orderId: z.string().uuid(),
+  amount: z.number().positive(),
+  userId: z.string().min(1),
+})
+
+orderApi.post('/', async (ctx) => {
+  const result = orderSchema.safeParse(ctx.req.json())
+  if (result.success) {
+    await ordersQueue.enqueue(result.data)
+    ctx.res.json({
+      message: `Adding order with id: ${result.data.orderId} to queue`,
+    })
+  } else {
+    ctx.res.status = 400
+    ctx.res.json(result.error)
+  }
+})
+```
+
+### Breakdown:
+
+- The request body is validated against `orderSchema`
+- If the data is valid, it gets enqueued for processing
+- If invalid, a `400` error response is returned
+
+This prevents bad data from ever reaching the queue.
+
+## Processing the Queue
+
+To ensure only valid data is processed, we apply validation again when dequeuing orders.
+
+```ts
+schedule('process-transactions').every('5 minutes', async (ctx) => {
+  console.log(`Processing at ${new Date().toLocaleString()}`)
+
+  const tasks = await ordersQueue.dequeue()
+
+  await Promise.all(
+    tasks.map(async (task) => {
+      const result = orderSchema.safeParse(task.payload)
+
+      if (result.success) {
+        console.log(
+          `Processing order ${result.data.orderId} for user ${result.data.userId}`,
+        )
+        await task.complete()
+      } else {
+        console.error(`Invalid order message:`, result.error)
+      }
+    }),
+  )
+})
+```
+
+### What This Does:
+
+- Every **5 minutes**, the function processes all messages in the queue
+- Each message is validated before being processed
+- Invalid messages are logged and ignored to prevent errors in downstream services
+
+## Conclusion
+
+Validation isn't just about catching errors, it’s about building confidence in how data moves through an application.
+
+By integrating Zod into a Nitric application, we:
+
+- Ensure APIs only accept well-formed requests
+- Prevent malformed messages from breaking queue processing
+- Guarantee background jobs run with predictable data
+- Validate real-time connections before they interact with the system
+
+Now that you've established server-side validation, the next step is handling errors effectively, some errors and failures will require retries, while others should be logged and flagged for manual review.

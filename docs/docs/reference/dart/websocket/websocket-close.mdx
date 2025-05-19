@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Dart library - Close a connection to a websocket"
+---
+
+# Dart - websocket.close()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Closes a connection to a websocket
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+
+await socket.close(connectionId);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connectionId" required type="String">
+    The ID of the connection to be closed.
+  </Property>
+</Properties>
+
+## Examples
+
+### Close a connection to the websocket on message
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+
+await socket.close(connectionId);
+```

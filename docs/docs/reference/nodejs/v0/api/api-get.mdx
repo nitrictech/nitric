@@ -1,0 +1,77 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Register an API route and set a specific HTTP GET handler on that route."
+---
+
+# Node.js - api.get()
+
+Register an API route and set a specific HTTP GET handler on that route.
+
+<Note>
+  This method is a convenient short version of
+  [api().route().get()](./api-route-get)
+</Note>
+
+```javascript
+import { api } from '@nitric/sdk'
+
+api('public').get('/customers', (ctx) => {
+  // construct response for the GET: /customers request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="string">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers. See [create
+    a route with path params](#create-a-route-with-path-params)
+  </Property>
+  <Property name="middleware" required type="HttpMiddleware | HttpMiddleware[]">
+    One or more middleware services to use as the handler for HTTP requests.
+    Handlers can be sync or async
+  </Property>
+  <Property name="opts" type="object">
+    Additional options when creating method.
+    <Properties nested>
+      <Property name="security" type="map<string, string[]>">
+        Security rules to apply with scopes to the entire API. Keys must match a
+        `securityDefinition`.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for GET requests
+
+```javascript
+import { api } from '@nitric/sdk'
+
+api('public').get('/customers', (ctx) => {
+  // construct response for the GET: /customers request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+### Chain services as a single method handler
+
+When multiple services are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+```javascript
+import { api } from '@nitric/sdk'
+import { validate } from '../middleware'
+
+const getAllCustomers = (ctx) => {
+  // construct response for the GET: /customers request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+}
+
+api('public').get('/customers', [validate, getAllCustomers])
+```

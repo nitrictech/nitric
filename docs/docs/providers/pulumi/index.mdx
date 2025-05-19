@@ -1,0 +1,52 @@
+---
+description: 'How Nitric integrates with Pulumi'
+---
+
+# Nitric Pulumi Providers
+
+Nitric enables application portability and deployments through pluggable modules known as [providers](/get-started/foundations/deployment#providers). This allows applications to be deployed with many different Infrastructure Automation technologies, including [Pulumi](https://pulumi.com). Nitric has pre-built providers that use Pulumi to deploy to [AWS](/providers/pulumi/aws), [Azure](/providers/pulumi/azure) and [Google Cloud](/providers/pulumi/gcp).
+
+<Note>
+  All pre-built Pulumi providers are [direct deployment
+  providers](/get-started/foundations/deployment#providers).
+</Note>
+
+These providers are recommended if you're new to Nitric. Pulumi's [Automation API](https://www.pulumi.com/automation/) lets Nitric define and deploy infrastructure directly, without transpiling to another DSL first. This reduces the steps and tooling needed for deployments.
+
+<Note>
+  If you have a specific need to use another IfC tool, such as Terraform, those
+  providers are [also available](/providers/terraform) or you can [build your
+  own](/providers/custom).
+</Note>
+
+## Prerequisites
+
+The **Pulumi CLI** is required to deploy Nitric applications using the Pulumi Providers. You can find the installation instructions in the [Pulumi documentation](https://www.pulumi.com/docs/install/).
+
+## Available Pulumi Providers
+
+- [AWS](/providers/pulumi/aws)
+- [Azure](/providers/pulumi/azure)
+- [Google Cloud](/providers/pulumi/gcp)
+
+## How Nitric integrates with Pulumi
+
+Nitric uses the [Pulumi Automation API](https://www.pulumi.com/automation/) for its pre-built Pulumi Providers. This means there's no need to create a workspace to manage stacks alongside your project. Instead, the Provider interacts directly with Pulumi via the Automation API to manage stacks.
+
+This does not change how you integrate Nitric with Pulumi Cloud if you wish to use it as a [state backend](https://www.pulumi.com/docs/iac/concepts/state-and-backends/) for your stacks.
+
+## Using your Pulumi Cloud Account (Optional)
+
+If you need to login to your Pulumi Cloud account you can do so with:
+
+```bash
+pulumi login
+```
+
+Once you're logged in, you can deploy your Nitric project using the Nitric CLI:
+
+```bash
+nitric up
+```
+
+Within your project directory and wait until the project has finished deploying. You can also follow your deployment on the [Pulumi Cloud dashboard](https://app.pulumi.com)

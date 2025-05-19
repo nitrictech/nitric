@@ -1,0 +1,52 @@
+---
+description: "Reference for Nitric's Python library - Create a signed URL for write access to a file."
+---
+
+# Python - bucket.file.upload_url()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a signed url for write access to a file.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('write')
+
+logo = assets.file('images/logo.png')
+
+upload_url = await logo.upload_url()
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'writing'. The latest version uses 'write'.
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" type="number">
+    Seconds until link expiry. Maximum of 604800 (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a temporary file upload link for a user
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+uploads = bucket('uploads').allow('write')
+
+photo = assets.file('images/photo.png')
+
+photo_url = await logo.upload_url()
+
+Nitric.run()
+```

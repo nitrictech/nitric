@@ -1,0 +1,38 @@
+---
+description: "Reference for Nitric's v0 Python library - Fetch paged results from a query."
+---
+
+# Python - collection.query.fetch()
+
+Retrieve a page of results for a query. This is an alternative to [collection.query.stream()](./collection-query-stream)
+
+```python
+from nitric.resources import collection
+
+query = collection("profiles").allow('reading').query()
+
+results = await query.fetch()
+```
+
+## Examples
+
+### Paging through results from a query
+
+```python
+from nitric.resources import collection
+
+query = collection("profiles").allow('reading').query()
+
+# Fetch first page
+results = await query.fetch()
+
+# Fetch next page
+if results.paging_token:
+    results = await query.page_from(results.paging_token).fetch()
+```
+
+## See also
+
+- [query().where()](./collection-query-where)
+- [query().limit()](./collection-query-limit)
+- [query().pagingFrom()](./collection-query-pagingfrom)

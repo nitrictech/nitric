@@ -1,0 +1,77 @@
+---
+description: "Reference for Nitric's Dart library - Register a job handler to with the Nitric Dart SDK"
+---
+
+# Dart - job.handler()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Batch
+  Services in Nitric start with the [Batch docs](/batch).
+</Note>
+
+Job handlers are the code that is run when a job request is submitted. These handlers should be written in a separate file to your services.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze").allow([JobPermission.submit]);
+
+analyze.handler((ctx) async {
+  return ctx;
+}, opts: JobResourceRequirements(cpus: 1, memory: 2048, gpus: 0));
+```
+
+## Defining Batches
+
+Batches are defined in different files to services and referenced in a project's `nitric.yaml` file. For example:
+
+```yaml
+batch-services:
+  - match: ./batches/*.dart
+    start: dart run $SERVICE_PATH
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="JobHandler">
+    The middleware service to use as the handler for Job requests.
+  </Property>
+  <Property name="opts" type="JobResourceRequirements" nested>
+    <Property name="cpus" type="int">
+      The number of CPUs to allocate to the handler
+    </Property>
+    <Property name="gpus" type="int">
+      The number of GPUs to allocate to the handler
+    </Property>
+    <Property name="memory" type="int">
+      The amount of memory (MB) to allocate to the handler
+    </Property>
+  </Property>
+</Properties>
+
+## Examples
+
+### Define a job handler
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze").allow([JobPermission.submit]);
+
+analyze.handler((ctx) async {
+  return ctx;
+});
+```
+
+### Create a job handler with custom resource requirements
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze").allow([JobPermission.submit]);
+
+analyze.handler((ctx) async {
+  return ctx;
+}, opts: JobResourceRequirements(cpus: 1, memory: 2048, gpus: 1));
+```

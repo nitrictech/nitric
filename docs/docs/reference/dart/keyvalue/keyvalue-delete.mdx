@@ -1,0 +1,44 @@
+---
+description: "Reference for Nitric's Dart library - Delete key from a key value store."
+---
+
+# Dart - kv.delete()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Delete key from a key value store.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.delete,
+]);
+
+await profiles.delete('profile-1a2b3c');
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="String">
+    The key that references the key value pair that should be deleted.
+  </Property>
+</Properties>
+
+## Examples
+
+### Delete a key
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.delete,
+]);
+
+await profiles.delete('profile-1a2b3c');
+```

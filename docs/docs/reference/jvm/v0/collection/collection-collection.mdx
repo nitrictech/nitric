@@ -1,0 +1,134 @@
+---
+description: "Reference for Nitric's v0 JVM library - Get a query-only sub-collection reference, this can be used to query commonly named collections across documents."
+---
+
+# JVM - collection.collection()
+
+Get a query-only sub-collection reference, this can be used to query commonly named collections across documents.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    var drakesEnemies = drakesProfile.collection("enemies", User.class);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val enemies = profiles.collection<User>("enemies")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The name of the sub-collection to reference
+  </Property>
+  <Property name="type" required type="Class<T>">
+    The type of documents that will be stored in the collection.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a query for a sub collection
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    var drakesEnemies = drakesProfile.collection("enemies", User.class);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val enemies = profiles.collection<User>("enemies")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### See also
+
+- [collection().query()](./collection-query)

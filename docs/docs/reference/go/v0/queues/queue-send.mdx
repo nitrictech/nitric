@@ -1,0 +1,102 @@
+---
+description: "Reference for Nitric's v0 Go library - Send tasks to a queue."
+---
+
+# Go - Queue.Send()
+
+Send tasks to a queue.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/api/queues"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueSending)
+  if err != nil {
+    return
+  }
+
+  _, err := queue.Send(context.TODO(), []*queues.Task{
+    {
+      ID: "1234",
+      PayloadType: "message",
+      Payload: map[string]interface{}{
+        "message": "hello world",
+      },
+    },
+  })
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="tasks" required type="[]*Task">
+    An array of tasks to send to the queue.
+  </Property>
+</Properties>
+
+## Examples
+
+### Send multiple tasks to a queue
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/api/queues"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("blah").With(nitric.QueueSending)
+  if err != nil {
+    return
+  }
+
+  _, err := queue.Send(context.TODO(), []*queues.Task{
+    {
+      ID: "1234",
+      PayloadType: "message",
+      Payload: map[string]interface{}{
+        "message": "hello world",
+      },
+    },
+  })
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Dealing with failures
+
+In rare cases when sending tasks to a queue some tasks might fail to be sent. The response from `Send()` will include an array of any tasks that failed to send. You can process this array to retry or log the error.
+
+```go
+failedTasks, err := queue.Send(ctx, tasks)
+if err != nil {
+  fmt.Println(err)
+  return
+}
+
+for _, ft := range failedTasks {
+  fmt.Println(ft.Reason)
+}
+```

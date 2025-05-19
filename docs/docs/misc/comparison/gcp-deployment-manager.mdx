@@ -1,0 +1,128 @@
+---
+description: 'Comparison to Google Cloud Deployment Manager'
+---
+
+# Google Cloud Deployment Manager vs. Nitric
+
+[Google Cloud Deployment Manager](https://cloud.google.com/deployment-manager/docs#docs) is an infrastructure as code offering for creating and managing deployments on GCP.
+
+## TLDR
+
+The major differences between Nitric and Google Cloud Deployment Manager are:
+
+- Only supports GCP.
+- Configuration is defined in yaml, jinja, or python files.
+- IAM implementation is the responsibility of the developer.
+
+## Building
+
+To build with Google Cloud Deployment Manager you can build a template yaml file. For deploying a virtual machine, the file may look like:
+
+```yaml
+resources:
+  - type: compute.v1.instance
+    name: quickstart-deployment-vm
+    properties:
+      zone: us-central1-f
+      machineType: https://www.googleapis.com/compute/v1/projects/[MY_PROJECT]/zones/us-central1-f/machineTypes/f1-micro
+      disks:
+        - deviceName: boot
+          type: PERSISTENT
+          boot: true
+          autoDelete: true
+          initializeParams:
+            sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+      networkInterfaces:
+        - network: https://www.googleapis.com/compute/v1/projects/[MY_PROJECT]/global/networks/default
+s      accessConfigs:
+  - name: External NAT
+    type: ONE_TO_ONE_NAT
+```
+
+However, there are also options provided to write these config files in python. This code must supply a `GenerateConfig(context)` or `generate_config(context)` function that returns a dictionary.
+
+```python
+def generate_config(context):
+  resources = []
+  resources.append({
+      'name': 'vm-template',
+      'type': 'compute.v1.instance',
+      'properties': {
+          'zone': 'us-central1-a',
+          'machineType': 'zones/us-central1-a/machineTypes/n1-standard-1',
+          'disks': [{
+              'deviceName': 'boot',
+              'type': 'PERSISTENT',
+              'boot': True,
+              'autoDelete': True,
+              'initializeParams': {
+                  'sourceImage':
+                      'projects/debian-cloud/global/images/family/debian-9'
+              }
+          }],
+          'networkInterfaces': [{
+              'network': 'global/networks/default'
+          }]
+      }
+  })
+```
+
+On the contrary, any Nitric config you write is done as code, keeping the architecture and logic of your code in one place. This means when deployment happens, both the architecture and logic are deployed.
+
+```typescript
+const newApi = api('test-api')
+
+newApi.get('/hello', (ctx) => {
+  return ctx.text('Hello World')
+})
+```
+
+Nitric also has first-class support for other resources. Creating these resources is a one line definition.
+
+```typescript
+const newBucket = bucket('test-bucket')
+```
+
+## IAM Policy
+
+Google Cloud Deployment Manager templates have property keys for defining or assigning roles. This puts the responsibility on the developer to make sure the policies defined in the file are following best practices.
+
+On the other hand, Nitric handles the implementation of least-privilege policies for you. All that is needed is to specify how you want to use a resource, and the function will be assigned the relevant policy.
+
+```typescript
+const newQueue = queue('tester').allow('dequeue', 'enqueue')
+```
+
+## Testing
+
+The decoupling of architecture and logic means testing for Google Cloud Deployment Manager is more about testing the function code then the templates themselves. This means the test process will be writing unit and integration tests using a test framework which works for your services. The issue with this is your integration tests will be run against your deployed resources.
+
+GCP has a few ways of emulating the cloud locally, either through a visual code extension, their CLI, or docker. Nitric has a local test environment that will mock other resources like buckets, as well as containerizing and running your services. This means you can easily write automated integration tests using any test framework you want, without worrying about side effects to production.
+
+Nitric's unit testing can also be done using any test framework and any mocking library, as all the architecture and config is defined as code.
+
+|             | GCP DM | Nitric |
+| ----------- | ------ | ------ |
+| Unit        | BYO    | BYO    |
+| Integration | BYO    | BYO    |
+| Mocking     | BYO    | BYO    |
+
+## Deployment
+
+When deploying the stack to the cloud the big difference is that for GCP deployment manager, you will also have to deploy the function code separately. Deployment manager is also (obviously) only going to deploy to GCP. The commands for deployment are as follows:
+
+Deploying the stack.
+
+```
+gcloud deployment-manager deployments create quickstart-deployment --config vm.yaml
+
+nitric up
+```
+
+Deleting the stack.
+
+```
+gcloud deployment-manager deployments delete quickstart-deployment
+
+nitric down
+```

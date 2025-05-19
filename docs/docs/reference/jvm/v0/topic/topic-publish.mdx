@@ -1,0 +1,176 @@
+---
+description: "Reference for Nitric's v0 JVM library - Publish new events to the topic."
+---
+
+# JVM - topic.publish()
+
+Publish an event (push based message) to a topic.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.api.events.v0.NitricEvent;
+import io.nitric.resources.TopicPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("new-user").with(TopicPermission.Publishing);
+
+    topic.publish(new NitricEvent(Map.of("message", "new user created"), "1234", "none"));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.api.events.v0.NitricEvent
+import io.nitric.resources.TopicPermission
+
+fun main() {
+  var topic = Nitric.topic("new-user").with(TopicPermission.Publishing)
+
+  topic.publish(
+    NitricEvent(mapOf("message" to "New user created"), "1234", "none")
+  )
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+---
+
+<Properties>
+  <Property name="event" required type="Event or Map<String, Any>">
+    The event to publish to the topic.
+    <Properties nested>
+      <Property name="payload" required type="Map<String, Any>">
+        Payload to send with the event.
+      </Property>
+      <Property name="id" type="String">
+        The unique ID to apply to the event. If an ID is not supplied a UUIDv4
+        is generated.
+      </Property>
+      <Property name="payloadType" type="String">
+        A hint to the type of payload supplied.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Publish a topic
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.api.events.v0.NitricEvent;
+import io.nitric.resources.TopicPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("topic").with(TopicPermission.Publishing);
+
+    topic.publish(new NitricEvent(Map.of("message", "New user created"), "1234", "none"));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.api.events.v0.NitricEvent
+import io.nitric.resources.TopicPermission
+
+fun main() {
+  var topic = Nitric.topic("topic").with(TopicPermission.Publishing)
+
+  topic.publish(NitricEvent(mapOf("message" to "New user created"), "1234", "none"))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Send a message with a delay
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.api.events.v0.NitricEvent;
+import io.nitric.api.events.v0.PublishOptions;
+import io.nitric.resources.TopicPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("topic").with(TopicPermission.Publishing);
+
+    topic.publish(
+      new NitricEvent(Map.of("message", "New user created"), "1234", "none"),
+      PublishOptions.WithDelay(600) // Send with a delay of 600 seconds (10 minutes)
+    );
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.api.events.v0.NitricEvent
+import io.nitric.api.events.v0.PublishOptions
+import io.nitric.resources.TopicPermission
+
+fun main() {
+  var topic = Nitric.topic("topic").with(TopicPermission.Publishing)
+
+  topic.publish(
+    NitricEvent(mapOf("message" to "New user created"), "1234", "none"),
+    PublishOptions.WithDelay(600) // Send with a delay of 600 seconds (10 minutes)
+  )
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Notes
+
+- If an id is not supplied with an event a UUID(v4) will be generated for you.
+- A function may subscribe to OR publish to a topic but not both.

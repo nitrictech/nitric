@@ -1,0 +1,74 @@
+---
+description: "Reference for Nitric's v0 .NET library - Set the value of a document"
+---
+
+# .NET - Collection.Doc.Set()
+
+Set the value of a document.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Writing);
+
+var drakesProfile = profiles.Doc("Drake Mallard").Set(
+    new Profile {
+        Name = "Drake Mallard"
+        Age = 28.0,
+    }
+);
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="document" required type="object">
+    The document to set on the key
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a document
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Writing);
+
+var drakesProfile = profiles.Doc("Drake Mallard").Set(
+    new Profile {
+        Name = "Drake Mallard"
+        Age = 28.0,
+    }
+);
+
+Nitric.Run();
+```
+
+### Update a document
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading, CollectionPermission.Writing);
+
+var drakesProfile = profiles.Doc("Drake Mallard");
+
+var exitingProfile = drakesProfile.Get();
+existingProfile.Age = 29.0;
+
+drakesProfile.Set(existingProfile);
+
+Nitric.Run();
+```
+
+### See also
+
+- [Doc.Get()](./collection-doc-get)
+- [Doc.Delete()](./collection-doc-delete)

@@ -1,0 +1,741 @@
+---
+title_seo: 'Building Your Own Deep Research System with Nitric'
+description: 'Learn how to build a simple research system using Nitric that can be tested locally and deployed to production'
+languages:
+  - typescript
+tags:
+  - API
+  - AI & Machine Learning
+published_at: 2025-04-29
+---
+
+# Building a Simple Deep Research System with Nitric and Deno
+
+TLDR; You can check the example code [here](https://github.com/nitrictech/deep-research-example)
+
+In the era of large language models, building and testing research systems can be challenging due to API costs and rate limits. However, with the right approach, you can build a simple research system that can be tested locally using smaller models and then deployed to production with your preferred LLM provider. In this post, we'll explore how to create such a system using TypeScript and Nitric.
+
+## Why Local Testing?
+
+Before diving into the implementation, let's understand why local testing is valuable:
+
+1. **Rapid Development**: Test and iterate quickly without waiting for API responses
+2. **Cost Control**: Avoid unnecessary API costs during development
+3. **Reliability**: Test without worrying about API rate limits or availability
+4. **Privacy**: Work with sensitive data without sending it to external services
+5. **Flexibility**: Easily switch between local and production models
+6. **Quick Iteration**: Test the entire pipeline without API costs
+7. **Prompt Development**: Iterate quickly on prompts and logic using smaller models
+
+## Project Setup and Dependencies
+
+Before we start implementing our research system, let's set up the project and install the necessary dependencies:
+
+### 1. **Create a new Nitric project**:
+
+If you haven't already, install Nitric CLI by following the [official installation guide](https://nitric-docs-git-docs-byo-deep-research-nitrictech.vercel.app/docs/get-started/installation)
+
+Then create a new Nitric project with:
+
+```bash
+nitric new deep-research ts-starter-deno
+cd deep-research
+```
+
+2. **Configure dependencies in deno.json**:
+
+Create or update the `deno.json` file in your project root:
+
+```json title:deno.json
+{
+  "imports": {
+    "@nitric/sdk": "npm:@nitric/sdk",
+    "openai": "npm:openai",
+    "duck-duck-scrape": "npm:duck-duck-scrape",
+    "cheerio": "npm:cheerio",
+    "turndown": "npm:turndown"
+  },
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --allow-read main.ts"
+  }
+}
+```
+
+3. **Install dependencies**:
+
+```bash
+# Install dependencies using Deno
+deno install
+```
+
+4. **Project structure**:
+
+The following is the project structure for this example (feel free to create these files in advance):
+
+```
+deep-research/
+├── deno.json                 # Deno configuration and dependencies
+├── .env                      # Environment variables
+├── utils/
+│   └── search.ts             # Search functionality
+├── prompts/
+│   ├── query.ts              # Query generation prompt
+│   ├── summarizer.ts         # Content summarization prompt
+│   └── reflect.ts            # Research reflection prompt
+└── services/
+    └── api.ts                # Main API implementation
+```
+
+## The Architecture
+
+Our research system will be built as a Nitric API with several key components:
+
+1. **Search Engine Integration**
+2. **Configurable LLM Interface**
+3. **Topic-based Research Pipeline**
+4. **Content Processing**
+5. **REST API Endpoints**
+
+Let's break down each component:
+
+### 1. Search Engine Integration
+
+The search engine integration handles the "Web Search" step of the research pipeline:
+
+- Query Creation: Generate search queries from topics
+- Web Search: Find relevant content
+- Content Processing: Clean and convert content
+
+```typescript title:utils/search.ts
+import { search, SafeSearchType } from 'duck-duck-scrape'
+
+export default async (query: string) => {
+  const results = await search(query, { safeSearch: SafeSearchType.STRICT })
+
+  // Get the top 3 most relevant results
+  const topResults = results.results.slice(0, 3)
+
+  // Fetch HTML content for each result
+  const htmlContents = await Promise.all(
+    topResults.map(async (result) => {
+      try {
+        const response = await fetch(result.url)
+        const html = await response.text()
+        return {
+          url: result.url,
+          title: result.title,
+          html,
+        }
+      } catch (error) {
+        console.error(`Failed to fetch ${result.url}:`, error)
+        return null
+      }
+    }),
+  )
+
+  // Filter out failed fetches and return the results
+  return htmlContents.filter((content) => content !== null)
+}
+```
+
+### 2. Configurable LLM Integration
+
+The LLM integration handles the "Summarization", "Reflection", and "Iteration" steps:
+
+- Summarization: Condense findings
+- Reflection: Identify knowledge gaps
+- Iteration: Continue research as needed
+
+The system can be configured to use different LLM providers through environment variables:
+
+```typescript title:services/api.ts
+import { OpenAI } from 'openai'
+
+// Configuration from environment variables
+const LLM_CONFIG = {
+  baseURL: Deno.env.get('LLM_BASE_URL') || 'http://localhost:11434/v1',
+  apiKey: Deno.env.get('LLM_API_KEY') || 'ollama',
+  model: Deno.env.get('LLM_MODEL') || 'llama3.2:3b',
+}
+
+const OAI = new OpenAI({
+  baseURL: LLM_CONFIG.baseURL,
+  apiKey: LLM_CONFIG.apiKey,
+})
+
+// Example .env file:
+// LLM_BASE_URL=http://localhost:11434/v1   # For local testing with Ollama
+// LLM_BASE_URL=https://api.openai.com/v1   # For production with OpenAI
+// LLM_API_KEY=your-api-key                 # For local this can be any value
+// LLM_MODEL=gpt-4-turbo-preview            # For production (or any other model of your choosing)
+// LLM_MODEL=llama3.2:3b                    # For local testing
+```
+
+### 3. Prompt Templates
+
+The system uses three types of LLM calls, each with its own prompt template:
+
+#### 1. **Query Generation** (`queryPrompt`): Generates search queries based on the research topic
+
+```typescript title:prompts/query.ts
+export default (date: string, topic: string) => `
+Your goal is to generate a targeted web search query.
+
+<CONTEXT>
+Current date: ${date}
+Please ensure your queries account for the most current information available as of this date.
+</CONTEXT>
+
+<TOPIC>
+${topic}
+</TOPIC>
+
+<FORMAT>
+Format your response as a JSON object with ALL two of these exact keys:
+   - "query": The actual search query string
+   - "rationale": Brief explanation of why this query is relevant
+</FORMAT>
+
+<EXAMPLE>
+Example output:
+{
+    "query": "machine learning transformer architecture explained",
+    "rationale": "Understanding the fundamental structure of transformer models"
+}
+</EXAMPLE>
+
+Provide your response only in JSON format:
+`
+```
+
+#### 2. **Content Summarization** (`summarizerPrompt`): Summarizes content in the context of research topics
+
+```typescript title:prompts/summarizer.ts
+export default (topics: string[]) => `<GOAL>
+Generate a high-quality summary of the provided context for the following topics: 
+${topics.map((topic) => `- ${topic}`).join('\n')}
+</GOAL>
+
+<REQUIREMENTS>
+When creating a NEW summary:
+1. Highlight the most relevant information related to the user topic from the search results
+2. Ensure a coherent flow of information
+
+When EXTENDING an existing summary:
+1. Read the existing summary and new search results carefully.
+2. Compare the new information with the existing summary.
+3. For each piece of new information:
+    a. If it's related to existing points, integrate it into the relevant paragraph.
+    b. If it's entirely new but relevant, add a new paragraph with a smooth transition.
+    c. If it's not relevant to the user topic, skip it.
+4. Ensure all additions are relevant to the user's topic.
+5. Verify that your final output differs from the input summary.
+</REQUIREMENTS>
+
+<FORMATTING>
+- Start directly with the updated summary, without preamble or titles. Do not use XML tags in the output.
+</FORMATTING>
+
+<TASK>
+Think carefully about the provided Context first. Then generate a summary of the context to address the User Input.
+</TASK>`
+```
+
+#### 3. **Research Reflection** (`reflectionPrompt`): Analyzes current research to identify knowledge gaps
+
+```typescript title:prompts/reflect.ts
+export default (topics: string[]) => `
+You are an expert research assistant analyzing a summary about the following topics: 
+${topics.map((topic) => `- ${topic}`).join('\n')}.
+
+<GOAL>
+1. If the provided context is enough to answer the questions, do not generate a follow-up query.
+2. Identify knowledge gaps or areas that need deeper exploration
+3. Be careful not to generate follow-up queries that are not related to the topics.
+4. Generate a follow-up question that would help expand your understanding
+</GOAL>
+
+<REQUIREMENTS>
+Ensure the follow-up question is self-contained and includes necessary context for web search.
+</REQUIREMENTS>
+
+Provide only the follow-up query in your response, if there are no follow-up queries, respond with nothing.
+`
+```
+
+These prompts work together to create a research system that:
+
+- Generates search queries from topics
+- Finds relevant content using the duckduckgo search API
+- Cleans and converts content to simple markdown
+- Summarizes findings
+- Attempts to identify knowledge gaps
+- Continues research if required
+
+### 4. Topic-based Research Pipeline
+
+The system uses a topic-based approach to conduct research, with different message types for each stage of the process:
+
+```typescript title:services/api.ts
+type TopicMessageTypes = 'create_query' | 'query' | 'reflect' | 'summarize'
+
+interface ResearchTopicMessage<T extends TopicMessageTypes> {
+  type: T
+  topics: string[]
+  summaries: string[]
+  remainingIterations: number
+}
+
+interface CreateQueryTopicMessage extends ResearchTopicMessage<'create_query'> {
+  type: 'create_query'
+  date: string
+  originalTopic: string
+}
+
+interface PerformQueryTopicMessage extends ResearchTopicMessage<'query'> {
+  type: 'query'
+  query: {
+    query: string
+    rationale: string
+  }
+}
+
+interface SummarizeTopicMessage extends ResearchTopicMessage<'summarize'> {
+  type: 'summarize'
+  content: string
+}
+
+interface ReflectTopicMessage extends ResearchTopicMessage<'reflect'> {
+  type: 'reflect'
+  content: string
+}
+```
+
+### 5. Content Processing
+
+We'll also include [turndown](https://github.com/domchristie/turndown) and [cheerio](https://github.com/cheeriojs/cheerio) to clean the HTML content and convert it to markdown. Making it easier to interpret by the LLM.
+
+```typescript title:services/api.ts
+import { load as cheerioLoad } from 'cheerio'
+import { TurndownService } from 'turndown'
+
+// Initialize TurndownService for HTML to Markdown conversion
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+  codeBlockStyle: 'fenced',
+})
+
+function cleanHtml(html: string): string {
+  const $ = cheerioLoad(html)
+
+  // Remove script and style tags
+  $('script, style, noscript, iframe, embed, object').remove()
+
+  // Remove navigation elements
+  $('nav, header, footer, aside, .nav, .navigation, .menu, .sidebar').remove()
+
+  // Remove ads and social media elements
+  $('.ad, .ads, .advertisement, .social, .share, .comments').remove()
+
+  // Remove empty elements
+  $('*').each(function () {
+    if ($(this).text().trim() === '') {
+      $(this).remove()
+    }
+  })
+
+  // Get the main content
+  let content = $('article, main, .article, .content, .post, .entry')
+  if (content.length === 0) {
+    content = $('body')
+  }
+
+  return content.html() || ''
+}
+```
+
+### 6. The Nitric API Implementation
+
+The main API implementation ties everything together:
+
+```typescript title:services/api.ts
+import { api, topic, bucket } from '@nitric/sdk'
+import search from '../utils/search.ts'
+import { OpenAI } from 'openai'
+import queryPrompt from '../prompts/query.ts'
+import summarizerPrompt from '../prompts/summarizer.ts'
+import reflectionPrompt from '../prompts/reflect.ts'
+import { load as cheerioLoad } from 'cheerio'
+import { TurndownService } from 'turndown'
+
+// Initialize TurndownService for HTML to Markdown conversion
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+  codeBlockStyle: 'fenced',
+})
+
+const OAI = new OpenAI({
+  baseURL: 'http://localhost:11434/v1',
+  apiKey: 'ollama',
+})
+
+const researchApi = api('research')
+const researchTopic = topic<TopicMessages>('research')
+const researchTopicPub = researchTopic.allow('publish')
+const researchBucket = bucket('research').allow('write')
+
+const MODEL = 'llama3.2:3b'
+const MAX_ITERATIONS = 3
+
+// Subscribe to the research topic to handle different types of messages
+researchTopic.subscribe(async (ctx) => {
+  const message = ctx.req.json()
+
+  switch (message.type) {
+    case 'create_query':
+      await handleCreateQuery(message)
+      break
+    case 'query':
+      await handleQuery(message)
+      break
+    case 'summarize':
+      await handleSummarize(message)
+      break
+    case 'reflect':
+      await handleReflect(message)
+      break
+    default:
+      console.error(`Unknown message type: ${message.type}`)
+  }
+})
+
+// Implementation of message handlers
+async function handleCreateQuery(message: CreateQueryTopicMessage) {
+  console.log(
+    `[Research] Starting new query for topic: ${message.originalTopic}`,
+  )
+
+  // Create a new query using ollama
+  const completion = await OAI.chat.completions.create({
+    model: MODEL,
+    messages: [
+      {
+        role: 'system',
+        content: queryPrompt(new Date().toISOString(), message.originalTopic),
+      },
+      { role: 'user', content: message.originalTopic },
+    ],
+  })
+
+  console.log(
+    `[Research] Generated query: ${completion.choices[0].message.content}`,
+  )
+
+  // Parse the JSON response to extract query and rationale
+  const response = JSON.parse(completion.choices[0].message.content!)
+  const { query, rationale } = response
+
+  console.log(`[Research] Query: ${query}\nRationale: ${rationale}`)
+
+  // Submit a new query creation request to the research service
+  await researchTopicPub.publish({
+    ...message,
+    type: 'query',
+    topics: [...message.topics, query],
+    query: {
+      query,
+      rationale,
+    },
+  })
+}
+
+async function handleQuery(message: PerformQueryTopicMessage) {
+  console.log(`[Research] Executing search query: ${message.query.query}`)
+  // perform the given query using our search
+  const result = await search(message.query.query)
+
+  console.log(`[Research] Found ${result.length} results`)
+  console.log(`[Research] First result preview:`, {
+    url: result[0]?.url,
+    title: result[0]?.title,
+    html: result[0]?.html.substring(0, 200) + '...',
+  })
+
+  const content = result.reduce((acc, curr) => {
+    const cleanedContent = cleanHtml(curr.html)
+    return `${acc}
+
+  # ${curr.title}
+  ${turndownService.turndown(cleanedContent)}
+`
+  }, '')
+
+  // publish a summarize request to the research service
+  await researchTopicPub.publish({
+    ...message,
+    type: 'summarize',
+    content: content,
+  })
+}
+
+async function handleSummarize(message: SummarizeTopicMessage) {
+  console.log(
+    `[Research] Summarizing content for topic: ${message.topics[message.topics.length - 1]}`,
+  )
+
+  console.log(
+    `[Research] Previous summaries count: ${message.summaries.length}`,
+  )
+  console.log(`[Research] Current content length: ${message.content.length}`)
+
+  // Process the current content in isolation
+  const completion = await OAI.chat.completions.create({
+    model: MODEL,
+    messages: [
+      {
+        role: 'system',
+        content: summarizerPrompt([message.topics[message.topics.length - 1]]),
+      },
+      { role: 'user', content: message.content },
+    ],
+  })
+
+  const summary = completion.choices[0].message.content!
+  console.log(`[Research] Generated summary: ${summary}`)
+
+  // publish a reflect request to the research service
+  await researchTopicPub.publish({
+    summaries: [
+      // Keep all previous summaries and add the new one
+      ...message.summaries,
+      summary,
+    ],
+    remainingIterations: message.remainingIterations,
+    topics: [...message.topics, message.topics[message.topics.length - 1]],
+    type: 'reflect',
+    content: summary,
+  })
+}
+
+async function handleReflect(message: ReflectTopicMessage) {
+  console.log(`[Research] Reflecting on summary for topics: ${message.topics}`)
+  console.log(
+    `[Research] Current summary: ${message.content.substring(0, 200)}...`,
+  )
+  console.log(`[Research] Remaining iterations: ${message.remainingIterations}`)
+
+  // Check iteration limit
+  if (message.remainingIterations <= 0) {
+    console.log(
+      `[Research] No iterations remaining. Writing final summary to bucket.`,
+    )
+    // Create a more comprehensive final summary with proper structure
+    const finalSummary = `# Research Summary: ${message.topics[0]}
+
+## Introduction
+This document contains research findings on the topic "${message.topics[0]}". The research was conducted through multiple iterations of querying, analyzing, and synthesizing information.
+
+## Research Findings
+${message.summaries
+  .map(
+    (summary, index) =>
+      `### Research Topic: ${message.topics[index]}\n\n${summary}`,
+  )
+  .join('\n\n')}
+
+## Conclusion
+This research provides a comprehensive overview of "${message.topics[0]}" and related topics. The findings are based on multiple sources and have been synthesized to provide a coherent understanding of the subject matter.
+`
+
+    await researchBucket.file(message.topics[0]).write(finalSummary)
+    return
+  }
+
+  // Here I want to use the reflection prompt I have to restart the research chain
+  const completion = await OAI.chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: 'system', content: reflectionPrompt(message.topics) },
+      { role: 'user', content: message.content },
+    ],
+  })
+
+  console.log(
+    `[Research] Parsing reflection:`,
+    completion.choices[0].message.content!,
+  )
+
+  const reflection = completion.choices[0].message.content!
+
+  // Only restart research if knowledge gaps were identified
+  if (reflection !== '') {
+    console.log(
+      `[Research] Found knowledge gap, following up with: ${reflection}`,
+    )
+    await researchTopicPub.publish({
+      ...message,
+      remainingIterations: message.remainingIterations - 1,
+      type: 'create_query',
+      topics: [...message.topics],
+      originalTopic: reflection,
+      date: new Date().toISOString(),
+    })
+  } else {
+    console.log(
+      `[Research] No knowledge gaps found. Writing final summary to bucket: ${message.topics[message.topics.length - 1]}`,
+    )
+    // Create a more comprehensive final summary with proper structure
+    const finalSummary = `# Research Summary: ${message.topics[0]}
+
+## Introduction
+This document contains research findings on the topic "${message.topics[0]}". The research was conducted through multiple iterations of querying, analyzing, and synthesizing information.
+
+## Research Findings
+${message.summaries
+  .map(
+    (summary, index) =>
+      `### Research Topic: ${message.topics[index]}\n\n${summary}`,
+  )
+  .join('\n\n')}
+
+## Conclusion
+This research provides a comprehensive overview of "${message.topics[0]}" and related topics. The findings are based on multiple sources and have been synthesized to provide a coherent understanding of the subject matter.
+`
+
+    console.log(`[Research] Final summary length: ${finalSummary.length}`)
+    await researchBucket.file(message.topics[0]).write(finalSummary)
+  }
+}
+
+researchApi.post('/query', async (ctx) => {
+  const query = ctx.req.text()
+  const remainingIterations = MAX_ITERATIONS
+
+  // Submit off start of research chain
+  await researchTopicPub.publish({
+    summaries: [],
+    remainingIterations,
+    type: 'create_query',
+    date: new Date().toISOString(),
+    topics: [],
+    originalTopic: query,
+  })
+
+  ctx.res.body = 'Query submitted'
+
+  return ctx
+})
+
+// API endpoint to start research
+researchApi.post('/query', async (ctx) => {
+  const query = ctx.req.text()
+  const remainingIterations = MAX_ITERATIONS
+
+  // Submit off start of research chain
+  await researchTopicPub.publish({
+    summaries: [],
+    remainingIterations,
+    type: 'create_query',
+    date: new Date().toISOString(),
+    topics: [],
+    originalTopic: query,
+  })
+
+  ctx.res.body = 'Query submitted'
+  return ctx
+})
+```
+
+## Configuration Options
+
+This app can be configured through environment variables:
+
+```bash
+# Local Development example (using Ollama)
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_API_KEY=ollama
+LLM_MODEL=llama3.2:3b
+
+# Production Example (using OpenAI)
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your-openai-key
+LLM_MODEL=gpt-4-turbo-preview
+
+# Other Options
+MAX_ITERATIONS=3
+SEARCH_RESULTS=3
+```
+
+Production deployment is as simple as updating these environment variables:
+
+- Switch to production models by updating the base URL and API key
+- Use more powerful models for better results
+- Scale the system as needed
+
+## Testing it locally
+
+To test the system locally:
+
+1. **Install and Start Ollama (optional)**:
+
+First, [install Ollama](https://ollama.ai/) for your operating system.
+
+Then pull and start the model:
+
+```bash
+ollama pull llama2:3b
+ollama serve
+```
+
+<Note>
+  You can skip this step if you want to use OpenAI or other hosted solution as
+  your LLM provider.
+</Note>
+
+2. **Configure Environment**:
+
+Create a `.env` file with local testing configuration:
+
+```bash
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_API_KEY=ollama
+LLM_MODEL=llama2:3b
+MAX_ITERATIONS=3
+SEARCH_RESULTS=3
+```
+
+3. **Start the Local Development Server**:
+
+```bash
+nitric start
+```
+
+4. **Test the API**:
+
+Send a POST request to start research:
+
+```bash
+curl -X POST http://localhost:4001/query \
+  -H "Content-Type: text/plain" \
+  -d "quantum computing basics"
+```
+
+The system will begin its research process, and you can monitor the progress in the Nitric development server logs.
+
+<Note>
+  Local testing with smaller models may produce different results compared to
+  production models, but the workflow and functionality will remain the same.
+  This allows you to iterate quickly on your implementation without incurring
+  API costs.
+</Note>
+
+## Conclusion
+
+Building a research system that can be tested locally and deployed to production gives you the best of both worlds. You can develop and test quickly using local models, then deploy to production with your preferred LLM provider. The system we've built here is a starting point that you can extend and customize based on your specific needs.
+
+Remember that the quality of your research will depend on:
+
+- The quality of information in your source documents
+- The size and power of your chosen LLM
+
+With these components in place, you're well on your way to building a simple research assistant that can be developed locally and deployed to production with ease.

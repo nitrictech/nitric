@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Node.js library - Submit a batch job request with custom resource requirements"
+---
+
+# Node.js - job.submit()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Batch Services in Nitric start with the [Batch docs](/batch).
+</Note>
+
+Jobs may be submitted from Nitric `services` or other `batches` using the `submit` method on the job reference. When submitting a job you can provide a payload that will be passed to the job handler function.
+
+```ts
+import { job } from '@nitric/sdk'
+
+const analyze = job('analyze').allow('submit')
+
+await analyze.submit({ message: 'message contents' })
+```
+
+## Parameters
+
+<Properties>
+  <Property name="message" required type="Record<string, any>">
+    The data that will be sent to the submit
+  </Property>
+</Properties>
+
+## Examples
+
+### Submit a job request
+
+```ts
+import { job } from '@nitric/sdk'
+
+const analyze = job('analyze').allow('submit')
+
+await analyze.submit({ message: 'message contents' })
+```

@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's v0 Go library - Retrieve details about the deployed API at runtime."
+---
+
+# Go - Api.Details()
+
+Retrieve details about the deployed API at runtime. These details include:
+
+- `ID`: the identifier for the resource.
+- `Provider`: the cloud provider that this API is deployed to.
+- `Service`: the cloud service that is running this API (i.e. AWS API Gateway).
+- `URL`: the URL of the deployed API.
+
+```go
+import (
+  "fmt"
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  details, err := api.Details(context.TODO())
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get the URL of a deployed API
+
+```go
+import (
+  "fmt"
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  details, err := api.Details(context.TODO())
+  if err != nil {
+    return
+  }
+
+  fmt.Println(details.URL)
+
+  nitric.Run()
+}
+```

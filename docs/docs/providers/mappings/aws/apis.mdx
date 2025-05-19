@@ -1,0 +1,30 @@
+---
+description: 'How Nitric deploys APIs to AWS'
+---
+
+# AWS Resources - APIs
+
+Nitric APIs are deployed to AWS using [Amazon API Gateway](https://aws.amazon.com/api-gateway/).
+
+## AWS Resources
+
+The following resources are created when deploying APIs to AWS:
+
+- API Gateway v2 HTTP APIs
+- API Gateway v2 Stages
+- API Gateway Integration
+- Lambda Functions
+- ECR Images
+- IAM Policies
+
+## Deployment
+
+During deployment the Nitric CLI builds your API's routes, methods and handlers:
+
+- Files referenced by the `services` key in the `nitric.yaml` file are built into container images
+- Built container images are pushed to the [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/) as private images
+- Functions in [AWS Lambda](https://aws.amazon.com/lambda/) are created to run the container images
+- All route/handler mappings are built into an Open API v3 definition file (as required by Amazon API Gateway)
+- Lambda ARNs are injected into the API definition using the [x-amazon-apigateway-integration object](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html), creating an [API Gateway Integration](https://docs.aws.amazon.com/apigateway/api-reference/resource/integration/) for each.
+- The API definition is deployed as an API Gateway v2 HTTP API, using the `$default` stage name
+- IAM policies are created enabling API Gateway to execute the Lambdas

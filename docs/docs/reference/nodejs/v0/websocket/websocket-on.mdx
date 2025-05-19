@@ -1,0 +1,98 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Register a handler for connections, disconnections, or messages for the websocket."
+---
+
+# Node.js - websocket.on()
+
+Register a handler for connections, disconnections, or messages for the websocket.
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+socket.on('connect', async (ctx) => {
+  // handle connections
+})
+
+socket.on('disconnect', async (ctx) => {
+  // handle disconnections
+})
+
+socket.on('message', async (ctx) => {
+  // handle messages
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="eventType" required type="string">
+    The type of websocket event to listen for. Can be `connect`, `disconnect`,
+    or `message`.
+  </Property>
+  <Property name="middleware" required type="WebsocketMiddleware<T>">
+    The middleware function(s) to use as handlers for the Websocket events.
+  </Property>
+</Properties>
+
+## Examples
+
+### The `connect` event
+
+The `connect` event can be used to permit or deny new connections. Until the `connect` handler returns a successful response the client will be unable to send or receive messages via the websocket. If you need to perform any sort of client authentication before accepting the connection this is where it should be done.
+
+Unlike the other websocket events the `connect` event has access to the query parameters provided during the connection request. This allows the client to provide relevant information needed to validate and establish the connection.
+
+Additionally, the `connectionId` provided during this event will be used for all future communication with the client via this connection, it should be persisted in your application until the connection is terminated.
+
+```javascript
+import { websocket, collection } from '@nitric/sdk'
+import { isValidConnection, registerConnection } from 'lib/connections'
+
+const socket = websocket('socket')
+
+socket.on('connect', async (ctx) => {
+  if (!isValidConnection(ctx.req.query)) {
+    // deny the connection
+    ctx.res.success = false
+    return
+  }
+  registerConnection(ctx.req.connectionId)
+})
+```
+
+### Managing websocket connections
+
+Websocket connections need to be managed. This can be done using any persistent data store you like. One approach is to use a [Nitric collection](https://nitric.io/docs/collections).
+
+```javascript
+import { websocket, collection } from '@nitric/sdk'
+
+const socket = websocket('socket')
+const connections = collection('connections').for(
+  'reading',
+  'writing',
+  'deleting',
+)
+
+socket.on('connect', async (ctx) => {
+  await connections.doc(ctx.req.connectionId).set({
+    // store any metadata related to the connection here
+    connectionId: ctx.req.connectionId,
+  })
+})
+
+socket.on('disconnect', async (ctx) => {
+  await connections.doc(ctx.req.connectionId).delete()
+})
+```
+
+### Register a handler for message events
+
+```javascript
+socket.on('message', async (ctx) => {
+  // handle messages
+  console.log(`new message from ${ctx.req.connectionId}: ${ctx.req.data}`)
+})
+```

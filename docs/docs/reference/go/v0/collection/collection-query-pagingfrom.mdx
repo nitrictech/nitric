@@ -1,0 +1,29 @@
+---
+description: "Reference for Nitric's v0 Go library - Set a point to resume a query from."
+---
+
+# Go - Collection.Query.FromPagingToken()
+
+Set a point to resume a query from, this is required when continuing a paginated query response.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query().pagingFrom(pagingToken)
+```
+
+## Parameters
+
+<Properties>
+  <Property name="pagingToken" required type="interface{}">
+    The paging token to apply to the query. Tokens are returned from
+    `query().fetch()`, when results cannot be returned in a single page.
+  </Property>
+</Properties>
+
+### See also
+
+- [Query().Limit()](./collection-query-limit)
+- [Query().Fetch()](./collection-query-where)

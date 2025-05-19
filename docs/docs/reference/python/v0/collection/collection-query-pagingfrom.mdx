@@ -1,0 +1,34 @@
+---
+description: "Reference for Nitric's v0 Python library - Set a point to resume a query from."
+---
+
+# Python - collection.query.pagingFrom()
+
+Set a point to resume a query from, this is required when continuing a paginated query response.
+
+```python
+from nitric.resources import collection
+
+query = collection("profiles").allow('reading').query().limit(1000)
+
+# Fetch first page
+results = await query.fetch()
+
+# Fetch next page
+if results.paging_token:
+    results = await query.page_from(results.paging_token).fetch()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="pagingToken" required type="object">
+    The paging token to apply to the query. Tokens are returned from
+    `query().fetch()` when results cannot be returned in a single page.
+  </Property>
+</Properties>
+
+## See also
+
+- [query().limit()](./collection-query-limit)
+- [query().fetch()](./collection-query-fetch)

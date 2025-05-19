@@ -1,0 +1,36 @@
+---
+description: "Reference for Nitric's Dart library - Determine if a file exists in a bucket."
+---
+
+# Dart - bucket.file.exists()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Determine if a file exists in a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final exists = await assets.file("images/logo.png").exists();
+```
+
+## Examples
+
+### Determine if a file exists
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final exists = await assets.file("images/logo.png").exists();
+```

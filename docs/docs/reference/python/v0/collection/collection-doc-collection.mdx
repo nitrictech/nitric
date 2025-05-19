@@ -1,0 +1,44 @@
+---
+description: "Reference for Nitric's v0 Python library - Gets a reference to a child collection on a document."
+---
+
+# Python - collection.doc.collection()
+
+Gets a reference to a child collection on a document.
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+drakes_profile = profiles.doc('Drake Mallard')
+
+drakes_enemies = drakes_profile.collection('enemies')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the child collection to reference.
+  </Property>
+</Properties>
+
+## Notes
+
+Document collection relationships can be at most 1 deep.
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+
+profiles
+  .doc('Drake Mallard')
+  .collection('enemies')
+  .doc('Steel Beak') // ✔️ We can go this deep
+  .collection('enemies') // ❌ But not this deep
+```
+
+## See also
+
+- [collection()](./collection)

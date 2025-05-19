@@ -1,0 +1,32 @@
+---
+description: 'How Nitric deploys SQL Databases to Google Cloud'
+---
+
+# Google Cloud Resources - SQL Database
+
+Nitric SQL Databases are deployed to Google Cloud using [Cloud SQL](https://cloud.google.com/sql).
+
+## Google Cloud Resources
+
+The following resources are created when deploying SQL Databases to Google Cloud:
+
+- Private Network
+- Subnet
+- PostgreSQL Databases
+- Cloud Run Jobs for migrations
+
+## Deployment
+
+During deployment the Nitric CLI deploys your SQL Databases:
+
+- Private Network is created for the Google project
+- Subnet is created for the network
+- Declared databases are deployed as PostgreSQL databases
+- Migration images are built and deployed to the artifact registry
+- Migrations are run against the deployed databases using cloud run jobs
+
+## Other Engine Support
+
+Currently, Nitric supports only PostgreSQL for Google Cloud SQL databases. Support for other engines like MySQL is not available yet, but you can create a [custom provider](/providers/custom) to add support for your preferred database engine.
+
+If you'd like to see support for additional engines, please share your [feedback](https://github.com/nitrictech/nitric/issues/684) with the Nitric team!

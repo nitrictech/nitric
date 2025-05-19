@@ -1,0 +1,466 @@
+---
+description: Use the Nitric framework and Tensorflow to easily train a prediction model and deploy to AWS, Google Cloud, or Azure
+tags:
+  - AI & Machine Learning
+languages:
+  - python
+published_at: 2022-12-20
+updated_at: 2025-01-06
+---
+
+# Building serverless text prediction from training to deployment
+
+## What we'll be doing
+
+We'll be making a simple text based prediction model based off of the book Pride and Prejudice. We will then create an API which will take prediction queries and return the top three most likely words to come afterwards. This will be deployed to the cloud so that it can be used in another project.
+
+## Prerequisites
+
+- [uv](https://docs.astral.sh/uv/#getting-started) - for Python dependency management
+- The [Nitric CLI](/get-started/installation)
+- _(optional)_ Your choice of an [AWS](https://aws.amazon.com), [GCP](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account
+
+## Getting started
+
+We'll start by creating a new project for our API.
+
+```bash
+nitric new prediction-api py-starter
+```
+
+Next, open the project in your editor of choice.
+
+```bash
+cd prediction-api
+```
+
+Make sure all dependencies are resolved using `uv`:
+
+```bash
+uv sync
+```
+
+## Exploring our data
+
+We will need to start by downloading the Pride and Prejudice text file from [Project Gutenberg](https://www.gutenberg.org/cache/epub/42671/pg42671.txt). This will form the basis of our training data and as you will find at the end, it makes the predictions have a Jane Austen spin to it.
+
+An important first step for training a model is exploring and pre-processing the training data. After spending some time looking through, we will find that Project Gutenberg adds a header and a footer to the data. As the book is three separate volumes, there are volume headers that also need to be removed. Along with these, we will need to remove chapter headings, punctuation, contractions, and convert all the numbers to number words i.e. 8 -> eight. This will allow for our training data to be as versatile as possible, which will make the predictions more cohesive.
+
+To start we can manually remove the headers and footers. The header starts with `The Project Gutenberg eBook, Pride and Prejudice, by Jane Austen, Edited` and ends with `CHAPTER I.`. The footer starts with `Transcriber's note:` and ends with `subscribe to our email newsletter to hear about new eBooks.`.
+
+We can then either manually remove the section headers, or do it programmatically.
+
+```python title:prediction/preprocess.py
+def remove_section_headers(lines: list[str]):
+  section = False
+  new_lines = []
+  for line in lines:
+    if line.lower().startswith(("end of the second", "end of vol")):
+      section = True
+    elif line.lower().startswith("chapter") and section:
+      section = False
+
+    if not section:
+      new_lines.append(line)
+  return new_lines
+```
+
+Removing the chapters.
+
+```python title:prediction/preprocess.py
+import re
+
+def remove_chapters(data: str):
+  return str(re.sub('(CHAPTER .+)', '', data))
+```
+
+Remove contractions.
+
+```python title:prediction/preprocess.py
+def remove_contractions(data: str) -> str:
+  return (data.
+    replace("shan't", "shall not").
+    replace("here's", "here is").
+    replace("you'll", "you will").
+    replace("what's", "what is").
+    replace("don't", "do not").
+    replace("i'm", "i am").
+    replace("there's", "there is")
+  )
+```
+
+Remove punctuation.
+
+```python title:prediction/preprocess.py
+import string
+
+def remove_punctuation(data: str) -> str:
+  return data.translate(str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
+```
+
+Convert to numbers using num2words. This will mean we have to install it.
+
+```bash
+uv add num2words
+```
+
+We can then write our convert numbers function.
+
+```python title:prediction/preprocess.py
+from num2words import num2words
+
+def convert_numbers(data: str) -> str:
+  numberless_data = []
+  for word in data.split():
+    if str.isdigit(word):
+      numberless_data.append(num2words(word))
+    else:
+      numberless_data.append(word)
+  return " ".join(numberless_data)
+```
+
+Putting it all together we can get our cleaned data.
+
+```python title:prediction/preprocess.py
+# Open text data and read it into array
+file = open("data.txt", "r")
+lines = []
+
+for line in file:
+  lines.append(line)
+
+data = remove_section_headers(lines)
+data = remove_chapters(" ".join(data))
+data = data.lower()
+data = remove_contractions(data)
+data = remove_punctuation(data)
+data = convert_numbers(data)
+
+# Save the cleaned data in a new file
+with open('clean_data.txt', 'w') as f:
+  f.write(data)
+```
+
+Before we are done, we will want to tokenize the data so that it can be processed by the model. After it's fit to the text, we will save it so we can use it later. To tokenize the data, we will use keras' pre-processing module. For this we require the keras module.
+
+```bash
+uv add keras
+```
+
+We can then create and fit the tokenizer to the text. We will initialize the Out of Vocabulary (OOV) token as `<oov>`.
+
+```python title:prediction/preprocess.py
+import pickle
+from keras.preprocessing.text import Tokenizer
+
+# Tokenize the data and fit it to the text
+tokenizer = Tokenizer(oov_token='<oov>')
+tokenizer.fit_on_texts(data.split())
+
+# Save tokenizer
+with open('tokenizer.pickle', 'wb') as handle:
+  pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+```
+
+## Training the model
+
+To train the model, we will be using a Bi-Directional Long-Short Term Memory Recurrent Neural Network or Bi-LSTM for short. This type of recurrent neural network is ideal for this problem as it is able to store state for both long term and short term memory. This enables the neural network to be able to store the context of the previous words in the sentence.
+
+Start by loading the tokenizer from the pre-processing stage.
+
+```python title:prediction/training.py
+import pickle
+
+with open('tokenizer.pickle', 'rb') as handle:
+  tokenizer = pickle.load(handle)
+```
+
+We can then create all the input sequences to train our model. This works by getting every 6 word combination in the text. First add numpy as a dependency.
+
+```bash
+uv add numpy
+```
+
+Then we'll write the function to create the input sequences from the data.
+
+```python title:prediction/training.py
+import numpy as np
+from keras.utils import pad_sequences
+
+def create_input_sequences(data: list[str], n_gram_size=6):
+  # Create n-gram input sequences based on an n-gram size of 6
+  input_sequences = []
+  token_list = tokenizer.texts_to_sequences([data])[0]
+
+  # Sliding iteration which takes every 6 words in a row as an input sequence
+  for i in range(1, len(token_list) - n_gram_size):
+    n_gram_sequence = token_list[i:i+n_gram_size]
+    input_sequences.append(n_gram_sequence)
+
+  # Pad sequences
+  max_sequence_len = max([len(x) for x in input_sequences])
+  return np.array(pad_sequences(input_sequences, maxlen=max_sequence_len, padding='pre')), max_sequence_len
+```
+
+We'll then split the input sequences into labels, training, and testing data.
+
+```python title:prediction/training.py
+from keras.utils import to_categorical, pad_sequences
+from sklearn.model_selection import train_test_split
+
+# Create the features and labels and split the data into training and testing
+def create_training_data(input_sequences):
+  # Create features and labels
+  xs, labels = input_sequences[:,:-1], input_sequences[:,-1]
+  ys = to_categorical(labels, num_classes=total_words)
+
+  # Split data
+  return train_test_split(xs, ys, test_size=0.1, shuffle=True)
+```
+
+The next part is fitting, compiling, and training the model. We will use the X training data and y training data, as well as the sizes of our data. We are using an ADAM optimizer, a reduce learning rate on plateau callback, and a save model on checkpoint callback.
+
+```python title:prediction/training.py
+# Create callbacks
+checkpoint = ModelCheckpoint("model.h5", monitor='loss', verbose=1, save_best_only=True, mode='auto')
+
+reduce = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=3, min_lr=0.0001, verbose = 1)
+
+# Create optimiser
+optimizer = Adam(learning_rate=0.01)
+```
+
+Then we will add layers to the sequential model.
+
+```python title:prediction/training.py
+# Create model
+model = Sequential()
+model.add(Embedding(total_words, 100, input_length=max_sequence_len-1))
+model.add(Bidirectional(LSTM(512)))
+model.add(Dense(total_words, activation='softmax'))
+
+model.summary()
+```
+
+Putting it all together and compiling the model using the training data.
+
+```python title:prediction/training.py
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Embedding, Bidirectional
+from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+
+# Train the model
+def train_model(X_train, y_train, total_words, max_sequence_len):
+  # Create callbacks
+  checkpoint = ModelCheckpoint("model.h5", monitor='loss', verbose=1, save_best_only=True, mode='auto')
+
+  reduce = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=3, min_lr=0.0001, verbose = 1)
+
+  # Create optimiser
+  optimizer = Adam(learning_rate=0.01)
+
+  # Create model
+  model = Sequential()
+  model.add(Embedding(total_words, 100, input_length=max_sequence_len-1))
+  model.add(Bidirectional(LSTM(512)))
+  model.add(Dense(total_words, activation='softmax'))
+
+  model.summary()
+
+  # Compile model
+  model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+  model.fit(
+    X_train, y_train, epochs=20, batch_size=2000,
+    callbacks=[
+      checkpoint,
+      reduce,
+    ]
+  )
+```
+
+With all the services defined, we can train our model with the cleaned data.
+
+```python title:prediction/training.py
+data = open('clean_data.txt', 'r').read().split(' ')
+total_words = len(tokenizer.word_index) + 1
+
+input_sequences, max_sequence_len = create_input_sequences(data)
+X_train, X_test, y_train, y_test = create_training_data(input_sequences)
+
+train_model(X_train, y_train, total_words, max_sequence_len)
+```
+
+The model checkpoint save callback will save the model as `model.h5`. We will then be able to load the model when we create our API.
+
+## Predicting text
+
+Starting with the `api.py` file, we will first load the model and tokenizer. This is done with dynamic imports so that it will reduce the cold start time when its deployed.
+
+```python title:services/api.py
+import pickle
+import importlib
+
+model = None
+tokenizer = None
+
+def load_tokenizer():
+  global tokenizer
+  if tokenizer is None:
+    # Load the tokenizer
+    with open('prediction/tokenizer.pickle', 'rb') as handle:
+      tokenizer = pickle.load(handle)
+  return tokenizer
+
+def load_model():
+  global model
+  if model is None:
+    models = importlib.import_module("keras.models")
+    # Load the model
+    model = models.load_model('prediction/model.h5')
+  return model
+```
+
+Once the model is loaded, we can write a function to predict the next 3 most likely words. This uses the tokenizer to create the same token list that was used to train the model. We can then get a prediction of all the most likely words, which we will reduce down to 3. We'll then get the actual word from the map of tokens by finding the word in the dictionary. The tokenizer word index is in the from `{ "word": token_num }`, e.g. `{ "the": 1, "and": 2 }`. The predictions we receive will be an array of the token numbers.
+
+```python title:prediction/training.py
+# Predict text based on a set of seed text
+# Returns a list of 3 top choices for the next word
+def predict_text(seed_text: str) -> list[str]:
+  # Dynamically load the utils
+  utils = importlib.import_module("keras.utils")
+
+  # Convert the seed text into a token list using the same process as the previous tokenization
+  token_list = load_tokenizer().texts_to_sequences([seed_text])[0]
+  token_list = utils.pad_sequences([token_list], maxlen=5, padding='pre')
+
+  # Make the prediction
+  m  = load_model()
+
+  predict_x = m.predict(token_list, batch_size=500, verbose=0)
+
+  # Find the top three words
+  predict_x = np.argpartition(predict_x, -3, axis=1)[0][-3:]
+
+  # Reverse the list so the most popular is first
+  predictions = list(predict_x)
+  predictions.reverse()
+
+  # Iterate over the predicted words, and find the word in the tokenizer dictionary that matches
+  output_words = []
+  for prediction in predictions:
+    for word, index in tokenizer.word_index.items():
+      if prediction == index:
+        output_words.append(word)
+        break
+
+  return output_words
+```
+
+## Creating the API
+
+Using the predictive text function, we can create our API. First we will make sure that the necessary modules are imported.
+
+```python title:prediction/training.py
+from nitric.resources import api
+from nitric.application import Nitric
+from nitric.context import HttpContext
+```
+
+We will then define the API and our first route.
+
+```python title:prediction/training.py
+mainApi = api("main")
+
+@mainApi.get("/prediction")
+async def create_prediction(ctx: HttpContext) -> None:
+  pass
+
+Nitric.run()
+```
+
+Within this function block we want to define the code that is run on a request. We will accept the prompt to predict from via the query parameters. This will mean requests are in the form: `/predictions?prompt=where should I`.
+
+```python title:prediction/training.py
+@mainApi.get("/prediction")
+async def create_prediction(ctx: HttpContext) -> None:
+  prompt = ctx.req.query.get("prompt")
+
+  if prompt is None:
+    return
+
+  prompt = " ".join(prompt)
+
+Nitric.run()
+```
+
+With the users prompt we can then do the prediction and return to the user the prediction.
+
+```python title:prediction/training.py
+@mainApi.get("/prediction")
+async def create_prediction(ctx: HttpContext) -> None:
+  ...
+
+  prompt = " ".join(prompt)
+
+  prediction = predict_text(prompt)
+
+  ctx.res.body = f"{prompt} {prediction}"
+
+Nitric.run()
+```
+
+Thats all there is to it. To test the function locally, we will start the nitric server.
+
+```bash
+nitric start
+```
+
+You can then make a request to the API using any HTTP client.
+
+```bash
+curl "http://localhost:4001/prediction?prompt=what%20should%20I"
+
+What should I ['have', 'think', 'say']
+```
+
+## Deploy to the cloud
+
+At this point, you can deploy what you've built to any of the supported cloud providers. In this example we'll deploy to AWS. Start by setting up your credentials and configuration for the [nitric/aws provider](/providers/pulumi/aws).
+
+Next, we'll need to create a `stack file` (deployment target). A stack is a deployed instance of an application. You might want separate stacks for each environment, such as stacks for `dev`, `test`, and `prod`. For now, let's start by creating a file for the `dev` stack.
+
+The `stack new` command below will create a stack named `dev` that uses the `aws` provider.
+
+```bash
+nitric stack new dev aws
+```
+
+This project will run perfectly fine with a default memory configuration of 512 MB. However, to get instant predictions we will amend the memory to be 1 GB. Edit the stack file `nitric.dev.yaml` and set your preferred AWS region and memory configuration.
+
+```yaml title:nitric.dev.yaml
+provider: nitric/awsp@latest
+region: us-east-1
+config:
+  lambda:
+    memory: 1024
+```
+
+<Note>
+  You are responsible for staying within the limits of the free tier or any
+  costs associated with deployment.
+</Note>
+
+Let's try deploying the stack with the `up` command:
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your application.
+
+To tear down your application from the cloud, use the `down` command:
+
+```bash
+nitric down
+```

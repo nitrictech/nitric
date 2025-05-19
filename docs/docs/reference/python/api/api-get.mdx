@@ -1,0 +1,60 @@
+---
+description: "Reference for Nitric's Python library - Register an API route and set a specific HTTP GET handler on that route."
+---
+
+# Python - api.get()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Register an API route and set a specific HTTP GET handler on that route.
+
+```python
+from nitric.resources import api
+from nitric.application import Nitric
+
+publicApi = api("public")
+
+@publicApi.get("/customer/:customerId")
+async def customer_get(ctx):
+    id = ctx.req.params.customerId
+
+    ctx.res.body = f"Getting {id}"
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="string">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers. See
+    [Examples](#examples)
+  </Property>
+  <Property name="options" required type="MethodOptions">
+    Options to configure the route such as security options.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for GET requests
+
+```python
+from nitric.resources import api
+from nitric.application import Nitric
+
+publicApi = api("public")
+
+@publicApi.get("/customer/:customerId")
+async def hello_world(ctx):
+    id = ctx.req.params.customerId
+
+    ctx.res.body = f"Getting {id}"
+
+Nitric.run()
+```

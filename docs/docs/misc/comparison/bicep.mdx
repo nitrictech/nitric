@@ -1,0 +1,79 @@
+---
+description: 'Comparison to Bicep'
+---
+
+# Bicep vs. Nitric
+
+[Bicep](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview?tabs=bicep) is an infrastructure as code solution for deploying stacks to Azure. It acts as an abstraction layer for Azure Resource Manager ([ARM](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/overview)) templates.
+
+## TLDR
+
+The major differences with Bicep are:
+
+- Only supports Azure.
+- Configuration is defined in `.bicep` files.
+- IAM implementation is the responsibility of the developer.
+
+## Building
+
+Building with bicep involves creating a `.bicep` file and defining your resources in there. You can also add parameters, so properties like locations and names can be defined at deployment time.
+
+The API gateway resource [definitions](https://docs.microsoft.com/en-us/azure/templates/microsoft.apimanagement/service?tabs=bicep) can take up to 100 lines to define your API properties, before writing any function code or defining your API routes.
+
+The way you assign these routes and function code depends upon whether you are using logic apps, container apps, or something else. Each solution will require further configuration as well code or container deployments.
+
+Nitric's solution to these lengthy configuration files and processes is to have all your config as code.
+
+```typescript
+const newApi = api('test-api')
+
+newApi.get('/hello', (ctx) => {
+  return ctx.text('Hello World')
+})
+```
+
+## IAM Policy
+
+Implementing least-privilege with bicep requires defining role definitions and/or role assignments in the bicep file.
+
+```bicep
+resource symbolicname 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
+  name: 'string'
+  scope: resourceSymbolicName or tenant()
+  properties: {
+    condition: 'string'
+    conditionVersion: 'string'
+    delegatedManagedIdentityResourceId: 'string'
+    description: 'string'
+    principalId: 'string'
+    principalType: 'string'
+    roleDefinitionId: 'string'
+  }
+}
+```
+
+You choose the role assignment by either picking from the [long list](https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles) of default roles, or creating a more granular role based on the specific actions and data actions you want.
+
+On the other hand, Nitric handles the implementation of least-privilege policies for you. All that is needed is to specify how you want to use a resource, and the function will be assigned the relevant policy.
+
+```typescript
+const newQueue = bucket('tester').allow('read', 'write')
+```
+
+## Testing
+
+Azure functions can use any testing framework, including any mocking library. The same goes for Nitric testing. Both Nitric and Azure also have local testing environments using the Nitric CLI and the Azure Function CLI respectively. These will start local api gateways that can be used for integration tests.
+
+|             | Bicep | Nitric |
+| ----------- | ----- | ------ |
+| Unit        | BYO   | BYO    |
+| Integration | BYO   | BYO    |
+| Mocking     | BYO   | BYO    |
+
+However, the Azure Function CLI does not mock or create test resources that the function will interact with. This makes it difficult to test complex functions locally.
+
+## Deploying
+
+When deploying to Azure using bicep files, there are two options. The first is via the command line with powershell, cloud shell, or the Azure CLI. The other is via the template deployment manager on Azure. Both offer similar experiences, prompting for parameters and then deploying the resources. However, some things such as functions and containers might require external configuration.
+
+Nitric's deployment experience is a single command that deploys the entire stack. Due to the config as code approach, the deployment will containerize your functions, push them privately to Azure Container Registry, and map your routes without any manual config.

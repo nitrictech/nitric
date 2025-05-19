@@ -1,0 +1,78 @@
+---
+description: "Reference for Nitric's v0 .NET library - Adds a new where clause to a query, which filters the data returned."
+---
+
+# .NET - Collection.Query.Where()
+
+Adds a new where clause to a query, which filters the data returned.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resource;
+
+class Profile {
+  public string Name { get; set; }
+  public float Age { get; set; }
+}
+
+var profiles = Nitric.Collection<Profile>("profiles").With(
+  CollectionPermission.Reading, CollectionPermission.Writing, CollectionPermission.Deleting
+);
+
+var profilesQuery = profiles.Query().Where("name", "startsWith", "T");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="field" required type="string">
+    The document field to query.
+  </Property>
+  <Property name="operation" required type="string">
+    The query operation to perform.<br />
+    Valid values are: `startsWith | == | != | >= | <= | > | <`.
+  </Property>
+  <Property name="value" required type="string | double | int | bool">
+    The value to compare against.
+  </Property>
+</Properties>
+
+### Notes
+
+Where clauses combined together are always considered `AND`
+
+## Examples
+
+### A simple query
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query().Where("firstName", "==", "Drake");
+
+Nitric.Run();
+```
+
+### Combining where clauses
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query()
+  .Where("firstName", "==", "Drake")
+  .Where("age", ">=", 21);
+
+Nitric.Run();
+```
+
+### See also
+
+- [Query.Fetch()](./collection-query-fetch)

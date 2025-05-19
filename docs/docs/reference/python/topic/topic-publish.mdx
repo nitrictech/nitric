@@ -1,0 +1,66 @@
+---
+description: "Reference for Nitric's Python library - Publish new events to the topic."
+---
+
+# Python - topic.publish()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Topics and Pub/Sub in Nitric start with the [Async Messaging
+  docs](/messaging#topics).
+</Note>
+
+Publishes a topic.
+
+```python
+from nitric.resources import topic
+from nitric.application import Nitric
+
+updates = topic('updates').allow('publish')
+
+await updates.publish({
+  'something': 'amazing happened'
+})
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="event" required type="Event">
+    The event to publish to the topic.
+  </Property>
+  <Properties nested>
+    <Property name="id" type="string">
+      Unique ID to apply to the event.
+    </Property>
+    <Property name="payload" required type="dict">
+      Payload to send with the event.
+    </Property>
+    <Property name="payloadType" type="string">
+      A hint to the type of payload supplied.
+    </Property>
+  </Properties>
+</Properties>
+
+## Examples
+
+### Publish a topic
+
+```python
+from nitric.resources import topic
+from nitric.application import Nitric
+
+updates = topic('updates').allow('publish')
+
+await updates.publish({
+  'something': 'amazing happened'
+})
+
+Nitric.run()
+```
+
+## Notes
+
+- A service may subscribe to OR publish to a topic but not both. This is in place to stop services calling themselves infinitely.

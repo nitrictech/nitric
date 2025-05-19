@@ -1,0 +1,27 @@
+---
+description: 'How Nitric deploys Websites to Google Cloud Platform'
+---
+
+# Google Cloud Resources - Websites
+
+Nitric Websites are deployed to Google Cloud using [Cloud Storage](https://cloud.google.com/storage), [Cloud CDN](https://cloud.google.com/cdn), [Cloud DNS](https://cloud.google.com/dns), [Cloud Load Balancing](https://cloud.google.com/load-balancing) and [Certificate Manager](https://cloud.google.com/certificate-manager).
+
+## Google Cloud Resources
+
+The following resources are created when deploying Websites to Google Cloud:
+
+- Storage Bucket
+- Cloud CDN Backends
+- Load Balancer Target Https Proxy
+- DNS Zone Entries
+- A Certificate Manager Certificate
+
+## Deployment
+
+During deployment the Nitric CLI creates a storage bucket for each website, uploading each static asset as an object. Then configures a target https proxy, certificate, and CDN as described to serve those assets:
+
+- A Cloud Storage Bucket, per website
+- Cloud CDN to cache and serve static files
+- A Cloud Load Balancer to route traffic to buckets and APIs, including URL rewrites
+- Cloud DNS to configure a domain name for the Load Balancer
+- Certificate Manager to issue a certificate for the Load Balancer, enabling HTTPS

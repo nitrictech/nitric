@@ -1,0 +1,46 @@
+---
+description: "Reference for Nitric's Python library - Delete key from a key value store."
+---
+
+# Python - kv.delete()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Delete key from a key value store.
+
+```python
+from nitric.resources import kv
+from nitric.application import Nitric
+
+profiles = kv('profiles').allow('delete')
+
+await profiles.delete('profile-1a2b3c')
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key that references the key value pair that should be deleted.
+  </Property>
+</Properties>
+
+## Examples
+
+### Delete a key
+
+```python
+from nitric.resources import kv
+from nitric.application import Nitric
+
+profiles = kv('profiles').allow('delete')
+
+await profiles.delete('profile-1a2b3c')
+
+Nitric.run()
+```

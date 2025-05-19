@@ -1,0 +1,697 @@
+---
+description: An overview of cloud resources provided by the Nitric framework
+---
+
+# Resources
+
+Nitric provides cloud-native building blocks that make it simple to declare the resources you need as part of your application code.
+
+The Nitric deployment engine will run through your code at deployment time, collecting a graph of all the required resources and their interactions. This information is forwarded to a [Nitric plugin](/get-started/foundations/deployment#providers) during deployment, which provisions the resources in the cloud.
+
+During development though, you can interact with these resources as if they were local objects, making it easy to build and test your application. Here we'll discuss the different types of resources you can declare in Nitric, and some best practices for working with them.
+
+## Types of Resources
+
+Nitric supports many recognizable cloud resources, such as:
+
+- [**HTTP APIs**](/apis): Expose an HTTP API to the internet.
+- [**Websocket APIs**](/websockets): Expose a websocket API to the internet.
+- [**Schedule**](/schedules): Run a function callback on a schedule.
+- [**Batch Jobs**](/batch): Run high-performance computing tasks, data processing, or tasks requiring GPUs, or a large number of vCPUs or memory.
+- [**Topic**](/messaging): Publish and subscribe to messages between services.
+- [**Queue**](/messaging): Send and receive messages between services.
+- [**Bucket**](/storage): Store and retrieve files in the cloud, and implement callbacks that run on file change events.
+- [**SQL Databases**](/sql): Deploy and interact with SQL databases, like PostgreSQL.
+- [**Key/Value Stores**](/keyvalue): Store and retrieve data key/value data.
+- [**Secrets**](/secrets): Store and retrieve sensitive data securely, such as API keys, passwords or database credentials.
+
+## Rules
+
+In order for Nitric to enable resource declarations with existing language features, there are a few rules to keep in mind when declaring Nitric resources as part of your application. Most of these rules are easy to follow and are good practice for writing clean, maintainable code.
+
+### Don't declare resources in runtime code, like callbacks
+
+Nitric needs to be aware of resources at deployment time so they can be deployed appropriately. Declaring resources at runtime means the resource won't be declared when deploying your application. Consequently, the resource will not be provisioned to the cloud.
+
+The Nitric deployment engine does not evaluate runtime code at deployment time as this could result in unintended behavior or side effects.
+
+A working example:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api, bucket } from '@nitric/sdk'
+
+// ✅ This declaration will work
+const files = bucket('files').allow('read')
+
+api('public').get('/files/:name', (ctx) => {
+  // ❌ This declaration won't work, since it's in a callback that's only called at runtime.
+  const badBucket = bucket('wont-work').allow('read')
+})
+```
+
+```typescript !!
+import { api, bucket } from '@nitric/sdk'
+
+// ✅ This declaration will work
+const files = bucket('files').allow('read')
+
+api('public').get('/files/:name', (ctx) => {
+  // ❌ This declaration won't work, since it's in a callback that's only called at runtime.
+  const badBucket = bucket('wont-work').allow('read')
+})
+```
+
+```python !!
+from nitric.resources import api, bucket
+from nitric.application import Nitric
+
+public_api = api('public')
+
+# ✅ This declaration will work
+files = bucket('files').allow('read')
+
+@public_api.get("/files/:name")
+async def get_file(ctx):
+  # ❌ This declaration won't work, since it's in a callback that's only called at runtime.
+  bad_bucket = bucket('wont-work').allow('write')
+
+Nitric.run()
+```
+
+```go !!
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+	api := nitric.NewApi("public")
+
+	// ✅ This declaration will work
+	bucket := nitric.NewBucket("files").Allow(nitric.BucketRead)
+
+	api.Get("/files/:name", func(ctx *apis.Ctx) {
+		// ❌ This declaration won't work, since it's in a callback that's only called at runtime.
+		badBucket := nitric.NewBucket("wont-work").Allow(nitric.BucketRead)
+	})
+
+	nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final helloApi = Nitric.api("public");
+
+  // ✅ This declaration will work
+  final files = Nitric.bucket("files").allow([BucketPermission.read]);
+
+  helloApi.get("/files/:name", (ctx) async {
+    // ❌ This declaration won't work, since it's in a callback that's only called at runtime.
+    final backBucket =
+        Nitric.bucket("wont-work").allow([BucketPermission.read]);
+
+    return ctx;
+  });
+}
+```
+
+</CodeSwitcher>
+
+<Note>Always declare resources outside of runtime/callback code</Note>
+
+### Don't use runtime methods in top level code
+
+Calling runtime methods in top-level code can lead to unintended side effects. Nitric resources should be accessed in a deterministic way to avoid unintentional side-effects.
+
+A working example:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api, bucket } from '@nitric/sdk'
+
+const files = bucket('files').allow('read')
+
+// ❌ This access will not work.
+const fileContents = files.file('example.txt').read()
+
+api('public').get('/files/:name', (ctx) => {
+  // ✅ This access will work.
+  const fileContents = files.file('example.txt').read()
+})
+```
+
+```typescript !!
+import { api, bucket } from '@nitric/sdk'
+
+const files = bucket('files').allow('read')
+
+// ❌ This access will not work.
+const fileContents = files.file('example.txt').read()
+
+api('public').get('/files/:name', (ctx) => {
+  // ✅ This access will work.
+  const fileContents = files.file('example.txt').read()
+})
+```
+
+```python !!
+from nitric.resources import api, bucket
+from nitric.application import Nitric
+
+public_api = api('public')
+
+files = bucket('files').allow('read')
+
+# ❌ This access will not work.
+file_contents = files.file('example.txt').read()
+
+@public_api.get("/files/:name")
+async def get_file(ctx):
+  # ✅ This access will work.
+  file_contents = files.file('example.txt').read()
+
+Nitric.run()
+```
+
+```go !!
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+	api := nitric.NewApi("public")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+
+	bucket := nitric.NewBucket("files").Allow(nitric.BucketRead)
+
+	// ❌ This access will not work
+	fileContents, _ := bucket.Read(context.TODO(), "example.txt")
+
+	api.Get("/files/:name", func(ctx *apis.Ctx) {
+		// ✅ This access will work
+		fileContents, _ := bucket.Read(context.TODO(), "example.txt")
+	})
+
+	nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final helloApi = Nitric.api("public");
+
+  final files = Nitric.bucket("files").allow([BucketPermission.read]);
+
+  // ❌ This access will not work
+  final fileContents = files.file("example.txt").read();
+
+  helloApi.get("/files/:name", (ctx) async {
+    // ✅ This access will work
+    final fileContents = await files.file("example.txt").read();
+
+    return ctx;
+  });
+}
+```
+
+</CodeSwitcher>
+
+<Note>
+  If you want to limit resource access to a single instance/access consider
+  implementing a lazy singleton.
+</Note>
+
+```typescript
+import { api, bucket } from '@nitric/sdk'
+
+const files = bucket('files').allow('read')
+
+// 👀 Singleton value
+let fileContents: string
+
+// Lazy access method
+const getFileContents = async () => {
+  if (!fileContents) {
+    fileContents = await files.file('example.txt').read()
+  }
+
+  return fileContents
+}
+
+api('public').get('/files/:name', (ctx) => {
+  const fileContents = await getFileContents()
+})
+```
+
+## Best Practices
+
+### ✅ Re-use declarations for shared resources
+
+When many services share a resource it's helpful to re-use resource declaration like any other variable in your code.
+
+For example:
+
+<CodeTabs>
+
+<TabItem label="JavaScript">
+
+```javascript title:lib/resources.js
+import { api, topic } from '@nitric/sdk'
+
+export const publicApi = api('public')
+
+export const updateTopic = topic('updates')
+```
+
+```javascript title:services/api.js
+import { publicApi, updateTopic } from '../lib/resources'
+
+const publisher = updateTopic.allow('publish')
+
+publicApi.post('/update', async (ctx) => {
+  await publisher.publish({ test: 'message' })
+})
+```
+
+```javascript title:services/updates.js
+import { updateTopic } from '../lib/resources'
+
+updateTopic.subscribe((ctx) => {
+  console.log('got the message')
+})
+```
+
+</TabItem>
+
+<TabItem label="TypeScript">
+
+```typescript title:lib/resources.ts
+// lib/resources.ts
+import { api, topic } from '@nitric/sdk'
+
+export const publicApi = api('public')
+
+export const updateTopic = topic('updates')
+```
+
+```typescript title:services/api.ts
+import { publicApi, updateTopic } from '../lib/resources'
+
+const publisher = updateTopic.allow('publish')
+
+publicApi.post('/update', async (ctx) => {
+  await publisher.publish({ test: 'message' })
+})
+```
+
+```typescript title:services/updates.ts
+import { updateTopic } from '../lib/resources'
+
+updateTopic.subscribe((ctx) => {
+  console.log('got the message')
+})
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python title:resources.py
+from nitric.resources import api, topic
+
+public_api = api('public')
+update_topic = topic('updates')
+
+```
+
+```python title:services/api.py
+from resources import public_api, update_topic
+
+publisher = update_topic.allow('publish')
+
+@public_api.post("/update")
+async def new_update(ctx):
+  await publisher.publish({"test": "message"})
+
+```
+
+```python title:services/updates.py
+from resources import update_topic
+
+@update_topic.subscribe
+async def updates_sub(ctx):
+  print(ctx.req.payload)
+
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```go title:resources/main.go
+package resources
+
+import "github.com/nitrictech/go-sdk/nitric"
+
+var PublicApi nitric.Api
+
+var UpdateTopic nitric.SubscribableTopic
+
+func init() {
+	publicApi := nitric.NewApi("public")
+
+	PublicApi = publicApi
+
+	UpdateTopic = nitric.NewTopic("updates")
+}
+
+```
+
+```go title:services/api/main.go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/your-org/your-repo/resources"
+)
+
+func main() {
+	publisher, err := resources.UpdateTopic.Allow(nitric.TopicPublish)
+	if err != nil {
+		panic(err)
+	}
+
+	resources.PublicApi.Post("/update", func() {
+		publisher.Publish(context.TODO(), map[string]interface{}{
+			"test": "message",
+		})
+	})
+
+	nitric.Run()
+}
+```
+
+```go title:services/updates/main.go
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/your-org/your-repo/resources"
+)
+
+func main() {
+	resources.UpdateTopic.Subscribe(func() {
+		println("got the message")
+	})
+
+	nitric.Run()
+}
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```dart title:lib/resources.dart
+import 'package:nitric_sdk/nitric.dart';
+
+final publicApi = Nitric.api("public");
+
+final updateTopic = Nitric.topic("updates");
+```
+
+```dart title:services/api.dart
+import 'package:your-project/resources.dart' as resources;
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final subscriber = resources.updateTopic.allow([TopicPermission.publish]);
+
+  resources.publicApi.post("/update", (ctx) async {
+    subscriber.publish({"test": "message"});
+
+    return ctx;
+  });
+}
+```
+
+```dart title:services/updates.dart
+import 'package:your-project/resources.dart' as resources;
+
+void main() {
+  resources.updateTopic.subscribe((ctx) async {
+    print("got the message");
+
+    return ctx;
+  });
+}
+```
+
+</TabItem>
+
+</CodeTabs>
+
+<Note>
+  Sharing resources like this can avoid nasty typos, and allows easily shared
+  references to a single resource using your IDE.
+</Note>
+
+### ❌ Avoid declaring permissions for shared resources
+
+Creating resource permissions in the same context as the resources can make those permissions leak. This is demonstrated in the below example:
+
+<CodeTabs>
+
+<TabItem label="JavaScript">
+
+```javascript title:lib/resources.js
+import { api, bucket } from '@nitric/sdk'
+
+export const publicApi = api('public')
+
+export const bucketOne = bucket('bucket-one').allow('read')
+export const bucketTwo = bucket('bucket-two').allow('read')
+```
+
+```javascript title:services/service-one.js
+import { publicApi, bucketOne } from '../lib/resources'
+
+publicApi.get('bucket-one/file/:name', (ctx) => {
+  // do something with the file
+})
+```
+
+```javascript title:services/service-two.js
+import { publicApi, bucketTwo } from '../lib/resources'
+
+publicApi.get('bucket-two/file/:name', (ctx) => {
+  // do something with the file
+})
+```
+
+</TabItem>
+
+<TabItem label="TypeScript">
+
+```typescript title:lib/resources.ts
+import { api, bucket } from '@nitric/sdk'
+
+export const publicApi = api('public')
+
+export const bucketOne = bucket('bucket-one').allow('read')
+export const bucketTwo = bucket('bucket-two').allow('read')
+```
+
+```typescript title:services/service-one.ts
+import { publicApi, bucketOne } from '../lib/resources'
+
+publicApi.get('bucket-one/file/:name', (ctx) => {
+  // do something with the file
+})
+```
+
+```typescript title:services/service-two.ts
+import { publicApi, bucketTwo } from '../lib/resources'
+
+publicApi.get('bucket-two/file/:name', (ctx) => {
+  // do something with the file
+})
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python title:resources.py
+from nitric.resources import api, bucket
+from nitric.application import Nitric
+
+public_api = api('public')
+
+bucket_one = bucket('bucket-one').allow('read')
+bucket_two = bucket('bucket-two').allow('read')
+
+```
+
+```python title:services/service-one.py
+from resources import public_api, bucket_one
+from nitric.application import Nitric
+
+@public_api.get("bucket-one/file/:name")
+async def get_file(ctx):
+  pass # do something with the file
+
+Nitric.run()
+
+```
+
+```python title:services/service-two.py
+from resources import public_api, bucket_two
+from nitric.application import Nitric
+
+@public_api.get("bucket-two/file/:name")
+async def get_file(ctx):
+  pass # do something with the file
+
+Nitric.run()
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```go title:resources/resources.go
+package resources
+
+import (
+	"github.com/nitrictech/go-sdk/api/storage"
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+var PublicApi nitric.Api
+var BucketOne storage.Bucket
+var BucketTwo storage.Bucket
+
+func init() {
+	publicApi, _ := nitric.NewApi("public")
+	bucketOne, _ := nitric.NewBucket("bucket-one").Allow(nitric.BucketRead)
+	bucketTwo, _ := nitric.NewBucket("bucket-two").Allow(nitric.BucketRead)
+
+	PublicApi = publicApi
+	BucketOne = bucketOne
+	BucketTwo = bucketTwo
+}
+```
+
+```go title:services/service-one/main.go
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/your-org/your-repo/resources"
+)
+
+func main() {
+	resources.PublicApi.Get("/bucket-one/file/:name", func(ctx *apis.Ctx) {
+		// do something with the file
+	})
+
+	nitric.Run()
+}
+```
+
+```go title:services/service-two/main.go
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/your-org/your-repo/resources"
+)
+
+func main() {
+	resources.PublicApi.Get("/bucket-two/file/:name", func(hc *apis.Ctx) {
+		// do something with the file
+	})
+
+	nitric.Run()
+}
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```dart title:lib/resources.dart
+import 'package:nitric_sdk/nitric.dart';
+
+final publicApi = Nitric.api("public");
+final bucketOne = Nitric.bucket("bucket-one").allow([BucketPermission.read]);
+final bucketTwo = Nitric.bucket("bucket-two").allow([BucketPermission.read]);;
+```
+
+```dart title:services/service-one.dart
+import 'package:your_project/resources.dart' as resources;
+
+void main() {
+  resources.publicApi.get("/bucket-one/file/:name", (ctx) async {
+    // do something with the file
+    return ctx;
+  });
+}
+```
+
+```dart title:services/service-two.dart
+import 'package:your_project/resources.dart' as resources;
+
+void main() {
+  resources.publicApi.get("/bucket-two/file/:name", (ctx) async {
+    // do something with the file
+    return ctx;
+  });
+}
+```
+
+</TabItem>
+
+</CodeTabs>
+
+In this scenario, both `service-one` and `service-two` have read access to **both** buckets, even though each service is only using one of the buckets. This is because they are declared in the same context and evaluated at the same time in each of the services.
+
+Resource permissions should always be declared in the scope of a single service unless the permissions required by one or more services are identical.
+
+<Note>
+  This practice can break principal of least privilege in infrastructure
+  deployments
+</Note>

@@ -1,0 +1,90 @@
+---
+description: 'Comparison to SST'
+---
+
+# SST vs. Nitric
+
+Nitric is a framework designed to aid developers in building full cloud applications on the Cloud of their choice, including declaring their infrastructure and application code in one place.
+SST is a framework that makes it easy to build modern full-stack JavaScript/TypeScript applications on AWS.
+
+These are the main differences between the two:
+
+1. **Cloud Provider Support:** Nitric is provider-agnostic, capable of deploying to multiple cloud providers such as AWS, Google Cloud, and Azure. SST is primarily designed for AWS services.
+2. **Language Support:** Nitric provides multiple libraries for TypeScript/JavaScript, Python, Go, C# .NET and Java, allowing developers to choose their preferred language. Currently SST only supports TypeScript and JavaScript.
+3. **Infrastructure Provisioning:** Nitric uses Pulumi by default for provisioning cloud resources, but also allows the use of [custom providers](/providers/custom/create). SST uses the AWS CDK, which uses AWS CloudFormation for provisioning.
+4. **Local Simulation:** Nitric provides a fully offline local cloud simulation tool, allowing you to test your applications locally before deploying them. This is a feature that SST does not offer, for local development SST deploys your application to the cloud and uses a proxy to sync with your local code.
+
+## Code Comparison
+
+To get a deeper understanding of the differences, let's see the same app built in both Nitric and SST. The SST App in this example is standalone without the frontend code.
+
+<Row>
+
+<Col>
+
+**Nitric**
+
+```javascript title:hello.js
+import { api } from '@nitric/sdk'
+
+const helloApi = api('main')
+
+helloApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+
+  ctx.res.body = `Hello ${name}`
+})
+```
+
+</Col>
+
+<Col>
+
+**SST**
+
+```javascript title:packages/functions/hello.ts
+import { ApiHandler, usePathParam } from 'sst/node/api'
+
+export const handler = ApiHandler(async (evt) => {
+  const name = usePathParam('name')
+
+  return {
+    statusCode: 200,
+    body: `Hello ${name}`,
+  }
+})
+```
+
+```javascript title: stacks/hello-stack.ts
+import { StackContext, Api } from 'sst/constructs'
+
+export function API({ stack }: StackContext) {
+  const api = new Api(stack, 'api', {
+    routes: {
+      'GET /hello/{name}': 'packages/functions/src/hello.handler',
+    },
+  })
+
+  stack.addOutputs({
+    ApiEndpoint: api.url,
+  })
+}
+```
+
+</Col>
+
+</Row>
+
+One key difference between Nitric and SST examples is while Nitric allows defining the API route handler inline which streamlines and simplifies the code, SST separates the route definition and the handler into different files for modularity. Another difference is that Nitric is cloud-neutral while SST is designed specifically for AWS.
+
+## Differences
+
+|                      | Nitric                                                                  | SST                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Language             | Your choice                                                             | JavaScript / TypeScript                                                                                             |
+| Lines of code        | 9                                                                       | 23                                                                                                                  |
+| Cloud Infrastructure | Inferred                                                                | Explicit                                                                                                            |
+| Extensibility        | [Custom providers](/providers/custom/create) can be created             | Yes, you can fallback to using the underlying AWS CDK constructs.                                                   |
+| Local simulation     | Built-in local simulator with instant hot reloading and offline support | No, provides proxy to a deployed app                                                                                |
+| Cloud providers      | AWS, Azure, GCP and [Custom providers](/providers/custom/create)        | AWS                                                                                                                 |
+| Provisioning engine  | Pulumi by default, other custom providers can be created                | CloudFormation via AWS CDK (CDKTF is used for Terraform, but you cannot compile the same code to different engines) |

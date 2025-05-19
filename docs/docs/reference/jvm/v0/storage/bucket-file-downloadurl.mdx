@@ -1,0 +1,103 @@
+---
+description: "Reference for Nitric's v0 JVM library - Create a download url for a file from a bucket."
+---
+
+# JVM - bucket.file.getDownloadUrl()
+
+Create a download URL for a file from a bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Read);
+
+    // Get a download url that lasts 600 seconds
+    var url = bucket.file("cat.png").getDownloadUrl(600);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Read)
+
+  // Get a download url that lasts 600 seconds
+  val url = bucket.file("cat.png").getDownloadUrl()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" type="Int">
+    Seconds until link expiry. Defaults to `600`. Maximum of `604800` (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a temporary file download link for a user
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Read);
+
+    // Get a download url that lasts 600 seconds
+    var url = bucket.file("cat.png").getDownloadUrl();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Write)
+
+  // Get a download url that lasts 600 seconds
+  val url = bucket.file("cat.png").getDownloadUrl()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

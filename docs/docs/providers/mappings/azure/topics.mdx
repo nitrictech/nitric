@@ -1,0 +1,25 @@
+---
+description: 'How Nitric deploys Topics to Azure'
+---
+
+# Azure Resources - Topics
+
+Nitric Topics are deployed to Azure using [Azure Event Grid](https://azure.microsoft.com/en-us/services/event-grid/).
+
+## Azure Resources
+
+The following resources are created when deploying Topics to Azure:
+
+- Event Grid Topic
+- Event Grid Subscriptions
+- Azure Resource Group
+
+## Deployment
+
+During deployment the Nitric CLI builds your Topics as follows:
+
+- The Topic definitions as Event Grid Topics
+- Subscriber services are built into container images
+- Container images are pushed to [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/) as private images
+- Container Apps are setup to run the containers
+- Container Apps are subscribed to defined Topics in Event Grid

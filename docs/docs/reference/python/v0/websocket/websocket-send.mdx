@@ -1,0 +1,66 @@
+---
+description: "Reference for Nitric's v0 Python library - Send a message to a connection on a websocket."
+---
+
+# Python - websocket.send()
+
+Send a message to a connected websocket client.
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+public_websocket = websocket("public")
+
+async def send_hello_message(connection_id: string):
+    await public_websocket.send(connection_id, b"Hello")
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connection_id" required type="string">
+    The ID of the connection to send the message to on this websocket.
+  </Property>
+  <Property name="data" required type="bytes">
+    The byte data to send to that connection
+  </Property>
+</Properties>
+
+<Note>
+  Do not send messages to a connection during it's `connect` callback, if you
+  need to acknowledge connection, do so by using a [topic](../topic/topic)
+</Note>
+
+## Examples
+
+### Broadcast messages to all connected clients
+
+```python
+from nitric.resources import api, websocket, collection
+from nitric.application import Nitric
+from nitric.context import WebsocketContext
+
+connections = collection("connections").allow("reading", "writing", "deleting")
+main_websocket = websocket("main")
+
+@main_websocket.on("connect")
+async def connect(ctx: WebsocketContext):
+  await connections.doc(ctx.req.connection_id).set({})
+
+@main_websocket.on("disconnect")
+async def disconnect(ctx: WebsocketContext):
+  await connections.doc(ctx.req.connection_id).delete()
+
+@main_websocket.on("message")
+async def message(ctx: WebsocketContext):
+  all = connections.query().stream()
+
+  async for conn in all:
+    await main_websocket.send(conn.id, ctx.req.data)
+
+
+Nitric.run()
+```

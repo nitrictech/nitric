@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's Dart library - Get a download url for a file from a bucket."
+---
+
+# Dart - bucket.file.getDownloadUrl()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a download url for a file within a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final logo = assets.file("images/logo.png");
+
+// Create a read-only url reference for downloading
+final downloadUrl = await logo.getDownloadUrl();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" optional type="int">
+    Seconds until link expiry. Defaults to `600`, Maximum of `604800` (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a readable link that is valid for the next 5 minutes
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final logo = assets.file("images/logo.png");
+
+// Create a read-only url reference for downloading
+final downloadUrl = await logo.getDownloadUrl(expiry: 300);
+```
+
+### Redirect response to an image URL
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final mainApi = Nitric.api("main");
+final images = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+mainApi.get("/images/:id", (ctx) async {
+  final id = ctx.req.pathParams["id"]!;
+
+  final signedUrl = await images.file(id).getDownloadUrl();
+
+  ctx.res.status = 303;
+  ctx.res.headers["Location"] = [signedUrl];
+
+  return ctx;
+});
+```

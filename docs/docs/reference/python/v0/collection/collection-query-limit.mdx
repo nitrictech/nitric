@@ -1,0 +1,26 @@
+---
+description: "Reference for Nitric's v0 Python library - Limit the number of results returned by a query."
+---
+
+# Python - collection.query.limit()
+
+Limit the number of results returned by a query.
+
+```python
+from nitric.resources import collection
+
+query = collection("profiles").allow('reading').query().limit(1000)
+```
+
+## Parameters
+
+<Properties>
+  <Property name="limit" required type="number">
+    The limit to apply to the query.
+  </Property>
+</Properties>
+
+## See also
+
+- [query().pagingFrom()](./collection-query-pagingfrom)
+- [query().where()](./collection-query-where)

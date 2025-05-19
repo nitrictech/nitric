@@ -1,0 +1,17 @@
+---
+description: 'How Nitric deploys Key Value Stores to Google Cloud'
+---
+
+# Google Cloud Resources - Key Value Stores
+
+Nitric Key Value Stores are deployed to Google Cloud using [Firestore](https://cloud.google.com/firestore).
+
+## Google Cloud Resources
+
+No resources are provisioned at deploy time, key value stores will be created as needed at runtime.
+
+## Deployment
+
+During deployment, Nitric may deploy an App Engine application to your project if one does not already exist, this ensures the App Engine region of your Google Cloud project is set.
+
+<Note>This is required for firestore to operate.</Note>

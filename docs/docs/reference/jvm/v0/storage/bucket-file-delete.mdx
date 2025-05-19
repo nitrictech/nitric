@@ -1,0 +1,91 @@
+---
+description: "Reference for Nitric's v0 JVM library - Delete a file from a bucket."
+---
+
+# JVM - bucket.file.delete()
+
+Delete a file from a bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Delete);
+
+    bucket.file("cat.png").delete();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Delete)
+
+  bucket.file("cat.png").delete()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Examples
+
+### Delete a file
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Delete);
+
+    bucket.file("cat.png").delete();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Delete)
+
+  bucket.file("cat.png").delete()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

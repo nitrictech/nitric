@@ -1,0 +1,90 @@
+---
+description: "Reference for Nitric's Go library - Creates a reference to a SQL database."
+---
+
+# Go - NewSqlDatabase()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about SQL
+  Databases in Nitric start with the [SQL docs](/sql).
+</Note>
+
+Creates a reference to a SQL database.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+db := nitric.NewSqlDatabase("my-database")
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this database within the project.
+  </Property>
+  <Property name="options" type="...sqlDatabaseOption">
+    Additional options for the SQL Database. See below.
+  </Property>
+</Properties>
+
+### SQL Database options
+
+<Properties>
+  <Property name="WithMigrationsPath()" type="sqlDatabaseOption">
+    <Properties nested>
+      <Property name="path" required type="string">
+        Points to the location of migration files, prefixed with `file://`, or a
+        migration dockerfile, prefixed with `dockerfile://`.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a reference to a database
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+db := nitric.NewSqlDatabase("my-database")
+```
+
+### With a migrations directory
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/sql"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database", sql.WithMigrationsPath("file://migrations/my-database"))
+
+  nitric.Run()
+}
+```
+
+### With a migrations dockerfile
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/sql"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database", sql.WithMigrationsPath("dockerfile://migrations.dockerfile"))
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [SqlDatabase.ConnectionString()](./sql-connection-string)

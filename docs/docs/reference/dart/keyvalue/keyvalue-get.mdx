@@ -1,0 +1,44 @@
+---
+description: "Reference for Nitric's Dart library - Get a value from a key value store."
+---
+
+# Dart - kv.get()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Get a value from a key value store.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final profile = await profiles.get('profile-1a2b3c');
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="String">
+    The key that references the key value pair that should be retrieved.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get a key value pair
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final profile = await profiles.get('profile-1a2b3c');
+```

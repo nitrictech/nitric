@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Node.js library - Get a value from a key value store."
+---
+
+# Node.js - kv.get()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Stores docs](/keyvalue).
+</Note>
+
+Get a value from a key value store.
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const profile = await profiles.get('profile-1a2b3c')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key that references the key value pair that should be retrieved.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get a key value pair
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const profile = await profiles.get('profile-1a2b3c')
+```

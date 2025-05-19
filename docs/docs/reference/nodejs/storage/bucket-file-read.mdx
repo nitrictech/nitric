@@ -1,0 +1,36 @@
+---
+description: "Reference for Nitric's Node.js library - Read the contents of a file from a bucket."
+---
+
+# Node.js - bucket.file.read()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Read the contents of a file from a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('read')
+
+const logo = assets.file('images/logo.png')
+
+const logoData = await logo.read()
+```
+
+## Examples
+
+### Read a file
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('read')
+
+const logo = assets.file('images/logo.png')
+
+const logoData = await logo.read()
+```

@@ -1,0 +1,54 @@
+---
+description: "Reference for Nitric's Node.js library - Close a connection to a websocket"
+---
+
+# Node.js - websocket.close()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Closes a connection to a websocket
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+/**
+ * Close a connection to a client.
+ *
+ * @param connectionId the client received when connecting to the websocket
+ */
+const closeConnection = async (connectionId) => {
+  await socket.close(connectionId)
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connectionId" required type="string">
+    The ID of the connection to be closed.
+  </Property>
+</Properties>
+
+## Examples
+
+### Close a connection to the websocket on message
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+/**
+ * Close a connection to a client.
+ *
+ * @param connectionId the client received when connecting to the websocket
+ */
+const closeConnection = async (connectionId) => {
+  await socket.close(connectionId)
+}
+```

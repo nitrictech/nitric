@@ -1,0 +1,202 @@
+---
+description: "Reference for Nitric's v0 JVM library - Set the value of a document"
+---
+
+# JVM - collection.doc.set()
+
+Set the value of a document.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Write);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    drakesProfile.set(new User("Drake Mallard", 21));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Write)
+
+  val drakesProfile = profiles.doc("Drake Mallard")
+
+  drakesProfile.set(User("Drake Mallard", 21))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="document" required type="object">
+    The document to set on the key
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a document
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Write);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    drakesProfile.set(new User("Drake Mallard", 21));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Write)
+
+  val drakesProfile = profiles.doc("Drake Mallard")
+
+  drakesProfile.set(User("Drake Mallard", 21))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Update a document
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read, CollectionPermission.Write);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    drakesProfile.set(new User("Drake Mallard", 21));
+
+    var existingProfile = drakesProfile.get();
+
+    existingProfile.set(new User("Drake Mallard", 22));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read, CollectionPermission.Write)
+
+  val drakesProfile = profiles.doc("Drake Mallard")
+
+  drakesProfile.set(User("Drake Mallard", 21))
+
+  val existingProfile = drakesProfile.get()
+
+  existingProfile.set(User("Drake Mallard", 22))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### See also
+
+- [doc.get()](./collection-doc-get)
+- [doc.delete()](./collection-doc-delete)

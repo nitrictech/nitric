@@ -1,0 +1,112 @@
+---
+description: "Reference for Nitric's Go library - Register an API route and set a specific HTTP POST handler on that route."
+---
+
+# Go - Api.Post()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about APIs in
+  Nitric start with the [API docs](/apis).
+</Note>
+
+Register an API route and set a specific HTTP POST handler on that route.
+
+<Note>
+  This method is a convenient short version of
+  [Api.Route.Post()](./api-route-post)
+</Note>
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  api.Post("/hello", func(ctx *apis.Ctx) {
+    ctx.Response.Body = []byte("Hello World")
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="path" required type="string">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers. See [create
+    a route with path params](#create-a-route-with-path-params).
+  </Property>
+  <Property name="handler" required type="interface{}">
+    The callback function to handle requests to the given path and method.
+  </Property>
+  <Property name="options" type="...MethodOption">
+    Additional options for the route. See below.
+  </Property>
+</Properties>
+
+### Method options
+
+<Properties>
+  <Property name="WithNoMethodSecurity()" type="MethodOption">
+    Disables security on the method.
+  </Property>
+  <Property name="WithMethodSecurity()" type="MethodOption">
+    Overrides a security rule from API defined JWT rules.
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="scopes" required type="[]string">
+        The scopes of the security rule.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for POST requests
+
+```go
+api.Post("/hello", func(ctx *apis.Ctx) {
+  ctx.Response.Body = []byte("Hello World")
+})
+```
+
+### Create a route with path params
+
+```go
+api.Post("/hello/:name", func(ctx *apis.Ctx) {
+  name := ctx.Request.PathParams()["name"]
+  ctx.Response.Body = []byte("Hello " + name)
+})
+```
+
+### Access the request body
+
+The POST request body is accessible using `ctx.Request.Data()`.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  api.Post("/hello", func(ctx *apis.Ctx) {
+    data := ctx.Request.Data()
+
+    ctx.Response.Body = data
+  })
+
+  nitric.Run()
+}
+```

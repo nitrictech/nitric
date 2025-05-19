@@ -1,0 +1,20 @@
+---
+description: 'How Nitric deploys Queues to Azure'
+---
+
+# Azure Resources - Queues
+
+Nitric Queues are deployed to Azure using [Azure Storage Queues](https://azure.microsoft.com/en-us/services/storage/queues/).
+
+## Azure Resources
+
+The following resources are created when deploying Queues to Azure:
+
+- Storage Queue
+- Azure Resource Group
+
+## Deployment
+
+During deployment the Nitric CLI builds your Queues will be built as follows:
+
+- The queue definition and resource group are deployed as a Storage Queue.

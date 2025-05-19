@@ -1,0 +1,41 @@
+---
+description: "Reference for Nitric's v0 Go library - Get a reference to a document in the collection."
+---
+
+# Go - Collection.Doc()
+
+Get a reference to a document in the collection.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading, nitric.CollectionWriting)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key of the document to reference.
+  </Property>
+</Properties>
+
+### See also
+
+- [Doc().Get()](./collection-doc-get)
+- [Doc().Set()](./collection-doc-set)
+- [Doc().Delete()](./collection-doc-delete)
+- [Doc().Collection()](./collection-doc-collection)

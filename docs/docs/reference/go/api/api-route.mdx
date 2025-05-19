@@ -1,0 +1,42 @@
+---
+description: "Reference for Nitric's Go library - Creates a new route (path) within an API."
+---
+
+# Go - Api.Route()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about APIs in
+  Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new route (path) within an API.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  route := api.NewRoute("/hello")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="string">
+    The path matcher to use for this route. Calling `NewRoute` on the same API
+    more than once with the same matcher will return the same route object.
+    Matchers accept path parameters in the form of a colon prefixed string. The
+    string provided will be used as that path parameter's name when calling
+    middleware and handlers. See [create a route with path
+    params](#create-a-route-with-path-params)
+  </Property>
+  <Property name="options" type="...RouteOption">
+    Additional options for the route.
+  </Property>
+</Properties>

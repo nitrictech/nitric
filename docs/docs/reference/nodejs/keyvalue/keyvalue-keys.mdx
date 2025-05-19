@@ -1,0 +1,62 @@
+---
+description: "Reference for Nitric's Node.js library - Retrieve all or some of the keys from a value store."
+---
+
+# Node.js - kv.keys()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Stores docs](/keyvalue).
+</Note>
+
+Return an async iterable of keys in the store.
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const keys = profiles.keys()
+
+for await (const key of keys) {
+  // do something with the key
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="prefix" type="string">
+    The prefix to filter keys by, if not provided all keys will be returned.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get all keys from a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const keys = profiles.keys()
+
+for await (const key of keys) {
+  // do something with the key
+}
+```
+
+### Get keys filtered by prefix from a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const keys = profiles.keys('subprofile:')
+
+for await (const key of keys) {
+  // do something with the key
+}
+```

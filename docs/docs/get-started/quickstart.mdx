@@ -1,0 +1,441 @@
+---
+description: 'Getting started guide for an initial Nitric project'
+---
+
+# Getting started
+
+Before you begin, you'll need to install the Nitric CLI.
+
+<OSTabs>
+
+<TabItem label="macOS">
+
+```bash
+brew install nitrictech/tap/nitric
+```
+
+</TabItem>
+
+<TabItem label="Windows">
+
+```bash
+scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
+scoop install nitric
+```
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -L "https://nitric.io/install?version=latest" | bash
+```
+
+</TabItem>
+
+</OSTabs>
+
+<Note>
+  For more installation options and dependency information review the full
+  [installation guide](/get-started/installation).
+</Note>
+
+## Using the `new` command
+
+The Nitric CLI's `new` command provides prompts to scaffold new projects from templates. Here's an example of creating a new project from a template:
+
+<CodeTabs>
+
+<TabItem label="TypeScript">
+
+```bash
+nitric new hello-world ts-starter
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```bash
+nitric new hello-world js-starter
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```bash
+nitric new hello-world py-starter
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```bash
+nitric new hello-world go-starter
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```bash
+nitric new hello-world dart-starter
+```
+
+</TabItem>
+
+</CodeTabs>
+
+Navigate to the new project directory and install the dependencies:
+
+<CodeTabs>
+
+<TabItem label="TypeScript">
+
+```bash
+cd hello-world
+
+npm install
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```bash
+cd hello-world
+
+npm install
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```bash
+cd hello-world
+
+uv sync
+```
+
+<Note>
+We use `uv` by default in our base py-starter template. If you would prefer to use another dependency manager we also have a template for `pipenv`.
+
+If there are other dependency managers you would like to see supported, please let us know in our [GitHub issues](https://github.com/nitrictech/nitric/issues).
+
+</Note>
+
+</TabItem>
+
+<TabItem label="Go">
+
+```bash
+cd hello-world
+
+go mod tidy
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```bash
+cd hello-world
+
+dart pub get
+```
+
+</TabItem>
+
+</CodeTabs>
+
+Your project should now look like this:
+
+<CodeTabs>
+
+<TabItem label="TypeScript">
+
+```txt
++--services/
+|  +-- api.ts
++--node_modules/
+|  ...
++--package-lock.json
++--package.json
++--nitric.yaml
++--README.md
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```txt
++--services/
+|  +-- api.js
++--node_modules/
+|  ...
++--package-lock.json
++--package.json
++--nitric.yaml
++--README.md
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```txt
++--services/
+|  +-- api.py
++--.env
++--pyproject.toml
++--.python-version
++--uv.lock
++--nitric.yaml
++--python.dockerfile
++--python.dockerfile.dockerignore
++--README.md
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```txt
++--services/hello/
+|  +-- main.go
++--go.mod
++--go.sum
++--golang.dockerfile
++--nitric.yaml
++--README.md
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```txt
++--services/
+|  +-- api.dart
++--analysis_options.yaml
++--pubspec.lock
++--pubspec.yaml
++--nitric.yaml
++--README.md
+```
+
+</TabItem>
+
+</CodeTabs>
+
+## Running the app locally
+
+Nitric provides a local development server offering emulated versions of cloud services, suitable for local development/testing. You can use the Nitric CLI to start the local server using the `nitric start` command.
+
+```bash
+nitric start
+```
+
+Nitric will automatically run your application using the service `start` command from the `nitric.yaml` file.
+
+Once your services are running, they will register themselves with the server. Resources like HTTP APIs and Websockets will be hosted on their own port, which will also be displayed in the CLI output as `http://localhost:<port_number>`.
+
+The output will include a link to the [Local Dashboard](/get-started/foundations/projects/local-development), which automatically refreshes with details about all the resources your application uses (e.g APIs, Buckets, Topics, Databases, etc.).
+
+![Nitric Local Dashboard](/docs/images/docs/dashboard-architecture.png)
+
+You can use the automatically generated HTTP client in the dashboard or any other HTTP client to test your APIs. For example, you can use `curl` to test the `hello` service:
+
+```bash
+curl http://localhost:4001/hello/John
+Hello John
+```
+
+<Note>
+  The local dashboard provides real-time visualization of the application's
+  resources, along with useful testing tools. We recommend taking a look at the
+  [Local Dashboard](/get-started/foundations/projects/local-development)
+  documentation to learn more about its features.
+</Note>
+
+## Making updates
+
+Nitric's project templates typically include hot-reloading by default, so at this point, you can start making changes to services and see what happens.
+
+Start by opening the `hello` service in your editor and adding a new route to the API, then save, and execute the file:
+
+<CodeSwitcher tabs>
+
+```typescript !! title:services/api.ts
+import { api } from '@nitric/sdk'
+
+const helloApi = api('main')
+
+helloApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}`
+  return ctx
+})
+
+// Let's add a 'goodbye' route to the API, like this:
+helloApi.get('/goodbye/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Goodbye ${name}`
+  return ctx
+})
+```
+
+```javascript !! title:services/api.js
+import { api } from '@nitric/sdk'
+
+const helloApi = api('main')
+
+helloApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}`
+  return ctx
+})
+
+// Let's add a 'goodbye' route to the API, like this:
+helloApi.get('/goodbye/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Goodbye ${name}`
+  return ctx
+})
+```
+
+```python !! title:services/api.py
+from nitric.resources import api
+from nitric.application import Nitric
+
+helloApi = api("main")
+
+
+@helloApi.get("/hello/:name")
+async def hello_world(ctx):
+    name = ctx.req.params['name']
+
+    ctx.res.body = f"Hello {name}"
+
+@helloApi.get("/goodbye/:name")
+async def hello_world(ctx):
+    name = ctx.req.params['name']
+
+    ctx.res.body = f"Goodbye {name}"
+
+Nitric.run()
+```
+
+```go !! title:services/hello/main.go
+package main
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+	api := nitric.NewApi("main")
+
+	api.Get("/hello/:name", func(ctx *apis.Ctx) {
+		name := ctx.Request.PathParams()["name"]
+		ctx.Response.Body = []byte(fmt.Sprintf("Hello %s", name))
+	})
+
+	api.Get("/goodbye/:name", func(ctx *apis.Ctx) {
+		name := ctx.Request.PathParams()["name"]
+		ctx.Response.Body = []byte(fmt.Sprintf("Goodbye %s", name))
+	})
+
+	nitric.Run()
+}
+```
+
+```dart !! title:services/api.dart
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final helloApi = Nitric.api("main");
+
+  helloApi.get("/hello/:name", (ctx) async {
+    final name = ctx.req.pathParams["name"]!;
+    ctx.res.body = "Hello $name";
+
+    return ctx;
+  });
+
+  helloApi.get("/goodbye/:name", (ctx) async {
+    final name = ctx.req.pathParams["name"]!;
+    ctx.res.body = "Goodbye $name";
+
+    return ctx;
+  });
+}
+```
+
+</CodeSwitcher>
+
+<Note>
+  Depending on the language you choose the template may support hot-reloading,
+  if not you'll need to restart the service.
+</Note>
+
+After saving the file, the new route will be registered and you can test it:
+
+```bash
+curl http://localhost:4001/goodbye/John
+Goodbye John
+```
+
+When you're finished testing, you can stop your application and the Nitric Server.
+
+## Deploying the app
+
+Now that you've implemented a basic API and tested that it works, you can deploy it to one or more cloud platforms. Applications built with Nitric can be automatically deployed and run to different cloud providers without any code changes, thanks to Nitric [Provider Plugins](/get-started/foundations/deployment).
+
+The first step is to configure your credentials for the cloud provider and any prerequisites for the provider plugin you want to use:
+
+- [AWS](/providers/pulumi/aws)
+- [Azure](/providers/pulumi/azure)
+- [GCP](/providers/pulumi/gcp)
+
+You'll then need to create a [stack file](/reference/cli#stacks), which represents a deployment target for your application.
+
+The `stack new` command can help you create a new stack file, with prompts to guide you through selecting a provider plugin and naming the stack:
+
+```bash
+nitric stack new
+```
+
+For this example we'll create a new stack named `dev` that uses the `aws` provider, but you can choose a different name and provider if you prefer.
+
+Once you've created your stack file, you should see it appear in your project directory as `nitric.[stack ID].yaml`. In our case the file is named `nitric.dev.yaml`.
+
+Edit this file and set any remaining configuration options, such as the region you'd like to deploy to e.g. `us-east-1` for AWS.
+
+Now you can build your application and deploy the stack with the `up` command.
+
+```bash
+nitric up
+```
+
+Typically, when the deployment is complete any relevant URLs will be displayed in the CLI output. You can use these URLs to interact with your API. You can also use the relevant cloud console (e.g. [https://aws.amazon.com/](https://aws.amazon.com/)) to see the deployed resources.
+
+To deploy any changes you make to your application, you can use the `up` command again. Nitric will automatically detect the changes and update the deployed resources.
+
+When you're finished with your application, you can tear it down using the `down` command:
+
+```bash
+nitric down
+```
+
+# What's next?
+
+- Learn more about [APIs](/apis)
+- Learn more about the [foundations](/get-started/foundations/projects) of Nitric

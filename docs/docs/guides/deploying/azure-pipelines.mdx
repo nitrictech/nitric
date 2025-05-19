@@ -1,0 +1,125 @@
+---
+description: Deploy to AWS, Google Cloud or Microsoft Azure using Azure DevOps and the Nitric CLI
+tags:
+  - CI/CD
+  - Azure
+published_at: 2023-11-01
+updated_at: 2024-02-04
+---
+
+# Deployment Automation with Azure Pipelines and Nitric
+
+This guide will illustrate how Nitric can be integrated with Azure Pipelines to establish a continuous deployment pipeline. The example below focuses on Azure, but with minor adjustments, it can be adapted for Google Cloud or AWS.
+
+<Note>
+  This guide assumes basic knowledge about Azure Pipelines. If you're
+  unfamiliar, it's recommended to go through [Azure Pipelines
+  documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/what-is-azure-pipelines)
+  first.
+</Note>
+
+## Pipeline Setup
+
+Firstly, ensure you have a Nitric project prepared for deployment. If not, refer to Nitric's [quickstart guide](/get-started/quickstart).
+
+Then, you'll need to create an Azure Pipelines YAML file for your project. This will dictate the automated deployment steps. Let's name this file `azure-pipelines.yml`.
+
+Below is the example content for your pipeline file. We'll explain each segment afterward, allowing you to adjust as needed:
+
+```yaml
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - script: |
+      # Install Pulumi
+      curl -fsSL https://get.pulumi.com | sh
+      # Export path for pulumi (assuming default installation path)
+      export PATH=$PATH:$HOME/.pulumi/bin
+      pulumi version
+
+      # Install Nitric
+      curl -L https://nitric.io/install?version=latest | bash
+      export PATH=$PATH:$HOME/.nitric/bin
+
+      # Login to Azure (assuming using Service Principal and Certificate)
+      az login --service-principal -u $(AZURE_CLIENT_ID) -p $(AZURE_CERTIFICATE_PATH) --tenant $(AZURE_TENANT_ID)
+
+      # Execute the nitric command
+      nitric up --ci
+    displayName: 'Install Pulumi and Nitric CLI'
+    env:
+      PULUMI_CONFIG_PASSPHRASE: $(PULUMI_CONFIG_PASSPHRASE)
+      PULUMI_ACCESS_TOKEN: $(PULUMI_ACCESS_TOKEN)
+      AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+      AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+      AZURE_CERTIFICATE_PATH: $(AZURE_CERTIFICATE_PATH)
+```
+
+## Breaking it down
+
+### Pipeline Triggers
+
+Triggers indicate when the pipeline should execute, in this example the main branch is targeted.
+
+```yaml
+trigger:
+  - main
+```
+
+### Virtual Machine Image
+
+Define the [virtual machine image](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml) on which the pipeline runs:
+
+```yaml
+pool:
+  vmImage: ubuntu-latest
+```
+
+### Pulumi and Nitric Setup
+
+Install Pulumi and Nitric, which are necessary for deployment and set the relevant environment paths:
+
+The `up` command can be used to deploy your project. The first argument `--ci` tells the CLI that we are running in a ci pipeline and should have raw output.
+
+```yaml
+- steps
+  - script: |
+      # Install Pulumi
+      curl -fsSL https://get.pulumi.com | sh
+      # Export path for pulumi (assuming default installation path)
+      export PATH=$PATH:$HOME/.pulumi/bin
+      pulumi version
+
+      # Install Nitric
+      curl -L https://nitric.io/install?version=latest | bash
+      export PATH=$PATH:$HOME/.nitric/bin
+
+      # Login to Azure (assuming using Service Principal and Certificate)
+      az login --service-principal -u $(AZURE_CLIENT_ID) -p $(AZURE_CERTIFICATE_PATH) --tenant $(AZURE_TENANT_ID)
+
+      # Execute the nitric command
+      nitric up --ci
+    displayName: 'Install Pulumi and Nitric CLI'
+    env:
+      PULUMI_CONFIG_PASSPHRASE: $(PULUMI_CONFIG_PASSPHRASE)
+      PULUMI_ACCESS_TOKEN: $(PULUMI_ACCESS_TOKEN)
+      AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+      AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+      AZURE_CERTIFICATE_PATH: $(AZURE_CERTIFICATE_PATH)
+```
+
+To set up these secrets, navigate to the Azure Pipelines dashboard, select your pipeline, and add new secrets under the 'Variables' section.
+
+<Note>
+  Environment variables like api keys should be stored securely in Azure
+  Pipelines secrets. These secrets are encrypted and can only be accessed by
+  pipelines running in the same Azure DevOps project.
+</Note>
+
+With the pipeline established, each commit to the main branch will trigger an automated deployment using Nitric.
+
+Adjustments can be made to target different cloud platforms or to integrate additional stages and tools as required.

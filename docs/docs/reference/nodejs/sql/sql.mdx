@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's Node.js library - Creates a reference to a SQL database."
+---
+
+# Node.js - sql()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about SQL
+  Databases in Nitric start with the [SQL docs](/sql).
+</Note>
+
+Creates a reference to a SQL database.
+
+```javascript
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-data')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this database within the project.
+  </Property>
+  <Property name="migrations" type="string">
+    Points to the location of migration files, prefixed with `file://`, or a
+    migration dockerfile, prefixed with `dockerfile://`.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a reference to a database
+
+```javascript
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-data')
+```
+
+### With a migrations directory
+
+```javascript
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-data', {
+  migrations: 'file://migrations/my-data',
+})
+```
+
+### With a migrations dockerfile
+
+```javascript
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-data', {
+  migrations: 'dockerfile://migrations.dockerfile',
+})
+```
+
+### Connect with Prisma
+
+<ImportCode file="/src/assets/snippets/sql-prisma-snippet.js" />
+
+### Connect with Drizzle
+
+<ImportCode file="/src/assets/snippets/sql-drizzle-snippet.js" />
+
+### See also
+
+- [sql().connectionString()](./sql-connection-string)

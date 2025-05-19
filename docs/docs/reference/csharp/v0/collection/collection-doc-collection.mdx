@@ -1,0 +1,51 @@
+---
+description: "Reference for Nitric's v0 .NET library - Gets a reference to a child collection on a document."
+---
+
+# .NET - Collection.Doc.Collection()
+
+Gets a reference to a child collection on a document.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var drakesProfile = profiles.Doc("Drake Mallard");
+
+var drakesEnemies = drakesProfile.Collection("enemies");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the child collection to reference
+  </Property>
+</Properties>
+
+### Notes
+
+Document collection relationships can be at most 1 deep.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+profiles
+  .Doc("Drake Mallard")
+  .Collection("enemies")
+  .Doc("Steel Beak") // ✔️ We can go this deep
+  .Collection("enemies"); // ❌ But not this deep
+
+Nitric.Run();
+```
+
+### See also
+
+- [Collection()](./collection)

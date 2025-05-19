@@ -1,0 +1,52 @@
+---
+description: "Reference for Nitric's v0 Python library - Subscribe a handler to a topic and receive new events for processing."
+---
+
+# Python - topic.subscribe()
+
+Subscribes to a topic.
+
+```python
+from nitric.resources import topic
+from nitric.application import Nitric
+from nitric.context import EventContext
+
+updates = topic("updates")
+
+@updates.subscribe
+async def updates_sub(ctx: EventContext):
+  print(ctx.req.payload)
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="middleware" required type="Middleware">
+    The middleware (code) to be triggered by the topic.
+  </Property>
+</Properties>
+
+## Examples
+
+### Subscribe to a topic
+
+```python
+from nitric.resources import topic
+from nitric.application import Nitric
+from nitric.context import EventContext
+
+updates = topic("updates")
+
+@updates.subscribe
+async def updates_sub(ctx: EventContext):
+  print(ctx.req.payload)
+
+Nitric.run()
+```
+
+## Notes
+
+- A function may only subscribe to a topic once, if multiple subscribers are required, create them in different services.
+- A function may subscribe to OR publish to a topic but not both. This is in place to stop services calling themselves infinitely.

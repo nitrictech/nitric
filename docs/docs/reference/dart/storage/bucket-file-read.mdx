@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Dart library - Read the contents of a file from a bucket."
+---
+
+# Dart - bucket.file.read()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Read the contents of a file from a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final logo = assets.file("images/logo.png");
+
+final logoData = await logo.read();
+```
+
+## Examples
+
+### Read a file
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final logo = assets.file("images/logo.png");
+
+final logoData = await logo.read();
+```

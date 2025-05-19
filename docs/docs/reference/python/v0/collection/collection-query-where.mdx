@@ -1,0 +1,60 @@
+---
+description: "Reference for Nitric's v0 Python library - Adds a new where clause to a query, which filters the data returned."
+---
+
+# Python - collection.query.where()
+
+Adds a new where clause to a query, which filters the data returned.
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+
+query = collection("profiles").query().where("name", startsWith, 'T')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="field" required type="string">
+    The document field to query.
+  </Property>
+  <Property name="operation" required type="string">
+    The query operation to perform. Valid values are: `startsWith, ==, !=, >=, <=, >, <.`
+  </Property>
+  <Property name="value" required type="string or number">
+    The value to compare against.
+  </Property>
+</Properties>
+
+### Notes
+
+Where clauses combined together are always considered `AND`
+
+## Examples
+
+### A simple query
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+
+query = profiles.query().where("firstName", '==', 'Drake')
+```
+
+### Combining where clauses
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+
+query = profiles.query().where("firstName", '==', 'Drake').where('age', '>=', 21)
+```
+
+## See also
+
+- [query().fetch()](./collection-query-fetch)
+- [query().stream()](./collection-query-stream)

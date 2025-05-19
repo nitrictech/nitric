@@ -1,0 +1,80 @@
+---
+description: "Reference for Nitric's Go library - Get a list of file references for files that exist in the bucket."
+---
+
+# Go - Bucket.ListFiles()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Storage
+  and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Get a list of file keys for files that exist in the bucket.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  bucket := nitric.NewBucket("bucket-name").Allow(storage.BucketRead)
+
+  files, err := bucket.ListFiles(context.TODO())
+  if err != nil {
+    return
+  }
+
+  for _, file := range files {
+    contents, err := bucket.Read(context.TODO(), file)
+    if err != nil {
+      continue
+    }
+    // Do something with the file contents
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+## Examples
+
+Deleting all files in a bucket
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  bucket := nitric.NewBucket("bucket-name").Allow(storage.BucketRead)
+
+  ctx := context.TODO()
+
+  files, err := bucket.ListFiles(ctx)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+
+  for _, file := range files {
+    bucket.Delete(ctx, file)
+  }
+
+  nitric.Run()
+}
+```

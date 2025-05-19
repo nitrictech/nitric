@@ -1,0 +1,99 @@
+---
+description: "Reference for Nitric's v0 JVM library - Write a file to a bucket."
+---
+
+# JVM - bucket.file.write()
+
+Write a file to a bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Write);
+
+    bucket.file("cat.png").write("This can be anything");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Write)
+
+  bucket.file("cat.png").write("This can be anything")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="data" required type="byte[] or String">
+    The data to write to the file.
+  </Property>
+</Properties>
+
+## Examples
+
+### Write a file
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.INSTANCE.bucket("images").with(BucketPermission.Write);
+
+    bucket.file("cat.png").write("This can be anything");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Write)
+
+  bucket.file("cat.png").write("This can be anything")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

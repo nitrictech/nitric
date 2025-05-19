@@ -1,0 +1,107 @@
+---
+description: "Reference for Nitric's Node.js library - Creates a new key value store to get, set, and delete key value pairs."
+---
+
+# Node.js - kv()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Stores docs](/keyvalue).
+</Note>
+
+Creates a new key value store to get, set, and delete key value pairs.
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get', 'set', 'delete')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this key value store within the service. Subsequent calls
+    to `kv` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**getting**
+
+This permission allows your service to get values from the key value store.
+
+---
+
+**setting**
+
+This permission allows your service to set key value pairs in the key value store.
+
+---
+
+**deleting**
+
+This permission allows your service to delete key value pairs in the key value store.
+
+---
+
+## Examples
+
+### Create a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles')
+```
+
+### Get value from a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const profile = await profiles.get('profile-1a2b3c')
+```
+
+### Set a key in a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('set')
+
+await profiles.set('profile-1a2b3c', { name: 'John Smith' })
+```
+
+### Delete a key from a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('delete')
+
+profiles.delete('profile-1a2b3c')
+```
+
+### Get all keys from a key value store
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('get')
+
+const keys = profiles.keys()
+
+for await (const key of keys) {
+  // do something with the key
+}
+```

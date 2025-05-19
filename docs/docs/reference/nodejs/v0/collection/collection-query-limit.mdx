@@ -1,0 +1,28 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Limit the number of results returned by a query."
+---
+
+# Node.js - collection.query.limit()
+
+Limit the number of results returned by a query.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query().limit(10)
+```
+
+## Parameters
+
+<Properties>
+  <Property name="limit" required type="number">
+    The limit to apply to the query.
+  </Property>
+</Properties>
+
+### See also
+
+- [query().pagingFrom()](./collection-query-pagingfrom)
+- [query().where()](./collection-query-where)

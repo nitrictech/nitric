@@ -1,0 +1,55 @@
+---
+description: "Reference for Nitric's Node.js library - Subscribe a handler to a topic and receive new events for processing."
+---
+
+# Node.js - topic.subscribe()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Topics in Nitric start with the [Async Messaging docs](/messaging#topics).
+</Note>
+
+Subscribe a handler to a topic and receive new events for processing.
+
+```javascript
+import { topic } from '@nitric/sdk'
+
+const updates = topic('updates')
+
+updates.subscribe(async (ctx) => {
+  // Log the provided message
+  console.log(ctx.req.json())
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property
+    name="middleware"
+    required
+    type="EventMiddleware or EventMiddleware[]"
+  >
+    The middleware (code) to be triggered by the topic.
+  </Property>
+</Properties>
+
+## Examples
+
+### Subscribe to a topic
+
+```javascript
+import { topic } from '@nitric/sdk'
+
+const updates = topic('updates')
+
+updates.subscribe(async (ctx) => {
+  // Log the provided message
+  console.log(ctx.req.json())
+})
+```
+
+### Notes
+
+- A service may only subscribe to a topic once, if multiple subscribers are required, create them in different service.
+- A service may subscribe to OR publish to a topic but not both

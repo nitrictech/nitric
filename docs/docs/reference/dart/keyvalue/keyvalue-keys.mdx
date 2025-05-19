@@ -1,0 +1,68 @@
+---
+description: "Reference for Nitric's Dart library - Retrieve all or some of the keys from a value store."
+---
+
+# Dart - kv.keys()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Return an async iterable of keys in the store.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final keys = await profiles.keys();
+
+keys.forEach((String key) {
+  // do something with the key
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="prefix" type="String">
+    The prefix to filter keys by, if not provided all keys will be returned.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get all keys from a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final keys = await profiles.keys();
+
+keys.forEach((String key) {
+  // do something with the key
+});
+```
+
+### Get keys filtered by prefix from a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final keys = await profiles.keys("subprofile:");
+
+keys.forEach((String key) {
+  // do something with the key
+});
+```

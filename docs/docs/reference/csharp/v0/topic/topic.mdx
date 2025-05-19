@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's v0 .NET library - Creates a new Topic."
+---
+
+# .NET - Topic()
+
+Creates a new Topic.
+
+```csharp
+using Nitric.Sdk;
+
+var updates = Nitric.Topic("updates");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the topic to create.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a new topic
+
+```csharp
+using Nitric.Sdk;
+
+var updates = Nitric.Topic("updates");
+
+Nitric.Run();
+```
+
+## See also
+
+- [topic.Subscribe()](./topic-subscribe)
+- [topic.Publish()](./topic-publish)

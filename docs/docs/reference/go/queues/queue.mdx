@@ -1,0 +1,137 @@
+---
+description: "Reference for Nitric's Go library - Creates a new Queue to send and receive asynchronous tasks."
+---
+
+# Go - NewQueue()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Queues
+  in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Creates a new Queue to send and receive asynchronous tasks.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+	queue := nitric.NewQueue("queue-name").Allow(queues.QueueEnqueue, queues.QueueDequeue)
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Queue within the app. Subsequent calls to `NewQueue`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**nitric.QueueEnqueue**
+
+This permission allows your service to enqueue new messages.
+
+---
+
+**nitric.QueueDequeue**
+
+This permission allows your service to dequeue messages and complete them.
+
+---
+
+### Notes
+
+In most instances, code should either enqueue or dequeue from a queue, usually not both.
+
+## Examples
+
+### Create a Queue
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+	queue := nitric.NewQueue("queue-name").Allow(queues.QueueEnqueue, queues.QueueDequeue)
+
+	nitric.Run()
+}
+```
+
+### Enqueue messages
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+	queue := nitric.NewQueue("queue-name").Allow(queues.QueueEnqueue, queues.QueueDequeue)
+
+	messages := []map[string]interface{}{
+		{
+			"message": "hello world",
+		},
+	}
+
+	failedMessages, err := queue.Enqueue(context.TODO(), messages)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	nitric.Run()
+}
+```
+
+### Dequeue messages
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+  queue := nitric.NewQueue("queue-name").Allow(queues.QueueDequeue)
+
+  ctx := context.TODO()
+
+  // dequeue up to 10 messages
+  messages, err := queue.Dequeue(ctx, 10)
+  if err != nil {
+    return
+  }
+
+  for _, message := range messages {
+    fmt.Println("Message: ", message.Message())
+
+    message.Complete(ctx)
+  }
+
+  nitric.Run()
+}
+```

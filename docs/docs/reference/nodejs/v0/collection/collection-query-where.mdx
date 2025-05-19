@@ -1,0 +1,64 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Adds a new where clause to a query, which filters the data returned."
+---
+
+# Node.js - collection.query.where()
+
+Adds a new where clause to a query, which filters the data returned.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query().where('name', 'startsWith', 'T')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="field" required type="string">
+    The document field to query.
+  </Property>
+  <Property name="operation" required type="string">
+    The query operation to perform.<br />
+    Valid values are: `startsWith | == | != | >= | <= | > | <`.
+  </Property>
+  <Property name="value" required type="string or number">
+    The value to compare against.
+  </Property>
+</Properties>
+
+### Notes
+
+Where clauses combined together are always considered `AND`
+
+## Examples
+
+### A simple query
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query().where('firstName', '==', 'Drake')
+```
+
+### Combining where clauses
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles
+  .query()
+  .where('firstName', '==', 'Drake')
+  .where('age', '>=', 21)
+```
+
+### See also
+
+- [query().fetch()](./collection-query-fetch)
+- [query().stream()](./collection-query-stream)

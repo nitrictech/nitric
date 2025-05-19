@@ -1,0 +1,159 @@
+---
+description: "Reference for Nitric's v0 JVM library - Creates a new Queue to send and receive asynchronous tasks."
+---
+
+# JVM - queue()
+
+Creates a new Queue to send and receive asynchronous tasks.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.QueuePermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var queue = Nitric.INSTANCE.queue("batch").with(QueuePermission.Send);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.QueuePermission
+
+fun main() {
+    val queue = Nitric.queue("batch").with(QueuePermission.Send)
+
+    Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this Queue within the app. Subsequent calls to `queue`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**QueuePermission.Send**
+
+This permission allows your code to send new tasks to the queue.
+
+---
+
+**QueuePermission.Receive**
+
+This permission allows your code to receive tasks from the queue.
+
+---
+
+<Note>
+  In most instances, code should either send to or receive from a queue, usually
+  not both.
+</Note>
+
+## Examples
+
+### Create a Queue
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.QueuePermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var queue = Nitric.INSTANCE.queue("batch").with(QueuePermission.Send);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.QueuePermission
+
+fun main() {
+    val queue = Nitric.queue("batch").with(QueuePermission.Send)
+
+    Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Receive tasks from a queue
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.QueuePermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var queue = Nitric.INSTANCE.queue("batch").with(QueuePermission.Receive);
+
+    var tasks = queue.receive(10);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.QueuePermission
+
+fun main() {
+    val queue = Nitric.queue("batch").with(QueuePermission.Receive)
+
+    val tasks = queue.receive()
+
+    Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

@@ -1,0 +1,62 @@
+---
+description: "Reference for Nitric's Go library - Subscribe a handler to a topic and receive new events for processing."
+---
+
+# Go - Topic.Subscribe()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Topics
+  in Nitric start with the [Async Messaging docs](/messaging#topics).
+</Note>
+
+Subscribe a handler to a topic and receive new events for processing.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  nitric.NewTopic("updates").Subscribe(func() {
+    fmt.Println("received update")
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="interface{}">
+    The callback to be triggered when new messages are sent to the topic.
+  </Property>
+</Properties>
+
+## Examples
+
+### Subscribe to a topic
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/topics"
+)
+
+func main() {
+  nitric.NewTopic("updates").Subscribe(func(ctx *topics.Ctx) {
+    fmt.Printf("received update %+v", ctx.Request.Message())
+  })
+
+  nitric.Run()
+}
+```
+
+### Notes
+
+- A function may only subscribe to a topic once, if multiple subscribers are required, create them in different functions.
+- A function may subscribe to OR publish to a topic but not both

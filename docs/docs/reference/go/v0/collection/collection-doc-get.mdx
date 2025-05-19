@@ -1,0 +1,48 @@
+---
+description: "Reference for Nitric's v0 Go library - Retrieve the value of a document."
+---
+
+# Go - Collection.Doc.Get()
+
+Retrieve the value of a document.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  doc, err := drakeProfileRef.Get(context.TODO())
+  if err != nil {
+    return
+  }
+
+  fmt.Println(doc.Content())
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+### See also
+
+- [Doc().Set()](./collection-doc-set)
+- [Doc().Delete()](./collection-doc-delete)
+- [Doc().Collection()](./collection-doc-collection)

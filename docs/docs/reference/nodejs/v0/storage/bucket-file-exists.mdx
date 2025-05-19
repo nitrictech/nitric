@@ -1,0 +1,29 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Determine if a file exists in a bucket."
+---
+
+# Node.js - bucket.file.exists()
+
+Determine if a file exists in a bucket.
+
+<Note>This API method is available from Release v0.16.0 and later.</Note>
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('reading')
+
+const exists = await assets.file('images/logo.png').exists()
+```
+
+## Examples
+
+### Determine if a file exists
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('reading')
+
+const exists = await assets.file('images/logo.png').exists()
+```

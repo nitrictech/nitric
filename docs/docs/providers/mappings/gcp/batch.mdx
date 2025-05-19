@@ -1,0 +1,27 @@
+---
+description: 'How Nitric deploys Batch Jobs to Google Cloud'
+---
+
+# Google Cloud Resources - Batch
+
+Nitric Batch Jobs are deployed to Google Cloud using [Batch](https://cloud.google.com/batch).
+
+## Google Cloud Resources
+
+The following resources are created when deploying Batch Jobs to Google Cloud:
+
+- Google Cloud Batch Compute Environments
+- Google Cloud Batch Job Queues
+- Google Cloud Batch Job Definitions
+- EC2 Instances
+- EC2 Security Groups
+- ECR Images
+- IAM Policies
+
+## Deployment
+
+During deployment the Nitric CLI deploys your batch jobs:
+
+- Built container images are pushed to the [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/) as private images
+- Files referenced by the `batch-services` key in the `nitric.yaml` file are built into Job Definitions
+- IAM policies are created

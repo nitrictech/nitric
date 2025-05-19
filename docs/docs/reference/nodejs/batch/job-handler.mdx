@@ -1,0 +1,87 @@
+---
+description: "Reference for Nitric's Node.js library - Register a job handler"
+---
+
+# Node.js - job.handler()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Batch Services in Nitric start with the [Batch docs](/batch).
+</Note>
+
+Job handlers are the code that is run when a job request is submitted. These handlers should be written in a separate file to your services.
+
+```ts
+import { job, JobContext } from '@nitric/sdk'
+
+const analyze = job('analyze')
+
+analyze.handler(
+  async (ctx: JobContext) => {
+    // Do some work
+    return ctx
+  },
+  { cpus: 1, memory: 1024, gpus: 0 },
+)
+```
+
+## Defining Batches
+
+Batches are defined in different files to services and referenced in a project's `nitric.yaml` file. For example:
+
+```yaml
+batch-services:
+  - match: ./services/*.ts
+    start: yarn dev:services $SERVICE_PATH
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="JobMiddleware or JobMiddleware[]">
+    One or more middleware services to use as the handler which will run on the
+    defined frequency.
+  </Property>
+  <Property name="opts" type="JobResourceRequirements" nested>
+    <Property name="cpus" type="number">
+      The number of CPUs to allocate to the handler
+    </Property>
+    <Property name="gpus" type="number">
+      The number of GPUs to allocate to the handler
+    </Property>
+    <Property name="memory" type="number">
+      The amount of memory (MB) to allocate to the handler
+    </Property>
+  </Property>
+</Properties>
+
+## Examples
+
+### Define a job handler with default resource requirements
+
+```ts
+import { job, JobContext } from '@nitric/sdk'
+
+const analyze = job('analyze')
+
+analyze.handler(async (ctx: JobContext) => {
+  // Do some work
+  return ctx
+})
+```
+
+### Create a job handler with custom resource requirements
+
+```ts
+import { job, JobContext } from '@nitric/sdk'
+
+const analyze = job('analyze')
+
+analyze.handler(
+  async (ctx: JobContext) => {
+    // Do some work
+    return ctx
+  },
+  { cpus: 1, memory: 2048, gpus: 0 },
+)
+```

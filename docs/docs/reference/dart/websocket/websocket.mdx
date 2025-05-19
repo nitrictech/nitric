@@ -1,0 +1,37 @@
+---
+description: "Reference for Nitric's Dart library - Create Websockets with the Nitric Dart SDK"
+---
+
+# Dart - websocket()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Creates a new Websocket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this Websocket within the app. Subsequent calls to
+    `websocket()` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Websocket
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+```

@@ -1,0 +1,174 @@
+---
+description: "Reference for Nitric's v0 JVM library - Adds a new where clause to a query, which filters the data returned."
+---
+
+# JVM - collection.query.where()
+
+Adds a new where clause to a query, which filters the data returned.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+import io.nitric.api.documents.v0.Operator;
+
+// A user class to store in the profiles collection
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profilesQuery = profiles.query().where("name", Operator.STARTS_WITH, "T");
+
+    NITRIC.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+import io.nitric.api.documents.v0.Operator
+
+// A user class to store in the profiles collection
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profilesQuery = profiles.query().where("name", Operator.STARTS_WITH, "T")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="field" required type="String">
+    The document field to query.
+  </Property>
+  <Property name="operation" required type="Operator">
+    The query operation to perform.
+    <br />
+    Valid values are: `STARTS_WITH | EQ | NEQ | GTE | LTE | GT | LT`.
+  </Property>
+  <Property name="value" required type="String or Int or Boolean">
+    The value to compare against.
+  </Property>
+</Properties>
+
+<Note>Where clauses combined together are always considered `AND`</Note>
+
+## Examples
+
+### A simple query
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+import io.nitric.api.documents.v0.Operator;
+
+// A user class to store in the profiles collection
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profilesQuery = profiles.query().where("name", Operator.STARTS_WITH, "T");
+
+    NITRIC.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+import io.nitric.api.documents.v0.Operator
+
+// A user class to store in the profiles collection
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profilesQuery = profiles.query().where("name", Operator.STARTS_WITH, "T")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Combining where clauses
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+var profileQuery = profiles
+  .query()
+  .where("firstName", Operator.EQ, "Drake")
+  .where("age", Operator.GTE, 21)
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+val profileQuery = profiles
+  .query()
+  .where("firstName", Operator.EQ, "Drake")
+  .where("age", Operator.GTE, 21);
+```
+
+</TabItem>
+
+</Tabs>
+
+### See also
+
+- [query().fetch()](./collection-query-fetch)
+- [query().stream()](./collection-query-stream)

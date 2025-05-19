@@ -1,0 +1,37 @@
+---
+description: "Reference for Nitric's v0 Python library - Get a query-only sub-collection reference, this can be used to query commonly named collections across documents."
+---
+
+# Python - collection.collection()
+
+Get a query-only sub-collection reference, this can be used to query commonly named collections across documents.
+
+```python
+from nitric.resources import collection
+
+enemies = collection('profiles').allow('reading','writing').collection('enemies')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the sub-collection to reference.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a query for a sub collection
+
+```python
+from nitric.resources import collection
+
+enemies = collection('profiles').allow('reading').collection('enemies')
+
+enemiesQuery = enemies.query()
+```
+
+## See also
+
+- [collection().query()](./collection-query)

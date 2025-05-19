@@ -1,0 +1,46 @@
+---
+description: "Reference for Nitric's v0 Go library - Create a reference to a file within a bucket."
+---
+
+# Go - Bucket.File()
+
+Create a reference to a file within a bucket.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  bucket, err := nitric.NewBucket("bucket-name").With(nitric.BucketReading)
+  if err != nil {
+    return
+  }
+
+  file := bucket.File("cat.png")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name/reference to the file.
+  </Property>
+</Properties>
+
+### Notes
+
+The file does not need to exist, only a reference to that file is being created.
+
+## Available Operations
+
+- [File.Read()](./bucket-file-read)
+- [File.Write()](./bucket-file-write)
+- [File.Delete()](./bucket-file-delete)
+- [File.GetDownloadUrl()](./bucket-file-downloadurl)
+- [File.GetUploadUrl()](./bucket-file-uploadurl)

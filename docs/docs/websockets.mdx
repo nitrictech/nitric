@@ -1,0 +1,473 @@
+---
+description: 'Connect and manage websockets with Nitric'
+---
+
+# Websockets
+
+Nitric provides support for serverless websockets. This feature allows you to connect client applications to your Nitric services using websocket gateways such as AWS APIGateway.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/websockets).
+
+<Note>
+  Projects with websockets will only be deployable to AWS at the moment. If you
+  require support for additional clouds let us know:
+  https://github.com/nitrictech/nitric/issues
+</Note>
+
+## Listening for events
+
+There are three events that must be defined to deploy a valid websocket implementation. These are `connect`, `disconnect` and `message`.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+socket.on('connect', async (ctx) => {
+  // handle connections
+})
+
+socket.on('disconnect', async (ctx) => {
+  // handle disconnections
+})
+
+socket.on('message', async (ctx) => {
+  // handle messages
+})
+```
+
+```typescript !!
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+socket.on('connect', async (ctx) => {
+  // handle connections
+})
+
+socket.on('disconnect', async (ctx) => {
+  // handle disconnections
+})
+
+socket.on('message', async (ctx) => {
+  // handle messages
+})
+```
+
+```python !!
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+socket = websocket("socket")
+
+@socket.on("connect")
+async def on_connect(ctx):
+  # handle connections
+
+@socket.on("disconnect")
+async def on_disconnect(ctx):
+  # handle disconnections
+
+@socket.on("message")
+async def on_message(ctx):
+  # handle messages
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  socket := nitric.NewWebsocket("socket")
+
+  socket.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    // handle connections
+  })
+
+  socket.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    // handle disconnections
+  })
+
+  socket.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+    // handle messages
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+
+socket.onConnect((ctx) async {
+  // handle connections
+});
+
+socket.onDisconnect((ctx) async {
+  // handle disconnections
+});
+
+socket.onMessage((ctx) async {
+  // handle messages
+});
+```
+
+</CodeSwitcher>
+
+## Managing connections
+
+Nitric connects your services to a websocket interface, but it is up to you to manage the connections. Nitric provides `kv`
+out of the box that can be used to do this or you can use any other store or database you like.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { websocket, kv } from '@nitric/sdk'
+
+// Initialize KV store for connections and a WebSocket
+const kvStore = kv('connections').allow('get', 'set', 'delete')
+const socket = websocket('example-websocket')
+
+// Handle new connections
+socket.on('connect', async (ctx) => {
+  await kvStore.set(ctx.req.connectionId, {
+    /* connection meta data here */
+  })
+})
+
+// Handle disconnections
+socket.on('disconnect', async (ctx) => {
+  const disconnectedId = ctx.req.connectionId
+  await kvStore.delete(disconnectedId)
+})
+```
+
+```typescript !!
+import { websocket, kv } from '@nitric/sdk'
+
+// Initialize KV store for connections and a WebSocket
+const kvStore = kv('connections').allow('get', 'set', 'delete')
+const socket = websocket('example-websocket')
+
+// Handle new connections
+socket.on('connect', async (ctx) => {
+  await kvStore.set(ctx.req.connectionId, {
+    /* connection meta data here */
+  })
+})
+
+// Handle disconnections
+socket.on('disconnect', async (ctx) => {
+  const disconnectedId = ctx.req.connectionId
+  await kvStore.delete(disconnectedId)
+})
+```
+
+```python !!
+from nitric.resources import websocket, kv
+from nitric.application import Nitric
+
+socket = websocket("socket")
+connections = kv("connections").allow("get", "set", "delete")
+
+@socket.on("connect")
+async def on_connect(ctx):
+  connection_list = await connections.get("connections")
+  await connections.set([
+    *connection_list,
+    {
+      # Store any metadata related to the connection here
+      "connectionId": ctx.req.connection_id
+    }
+  ])
+
+@socket.on("disconnect")
+async def on_disconnect(ctx):
+  connection_list = await connections.get('connections')
+  await connections.set(
+    'connections',
+    filter(lambda c: c.connection_id == ctx.req.connection_id, connection_list)
+  )
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  socket := nitric.NewWebsocket("socket")
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Register a new connection on connect
+  socket.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    _ = connections.Set(context.TODO(), ctx.Request.ConnectionID(), map[string]interface{}{
+      // Store any metadata related to the connection here
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+  })
+
+  // Remove a registered connection on disconnect
+  socket.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    _ = connections.Delete(context.TODO(), ctx.Request.ConnectionID())
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+final connections = Nitric.store("connections").allow([
+  KeyValueStorePermission.get,
+  KeyValueStorePermission.set,
+  KeyValueStorePermission.delete,
+]);
+
+socket.onConnect((ctx) async {
+  await connections.set(ctx.req.connectionId, {
+    // Store any metadata related to the connection here
+    "creation_time": DateTime.now(),
+  });
+
+  return ctx;
+});
+
+socket.onDisconnect((ctx) async {
+  await connections.delete(ctx.req.connectionId);
+});
+```
+
+</CodeSwitcher>
+
+## Sending Messages
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { websocket, kv } from '@nitric/sdk'
+
+// Initialize KV store for connections and a WebSocket
+const kvStore = kv('connections').allow('get', 'set', 'delete')
+const socket = websocket('example-websocket')
+
+// Handle new connections
+socket.on('connect', async (ctx) => {
+  await kvStore.set(ctx.req.connectionId, {
+    /* connection meta data here */
+  })
+})
+
+// Handle disconnections
+socket.on('disconnect', async (ctx) => {
+  const disconnectedId = ctx.req.connectionId
+  await kvStore.delete(disconnectedId)
+})
+
+// Send messages
+socket.on('message', async (ctx) => {
+  const message = ctx.req.text()
+  const connections = kvStore.keys()
+
+  // Send the message to each connection
+  try {
+    for await (const connectionId of connections) {
+      await socket.send(connectionId, message)
+    }
+  } catch (error) {
+    console.error('Error during message broadcasting:', error)
+  }
+})
+```
+
+```typescript !!
+import { websocket, kv } from '@nitric/sdk'
+
+// Initialize KV store for connections and a WebSocket
+const kvStore = kv('connections').allow('get', 'set', 'delete')
+const socket = websocket('example-websocket')
+
+// Handle new connections
+socket.on('connect', async (ctx) => {
+  await kvStore.set(ctx.req.connectionId, {
+    /* connection meta data here */
+  })
+})
+
+// Handle disconnections
+socket.on('disconnect', async (ctx) => {
+  const disconnectedId = ctx.req.connectionId
+  await kvStore.delete(disconnectedId)
+})
+
+// Send messages
+socket.on('message', async (ctx) => {
+  const message = ctx.req.text()
+  const connections = kvStore.keys()
+
+  // Send the message to each connection
+  try {
+    for await (const connectionId of connections) {
+      await socket.send(connectionId, message)
+    }
+  } catch (error) {
+    console.error('Error during message broadcasting:', error)
+  }
+})
+```
+
+```python !!
+from nitric.resources import websocket, kv
+from nitric.application import Nitric
+
+socket = websocket("socket")
+connections = kv("connections").allow("get", "set", "delete")
+
+@socket.on("connect")
+async def on_connect(ctx):
+  connection_list = await connections.get("connections")
+  await connections.set([
+    *connection_list,
+    {
+      # Store any metadata related to the connection here
+      "connectionId": ctx.req.connection_id
+    }
+  ])
+
+@socket.on("disconnect")
+async def on_disconnect(ctx):
+  connection_list = await connections.get('connections')
+  await connections.set(
+    'connections',
+    filter(lambda c: c.connection_id == ctx.req.connection_id, connection_list)
+  )
+
+async def broadcast(data):
+  connection_list = await connections.get("connections")
+
+  for connection in connection_list:
+    # Send message to a connection
+    await socket.send(connection.connection_id, data)
+
+
+@socket.on("message")
+async def on_message(ctx):
+  # broadcast message to all clients (including the sender)
+  await broadcast(ctx.req.data)
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  socket := nitric.NewWebsocket("socket")
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Register a new connection on connect
+  socket.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    _ = connections.Set(context.TODO(), ctx.Request.ConnectionID(), map[string]interface{}{
+      // Store any metadata related to the connection here
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+  })
+
+  // Remove a registered connection on disconnect
+  socket.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    _ = connections.Delete(context.TODO(), ctx.Request.ConnectionID())
+  })
+
+  // Broadcast message to all the registered websocket connections
+  socket.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+    connectionStream, _ := connections.Keys(context.TODO())
+
+    for {
+      connectionId, err := connectionStream.Recv()
+      if err != nil {
+        break // reached the end of the documents
+      }
+
+      // Send a message to a connection
+      _ = socket.Send(context.TODO(), connectionId, []byte(ctx.Request.Message()))
+    }
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final socket = Nitric.websocket("socket");
+final connections = Nitric.store("connections").allow([
+  KeyValueStorePermission.get,
+  KeyValueStorePermission.set,
+  KeyValueStorePermission.delete,
+]);
+
+socket.onConnect((ctx) async {
+  await connections.set(ctx.req.connectionId, {
+    // add metadata
+    "creation_time": DateTime.now(),
+  });
+
+  return ctx;
+});
+
+socket.onDisconnect((ctx) async {
+  await connections.delete(ctx.req.connectionId);
+});
+
+// broadcast message to all clients (including the sender)
+socket.onMessage((ctx) async {
+  final conns = await connections.keys();
+
+  await Future.wait(await conns.map((conn) async {
+    // Send a message to a connection
+    return socket.send(conn, ctx.req.message);
+  }).toList());
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+<Note>
+  Do not send messages to a connection during it's `connect` callback, if you
+  need to acknowledge connection, do so by using a [topic](./messaging)
+</Note>
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/websockets)
+- Azure - Not implemented
+- Google Cloud - Not implemented
+
+If you need support for additional clouds, let us know by [opening an issue](https://github.com/nitrictech/nitric/issues) or joining the conversation on [Discord](https://nitric.io/chat).

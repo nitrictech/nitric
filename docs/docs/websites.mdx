@@ -1,0 +1,271 @@
+---
+description: 'Hosting and managing websites with Nitric'
+---
+
+# Websites
+
+Nitric provides a simple way to deploy websites to the cloud, allowing you to serve website assets in a serverless environment without managing complex infrastructure.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/websites).
+
+<Note>
+  At this time, websites can only be deployed as static assets. If you require
+  more advanced features, let us know:
+  https://github.com/nitrictech/nitric/issues
+</Note>
+
+<Note>
+  When deploying website with the `nitric/gcp` provider a custom domain and DNS
+  zone will be required. See the [`nitric/gcp`
+  docs](/providers/pulumi/gcp#websites) for details.
+</Note>
+
+## Overview
+
+Nitric's website resource lets you:
+
+- Serve static files (HTML, JS, CSS, images) from cloud storage.
+- Serve your entire Nitric application from a single domain.
+- APIs are automatically served under `/api` and websites are served under `/`.
+- Deploy to various supported providers with minimal configuration.
+- Use infrastructure from code to keep your environment consistent.
+
+### About API Routes
+
+API route rewrites (under `/api`) are **only enabled if you have at least one website defined** in your project.  
+We are exploring options to allow enabling API routing independently of websites in the future.
+
+## Enabling Websites
+
+Websites are currently in [Preview](/reference/preview-features). To enable this feature in your project add the following to your `nitric.yaml` file.
+
+```yaml
+preview:
+  - websites
+```
+
+## Create a Website
+
+### 1. Create your website project
+
+Create a new website project using your preferred framework. For example, using [Astro](https://astro.build/) within your nitric project:
+
+```bash
+npm create astro@latest my-website
+```
+
+### 2. Add a website resources
+
+Add a website resource to your `nitric.yaml` file.
+
+```yaml
+websites:
+  - basedir: ./my-website
+    build:
+      command: npm run build
+      output: ./dist
+    dev:
+      command: npm run dev -- --port 4322
+      url: http://localhost:4322
+```
+
+### Alternative: Using the Nitric CLI
+
+You can also add a website to your project using the Nitric CLI's `add website` command:
+
+```bash
+nitric add website
+```
+
+This will walk you through an interactive process to:
+
+- Name your website
+- Select a tool/framework (currently supports [Astro](https://astro.build/), [Vite](https://vite.dev/), and [Hugo](https://gohugo.io/))
+- Configure the website's base URL path and dev server port
+
+You can also specify the website name and tool directly:
+
+```bash
+# For Astro
+nitric add website my-site astro
+
+# For Vite
+nitric add website my-site vite
+
+# For Hugo
+nitric add website my-site hugo
+```
+
+The command will automatically:
+
+1. Create a new website project using the framework's official package manager commands
+2. Add the necessary configuration to your `nitric.yaml` file
+3. Set up the build and development commands using the framework's native tools
+
+### 3. Start your website locally
+
+Run `nitric start` to start your website locally. This will use the `dev` configuration, which proxies requests to your local development server.
+
+Run `nitric run` command to run your production website locally. This will use the `build` configuration and serve the static files.
+
+### 4. Deploy your website
+
+Run `nitric up` to deploy your website to the cloud.
+
+## Sub Sites
+
+You can also configure sub-sites under different paths. These will be deployed as subdirectories of the main site.
+
+Here is an example configuration:
+
+```yaml
+websites:
+  - basedir: ./my-website
+    build:
+      command: npm run build
+      output: ./dist
+    dev:
+      command: npm run dev -- --port 4322
+      url: http://localhost:4322
+  # the sub site is served under /docs, ensure you do not have conflicting routes
+  - basedir: ./docs-website
+    path: /docs
+    build:
+      command: npm run build
+      output: ./dist
+    dev:
+      command: npm run dev -- --port 4323
+      url: http://localhost:4323
+```
+
+## Why Are All Sites Behind a Single Domain?
+
+Currently, Nitric serves all websites behind a single domain to simplify deployment and management. This approach ensures that your API and website can coexist without CORS issues and allows for relative path usage in your frontend code. Additionally, serving all sites behind a single domain can reduce costs associated with managing multiple domains.
+
+At this time, configuring multiple domains for different websites is not supported. However, we understand the need for this feature and may support multiple domains in the future.
+
+## Conflicting Routes
+
+If you have conflicting routes between your API and website or between multiple sub-sites, you can configure the `path` for each website to avoid conflicts.
+
+### What Happens If There Are Overlapping Paths?
+
+If Nitric detects overlapping paths between websites, an error will be raised during development and deployment.
+
+However, client-side routes (like React Router) are not detected at deployment time — so be careful when designing single-page apps to avoid unexpected overlaps.
+
+### Reserved Paths
+
+The following paths are reserved for use by the Nitric framework and cannot be used as website paths:
+
+- `/api` - used to rewrite API requests
+- `/ws` - used to rewrite websocket requests
+
+We are looking at making the **rewrite path configurable** in the future, so you will have more flexibility in defining your own path structure.
+
+## API and Websocket Routes
+
+When you have at least **one website enabled**, Nitric automatically serves your API under the `/api` path and websocket routes under the `/ws` path.
+
+### Accessing Routes
+
+You can access your API routes at:
+
+```bash
+https://<your-cdn-endpoint>/api/<your-api>/<your-route>
+```
+
+And connect to websocket routes at:
+
+```bash
+https://<your-cdn-endpoint>/ws/<your-websocket>
+```
+
+### When Are Routes Enabled?
+
+Both API and websocket route rewrites are **only enabled if you have at least one website defined** in your project.  
+We are exploring options to allow enabling these routes **without requiring a website** in the future.
+
+### Why This Approach?
+
+By serving your API and websocket routes under the same domain as your website, you avoid **CORS issues** and can use **relative paths** to access your routes directly from your frontend code.
+
+### Example Usage
+
+Here's how to use both API and websocket routes in your frontend code:
+
+```javascript
+// API Example
+async function fetchData() {
+  // due to apis being served from the same domain thanks to rewrites, no CORS is required
+  const response = await fetch('/api/main/hello')
+  const data = await response.json()
+  console.log(data)
+}
+
+// Websocket Example with a websocket named `chat`
+const ws = new WebSocket('/ws/chat')
+
+ws.onmessage = (event) => {
+  console.log(event.data)
+}
+
+ws.send('Hello, server!')
+```
+
+## Support for Frameworks like Next.js
+
+If you're new to deploying websites with Nitric, you might wonder whether frameworks like **Next.js** will work by default.
+
+- **Built static websites** (where your framework generates static assets, such as HTML, CSS, and JavaScript files) are fully supported.
+- **Server-side rendering (SSR)** and **framework-specific API routes** (like Next.js API routes) are **not currently supported**.
+
+If you are using **Next.js**, you can follow the official guide on [static exports](https://nextjs.org/docs/app/building-your-application/deploying/static-exports) to generate a fully static version of your site.
+
+We are actively exploring options to **support server-side applications**, including frameworks like Next.js, in the future.
+
+## Configuration
+
+Here is a breakdown of the configuration options:
+
+```yaml
+websites:
+  - # The path to the website project directory
+    basedir: ./my-website
+    # The path to the website when deployed
+    path: /
+    # The default file to serve when no file is specified
+    index: index.html
+    # The file to serve when a 404 error occurs
+    error: 404.html
+    # The build options for the website
+    build:
+      # The command to build your website
+      command: npm run build
+      # The output directory for the build command
+      output: ./dist
+    # dev configuration is used by the `nitric start` command
+    dev:
+      # The command to run your website locally
+      command: npm run dev -- --port 4322
+      # The URL to access your website locally
+      url: http://localhost:4322
+```
+
+## Custom Domains
+
+You can configure a custom domain for your website by following the instructions in the cloud provider documentation:
+
+- [AWS](/providers/pulumi/aws#websites)
+- [Azure](/providers/pulumi/azure#websites)
+- [Google Cloud](/providers/pulumi/gcp#websites)
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/websites)
+- [Azure](/providers/mappings/azure/websites)
+- [Google Cloud](/providers/mappings/gcp/websites)
+
+If you need support for additional clouds or website types, let us know by [opening an issue](https://github.com/nitrictech/nitric/issues) or joining the conversation on [Discord](https://nitric.io/chat).

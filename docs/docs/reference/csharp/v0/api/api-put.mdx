@@ -1,0 +1,121 @@
+---
+description: "Reference for Nitric's v0 .NET library - Register an API route and set a specific HTTP PUT handler on that route."
+---
+
+# .NET - Api.Put()
+
+Register an API route and set a specific HTTP PUT handler on that route.
+
+<Note>
+  This method is a convenient short version of
+  [api().route().put()](./api-route-put)
+</Note>
+
+```csharp
+using Nitric.Sdk;
+
+var api = Nitric.Api("main");
+
+api.Put("/hello/:name", context => {
+  var name = context.Req.PathParams.get("name");
+
+  context.Res.Text($"Updating {name}!");
+
+  return context;
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" type="string" required>
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers. See [create
+    a route with path params](#create-a-route-with-path-params)
+  </Property>
+  <Property
+    name="...middleware"
+    type="Middleware&lt;HttpContext&gt; or Func&lt;HttpContext, HttpContext&gt;"
+    required
+  >
+    One or more middleware functions to use as the handler for HTTP requests.
+    Handlers can be sync or async.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for PUT requests
+
+```csharp
+using Nitric.Sdk;
+
+var api = Nitric.Api("main");
+
+api.Put("/hello/:name", context => {
+  var name = context.Req.PathParams.get("name");
+
+  context.Res.Text($"Updating {name}!");
+
+  return context;
+});
+
+Nitric.Run();
+```
+
+### Chain functions as a single method handler
+
+When multiple functions are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+```csharp
+using Nitric.Sdk;
+
+var api = Nitric.Api("main");
+
+api.Put("/hello/:userId",
+  (context, next) => {
+    var user = context.Req.PathParams["userId"];
+
+    // Validate the user identity
+    if (user != "1234")
+    {
+        context.Res.Text($"User {user} is unauthorised");
+        context.Res.Status = 403;
+
+        // Return prematurely to end the middleware chain.
+        return context;
+    }
+
+    // Call next to continue the middleware chain.
+    return next(context);
+  }, (context, next) => {
+    var user = context.Req.PathParams["userId"];
+
+    context.Res.Text($"Updating {user}");
+
+    return next(context);
+  }
+);
+
+Nitric.Run();
+```
+
+### Access the request body
+
+The PUT request body is accessible from the `ctx.req` object.
+
+```csharp
+using Nitric.Sdk;
+
+var api = Nitric.Api("main");
+
+api.Put("/hello/:name", context => {
+  var body = context.Req.Json<Dictionary<string, string>>();
+  // parse, validate and store the request payload...
+});
+
+Nitric.Run();
+```

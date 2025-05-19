@@ -1,0 +1,406 @@
+---
+description: Use the Nitric framework to easily build and deploy Deno REST APIs for AWS, Azure, or GCP
+title_seo: Building your first API with Deno and Nitric
+tags:
+  - API
+  - Key Value Store
+languages:
+  - typescript
+published_at: 2024-12-24
+---
+
+# Building a REST API with Nitric and Deno
+
+This guide will show you how to build a serverless REST API with the Nitric framework using [Deno](https://deno.com/). The example API enables getting, setting, and editing basic user profile information using a Nitric [key value store](/keyvalue) to store user data. Once the API is created, we'll test it locally, then optionally deploy it to a cloud provider of your choice.
+
+The API will provide the following routes:
+
+| **Method** | **Route**      | **Description**                  |
+| ---------- | -------------- | -------------------------------- |
+| `GET`      | /profiles/[id] | Get a specific profile by its Id |
+| `POST`     | /profiles      | Create a new profile             |
+| `DELETE`   | /profiles/[id] | Delete a profile                 |
+
+There is also an extended section of the guide that adds file operations using a Nitric [bucket](/storage) to store and retrieve profile pictures. The extension adds these routes to the API:
+
+| **Method** | **Route**                     | **Description**                   |
+| ---------- | ----------------------------- | --------------------------------- |
+| `GET`      | /profiles/[id]/image/upload   | Get a profile image upload URL    |
+| `GET`      | /profiles/[id]/image/download | Get a profile image download URL  |
+| `GET`      | /profiles/[id]/image/view     | View the image that is downloaded |
+
+---
+
+## Prerequisites
+
+Ensure you have the following installed:
+
+- [Deno](https://docs.deno.com/runtime/getting_started/installation/)
+- [Nitric CLI](https://nitric.io/docs/installation)
+- A supported code editor like VS Code with the [Deno extension](https://docs.deno.com/runtime/reference/vscode/) installed.
+- _(optional)_ Your choice of an [AWS](https://aws.amazon.com), [GCP](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account
+
+---
+
+## Getting started
+
+Let's start by creating a new project from a Nitric TypeScript template, this will provide a base to start building the API.
+
+```bash
+nitric new my-profile-api ts-starter-deno
+```
+
+Next, open the project in your editor of choice.
+
+```bash
+cd my-profile-api
+```
+
+Make sure all dependencies are resolved:
+
+```bash
+deno install
+```
+
+The scaffolded project should have the following structure:
+
+```text
+services/
+├── api.ts
+node_modules/
+deno.dockerfile
+deno.dockerfile.dockerignore
+deno.json
+package.json
+nitric.yaml
+README.md
+```
+
+You can test the project to verify everything is working as expected:
+
+```bash
+nitric start
+```
+
+If everything's working you can now delete all files in the `services/` folder, we'll create new services in this guide.
+
+## Building the API
+
+This example uses UUIDs to create unique IDs to store profiles against, let's start by adding a library to help with that:
+
+```bash
+deno install npm:uuid
+```
+
+Applications built with Nitric can contain many APIs, let's start by adding one to this project to serve as the public endpoint. Create a file named `profiles.ts` in the services directory and add the following code to that file.
+
+```typescript title:services/profiles.ts
+import { api, kv } from 'npm:@nitric/sdk'
+import { v4 as uuid } from 'npm:uuid'
+
+// Define a profile interface
+interface Profile {
+  id: string
+  name: string
+  age: number
+  homeTown: string
+}
+
+// Create an API named 'public'
+const profileApi = api('public')
+
+// Define a key value store named 'profiles', then request get, set and delete permissions
+const profiles = kv<Profile>('profiles').allow('get', 'set', 'delete')
+```
+
+Here we're creating an API named `public` and key value store named `profiles`, then requesting get and set permissions which allows our function to access the key value store.
+
+<Note>
+  Resources in Nitric like `api` and `key value store` represent high-level
+  cloud resources. When your app is deployed Nitric automatically converts these
+  requests into appropriate resources for the specific [provider](/providers).
+  Nitric also takes care of adding the IAM roles, policies, etc. that grant the
+  requested access. For example the `key value store` resource uses DynamoDB in
+  AWS or FireStore on Google Cloud.
+</Note>
+
+### Create profiles with POST
+
+Next we will add features that allow our API consumers to work with profile data.
+
+<Note>
+  You could separate some or all of these handlers into their own files if you
+  prefer. For simplicity we'll group them together in this guide.
+</Note>
+
+```typescript title:services/profiles.ts
+profileApi.post('/profiles', async (ctx) => {
+  const id = uuid()
+  const { name, age, homeTown } = ctx.req.json()
+
+  try {
+    // Create a new profile
+    await profiles.set(id, {
+      id,
+      name,
+      age,
+      homeTown,
+    })
+
+    // Set a JSON HTTP response
+    ctx.res.json({
+      msg: `Profile with id ${id} created.`,
+    })
+  } catch (error) {
+    ctx.res.status = 500
+    ctx.res.json({
+      msg: `Failed to create profile.`,
+    })
+  }
+})
+```
+
+### Retrieve a profile with GET
+
+```typescript title:services/profiles.ts
+profileApi.get('/profiles/:id', async (ctx) => {
+  const { id } = ctx.req.params
+
+  try {
+    // Get a profile by id
+    const profile = await profiles.get(id)
+
+    // Set a JSON HTTP response
+    ctx.res.json(profile)
+  } catch (error) {
+    ctx.res.status = 404
+    ctx.res.json({
+      msg: `Profile with id ${id} not found.`,
+    })
+  }
+})
+```
+
+### Remove a profile with DELETE
+
+```typescript title:services/profiles.ts
+profileApi.delete('/profiles/:id', async (ctx) => {
+  const { id } = ctx.req.params
+
+  try {
+    // Delete a profile by id
+    await profiles.delete(id)
+
+    // Set a JSON HTTP response
+    ctx.res.json({
+      msg: `Profile with id ${id} deleted.`,
+    })
+  } catch (error) {
+    ctx.res.status = 404
+    ctx.res.json({
+      msg: `Profile with id ${id} not found.`,
+    })
+  }
+})
+```
+
+### List all profiles with GET
+
+```typescript title:services/profiles.ts
+profileApi.get('/profiles', async (ctx) => {
+  try {
+    const profilesList = []
+    // Get a profile by id
+    const keys = profiles.keys()
+
+    for await (const key of keys) {
+      const profile = await profiles.get(key)
+      profilesList.push(profile)
+    }
+
+    // Set a JSON HTTP response
+    ctx.res.json(profilesList)
+  } catch (error) {
+    ctx.res.status = 404
+    ctx.res.json({
+      msg: `Profiles not found.`,
+    })
+  }
+})
+```
+
+## Ok, let's run this thing!
+
+Now that you have an API defined with handlers for each of its methods, it's time to test it locally.
+
+```bash
+nitric start
+```
+
+Once it starts, your services will receive requests via the API port. You can use the Local Dashboard or any HTTP client to test the API. We'll keep it running for our tests.
+
+## Test the API
+
+Below are some example requests you can use to test the API. You'll need to update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+### Create Profile
+
+```bash
+curl --location --request POST 'http://localhost:4001/profiles' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "name": "Peter Parker",
+    "age": "21",
+    "homeTown" : "Queens"
+}'
+```
+
+### Fetch Profile
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]'
+```
+
+### Fetch All Profiles
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles'
+```
+
+### Delete Profile
+
+```bash
+curl --location --request DELETE 'http://localhost:4001/profiles/[id]'
+```
+
+## Deploy to the cloud
+
+At this point, you can deploy the application to any supported cloud provider. Start by setting up your credentials and any configuration for the cloud you prefer:
+
+- [AWS](/providers/pulumi/aws)
+- [Azure](/providers/pulumi/azure)
+- [Google Cloud](/providers/pulumi/gcp)
+
+Next, we'll need to create a `stack`. Stacks represent deployed instances of an application, including the target provider and other details such as the deployment region. You'll usually define separate stacks for each environment such as development, testing and production.
+
+```bash
+nitric stack new dev
+```
+
+Continue by checking your stack file `nitric.dev.yaml` and adding in your preferred region, let's use `us-east-1`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target aws region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-1
+```
+
+<Note>
+  Cloud deployments incur costs and while most of these resource are available
+  with free tier pricing you should consider the costs of the deployment.
+</Note>
+
+We can deploy our application using the following command:
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your API. If you'd like to make changes to the API you can apply those changes by re-running the `up` command. Nitric will automatically detect what's changed and just update the relevant cloud resources.
+
+When you're done testing your application you can tear it down from the cloud, use the `down` command:
+
+```bash
+nitric down
+```
+
+## Optional - Add profile image upload/download support
+
+If you want to go a bit deeper and create some other resources with Nitric, why not add images to your profiles API.
+
+### Access profile buckets with permissions
+
+Define a bucket named `profilesImg` with reading/writing permissions.
+
+```typescript title:services/profiles.ts
+import { bucket } from 'npm:@nitric/sdk'
+
+const profilesImg = bucket('profilesImg').allow('read', 'write')
+```
+
+### Get a URL to upload a profile image
+
+```typescript title:services/profiles.ts
+profileApi.get('/profiles/:id/image/upload', async (ctx) => {
+  const { id } = ctx.req.params
+
+  // Return a signed upload URL, which provides temporary access to upload a file.
+  const photoUrl = await profilesImg
+    .file(`images/${id}/photo.png`)
+    .getUploadUrl()
+
+  ctx.res.json({
+    url: photoUrl,
+  })
+})
+```
+
+### Get a URL to download a profile image
+
+```typescript title:services/profiles.ts
+profileApi.get('/profiles/:id/image/download', async (ctx) => {
+  const { id } = ctx.req.params
+
+  // Return a signed download URL, which provides temporary access to download a file.
+  const photoUrl = await profilesImg
+    .file(`images/${id}/photo.png`)
+    .getDownloadUrl()
+
+  ctx.res.json({
+    url: photoUrl,
+  })
+})
+```
+
+You can also return a redirect response that takes the HTTP client directly to the photo URL.
+
+```typescript title:services/profiles.ts
+profileApi.get('/profiles/:id/image/view', async (ctx) => {
+  const { id } = ctx.req.params
+
+  // Redirect to a signed read-only file URL.
+  const photoUrl = await profilesImg
+    .file(`images/${id}/photo.png`)
+    .getDownloadUrl()
+
+  ctx.res.status = 303
+  ctx.res.headers['Location'] = [photoUrl]
+})
+```
+
+### Test the extended API
+
+Update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+#### Get an image upload URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/upload'
+```
+
+#### Using the upload URL with curl
+
+```bash
+curl --location --request PUT '[url]' \
+--header 'content-type: image/png' \
+--data-binary '@/home/user/Pictures/photo.png'
+```
+
+#### Get an image download URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/download'
+```

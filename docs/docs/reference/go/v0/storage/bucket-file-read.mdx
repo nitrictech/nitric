@@ -1,0 +1,69 @@
+---
+description: "Reference for Nitric's v0 Go library - Read the contents of a file from a bucket."
+---
+
+# Go - Bucket.File.Read()
+
+Read the contents of a file from a bucket.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  bucket, err := nitric.NewBucket("bucket-name").With(nitric.BucketReading)
+  if err != nil {
+    return
+  }
+
+  contents, err := bucket.File("cat.png").Read(context.TODO())
+  if err != nil {
+    return
+  }
+
+  fmt.Println(contents)
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+## Examples
+
+### Read a file
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  bucket, err := nitric.NewBucket("bucket-name").With(nitric.BucketReading)
+  if err != nil {
+    return
+  }
+
+  contents, err := bucket.File("cat.png").Read(context.TODO())
+  if err != nil {
+    return
+  }
+
+  fmt.Println(contents)
+
+  nitric.Run()
+}
+```

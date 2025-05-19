@@ -1,0 +1,56 @@
+---
+description: "Reference for Nitric's Dart library - Sets the cron expression and one or many handlers to be triggered."
+---
+
+# Dart - schedule.cron()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Schedules in Nitric start with the [Schedule docs](/schedules).
+</Note>
+
+Sets the cron expressions that determines when the schedule triggers and a callback to be triggered.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+Nitric.schedule("send-reminder").cron("0 1 1 * *", (ctx) async {
+  // do some processing
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expression" required type="String">
+    The expression that sets when the schedule will be triggered. This value
+    should be a standard 5 value Unix cron expression, e.g., '0 1 1 * *'.
+  </Property>
+  <Property name="handler" required type="IntervalHandler">
+    Callback services to use as the handler which will run on the defined
+    frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule to run on a cron
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// every 15 minutes
+Nitric.schedule("check for updates").cron("0/15 * * * *", (ctx) async {
+  print("checking for updates");
+
+  return ctx;
+});
+
+// at 1:00am on the 1st of every month
+Nitric.schedule("delete stale data").cron("0 1 1 * *", (ctx) async {
+  print("clearing data");
+
+  return ctx;
+});
+```

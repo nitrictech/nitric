@@ -1,0 +1,95 @@
+---
+description: "Reference for Nitric's Python library - Creates a new Queue to process asynchronous messages."
+---
+
+# Python - queue()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Queues in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Creates a new Queue to process asynchronous messages.
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Queue within the app. Subsequent calls to `queue`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**enqueue**
+
+This permission allows your code to enqueue messages.
+
+---
+
+**dequeue**
+
+This permission allows your code to dequeue messages.
+
+---
+
+### Notes
+
+In most instances code should either enqueue or dequeue, usually not both.
+
+## Examples
+
+### Create a Queue
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+Nitric.run()
+```
+
+### Enqueue messages
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+payload = {}
+await batch_queue.send(payload)
+
+Nitric.run()
+```
+
+### Dequeue messages
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+payload = {}
+batch_queue = queue('batch').allow('dequeue')
+
+messages = await batch_queue.dequeue(10)
+
+Nitric.run()
+```

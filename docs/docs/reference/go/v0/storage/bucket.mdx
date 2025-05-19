@@ -1,0 +1,71 @@
+---
+description: "Reference for Nitric's v0 Go library - Create a new bucket for storing and retrieving files."
+---
+
+# Go - NewBucket()
+
+Create a new bucket for storing and retrieving files.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  bucket, err := nitric.NewBucket("bucket-name").With(nitric.BucketWriting, nitric.BucketReading, nitric.BucketDeleting)
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this bucket within the app. Subsequent calls to
+    `NewBucket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**BucketReading**
+
+This permission allows your function to read files from the bucket
+
+---
+
+**BucketWriting**
+
+This permission allows your function to write files to the bucket
+
+---
+
+**BucketDeleting**
+
+This permission allows your function to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [On()](./bucket-on)
+- [File()](./bucket-file)
+- [File.Read()](./bucket-file-read)
+- [File.Write()](./bucket-file-write)
+- [File.Delete()](./bucket-file-delete)
+- [File.DownloadUrl()](./bucket-file-downloadurl)
+- [File.UploadUrl()](./bucket-file-uploadurl)

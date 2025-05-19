@@ -1,0 +1,66 @@
+---
+description: "Reference for Nitric's Go library - Create Batch Jobs with the Nitric Go SDK"
+---
+
+# Go - NewJob()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Batch
+  Services in Nitric start with the [Batch Services docs](/batch).
+</Note>
+
+Creates a new Batch Job.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+	analyze := nitric.NewJob("analyze")
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Batch Job within the app. Subsequent calls to `job`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Job
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+	analyze := nitric.NewJob("analyze")
+
+	nitric.Run()
+}
+```
+
+### Create a Job with permissions to submit jobs
+
+```go
+package main
+
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyse := nitric.NewJob("analyse").Allow(batch.JobSubmit)
+
+	nitric.Run()
+}
+```

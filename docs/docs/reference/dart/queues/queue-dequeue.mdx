@@ -1,0 +1,83 @@
+---
+description: "Reference for Nitric's Dart library - Dequeue messages."
+---
+
+# Dart - queue.dequeue()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Queues
+  in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Dequeue messages.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final batchQueue = Nitric.queue("batch").allow([
+  QueuePermission.dequeue,
+]);
+
+final messages = await batchQueue.dequeue();
+
+await Future.wait(messages.map((message) async {
+  // Work on a message...
+
+  // Complete the message
+  await message.complete();
+}));
+```
+
+## Parameters
+
+<Properties>
+  <Property name="depth" type="int">
+    The maximum number of messages to dequeue. Defaults to 1.
+  </Property>
+</Properties>
+
+## Notes
+
+### Completing dequeued items
+
+Since the process is asynchronous the queue doesn't know when a message has been processed. This ensures failed services/containers don't result in lost message, since messages are not removed from a queue when they're dequeued.
+
+Instead, messages are hidden and requesters are granted a temporary lease for each message they request.
+
+When processing is complete, the requester must tell the queue the task was completed successfully, which will remove it from the queue and stop it being reprocessed.
+
+<Note>
+  Failing to complete a dequeued message before the lease expires will result in
+  it being re-queued.
+</Note>
+
+To notify the queue that a message was completed call the `complete()` method on the dequeued message reference.
+
+### Dequeue depth
+
+When calling `dequeue()` a depth parameter can be provided, e.g. `dequeue(5)`. This will _attempt_ to dequeue up to 5 messages from the queue.
+
+However, if the queue is empty or less than 5 messages are available on the queue, then the maximum that are currently available will be returned.
+
+This means calls to dequeue will return between 0 and _depth_ tasks.
+
+## Examples
+
+### Dequeue and complete messages
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final batchQueue = Nitric.queue("batch").allow([
+  QueuePermission.dequeue,
+]);
+
+final messages = await batchQueue.dequeue();
+
+await Future.wait(messages.map((message) async {
+  // Work on a message...
+
+  // Complete the message
+  await message.complete();
+}));
+```

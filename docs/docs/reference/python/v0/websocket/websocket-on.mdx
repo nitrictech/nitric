@@ -1,0 +1,67 @@
+---
+description: "Reference for Nitric's v0 Python library - Register a handler for Websocket events."
+---
+
+# Python - websocket.on()
+
+Register a handler for a specific websocket event.
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+chat_websocket = websocket("chat")
+
+@chat_websocket.on("connect")
+async def on_connect(ctx):
+    print("connecting ", ctx.req.connection_id)
+
+    ctx.res.success = true
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="event_type" required type="string">
+    The event to respond to on the websocket, valid values are 'connect',
+    'disconnect' and 'message'.
+  </Property>
+</Properties>
+
+<Note>
+  All event types (`connect`, `disconnect` and `message`) must be handled, or
+  the project will not be valid for deployment.
+</Note>
+
+## Examples
+
+### Websocket example with all available event types
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+public_websocket = websocket("public")
+
+@public_websocket.on("connect")
+async def on_connect(ctx):
+    print("connecting ", ctx.req.connection_id)
+
+    ctx.res.success = true
+
+@public_websocket.on("disconnect")
+async def on_disconnect(ctx):
+    print("disconnecting ", ctx.req.connection_id)
+
+    ctx.res.success = true
+
+@public_websocket.on("message")
+async def on_message(ctx):
+    print("handling message from ", ctx.req.connection_id)
+
+    ctx.res.success = true
+
+Nitric.run()
+```

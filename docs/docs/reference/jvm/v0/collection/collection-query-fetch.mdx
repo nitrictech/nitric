@@ -1,0 +1,155 @@
+---
+description: "Reference for Nitric's JVM library - Fetch paged results from a query."
+---
+
+# JVM - collection.query.fetch()
+
+Retrieve a page of results for a query. This is an alternative to [collection.query.stream()](./collection-query-stream)
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+// A user class to store in the profiles collection
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profilesQuery = profiles.query();
+
+    var results = profilesQuery.fetch();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+// A user class to store in the profiles collection
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profilesQuery = profiles.query()
+
+  val results = profilesQuery.fetch()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Examples
+
+### Paging through results from a query
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profileQuery = profiles.query();
+    var results = profileQuery.fetch();
+    var pagingToken = results.getPagingToken();
+
+    do {
+      results.getDocuments().forEach((doc) -> {
+        System.out.println(doc.getContent());
+      });
+
+      if (pagingToken.size() > 0) {
+        results = profileQuery.pagingFrom(pagingToken).fetch();
+        pagingToken = results.getPagingToken();
+      }
+    } while (results.getPagingToken().size() > 0 && results.getDocuments().size() > 0);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.Nitric.collection
+import io.nitric.api.documents.v0.DocumentSnapshot
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profileQuery = profiles.query()
+  var results = profileQuery.fetch()
+  var pagingToken = results.pagingToken
+
+  do {
+    results.documents.forEach { doc ->
+      println(doc.content)
+    }
+
+    if (pagingToken.isNotEmpty()) {
+      results = profileQuery.pagingFrom(pagingToken).fetch()
+      pagingToken = results.pagingToken
+    }
+  } while (results.pagingToken.isNotEmpty() && results.documents.isNotEmpty())
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### See also
+
+- [query().where()](./collection-query-where)
+- [query().limit()](./collection-query-limit)
+- [query().pagingFrom()](./collection-query-pagingfrom)

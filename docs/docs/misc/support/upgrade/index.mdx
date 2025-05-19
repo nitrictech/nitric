@@ -1,0 +1,203 @@
+---
+description: 'How to upgrade from v0 to v1 of Nitric'
+---
+
+# Upgrading Nitric projects from v0.x to v1.x
+
+## Overview
+
+Nitric v1.x introduces a number of breaking changes from v0.x. However, in most cases the changes are relatively minor and can be easily applied to existing projects. This guide will help you upgrade your existing Nitric projects to v1.x.
+
+## Upgrading the Nitric CLI
+
+The first step in upgrading your project is to upgrade the Nitric CLI. You can do this by running the following command:
+
+<OSTabs>
+
+<TabItem label="macOS">
+
+```bash
+brew install nitrictech/tap/nitric
+```
+
+</TabItem>
+
+<TabItem label="Windows">
+
+```bash
+scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
+scoop install nitric
+```
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -L "https://nitric.io/install?version=latest" | bash
+```
+
+</TabItem>
+
+</OSTabs>
+
+## Upgrading Nitric Projects
+
+### Updating Project Configuration
+
+The format of the `nitric.yaml` file has changed in v1.x. The new format is more flexible and allows for more complex project configurations. The new format is as follows:
+
+```yaml
+name: my-project
+services:
+  - match: ./services/*.ts
+    start: yarn dev:function $SERVICE_PATH
+```
+
+The notable changes are:
+
+- The `functions` key has been replaced with `services` to better reflect the broad range of solutions that Nitric supports.
+- Service type definitions include a `match` key that specifies the file pattern to match for the service type.
+- Service type definitions also includes a `start` key that specifies the command to run to start the service.
+- A `$SERVICE_PATH` environment variable is available to the `start` command which will specify the relative filepath of each matched service.
+
+If you have an existing `nitric.yaml` file, the before and after for the upgrade would look something like this:
+
+#### Before
+
+```yaml
+name: my-project
+handlers:
+  - functions/*.js
+```
+
+#### After
+
+```yaml
+name: my-project
+services:
+  - match: ./functions/*.js
+    start: yarn dev:function $SERVICE_PATH
+```
+
+Where the `yarn dev:function` is a command capable of starting the function in development mode, for example:
+
+```json
+{
+  "scripts": {
+    "dev:function": "nodemon -r -q dotenv/config"
+  }
+}
+```
+
+<Note>
+  Previous versions of Nitric relied on two terminal windows to run applications
+  locally. This is no longer the case, and the `nitric start` command will start
+  all services in a single terminal window. This also means that the index file
+  that was previously provided in the templates is no longer required.
+</Note>
+
+### Upgrading Stack Files
+
+There is one minor change to the inner format of stack files in v1.x, as well as a new naming convention for stack files. While v0.x stack files were named `nitric-mystack.yaml`, v1.x stack files are named `nitric.mystack.ts` (replacing the first dash with a dot). The only change to the inner format of the files is removal of the `name` key, which is no longer required or supported. The name of the stack will be now always be inferred from the filename, to avoid confusion and naming conflicts.
+
+<Note>
+  v0.x providers are not compatible with nitric v1.x. The provider version
+  referenced in the stack files will also need to be upgraded.
+</Note>
+
+### Upgrading Nitric APIs
+
+While Nitric APIs remain largely unchanged in v1.x, there is a change to the way security definitions are created and applied to APIs and their routes. In v0.x, security definitions were created when defining an API, then separately applied either to the API, routes or both. The original code for this might have looked something like this:
+
+```typescript
+const helloApi = api('main', {
+  security: {
+    // only authorize requests with the 'user.read' scope
+    user: ['user.read'],
+  },
+  securityDefinitions: {
+    user: {
+      kind: 'jwt',
+      issuer: 'https://dev-abc123.my.issuer.com',
+      audiences: ['https://test-security-definition/'],
+    },
+  },
+})
+```
+
+The issue with this approach is that it was easy to create a security definition and not realize it needed to be applied to take effect.
+
+For example, this code would create a security definition but not apply, resulting in an API that was not secure:
+
+```typescript
+const helloApi = api('main', {
+  // Note: no security key
+  securityDefinitions: {
+    user: {
+      kind: 'jwt',
+      issuer: 'https://dev-abc123.my.issuer.com',
+      audiences: ['https://test-security-definition/'],
+    },
+  },
+})
+```
+
+In v1.x security definitions, now called rules, are created as standalone objects and then applied to the API or route. This ensures security definitions that have not been applied are more obvious and less likely to be overlooked.
+
+The new code for the above example would look like this for an OpenID Connect (OICD) Rule:
+
+```typescript
+import { oidcRule, api } from '@nitric/sdk'
+
+const userAccessRule = oidcRule({
+  name: 'user',
+  audiences: ['https://test-security-definition/'],
+  issuer: 'https://dev-abc123.my.issuer.com',
+})
+
+const helloApi = api('main', {
+  security: [userAccessRule('user.read')],
+})
+```
+
+### Upgrading Nitric Functions
+
+Nitric Functions have been renamed to Nitric Services. While in practice this change is mostly cosmetic, it serves to disambiguate the different elements of a Nitric application. Each service is an entrypoint to a Nitric application and typically represents a single deployed container image. These images could always include multiple functions, which is where confusion could arise.
+
+### Upgrading Queues
+
+Nitric Queues have been simplified in v1.x. They also include some changes in nomenclature. The `send` method has been renamed to `enqueue` and the `receive` method has been renamed to `dequeue`. While the messages sent to queues were typically referred to as "tasks" in v0.x, they are now referred to as "messages" in v1.x.
+
+Lastly, messages sent to queues used to require common properties such as `id` and `payloadType`. These properties are no longer used by the Nitric SDK, however, you're free to reintroduce them as you see fit or leave them out entirely.
+
+### Upgrading Topics
+
+As with Queues, Nitric Topics have also been simplified in v1.x. The messages sent to topics were typically referred to as "events" in v0.x, they are now referred to as "messages" in v1.x. They also no longer automatically include or generate an `id` property or other properties such as `payloadType`. As with Queues, you're free to reintroduce these properties as you see fit or leave them out entirely.
+
+### Changing from Collections to Key/Value
+
+The most significant change in Nitric v1.x is the change from Collections to Key/Value. Collection resources are no longer supported or deployed by Nitric, instead they've been superseded by Key/Value resources. Nitric always strives to provide the most consistent experience across all supported cloud providers, and this change was made to better reflect the capabilities of the underlying cloud providers, while also greatly improving the breadth of options available to fulfill the underlying requirements.
+
+The primary differences between Collections and Key/Value are:
+
+- Key/Value stores, designed for efficient key/value storage rather than complex querying, now feature a `keys` method to facilitate the retrieval of all available keys within the store, you can also filter them via a prefix.
+- Key/Value stores do not support sub-collections.
+- For Azure deployments Key/Value stores are backed by Azure Table Storage, instead of the MongoDB deployments used for Collections.
+
+<Note>
+  The switch from MongoDB to Azure Table Storage for Key/Value stores
+  significantly improves deployment times Azure and reduces runtime costs.
+</Note>
+
+To migrate from Collections to Key/Value, you will need to:
+
+- Use alternate mechanisms or persistence if querying is required.
+- Flatten any sub-collections into a single collection. One approach to this is to use a delimiter in the key to represent the sub-collection, for example `users:123` and `users:123:posts:456`.
+
+<Note>
+  While we're not aware of projects with heavy reliance on the features of
+  Collections that have been removed, if you have such a project, please reach
+  out to us and we'll be happy to help you migrate to a solution that meets your
+  needs or provide guidance on what can be achieved with Key/Value stores.
+</Note>

@@ -1,0 +1,95 @@
+---
+description: "Reference for Nitric's v0 Python library - Creates a new Schedule to run a function on a defined frequency."
+---
+
+# Python - schedule()
+
+Creates a new Schedule to run a function on a defined frequency.
+
+```python
+from nitric.resources import schedule
+from nitric.application import Nitric
+from nitric.context import EventContext
+
+report_schedule = schedule('run-a-report')
+
+@report_schedule.every('1 days')
+async def process_transactions(ctx: EventContext):
+  # do some processing
+  pass
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="description" required type="string">
+    The unique name of this Schedule within the app. Subsequent calls to `schedule` with the same name will return the same object.
+  </Property>
+  <Property name="every" required type="string">
+    The rate description for the schedule. Supported frequencies include `seconds`, `minutes`, `hours` and `days`.
+    Using `every` as a keyword argument can help with readability of schedules, e.g.
+
+```python
+backup = schedule("backup")
+
+@backup.every("2 days")
+```
+
+  </Property>
+</Properties>
+
+### Examples:
+
+| description      | example schedule                       |
+| ---------------- | -------------------------------------- |
+| Every day        | @schedule("work").every("day")         |
+| Every 14 hours   | @schedule("work").every("14 hours")    |
+| Every 30 minutes | @schedule("work").every("30 minutes")  |
+| Every day (cron) | @schedule("work").cron("0 0 \* \* \*") |
+
+<Note>
+  Singular rates will be automatically converted. e.g. "day" will be interpreted
+  as "1 days".
+</Note>
+
+## Notes
+
+- Schedules do not require access permissions to be specified.
+
+- Local execution and testing can be done with the local dashboard.
+
+## Examples
+
+### Create a Schedule
+
+```python
+from nitric.resources import schedule
+from nitric.application import Nitric
+from nitric.context import EventContext
+
+processor = schedule("processor")
+
+@processor.every('5 minutes')
+async def process_transactions(ctx: EventContext):
+  # do some processing
+  pass
+
+@processor.every('3 hours')
+async def process_transactions(ctx: EventContext):
+  # do some processing
+  pass
+
+@processor.every('1 days')
+async def process_transactions(ctx: EventContext):
+  # do some processing
+  pass
+
+@processor.cron('0 0 * * *')
+async def process_transactions(ctx: EventContext)
+  # do some processing
+  pass
+
+Nitric.run()
+```

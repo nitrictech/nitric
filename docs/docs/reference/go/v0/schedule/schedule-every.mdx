@@ -1,0 +1,93 @@
+---
+description: "Reference for Nitric's Go  library - Sets the frequency and one or many handlers to be triggered."
+---
+
+# Go - Schedule.Every()
+
+Sets the frequency and one or many handlers to be triggered.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  // Create a schedule that runs every 3 minutes
+  nitric.NewSchedule("send reminder").Every("3 minutes", func(ctx *faas.EventContext, _ faas.EventHandler) (*faas.EventContext, error) {
+    // code which sends a reminder
+
+    return ctx, nil
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="rate" required type="string">
+    The rate to run the schedule, e.g., '7 days'. All rates accept a number and
+    a frequency. Valid frequencies are 'days', 'hours', or 'minutes'.
+  </Property>
+  <Property name="middleware" required type="EventMiddleware">
+    One or more middleware functions to use as the handler which will run on the
+    defined frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule to run every 3 minutes
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  // Create a schedule that runs every 3 minutes
+  nitric.NewSchedule("send reminder").Every("3 minutes", func(ctx *faas.EventContext, _ faas.EventHandler) (*faas.EventContext, error) {
+    // code which sends a reminder
+
+    return ctx, nil
+  })
+
+  nitric.Run()
+}
+```
+
+### Create a Schedule with multiple middleware/handlers
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func generateReport(ctx *faas.EventContext, next faas.EventHandler) (*faas.EventContext, error) {
+  // generate report
+
+  return next(ctx)
+}
+
+func sendNotification(ctx *faas.EventContext, next faas.EventHandler) (*faas.EventContext, error) {
+  // send notification with the report
+
+  return next(ctx)
+}
+
+func main() {
+  nitric.NewSchedule("aggregate data").Every("3 days", faas.ComposeEventMiddleware(generateReport, sendNotification))
+
+  nitric.Run()
+}
+```

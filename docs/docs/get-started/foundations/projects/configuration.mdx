@@ -1,0 +1,294 @@
+---
+description: 'Configuring a Nitric Project using nitric.yaml'
+---
+
+# Configuration
+
+The Nitric CLI uses a configuration file named `nitric.yaml` to define the structure of your project. This file specifies the name of your project, where nitric should look for the entrypoints to your application, and other project-specific settings.
+
+Projects created from a template using the Nitric CLI will have a `nitric.yaml` file created for you. If you are creating a project from scratch, you can create a `nitric.yaml` file in the root of your project.
+
+<Note>
+  If you're new to Nitric and starting from a project template, you can skip
+  this section and start building your application. The `nitric.yaml` file will
+  be created for you. Use this section as a reference when you need to customize
+  your project configuration or understand how the configuration works.
+</Note>
+
+## Example `nitric.yaml`
+
+```yaml
+name: my-project
+services:
+  - match: services/*
+    runtime: go
+    type: ''
+    start: go run ./$SERVICE_PATH/...
+runtimes:
+  go:
+    dockerfile: ./golang.dockerfile
+    context: ''
+    args: {}
+```
+
+## Configuration Options
+
+### `name`
+
+The name of your project. This is used to identify your project and it used when auto-generating service and resource names during deployment.
+
+### `services`
+
+A list of [service](/get-started/foundations/infrastructure/services) types that make up your project. Typically, nitric will build each service in your project into a separate container image. Each service can have its own runtime, build configuration, and start command.
+
+#### `match`
+
+A glob pattern that matches service entrypoints. Each file matching this pattern will be treated as a separate service. This allows multiple services to share a single runtime configuration and `type`.
+
+For example, with the following configuration:
+
+```yaml
+services:
+  - match: services/*
+    runtime: go
+    type: ''
+    start: go run ./$SERVICE_PATH/...
+```
+
+And the project structure below:
+
+```text
+services/
+  service1/
+    main.go
+  service2/
+    main.go
+```
+
+```text
+services/
+├── service1/
+│   └── main.go
+└── service2/
+    └── main.go
+```
+
+Both `service1/main.go` and `service2/main.go` will be treated as separate services with the same runtime configuration.
+
+#### `basedir` (optional)
+
+The base directory to search for service entrypoints. If not provided, the base directory is the root of the project. This is useful when you want to group services under a specific directory or you're working with a monorepo.
+
+<Note>
+  If you're using a custom [runtime configuration](#runtimes), the `basedir`
+  value will be used as the context for the Docker build, i.e. it will override
+  the `context` value in the runtime configuration.
+</Note>
+
+#### `runtime` (optional)
+
+The runtime to use for this service. For certain languages like JavaScript, Python and Dart the runtime can be inferred from the file extension. For other languages, you will need to specify the runtime.
+
+If a runtime is provided it must match the name of a runtime configuration in the `runtimes` section.
+
+#### `type` (optional)
+
+Type is essentially the name for this group of services. It is used to group services together for deployment and resource management. If not provided, the service will be grouped under the 'default' type.
+
+The most common use case for this is grouping service with similar deployed resource requirements together. For example, you make have a set of services that required additional vCPU or memory resources at runtime. You can group these services together under a specific type and apply resource constraints to that type in a [stack file](/get-started/foundations/deployment#stacks).
+
+For example, if you have a set of services that require additional memory, you can group them together under a type named `memory-intensive`, separate from the default type.
+
+```yaml
+services:
+  - match: services/other/*
+    runtime: go
+    start: go run ./$SERVICE_PATH/...
+  - match: services/memory-intensive/*
+    runtime: go
+    # Group these services under the 'memory-intensive' type
+    type: memory-intensive
+    start: go run ./$SERVICE_PATH/...
+```
+
+#### `start` (optional)
+
+The command to start the service during local development. This command is used when running locally using the `nitric start` CLI command. This command will be executed once for each service, with the `$SERVICE_PATH` environment variable set to the path to the service entrypoint.
+
+For example, with the following configuration:
+
+```yaml
+services:
+  - match: services/*
+    runtime: go
+    type: ''
+    start: go run ./$SERVICE_PATH/...
+```
+
+And the project structure below:
+
+```text
+services/
+  service1/
+    main.go
+  service2/
+    main.go
+```
+
+When running `nitric start`, the following commands will be executed:
+
+```bash
+go run ./services/service1/main.go
+go run ./services/service2/main.go
+```
+
+### `batch-services` (optional)
+
+A list of [batch service](/get-started/foundations/infrastructure/services#batch-services) types that make up your project. Batch services are used to run high-performance computing tasks, data processing or tasks requiring GPUs, or a large number of vCPUs or memory.
+
+Batch services are similar to services but are optimized for running batch processing tasks. You can read more about batch services in the [batch service](/get-started/foundations/infrastructure/services#batch-services) section.
+
+The configuration options for `batch-services` are the same as for `services`.
+
+### `runtimes` (optional)
+
+A list of runtime configurations that can be used by services in your project. Each runtime configuration defines how to build a service for a specific runtime. For example, this can be used to define a custom Dockerfile for a specific runtime.
+
+For example, with the following configuration:
+
+```yaml
+runtimes:
+  go:
+    dockerfile: ./golang.dockerfile
+    context: ''
+    args: {}
+```
+
+Nitric ships with a set of default runtime configurations for common languages. You can override these default configurations by providing your own runtime configuration. The runtime configuration must match the runtime name used in the `services` section.
+
+#### `dockerfile`
+
+The path to the Dockerfile _template_ used to build the services. This path is relative to the root of the project. The Dockerfile template will be provided with the following arguments:
+
+- `HANDLER`: The service entrypoint path relative to the base directory.
+
+Here is an example of a Dockerfile template for Go services:
+
+```dockerfile
+FROM golang:alpine AS build
+
+# Include the HANDLER argument, nitric will populate this with the service entrypoint path
+ARG HANDLER
+
+WORKDIR /app/
+
+COPY go.mod *.sum ./
+
+RUN go mod download
+
+# Note: Operations like COPY are relative to the `basedir` value in service configuration.
+# Or the root of the project if not provided.
+COPY . .
+
+# Build the Go App from the provided HANDLER (this will be based on matches in your nitric.yaml fle)
+RUN go build -o /bin/main ./${HANDLER}/...
+
+FROM alpine
+
+COPY --from=build /bin/main /bin/main
+
+RUN chmod +x-rw /bin/main
+RUN apk update && \
+  apk add --no-cache tzdata ca-certificates && \
+  update-ca-certificates
+
+ENTRYPOINT ["/bin/main"]
+```
+
+<Note>
+  The Dockerfile only needs to start your application. The Nitric CLI will
+  automatically wrap this Dockerfile with additional build steps to inject the
+  Nitric runtime and build context for the target platform.
+</Note>
+
+#### `context` (optional)
+
+The build context to use when building the container image. This is the directory that will be provided to the Docker build command as the build context. If not provided, the build context will be the root of the project.
+
+<Note>
+  Any services using this runtime which have a `basedir` value set will use the
+  `basedir` value as the build context instead of the `context` value.
+</Note>
+
+#### `args` (optional)
+
+A map of additional arguments to provide to the Docker build command. These arguments will be provided to the Docker build command as `--build-arg` arguments.
+
+For example, with the following configuration:
+
+```yaml
+runtimes:
+  go:
+    dockerfile: ./golang.dockerfile
+    context: ''
+    args:
+      GO_VERSION: 1.16
+```
+
+### `websites` (optional)
+
+A list of [website](/websites) types that make up your project. Websites are used to serve static files and assets.
+
+```yaml
+websites:
+  - basedir: ./my-website
+    path: /
+    index: index.html
+    error: 404.html
+    build:
+      command: npm run build
+      output: ./dist
+    dev:
+      command: npm run dev
+      url: http://localhost:4322
+```
+
+#### `basedir`
+
+The base directory to search for website assets. If not provided, the base directory is the root of the project. This is useful when you want to group websites under a specific directory or you're working with a monorepo.
+
+#### `path`
+
+The path to serve the website at. If not provided, the default is `/`. This is useful when you want to serve multiple websites under different paths.
+
+#### `index`
+
+The name of the index file to serve. If not provided, the default is `index.html`.
+
+#### `error`
+
+The name of the error file to serve. If not provided, the default is `404.html`.
+
+#### `build`
+
+A map of build configuration options for the website. This is used to build the website assets before deployment.
+
+##### `command`
+
+The command to build the website assets. This command will be executed in the base directory of the website.
+
+##### `output`
+
+The output directory for the built website assets. This is relative to the base directory of the website.
+
+#### `dev`
+
+A map of development configuration options for the website. This is used to run the website in development mode.
+
+##### `command`
+
+The command to run the website in development mode. This command will be executed in the base directory of the website.
+
+##### `url`
+
+The URL to access the website in development mode. This is used to configure the Nitric CLI to proxy requests to the website during local development.

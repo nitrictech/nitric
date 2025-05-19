@@ -1,0 +1,55 @@
+---
+description: 'Integrating with existing HTTP frameworks'
+---
+
+# HTTP
+
+Nitric supports existing web app and API frameworks, including Express, Koa, Fastify and many more. The `http` resource allows you to connect Nitric to your existing applications. When deployed, this resource deploys a unique HTTP API Gateway in your chosen cloud provider and routes all incoming requests to your HTTP application.
+
+<Note>
+  The HTTP resource is currently only supported for Node.js projects. If you
+  would like support for another language let us know:
+  https://github.com/nitrictech/nitric/issues
+</Note>
+
+## Connecting existing frameworks
+
+Here are some examples of how to connect your existing API frameworks with Nitric:
+
+<Tabs>
+
+<TabItem label="Express.js">
+
+```javascript
+import { http } from '@nitric/sdk'
+import express from 'express'
+
+const app = express()
+
+app.use('/hello', (req, res) => {
+  res.send('hello from express')
+})
+
+http(app)
+```
+
+</TabItem>
+
+<TabItem label="NestJS">
+
+```javascript
+import { http } from '@nitric/sdk'
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+
+async function bootstrap(port: number) {
+  const app = await NestFactory.create(AppModule)
+  return await app.listen(port)
+}
+
+http(bootstrap)
+```
+
+</TabItem>
+
+</Tabs>

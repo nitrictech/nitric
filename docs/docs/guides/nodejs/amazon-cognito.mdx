@@ -1,0 +1,361 @@
+---
+description: 'Secure a Nitric API with Amazon Cognito'
+tags:
+  - Authentication
+  - API
+  - AWS
+languages:
+  - typescript
+  - javascript
+published_at: 2023-10-09
+updated_at: 2024-12-11
+---
+
+# Securing APIs with Amazon Cognito
+
+The following guide assumes prior knowledge of Amazon Cognito and JWT based user Authentication and Authorization. We'll discuss how to setup API Gateway level token authentication with Nitric APIs in the cloud, as well as how to create Nitric API middleware to perform basic Authorization of requests.
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/en/download/)
+- The [Nitric CLI](/get-started/installation)
+- An account with [AWS](https://aws.amazon.com/)
+- An Amazon Cognito [user pool](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)
+
+## Creating an API with Nitric
+
+We'll start by creating an example API with Nitric, which we can then secure using Amazon Cognito. To begin, create a new project with the Nitric CLI using the `new` command.
+
+```bash
+nitric new
+```
+
+<img
+  src="/docs/images/guides/amazon-cognito/new_project_cognito.gif"
+  style={{ maxWidth: 600, width: '100%' }}
+  alt="demo showing creation of a new project with the nitric cli."
+/>
+
+In this new Nitric project there will be an example API with a single `GET: /hello/:name` route. We'll start by securing this route.
+
+<Tabs syncKey="lang-node">
+
+<TabItem label="TypeScript">
+
+```typescript title:services/api.ts
+import { api } from '@nitric/sdk'
+
+const mainApi = api('main')
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+
+  ctx.res.body = `Hello ${name}`
+
+  return ctx
+})
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```javascript title:services/api.js
+import { api } from '@nitric/sdk'
+
+const mainApi = api('main')
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+
+  ctx.res.body = `Hello ${name}`
+
+  return ctx
+})
+```
+
+</TabItem>
+
+</Tabs>
+
+## Rejecting unauthenticated requests with API Gateways
+
+[Nitric APIs](/apis#api-security) allow initial token authentication to be performed by the API Gateways of various cloud providers, such as AWS API Gateway. When configured correctly this will ensure unauthenticated requests are rejected before reaching your application code.
+
+To add this API Gateway authentication we need to create a `security definition` and then apply that definition to specific routes or the entire API. Here we'll update the `main` API by adding a new security definition named `cognito`. This will apply to all routes in the API.
+
+<Tabs syncKey="lang-node">
+
+<TabItem label="TypeScript">
+
+```typescript title:services/api.ts
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'cognito',
+  issuer:
+    'https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/openid-configuration',
+  audiences: ['<app-client-id>'],
+})
+
+const mainApi = api('main', {
+  // apply the security definition to all routes in this API.
+  security: [defaultSecurityRule()],
+})
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+
+  ctx.res.body = `Hello ${name}`
+
+  return ctx
+})
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```javascript title:services/api.js
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'cognito',
+  issuer:
+    'https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/openid-configuration',
+  audiences: ['<app-client-id>'],
+})
+
+const mainApi = api('main', {
+  // apply the security definition to all routes in this API.
+  security: [defaultSecurityRule()],
+})
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+
+  ctx.res.body = `Hello ${name}`
+
+  return ctx
+})
+```
+
+</TabItem>
+
+</Tabs>
+
+<Note>
+  You will need to update the `region`, `user-pool-id` and `app-client-id`
+  values to match your values from Amazon Cognito.
+</Note>
+
+<Note>
+  It's worth noting that these security definitions are *not* enforced when
+  testing your Nitric services locally. Currently, they're only enforced when
+  the services are deployed to cloud environments.
+</Note>
+
+## Authorizing requests with middleware
+
+Now that we have the basic authentication done at the API Gateway we can extract the JWT from the `Authorization` header and perform additional checks to authorize requests.
+
+In the example below we're simply checking whether the user is a member of a particular group in our Cognito user pool. If they are the request is allowed through, otherwise it's rejected with an HTTP `401 Unauthorized` status.
+
+<Note>
+  This example stores the user information extracted from their authorization
+  token in the request context object, making that data available in subsequent
+  handlers or middleware.
+</Note>
+
+<Tabs syncKey="lang-node">
+
+<TabItem label="TypeScript">
+
+```typescript title:services/api.ts
+import { api, HttpContext, HttpMiddleware, oidcRule } from '@nitric/sdk'
+import * as jwt from 'jsonwebtoken'
+
+interface AccessToken {
+  iss: string
+  username: string
+  'cognito:groups': string[]
+}
+
+type AuthContext = HttpContext & { user: AccessToken }
+
+/**
+ * Middleware function to authorize "authors".
+ *
+ * This function verifies that the incoming request contains a JWT token in the
+ * authorization header and checks if the user is a member of the "authors" Cognito group.
+ */
+const authorizeAuthors: HttpMiddleware = (ctx: AuthContext, next) => {
+  const authHeader = Array.isArray(ctx.req.headers['authorization'])
+    ? ctx.req.headers['authorization'][0]
+    : ctx.req.headers['authorization']
+  const token = authHeader?.split(' ')[1]
+
+  // If no token is present, deny access.
+  // There should be a token as the security rules would be checked first, but this is a good practice.
+  if (!token) {
+    ctx.res.status = 401
+    ctx.res.body = 'Unauthorized'
+    return ctx
+  }
+
+  // It's valuable to validate the token's shape, skipped here for brevity.
+  ctx.user = jwt.decode(token) as AccessToken
+
+  // If the user is not a member of any groups or not an "author", deny access
+  if (
+    !ctx.user['cognito:groups'] ||
+    !ctx.user['cognito:groups'].includes('authors')
+  ) {
+    ctx.res.status = 401
+    ctx.res.body = 'Unauthorized'
+    return ctx
+  }
+
+  return next(ctx)
+}
+
+const defaultSecurityRule = oidcRule({
+  name: 'cognito',
+  issuer:
+    'https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/openid-configuration',
+  audiences: ['<app-client-id>'],
+})
+
+const mainApi = api('main', {
+  security: [defaultSecurityRule()],
+  middleware: [authorizeAuthors],
+})
+
+mainApi.get('/hello/:name', async (ctx: AuthContext) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}, you're group memberships include: ${ctx.user[
+    'cognito:groups'
+  ].join(', ')}`
+  return ctx
+})
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```javascript title:services/api.js
+import { api, oidcRule } from '@nitric/sdk'
+import * as jwt from 'jsonwebtoken'
+
+/**
+ * Middleware function to authorize "authors".
+ *
+ * This function verifies that the incoming request contains a JWT token in the
+ * authorization header and checks if the user is a member of the "authors" Cognito group.
+ */
+const authorizeAuthors = (ctx, next) => {
+  const authHeader = Array.isArray(ctx.req.headers['authorization'])
+    ? ctx.req.headers['authorization'][0]
+    : ctx.req.headers['authorization']
+  const token = authHeader?.split(' ')[1]
+
+  // If no token is present, deny access.
+  // There should be a token as the security rules would be checked first, but this is a good practice.
+  if (!token) {
+    ctx.res.status = 401
+    ctx.res.body = 'Unauthorized'
+    return ctx
+  }
+
+  // It's valuable to validate the token's shape, skipped here for brevity.
+  ctx.user = jwt.decode(token)
+
+  // If the user is not a member of any groups or not an "author", deny access
+  if (
+    !ctx.user['cognito:groups'] ||
+    !ctx.user['cognito:groups'].includes('authors')
+  ) {
+    ctx.res.status = 401
+    ctx.res.body = 'Unauthorized'
+    return ctx
+  }
+
+  return next(ctx)
+}
+
+const defaultSecurityRule = oidcRule({
+  name: 'cognito',
+  issuer:
+    'https://cognito-idp.<region>.amazonaws.com/<user-pool-id>/.well-known/openid-configuration',
+  audiences: ['<app-client-id>'],
+})
+
+const mainApi = api('main', {
+  security: [defaultSecurityRule()],
+  middleware: [authorizeAuthors],
+})
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}, you're group memberships include: ${ctx.user[
+    'cognito:groups'
+  ].join(', ')}`
+  return ctx
+})
+```
+
+</TabItem>
+
+</Tabs>
+
+## Testing authentication and authorization
+
+Using the AWS CLI we can quickly generate a new user and token, then test our authentication flow to ensure it behaves as expected.
+
+If you already have a test user, you can skip the first two steps. These commands let you create and verify a new user.
+
+```bash
+# create a new user
+aws cognito-idp sign-up --region <region> --client-id <app-client-id> --username nitric@example.com --password SuperSafePassword
+
+# verify the new user, so they're able to sign-in
+aws cognito-idp admin-confirm-sign-up --region <region> --user-pool-id <user-pool-id> --username nitric@example.com
+```
+
+Next, you'll need to create a JSON file contain the details you want to use to sign-in.
+
+```json title:test-auth.json
+{
+  "UserPoolId": "<user-pool-id>",
+  "ClientId": "<app-client-id>",
+  "AuthFlow": "ADMIN_NO_SRP_AUTH",
+  "AuthParameters": {
+    "USERNAME": "nitric@example.com",
+    "PASSWORD": "SuperSafePassword"
+  }
+}
+```
+
+Finally, you can sign-in as the user, using this file.
+
+```bash
+aws cognito-idp admin-initiate-auth --region <regionb> --cli-input-json file://test-auth.json
+```
+
+The output will look something like this:
+
+```json
+{
+  "ChallengeParameters": {},
+  "AuthenticationResult": {
+    "AccessToken": "...",
+    "ExpiresIn": 3600,
+    "TokenType": "Bearer",
+    "RefreshToken": "...",
+    "IdToken": "..."
+  }
+}
+```
+
+You can use the value of the `AccessToken` property in the Authorization header of your test requests. Since this is a new user with no group memberships they should initially be rejected. If you then create an "authors" group, add the user to that group and sign-in a second time (generating a new token, which contains the group membership) authorization will subsequently succeed.

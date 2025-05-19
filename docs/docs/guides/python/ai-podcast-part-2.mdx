@@ -1,0 +1,455 @@
+---
+description: 'Using Llama 3.2 to generate podcast scripts from prompts and transform them into audio.'
+tags:
+  - AI & Machine Learning
+languages:
+  - python
+image: /docs/images/guides/ai-podcast/part-2/banner.png
+image_alt: 'AI Podcast Part 2 Banner'
+featured:
+  image: /docs/images/guides/ai-podcast/part-2/featured.png
+  image_alt: 'AI Podcast Part 2 featured image'
+published_at: 2024-11-07
+---
+
+# Building AI Workflows: Combining LLMs and Voice Models - Part 2
+
+This is part two of a two-part guide on building an AI podcast using Nitric. In this part of the guide we'll enhance [Part 1](/guides/python/ai-podcast-part-1) to complete our fully autonomous AI podcast, adding an LLM for script writing to the existing text-to-speech model.
+
+In this guide we'll build a fully autonomous AI podcast, combining an LLM for script writing and a text-to-speech model to produce the audio content. By the end of this guide we'll be able to produce podcast style audio content from simple text prompts like "a 10 minute podcast about [add your topic here]".
+
+In this first part we'll focused on generating the audio content, in this part we'll add an LLM agent to our project to automatically generate scripts for our podcasts from small prompts. Here's an example of what we'll be able to generate from a prompt requesting a podcast about "Daylight Saving Time":
+
+<div className="rounded-sm bg-black p-4 text-white shadow dark:bg-white dark:text-black">
+  <div className="space-y-1 pb-4 pl-2 font-mono">
+    <div className="font-bold">Generated Script:</div>
+    <div className="text-sm">
+    Welcome to the Dead Internet Podcast, I'm your host. I'm a writer and a curious person, and I'm here to explore the weird and fascinating side of the internet.
+
+Today, we're going to talk about a topic that's often met with eye-rolling and groans: daylight saving time. You know, that bi-annual ritual where we spring forward or fall back an hour, supposedly to make better use of natural light. But is it really worth it? Let's take a closer look.
+
+Daylight saving time has been around for over a century, first implemented during World War I as a way to conserve energy. The idea was simple: move the clock forward in the summer to make better use of daylight, and then fall back in the winter to conserve energy. It's a system that's been adopted by over 70 countries around the world, but it's also been criticized and ridiculed by many.
+
+One of the main criticisms is that it's just plain annoying. Who likes waking up an hour earlier in the spring, or going to bed an hour later in the fall? It's a disruption to our daily routines, and it can be especially difficult for people who have to deal with it, like parents trying to get their kids to school on time, or people who work non-traditional hours.
+
+But the implications of daylight saving time go beyond just annoyance. Research has shown that it can actually have negative effects on our health, including increased risk of heart attacks, strokes, and other cardiovascular problems. And then there's the economic impact, which can be significant, especially for people who work night shifts or have to deal with disruptions to their schedules.
+
+So, why do we still do it? Well, the answer is complicated. Some argue that it's a necessary evil, that the benefits of daylight saving time outweigh the costs. Others argue that it's a relic of a bygone era, a reminder of the mistakes of the past. And then there are those who just plain don't get it, who think that the whole thing is a waste of time.
+
+As we wrap up our discussion on daylight saving time, let's take a moment to summarize. Daylight saving time is a complex and contentious topic, with both benefits and drawbacks. While some people argue that it's a necessary ritual, others see it as a disruption to our daily lives. Whether or not you're a fan of daylight saving time, it's clear that it's a topic that sparks a lot of debate and discussion. Thanks for joining me on this journey down the rabbit hole of timekeeping. Until next time, stay curious.
+
+</div>
+
+  </div>
+</div>
+
+## Prerequisites
+
+- [uv](https://docs.astral.sh/uv/#getting-started) - for Python dependency management
+- The [Nitric CLI](/get-started/installation)
+- Complete [Part 1](/guides/python/ai-podcast-part-1) of this guide
+- _(optional)_ An [AWS](https://aws.amazon.com) account
+
+## Continuing from Part 1
+
+If you haven't already completed [Part 1](/guides/python/ai-podcast-part-1), we recommend you start there. In Part 1 we set up the project structure and deployed the audio generation job to the cloud. In this part we'll add an LLM agent to our project to automatically generate scripts for our podcasts from prompts.
+
+We'll start by adding llama-cpp-python which will allow us to perform LLM inference in Python using Llama models.
+
+```bash
+# Add the extra llm dependencies
+uv add llama-cpp-python --optional llm
+```
+
+<Note>
+  We add the extra dependencies to the 'llm' optional dependencies to keep them
+  separate. This allows only certain services in our project to include the
+  dependencies, reducing the size of other docker images.
+</Note>
+
+## Download the LLM Model
+
+In part 1, we downloaded the audio model using the `huggingface_hub` package's `snapshot_download` function. In this step we'll show another method to include the model in the docker image at build time. This method is useful if you want the model to be immutable and included in the docker image. If you prefer to download the model at runtime, you can follow similar steps to part 1.
+
+In this example we'll use a quantized version of the Llama 3.2 3B model (specifically `Llama-3.2-3B-Instruct-Q4_K_L.gguf`), which is smaller Llama model, but still provides decent quality results with fast performance even on CPU only environments.
+
+[Download the Llama model](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_L.gguf) file, then move it to a new `./models/` directory in the project.
+
+```bash
+mkdir models
+curl -L https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_L.gguf -o models/Llama-3.2-3B-Instruct-Q4_K_L.gguf
+```
+
+Let's also add this new directory to the existing `.dockerignore` files to prevent it from being included our docker images from Part 1.
+
+```bash
+echo "models/" >> python.dockerfile.dockerignore
+echo "model/" >> torch.dockerfile.dockerignore
+```
+
+<Note>
+  We'll create another dockerfile for the LLM model, as it requires a different
+  set of dependencies to the audio model. This will allow us to keep the docker
+  images for the audio and LLM models separate.
+</Note>
+
+## Add the Script Generation Service
+
+Next, we'll add a new service to our project to generate scripts for our podcasts. We'll use the `llama-cpp-python` package to interact with the LLM model. Create a new file `batches/script.py` with the following content:
+
+```bash
+touch batches/script.py
+```
+
+```python title:batches/script.py
+from common.resources import gen_podcast_job, gen_audio_job, scripts_bucket
+from nitric.context import JobContext
+from nitric.application import Nitric
+from llama_cpp import Llama
+import os
+
+system_prompt = """You're a writer for the Dead Internet Podcast.
+The podcast only has the host and no guests so the writing style is more like a speech than a script and should just be simple text with no queues or speaker names.
+The host always starts with a brief introduction and then dives into the topic, and always finishes with a summary and a farewell.
+"""
+
+# Allow the model to be set via an environment variable
+model = os.environ.get("LLAMA_MODEL", "./models/Llama-3.2-3B-Instruct-Q4_K_L.gguf")
+
+llm = Llama(model_path=model, chat_format="llama-3", n_ctx=4096)
+
+# allow this service to write scripts to the scripts bucket
+scripts = scripts_bucket.allow("write")
+
+# allow this job to submit the script to be turned into audio
+audio_job = gen_audio_job.allow("submit")
+
+@gen_podcast_job()
+async def do_gen_script(ctx: JobContext):
+    prompt = ctx.req.data["prompt"]
+    title = ctx.req.data["title"]
+    preset = ctx.req.data["preset"]
+
+    print('generating script')
+
+    completion = llm.create_chat_completion(
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ],
+        # unlimited tokens, set a limit if you prefer
+        max_tokens=-1,
+        temperature=0.9,
+    )
+
+    # extract just the text from the output
+    text_response = completion["choices"][0]["message"]["content"]
+
+    # store the script in the scripts bucket
+    script_file = f'{title}.txt'
+    await scripts.file(script_file).write(str.encode(text_response))
+    print(f'script written to {script_file}')
+
+    # send the script for audio generation
+    await audio_job.submit({
+        "text": text_response,
+        "file": title,
+        "preset": preset,
+    })
+
+Nitric.run()
+```
+
+You'll notice this new script service references two new resources `gen_audio_job` and `scripts_bucket`. Let's add those now to the `common/resources.py` file:
+
+```python title:common/resources.py
+from nitric.resources import api, bucket, job, topic
+import os
+import tempfile
+# Our main API for submitting audio generation jobs
+main_api = api("main")
+# A job for generating our audio content
+gen_audio_job = job("audio")
+# !diff(1:2) +
+# A job for generating our audio script
+gen_podcast_job = job("podcast")
+
+# A bucket for storing output audio clips
+clips_bucket = bucket("clips")
+# And another bucket for storing our models
+models_bucket = bucket("models")
+
+# !diff(1:2) +
+# A bucket for storing our scripts
+scripts_bucket = bucket("scripts")
+
+# Many cloud API Gateways impose hard response time limits on synchronous requests.
+# To avoid these limits, we can use a Pub/Sub topic to trigger asynchronous processing.
+download_audio_model_topic = topic("download-audio-model")
+
+model_dir = os.path.join(tempfile.gettempdir(), "ai-podcast", ".model")
+cache_dir = os.path.join(tempfile.gettempdir(), "ai-podcast", ".cache")
+zip_path = os.path.join(tempfile.gettempdir(), "ai-podcast", "model.zip")
+```
+
+## Add a new API route
+
+Next, we'll add a new API route to our project to allow users to submit prompts for script generation. We can do this by editing the `services/api.py` file:
+
+```python title:services/api.py
+from common.resources import (
+    main_api, model_dir, cache_dir, zip_path,
+    gen_audio_job, download_audio_model_topic, models_bucket,
+    # !diff +
+    gen_podcast_job
+)
+from nitric.application import Nitric
+from nitric.context import HttpContext, MessageContext
+from huggingface_hub import snapshot_download
+import os
+import zipfile
+import requests
+
+models = models_bucket.allow('write')
+generate_audio = gen_audio_job.allow('submit')
+download_audio_model = download_audio_model_topic.allow("publish")
+# !diff +
+generate_podcast = gen_podcast_job.allow("submit")
+
+audio_model_id = "suno/bark"
+default_voice_preset = "v2/en_speaker_6"
+
+@download_audio_model_topic.subscribe()
+# !collapse(1:42) collapsed
+async def do_download_audio_model(ctx: MessageContext):
+    model_id: str = ctx.req.data["model_id"]
+
+    print(f"Downloading model to {model_dir}")
+    dir = snapshot_download(model_id,
+      local_dir=model_dir,
+      cache_dir=cache_dir,
+      allow_patterns=[
+          "config.json",
+          "generation_config.json",
+          "pytorch_model.bin",
+          "speaker_embeddings_path.json",
+          "special_tokens_map.json",
+          "tokenizer.json",
+          "tokenizer_config.json",
+          "vocab.txt"
+      ]
+    )
+
+    print(f"Downloaded model to {dir}")
+
+    # zip the model and upload it to the bucket
+    print("Compressing models")
+
+    # zip the model
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_STORED) as zip_file:
+        for root, dirs, files in os.walk(dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                archive_name = os.path.relpath(file_path, start=dir)
+                print(f"Adding {file_path} to zip as {archive_name}")
+                zip_file.write(file_path, archive_name)
+
+    # upload the model to the bucket
+    module_url = await models.file(f"{model_id}.zip").upload_url()
+
+    with open(zip_path, "rb") as f:
+        requests.put(module_url, data=f, timeout=6000)
+
+    os.remove(zip_path)
+
+    print("Successfully cached model in bucket")
+
+@main_api.post("/download-model")
+async def download_audio(ctx: HttpContext):
+    model_id = ctx.req.query.get("model", audio_model_id)
+
+    if isinstance(model_id, list):
+        model_id = model_id[0]
+    # asynchronously download the model
+    await download_audio_model.publish({ "model_id": model_id })
+
+@main_api.post("/audio/:filename")
+# !collapse(1:25) collapsed
+async def submit_audio(ctx: HttpContext):
+    name = ctx.req.params["filename"]
+    model_id = ctx.req.query.get("model", audio_model_id)
+    preset = ctx.req.query.get("preset", default_voice_preset)
+
+    if isinstance(model_id, list):
+        model_id = model_id[0]
+
+    model_downloaded = await models.exists(f"{model_id}.zip")
+    if not model_downloaded:
+        ctx.res.status = 404
+        ctx.res.body = f'model \'{model_id}\' hasn\'t been downloaded yet, call POST: /download-model to pre-download the model'
+        return
+
+    if isinstance(preset, list):
+        preset = preset[0]
+
+    body = ctx.req.data
+    if body is None:
+        ctx.res.status = 400
+        return
+
+    print(f"using preset {preset}")
+
+    await generate_audio.submit({"file": name, "model_id": model_id, "text": body.decode('utf-8'), "preset": preset})
+
+# !diff(1:13) +
+# Generate a full podcast from script to audio
+@main_api.post("/podcast/:title")
+async def submit_script(ctx: HttpContext):
+  title = ctx.req.params["title"]
+  preset = ctx.req.query.get("preset", default_voice_preset)
+  body = ctx.req.data
+
+  if body is None:
+    ctx.res.status = 400
+    return
+
+  await generate_podcast.submit({"title": title, "prompt": body.decode('utf-8'), "preset": preset})
+
+Nitric.run()
+```
+
+## Add the LLM Dockerfile
+
+Next, we'll create a new Dockerfile for the LLM model. This Dockerfile will be used to build a new docker image for the script service. Create a new file `llama.dockerfile` and add the content below:
+
+```bash
+touch llama.dockerfile
+```
+
+```dockerfile title:llama.dockerfile
+# The python version must match the version in .python-version
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS builder
+
+ARG HANDLER
+ENV HANDLER=${HANDLER}
+# Set flags for common execution environment
+ENV CMAKE_ARGS="-DLLAMA_NATIVE=OFF -DGGML_NATIVE=OFF -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS -DGGML_AVX512=OFF -DGGML_AVX512_VNNI=OFF -DGGML_AVX512_VBMI=OFF -DGGML_AVX512_BF16=OFF"
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONPATH=.
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+  --mount=type=bind,source=uv.lock,target=uv.lock \
+  --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+  uv sync --frozen --no-install-project --extra llm --no-dev --no-python-downloads
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv sync --frozen --no-dev --extra llm --no-python-downloads
+
+
+# Then, use a final image without uv
+FROM python:3.11-bookworm
+
+ARG HANDLER
+ENV HANDLER=${HANDLER} PYTHONPATH=.
+
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
+WORKDIR /app
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Run the service using the path to the handler
+ENTRYPOINT python -u $HANDLER
+```
+
+We can also add a `.dockerignore` file to prevent unnecessary files from being included in the docker image:
+
+```bash
+touch llama.dockerfile.dockerignore
+```
+
+```text title:llama.dockerfile.dockerignore
+.mypy_cache/
+.nitric/
+.venv/
+.model/
+nitric-spec.json
+nitric.yaml
+nitric.*.yaml
+README.md
+model.zip
+```
+
+## Update our .env file
+
+We'll change some of the environment variables in our `.env` file to factor in the extra init time it will take to start our LLM job:
+
+```sh title:.env
+PYTHONPATH=.
+# !diff +
+WORKER_TIMEOUT=300
+```
+
+Finally, we need to tell Nitric to use these files to create the script service. We can do this by updating the `nitric.yaml` file:
+
+```yaml title:nitric.yaml
+name: ai-podcast
+services:
+  - match: services/*.py
+    start: uv run watchmedo auto-restart -p *.py --no-restart-on-command-exit -R uv run $SERVICE_PATH
+    runtime: python
+batch-services:
+  # !diff -
+  - match: batches/*.py
+  # !diff(1:6) +
+  - match: batches/podcast.py
+    start: uv run watchmedo auto-restart -p *.py --no-restart-on-command-exit -R uv run $SERVICE_PATH
+    runtime: torch
+  - match: batches/script.py
+    start: uv run watchmedo auto-restart -p *.py --no-restart-on-command-exit -R uv run $SERVICE_PATH
+    runtime: llama
+
+runtimes:
+  python:
+    dockerfile: './python.dockerfile'
+  torch:
+    dockerfile: './torch.dockerfile'
+  # !diff(1:2) +
+  llama:
+    dockerfile: './llama.dockerfile'
+
+preview:
+  - batch-services
+```
+
+## Run or Deploy the Project
+
+Now that we've added the LLM model and script generation service to our project, we can run or deploy the project to test it out. If you haven't already, you can run the project locally using the Nitric CLI:
+
+```bash
+nitric run
+```
+
+Or deploy the project to the cloud, like we did in Part 1:
+
+```bash
+nitric up
+```
+
+## Next Steps
+
+In this guide we added an LLM agent to our project to automatically generate scripts for our podcasts from prompts. We also added a new API route to allow users to submit prompts for script generation.
+
+Now that you've seen how to include and connect models using Nitric, you can experiment with different models and services to build your own AI workflows. Here are some ideas that might help get you started:
+
+- Try using other models for script generation
+- Perform a different action with the LLM instead of generating scripts
+- Include other [Nitric resources](/get-started/foundations/infrastructure/resources) like databases or storage in your project
+
+If you'd like to see a part 3 of this guide and have any ideas on what we could add/improve then let us know over at the [Nitric Discord](https://nitric.io/chat)

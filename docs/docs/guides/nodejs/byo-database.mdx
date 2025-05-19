@@ -1,0 +1,189 @@
+---
+description: 'How to work with existing databases'
+tags:
+  - Databases & CMS
+languages:
+  - typescript
+  - javascript
+published_at: 2022-10-13
+updated_at: 2024-12-30
+---
+
+# BYO Database
+
+Nitric currently has out of the box **preview** support for [PostgreSQL databases](/sql), however Nitric allows you to use whatever tooling and ORMs you prefer for directly interfacing with your database. If you want to use a database that isn't managed by Nitric, we have the following recommendations:
+
+- For local development, set up a container that runs alongside your Nitric processes.
+- For a production environment, use any of the database services offered by your preferred cloud provider:
+
+|            | AWS                                                                         | GCP                                                                                  | Azure                                                                                   |
+| ---------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| PostgreSQL | [Amazon RDS for PostgreSQL](https://aws.amazon.com/rds/postgresql/)         | [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres)               | [Azure Database for PostgreSQL](https://azure.microsoft.com/en-us/products/postgresql/) |
+| MySQL      | [Amazon RDS for MySQL](https://aws.amazon.com/rds/mysql/)                   | [Cloud SQL for MySQL](https://cloud.google.com/sql/mysql)                            | [Azure Database for MySQL](https://azure.microsoft.com/en-us/products/mysql/)           |
+| MongoDB    | [MongoDB Atlas on AWS](https://www.mongodb.com/atlas/reference/amazon-aws/) | [MongoDB Atlas on Google Cloud](https://www.mongodb.com/atlas/reference/google-gcp/) | [MongoDB Atlas on Azure](https://www.mongodb.com/atlas/reference/microsoft-azure/)      |
+
+## PostgreSQL
+
+### Image
+
+For a local PostgreSQL instance, we recommend the [official docker image](https://hub.docker.com/_/postgres). It has the following configuration variables:
+
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+
+### Connect
+
+The official [postgres](https://github.com/mysql/mysql-connector-nodejs) driver is recommended for basic connections to a PostgreSQL instance. However, if you would prefer a higher abstraction, we recommend Prisma ORM. You can read our guide on using Prisma [here](./serverless-api-with-planetscale-and-prisma).
+
+```ts
+import { Client } from 'pg'
+
+const client = new Client()
+
+await client.connect()
+```
+
+### Run Locally
+
+To start, make sure you have a `.env` file containing your environment variables.
+
+```text title:.env
+POSTGRES_USER=root
+POSTGRES_PASSWORD=root
+POSTGRES_DB=my-database
+```
+
+You can then create a docker compose file to simplify running your docker container each time.
+
+```yaml title:docker-compose.yml
+version: '3.6'
+services:
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_DB=$POSTGRES_DB
+
+    ports:
+      - '5432:5432'
+```
+
+You can add a script to your `package.json` which will run the docker compose file.
+
+```json title:package.json
+"scripts": {
+  "db": "docker compose up --wait"
+}
+```
+
+Then for any local development you can just run `yarn db`.
+
+## MySQL
+
+### Image
+
+For a local MySQL instance, we recommend the [official docker image](https://hub.docker.com/_/mysql). It has the following configuration variables:
+
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_DATABASE`
+
+### Connect
+
+The official [mysql](https://github.com/mysql/mysql-connector-nodejs) driver is recommended for basic connections to a MySQL instance. However, if you would prefer a higher abstraction, we recommend Prisma ORM. You can read our guide on using Prisma [here](./serverless-api-with-planetscale-and-prisma).
+
+```ts
+import mysql from 'mysql'
+
+var con = mysql.createConnection({
+  host: HOST,
+  user: USERNAME,
+  password: PASSWORD,
+})
+
+con.connect(function (err) {
+  if (err) throw err
+  console.log('Connected!')
+})
+```
+
+You can then create a docker compose file to simplify running your docker container each time.
+
+```yaml title:docker-compose.yml
+version: '3.6'
+services:
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+      - MYSQL_DATABASE=$MYSQL_DATABASE
+
+    ports:
+      - '5432:5432'
+```
+
+You can add a script to your `package.json` which will run the docker compose file.
+
+```json title:package.json
+"scripts": {
+  "db": "docker compose up --wait"
+}
+```
+
+Then for any local development you can just run `yarn db`.
+
+## MongoDB
+
+### Image
+
+For a local MongoDB instance, we recommend the [official docker image](https://hub.docker.com/_/mongo). It has the following configuration variables:
+
+- `MONGO_INITDB_ROOT_USERNAME`
+- `MONGO_INITDB_ROOT_PASSWORD`
+- `MONGO_INITDB_DATABASE`
+
+### Connect
+
+The official [mongodb](https://github.com/mongodb/node-mongodb-native) driver is recommended for basic connections to a MongoDB instance. However, if you would prefer a higher abstraction, we recommend Prisma ORM. You can read our guide on using Prisma [here](./serverless-api-with-planetscale-and-prisma).
+
+```ts
+const client = new MongoClient(
+  `mongodb://${USERNAME}:${PASSWORD}@${HOST}/${DATABASE}`,
+)
+
+await client.connect()
+```
+
+You can then create a docker compose file to simplify running your docker container each time.
+
+```yaml title:docker-compose.yml
+version: '3.6'
+services:
+  mongodb:
+    image: mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
+      - MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE
+
+    ports:
+      - '27017:27017'
+```
+
+You can add a script to your `package.json` which will run the docker compose file.
+
+```json title:package.json
+"scripts": {
+  "db": "docker compose up --wait"
+}
+```
+
+Then for any local development you can just run `yarn db`.

@@ -1,0 +1,33 @@
+---
+description: "Reference for Nitric's v0 .NET library - Get a reference to a document in the collection."
+---
+
+# .NET - Collection.Doc()
+
+Get a reference to a document in the collection.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading, CollectionPermission.Writing);
+
+var drakesProfile = profiles.Doc("Drake Mallard");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key of the document to reference.
+  </Property>
+</Properties>
+
+### See also
+
+- [Doc.Get()](./collection-doc-get)
+- [Doc.Set()](./collection-doc-set)
+- [Doc.Delete()](./collection-doc-delete)
+- [Doc.Collection()](./collection-doc-collection)

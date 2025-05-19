@@ -1,0 +1,120 @@
+---
+description: "Reference for Nitric's Python library - Create APIs with the Nitric Python SDK."
+---
+
+# Python - api()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new HTTP API.
+
+```python
+from nitric.resources import api
+
+publicApi = api("public")
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this API within the app. Subsequent calls to `api` with
+    the same name will return the same object.
+  </Property>
+  <Property name="options" type="object" optional>
+    Additional options when creating the API.
+    <Properties nested>
+      <Property name="path" type="string" optional>
+        Base path for all routes in the API.
+      </Property>
+      <Property name="middleware" type="List[Middleware]" optional>
+        Middleware to apply to all routes and methods of the API.
+      </Property>
+      <Property name="security" type="List[ScopedOidcOptions]">
+        Security rules to apply with scopes to the entire API.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## SecurityDefinition Parameters
+
+<Properties>
+  <Property name="issuer" required type="string">
+    The issuer for the JWT tokens e.g. `https://account.region.auth0.com`.
+  </Property>
+  <Property name="audiences" required type="string[]">
+    The `aud` that will be applied to JWT tokens from the issuer.
+  </Property>
+</Properties>
+
+---
+
+### Notes
+
+The `middleware` property on the `options` param is useful for applying universal middleware such as CORS headers, across an entire API from a single place.
+
+## Examples
+
+### Create an API
+
+```python
+from nitric.resources import api
+
+publicApi = api("public")
+```
+
+### Create an API with universal middleware
+
+```python
+from nitric.resources import api, ApiOptions
+from myapp.middleware import auth
+
+publicApi = api("public", ApiOptions(middleware=[auth]))
+```
+
+### Define middleware
+
+```python
+async def auth(ctx, nxt: HttpMiddleware):
+  # Perform auth validation.
+  return await nxt(ctx)
+```
+
+### Notes
+
+Middleware services are supplied a `HttpContext` object and a `next()` function which calls the next middleware in the chain.
+
+### Create an API with a base path
+
+If you need to put all the routes in your api below a shared base path, you can do that with the `path` option. In this example we ensure all routes start with `/api/v1/` before the route specific path.
+
+```python
+from nitric.resources import api, ApiOptions
+
+publicApi = api("public", ApiOptions(path="/api/v1/"))
+```
+
+### Apply JWT authentication to an API
+
+```python
+from nitric.resources import api, ApiOptions, oidc_rule
+from nitric.application import Nitric
+
+default_security_rule = oidc_rule(
+    name="default",
+    audiences=["https://test-security-definition/"],
+    issuer="https://dev-abc123.us.auth0.com",
+)
+
+secure_api = api("main", opts=ApiOptions(
+        # apply the security definition to all routes in this API.
+        security=[default_security_rule("user.read")],
+    )
+)
+
+Nitric.run()
+```

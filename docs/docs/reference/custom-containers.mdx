@@ -1,0 +1,299 @@
+---
+description: 'Customize how services are built into containers'
+---
+
+# Custom container runtimes
+
+Nitric builds applications by identifying its entrypoints, which are typically defined in the `nitric.yaml` file as `services`. Each entrypoint in a Nitric app is built into its own container using Docker, then deployed to a cloud container runtime such as AWS Lambda, Google CloudRun or Azure Container Apps.
+
+The Nitric CLI decides how to build those containers based on the programming language used by the entrypoint, for example if the entrypoint is a python file it will be built using Nitric's python dockerfile template. These dockerfile templates are designed with compatibility and ease of use in mind, this makes building applications convenient but may not provide additional dependencies your code relies or the ideal optimization for your application.
+
+If you need to customize the docker container build process to add dependencies, optimize container size, support a new language or any other reason, you can create a custom dockerfile template to be used by some or all of the entrypoints (services) in your application.
+
+## Add a new custom runtime
+
+Add a new custom runtime in the `runtimes` configuration.
+
+To use the runtime, simply specify the runtime key per service as shown below.
+
+```yaml title:nitric.yaml
+name: custom-example
+services:
+  - match: services/*.ts
+    runtime: 'custom-node' # specify custom runtime
+    start: npm run dev:services $SERVICE_PATH
+runtimes:
+  custom-node:
+    # All services that specify the 'custom-node' runtime will be built using this dockerfile
+    dockerfile: ./docker/node.dockerfile
+    args: {}
+```
+
+In this example we're specifying that any handlers that match the path `services/*.ts` will use a custom `node.dockerfile` for their dockerfile template.
+
+## Create a dockerfile template
+
+It's important to note that the custom dockerfile you create needs to act as a template. This can look a bit different to how you might have written dockerfiles in the past, since the same template file will need to be used for all services that match the configuration the entrypoint will use a variable which contains the service's filename.
+
+Here are some example dockerfiles:
+
+<Note>
+  Note the `$HANDLER` variable, which specifies the handler to execute in the
+  final container.
+</Note>
+
+<Tabs>
+
+<TabItem label="Python">
+
+```docker Python
+FROM python:3.11-slim
+
+ARG HANDLER
+
+ENV HANDLER=${HANDLER}
+ENV PYTHONUNBUFFERED=TRUE
+
+RUN apt-get update -y && \
+    apt-get install -y ca-certificates && \
+    update-ca-certificates
+
+RUN pip install --upgrade pip pipenv
+
+# Copy either requirements.txt or Pipfile
+COPY requirements.tx[t] Pipfil[e] Pipfile.loc[k] ./
+
+# Guarantee lock file if we have a Pipfile and no Pipfile.lock
+RUN (stat Pipfile && pipenv lock) || echo "No Pipfile found"
+
+# Output a requirements.txt file for final module install if there is a Pipfile.lock found
+RUN (stat Pipfile.lock && pipenv requirements > requirements.txt) || echo "No Pipfile.lock found"
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENTRYPOINT python $HANDLER
+```
+
+</TabItem>
+
+<TabItem label="JavaScript">
+
+```docker JavaScript
+# syntax=docker/dockerfile:1
+FROM node:alpine
+
+ARG HANDLER
+ENV HANDLER=${HANDLER}
+
+RUN apk update && \
+    apk add --no-cache ca-certificates && \
+    update-ca-certificates
+
+# Python and make are required by certain native package build processes in NPM packages.
+ENV PYTHONUNBUFFERED=1
+RUN apk add --update --no-cache python3 make g++ && ln -sf python3 /usr/bin/python
+RUN python3 -m ensurepip
+RUN pip3 install --no-cache --upgrade pip setuptools
+
+COPY . .
+
+RUN \
+  set -ex; \
+  yarn install --production --frozen-lockfile --cache-folder /tmp/.cache; \
+  rm -rf /tmp/.cache; \
+  # prisma fix for docker installs: https://github.com/prisma/docs/issues/4365
+  test -d ./prisma && npx prisma generate || echo "";
+
+ENTRYPOINT node $HANDLER
+```
+
+</TabItem>
+
+<TabItem label="TypeScript">
+
+```docker TypeScript
+# syntax=docker/dockerfile:1
+FROM node:alpine as build
+
+ARG HANDLER
+
+# Python and make are required by certain native package build processes in NPM packages.
+RUN apk add g++ make py3-pip
+RUN yarn global add typescript @vercel/ncc
+
+WORKDIR /usr/app
+
+COPY package.json yarn.lock ./
+
+RUN yarn install --production --frozen-lockfile --cache-folder /tmp/.cache && \
+    rm -rf /tmp/.cache
+
+COPY . .
+
+RUN \
+  --mount=type=cache,target=/tmp/ncc-cache \
+  ncc build ${HANDLER} -o lib/ -t
+
+FROM node:alpine as final
+
+WORKDIR /usr/app
+
+RUN apk update && \
+    apk add --no-cache ca-certificates && \
+    update-ca-certificates
+
+COPY package.json yarn.lock ./
+
+RUN yarn install --production --frozen-lockfile --cache-folder /tmp/.cache && \
+    rm -rf /tmp/.cache
+
+COPY . .
+
+COPY --from=build /usr/app/lib/ ./lib/
+
+ENTRYPOINT ["node", "lib/index.js"]
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```docker Go
+FROM golang:alpine as build
+
+ARG HANDLER
+
+WORKDIR /app/
+
+COPY go.mod *.sum ./
+
+RUN go mod download
+
+COPY . .
+
+RUN go build -o /bin/main ./${HANDLER}/...
+
+FROM alpine
+
+COPY --from=build /bin/main /bin/main
+
+RUN chmod +x-rw /bin/main
+RUN apk update && \
+    apk add --no-cache tzdata ca-certificates && \
+    update-ca-certificates
+
+ENTRYPOINT ["/bin/main"]
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```docker Dart
+FROM dart:stable AS build
+
+ARG HANDLER
+
+WORKDIR /app/
+
+# Resolve app dependencies.
+COPY pubspec.* ./
+RUN dart pub get
+
+# Ensure the ./bin folder exists
+RUN mkdir -p ./bin
+
+# Copy app source code and AOT compile it.
+COPY . .
+
+# Ensure packages are still up-to-date if anything has changed
+RUN dart pub get --offline
+RUN dart compile exe ./${HANDLER} -o bin/main
+
+FROM alpine
+
+COPY --from=build /runtime/ /
+COPY --from=build /app/bin/main /app/bin/
+
+ENTRYPOINT ["/app/bin/main"]
+```
+
+</TabItem>
+
+</Tabs>
+
+### Create an ignore file
+
+Custom dockerfile templates also support co-located dockerignore files. If your custom docker template is at path `./docker/node.dockerfile` you can create an ignore file at `./docker/node.dockerfile.dockerignore`.
+
+## Create a monorepo with custom runtimes
+
+Nitric supports monorepos via the custom runtime feature, this allows you to change the build context of your docker build. To use a custom runtime in a monorepo, you can specify the `runtime` key per service definition as shown below.
+
+<Note>Available in Nitric CLI version 1.45.0 and above</Note>
+
+### Example for Turborepo
+
+[Turborepo](https://turbo.build/) is a monorepo tool for JavaScript and TypeScript that allows you to manage multiple packages in a single repository. In this example, we will use a custom runtime to build a service in a monorepo using a custom dockerfile.
+
+```yaml title:root/backends/guestbook-app/nitric.yaml
+name: guestbook-app
+services:
+  - match: services/*.ts
+    runtime: turbo
+    type: ''
+    start: npm run dev:services $SERVICE_PATH
+runtimes:
+  turbo:
+    dockerfile: ./turbo.dockerfile # the custom dockerfile
+    context: ../../ # the context of the docker build
+    args:
+      TURBO_SCOPE: 'guestbook-api'
+```
+
+```docker title:root/backends/guestbook-app/turbo.dockerfile"  }}
+FROM node:alpine AS builder
+ARG TURBO_SCOPE
+
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+RUN apk update
+# Set working directory
+WORKDIR /app
+RUN yarn global add turbo
+
+# copy from root of the mono-repo
+COPY . .
+RUN turbo prune --scope=${TURBO_SCOPE} --docker
+
+# Add lockfile and package.json's of isolated subworkspace
+FROM node:alpine AS installer
+ARG TURBO_SCOPE
+ARG HANDLER
+RUN apk add --no-cache libc6-compat
+RUN apk update
+WORKDIR /app
+RUN yarn global add typescript @vercel/ncc turbo
+
+# First install dependencies (as they change less often)
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/yarn.lock ./yarn.lock
+RUN yarn install --frozen-lockfile --production
+
+# Build the project and its dependencies
+COPY --from=builder /app/out/full/ .
+COPY turbo.json turbo.json
+
+RUN turbo run build --filter=${TURBO_SCOPE} -- ./${HANDLER}  -m --v8-cache -o lib/
+
+FROM node:alpine AS runner
+ARG TURBO_SCOPE
+WORKDIR /app
+
+COPY --from=installer /app/backends/${TURBO_SCOPE}/lib .
+
+ENTRYPOINT ["node", "index.js"]
+```

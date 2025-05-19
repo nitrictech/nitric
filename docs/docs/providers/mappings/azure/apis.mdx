@@ -1,0 +1,31 @@
+---
+description: 'How Nitric deploys APIs to Azure'
+---
+
+# Azure Resources - APIs
+
+Nitric APIs are deployed to Azure using [Azure API Management](https://azure.microsoft.com/en-us/services/api-management/).
+
+## Azure Resources
+
+The following resources are created when deploying APIs to Azure:
+
+- API Management Service
+- Container Apps
+- ACR Images
+- Azure Resource Group
+
+## Notes
+
+The resource group stores metadata about the resources.
+All metadata is stored in the region nominated by the region which you have configured.
+
+## Deployment
+
+During deployment the Nitric CLI builds your API's routes, methods and handlers will be built as follows:
+
+- Files referenced by the `services` key in the `nitric.yaml` file are built into container images
+- Built container images are pushed to the [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/) as private images
+- Container Apps are setup to run the containers
+- All route/handler mappings are built into an Open API v3 definition file
+- The API definition and Resource Group is deployed as an API Management hosted API

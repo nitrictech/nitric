@@ -1,0 +1,301 @@
+---
+description: 'How to work with Nitric SQL Databases and Drizzle'
+tags:
+  - Databases & CMS
+  - ORMs
+languages:
+  - typescript
+  - javascript
+published_at: 2024-06-14
+---
+
+# Nitric SQL Databases with Drizzle
+
+This guide demonstrates how to use [Drizzle ORM](https://orm.drizzle.team) with Nitric's [SQL database](/sql) feature. For this guide we will be creating a to-do app. The finished source can be found [here](https://github.com/nitrictech/examples/tree/main/v1/nitric-drizzle).
+
+<Note>
+  SQL databases are currently in preview and only support PostgreSQL deployed to
+  AWS.
+</Note>
+
+## Create a new nitric project
+
+The first step is to create a new Nitric TypeScript project using the [Nitric CLI](/reference/cli).
+
+```bash
+nitric new todo-app ts-starter
+```
+
+## Enabling SQL databases
+
+SQL databases are currently in Preview. To enable this feature in your project add the following to your `nitric.yaml` file
+
+```yaml
+preview:
+  - sql-databases
+```
+
+Ensure your CLI is at least `v1.42` and your AWS provider is at least `v1.6.2`.
+
+## Install Drizzle Kit, Drizzle ORM and postgres
+
+```bash
+npm i drizzle-orm postgres
+npm i -D drizzle-kit
+```
+
+We install `drizzle-orm` for database interactions, `postgres` for database management, and `drizzle-kit` as a dev-dependency for configuration and migrations.
+
+## Create a Nitric SQL Database and Connect Drizzle ORM to it
+
+```ts {{title: 'db.ts'}}
+import { sql } from '@nitric/sdk'
+import { type PostgresJsDatabase, drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+
+const db = sql('todos', {
+  // points to our custom drizzle migration dockerfile
+  migrations: 'dockerfile://migrate.dockerfile',
+})
+
+let drizzleClient: PostgresJsDatabase
+
+const getClient = async () => {
+  // ensure we only create the client once
+  if (!drizzleClient) {
+    const connectionString = await db.connectionString()
+
+    const queryClient = postgres(connectionString)
+    drizzleClient = drizzle(queryClient)
+  }
+  return drizzleClient
+}
+
+// export our getClient function, which will be used to get the drizzle client during runtime
+export default getClient
+```
+
+In this snippet, we declare a new database called `todos` with the `sql` resource from `@nitric/sdk`, then we import functionality from `postgres` and `drizzle-orm`, connect to the database using Nitric's connection string, and initialize Drizzle.
+
+## Add the migrations dockerfile for cloud deployments
+
+```docker {{title: 'migrate.dockerfile'}}
+# Use an official Node.js runtime as the base image
+FROM node
+
+ENV DB_URL=""
+ENV NITRIC_DB_NAME=""
+
+# Copy package.json and package-lock.json into the Docker image
+COPY package*.json ./
+
+# Install the application's dependencies inside the Docker image
+RUN npm ci
+
+# Copy the rest of the application into the Docker image
+COPY . .
+
+# Build the Prisma client
+RUN npm run drizzle-kit generate
+
+# Run the migrations and start the application when the Docker container starts
+# We define the entrypoint like this so we can correctly copy it out when running it
+# in the various clouds (e.g. AWS Codebuild does not respect ENTRYPOINT and CMD)
+ENTRYPOINT ["sh", "-c", "npm run drizzle-kit migrate"]
+```
+
+This will be used during deployment to apply migrations using drizzle-kit before any code changes are applied, ensuring no breakages in code due to a schema change.
+
+## Setup Drizzle config file
+
+Next, set up the Drizzle configuration. This file, used by Drizzle Kit, contains information about your database connection, migration folder, and schema files. The `DB_URL` environment variable is used by Nitric during cloud migrations, however during local development we can can add it via a `.env` file (we will do that later).
+
+```ts {{title: 'drizzle.config.ts'}}
+import 'dotenv/config'
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './schema.ts',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DB_URL,
+  },
+})
+```
+
+This configuration file specifies the database schema location, the migration generation path, and the database connection via the connection string.
+
+## Declare todos schema
+
+```ts {{title: 'schema.ts'}}
+import { integer, text, boolean, pgTable } from 'drizzle-orm/pg-core'
+
+export const todo = pgTable('todo', {
+  id: integer('id').primaryKey(),
+  text: text('text').notNull(),
+  done: boolean('done').default(false).notNull(),
+})
+```
+
+Here we define the `todo` table with fields `id`, `text`, and `done`, using data types from Drizzle ORM.
+
+Now we’re ready to start developing an API.
+
+## Developing the app
+
+### Building the API
+
+Delete the `services/hello.ts` file and create a new one called `todos.ts`, this will house our APIs.
+
+Let's create some endpoints for creating, retrieving, editing and deleting todo tasks.
+
+```ts {{title: 'services/todos.ts'}}
+import { api } from '@nitric/sdk'
+import getClient from '../db'
+import { todo } from '../schema'
+import { asc, eq, not } from 'drizzle-orm'
+
+const mainApi = api('main')
+
+// fetch all todos, sorted by their identifier
+mainApi.get('/todos', async (ctx) => {
+  const db = await getClient()
+  const data = await db.select().from(todo).orderBy(asc(todo.id))
+
+  return ctx.res.json(data)
+})
+
+// inserts a new record into the todo table
+mainApi.post('/todos/:id', async (ctx) => {
+  const { id } = ctx.req.params
+  const { text } = ctx.req.json()
+  const db = await getClient()
+
+  await db.insert(todo).values({
+    id: parseInt(id),
+    text,
+  })
+})
+
+// updates the text of a todo by its identifier
+mainApi.patch('/todos/:id', async (ctx) => {
+  const { id } = ctx.req.params
+  const { text } = ctx.req.json()
+  const db = await getClient()
+
+  await db
+    .update(todo)
+    .set({
+      text: text,
+    })
+    .where(eq(todo.id, parseInt(id)))
+})
+
+// toggles the status of a todo to its opposite state
+mainApi.patch('/todos/:id/toggle', async (ctx) => {
+  const { id } = ctx.req.params
+  const db = await getClient()
+
+  await db
+    .update(todo)
+    .set({
+      done: not(todo.done),
+    })
+    .where(eq(todo.id, parseInt(id)))
+})
+
+// removes a todo by its identifier
+mainApi.delete('/todos/:id', async (ctx) => {
+  const { id } = ctx.req.params
+  const db = await getClient()
+
+  await db.delete(todo).where(eq(todo.id, parseInt(id)))
+})
+```
+
+### Start testing with nitric start
+
+Create a `.env` file with your local database url, so you can develop against it during `nitric start`. By default this will be:
+
+```bash {{title: '.env'}}
+DB_URL="postgresql://postgres:localsecret@localhost:5432/todos"
+```
+
+Run nitric start to start your local database and apis.
+
+```bash
+nitric start
+```
+
+With your local database now running, create and run your first migration using the `drizzle-kit generate` and `drizzle-kit migrate` commands:
+
+```bash
+npx drizzle-kit generate --name init
+npx drizzle-kit migrate
+```
+
+### Add some todos using the Nitric dashboard
+
+Open the local dashboard at <a target="_blank" href="http://localhost:49152">localhost:49152</a>, then navigate to the `POST /todos/{id}` endpoint and fill in an `id` as the path param.
+
+![Add id param for creating a todo](/docs/images/guides/nitric-and-drizzle/step-1.png)
+
+Then add some content to the body of the request, stating the `text` key and value of the todo task and click send.
+
+![Add text content for the todo](/docs/images/guides/nitric-and-drizzle/step-2.png)
+
+Let's check our todo got created by calling the `GET /todos` endpoint, which will list all todos.
+
+![Check that our todo get created](/docs/images/guides/nitric-and-drizzle/step-3.png)
+
+Let's toggle our todo as done, navigate to the `PATCH /todos/{id}/toggle` and enter the correct `id` to toggle.
+
+![Toggle our todo as done](/docs/images/guides/nitric-and-drizzle/step-4.png)
+
+Finally, let's check our todo got toggled to done by calling the `GET /todos` endpoint.
+
+![View the todo change](/docs/images/guides/nitric-and-drizzle/step-5.png)
+
+Feel free to test the other endpoints to update or delete the todo items.
+
+## Deploying to AWS
+
+### Create your stack
+
+Create a AWS stack called `aws-staging` for your staging environment.
+
+```bash
+nitric stack new aws-staging aws
+```
+
+Inside the stack file, ensure you set your `region`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target aws region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-2
+```
+
+### Deploy
+
+Go ahead and deploy to AWS using the `nitric up` command. Ensure you have setup your [AWS credentials](/providers/pulumi/aws#usage) correctly.
+
+```bash
+nitric up
+```
+
+### Tear down
+
+The avoid unwanted costs of running your test app, you can tear down the stack using the `nitric down` command.
+
+```bash
+nitric down
+```
+
+### Prefer to use a different ORM? We also have these guides:
+
+- [Nitric SQL with Prisma](./nitric-and-prisma).

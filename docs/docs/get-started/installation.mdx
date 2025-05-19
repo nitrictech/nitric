@@ -1,0 +1,103 @@
+---
+description: 'Basic installation instructions for the Nitric Framework'
+---
+
+# Installation
+
+## Prerequisites
+
+Nitric relies on functionality from the following projects to help retrieve plugins, containerize, and deploy your application.
+Please follow these links to the official installation steps for each.
+
+- [Git](https://git-scm.com/)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Buildx](https://github.com/docker/buildx/)
+
+### Deployment Prerequisites
+
+Deployment plugins have their own requirements, please refer to the documentation for the specific deployment provider you want to use.
+
+- [Pulumi Providers](/providers/pulumi#prerequisites)
+- [Terraform Providers](/providers/terraform#prerequisites)
+
+<Note>
+  When setting up Docker on Linux be sure to follow the [post-installation
+  steps](https://docs.docker.com/engine/install/linux-postinstall/) so you can
+  run Docker as a non-root user.
+</Note>
+
+## Installing the Nitric CLI
+
+<OSTabs>
+
+<TabItem label="macOS">
+
+```bash
+brew install nitrictech/tap/nitric
+```
+
+</TabItem>
+
+<TabItem label="Windows">
+
+```bash
+scoop bucket add nitric https://github.com/nitrictech/scoop-bucket.git
+scoop install nitric
+```
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -L "https://nitric.io/install?version=latest" | bash
+```
+
+</TabItem>
+
+</OSTabs>
+
+### Manual Install
+
+Alternatively, you can download pre-compiled binaries from the [releases](https://github.com/nitrictech/cli/releases) page and install them manually.
+
+## Update to the latest version
+
+<OSTabs>
+
+<TabItem label="macOS">
+
+```bash
+brew upgrade nitric
+```
+
+</TabItem>
+
+<TabItem label="Windows">
+
+```bash
+scoop update nitric
+```
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -L "https://nitric.io/install?version=latest" | bash
+```
+
+</TabItem>
+
+</OSTabs>
+
+You can easily check which version you're on by running `nitric version`.
+
+## Release notes
+
+You can view the CLI release notes on our [CLI GitHub Releases page](https://github.com/nitrictech/cli/releases).
+
+## What's next
+
+- Start building with the [quick start guide](/get-started/quickstart).
+- Checkout out the [foundations](/get-started/foundations/why-nitric) section for a more detailed introduction to Nitric.

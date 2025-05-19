@@ -1,0 +1,98 @@
+---
+description: "Reference for Nitric's v0 .NET library - Creates a new Queue to send and receive asynchronous tasks."
+---
+
+# .NET - Queue()
+
+Creates a new Queue to send and receive asynchronous tasks.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+
+class UserRequest
+{
+    public string UserId { get; set; }
+    public string Message { get; set; }
+}
+
+var batchQueue = Nitric.Queue<UserRequest>("batchQueue").With(QueuePermission.Writing);
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" type="string" required>
+    The unique name of this Queue within the app. Subsequent calls to `queue`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**QueuePermission.Sending**
+
+This permission allows your code to send new tasks to the queue.
+
+---
+
+**QueuePermission.Receiving**
+
+This permission allows your code to receive tasks from the queue.
+
+---
+
+### Notes
+
+In most instances, code should either send to or receive from a queue, usually not both.
+
+## Examples
+
+### Create a Queue
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+
+class UserRequest
+{
+    public string UserId { get; set; }
+    public string Message { get; set; }
+}
+
+var batchQueue = Nitric.Queue<UserRequest>("batchQueue");
+
+Nitric.Run();
+```
+
+### Receive tasks from a queue
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+
+class UserRequest
+{
+    public string UserId { get; set; }
+    public string Message { get; set; }
+}
+
+var batchQueue = Nitric.Queue<UserRequest>("batchQueue").With(QueuePermission.Reading);
+
+var tasks = batchQueue.Receive();
+
+Nitric.Run();
+```
+
+### See also
+
+- [Queue.Receive()](./queue-receive)
+- [Queue.Send()](./queue-send)

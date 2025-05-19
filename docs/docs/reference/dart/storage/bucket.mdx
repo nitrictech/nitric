@@ -1,0 +1,70 @@
+---
+description: "Reference for Nitric's Dart library - Create a new bucket for storing and retrieving files."
+---
+
+# Dart - bucket()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a new bucket for storing and retrieving files.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create a readable, writable, and deletable reference to an 'assets' bucket
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+  BucketPermission.write,
+  BucketPermission.delete,
+]);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this bucket within the service. Subsequent calls to
+    `bucket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**BucketPermission.read**
+
+This permission allows your service to read files from the bucket
+
+---
+
+**BucketPermission.write**
+
+This permission allows your service to write files to the bucket
+
+---
+
+**BucketPermission.delete**
+
+This permission allows your service to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [on()](./bucket-on)
+- [file()](./bucket-file)
+- [file().read()](./bucket-file-read)
+- [file().write()](./bucket-file-write)
+- [file().delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

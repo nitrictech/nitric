@@ -1,0 +1,119 @@
+---
+description: "Reference for Nitric's Dart library - Creates a new key value store to get, set, and delete key value pairs."
+---
+
+# Dart - kv()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Creates a new key value store to get, set, and delete key value pairs.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+  KeyValueStorePermission.set,
+  KeyValueStorePermission.delete,
+]);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this key value store within the service. Subsequent calls
+    to `kv` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**KeyValueStorePermission.get**
+
+This permission allows your service to get values from the key value store.
+
+---
+
+**KeyValueStorePermission.set**
+
+This permission allows your service to set key value pairs in the key value store.
+
+---
+
+**KeyValueStorePermission.delete**
+
+This permission allows your service to delete key value pairs in the key value store.
+
+---
+
+## Examples
+
+### Create a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles");
+```
+
+### Get value from a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final profile = await profiles.get('profile-1a2b3c');
+```
+
+### Set a key in a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.set,
+]);
+
+await profiles.set('profile-1a2b3c', { "name": "John Smith" });
+```
+
+### Delete a key from a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.delete,
+]);
+
+await profiles.delete('profile-1a2b3c');
+```
+
+### Get all keys from a key value store
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.get,
+]);
+
+final keys = await profiles.keys();
+
+keys.forEach((String key) {
+  // do something with the key
+});
+```

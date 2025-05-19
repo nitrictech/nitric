@@ -1,0 +1,53 @@
+---
+description: "Reference for Nitric's Node.js library - Get an upload URL for a file from a bucket."
+---
+
+# Node.js - bucket.file.getUploadUrl()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create an upload URL for a file within a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('read', 'write')
+
+const logo = assets.file('images/logo.png')
+
+// Create a read-only signed url reference for uploading
+const uploadUrl = await logo.getUploadUrl()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="options" type="SignUrlOptions">
+    Additional options when creating a signed URL.
+    <Properties nested>
+      <Property name="expiry" optional type="number">
+        Seconds until link expiry. Defaults to `600`, Maximum of `604800` (7
+        days).
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a temporary file upload link for a user
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const uploads = bucket('uploads').allow('write')
+
+const photo = uploads.file('images/photo.png')
+
+const photoUrl = await photo.getUploadUrl({
+  expiry: 300,
+})
+```

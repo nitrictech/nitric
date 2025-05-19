@@ -1,0 +1,166 @@
+---
+description: 'Learn how Nitric provisions and manages cloud storage buckets with Terraform and Pulumi across AWS, GCP, and Azure.'
+---
+
+# Storage (Buckets/Object Storage)
+
+## 1. System Context
+
+**Developers** use Nitric to define required buckets within their application.
+
+- App code uses the [Bucket resource](/storage) from the Nitric SDK.
+- Developers define buckets their application requires and implement logic to securely store/retrieve/delete files.
+- Developers _request_ the level of access they require for the bucket in their application logic e.g. read, write, delete.
+- Developers can implement handlers for file change events such as write or delete.
+
+**Operations** use default or overridden IaC (e.g Terraform modules) to provision the necessary resources for their target cloud.
+
+<details>
+  <summary>Example AWS Provider</summary>
+
+- **AWS S3** serves as the storage backend.
+- **AWS Lambda** functions are used to process events triggered by S3.
+- **AWS IAM** provides roles and policies for secure access to S3 buckets and Lambda functions, enforcing least privilege access based on the developers request.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    App["nitric up"]
+    S3Bucket["AWS S3 Bucket"]
+    Lambda["AWS Lambda Functions"]
+    IAM["AWS IAM"]
+
+    Developer -->|Code| App
+    Operations -->|Terraform| App
+    App -->|Create S3 Bucket| S3Bucket
+    App -->|Configure Notifications| S3Bucket
+    IAM -->|Allow Lambda Invocation| Lambda
+    Lambda -->|Store/Retrieve Data/Trigger onEvents| S3Bucket
+    App -->|Provide Access| IAM
+    IAM -->S3Bucket
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+<details>
+  <summary>Example GCP Provider</summary>
+
+- **Google Cloud Storage** serves as the storage backend.
+- **Google Cloud Pub/Sub** is used to publish events triggered by Cloud Storage notifications.
+- **Google IAM** provides roles and policies for secure access to Cloud Storage buckets and Pub/Sub topics, enforcing least privilege access based on the developer's request.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    App["nitric up"]
+    GCSBucket["Google Cloud Storage Bucket"]
+    PubSubTopic["Google Pub/Sub Topic"]
+    PubSubSubscription["Google Pub/Sub Subscription"]
+    IAM["Google IAM"]
+    CloudRun["Google Cloud Run Functions"]
+
+
+    Developer -->|Code| App
+    Operations -->|Terraform| App
+    App -->|Create Storage Bucket| GCSBucket
+    App -->|Configure Notifications| GCSBucket
+    IAM -->|Allow Pub/Sub Publishing| PubSubTopic
+    PubSubTopic -->|Publish Events| PubSubSubscription
+    PubSubSubscription -->|Deliver Notifications| CloudRun
+    App -->|Provide Access| IAM
+    IAM -->GCSBucket
+    IAM -->PubSubTopic
+    CloudRun -->|Store/Retrieve Data/Trigger onEvents| GCSBucket
+
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+
+## 2. Sequence
+
+### Build Sequence
+
+Below is the sequence of events that occur when a developer registers a bucket with Nitric. Including, optionally registering event handlers for file change events.
+
+```mermaid
+sequenceDiagram
+    participant Worker as App Worker(s)
+    participant SDK as Nitric SDK
+    participant Nitric as Nitric CLI
+    participant Provider as Nitric Provider <br> (plugin)
+    participant IAC as IaC <br> (e.g. Terraform)
+
+    Worker->>SDK: Register Bucket
+    Worker->>SDK: Register Access Requirements
+    SDK->>Nitric: Register Bucket
+    SDK->>Nitric: Register Access Requirements
+
+    opt Notifications
+      Worker->>SDK: Register Event Callback
+      SDK->>Nitric: Register Event Handler
+    end
+
+    Nitric->>Provider: Forward Nitric Spec
+    Provider->>IAC: Provision Bucket
+    Provider->>IAC: Provision IAM
+
+    opt Notifications
+      Provider->>IAC: Provision Event Rule(s)
+      Provider->>IAC: Provision IAM
+    end
+```
+
+### Runtime Sequence
+
+Below is the runtime flow of a storage operation in a Nitric application, using the Nitric SDK. The SDK forwards the request to the Nitric runtime, which converts the request and forwards it to the cloud storage API. The plugin nature of the Nitric runtime allows for seamless integration with different cloud providers.
+
+```mermaid
+sequenceDiagram
+    participant Client as App Code
+    participant SDK as Nitric SDK
+    participant Nitric as Nitric Runtime <br> (plugin)
+    participant CloudAPI as Cloud Storage <br> (e.g. AWS S3)
+
+    Client->>SDK: Read()
+    SDK->>Nitric: Forward Request
+    Nitric->>Nitric: Convert Request
+    Nitric->>CloudAPI: Storage API Request
+```
+
+## 3. Component
+
+### Bucket Module
+
+- Ensures storage buckets have unique names by appending a randomly generated identifier. This avoids naming conflicts and aligns with best practices for globally accessible cloud resources.
+- Supports the addition of metadata tags for resource identification, management, and tracking, enabling better governance.
+- Configures storage bucket notifications to trigger functions or message queues based on specified events (e.g., object update or deletion).
+- Implements least privilege access by only assigning requested permissions to functions or services that interact with the storage bucket.
+- Uses templates or dynamic blocks to handle multiple notification targets, allowing scalability and flexibility for different workflows.
+
+## 4. Code
+
+**Developers** write application code that uses the [Bucket resource](/storage) from the SDK, configures the bucket, and implements the application logic to read, write and delete files.
+
+SDK Reference by language -
+
+- [NodeJS SDK](/reference/nodejs/storage/bucket)
+- [Python SDK](/reference/python/storage/bucket)
+- [Go SDK](/reference/go/storage/bucket)
+- [Dart SDK](/reference/dart/storage/bucket)
+
+**Operations** will use or extend the Nitric infrastructure modules, including both Terraform and Pulumi:
+
+- Terraform Modules:
+  - [AWS Storage Bucket Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploytf/.nitric/modules/bucket/main.tf)
+  - [GCP Storage Bucket Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/gcp/deploytf/.nitric/modules/bucket/main.tf)
+- Pulumi Modules:
+  - [AWS Storage Bucket Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/bucket.go)
+  - [GCP Storage Bucket Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/gcp/deploy/bucket.go)
+  - [Azure Storage Bucket Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/azure/deploy/bucket.go)

@@ -1,0 +1,39 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Write a file to a bucket."
+---
+
+# Node.js - bucket.file.write()
+
+Write a file to a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('writing')
+
+const logo = assets.file('images/logo.png')
+
+await logo.write(someImageData)
+```
+
+## Parameters
+
+<Properties>
+  <Property name="data" required type="Uint8Array">
+    The data to write to the file.
+  </Property>
+</Properties>
+
+## Examples
+
+### Write a file
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('writing')
+
+const logo = assets.file('images/logo.png')
+
+await logo.write(someImageData)
+```

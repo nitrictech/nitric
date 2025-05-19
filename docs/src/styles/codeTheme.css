@@ -1,0 +1,77 @@
+/* Code Styles */
+:root {
+  --code-theme: light;
+  --code-black: #00000000;
+
+  /* Specific references */
+  --code-variable: #e64553;
+  --code-function: #fe640b;
+  --code-punctuation: #179299;
+  --code-keyword: #8839ef;
+
+  /* Overall colour scheme */
+  --code-rosewater: #dc8a78;
+  --code-flamingo: #dd7878;
+  --code-pink: #ea76cb;
+  --code-mauve: #8839ef;
+  --code-red: #d20f39;
+  --code-maroon: #e64553;
+  --code-peach: #fe640b;
+  --code-yellow: #df8e1d;
+  --code-green: #40a02b;
+  --code-teal: #179299;
+  --code-sky: #04a5e5;
+  --code-sapphire: #209fb5;
+  --code-blue: #1e66f5;
+  --code-lavender: #7287fd;
+  --code-text: #4c4f69;
+  --code-subtext-1: #5c5f77;
+  --code-subtext-0: #6c6f85;
+  --code-overlay-2: #7c7f93;
+  --code-overlay-1: #8c8fa1;
+  --code-overlay-0: #9ca0b0;
+  --code-surface-2: #acb0be;
+  --code-surface-1: #bcc0cc;
+  --code-surface-0: #ccd0da;
+  --code-base: #eff1f5;
+  --code-mantle: #e6e9ef;
+  --code-crust: #dce0e8;
+}
+
+.dark {
+  --code-theme: dark;
+
+  /* Specific references */
+  --code-variable: #ee8d94;
+  --code-function: #7ea2f7;
+  --code-punctuation: #66e0cc;
+  --code-keyword: #bf89eb;
+
+  /* Overall colour scheme */
+  --code-rosewater: #f4dbd6;
+  --code-flamingo: #f0c6c6;
+  --code-pink: #f5bde6;
+  --code-mauve: #c6a0f6;
+  --code-red: #ed8796;
+  --code-maroon: #ee99a0;
+  --code-peach: #f5a97f;
+  --code-yellow: #eed49f;
+  --code-green: #a6da95;
+  --code-teal: #8bd5ca;
+  --code-sky: #91d7e3;
+  --code-sapphire: #7dc4e4;
+  --code-blue: #8aadf4;
+  --code-lavender: #b7bdf8;
+  --code-text: #cad3f5;
+  --code-subtext-1: #b8c0e0;
+  --code-subtext-0: #a5adcb;
+  --code-overlay-2: #939ab7;
+  --code-overlay-1: #8087a2;
+  --code-overlay-0: #6e738d;
+  --code-surface-2: #5b6078;
+  --code-surface-1: #494d64;
+  --code-surface-0: #363a4f;
+  --code-base: #24273a;
+  --code-mantle: #1e2030;
+  --code-crust: #181926;
+}

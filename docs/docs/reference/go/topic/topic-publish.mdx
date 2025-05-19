@@ -1,0 +1,98 @@
+---
+description: "Reference for Nitric's Go library - Publish new events to the topic."
+---
+
+# Go - Topic.Publish()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Topics
+  in Nitric start with the [Async Messaging docs](/messaging#topics).
+</Note>
+
+Publish an event (push based message) to a topic.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/topics"
+)
+
+func main() {
+  updates := nitric.NewTopic("updates").Allow(topics.TopicPublish)
+
+  updates.Publish(context.TODO(),
+    map[string]interface{}{
+      "something": "amazing happened",
+    },
+  )
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="event" required type="map[string]interface{}">
+    The event to publish to the topic.
+  </Property>
+  <Property name="opts" type="PublishOption">
+    Optional function to send a message with a delay.
+  </Property>
+</Properties>
+
+## Examples
+
+### Publish a message
+
+Publishing messages to a topic will push a copy of the message to each of the topic's subscribers. By default, delivery occurs without a delay.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/topics"
+)
+
+func main() {
+  updates := nitric.NewTopic("updates").Allow(topics.TopicPublish)
+
+  updates.Publish(context.TODO(),
+    map[string]interface{}{
+      "something": "amazing happened",
+    },
+  )
+
+  nitric.Run()
+}
+```
+
+### Delaying message delivery
+
+You can delay the delivery of messages sent to a topic. The current maximum delay is 7 days (604800 seconds).
+
+```go
+import (
+  "context"
+  "time"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/topics"
+)
+
+func main() {
+  updates := nitric.NewTopic("updates").Allow(topics.TopicPublish)
+
+  updates.Publish(context.TODO(), map[string]interface{}{
+    "something": "amazing happened",
+  }, topics.WithDelay(time.Hour))
+
+  nitric.Run()
+}
+```

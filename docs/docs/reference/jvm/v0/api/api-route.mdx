@@ -1,0 +1,204 @@
+---
+description: "Reference for Nitric's v0 JVM library - Creates a new route (path) within an API."
+---
+
+# JVM - api.route()
+
+Creates a new route (path) within an API.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    var customersRoute = api.route("/customers");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  val customerRoute = api.route("/customers")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="String">
+    The path matcher to use for this route. Calling `route` on the same API more
+    than once with the same matcher will return the same route object. Matchers
+    accept path parameters in the form of a colon prefixed string. The string
+    provided will be used as that path parameter's name when calling middleware
+    and handlers. See [create a route with path
+    params](#create-a-route-with-path-params)
+  </Property>
+  <Property name="options" type="RouteOptions">
+    Additional options when creating method.
+    <Properties nested>
+      <Property name="middleware" type="HttpMiddleware or List<HttpMiddleware>">
+        Middleware to apply to all methods on this route.
+      </Property>
+      <Property name="security" type="Map<String, List<String>>">
+        Specify the security rules that apply to this route. Overrides API level
+        security rules.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### Notes
+
+The `middleware` property on the `options` param is useful for applying universal middleware such as CORS headers or Auth, across an entire route. However, if methods aren't registered, the route won't be deployed. If you need to run the same handler for all methods on a route, you should use [route.all()](./api-route-all)
+
+## Examples
+
+### Create a route
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    var customersRoute = api.route("/customers");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  val customerRoute = api.route("/customers")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Create a route with path params
+
+Route paths can include dynamic parameters. These values will automatically be parsed and provided in the context object for your middleware and handlers as a `string`.
+
+For example, if you have a customers path and you want to include a `customerId` param you would define the route like this.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    var customersRoute = api.route("/customer/:customerId");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  val customerRoute = api.route("/customer/:customerId")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Create a route with middleware
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.RouteOptions;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    var customersRoute = api.route("/customers", new RouteOptions.Builder()
+      .middleware(authMiddleware)
+      .build()
+    );
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  val customerRoute = api.route("/customers", RouteOptions(middleware = authMiddleware))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

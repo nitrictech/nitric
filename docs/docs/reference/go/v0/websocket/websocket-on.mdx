@@ -1,0 +1,153 @@
+---
+description: "Reference for Nitric's v0 Go library - Register a handler for connections, disconnections, or messages for the websocket."
+---
+
+# Go - Websocket.On()
+
+Register a handler for connections, disconnections, or messages for the websocket.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws, err := nitric.NewWebsocket("public")
+  if err != nil {
+    return
+  }
+
+  ws.On(faas.WebsocketConnect, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    // handle connections
+    return next(ctx)
+  })
+
+  ws.On(faas.WebsocketDisconnect, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    // handle disconnections
+    return next(ctx)
+  })
+
+  ws.On(faas.WebsocketMessage, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    // handle messages
+    return next(ctx)
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="eventType" required type="WebsocketEventType">
+    The type of websocket event to listen for. Can be `WebsocketConnect`,
+    `WebsocketDisconnect`, or `WebsocketMessage`.
+  </Property>
+  <Property name="middleware" required type="WebsocketMiddleware">
+    The middleware function to use as the handler for Websocket events. If you
+    want to compose more than one middleware use
+    `faas.ComposeWebsocketMiddleware`.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for message events
+
+```go
+ws.On(faas.WebsocketMessage, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+  message := string(ctx.Request.Data())
+
+  fmt.Printf("New Message from %s: %s\n", ctx.Request.ConnectionID(), message)
+
+  return next(ctx)
+})
+```
+
+### Manage Websocket connections
+
+To store Websocket connections you can use a Nitric collection.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws, err := nitric.NewWebsocket("public")
+  if err != nil {
+    return
+  }
+
+  connections, err := nitric.NewCollection("connections").With(nitric.CollectionEverything...)
+  if err != nil {
+    return
+  }
+
+  ws.On(faas.WebsocketConnect, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    err := connections.Doc(ctx.Request.ConnectionID()).Set(ctx.Request.Context(), map[string]interface{}{
+      // store any metadata related to the connection here
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+    if err != nil {
+      return ctx, err
+    }
+
+    return next(ctx)
+  })
+
+  ws.On(faas.WebsocketDisconnect, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    // remove the connection from the collection
+    err := connections.Doc(ctx.Request.ConnectionID()).Delete(ctx.Request.Context())
+    if err != nil {
+      return ctx, err
+    }
+
+    return next(ctx)
+  })
+
+  nitric.Run()
+}
+```
+
+### Chain functions as a single method handler
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func validateMessage(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+  // validate that the message does not contain explicit content
+
+  return next(ctx)
+}
+
+func handleMessage(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+  message := string(ctx.Request.Data())
+
+  fmt.Printf("New Message from %s: %s\n", ctx.Request.ConnectionID(), message)
+
+  return next(ctx)
+}
+
+func main() {
+  ws, err := nitric.NewWebsocket("public")
+  if err != nil {
+    return
+  }
+
+  ws.On(faas.WebsocketMessage, faas.ComposeWebsocketMiddleware(validateMessage, handleMessage))
+
+  nitric.Run()
+}
+```

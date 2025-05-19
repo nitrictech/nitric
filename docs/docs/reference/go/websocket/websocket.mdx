@@ -1,0 +1,49 @@
+---
+description: "Reference for Nitric's Go library - Create Websockets with the Nitric Go SDK"
+---
+
+# Go - NewWebsocket()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Creates a new Websocket.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Websocket within the app. Subsequent calls to
+    `NewWebsocket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Websocket
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  nitric.Run()
+}
+```

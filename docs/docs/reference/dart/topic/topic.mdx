@@ -1,0 +1,42 @@
+---
+description: "Reference for Nitric's Dart library - Creates a new Topic."
+---
+
+# Dart - topic()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Topics
+  and Pub/Sub in Nitric start with the [Async Messaging
+  docs](/messaging#topics).
+</Note>
+
+Creates a new Topic.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final updates = Nitric.topic("updates");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The name of the topic to create.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a new topic
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final updates = Nitric.topic("updates");
+```
+
+### See also
+
+- [topic.subscribe()](./topic-subscribe)
+- [topic.publish()](./topic-publish)

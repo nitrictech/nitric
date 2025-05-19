@@ -1,0 +1,795 @@
+---
+description: 'How to extend a standard provider using Nitric'
+---
+
+# Extending Standard Providers
+
+Nitric supports the extension of our standard providers, allowing you to use the cloud services that you prefer. This guide assumes you understand the basis of the Nitric [providers](/providers) and are looking to use an extension to swap out a cloud service for another cloud service.
+
+You can use the [AWS extension skeleton](https://github.com/nitrictech/nitric-provider-template-poc/tree/main/extension) as a base for your extension provider.
+
+## What can be extended?
+
+Extending a provider can replace any individual resource, or add `pre` or `post` configuration to your deployment.
+
+Below is the Nitric deployment provider interface. To extend the provider you can replace any of the definitions of the resource or configuration that you require.
+
+```go
+type NitricPulumiProvider interface {
+	// Init - Initialize the provider with the given attributes, prior to any resource creation or Pulumi Context creation
+	Init(attributes map[string]interface{}) error
+	// Pre - Called prior to any resource creation, after the Pulumi Context has been established
+	Pre(ctx *pulumi.Context, resources []*deploymentspb.Resource) error
+	// Config - Return the Pulumi ConfigMap for the provider
+	Config() (auto.ConfigMap, error)
+
+	// Order - Return the order that resources should be deployed in.
+	// The order of resources is important as some resources depend on others.
+	// Changing the default order is not recommended unless you know what you are doing.
+	Order(resources []*deploymentspb.Resource) []*deploymentspb.Resource
+
+	// Api - Deploy an API Gateway
+	Api(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Api) error
+	// Http - Deploy a HTTP Proxy
+	Http(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Http) error
+	// Bucket - Deploy a Storage Bucket
+	Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error
+	// Service - Deploy an service (Service)
+	Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Service) error
+	// Topic - Deploy a Pub/Sub Topic
+	Topic(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Topic) error
+	// Queue - Deploy a Queue
+	Queue(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Queue) error
+	// Secret - Deploy a Secret
+	Secret(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Secret) error
+	// Schedule - Deploy a Schedule
+	Schedule(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Schedule) error
+	// Websocket - Deploy a Websocket Gateway
+	Websocket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Websocket) error
+	// Policy - Deploy a Policy
+	Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error
+	// KeyValueStore - Deploy a Key Value Store
+	KeyValueStore(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.KeyValueStore) error
+
+	// Post - Called after all resources have been created, before the Pulumi Context is concluded
+	Post(ctx *pulumi.Context) error
+
+	// Result - Last method to be called, return the result of the deployment to be printed to stdout
+	Result(ctx *pulumi.Context) (pulumi.StringOutput, error)
+}
+```
+
+## Replacing a Bucket Service
+
+This guide will run through how to replace the S3 implementation of the AWS provider's storage service with a [Digital Ocean Spaces Object Storage](https://www.digitalocean.com/products/spaces). You can find the full implementation on [GitHub](https://github.com/nitrictech/nitric-provider-template-poc/tree/main/spaces-extension).
+
+A convenient feature of Spaces is its compatibility with the S3 APIs. This will make writing the runtime component of the provider very similar to the standard [AWS implementation](https://github.com/nitrictech/nitric/blob/main/cloud/aws/runtime/storage/s3.go).
+
+### Initializing the project
+
+We can start by setting up our go project.
+
+```bash
+go mod init
+```
+
+We will then `go get` our dependencies. The first dependency is the nitric cloud provider. This comes with helpers to interface with the Nitric SDKs and CLI.
+
+```bash
+go get "github.com/nitrictech/nitric/cloud"
+```
+
+The next dependency is the Pulumi [digital ocean SDK](https://www.pulumi.com/registry/packages/digitalocean/).
+
+```bash
+go get "github.com/pulumi/pulumi-digitalocean/sdk/v4/go/digitalocean"
+```
+
+We will then scaffold our project structure. This isn't necessary if you are building from the [extension provider scaffold](https://github.com/nitrictech/nitric-provider-template-poc/tree/main/extension). The project structure should look like this:
+
+```txt
+├── cmd
+│   ├── deploy
+│   │	├── main.go
+│   ├── runtime
+│   │	├── main.go
+├── deploy
+│   ├── deploy.go
+├── runtime
+│   ├── spaces.go
+├── go.mod
+├── go.sum
+```
+
+### Deployment Interface
+
+We can start by creating the deployment interface. This will be an interface that embeds the Nitric AWS provider, that way we only have to build the services that we want to replace.
+
+```go title:deploy/deploy.go
+package deploy
+
+import (
+	"fmt"
+
+	"github.com/nitrictech/nitric/cloud/aws/deploy"
+	"github.com/pulumi/pulumi-digitalocean/sdk/v4/go/digitalocean"
+)
+
+type AwsExtensionProvider struct {
+	deploy.NitricAwsPulumiProvider
+
+	Buckets map[string]*digitalocean.SpacesBucket
+}
+
+func NewAwsExtensionProvider() *AwsExtensionProvider {
+	awsProvider := deploy.NewNitricAwsProvider()
+
+	return &AwsExtensionProvider{
+		NitricAwsPulumiProvider: *awsProvider,
+		Buckets:                 make(map[string]*digitalocean.SpacesBucket),
+	}
+}
+```
+
+You'll notice that we also override the `Bucket` value to use the pulumi spaces bucket type instead of the S3 bucket.
+
+### Config
+
+Now we can create an extension configuration to allow adding digital ocean configuration to our stack file. You can find the base AWS configuration [here](/providers/pulumi/aws#stack-configuration).
+
+Start by defining the type of configuration we want. To deploy to digital ocean we require setting a Digital Ocean token as well as a spaces key, secret, and region.
+
+```go title:deploy/config.go
+package deploy
+
+import (
+	"github.com/mitchellh/mapstructure"
+	"github.com/nitrictech/nitric/cloud/aws/deploy"
+)
+
+type ExtensionConfig struct {
+	deploy.AwsConfig
+	Token  string        `mapstructure:"token"`
+	Spaces *SpacesConfig `mapstructure:"spaces"`
+}
+
+type SpacesConfig struct {
+	Key    string `mapstructure:"key"`
+	Secret string `mapstructure:"secret"`
+	Region string `mapstructure:"region"`
+}
+```
+
+The attributes from the stack file are sent to the provider as a `map[string]interface{}`. We'll write a helper function to convert and validate the `config`.
+
+```go title:deploy/config.go
+func ConfigFromAttributes(attributes map[string]interface{}) (*ExtensionConfig, error) {
+	// Get our extension config
+	extensionConfig := &ExtensionConfig{}
+	err := mapstructure.Decode(attributes, extensionConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the digital ocean configuration was supplied.
+	if extensionConfig.Token == "" || extensionConfig.Spaces == nil || extensionConfig.Spaces.Key == "" || extensionConfig.Spaces.Secret == "" {
+		return nil, fmt.Errorf("invalid config: require a digital ocean token, spaces access key and access secret")
+	}
+
+	// Convert and validate the standard AWS provider attributes
+	awsConfig, err := deploy.ConfigFromAttributes(attributes)
+	if err != nil {
+		return nil, err
+	}
+
+	extensionConfig.AwsConfig = *awsConfig
+
+	return extensionConfig, nil
+}
+```
+
+Now that we have the helper, we can overwrite the AWS configuration `Init` function to take config from our `ConfigFromAttributes` function. The `Init` function is what is run before any pulumi resource creation to populate a provider with the required attributes.
+
+```go title:deploy/deploy.go"}}
+import (
+	...
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+...
+
+func (a \*AwsExtensionProvider) Init(attributes map[string]interface{}) error {
+var err error
+
+    a.CommonStackDetails, err = common.CommonStackDetailsFromAttributes(attributes)
+    if err != nil {
+    	return status.Errorf(codes.InvalidArgument, err.Error())
+    }
+
+    a.config, err = ConfigFromAttributes(attributes)
+    if err != nil {
+    	return status.Errorf(codes.InvalidArgument, "Bad stack configuration: %s", err)
+    }
+
+    a.AwsConfig = &a.config.AwsConfig
+
+    return nil
+
+}
+
+```
+
+We can then replace the `Config` function to add our digital ocean token and spaces access key. The `Config` function is used to provide pulumi with configuration variables. These are standardized based on the provider. You can find the Digital Ocean Pulumi config [here](https://www.pulumi.com/registry/packages/digitalocean/installation-configuration/#configuring-credentials).
+
+```go title:deploy/deploy.go
+import (
+	...
+	common "github.com/nitrictech/nitric/cloud/common/deploy"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto"
+)
+
+...
+
+func (a *AwsExtensionProvider) Config() (auto.ConfigMap, error) {
+	// Get the AWS configuration variables
+	config, err := a.NitricAwsPulumiProvider.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	config["digitalocean:token"] = auto.ConfigValue{Value: a.config.Token, Secret: true}
+	config["digitalocean:spaces_access_id"] = auto.ConfigValue{Value: a.config.Spaces.Key, Secret: true}
+	config["digitalocean:spaces_secret_key"] = auto.ConfigValue{Value: a.config.Spaces.Secret, Secret: true}
+	config["digitalocean:version"] = auto.ConfigValue{Value: "4.27.0"} // Locking the digital ocean provider version
+
+	return config, nil
+}
+```
+
+### Deployment Code
+
+Now that we have our provider initialized with all the configuration we require, we can start writing our deployment code. Although we are just replacing the Bucket resource, we will need to augment the Service and Policy resources.
+
+The service resource will need to be changed slightly to add our spaces credentials as environment variables. This will allow our Lambda's to interact with our Spaces bucket at runtime.
+
+```go title:deploy/service.go"}}
+package deploy
+
+import (
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+	"github.com/nitrictech/nitric/cloud/common/deploy/pulumix"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+)
+
+func (a *AwsExtensionProvider) Service(ctx *pulumi.Context, parent pulumi.Resource, name string, config *pulumix.NitricPulumiServiceConfig, runtime provider.RuntimeProvider) error {
+	// Append Digital Ocean environment variables
+	config.SetEnv("DIGITALOCEAN_REGION", pulumi.String(a.config.Spaces.Region))
+	config.SetEnv("SPACES_KEY", pulumi.String(a.config.Spaces.Key))
+	config.SetEnv("SPACES_SECRET", pulumi.String(a.config.Spaces.Secret))
+
+	// Call the AWS provider service to deploy our Lambda
+	return a.NitricAwsPulumiProvider.Service(ctx, parent, name, config, runtime)
+}
+```
+
+As we aren't deploying S3 buckets to AWS, the base provider's policy (which includes references to S3) won't be valid. We can fix this by filtering out bucket permissions for our policy creation. This will be a simple wrapper like what we did with the service resource.
+
+<Note>
+  We are using [lo](https://github.com/samber/lo) for the Filter and Contains
+  methods. You can get this dependency with `go get "github.com/samber/lo"`
+</Note>
+
+```go title:deploy/policy.go
+package deploy
+
+import (
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	resourcespb "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
+)
+
+func (a *AwsExtensionProvider) Policy(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Policy) error {
+	filteredConfig := deploymentspb.Policy{
+		Principals: config.Principals,
+	}
+
+	// Filter out all bucket resources
+	filteredConfig.Resources = lo.Filter(config.Resources, func(res *deploymentspb.Resource, idx int) bool {
+		return res.Id.Type != resourcespb.ResourceType_Bucket
+	})
+
+	// Filter out bucket actions (read, write, delete)
+	filteredConfig.Actions = lo.Filter(config.Actions, func(res resourcespb.Action, idx int) bool {
+		return !lo.Contains([]resourcespb.Action{
+			resourcespb.Action_BucketFileDelete,
+			resourcespb.Action_BucketFileGet,
+			resourcespb.Action_BucketFileList,
+			resourcespb.Action_BucketFilePut,
+		}, res)
+	})
+
+	if len(filteredConfig.Actions) == 0 {
+		return nil
+	}
+
+	return a.NitricAwsPulumiProvider.Policy(ctx, parent, name, &filteredConfig)
+}
+```
+
+With that done, we can create our Bucket. This is done using the [pulumi SDK](https://www.pulumi.com/registry/packages/digitalocean/api-docs/spacesbucket/).
+
+```go title:deploy/bucket.go
+import (
+	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/pulumi/pulumi-digitalocean/sdk/v4/go/digitalocean"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+)
+
+func (a *AwsExtensionProvider) Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error {
+	bucket, err := digitalocean.NewSpacesBucket(ctx, name, &digitalocean.SpacesBucketArgs{
+		Name:   pulumi.String(name),
+		Region: pulumi.String(a.config.Spaces.Region),
+		Acl:    pulumi.String("private"),
+	})
+	if err != nil {
+		return err
+	}
+
+	a.Buckets[name] = bucket
+
+	return nil
+}
+```
+
+### Runtime Code
+
+With the deployment code created, we can now do the runtime implementation for the bucket.
+
+Spaces is compatible with the S3 APIs, so we can use the AWS S3 implementation and just change out a few AWS specific features. We'll start by creating the interface.
+
+```go title:runtime/storage/spaces.go
+import (
+	"github.com/nitrictech/nitric/cloud/aws/ifaces/s3iface"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+)
+
+package storage
+
+type SpacesStorageService struct {
+	s3Client      s3iface.S3API
+	preSignClient s3iface.PreSignAPI
+	provider      resource.AwsResourceProvider
+}
+
+var _ storagepb.StorageServer = (*SpacesStorageService)(nil)
+```
+
+We can then write a function to create a new `SpacesStorageService` with the S3 client authenticated using our digital ocean credentials. We have access to these environment variables because of the augmentation we did to the `Services` deployment code.
+
+```go title:runtime/storage/spaces.go
+import (
+	...
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+)
+
+...
+
+func New(provider resource.AwsResourceProvider) (*SpacesStorageService, error) {
+	awsRegion := env.AWS_REGION.String()
+	doRegion := os.Getenv("DIGITALOCEAN_REGION")
+	accessKey := os.Getenv("SPACES_KEY")
+	secretKey := os.Getenv("SPACES_SECRET")
+	spacesEndpoint := fmt.Sprintf("https://%s.digitaloceanspaces.com", doRegion)
+
+	s3Client := s3.New(s3.Options{
+		Region:       awsRegion,
+		Credentials:  aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		BaseEndpoint: &spacesEndpoint,
+	})
+
+	return &SpacesStorageService{
+		s3Client:      s3Client,
+		preSignClient: s3.NewPresignClient(s3Client),
+		provider:      provider,
+	}, nil
+}
+```
+
+A complete Nitric bucket implementation has the following functions that need to be implemented.
+
+```go title:runtime/storage/spaces.go
+import (
+	...
+	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+)
+
+...
+
+func (s *SpacesStorageService) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {}
+func (s *SpacesStorageService) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {}
+func (s *SpacesStorageService) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {}
+func (s *SpacesStorageService) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {}
+func (s *SpacesStorageService) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {}
+func (s *SpacesStorageService) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {}
+```
+
+If you don't want to implement all the functions you can return an unimplemented exception.
+
+```go title:runtime/storage/spaces.go
+import (
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+)
+
+// Unimplemented - PreSignUrl
+func (s *SpacesStorageService) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "PreSignUrl")
+}
+```
+
+However, for this guide we will be implementing every feature. Let's start with the `Read` function. `Read` will get the contents of a blob from the bucket.
+
+```go title:runtime/storage/spaces.go
+import (
+	...
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+)
+
+...
+
+func (s *SpacesStorageService) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {
+	bucketName := &req.BucketName
+
+	// Get object from s3 client
+	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: bucketName,
+		Key:    aws.String(req.Key),
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error occurred reading file: %v", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return &storagepb.StorageReadResponse{
+		Body: bodyBytes,
+	}, nil
+}
+```
+
+`Write` creates or updates a blob in a bucket.
+
+```go title:runtime/storage/spaces.go
+func (s *SpacesStorageService) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
+	bucketName := &req.BucketName
+
+	contentType := http.DetectContentType(req.Body)
+
+	if _, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      bucketName,
+		Body:        bytes.NewReader(req.Body),
+		ContentType: &contentType,
+		Key:         aws.String(req.Key),
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "error occurred writing file: %v", err)
+	}
+
+	return &storagepb.StorageWriteResponse{}, nil
+}
+```
+
+`Delete` deletes a blob from a bucket.
+
+```go title:runtime/storage/spaces.go
+func (s *SpacesStorageService) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {
+	bucketName := &req.BucketName
+
+	if _, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: bucketName,
+		Key:    aws.String(req.Key),
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "error occurred deleting file: %v", err)
+	}
+
+	return &storagepb.StorageDeleteResponse{}, nil
+}
+```
+
+`Exists` checks the existence of a single blob, returning true if it exists, false if it does not.
+
+```go title:runtime/storage/spaces.go
+func (s *SpacesStorageService) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {
+	bucketName := &req.BucketName
+
+	_, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: bucketName,
+		Key:    aws.String(req.Key),
+	})
+	if err != nil {
+		return &storagepb.StorageExistsResponse{
+			Exists: false,
+		}, nil
+	}
+
+	return &storagepb.StorageExistsResponse{
+		Exists: true,
+	}, nil
+}
+```
+
+`ListBlobs` will list all the blobs in a bucket.
+
+```go title:runtime/storage/spaces.go
+func (s *SpacesStorageService) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {
+	var prefix *string = nil
+	if req.Prefix != "" {
+		// Only apply if prefix isn't default
+		prefix = &req.Prefix
+	}
+
+	bucketName := &req.BucketName
+
+	objects, err := s.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: bucketName,
+		Prefix: prefix,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error occurred listing files: %v", err)
+	}
+
+	files := make([]*storagepb.Blob, 0, len(objects.Contents))
+	for _, o := range objects.Contents {
+		files = append(files, &storagepb.Blob{
+			Key: *o.Key,
+		})
+	}
+
+	return &storagepb.StorageListBlobsResponse{
+		Blobs: files,
+	}, nil
+}
+```
+
+`PreSignUrl` generates a signed URL which can be used to perform direct operations on a file. It is useful for large file uploads/downloads so they can bypass application code and work directly with S3. A pre-signed url request can either be for a download URL or an upload URL. An expiry time can also be specified.
+
+```go title:runtime/storage/spaces.go
+func (s *SpacesStorageService) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
+	bucketName := &req.BucketName
+
+	switch req.Operation {
+	case storagepb.StoragePreSignUrlRequest_READ:
+		// Handle getting a download URL
+		response, err := s.preSignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+			Bucket: bucketName,
+			Key:    aws.String(req.Key),
+		}, s3.WithPresignExpires(req.Expiry.AsDuration()))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate signed READ URL: %v", err)
+		}
+
+		return &storagepb.StoragePreSignUrlResponse{
+			Url: response.URL,
+		}, nil
+	case storagepb.StoragePreSignUrlRequest_WRITE:
+		// Handle getting an upload URL
+		req, err := s.preSignClient.PresignPutObject(ctx, &s3.PutObjectInput{
+			Bucket: bucketName,
+			Key:    aws.String(req.Key),
+		}, s3.WithPresignExpires(req.Expiry.AsDuration()))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to generate signed WRITE URL: %v", err)
+		}
+
+		return &storagepb.StoragePreSignUrlResponse{
+			Url: req.URL,
+		}, nil
+	default:
+		return nil, newErr(codes.Unimplemented, "requested operation not supported for pre-signed AWS S3 URLs", nil)
+	}
+}
+```
+
+### Packaging your provider
+
+The final steps are to write the entrypoint functions for the provider and a script to package it for use in Nitric projects.
+
+The first step is creating the runtime entrypoint file. This sets up which plugins will be used for the runtime implementation of our provider. Here we will use all the standard AWS provider plugins but use our Storage implementation.
+
+<Note>The Nitric runtime server is referred to as the `membrane`.</Note>
+
+```go title:cmd/runtime/main.go
+package main
+
+import (
+	"os"
+	"os/signal"
+	"syscall"
+
+	spaces_service "github.com/nitrictech/nitric-provider-template/spaces-extension/runtime/storage"
+
+	"github.com/nitrictech/nitric/cloud/aws/runtime/api"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/env"
+	lambda_service "github.com/nitrictech/nitric/cloud/aws/runtime/gateway"
+	dynamodb_service "github.com/nitrictech/nitric/cloud/aws/runtime/keyvalue"
+	sqs_service "github.com/nitrictech/nitric/cloud/aws/runtime/queue"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/resource"
+	secrets_manager_secret_service "github.com/nitrictech/nitric/cloud/aws/runtime/secret"
+	sns_service "github.com/nitrictech/nitric/cloud/aws/runtime/topic"
+	"github.com/nitrictech/nitric/cloud/aws/runtime/websocket"
+	base_http "github.com/nitrictech/nitric/cloud/common/runtime/gateway"
+	"github.com/nitrictech/nitric/core/pkg/logger"
+	"github.com/nitrictech/nitric/core/pkg/membrane"
+)
+
+func main() {
+	// Set logging settings
+	term := make(chan os.Signal, 1)
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(term, os.Interrupt, syscall.SIGINT)
+
+	logger.SetLogLevel(logger.INFO)
+
+	// Get server options
+	gatewayEnv := env.GATEWAY_ENVIRONMENT.String()
+	membraneOpts := membrane.DefaultMembraneOptions()
+
+	provider, err := resource.New()
+	if err != nil {
+		logger.Fatalf("could not create aws provider: %v", err)
+		return
+	}
+
+	// Load each of the provider plugins, starting with the Gateway Plugin
+	switch gatewayEnv {
+	case "lambda":
+		// assume lambda is used for AWS
+		membraneOpts.GatewayPlugin, _ = lambda_service.New(provider)
+	default:
+		// fallback to a default HTTP implementation
+		membraneOpts.GatewayPlugin, _ = base_http.NewHttpGateway(nil)
+	}
+
+ 	// Use our spaces_service plugin for the runtime storage
+	membraneOpts.StoragePlugin, _ = spaces_service.New(provider)
+
+	// Use the AWS provider plugins for everything else
+	membraneOpts.ApiPlugin = api.NewAwsApiGatewayProvider(provider)
+	membraneOpts.SecretManagerPlugin, _ = secrets_manager_secret_service.New(provider)
+	membraneOpts.KeyValuePlugin, _ = dynamodb_service.New(provider)
+	membraneOpts.TopicsPlugin, _ = sns_service.New(provider)
+	membraneOpts.WebsocketPlugin, _ = websocket.NewAwsApiGatewayWebsocket(provider)
+	membraneOpts.QueuesPlugin, _ = sqs_service.New(provider)
+	membraneOpts.ResourcesPlugin = provider
+
+	// Create the runtime Membrane server
+	m, err := membrane.New(membraneOpts)
+	if err != nil {
+		logger.Fatalf("There was an error initializing the membrane server: %v", err)
+	}
+
+	errChan := make(chan error)
+	// Start the Membrane server
+	go func(chan error) {
+		errChan <- m.Start()
+	}(errChan)
+
+	// Error handling...
+	select {
+	case membraneError := <-errChan:
+		logger.Errorf("Membrane Error: %v, exiting\n", membraneError)
+	case sigTerm := <-term:
+		logger.Infof("Received %v, exiting\n", sigTerm)
+	}
+
+	m.Stop()
+}
+```
+
+We'll then create the deployment provider which will embed the runtime provider. We create the AWS extension provider and use `provider.NewPulumiProviderServer` to wrap the provider so it can be used as a deployment gRPC server. `providerStack.Start()` starts the gRPC server.
+
+```go title:cmd/deploy/main.go
+package main
+
+import (
+	_ "embed"
+
+	"github.com/nitrictech/nitric-provider-template/spaces-extension/deploy"
+	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
+)
+
+// Embed the runtime provider
+//go:embed runtime-extension-aws
+var runtimeBin []byte
+
+var runtimeProvider = func() []byte {
+	return runtimeBin
+}
+
+// Create and start the deployment server
+func main() {
+	stack := deploy.NewAwsExtensionProvider()
+
+	providerServer := provider.NewPulumiProviderServer(stack, runtimeProvider)
+
+	providerServer.Start()
+}
+```
+
+<Note>
+  If you're curious whats going on under the hood with the gRPC server creation
+  you can find the complete implementation on our
+  [GitHub](https://github.com/nitrictech/nitric/blob/main/cloud/common/deploy/provider/pulumi.go).
+</Note>
+
+### Makefile
+
+We then need a way use our provider with Nitric projects. The following `makefile` has default scripts to build our runtime binary and our deployment binary, as well as a script `make install` to put in the provider directory. The `go build` output files match the binaries we were embedding into our `cmd` files earlier.
+
+```makefile title:makefile
+.PHONY: install
+
+# build runtime binary
+runtimebin:
+	@echo Building Extension Runtime Server
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/runtime-extension-aws -ldflags="-s -w -extldflags=-static" ./cmd/runtime
+
+# move the runtime file into the deployment directory for embedding
+predeploybin: runtimebin
+	@cp bin/runtime-extension-aws cmd/deploy/runtime-extension-aws
+
+# build the deployment binary, embedding the runtime binary
+deploybin: predeploybin
+	@echo Building Extension Deployment Server
+	@CGO_ENABLED=0 go build -o bin/deploy-extension -ldflags="-s -w -extldflags=-static" -ldflags="-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" ./cmd/deploy
+	@rm cmd/deploy/runtime-extension-aws
+
+# install the deployment binary into the provider directory so it can be used as `provider: custom/extension@0.0.1`
+install: deploybin
+	@echo installing extension deployment server to ${HOME}/.nitric/providers/custom/extension-0.0.1
+	@mkdir -p ${HOME}/.nitric/providers/custom/
+	@rm -f ${HOME}/.nitric/providers/custom/extension-0.0.1
+	@cp bin/deploy-extension ${HOME}/.nitric/providers/custom/extension-0.0.1
+```
+
+### Using the provider
+
+Building the extension provider can be done with the following command:
+
+```
+make install
+```
+
+This will build the runtime provider and the deployment provider, packaging them together and saving it to `$HOME/.nitric/providers/custom/extension-0.0.1`.
+
+To use the custom extension you can use the following stack configuration file. It requires you fill in digital ocean tokens to deploy your spaces bucket.
+
+- [digital_ocean_token](https://cloud.digitalocean.com/account/api/tokens)
+- [spaces_key](https://cloud.digitalocean.com/account/api/spaces)
+- [spaces_secret](https://cloud.digitalocean.com/account/api/spaces)
+
+```yaml title:nitric.xxxx.yaml"}}
+provider: custom/extension@0.0.1
+region: us-east-1
+token: `digital_ocean_token`
+spaces:
+  region: nyc1
+  key: `spaces_key`
+  secret: `spaces_secret`
+```
+
+You can then use `nitric up` to deploy your application.
+
+If you have any feedback or questions, you can reach out to us on our [Discord](https://nitric.io/chat).

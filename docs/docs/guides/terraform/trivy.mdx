@@ -1,0 +1,88 @@
+---
+description: Use Trivy for static analysis of a Nitric project deployed with Terraform
+tags:
+  - Terraform
+  - Testing
+published_at: 2025-01-09
+---
+
+# Static analysis of Terraform with Trivy
+
+This guide will walk you through generating a report with [Trivy](https://aquasecurity.github.io/trivy/) from a Nitric project.
+
+## How Trivy works
+
+[Trivy](https://aquasecurity.github.io/trivy/) is a comprehensive security scanner that supports scanning file systems, Git repositories, and container images. It also includes a “config” scanning feature that checks IaC (Infrastructure as Code) files like Terraform for misconfigurations, security issues, and vulnerabilities.
+
+This guide assumes that you have already [installed Trivy](https://aquasecurity.github.io/trivy/v0.35/getting-started/installation/) by following their installation guide.
+
+## What we'll be doing
+
+1. Create and set up your application.
+2. Deploying to AWS with a Terraform provider.
+3. Run Trivy.
+
+## Create and set up your application
+
+Trivy can be used with any Nitric project that you intend to deploy with Terraform. We'll be using a basic starter template in this guide; however, you can use your own Nitric project or an [example project](https://github.com/nitrictech/examples).
+
+Let's start by creating a new project from a Nitric template. This will provide a base for building the API:
+
+```bash
+nitric new my-profile-api ts-starter
+```
+
+Next, open the project in your editor of choice and make sure all dependencies are resolved:
+
+Using NPM:
+
+```bash
+npm install
+```
+
+You can test the project to verify everything is working as expected:
+
+```bash
+nitric start
+```
+
+## Deploying to AWS with a Terraform provider
+
+To deploy your application with Terraform, you'll need to use Nitric’s Terraform providers. You can learn more about using Nitric with Terraform [here](/providers/terraform).
+
+```bash
+nitric stack new dev aws-tf
+```
+
+Update this newly created stack file to include your target region:
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/awstf@1.11.6
+
+# The target AWS region to deploy to
+region: us-east-2
+```
+
+Once you've created your stack file, you can generate the Terraform code by running the following command:
+
+```bash
+nitric up
+```
+
+This will generate Terraform code that can deploy your application. The output will be in a folder named `cdktf.out` by default.
+
+## Run Trivy
+
+Trivy’s config scanning feature can analyze your Terraform files for possible misconfiguration.
+
+```bash
+cd cdktf.out/stacks/my-profile-api-dev
+trivy config .
+```
+
+## Analyzing the results
+
+Trivy comes with a variety of checks for common security and misconfiguration issues. Some findings might not always be relevant to your deployment scenario. For example, if Trivy flags a missing KMS key reference for encryption, it might be because your ECR repository is already encrypted by default with SSE-S3, and you haven’t explicitly configured a KMS key. In such cases, it’s worth reviewing the findings to see if they apply to your use case.
+
+If you have any concerns, please don't hesitate to [reach out](https://nitric.io/chat).

@@ -1,0 +1,61 @@
+---
+description: "Reference for Nitric's v0 Go library - Gets a reference to a child collection on a document."
+---
+
+# Go - Collection.Doc.Collection()
+
+Gets a reference to a child collection on a document.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  drakesEnemiesCollection, err := profiles.Doc("Drake Mallard").Collection("enemies")
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the child collection to reference
+  </Property>
+</Properties>
+
+### Notes
+
+Document collection relationships can be at most 1 deep.
+
+```go
+// ✔️ We can go this deep
+drakesEnemiesCollection, err := profiles.Doc("Drake Mallard").Collection("enemies")
+if err != nil {
+  fmt.Println(err)
+  return
+}
+
+// ❌ But not this deep
+drakesEnemiesEnemiesCollection, err := drakesEnemiesCollection.Doc("Steel Beak").Collection("enemies")
+if err != nil {
+  fmt.Println(err)
+  return
+}
+```
+
+### See also
+
+- [Collection()](./collection)

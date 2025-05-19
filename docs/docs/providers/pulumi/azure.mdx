@@ -1,0 +1,234 @@
+---
+description: 'The Azure provider for Nitric'
+---
+
+# Azure Provider Overview
+
+_The officially supported Nitric Azure Provider._
+
+```yaml
+provider: nitric/azure@latest
+```
+
+<Note>
+  See the [Overview](/providers/pulumi) page for general information on Nitric
+  Pulumi providers.
+</Note>
+
+<Note>
+  Nitric runs services (APIs, Schedules and Topic Subscribers) on Azure
+  Container Apps, which is unavailable in a [small number of
+  regions](https://azure.microsoft.com/en-au/explore/global-infrastructure/products-by-region/?products=container-apps&regions=all).
+</Note>
+
+The Azure provider is supported by the Nitric SDKs and CLI by default. However, credentials for an Azure account will be required when using the [up command](/reference/cli) from the CLI.
+
+## Azure Credentials
+
+The Nitric CLI uses the standard Azure credentials to authenticate with Azure. If you've set up local credentials for the Azure CLI or an SDK previously, these settings should work without modification.
+
+If you're setting up your credentials for the first time, simply run azure login command and finish the login via your browser.
+
+```bash
+az login
+```
+
+Verify the Azure CLI install -
+
+```bash
+az -v
+```
+
+<Note>
+  See [Azure
+  documentation](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
+  for full details on credentials and configuration.
+</Note>
+
+### Azure CLI Installation
+
+Installing the Azure CLI assists with credentials setup. You can install it using these summarized instructions, for more options see the [Microsoft docs](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+<OSTabs>
+
+<TabItem label="Windows">
+
+Download & install the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+```
+
+</TabItem>
+
+<TabItem label="macOS">
+
+```bash
+brew update && brew install azure-cli
+```
+
+</TabItem>
+
+</OSTabs>
+
+## Locating deployed resources
+
+This Nitric Azure provider deploys resources for a stack into a resource group dedicated to that stack. You can either use one your already have by configuring it in the stack configuration or let Nitric create one for you.
+
+Once a stack has been deployed to Azure it's resource group should be present in the [Resource groups](https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroupBlade/resourceType/Microsoft.Resources%2Fsubscriptions%2FresourceGroups) page of the portal. Assuming it was deployed to a subscription you have access to.
+
+<Note>
+  Resource groups are conventionally named `<project-name>-<stack-name>-<randomId>`
+
+In this example the project name is `api-testing` and the stack name is `az`.
+
+</Note>
+
+![resource group page screen](/docs/images/docs/az-rg.png)
+
+More recent versions of the Nitric Azure provider display a direct link to the resource group in output from `nitric up`.
+
+Example:
+
+```bash
+Resource Group:
+──────────────
+https://portal.azure.com/#@your-tenant-id/resource/subscriptions/your-subscription-id/resourceGroups/your-resource-group/overview
+
+API Endpoints:
+──────────────
+main: https://example-api865cb.azure-api.net
+```
+
+## Stack Configuration
+
+```yaml title:nitric.[stack ID].yaml
+# The provider to use and it's published version
+# See releases:
+# https://github.com/nitrictech/nitric/tags
+provider: nitric/azure@latest
+
+# The target Azure region to deploy to
+# See available regions:
+# https://azure.microsoft.com/en-us/explore/global-infrastructure/products-by-region/?products=container-apps
+region: my-azure-stack-region
+
+# Deploy into an existing resource group
+# Available since v1.11.0
+# ⚠️ Changing this property post-deployment is a destructive operation
+resource-group: my-azure-resource-group
+
+# Org to associate deployed API Management services with
+org: example-org
+
+# Admin email to associate deployed API Management services with
+adminemail: test@example.com
+
+# All configuration below is optional
+
+# Apply configuration to nitric APIs
+apis:
+  # Target an API by its nitric name
+  my-api:
+    # provide domains to be used for the api
+    description: An Azure API
+
+# Add CDN configuration, required for custom domains for website deployments
+# Available since v1.19.4
+cdn:
+  # The name of the Azure DNS Zone to use when configuring the website DNS
+  zone-name: example.com
+  # The resource group name of the DNS Zone you configured in Azure DNS Zones
+  zone-resource-group: yourzone-rg
+  # A valid domain or subdomain for the DNS Zone to use for the deployed websites endpoint
+  domain-name: app.example.com
+  # Skip CDN cache invalidation during deployments (defaults to false)
+  skip-cache-invalidation: true
+
+# Configure your deployed services
+config:
+  # How services without a type will be deployed
+  default:
+    # configure a sample rate for telemetry (between 0 and 1) e.g. 0.5 is 50%
+    telemetry: 0
+    # configure services to deploy to Google Cloud Run
+    # see: https://learn.microsoft.com/en-us/azure/container-apps/containers#configuration
+    containerapps: # Available since v0.26.0
+      # set 1/4 vCPU
+      cpu: 0.25
+      # set 0.5GB of RAM
+      memory: 0.5
+      # The minimum number of instances to scale down to
+      min-replicas: 0
+      # The maximum number of instances to scale up to
+      max-replicas: 10
+  # Additional deployment types
+  # You can target these types by setting a `type` in your project configuration
+  big-service:
+    telemetry: 0
+    containerapps:
+      memory: 1
+      min-replicas: 2
+      max-replicas: 100
+```
+
+### Websites
+
+When deploying [websites](/websites), Nitric will create a Front Door Endpoint that automatically provides a public URL for your website. This URL is not suitable for production use, and you should configure a custom domain for your website.
+
+The DNS Zone used to configure the custom domain must be created in Azure DNS Zones before deploying with your custom domain configuration.
+
+- Purchase/Register a domain name with your domain registrar of choice.
+- Navigate to https://portal.azure.com/#browse/Microsoft.Network%2FdnsZones in your Azure Portal
+- Click `Create`
+- Select your subscription and resource group (or create a new one)
+- Enter a `Name` of your choice, this should be the domain name you purchased i.e. example.com
+- Click `Review +  Create`
+- Click `Create`
+- Once the DNS Zone is created, click on the `Go to resource` button
+
+Now that the DNS Zone is created, you need to configure your registrar (domain) or existing DNS (subdomain) to point at the new name servers created for the zone.
+
+The configuration details are available on the `Essentials tab` within the `DNS Zone` page. This step is different depending on your chosen domain registrar. Below are some general steps depending on whether your configuring the primary domain or a subdomain.
+
+#### Domain
+
+Your registrar (e.g. Namecheap, GoDaddy, Cloudflare, etc.) will allow you to change the name servers for you domain, sometimes this is called 'Custom DNS'. Add each of the name servers (NS records) from the Registrar setup dialog in the relevant config page for your registrar.
+
+#### Subdomain
+
+If you're configuring a subdomain e.g. app.yourdomain.com, you can simply add the NS records to your existing DNS configuration for the chosen subdomain. Typically, the config will look something like this:
+
+<Note>Substitute your values for `Host` and `Nameserver`</Note>
+
+| Record Type | Host | Nameserver            |
+| ----------- | ---- | --------------------- |
+| NS Record   | app  | ns1-06.azure-dns.com  |
+| NS Record   | app  | ns2-06.azure-dns.net  |
+| NS Record   | app  | ns3-06.azure-dns.org  |
+| NS Record   | app  | ns4-06.azure-dns.info |
+
+### Stack file configuration
+
+Now that you have your DNS Zone created and Nameservers configured you can add the relevant config to your GCP stack file.
+
+```yaml title:nitric.[stack ID].yaml
+# Add to your stack file
+cdn:
+  # The name of the Azure DNS Zone to use when configuring the website DNS
+  zone-name: example.com
+  # The resource group name of the DNS Zone you configured in Azure DNS Zones
+  zone-resource-group: yourzone-rg
+  # A valid domain or subdomain for the DNS Zone to use for the deployed websites endpoint
+  domain-name: app.example.com
+```
+
+<Note>
+  Missing something? Let us know by raising an issue in
+  [GitHub](https://github.com/nitrictech/nitric) or by dropping us a line on
+  [Discord](https://nitric.io/chat)
+</Note>

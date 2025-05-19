@@ -1,0 +1,59 @@
+---
+description: "Reference for Nitric's v0 .NET library - Fetch paged results from a query."
+---
+
+# .NET - Collection.Query.Fetch()
+
+Retrieve a page of results for a query.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query();
+
+var results = profileQuery.Fetch();
+
+Nitric.Run();
+```
+
+## Examples
+
+### Paging through results from a query
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query();
+
+var results = profileQuery.Fetch();
+
+var pagingToken = results.PagingToken;
+
+do
+{
+  results.Documents.ForEach(doc => {
+    // Do something with the document
+    Console.WriteLine(doc);
+  });
+
+  if (pagingToken != null)
+  {
+    profileQuery.PagingFrom(pagingToken);
+    results = profileQuery.Fetch();
+  }
+} while (results.Documents.Count > 0 || results.PagingToken != null);
+
+Nitric.Run();
+```
+
+### See also
+
+- [Query.Where()](./collection-query-where)
+- [Query.Limit()](./collection-query-limit)
+- [Query.PagingFrom()](./collection-query-pagingfrom)

@@ -1,0 +1,66 @@
+---
+description: "Reference for Nitric's Node.js library - Create a new bucket for storing and retrieving files."
+---
+
+# Node.js - bucket()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a new bucket for storing and retrieving files.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+// Create a readable/writable reference to an 'assets' bucket
+const assets = bucket('assets').allow('read', 'write', 'delete')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this bucket within the service. Subsequent calls to
+    `bucket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**reading**
+
+This permission allows your service to read files from the bucket
+
+---
+
+**writing**
+
+This permission allows your service to write files to the bucket
+
+---
+
+**deleting**
+
+This permission allows your service to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [on()](./bucket-on)
+- [file()](./bucket-file)
+- [file().read()](./bucket-file-read)
+- [file().write()](./bucket-file-write)
+- [file().delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

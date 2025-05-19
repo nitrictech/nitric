@@ -1,0 +1,56 @@
+---
+description: "Reference for Nitric's Dart library - Creates a new Schedule to run a service on a defined frequency."
+---
+
+# Dart - schedule()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Schedules in Nitric start with the [Schedule docs](/schedules).
+</Note>
+
+Creates a new Schedule to run a service on a defined frequency.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create a schedule that runs every 3 hours
+Nitric.schedule("aggregate-data").every("3 hours", (ctx) async {
+  print("do something here");
+
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="description" required type="String">
+    The unique name of this Schedule within the app. Subsequent calls to
+    `schedule` with the same name will return the same object.
+  </Property>
+</Properties>
+
+### Notes
+
+- Schedules do not require access permissions to be specified.
+
+- During local development schedules can be triggered manually from the local development dashboard
+
+## Examples
+
+### Create a Schedule
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+Nitric.schedule("send-reminders").every("3 minutes", (ctx) async {
+  // add code to run here
+  return ctx;
+});
+
+Nitric.schedule("archive-orders").cron("0 1 1 * *", (ctx) async {
+  // add code to run here
+  return ctx;
+});
+```

@@ -1,0 +1,449 @@
+---
+description: 'Key value stores'
+---
+
+# Key/Value
+
+Nitric provides functionality for provisioning and interacting with persistent key/value stores.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/keyvalue).
+
+## Definitions
+
+### Key Value Store
+
+Key value stores act as a database which provides the functionality for efficient storage and retrieval of data. The data is fetched via a unique key, which is associated with a value. Due to the uniqueness of the key, accessing the data is incredibly efficient and will occur in constant time as there is no need for complex lookups.
+
+### Key
+
+A key is a unique string that acts as a references to a value. Anytime a value is updated or read from a key value store, it is done so by referencing the key.
+
+### Value
+
+Values are the data that is stored in the key value store. They are referenced by a key and can be any JSON serializable object.
+
+## Creating Key Value Stores
+
+Here's an example of how to create a key value store, with permissions for getting, setting, and deleting:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('get', 'set', 'delete')
+```
+
+```typescript !!
+// You can add typing by specifying the type of values that are stored in the key/value store.
+// This won't validate the values. However, it will provide type completion when interacting with the store.
+import { kv } from '@nitric/sdk'
+
+type Country = {
+  name: string
+  population: number
+}
+
+const countries = kv<Country>('Countries').allow('get', 'set', 'delete')
+```
+
+```python !!
+from nitric.resources import kv
+from nitric.application import Nitric
+
+countries = kv('Countries').allow('get', 'set', 'delete')
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  countries := nitric.NewKv("Countries").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final countries = Nitric.kv("Countries").allow([
+  KeyValueStorePermission.get,
+  KeyValueStorePermission.set,
+  KeyValueStorePermission.delete,
+]);
+```
+
+</CodeSwitcher>
+
+## Creating Key Value Pairs
+
+Key value pairs are created based on the `key` and the contents of the `value`. If a key already exists in the key value store, then its value will be overwritten.
+
+> Key value stores that are created using the Nitric SDK are compatible across cloud providers.
+
+The below example first creates a key value store that has permissions for setting. It then adds a key to the store called `USA` and a value which describes the country.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('set')
+
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 329500000,
+})
+```
+
+```typescript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('set')
+
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 329500000,
+})
+```
+
+```python !!
+from nitric.resources import kv
+from nitric.application import Nitric
+
+countries = kv('Countries').allow('set')
+
+await countries.set('USA', {
+  "name": "United States of America",
+  "population": 329500000
+})
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  countries := nitric.NewKv("Countries").Allow(keyvalue.KvStoreSet)
+
+  _ = countries.Set(context.TODO(), "USA", map[string]interface{}{
+    "name":       "United States of America",
+    "population": 329500000,
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final countries = Nitric.kv("Countries").allow([
+  KeyValueStorePermission.set,
+]);
+
+await countries.set("USA", {
+  "name": "United States of America",
+  "population": 329500000
+});
+```
+
+</CodeSwitcher>
+
+To update a value call `set` with the same key and a new value.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 330000000,
+})
+```
+
+```typescript !!
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 330000000,
+})
+```
+
+```python !!
+await countries.set('USA', {
+  "name": "United States of America",
+  "population": 330000000,
+})
+```
+
+```go !!
+_ = countries.Set(context.TODO(), "USA", map[string]interface{}{
+	"name":       "United States of America",
+	"population": 329500000,
+})
+```
+
+```dart !!
+await countries.set("USA", {
+  "name": "United States of America",
+  "population": 330000000
+});
+```
+
+</CodeSwitcher>
+
+## Accessing Values
+
+Values can be accessed from a store by calling the `get` method with the key of the value you want to retrieve.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('get')
+
+const country = await country.get('USA')
+```
+
+```typescript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('get')
+
+const country = await country.get('USA')
+```
+
+```python !!
+from nitric.resources import kv
+from nitric.application import Nitric
+
+countries = kv("Countries").allow("get")
+
+country = await countries.get("USA")
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  countries := nitric.NewKv("Countries").Allow(keyvalue.KvStoreGet)
+
+  country, _ := countries.Get(context.TODO(), "USA")
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final countries = Nitric.kv("Countries").allow([
+  KeyValueStorePermission.get,
+]);
+
+final country = await countries.get('USA');
+```
+
+</CodeSwitcher>
+
+## Deleting Values
+
+Values can be deleted from the key value store by referencing the key.
+
+The below example first creates a key value store that has permissions for deleting and setting. It then creates a value called `USA`, which is deleted using `delete` on the key.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('delete', 'set')
+
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 329500000,
+})
+
+await countries.delete('USA')
+```
+
+```typescript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('delete', 'set')
+
+await countries.set('USA', {
+  name: 'United States of America',
+  population: 329500000,
+})
+
+await countries.delete('USA')
+```
+
+```python !!
+from nitric.resources import kv
+from nitric.application import Nitric
+
+countries = kv('Countries').allow('set', 'delete')
+
+await countries.set('USA', {
+  "name": "United States of America",
+  "population": 329500000
+})
+
+await countries.delete('USA')
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  countries := nitric.NewKv("Countries").Allow(keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  _ = countries.Set(context.TODO(), "USA", map[string]interface{}{
+    "name":       "United States of America",
+    "population": 329500000,
+  })
+
+  _ = countries.Delete(context.TODO(), "USA")
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final countries = Nitric.kv("Countries").allow([
+  KeyValueStorePermission.set,
+  KeyValueStorePermission.delete,
+]);
+
+await countries.set("USA", {
+  "name": "United States of America",
+  "population": 329500000
+});
+
+await countries.delete("USA")
+```
+
+</CodeSwitcher>
+
+## Listing Keys
+
+Keys can be listed and filtered by an optional prefix.
+
+The below example first creates a key value store that has permissions for listing. It then lists all keys in the store.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('get')
+
+for await (const key of countries.keys()) {
+  console.log(key)
+}
+```
+
+```typescript !!
+import { kv } from '@nitric/sdk'
+
+const countries = kv('Countries').allow('get')
+
+for await (const key of countries.keys()) {
+  console.log(key)
+}
+```
+
+```python !!
+from nitric.resources import kv
+from nitric.application import Nitric
+
+countries = kv('Countries').allow('get')
+
+async for key in countries.keys():
+  print(key)
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+
+  countries := nitric.NewKv("Countries").Allow(keyvalue.KvStoreGet)
+
+  keys, _ := countries.Keys(context.TODO())
+
+  for {
+    key, err := keys.Recv()
+    if err != nil {
+      // check if the stream has ended
+      break
+    }
+
+    fmt.Println(key)
+  }
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final countries = Nitric.kv("Countries").allow([
+  KeyValueStorePermission.get,
+]);
+
+final keys = await countries.keys();
+
+keys.forEach((String key) {
+  print(key);
+});
+```
+
+</CodeSwitcher>
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/keyvalue)
+- [Azure](/providers/mappings/azure/keyvalue)
+- [Google Cloud](/providers/mappings/gcp/keyvalue)

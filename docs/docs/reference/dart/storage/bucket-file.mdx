@@ -1,0 +1,42 @@
+---
+description: "Reference for Nitric's Dart library - Create a reference to a file within a bucket."
+---
+
+# Dart - bucket.file()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a reference to a file within a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+final logo = assets.file("images/logo.png");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name/reference to the file.
+  </Property>
+</Properties>
+
+### Notes
+
+The file does not need to exist, only a reference to that file is being created.
+
+## Available Operations
+
+- [file.read()](./bucket-file-read)
+- [file.write()](./bucket-file-write)
+- [file.delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

@@ -1,0 +1,276 @@
+---
+description: 'Amazon Web Service (AWS) provider for Nitric'
+---
+
+# AWS Provider Overview
+
+_The officially supported Nitric AWS Provider._
+
+```yaml
+provider: nitric/aws@latest
+```
+
+<Note>
+  See the [Overview](/providers/pulumi) page for general information on Nitric
+  Pulumi providers.
+</Note>
+
+The AWS provider is supported by the Nitric SDKs and CLI by default. However, credentials for an AWS account will be required when using the [up command](/reference/cli) from the CLI.
+
+## AWS Credentials
+
+The Nitric CLI uses standard AWS credential settings to authenticate with AWS. If you've set credentials for the AWS CLI or an AWS SDK previously, these settings should work without modification.
+
+If you're setting your credentials for the first time, there are several available methods. We recommend the standard AWS credentials file to get started.
+
+### AWS Credential File Setup
+
+Create a new credentials files at one of these locations:
+
+- `~/.aws/credentials` on Linux, macOS, or Unix
+- `C:\Users\USERNAME\.aws\credentials` on Windows
+
+The file should contain the following:
+
+```toml
+[default]
+aws_access_key_id = your_access_key_id
+aws_secret_access_key = your_secret_access_key
+```
+
+<Note>
+  To use a different AWS profile for your deployments, you can use the
+  `AWS_PROFILE` environment variable. If no profile is supplied, we will use the
+  `[default]` profile.
+</Note>
+
+Replace `your_access_key_id` and `your_secret_access_key` with your own values.
+
+You can create an Access Key by logging into the [AWS console](https://aws.amazon.com/console/) and navigating to:
+`Username Menu > Security credentials > Access keys > Create New Access Key`
+
+<Note>
+  See [AWS
+  documentation](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html)
+  for full details on credentials and configuration.
+</Note>
+
+## Locating Deployed Resources
+
+This Nitric AWS provider creates a resource tag manager group and tags all possible resources to be referenced by this group. You can locate resources using the [AWS Console](https://console.aws.amazon.com/).
+
+Start by navigating to the [Resource Groups service](https://console.aws.amazon.com/resource-groups/home):
+
+![resource group search image](/docs/images/docs/aws-rg.png)
+
+Find your stack's resource group in the list and click it:
+
+<Note>
+  Resource groups are conventionally named `<project-name>-<stack-name>`
+
+In this example the project name is `api-testing` and the stack name is `aws`.
+
+</Note>
+
+![resource group list image](/docs/images/docs/aws-rg-screen.png)
+
+More recent versions of the Nitric AWS provider also display a direct link to the resource group in output from `nitric up`.
+
+Example:
+
+```bash
+Deployed Resources:
+──────────────
+https://us-east-2.console.aws.amazon.com/resource-groups/group/arn%3Aaws%3Aresource-groups%3Aus-east-2%3A3123456789%3Agroup%2Fexample-aws
+
+API Endpoints:
+──────────────
+main: https://example.execute-api.us-east-2.amazonaws.com
+```
+
+## Importing Existing Resources
+
+The Nitric team is working to expand the list of resources that can be imported. Currently, only the following resources are supported:
+
+- [Secrets](/secrets)
+- [Buckets](/storage)
+
+<Note>
+  Currently, only resources in the same AWS account and region as the Nitric
+  project are supported.
+</Note>
+
+### Buckets
+
+To import an S3 bucket, you will need to know the bucket's name or ARN. You can find the ARN of an S3 bucket in the AWS console or by using the AWS CLI.
+
+First, add the bucket to your project as you usually would if it wasn't imported. Then add the bucket to the `import` section of your stack file. Here's an example of how to import an S3 bucket:
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const images = bucket('images').allow('read', 'write', 'delete')
+```
+
+```yaml
+import:
+  buckets:
+    images: arn:aws:s3:::images-bucket-example
+```
+
+<Note>
+  Either the bucket's name or ARN can be used to import the bucket. The ARN is
+  recommended as it is less likely to have a conflict during lookup.
+</Note>
+
+### Secrets
+
+To import a secret, you will need to know the secret's ARN. You can find the ARN of a secret in the AWS console or by using the AWS CLI.
+
+First, add the secret to your project as you usually would if it wasn't imported. Then add the secret to the `import` section of your stack file. Here's an example of how to import a secret:
+
+```javascript
+import { secret } from "@nitric/sdk
+
+const mySecret = secret("credentials").allow("access");
+```
+
+```yaml
+import:
+  secrets:
+    credentials: arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret
+```
+
+<Note>
+  Unlike some other imported resources, secret imports require the ARN to be
+  used. Providing only the secret's name will be invalid.
+</Note>
+
+Need to import another resource type or have another question? Chat with us on [Discord](https://nitric.io/chat) or [open an issue](https://github.com/nitrictech/nitric/issues) on GitHub.
+
+## Stack Configuration
+
+```yaml title:nitric.[stack ID].yaml
+# The provider to use and it's published version
+# See releases:
+# https://github.com/nitrictech/nitric/tags
+provider: nitric/aws@latest
+
+# The target aws region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: my-aws-stack-region
+
+# The timezone that deployed schedules will run with
+# Format is in tz identifiers:
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+schedule-timezone: Australia/Sydney # Available since v0.27.0
+
+# Import existing AWS Resources
+# Available since v0.28.0
+import:
+  # A name ARN map of buckets, where the name matches the nitric name of the bucket you would like to import
+  buckets: # Available since v1.10.0
+    # NOTE: Imported S3 buckets must exist in the same AWS account and region as the Nitric project
+    my-bucket: arn:...
+  # A name ARN map of secrets, where the name matches the nitric name of the secret you would like to import
+  secrets: # Available since v0.28.0
+    # In typescript this would import the provided secret reference for a secret declared as
+    # const mySecret = secret('my-secret');
+    my-secret: arn:...
+
+# Apply configuration to nitric APIs
+apis:
+  # The nitric name of the API to configure
+  my-api:
+    # Array of domains to apply to the API
+    # The domain or parent domain must have a hosted zone already in Route53
+    domains:
+      - api.example.com
+    description: An AWS API
+
+# Apply configuration for nitric websites
+cdn:
+  # A valid domain or subdomain for the CloudFront Distribution to use for the deployed websites endpoint
+  domain: cdn.example.com
+  # Skip CDN cache invalidation during deployments (defaults to false)
+  skip-cache-invalidation: true
+
+# Configure your deployed services
+config:
+  # How services without a type will be deployed
+  default:
+    # configure a sample rate for telemetry (between 0 and 1) e.g. 0.5 is 50%
+    telemetry: 0
+    # configure services to deploy to AWS lambda
+    lambda: # Available since v0.26.0
+      # set the memory in MB
+      # See lambda configuration docs here:
+      # https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-memory-console
+      memory: 128
+      # set a timeout in seconds
+      # See lambda timeout values here:
+      # https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
+      timeout: 15
+      # set a provisioned concurrency value
+      # For info on provisioned concurrency for AWS Lambda see:
+      # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+      provisioned-concurrency: 0
+      # Configure VPCs that the lambda can access
+      vpc:
+        # Array of existing security group ids to apply
+        security-group-ids:
+          - sg-xxx
+        # Array of existing subnet ids to apply
+        subnet-ids:
+          - subnet-xxx
+  # Additional deployment types
+  # You can target these types by setting a `type` in your project configuration
+  big-service:
+    telemetry: 0
+    lambda:
+      memory: 1024
+      timeout: 60
+      provisioned-concurrency: 1
+```
+
+### Websites
+
+When deploying [websites](/websites), Nitric will create a CloudFront Distribution that automatically provides a public URL for your website. This URL is not suitable for production use, and you should configure a custom domain for your website.
+
+The Hosted Zone used to configure the custom domain must be created in Route53 before deploying your CloudFront distribution with a custom domain configuration.
+
+- Purchase/Register a domain name with your domain registrar of choice.
+- Navigate to https://us-east-1.console.aws.amazon.com/route53/v2/hostedzones in your Azure Portal
+- Click `Create hosted zone`
+- Enter a `Domain name` of your choice, this should be the domain name you purchased i.e. example.com
+- Select Public Hosted Zone
+- Click `Create hosted zone`
+- Once the Hosted Zone is created, click on the `Go to resource` button
+
+Now that the Hosted Zone is created, you need to configure your registrar (domain) or existing DNS (subdomain) to point at the new name servers created for the zone.
+
+The configuration details are available on the `Records` tab within the `Hosted Zone` page. This step is different depending on your chosen domain registrar. Below are some general steps depending on whether your configuring the primary domain or a subdomain.
+
+#### Domain
+
+Your registrar (e.g. Namecheap, GoDaddy, Cloudflare, etc.) will allow you to change the name servers for you domain, sometimes this is called 'Custom DNS'. Add each of the name servers (NS records) from the Registrar setup dialog in the relevant config page for your registrar.
+
+#### Subdomain
+
+If you're configuring a subdomain e.g. app.yourdomain.com, you can simply add the NS records to your existing DNS configuration for the chosen subdomain. Typically, the config will look something like this:
+
+<Note>Substitute your values for `Nameserver`</Note>
+
+| Record Type | Nameserver              |
+| ----------- | ----------------------- |
+| NS Record   | ns-001.awsdns-60.net.   |
+| NS Record   | ns-002.awsdns-49.co.uk. |
+| NS Record   | ns-003.awsdns-24.org.   |
+| NS Record   | ns-004.awsdns-34.com.   |
+
+<Note>
+  Missing something? Let us know by raising an issue in
+  [GitHub](https://github.com/nitrictech/nitric) or by dropping us a line on
+  [Discord](https://nitric.io/chat)
+</Note>

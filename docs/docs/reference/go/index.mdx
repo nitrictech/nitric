@@ -1,0 +1,39 @@
+---
+description: "Reference for Nitric's Go library - Using Nitric with Go"
+---
+
+# Nitric\'s Go SDK
+
+This SDK reference provides documentation for the functions and methods in Nitric\'s Go library.
+
+The library provides the ability to define and interact with cloud resources, as well as build application logic like functions/handlers.
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. If you're just learning
+  Nitric, we recommend starting with the [Quickstart](/get-started/quickstart)
+  guide.
+</Note>
+
+## Installation
+
+If you used a Nitric starter template for Go to scaffold your project, then the `github.com/nitrictech/go-sdk` dependency will already be included in the dependencies in your `go.mod` file. Using starter templates is the recommended installation option since it ensures the other files and configuration needed are also set up.
+
+However, you can also install the SDK.
+
+```bash
+go get github.com/nitrictech/go-sdk
+```
+
+## Custom runtime
+
+To successfully run and deploy Go applications using the Nitric framework, it is necessary to use a custom runtime Dockerfile. This Dockerfile ensures that your Go application is built and executed within an appropriate environment, taking into account all dependencies and configurations required by Nitric.
+
+### Default Dockerfile
+
+For your convenience, Nitric provides a default Dockerfile specifically tailored for Go applications. This default Dockerfile is included with the [Go starter template](https://github.com/nitrictech/examples/tree/main/v1/go-starter) available through the Nitric CLI. By using this template, you can quickly set up your development environment and focus on building your application without worrying about Docker configuration.
+
+This Dockerfile provides a solid starting point for deploying Go applications with Nitric. Feel free to customize it according to your application's needs.
+
+## Source
+
+The source for the SDK is available on [GitHub](https://github.com/nitrictech/go-sdk).

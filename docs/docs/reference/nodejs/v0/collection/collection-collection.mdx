@@ -1,0 +1,37 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Get a query-only sub-collection reference, this can be used to query commonly named collections across documents."
+---
+
+# Node.js - collection.collection()
+
+Get a query-only sub-collection reference, this can be used to query commonly named collections across documents.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const enemies = collection('profiles').for('reading').collection('enemies')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the sub-collection to reference
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a query for a sub collection
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const enemies = collection('profiles').for('reading').collection('enemies')
+
+const enemiesQuery = enemies.query()
+```
+
+### See also
+
+- [collection().query()](./collection-query)

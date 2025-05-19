@@ -1,0 +1,84 @@
+---
+description: "Reference for Nitric's Go library - Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route."
+---
+
+# Go - Api.Route.All()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about APIs in
+  Nitric start with the [API docs](/apis).
+</Note>
+
+Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+	customersRoute := nitric.NewApi("public").NewRoute("/customers")
+
+	customersRoute.All(func(ctx *apis.Ctx) {
+		ctx.Response.Body = []byte("")
+	})
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="interface{}">
+    The callback function to handle all HTTP methods on the given route.
+  </Property>
+  <Property name="options" type="...MethodOption">
+    Additional options for the route. See below.
+  </Property>
+</Properties>
+
+### Method options
+
+<Properties>
+  <Property name="WithNoMethodSecurity()" type="MethodOption">
+    Disables security on the method.
+  </Property>
+  <Property name="WithMethodSecurity()" type="MethodOption">
+    Overrides a security rule from API defined JWT rules.
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="scopes" required type="[]string">
+        The scopes of the security rule.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### Notes
+
+When using the `all()` method to register a single function as the handler for all HTTP methods, none of the other methods should be defined on that route.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+	customersRoute := nitric.NewApi("public").NewRoute("/customers")
+
+	customersRoute.All(func(ctx *apis.Ctx) {
+		/* handle all requests */
+	})
+
+	customersRoute.Get(func(ctx *apis.Ctx) {
+		/* this handler won't work */
+	})
+
+	nitric.Run()
+}
+```

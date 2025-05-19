@@ -1,0 +1,228 @@
+---
+description: "Reference for Nitric's v0 JVM library - Register a handler for HTTP DELETE requests to the route."
+---
+
+# JVM - api.route.delete()
+
+Register an API route and set a specific HTTP DELETE handler on that route.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.route("/customers").delete((ctx) -> {
+      // handle DELETE request
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.route("/customer").delete { ctx ->
+    // handle DELETE request
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property
+    name="middleware"
+    required
+    type="HttpMiddleware or List<HttpMiddleware>"
+  >
+    One or more middleware functions to use as the handler for HTTP requests.
+    Handlers can be sync or async
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for DELETE requests
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.route("/customers").delete((ctx) -> {
+      // handle DELETE request
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.route("/customer").delete { ctx ->
+    // handle DELETE request
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Chain functions as a single method handler
+
+When multiple functions are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.faas.v0.HttpContext;
+import io.nitric.faas.v0.Handler;
+
+import java.util.List;
+
+public class Application {
+  static HttpContext validateRequest(HttpContext ctx, Handler<HttpContext> next) {
+    // validateRequest
+    return next.invoke(ctx);
+  }
+
+  static HttpContext handleRequest(HttpContext ctx, Handler<HttpContext> next) {
+    // handle request
+    return next.invoke(ctx);
+  }
+
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.route("/customer").delete(List.of(Application::validateRequest, Application::handleRequest));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.faas.v0.HttpContext
+import io.nitric.faas.v0.Middleware
+
+val validateRequest = Middleware<HttpContext> { ctx, next ->
+  // validate request
+  return@Middleware next(ctx)
+}
+
+val handleRequest = Middleware<HttpContext> { ctx, next ->
+  // handle request
+  return@Middleware next(ctx)
+}
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.route("/customer").delete(listOf(validateRequest, handleRequest))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Access the request body
+
+The DELETE request body is accessible from the `ctx.req` object.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.route("/customer").delete((ctx) -> {
+      var customerData = ctx.getReq().getData();
+      // parse, validate, and store the request payload...
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.route("/customer").delete { ctx ->
+    val customerData = ctx.req.data
+    // parse, validate, and store the request payload...
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

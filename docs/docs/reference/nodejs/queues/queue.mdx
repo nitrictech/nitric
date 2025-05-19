@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's Node.js library - Creates a new Queue to process asynchronous messages."
+---
+
+# Node.js - queue()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Queues in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Creates a new Queue to process asynchronous messages.
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const batchQueue = queue('batch').allow('enqueue')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Queue within the service. Subsequent calls to
+    `queue` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**enqueue**
+
+This permission allows your service to enqueue new messages.
+
+---
+
+**dequeue**
+
+This permission allows your service to dequeue messages and complete them.
+
+---
+
+### Notes
+
+In most instances, code should either enqueue or dequeue from a queue, usually not both.
+
+## Examples
+
+### Create a Queue
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const batchQueue = queue('batch')
+```
+
+### Enqueue messages
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+const payload = {}
+const batchQueue = queue('batch').allow('dequeue')
+
+const messages = await batchQueue.enqueue()
+```

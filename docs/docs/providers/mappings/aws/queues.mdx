@@ -1,0 +1,21 @@
+---
+description: 'How Nitric deploys Queues to AWS'
+---
+
+# AWS Resources - Queues
+
+Nitric Queues are deployed using [Amazon Simple Queue Service (SQS)](https://aws.amazon.com/sqs/).
+
+## AWS Resources
+
+The following resources are created when deploying queues to AWS:
+
+- SQS queues
+- IAM Policies
+
+## Deployment
+
+During deployment the Nitric CLI creates your queues:
+
+- Each uniquely named queue declaration will be setup as a new SQS queue
+- Services provided with access to the queues will assigned policies using IAM to enable that access.

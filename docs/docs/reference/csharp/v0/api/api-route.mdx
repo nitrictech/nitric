@@ -1,0 +1,91 @@
+---
+description: "Reference for Nitric's v0 .NET library - Creates a new route (path) within an API."
+---
+
+# .NET - Api.Route()
+
+Creates a new route (path) within an API.
+
+```csharp
+using Nitric.Sdk;
+
+var route = Nitric.Api("main").Route("/customers");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" type="string" required>
+    The path matcher to use for this route. Calling `route` on the same API more
+    than once with the same matcher will return the same route object. Matchers
+    accept path parameters in the form of a colon prefixed string. The string
+    provided will be used as that path parameter's name when calling middleware
+    and handlers. See [create a route with path
+    params](#create-a-route-with-path-params)
+  </Property>
+  <Property name="options" type="object">
+    Additional options when creating the route.
+    <Properties nested>
+      <Property name="middleware" type="HttpMiddleware or HttpMiddleware[]">
+        Middleware to apply to all methods on this route.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Notes
+
+The `middleware` property on the `options` param is useful for applying universal middleware such as CORS headers or Auth, across an entire route. However, if methods aren't registered, the route won't be deployed. If you need to run the same handler for all methods on a route, you should use [route.all()](./api-route-all)
+
+## Examples
+
+### Create a route
+
+```csharp
+using Nitric.Sdk;
+
+var route = Nitric.Api("main").Route("/customers");
+
+Nitric.Run();
+```
+
+### Create a route with path params
+
+Route paths can include dynamic parameters. These values will automatically be parsed and provided in the context object for your middleware and handlers as a `string`.
+
+For example, if you have a customers path and you want to include a `customerId` param you would define the route like this.
+
+```csharp
+using Nitric.Sdk;
+
+var route = Nitric.Api("main").Route("/customers/:customerId");
+
+Nitric.Run();
+```
+
+### Create a route with middleware
+
+```csharp
+using Nitric.Sdk;
+
+var route = Nitric.Api("main").Route("/customers", (context, next) => {
+    var user = context.Req.PathParams["userId"];
+
+    // Validate the user identity
+    if (user != "1234")
+    {
+        context.Res.Text($"User {user} is unauthorised");
+        context.Res.Status = 403;
+
+        // Return prematurely to end the middleware chain.
+        return context;
+    }
+
+    // Call next to continue the middleware chain.
+    return next(context);
+});
+
+Nitric.Run();
+```

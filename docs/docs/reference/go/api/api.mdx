@@ -1,0 +1,182 @@
+---
+description: "Reference for Nitric's Go library - Create APIs with the Nitric Go SDK"
+---
+
+# Go - NewApi()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about APIs in
+  Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new HTTP API.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this API within the app. Subsequent calls to `NewApi`
+    with the same name will return the same object.
+  </Property>
+  <Property name="options" type="...ApiOption">
+    Additional options for the API. See below.
+  </Property>
+</Properties>
+
+### API options
+
+<Properties>
+  <Property name="WithPath()" type="ApiOption">
+    Sets a base path for all the routes in the API.
+    <Properties nested>
+      <Property name="path" required type="string">
+        Base path for all routes in the API.
+      </Property>
+    </Properties>
+  </Property>
+  <Property name="WithSecurity()" type="OidcOptions">
+    Security rules to apply with scopes to the entire API.
+  </Property>
+  <Property name="WithMiddleware()" type="ApiOption">
+    <Properties nested>
+      <Property name="middleware" required type="nitric.Middleware[apis.Ctx]">
+        The middleware (code) that should be run on all requests to the API.
+        Useful for applying universal middleware such as CORS headers or Auth,
+        across an entire API from a single place.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### OidcOptions Parameters
+
+<Properties>
+  <Property name="Name" required type="string">
+    the name of the security definition
+  </Property>
+  <Property name="Issuer" required type="string">
+    the issuer for the JWT tokens e.g.{' '}
+    <code>https://account.region.auth0.com</code>
+  </Property>
+  <Property name="Audiences" required type="[]string">
+    the <code>aud</code> that will be applied to JWT tokens from the issuer.
+  </Property>
+  <Property name="Scopes" required type="[]string">
+    the scopes that will be required to authenticate.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create an API
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  nitric.Run()
+}
+```
+
+### Create an API with universal middleware
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func authMiddleware(next apis.Handler) apis.Handler {
+  return func(ctx *apis.Ctx) error {
+    if ctx.Request.Headers().Get("Authorization") == "" {
+      ctx.Response.Status = 401
+      ctx.Response.Body = []byte("Unauthorized")
+      return nil
+    }
+    // perform additional auth checks
+
+    return next(ctx)
+  }
+}
+
+func main() {
+  api := nitric.NewApi("private", apis.WithMiddleware(authMiddleware))
+
+  nitric.Run()
+}
+```
+
+### Define middleware
+
+```go
+func yourMiddleware(next apis.Handler) apis.Handler {
+  return func(ctx *apis.Ctx) error {
+    // Perform checks/actions prior to the route handler
+    err := next(ctx)
+    // Perform checks/actions after the route handler
+    return err
+  }
+}
+```
+
+### Notes
+
+Middleware are higher-order functions that take a handler and return a handler. They can be used to perform actions before and after the route handler. Middleware can be used to perform actions such as logging, authentication, and error handling.
+
+### Create an API with a base path
+
+If you need to put all the routes in your api below a shared base path, you can do that with the `WithPath` option. In this example we ensure all routes start with `/api/v1/` before the route specific path.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+	v1Api := nitric.NewApi("public", apis.WithPath("/api/v1/"))
+
+	nitric.Run()
+}
+```
+
+### Apply JWT authentication to an API
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  defaultOidcRule := apis.OidcRule(
+    "user",
+    "https://example-issuer.com/.well-known/openid-configuration",
+    []string{"YOUR-AUDIENCES"},
+  )
+
+  secureApi := nitric.NewApi(
+    "secure",
+    // apply the security definition to all routes in this API.
+    apis.WithSecurity(defaultOidcRule([]string{})),
+  )
+
+  nitric.Run()
+}
+```

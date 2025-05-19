@@ -1,0 +1,64 @@
+---
+description: "Reference for Nitric's v0 JVM library - Delete a document from a collection"
+---
+
+# JVM - collection.doc.delete()
+
+Delete a document from a collection.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Delete);
+
+    var drakesProfile = profiles.doc("Drake Mallard").delete();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Delete)
+
+  val drakesProfile = profiles.doc("Drake Mallard").delete()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### See also
+
+- [doc.set()](./collection-doc-set)
+- [doc.get()](./collection-doc-get)

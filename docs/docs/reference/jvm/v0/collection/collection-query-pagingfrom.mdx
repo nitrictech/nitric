@@ -1,0 +1,74 @@
+---
+description: "Reference for Nitric's v0 JVM library - Set a point to resume a query from."
+---
+
+# JVM - collection.query.pagingFrom()
+
+Set a point to resume a query from, this is required when continuing a paginated query response.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profileQuery = profiles.query().pagingFrom(pagingToken);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profilesQuery = profiles.query().pagingFrom(pagingToken)
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="pagingToken" required type="Map<String, String>">
+    The paging token to apply to the query. Tokens are returned from
+    `query().fetch()`, when results cannot be returned in a single page.
+  </Property>
+</Properties>
+
+### See also
+
+- [query().limit()](./collection-query-limit)
+- [query().fetch()](./collection-query-where)

@@ -1,0 +1,30 @@
+---
+description: "Reference for Nitric's v0 .NET library - Get a reference to a websocket connection"
+---
+
+# .NET - Websocket.Connection()
+
+Get a reference to a websocket connection
+
+```csharp
+using Nitric.Sdk;
+
+var websocket = Nitric.Websocket("public");
+
+websocket.Connection("D28BA458-BFF4-404A");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connectionId" required type="string">
+    The ID of the connection.
+  </Property>
+</Properties>
+
+### See also
+
+- [Connection().Send()](./connection-send)
+- [Connection().Close()](./connection-close)

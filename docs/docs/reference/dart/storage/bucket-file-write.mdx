@@ -1,0 +1,48 @@
+---
+description: "Reference for Nitric's Dart library - Write a file to a bucket."
+---
+
+# Dart - bucket.file.write()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Write a file to a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.write,
+]);
+
+final logo = assets.file("images/logo.png");
+
+await logo.writ("someImageData");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="data" required type="String">
+    The data to write to the file.
+  </Property>
+</Properties>
+
+## Examples
+
+### Write a file
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.write,
+]);
+
+final logo = assets.file("images/logo.png");
+
+await logo.writ("someImageData");
+```

@@ -1,0 +1,555 @@
+---
+description: 'Making LLMs smarter with Extensible Knowledge Access using Retrieval Augmented Generation'
+tags:
+  - Realtime & Websockets
+  - AI & Machine Learning
+languages:
+  - python
+featured:
+  image: /docs/images/guides/llama-rag/featured.png
+  image_alt: 'Llama RAG featured image'
+published_at: 2025-01-13
+updated_at: 2025-01-13
+---
+
+# Making LLMs smarter with Extensible Knowledge Access
+
+This guide shows how to use Retrieval Augmented Generation (RAG) to enhance a large language model (LLM). RAG is the process of enabling an LLM to reference context outside of its initial training data before generating its response. Training a model that is useful for your own domain-specific purposes can be extremely expensive in both time and computing power. Therefore, using RAG is a cost-effective alternative to extending the capabilities of an existing LLM.
+To demonstrate RAG in this guide, we'll provide Llama 3.2 with access to Nitric's documentation so that it can answer specific questions. You can adjust this guide with another data source that meets your needs.
+
+## Prerequisites
+
+- [uv](https://docs.astral.sh/uv/#getting-started) - for Python dependency management
+- The [Nitric CLI](/get-started/installation)
+- _(optional)_ An [AWS](https://aws.amazon.com) account
+
+## Getting started
+
+We'll start by creating a new project using Nitric's python starter template.
+
+<Note>
+  If you want to take a look at the finished code, it can be found
+  [here](https://github.com/nitrictech/examples/tree/main/v1/llama-rag).
+</Note>
+
+```bash
+nitric new llama-rag py-starter
+cd llama-rag
+```
+
+Next, let's install our base dependencies, then add the `llama-index` libraries. We'll be using [llama index](https://docs.llamaindex.ai/en/stable/) as it makes creating RAGs extremely simple and has support for running our own local Llama 3.2 models.
+
+```bash
+# Install the base dependencies
+uv sync
+# Add Llama index dependencies
+uv add llama-index llama-index-embeddings-huggingface llama-index-llms-llama-cpp --optional ml
+```
+
+<Note>
+  We add the extra dependencies to the 'ml' optional dependencies to keep them
+  separate since they can be quite large. This lets us just install them in the
+  containers that need them.
+</Note>
+
+We'll organize our project structure like so:
+
+```text
++--common/
+|  +-- __init__.py
+|  +-- model_parameters.py
+|  +-- resources.py
++--services/
+|  +-- subscriber.py
+|  +-- chat.py
++--.gitignore
++--.python-version
++-- model.dockerfile
++-- model.dockerignore
++-- model_utilities.py
++-- pyproject.toml
++-- python.dockerfile
++-- python.dockerignore
++-- nitric.yaml
++-- README.md
+```
+
+## Setting up our LLM
+
+We'll define a `ModelParameters` class which will have parameters used throughout our application. By putting it in a class, it means it will lazily load the LLM, [embed model](https://docs.llamaindex.ai/en/stable/module_guides/models/embeddings/), and tokenizer so that it doesn't slow down other modules that don't require everything to be initialized. At this point we can also create a prompt template for prompts with our query engine. It will sanitize some of the hallucinations so that if the model does not know an answer it won't pretend like it does. We'll also define two functions that will convert a prompt or message into the required Llama 3.2 format.
+
+```python title:common/model_parameters.py
+import os
+
+
+# Convert the messages into Llama 3.2 format
+def messages_to_prompt(messages):
+  prompt = ""
+  for message in messages:
+      if message.role == 'system':
+        prompt += f"<|system|>\n{message.content}</s>\n"
+      elif message.role == 'user':
+        prompt += f"<|user|>\n{message.content}</s>\n"
+      elif message.role == 'assistant':
+        prompt += f"<|assistant|>\n{message.content}</s>\n"
+
+  # ensure we start with a system prompt, insert blank if needed
+  if not prompt.startswith("<|system|>\n"):
+      prompt = "<|system|>\n</s>\n" + prompt
+
+  # add final assistant prompt
+  prompt = prompt + "<|assistant|>\n"
+
+  return prompt
+
+# Convert the completed prompt into Llama 3.2 format
+def completion_to_prompt(completion):
+  return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
+
+class ModelParameters:
+  # Lazily loaded llm
+  _llm = None
+
+  # Lazily loaded embed model
+  _embed_model = None
+
+  # Lazily loaded tokenizer
+  _tokenizer = None
+
+  # Set the location that we will persist our embeds
+  persist_dir = "./models/query_engine_db"
+
+  # Set the location to cache the embed model
+  embed_cache_folder = os.getenv("HF_CACHE") or "./models/vector_model_cache"
+
+  # Set the location to store the llm
+  llm_cache_folder = "./models/llm_cache"
+
+  # Create the prompt query templates to sanitise hallucinations
+  prompt_template = (
+    "Context information is below. If the context is not useful, respond with 'I'm not sure'. "
+    "Given the context information and not prior knowledge answer the prompt.\n"
+    "{context_str}\n"
+  )
+
+
+  def __init__(self):
+    # Lazily load the locally stored Llama model
+    self._llm = None
+    # Lazily load the Embed from Hugging Face model
+    self._embed_model = None
+    # Lazily loaded the tokenizer
+    self._tokenizer = None
+
+  @property
+  def llm(self):
+    from llama_index.llms.llama_cpp import LlamaCPP
+
+    if self._llm is None:
+      print("Initializing Llama CPP Model...")
+      self._llm = LlamaCPP(
+        model_path=f"{self.llm_cache_folder}/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        temperature=0.7,
+        # Increase for longer responses
+        max_new_tokens=512,
+        context_window=3900,
+        generate_kwargs={},
+        # set to at least 1 to use GPU
+        model_kwargs={"n_gpu_layers": 1},
+        # transform inputs into Llama3.2 format
+        messages_to_prompt=messages_to_prompt,
+        completion_to_prompt=completion_to_prompt,
+        verbose=False,
+      )
+    return self._llm
+
+  @property
+  def embed_model(self):
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    if self._embed_model is None:
+      print("Initializing Embed Model...")
+      self._embed_model = HuggingFaceEmbedding(
+        model_name=self.embed_cache_folder,
+        cache_folder=self.embed_cache_folder
+      )
+    return self._embed_model
+
+  @property
+  def tokenizer(self):
+    from transformers import AutoTokenizer
+
+    if self._tokenizer is None:
+      print("Initializing Tokenizer")
+      self._tokenizer = AutoTokenizer.from_pretrained(
+        "pcuenq/Llama-3.2-1B-Instruct-tokenizer"
+      ).encode
+    return self._tokenizer
+```
+
+## Building a Query Engine
+
+The next step is where we embed our context into the LLM. For this example we will embed the Nitric documentation. It's open-source on [GitHub](https://github.com/nitrictech/docs), so we can clone it into our project. You can use any documentation for this step.
+
+```bash
+git clone https://github.com/nitrictech/docs.git nitric-docs
+```
+
+We'll create a script which will download the [LLM](https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF), the embed model (using a recommended [model](https://huggingface.co/BAAI/bge-large-en-v1.5) from Hugging Face), and convert the documentation into a vector model using the embed model.
+
+```python title:model_utilities.py
+import os
+from urllib.request import urlretrieve
+
+from common.model_parameters import ModelParameters
+
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
+from huggingface_hub import snapshot_download
+
+# !collapse(1:17) collapsed
+def build_query_engine():
+  params = ModelParameters()
+
+  Settings.llm = params.llm
+  Settings.embed_model = params.embed_model
+
+  # load data
+  loader = SimpleDirectoryReader(
+    input_dir = "nitric-docs/",
+    required_exts=[".mdx"],
+    recursive=True
+  )
+  docs = loader.load_data()
+
+  index = VectorStoreIndex.from_documents(docs, show_progress=True)
+
+  index.storage_context.persist(params.persist_dir)
+
+# !collapse(1:15) collapsed
+def download_embed_model():
+  print(f"Downloading embed model to {ModelParameters.embed_cache_folder}")
+
+  dir = snapshot_download("BAAI/bge-large-en-v1.5",
+    local_dir= ModelParameters.embed_cache_folder,
+    allow_patterns=[
+      "*.json",
+      "vocab.txt",
+      "onnx",
+      "1_Pooling",
+      "model.safetensors"
+    ]
+  )
+
+  print(f"Downloaded model to {dir}")
+
+# !collapse(1:16) collapsed
+def download_llm():
+  print(f"Downloading llm to {ModelParameters.llm_cache_folder}")
+
+  llm_download_location = f"{ModelParameters.llm_cache_folder}/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+
+  if os.path.isfile(llm_download_location):
+    print("Model already exists.")
+    return
+
+  os.mkdir(ModelParameters.llm_cache_folder)
+
+  llm_download_url = f"https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+  llm_dir = urlretrieve(llm_download_url, llm_download_location)
+
+  print(f"Download model to {llm_dir[0]}")
+
+
+download_embed_model()
+download_llm()
+build_query_engine()
+```
+
+You can then run the script using the following command. This should output the models and the vector model into the `./models` folder.
+
+```bash
+uv run model_utilities.py
+```
+
+## Create our resources
+
+Let's create our resources in a common file so that it can be imported to the subscriber and chat modules. We'll create a websocket which will interface with the user for prompts and create a topic to handle the backend query engine. The websocket will trigger the topic on a prompt message, which will trigger the subscriber to handle the prompt. Once the subscriber is finished it will send a response to the socket. It is done this way with the topic so that the websocket doesn't time out after 30 seconds, as most queries will take longer than that to process.
+
+```python title:common/resources.py
+from nitric.resources import websocket, topic, kv
+
+socket = websocket("socket")
+chat_topic = topic("chat")
+connections = kv("connections")
+```
+
+## Use the resources for querying the model
+
+With our LLM downloaded and given the context documentation for querying, we can use our websocket to handle prompts. The main piece of logic here is publishing to the chat topic
+
+```python title:services/chat.py
+from common.resources import socket, chat_topic, connections
+
+from nitric.context import WebsocketContext
+from nitric.application import Nitric
+
+publishable_chat_topic = chat_topic.allow("publish")
+write_delete_connections = connections.allow("set", "delete")
+
+@socket.on("connect")
+async def on_connect(ctx):
+  # handle connections
+  await write_delete_connections.set(ctx.req.connection_id, {
+    "context": []
+  })
+
+  print(f"socket connected with {ctx.req.connection_id}")
+  return ctx
+
+@socket.on("disconnect")
+async def on_disconnect(ctx):
+  # handle disconnections
+  await write_delete_connections.delete(ctx.req.connection_id)
+
+  print(f"socket disconnected with {ctx.req.connection_id}")
+  return ctx
+
+@socket.on("message")
+async def on_message(ctx: WebsocketContext):
+  # Publish to the topic with the connection id and the prompt.
+  await publishable_chat_topic.publish({
+    "connection_id": ctx.req.connection_id,
+    "prompt": ctx.req.data.decode("utf-8")
+  })
+
+  return ctx
+
+Nitric.run()
+```
+
+We'll then create our subscriber which will respond to the publish requests.
+
+```python title:services/subscriber.py
+import os
+
+from common.model_parameters import ModelParameters
+from common.resources import chat_topic, socket, connections
+
+from nitric.context import MessageContext
+from nitric.application import Nitric
+from llama_index.core import StorageContext, load_index_from_storage, Settings
+from llama_index.core.llms import MessageRole, ChatMessage
+from llama_index.core.chat_engine import ContextChatEngine
+
+read_write_connections = connections.allow("get", "set")
+
+@chat_topic.subscribe()
+async def query_model(ctx: MessageContext) -> str:
+  params = ModelParameters()
+
+  Settings.llm = params.llm
+  Settings.embed_model = params.embed_model
+  Settings.tokenizer = params.tokenizer
+
+  connection_id = ctx.req.data.get("connection_id")
+  prompt = ctx.req.data.get("prompt")
+
+  connection_metadata = await read_write_connections.get(connection_id)
+
+  # Get the model from the stored local context
+  if os.path.exists(ModelParameters.persist_dir):
+    print("Loading model from storage...")
+    storage_context = StorageContext.from_defaults(persist_dir=params.persist_dir)
+
+    index = load_index_from_storage(storage_context)
+  else:
+    print("model does not exist")
+    ctx.res.success = False
+    return ctx
+
+  # Create a list of chat messages from the chat history
+  chat_history = []
+  for chat in connection_metadata.get("context"):
+    chat_history.append(
+      ChatMessage(
+        role=chat.get("role"),
+        content=chat.get("content")
+      )
+    )
+
+  # Create the chat engine
+  retriever = index.as_retriever(
+    similarity_top_k=4,
+  )
+
+  chat_engine = ContextChatEngine.from_defaults(
+    retriever=retriever,
+    chat_history=chat_history,
+    context_template=params.prompt_template,
+    streaming=False,
+  )
+
+  # Query the model
+  assistant_response = chat_engine.chat(f"{prompt}")
+
+  print(f"Response: {assistant_response}")
+
+  # Send the response to the socket connection
+  await socket.send(
+    connection_id,
+    assistant_response.response.encode("utf-8")
+  )
+
+  # Add the context to th connections store
+  await read_write_connections.set(connection_id, {
+      "context": [
+        *connection_metadata.get("context"),
+        {
+          "role": MessageRole.USER,
+          "content": prompt,
+        },
+        {
+          "role": MessageRole.ASSISTANT,
+          "content": assistant_response.response
+        }
+      ]
+    }
+  )
+
+  return ctx
+
+Nitric.run()
+```
+
+## Test it locally
+
+Now that our application is complete, we can test it locally. You can do this using `nitric start` and connecting to the websocket through either the [Nitric Dashboard](/get-started/foundations/projects/local-development#local-dashboard) or another Websocket client. Once connected, you can send a message with a prompt to the model. Sending a prompt like "What is Nitric?" should produce an output similar to:
+
+```text
+Nitric is a cloud-agnostic framework designed to aid developers in building full cloud applications, including infrastructure.
+```
+
+## Get ready for deployment
+
+Now that its tested locally, we can get our project ready for containerization. The default python dockerfile uses `python3.11-bookworm-slim` as its basic container image, which doesn't have the right dependencies to load the Llama model. So, we'll start by creating a new python Dockerfile which uses python3.11-bookworm (the non-slim version) instead. We'll keep the default dockerfile for our `chat` service but use the new Dockerfile for the `subscriber` service. Let's copy the contents of the `python.dockerfile` into `model.dockerfile` and make the following changes:
+
+Update line 2:
+
+```dockerfile title:model.dockerfile
+# !diff -
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
+# !diff +
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS builder
+```
+
+And line 17:
+
+```dockerfile title:model.dockerfile
+# !diff -
+FROM python:3.11-slim-bookworm
+# !diff +
+FROM python:3.11-bookworm
+```
+
+We'll also change the `model.dockerfile` to download the extra ml dependencies.
+
+```dockerfile title:model.dockerfile
+RUN --mount=type=cache,target=/root/.cache/uv \
+  # !diff -
+  uv sync --frozen --no-install-project --no-dev --no-python-downloads
+  # !diff +
+  uv sync --extra ml --frozen --no-install-project --no-dev --no-python-downloads
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+  # !diff -
+  uv sync --frozen --no-dev --no-python-downloads
+  # !diff +
+  uv sync --extra ml --frozen --no-dev --no-python-downloads
+```
+
+We will also add a `HF_HOME` environment variable in the `.env` file to make sure our hugging face cache is in a readable/writable directory on the cloud. For Lambda, the `/tmp` directory is the best place to store these types of caches that require reading and writing.
+
+```text title:.env
+PYTHONPATH=.
+# Set the hugging face cache to a readable/writable lambda directory
+HF_HOME=/tmp/models
+```
+
+To ensure an optimized docker image, update the `python.dockerfile.dockerignore` to include the models folder.
+
+```text title:python.dockerfile.dockerignore
+.mypy_cache/
+.nitric/
+.venv/
+nitric-spec.json
+nitric.yaml
+README.md
+models/
+```
+
+We can then update the `nitric.yaml` file to point each service to the correct dockerfile.
+
+```yaml title:nitric.yaml
+name: llama-rag
+services:
+  - match: services/chat.py
+    runtime: python
+    start: uv run watchmedo auto-restart -p *.py --no-restart-on-command-exit -R uv run $SERVICE_PATH
+  - match: services/subscriber.py
+    runtime: model
+    start: uv run watchmedo auto-restart -p *.py --no-restart-on-command-exit -R uv run $SERVICE_PATH
+
+runtimes:
+  python:
+    dockerfile: ./python.dockerfile
+  model:
+    dockerfile: ./model.dockerfile
+```
+
+## Deploy the project
+
+When you're ready to deploy the project, we can create a new Nitric stack file that will target AWS:
+
+```bash
+nitric stack new dev aws
+```
+
+Update the stack file `nitric.dev.yaml` with the appropriate AWS region and memory allocation to handle the model:
+
+<Note>WebSockets are supported across all of AWS regions</Note>
+
+```yaml title:nitric.dev.yaml
+provider: nitric/aws@1.14.0
+region: us-east-1
+config:
+  # How services will be deployed by default, if you have other services not running models
+  # you can add them here too so they don't use the same configuration
+  default:
+    lambda:
+      # Set the memory to 6GB to handle the model, this automatically sets additional CPU allocation
+      memory: 6144
+      # Set a timeout of 900 seconds (maximum for a lambda)
+      timeout: 900
+      # We add more storage to the lambda function, so it can store the model
+      ephemeral-storage: 1024
+```
+
+<Note>
+  When you set ephemeral storage above the default 512 MB, there may be
+  additional charges based on the amount of storage and how long your function
+  runs.
+</Note>
+
+We can then deploy using the following command:
+
+```bash
+nitric up
+```
+
+Testing on AWS we'll need to use a Websocket client or the AWS portal. You can verify it in the same way as locally by connecting to the websocket and sending a message with a prompt for the model.
+
+Once you're finished querying the model, you can destroy the deployment using `nitric down`.
+
+## Summary
+
+In this project we've successfully augmented an LLM using Retrieval Augmented Generation (RAG) techniques with Llama Index and Nitric. You can modify this project to use any LLM, change the prompt template to be more specific in responses, or change the context for your own personal requirements. We could extend this project to maintain context between requests using a Key Value Store to have more of a chat-like experience with the model.
