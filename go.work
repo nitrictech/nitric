@@ -1,8 +1,9 @@
-go 1.23.1
+go 1.24.3
 
-toolchain go1.23.5
+toolchain go1.24.3
 
 use (
+	./cli
 	./cloud/aws
 	./cloud/azure
 	./cloud/common
