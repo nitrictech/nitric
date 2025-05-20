@@ -1,0 +1,350 @@
+---
+description: 'SQL databases'
+---
+
+# SQL
+
+Nitric provides functionality for provisioning and interacting with SQL databases.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/sql).
+
+<Note>
+  SQL databases are currently in preview and only support PostgreSql deployed to
+  AWS using the <br className="hidden lg:block" />
+  `nitric/aws` and `nitric/awstf` providers, GCP with the `nitric/azure`
+  provider, or Azure with the `nitric/azure` provider.
+</Note>
+
+<Note>
+  Managed SQL database services are often priced differently by cloud providers
+  than other resources Nitric can deploy. While most resources have true
+  serverless pricing (i.e. they're free if they go unused) databases are
+  typically charged hourly. Be sure to check the pricing for the database
+  service you choose. [AWS RDS Pricing](https://aws.amazon.com/rds/pricing/),
+  [Google Cloud SQL Pricing](https://cloud.google.com/sql/pricing), and [Azure
+  Database for PostgreSQL
+  Pricing](https://azure.microsoft.com/en-us/pricing/details/postgresql/flexible-server/).
+</Note>
+
+## Enabling SQL databases
+
+SQL databases are currently in [Preview](/reference/preview-features). To enable this feature in your project add the following to your `nitric.yaml` file
+
+```yaml
+preview:
+  - sql-databases
+```
+
+## Creating a SQL database
+
+Here's an example of how to create a SQL database:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database')
+```
+
+```typescript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database')
+```
+
+```python !!
+from nitric.resources import sql
+
+db = sql("my-database")
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final db = Nitric.sql("my-database");
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database")
+
+  nitric.Run()
+}
+```
+
+</CodeSwitcher>
+
+## Accessing a SQL database
+
+Unlike some Nitric resources, which abstract away the underlying service to enable portability, SQL databases are already portable. This means Nitric can allow you to interact with databases directly, freeing you to use the database client of your choice.
+
+Nitric provides a helper function to retrieve the connection details for your SQL database:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { sql, api } from '@nitric/sdk'
+
+const db = sql('my-database')
+
+api('example').get('/hello', async (ctx) => {
+  const connStr = await db.connectionString()
+  // TODO: Interact with the database using the connection string
+  return ctx
+})
+```
+
+```typescript !!
+import { sql, api } from '@nitric/sdk'
+
+const db = sql('my-database')
+
+api('example').get('/hello', async (ctx) => {
+  const connStr = await db.connectionString()
+  // TODO: Interact with the database using the connection string
+  return ctx
+})
+```
+
+```python !!
+from nitric.resources import api, sql
+from nitric.application import Nitric
+from nitric.context import HttpContext
+
+example = api("example")
+
+db = sql("my-database")
+
+@example.get("/hello")
+async def hello(ctx: HttpContext):
+    conn_str = await db.connection_string()
+    # TODO: Interact with the database using the connection string
+    return ctx
+
+Nitric.run()
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final db = Nitric.sql("my-database");
+
+Nitric.api("example").get("/hello", (ctx) async {
+  final connStr = await db.connectionString();
+  // TODO: Interact with the database using the connection string
+  return ctx;
+});
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database")
+
+  nitric.NewApi("example").Get("/hello", func() {
+    connStr, _ := db.ConnectionString(context.TODO())
+  })
+
+  nitric.Run()
+}
+```
+
+</CodeSwitcher>
+
+## Schemas and Migrations
+
+Nitric provides mechanisms that allow you to run migrations against your database, ensuring the schema is up to date with your application. This functionality is designed to be as flexible as possible, allowing you to define your migrations in a variety of ways, including SQL files, other scripts, or even code.
+
+There are two primary ways to run migrations:
+
+- SQL files
+- As a one-time task in a docker container
+
+### SQL files
+
+Nitric supports running SQL files as migrations. To do this, create a directory in your project, usually `migrations/[database_name]` by convention, and add your SQL files to it. These files should follow the naming convention `[version]_[name].[up/down].sql`, where `[version]` indicates the order in which the migrations should be run, `[name]` is a descriptive name for the migration and `[up/down]` indicates whether to run the migration on deployment (up) or whether it's for rollbacks (down). Here's an example of a directory structure:
+
+```
+migrations/
+  my-database/
+    1_create_table.up.sql
+    2_add_column.up.sql
+    3_create_index.up.sql
+```
+
+<Note>
+  Nitric doesn't currently support rolling back migrations, files ending in
+  `.down.sql` are ignored and can be omitted.
+</Note>
+
+Here is another example of a directory structure with both up and down migrations:
+
+```
+migrations/
+  my-database/
+    20240424002208_init.up.sql
+    20240424002208_init.down.sql
+    20240426001202_add_column.up.sql
+    20240426001202_add_column.down.sql
+    20240426001203_create_index.up.sql
+    20240426001203_create_index.down.sql
+```
+
+Next, configure your database to use these migration files, ensuring they're automatically applied when you deploy your project.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database', {
+  migrations: 'file://migrations/my-database',
+})
+```
+
+```typescript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database', {
+  migrations: 'file://migrations/my-database',
+})
+```
+
+```python !!
+from nitric.resources import sql
+
+db = sql("my-database", migrations="file://migrations/my-database")
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final db = Nitric.sql("my-database",
+  migrations: "file://migrations/my-database"
+);
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/sql"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database", sql.WithMigrationsPath("file://migrations/my-database"))
+
+  nitric.Run()
+}
+```
+
+</CodeSwitcher>
+
+When new migration files are added Nitric will automatically apply them when you redeploy your project.
+
+### Docker container
+
+Nitric also provides a more powerful option for migrations - running them as a once-per-deployment task using a docker container. This is useful when you need to run more complex migrations or you're using tools such as an ORM which can't generate SQL migration files. To do this, create a Dockerfile in your project that runs your migrations and add it to your database configuration.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database', {
+  migrations: 'dockerfile://migrations.dockerfile',
+})
+```
+
+```typescript !!
+import { sql } from '@nitric/sdk'
+
+const db = sql('my-database', {
+  migrations: 'dockerfile://migrations.dockerfile',
+})
+```
+
+```python !!
+from nitric.resources import sql
+
+db = sql("my-database", migrations="dockerfile://migrations.dockerfile")
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final db = Nitric.sql("my-database",
+  migrations: "dockerfile://migrations.dockerfile"
+);
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/sql"
+)
+
+func main() {
+  db := nitric.NewSqlDatabase("my-database", sql.WithMigrationsPath("dockerfile://migrations.dockerfile"))
+
+  nitric.Run()
+}
+```
+
+</CodeSwitcher>
+
+<Note>
+  The `dockerfile://` prefix is required to indicate that the migrations are run
+  in a Docker container, which will be built and pushed to a registry by your
+  chosen provider.
+</Note>
+
+The Dockerfile can operate as you see fit, but it must contain an entrypoint that runs your migrations and terminates when it's done. Here's an example of a Dockerfile that runs a migration script using Prisma and Node:
+
+```docker
+FROM node
+
+ENV DB_URL=""
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+# Build the Prisma client
+RUN npx prisma generate
+
+# Run the migrations and start the application when the Docker container starts
+# We define the entrypoint like this so we can correctly copy it out when running it
+# in the various clouds (e.g. AWS Codebuild does not respect ENTRYPOINT and CMD)
+ENTRYPOINT ["sh", "-c", "npx prisma migrate deploy"]
+```
+
+## Alternatives
+
+While Nitric's SQL database support is a great option if you prefer to host your database alongside your other Nitric resources, there are many other great serverless or managed options available for data persistence, some of which offer unique features or true serverless pricing.
+
+Here are a few alternatives that work well with Nitric:
+
+- [Supabase](https://supabase.com/) (PostgreSQL)
+- [Neon](https://neon.tech/) (PostgreSQL)
+- [PlanetScale](https://planetscale.com/) (MySQL)
+
+Guides are available for some of these alternatives in the [guides section](/guides).
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/sql)
+- [Azure](/providers/mappings/azure/sql)
+- [Google Cloud](/providers/mappings/gcp/sql)
+
+If you need support for additional clouds, let us know by [opening an issue](https://github.com/nitrictech/nitric/issues) or joining the conversation on [Discord](https://nitric.io/chat).

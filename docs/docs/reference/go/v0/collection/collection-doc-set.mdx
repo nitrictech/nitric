@@ -1,0 +1,118 @@
+---
+description: "Reference for Nitric's v0 Go library - Set the value of a document"
+---
+
+# Go - Collection.Doc.Set()
+
+Set the value of a document.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionWriting)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  err = drakeProfileRef.Set(context.TODO(), map[string]interface{}{
+    "firstName": "Drake",
+    "lastName": "Mallard",
+  })
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="document" required type="map[string]interface{}">
+    The document to set on the key
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a document
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionWriting)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  err = drakeProfileRef.Set(context.TODO(), map[string]interface{}{
+    "firstName": "Drake",
+    "lastName": "Mallard",
+  })
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Update a document
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading, nitric.CollectionWriting)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  existingProfile, err := drakeProfileRef.Get(context.TODO())
+  if err != nil {
+    return
+  }
+
+  contents := existingProfile.Content()
+  contents["firstName"] = "Drake"
+
+  err = drakeProfileRef.Set(context.TODO(), contents)
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Doc().Get()](./collection-doc-get)
+- [Doc().Delete()](./collection-doc-delete)

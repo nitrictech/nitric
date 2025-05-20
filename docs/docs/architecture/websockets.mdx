@@ -1,0 +1,140 @@
+---
+description: 'Explore how Nitric provisions and manages WebSockets on AWS using Terraform and Pulumi.'
+---
+
+# WebSockets
+
+## 1. System Context
+
+**Developers** use Nitric to define required WebSocket APIs within their application.
+
+- App code interacts with the [WebSocket resource](/websockets) through defined routes and integrations.
+- Developers implement backend logic to handle WebSocket connections, messages, and disconnections.
+
+**Operations** use default or overridden IaC (e.g Terraform modules) to provision the necessary resources for their target cloud.
+
+<details>
+  <summary>Example AWS Provider</summary>
+
+- **AWS API Gateway v2** manages WebSocket API endpoints and routes.
+- **AWS Lambda** functions handle WebSocket events such as connection, message reception, and disconnection.
+- **AWS IAM** manages roles and policies for secure access between API Gateway and Lambda functions.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    App["nitric up"]
+    APIGateway["AWS API Gateway v2<br>(WebSocket API)"]
+    Lambda["AWS Lambda Functions"]
+    IAM["AWS IAM"]
+
+    Developer -->|Code| App
+    Operations -->|Terraform| App
+    App -->|Create WebSocket API| APIGateway
+    App -->|Configure Integrations| APIGateway
+    App -->|Deploy Lambda Functions| Lambda
+    APIGateway -->|Invoke Lambda/Handle Events| Lambda
+    App -->|Manage Permissions| IAM
+    IAM -->Lambda
+    IAM -->APIGateway
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+
+## 2. Sequence
+
+### Build Sequence
+
+Here is the sequence of events that occur when a developer registers an Websocket API with Nitric, including the registration of handlers for connection, message, and disconnection events.
+
+```mermaid
+sequenceDiagram
+  participant Worker as App Worker(s)
+  participant SDK as Nitric SDK
+  participant Nitric as Nitric CLI
+  participant Provider as Nitric Provider <br> (plugin)
+  participant IAC as IaC <br> (e.g. Terraform)
+
+  Worker->>SDK: Register Websocket(s)
+  SDK->>Nitric: Register Websocket(s)
+
+  Worker->>SDK: Register Connection Handler
+  SDK->>Nitric: Register Connection Handler
+  Worker->>SDK: Register Message Handler
+  SDK->>Nitric: Register Message Handler
+  Worker->>SDK: Register Disconnection Handler
+  SDK->>Nitric: Register Disconnection Handler
+
+  Nitric->>Provider: Forward Nitric Spec
+  Provider->>IAC: Provision Websocket API
+  Provider->>IAC: Provision IAM
+```
+
+### Runtime Sequence
+
+Here is the sequence of events that occur at runtime when a websocket connection is established, messages are sent and received, and the connection is closed.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client
+    participant WSGateway as WebSocket Gateway <br> (e.g. AWS API Gateway)
+    participant NitricRuntime as Nitric Runtime <br> (plugin)
+    participant NitricSDK as Nitric SDK
+    participant App as App Code
+
+    Client->>WSGateway: Connect to ws:// endpoint
+    WSGateway->>NitricRuntime: Forward Connection Event
+    NitricRuntime->>NitricSDK: Connection Callback
+
+    loop Real-Time Communication
+        alt Client Message
+          Client->>WSGateway: Send WS Message
+          WSGateway->>NitricRuntime: Forward Message
+          NitricRuntime->>NitricSDK: Forward Message
+          NitricSDK->>App: Message Callback
+        else Server Message
+          App->>NitricSDK: Send WS Message
+          NitricSDK->>NitricRuntime: Forward Message
+          NitricRuntime->>WSGateway: Forward Message
+          WSGateway->>Client: Deliver Message
+        end
+    end
+
+    Client->>WSGateway: Disconnect
+    WSGateway->>NitricRuntime: Forward Disconnection Event
+    NitricRuntime->>NitricSDK: Disconnection Callback
+```
+
+## 3. Component
+
+### WebSocket API Module
+
+- Dynamically creates and manages WebSocket APIs to enable real-time, bidirectional communication between clients and servers.
+- Configures API properties such as protocol type, route selection expressions, and tags for governance and management.
+- Automatically provisions and links backend integrations to handle events for connection establishment (`$connect`), message handling (`$default`), and disconnections (`$disconnect`).
+- Grants permissions to enable secure communication between the WebSocket gateway and backend services, adhering to the principle of least privilege.
+- Supports deployment of WebSocket APIs with automatic handling of stage configurations and versioning for seamless updates.
+- Abstracts cloud-specific WebSocket services, ensuring a consistent developer experience across providers.
+- Ensures fault-tolerant and scalable handling of WebSocket connections, supporting high-throughput scenarios with minimal configuration.
+
+## 4. Code
+
+**Developers** write application code that uses the [WebSocket resource](/websockets) from the SDK and implement backend logic to handle WebSocket connections, messages, and disconnections.
+
+SDK Reference by language -
+
+- [NodeJS SDK](/reference/nodejs/websocket/websocket)
+- [Python SDK](/reference/python/websocket/websocket)
+- [Go SDK](/reference/go/websocket/websocket)
+- [Dart SDK](/reference/dart/websocket/websocket)
+
+**Operations** will use or extend the Nitric infrastructure modules, including both Terraform and Pulumi:
+
+- Terraform Modules:
+  - [AWS WebSocket Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploytf/.nitric/modules/websocket/main.tf)
+- Pulumi Modules:
+  - [AWS WebSocket Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/websocket.go)

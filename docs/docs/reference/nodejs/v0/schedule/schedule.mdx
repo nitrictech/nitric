@@ -1,0 +1,47 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Creates a new Schedule to run a function on a defined frequency."
+---
+
+# Node.js - schedule()
+
+Creates a new Schedule to run a function on a defined frequency.
+
+```javascript
+import { schedule } from '@nitric/sdk'
+
+// Create a schedule that runs every 3 hours
+schedule('aggregate-data').every('3 hours', async (ctx) => {
+  console.log('do something here')
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="description" required type="string">
+    The unique name of this Schedule within the app. Subsequent calls to
+    `schedule` with the same name will return the same object.
+  </Property>
+</Properties>
+
+### Notes
+
+- Schedules do not require access permissions to be specified.
+
+- During local development schedules can be triggered manually from the local development dashboard
+
+## Examples
+
+### Create a Schedule
+
+```javascript
+import { schedule } from '@nitric/sdk'
+
+schedule('send-reminders').every('3 minutes', async (ctx) => {
+  // add code to run here
+})
+
+schedule('archive-orders').cron('0 1 1 * *', async (ctx) => {
+  // add code to run here
+})
+```

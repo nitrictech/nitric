@@ -1,0 +1,20 @@
+---
+description: 'How Nitric deploys Key Value Stores to Azure'
+---
+
+# Azure Resources - Key Value Stores
+
+Nitric Key Value Stores are deployed to Azure using [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/).
+
+## Azure Resources
+
+The following resources are created when deploying Key Value Stores to Azure:
+
+- Azure Table storage
+- Azure Resource Group
+
+## Deployment
+
+During deployment the Nitric CLI builds your Key Value Stores as follows:
+
+- The key value store definition and resource group are deployed using Azure Table storage.

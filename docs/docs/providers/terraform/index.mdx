@@ -1,0 +1,78 @@
+---
+description: 'How Nitric integrates with Terraform'
+---
+
+# Nitric Terraform Providers
+
+Nitric enables application portability and deployments through pluggable modules known as [providers](/get-started/foundations/deployment#providers). This allows applications to be deployed with many different Infrastructure Automation technologies, including [Terraform](https://www.terraform.io/). Nitric has pre-built providers that use Terraform to deploy to [AWS](/providers/terraform/aws), [Google Cloud](/providers/terraform/gcp) and [Microsoft Azure](/providers/terraform/azure).
+
+<Note>
+  All pre-built Terraform providers are [IaC generating
+  providers](/get-started/foundations/deployment#providers).
+</Note>
+
+## Prerequisites
+
+The **Terraform CLI** is required to deploy the resulting Terraform Stack that Nitric generates. You can find the installation instructions for Terraform in the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
+The provider is built with the [Cloud Development Kit for Terraform (CDKTF)](https://developer.hashicorp.com/terraform/cdktf). Since CDKTF relies on **Node.js**, you'll need to have Node.js installed, you can read about the full CDKTF prerequisites in the [CDKTF documentation](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-install#prerequisites).
+
+<Note>
+  Terraform providers are currently in Preview. We recommend reviewing the
+  generated Terraform before deploying to Production environments, or
+  alternatively using the equivalent [Pulumi Provider](/providers/pulumi).
+</Note>
+
+## Available Terraform Providers
+
+- [AWS](/providers/terraform/aws)
+- [Google Cloud](/providers/terraform/gcp)
+- [Microsoft Azure](/providers/terraform/azure)
+
+## How Nitric integrates with Terraform
+
+Nitric uses the [Cloud Development Kit for Terraform (CDKTF)](https://developer.hashicorp.com/terraform/cdktf) to generate Terraform code for your application. This code can be deployed using the standard Terraform CLI commands.
+
+When you run `nitric up` in your project directory, Nitric will generate the Terraform code for your application, outputting the result to a directory named `cdktf.out` by default. You can then navigate into this directory and use the standard Terraform commands to deploy your application.
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+## Getting Started
+
+To get started with the Nitric Terraform provider, you'll need to install the Nitric CLI and the Terraform CLI. You can find the installation instructions for both in the [Nitric CLI](/reference/cli) and [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) documentation.
+
+Once you have the Nitric CLI and Terraform CLI installed, you can create a new Nitric project as usual, if you're new to Nitric, check out the [Getting Started](/get-started/quickstart) guide.
+
+To use the Nitric Terraform provider, you'll need to create a new Nitric stack that uses the Terraform provider. You can do this by running the following command:
+
+```bash
+nitric stack new
+```
+
+This will create a new Nitric stack and prompt you to select a provider. Select the Terraform provider of your choice during this process.
+
+Once you've created your Nitric stack, you can generate the Terraform code by running the following command:
+
+```bash
+nitric up
+```
+
+<Note>
+  If you project has more than one stack you'll be prompted to select the stack
+  you want to deploy. Choose the stack that uses the Terraform provider to
+  generate the Terraform code.
+</Note>
+
+This will generate the Terraform code for your Nitric application into a folder named `cdktf.out` by default. You can change this via the `outdir` property and inspect the code before deploying.
+
+To deploy the application using Terraform, you can navigate into your Terraform stack directory and use the standard Terraform commands:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```

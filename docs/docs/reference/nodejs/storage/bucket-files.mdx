@@ -1,0 +1,37 @@
+---
+description: "Reference for Nitric's Node.js library - Get a list of file references for files that exist in the bucket."
+---
+
+# Node.js - bucket.files()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Get a list of file references for files that exist in the bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('read')
+
+const files = await assets.files()
+```
+
+## Examples
+
+Deleting all files in a bucket
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('delete')
+
+const files = await assets.files()
+await Promise.all(files.map(async (file) => await file.delete()))
+```
+
+## Notes
+
+This method returns a list of [File](./bucket-file) references that exist on the bucket.

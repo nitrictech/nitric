@@ -1,0 +1,71 @@
+---
+description: "Reference for Nitric's v0 Go library - Close a connection to a websocket"
+---
+
+# Go - Websocket.Close()
+
+Closes a connection to a websocket
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws, err := nitric.NewWebsocket("public")
+  if err != nil {
+    return
+  }
+
+  ws.Close(context.TODO(), "D28BA458-BFF4-404A")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="connectionId" required type="string">
+    The ID of the connection which should be closed.
+  </Property>
+</Properties>
+
+## Examples
+
+### Close a connection to the websocket on message
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws, err := nitric.NewWebsocket("public")
+  if err != nil {
+    return
+  }
+
+  // Broadcast message to all the registered websocket connections
+  ws.On(faas.WebsocketMessage, func(ctx *faas.WebsocketContext, next faas.WebsocketHandler) (*faas.WebsocketContext, error) {
+    message := string(ctx.Request.Data())
+    if message == "close" {
+      err := ws.Close(ctx.Request.Context(), ctx.Request.ConnectionID())
+      return ctx, err
+    }
+
+    return next(ctx)
+  })
+
+  nitric.Run()
+}
+```

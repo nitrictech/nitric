@@ -1,0 +1,35 @@
+---
+description: "Reference for Nitric's v0 Python library - Retrieve the value of a document."
+---
+
+# Python - collection.doc.get()
+
+Retrieve the value of a document.
+
+```python
+from nitric.resources import collection
+
+enemies = collection('profiles').allow('reading')
+drakes_profile = profiles.doc('Drake Mallard')
+
+await drakes_profile.get()
+```
+
+## Examples
+
+### Get a document's value
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading')
+
+drakesProfile = profiles.doc('Drake Mallard')
+await drakesProfile.get()
+```
+
+## See also
+
+- [doc().set()](./collection-doc-set)
+- [doc().delete()](./collection-doc-delete)
+- [doc.collection()](./collection-doc-collection)

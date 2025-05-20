@@ -1,0 +1,91 @@
+---
+description: "Reference for Nitric's v0 .NET library - Subscribe a handler to a topic and receive new events for processing."
+---
+
+# .NET - Topic.Subscribe()
+
+Subscribe a handler to a topic and receive new events for processing.
+
+```csharp
+using Nitric.Sdk;
+
+class EventUpdate
+{
+  public string Message { get; set; }
+}
+
+var updates = Nitric.Topic<EventUpdate>("updates");
+
+updates.Subscribe(ctx => {
+  Console.WriteLine(ctx.Req.Payload);
+
+  return ctx;
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property
+    name="middleware"
+    required
+    type="Func<EventContext, EventContext> or Middleware<EventContext>[]"
+  >
+    The middleware (code) to be triggered by the topic.
+  </Property>
+</Properties>
+
+## Examples
+
+### Subscribe to a topic
+
+```csharp
+using Nitric.Sdk;
+
+var updates = Nitric.Topic("updates");
+
+updates.Subscribe(ctx => {
+  Console.WriteLine(ctx.Req.Payload);
+
+  return ctx;
+});
+
+Nitric.Run();
+```
+
+### Subscibe to a topic with chained middleware
+
+```csharp
+using Nitric.Sdk;
+
+class EventUpdate
+{
+  public string Message { get; set; }
+}
+
+var updates = Nitric.Topic<EventUpdate>("updates");
+
+
+updates.Subscribe((ctx, next) =>
+  {
+    // Validate request
+    if (invalidRequest(ctx))
+    {
+      return ctx;
+    }
+    return next(ctx);
+  }, (ctx, next) => {
+    // Handle request
+    return next(ctx);
+  }
+);
+
+Nitric.Run();
+```
+
+## Notes
+
+- A function may only subscribe to a topic once, if multiple subscribers are required, create them in different functions.
+- A function may subscribe to OR publish to a topic but not both

@@ -1,0 +1,239 @@
+---
+description: "Reference for Nitric's v0 JVM library - Register an API route and set a specific HTTP PATCH handler on that route."
+---
+
+# JVM - api.patch()
+
+Register an API route and set a specific HTTP PATCH handler on that route.
+
+<Note>
+  This method is a convenient short version of
+  [api().route().patch]()](./api-route-patch)
+</Note>
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.patch("/customers", (ctx) -> {
+      // handle PATCH request
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.patch("/customer") { ctx ->
+    // handle PATCH request
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="String">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers. See [create
+    a route with path params](#create-a-route-with-path-params)
+  </Property>
+  <Property
+    name="middleware"
+    required
+    type="HttpMiddleware or List<HttpMiddleware>"
+  >
+    One or more middleware functions to use as the handler for HTTP requests.
+    Handlers can be sync or async
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for PATCH requests
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.patch("/customers", (ctx) -> {
+      // handle PATCH request
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.patch("/customer") { ctx ->
+    // handle PATCH request
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Chain functions as a single method handler
+
+When multiple functions are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.faas.v0.HttpContext;
+import io.nitric.faas.v0.Handler;
+
+import java.util.List;
+
+public class Application {
+  static HttpContext validateRequest(HttpContext ctx, Handler<HttpContext> next) {
+    // validateRequest
+    return next.invoke(ctx);
+  }
+
+  static HttpContext handleRequest(HttpContext ctx, Handler<HttpContext> next) {
+    // handle request
+    return next.invoke(ctx);
+  }
+
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.patch("/customer", List.of(Application::validateRequest, Application::handleRequest));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.faas.v0.HttpContext
+import io.nitric.faas.v0.Middleware
+
+val validateRequest = Middleware<HttpContext> { ctx, next ->
+  // validate request
+  return@Middleware next(ctx)
+}
+
+val handleRequest = Middleware<HttpContext> { ctx, next ->
+  // handle request
+  return@Middleware next(ctx)
+}
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.patch("/customer", listOf(validateRequest, handleRequest))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Access the request body
+
+The PATCH request body is accessible from the `ctx.req` object.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var api = Nitric.INSTANCE.api("public");
+
+    api.patch("/customer", (ctx) -> {
+      var customerData = ctx.getReq().getData();
+      // parse, validate, and store the request payload...
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  val api = Nitric.api("public")
+
+  api.patch("/customer") { ctx ->
+    val customerData = ctx.req.data
+    // parse, validate, and store the request payload...
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

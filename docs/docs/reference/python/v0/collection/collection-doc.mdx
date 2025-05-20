@@ -1,0 +1,29 @@
+---
+description: "Reference for Nitric's v0 Python library - Get a reference to a document in the collection."
+---
+
+# Python - collection.doc()
+
+Get a reference to a document in the collection.
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading','writing')
+drakes_profile = profiles.doc('Drake Mallard')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key of the document to reference.
+  </Property>
+</Properties>
+
+## See also
+
+- [doc().get()](./collection-doc-get)
+- [doc().set()](./collection-doc-set)
+- [doc().delete()](./collection-doc-delete)
+- [doc().collection()](./collection-doc-collection)

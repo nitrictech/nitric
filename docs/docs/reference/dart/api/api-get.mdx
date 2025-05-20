@@ -1,0 +1,103 @@
+---
+description: "Reference for Nitric's Dart library - Register an API route and set a specific HTTP GET handler on that route."
+---
+
+# Dart - api.get()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Register an API route and set a specific HTTP GET handler on that route.
+
+<Note>
+  This method is a convenient short version of
+  [api().route().get()](./api-route-get)
+</Note>
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create an API named 'public'
+final api = Nitric.api("public");
+
+api.get("/customers/:customerId", (ctx) async {
+  // Extract the path parameter
+  final id = ctx.req.pathParams["customerId"]!;
+
+  // Construct response for the GET: /customers request...
+  final responseBody = {};
+  ctx.res.json(responseBody);
+
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="String">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling handlers.
+  </Property>
+  <Property name="handler" required type="HttpHandler">
+    The middleware service to use as the handler for HTTP requests.
+  </Property>
+  <Property name="security" type="List<OidcOptions>">
+    Security rules to apply with scopes to the entire API.
+  </Property>
+  <Property name="middlewares" type="List<HttpHandler>">
+    The list of middleware that will run before the handler is called. To call
+    the next middleware in the chain use `ctx.next()`, to finish early return
+    `ctx` by itself. The ordering of middleware goes: API -> Route -> Method.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for GET requests
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create an API named 'public'
+final api = Nitric.api("public");
+
+api.get("/customers", (ctx) async {
+  // Construct response for the GET: /customers request...
+  final responseBody = {};
+  ctx.res.json(responseBody);
+
+  return ctx;
+});
+```
+
+### Chain services as a single method handler
+
+When multiple services are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers. You can call the next middleware in the chain using `ctx.next()`. If a middleware in the chain does not call `.next` and instead returns the base context, the call chain will end.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+Future<HttpContext> validate(HttpContext ctx) async {
+  if (!ctx.req.headers.containsKey("Content-Type")) {
+    ctx.res.status = 400;
+    ctx.res.body = "header Content-Type is required";
+
+    // End the middleware chain by not calling `ctx.next()`.
+    return ctx;
+  }
+
+  return ctx.next();
+}
+
+Future<HttpContext> getCustomer(HttpContext ctx) async {
+  // handle the GET request...
+  return ctx.next();
+}
+
+// The validate middleware will run before the getCustomer handler
+Nitric.api("public").get("/customers", getCustomer, middlewares: [validate]);
+```

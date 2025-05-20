@@ -1,0 +1,43 @@
+---
+description: "Reference for Nitric's v0 .NET library - Get a query-only sub-collection reference, this can be used to query commonly named collections across documents."
+---
+
+# .NET - Collection.Collection()
+
+Get a query-only sub-collection reference, this can be used to query commonly named collections across documents.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var enemies = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading).Collection("enemies");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the sub-collection to reference
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a query for a sub collection
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var enemies = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading).Collection("enemies");
+
+var enemiesQuery = enemies.Query();
+
+Nitric.Run();
+```
+
+### See also
+
+- [Collection.Query()](./collection-query)

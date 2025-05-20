@@ -1,0 +1,366 @@
+---
+description: Use the Nitric framework to easily build and deploy Dart REST APIs for AWS, Azure or GCP
+title_seo: Building your first API with Dart and Nitric
+tags:
+  - API
+  - Key Value Store
+languages:
+  - dart
+published_at: 2024-04-24
+updated_at: 2025-01-06
+---
+
+# Building a REST API with Nitric
+
+This guide will show you how to build a serverless REST API with the Nitric framework using Dart. The example API enables reading, writing and editing basic user profile information using a Nitric [key value store](https://nitric.io/docs/keyvalue) to store user data. Once the API is created we'll test it locally, then optionally deploy it to a cloud of your choice.
+
+The example API enables reading, writing, and deleting profile information from a Nitric [key value store](https://nitric.io/docs/keyvalue).
+
+The API will provide the following routes:
+
+| **Method** | **Route**      | **Description**                        |
+| ---------- | -------------- | -------------------------------------- |
+| `GET`      | /profiles/[id] | Get a specific profile image by its id |
+| `GET`      | /profiles      | List all profiles                      |
+| `POST`     | /profiles      | Create a new profile image             |
+| `DELETE`   | /profiles/[id] | Delete a profile                       |
+
+There is also an extended section of the guide that adds file operations using a Nitric [bucket](https://nitric.io/docs/storage) to store and retrieve profile pictures using signed URLs. The extension adds these routes to the API:
+
+| **Method** | **Route**                     | **Description**                   |
+| ---------- | ----------------------------- | --------------------------------- |
+| `GET`      | /profiles/[id]/image/upload   | Get a profile image upload URL    |
+| `GET`      | /profiles/[id]/image/download | Get a profile image download URL  |
+| `GET`      | /profiles/[id]/image/view     | View the image that is downloaded |
+
+## Prerequisites
+
+- [Dart](https://dart.dev/get-dart)
+- The [Nitric CLI](/get-started/installation)
+- An [AWS](https://aws.amazon.com), [Google Cloud](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account (_your choice_)
+
+## Getting started
+
+Start by creating a new Nitric project from the dart template.
+
+```bash
+nitric new my-profile-api dart-starter
+```
+
+Next, open the project in your editor of choice.
+
+```bash
+cd my-profile-api
+```
+
+The scaffolded project should have the following structure:
+
+```text
+services/
+├── api.dart
+.gitignore
+analysis_options.yaml
+dart.dockerfile
+dart.dockerfile.dockerignore
+nitric.yaml
+pubspec.yaml
+README.md
+```
+
+As we will be generating IDs for each profile, add the uuid dependency by adding it to your `pubspec.yaml`.
+
+```bash
+dart pub add uuid
+```
+
+## Building the API
+
+Applications built with Nitric can contain many APIs, let's start by adding one to this project to serve as the public endpoint.
+
+```dart title:services/api.dart
+import 'package:nitric_sdk/nitric.dart';
+
+import 'package:uuid/uuid.dart';
+
+void main() {
+  // Create an API named 'public'
+  final profileApi = Nitric.api("public");
+
+  // Define a key value store named 'profiles', then request get, set and delete permissions.
+  final profiles = Nitric.kv("profiles").allow([
+    KeyValueStorePermission.get,
+    KeyValueStorePermission.set,
+    KeyValueStorePermission.delete
+  ]);
+}
+```
+
+Here we're creating an API named `public` and a key value store named `profiles`, then requesting get, set, and delete permissions which allows our service to access the key value store.
+
+<Note>
+  Resources in Nitric like `api` and `key value store` represent high-level
+  cloud resources. When your app is deployed Nitric automatically converts these
+  requests into appropriate resources for the specific
+  [provider](https://nitric.io/docs/reference/providers). Nitric also takes care
+  of adding the IAM roles, policies, etc. that grant the requested access. For
+  example the `key value store` resource uses DynamoDB in AWS or FireStore on
+  Google Cloud.
+</Note>
+
+### Create profiles with POST
+
+Let's start adding features that allow our API consumers to work with profile data.
+
+<Note>
+  You could separate some or all of these handlers into their own files if you
+  prefer. For simplicity we'll group them together in this guide.
+</Note>
+
+```dart title:services/api.dart
+profileApi.post("/profiles", (ctx) async {
+  final uuid = Uuid();
+
+  final id = uuid.v4();
+
+  final profile = ctx.req.json();
+
+  // Store the new profile in the profiles kv store
+  await profiles.set(id, profile);
+
+  // Send a success response.
+  ctx.res.body = "Profile $id created.";
+
+  return ctx;
+});
+```
+
+### Retrieve a profile with GET
+
+```dart title:services/api.dart
+profileApi.get("/profiles/:id", (ctx) async {
+  final id = ctx.req.pathParams["id"]!;
+
+  try {
+    // Retrieve and return the profile data
+    final profile = await profiles.get(id);
+    ctx.res.json(profile);
+  } on Exception catch (e) {
+    print(e);
+    ctx.res.status = 404;
+    ctx.res.body = "Profile $id not found.";
+  }
+
+  return ctx;
+});
+```
+
+### Retrieve all profiles with GET
+
+```dart title:services/api.dart
+profileApi.get("/profiles", (ctx) async {
+  List<Map<String, dynamic>> profilesList = [];
+  final profilesIds = await profiles.keys();
+
+  await for (final id in profilesIds) {
+    final profile = await profiles.get(id);
+    profilesList.add(profile);
+  }
+
+  ctx.res.body = jsonEncode(profilesList);
+  ctx.res.headers["Content-Type"] = ["application/json"];
+
+  return ctx;
+});
+```
+
+### Remove a profile with DELETE
+
+```dart title:services/api.dart
+profileApi.delete("/profiles/:id", (ctx) async {
+  final id = ctx.req.pathParams["id"]!;
+
+  // Delete the profile
+  try {
+    await profiles.delete(id);
+    ctx.res.body = "Profile $id removed.";
+  } on Exception catch (e) {
+    ctx.res.status = 404;
+    ctx.res.body = "Profile $id not found. $e";
+  }
+
+  return ctx;
+});
+```
+
+## Ok, let's run this thing!
+
+Now that you have an API defined with handlers for each of its methods, it's time to test it locally.
+
+```bash
+nitric start
+```
+
+Once it starts, the application will receive requests via the API port. You can use the [Local Dashboard](/get-started/foundations/projects/local-development) or any HTTP client to test the API. We'll keep it running for our tests. If you want to update your functions, just save them, they'll be reloaded automatically.
+
+## Test the API
+
+Below are some example requests you can use to test the API. You'll need to update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+### Create Profile
+
+```bash
+curl --location --request POST 'http://localhost:4001/profiles' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "name": "Peter Parker",
+    "age": "21",
+    "homeTown" : "Queens"
+}'
+```
+
+### Fetch Profile
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]'
+```
+
+### Fetch All Profiles
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles'
+```
+
+### Delete Profile
+
+```bash
+curl --location --request DELETE 'http://localhost:4001/profiles/[id]'
+```
+
+## Deploy to the cloud
+
+At this point, you can deploy what you've built to any of the supported cloud providers. To do this start by setting up your credentials and any configuration for the cloud you prefer:
+
+- [AWS](/providers/pulumi/aws)
+- [Azure](/providers/pulumi/azure)
+- [GCP](/providers/pulumi/gcp)
+
+Next, we'll need to create a `stack`. A stack represents a deployed instance of an application, which is a key value store of resources defined in your project. You might want separate stacks for each environment, such as stacks for `dev`, `test` and `prod`. For now, let's start by creating a `dev` stack.
+
+The `stack new` command below will create a stack named `dev` that uses the `aws` provider.
+
+```bash
+nitric stack new dev aws
+```
+
+Continue by checking your stack file `nitric.dev.yaml` and adding in your preferred region, let's use `us-east-1`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target aws region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-1
+```
+
+<Note>
+  Cloud deployments incur costs and while most of these resource are available
+  with free tier pricing you should consider the costs of the deployment.
+</Note>
+
+We called our stack `dev`, let's try deploying it with the `up` command
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your API.
+
+To tear down your application from the cloud, use the `down` command:
+
+```bash
+nitric down
+```
+
+## Optional - Add profile image upload/download support
+
+If you want to go a bit deeper and create some other resources with Nitric, why not add images to your profiles API.
+
+### Access profile buckets with permissions
+
+Define a bucket named `profilesImg` with reading/writing permissions.
+
+```dart title:services/api.dart
+final profilesImg = Nitric.bucket("profilesImg").allow([BucketPermission.read, BucketPermission.write]);
+```
+
+### Get a URL to upload a profile image
+
+```dart title:services/api.dart
+profileApi.get("/profiles/:id/image/upload", (ctx) async {
+  final id = ctx.req.pathParams["id"];
+
+  // Return a signed upload URL, which provides temporary access to upload a file.
+  final photoUrl = await profilesImg.file("images/$id/photo.png").getUploadUrl();
+
+  ctx.req.body = photoUrl;
+
+  return ctx;
+});
+```
+
+### Get a URL to download a profile image
+
+```dart title:services/api.dart
+profileApi.get("/profiles/:id/image/download", (ctx) async {
+  final id = ctx.req.pathParams["id"];
+
+  // Return a signed download URL, which provides temporary access to download a file.
+  final photoUrl = await profilesImg.file("images/$id/photo.png").getDownloadUrl();
+
+  ctx.req.body = photoUrl;
+
+  return ctx;
+});
+```
+
+You can also return a redirect response that takes the HTTP client directly to the photo URL.
+
+```dart title:services/api.dart
+profileApi.get("/profiles/:id/image/view", (ctx) async {
+  final id = ctx.req.pathParams["id"];
+
+  // Redirect to a signed read-only file URL.
+  final photoUrl = await profilesImg.file("images/$id/photo.png").getDownloadUrl();
+
+  ctx.res.status = 303;
+  ctx.res.headers["Location"] = [photoUrl];
+
+  return ctx;
+});
+```
+
+#### Test the extended API
+
+Update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+#### Get an image upload URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/upload'
+```
+
+#### Using the upload URL with curl
+
+```bash
+curl --location --request PUT '[url]' \
+--header 'content-type: image/png' \
+--data-binary '@/home/user/Pictures/photo.png'
+
+```
+
+#### Get an image download URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/download'
+```

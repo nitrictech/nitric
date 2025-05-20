@@ -1,0 +1,136 @@
+---
+description: "Reference for Nitric's Go library - Retrieve all or some of the keys from a value store."
+---
+
+# Go - Kv.Keys()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Return an async iterable of keys in the store.
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+	// Initialize the KV service
+	profiles := nitric.NewKv("profiles").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+	keys, err := profiles.Keys(context.TODO())
+	if err != nil {
+		// handle error
+	}
+
+	// Get all keys from a key value store
+	for {
+		key, err := keys.Recv()
+		if err != nil {
+			// check if the stream has ended
+			break
+		}
+		// do something with the key
+		fmt.Printf("Key: %s\n", key)
+	}
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="options" type="...ScanKeysOption">
+    Options for the scan keys operation. See below.
+  </Property>
+</Properties>
+
+### Scan keys options
+
+<Properties>
+  <Property name="WithPrefix(prefix)" type="ScanKeysOption">
+    Filter keys by prefix.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get all keys from a key value store
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  // Initialize the KV service
+  profiles := nitric.NewKv("profiles").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  keys, err := profiles.Keys(context.TODO())
+  if err != nil {
+    fmt.Println("Error getting keys: ", err)
+    return
+  }
+
+  // Get all keys from a key value store
+  for {
+    key, err := keys.Recv()
+    if err != nil {
+      // check if the stream has ended
+      break
+    }
+    // do something with the key
+    fmt.Printf("Key: %s\n", key)
+  }
+
+  nitric.Run()
+}
+```
+
+### Get keys filtered by prefix from a key value store
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  // Initialize the KV service
+  profiles := nitric.NewKv("profiles").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // make function with keyvalue.ScanKeysOption type
+  keys, err := profiles.Keys(context.TODO(), keyvalue.WithPrefix("profile:"))
+  if err != nil {
+    fmt.Println("Error getting keys: ", err)
+    return
+  }
+
+  // Get all keys from a key value store
+  for {
+    key, err := keys.Recv()
+    if err != nil {
+      // check if the stream has ended
+      break
+    }
+    // do something with the key
+    fmt.Printf("Key: %s\n", key)
+  }
+
+  nitric.Run()
+}
+```

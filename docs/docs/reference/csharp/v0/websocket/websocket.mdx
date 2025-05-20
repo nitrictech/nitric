@@ -1,0 +1,43 @@
+---
+description: "Reference for Nitric's v0 .NET library - Create Websockets with the Nitric Go SDK"
+---
+
+# .NET - NewWebsocket()
+
+Creates a new Websocket.
+
+```csharp
+using Nitric.Sdk;
+
+var websocket = Nitric.Websocket("public");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Websocket within the app. Subsequent calls to
+    `Websocket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Websocket
+
+```csharp
+using Nitric.Sdk;
+
+var websocket = Nitric.Websocket("public");
+
+Nitric.Run();
+```
+
+### See also
+
+- [Websocket().On()](./websocket-on)
+- [Websocket().Connection()](./websocket-connection)
+- [Websocket().Connection().Send()](./connection-send)
+- [Websocket().Connection().Close()](./connection-close)

@@ -1,0 +1,439 @@
+---
+description: Nitric allows applications to declare infrastructure requirements and generate the cloud infrastructure automation needed to deploy and manage the services, using Infrastructure-from-Code.
+---
+
+# Infrastructure
+
+If you haven't read [Why Nitric](/get-started/foundations/why-nitric) yet, you might want to start there. It explains the 'why' behind Nitric, which can help you understand the 'what' and 'how' of Nitric.
+
+Nitric applies the concept of Infrastructure from Code (IfC) in a very specific way, to enhance Infrastructure as Code (IaC) and help applications with platform specific Separation of Concerns (SoC).
+
+<Note>
+  "Infrastructure from Code" (IfC) is an emerging term and sometimes refers to
+  proprietary platforms/SaaS products. Instead, Nitric is an open source
+  application framework, that integrates with existing IaC tools, to automate
+  the creation of infrastructure from application code.
+</Note>
+
+Nitric separates platform-specific cloud and infrastructure interaction away from core application code, while allowing developers to define their application's requirement explicitly.
+
+Sometimes it's easier to explain IfC by exploring the benefits.
+
+---
+
+## Rapid Development
+
+Nitric significantly reduces or removes cloud-specific code. For example, accessing a file in a cloud storage bucket with Nitric is just a few lines of code, while the equivalent code using cloud provider SDKs is much more verbose and error prone:
+
+<Tabs>
+
+<TabItem label="Nitric SDK">
+
+This code works equally with AWS S3, Google Cloud Storage, Azure Blob Storage, or any other storage service:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const receiptDocs = bucket('receipt-docs').allow('read')
+
+export async function getReceiptDoc(filename) {
+  return await receiptDocs.file(filename).read()
+}
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const receiptDocs = bucket('receipt-docs').allow('read')
+
+export async function getReceiptDoc(filename: string): Promise<Uint8Array> {
+  return await receiptDocs.file(filename).read()
+}
+```
+
+```python !!
+from nitric.resources import bucket
+
+receipts_docs = bucket("receipts").allow("read")
+
+async def get_receipt_doc(filename):
+  return await receipts_docs.file(filename).read()
+
+```
+
+```go !!
+import (
+	"context"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+var receiptDocs storage.BucketClient
+
+func init() {
+	receiptDocs = *nitric.NewBucket("receipt-docs").Allow(storage.BucketRead)
+}
+
+func getReceiptDoc(ctx context.Context, filename string) ([]byte, error) {
+	return receiptDocs.Read(ctx, filename)
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final receiptDocs = Nitric.bucket("receipt-docs").allow([
+  BucketPermission.read,
+]);
+
+Future<List<int>> getReceiptDoc(String filename) async {
+  return await receiptDocs.file(filename).read();
+}
+```
+
+</CodeSwitcher>
+
+</TabItem>
+
+<TabItem label="AWS SDK">
+
+This code is specific to AWS S3 and requires additional runtime setup and error handling:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+
+const s3 = new S3Client({})
+const RECEIPT_DOCUMENTS_BUCKET = process.env.RECEIPT_DOCUMENTS_BUCKET
+
+if (!RECEIPT_DOCUMENTS_BUCKET) {
+  throw new Error('RECEIPT_DOCUMENTS_BUCKET environment variable not set')
+}
+
+export async function getReceiptDoc(filename) {
+  const command = new GetObjectCommand({
+    Bucket: RECEIPT_DOCUMENTS_BUCKET,
+    Key: filename,
+  })
+
+  const response = await s3.send(command)
+  return await response.Body.transformToByteArray()
+}
+```
+
+```typescript !!
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+
+const s3 = new S3Client({})
+const RECEIPT_DOCUMENTS_BUCKET = process.env.RECEIPT_DOCUMENTS_BUCKET
+
+if (!RECEIPT_DOCUMENTS_BUCKET) {
+  throw new Error('RECEIPT_DOCUMENTS_BUCKET environment variable not set')
+}
+
+export async function getReceiptDoc(filename: string): Promise<Uint8Array> {
+  const command = new GetObjectCommand({
+    Bucket: RECEIPT_DOCUMENTS_BUCKET,
+    Key: filename,
+  })
+
+  const response = await s3.send(command)
+  return await response.Body.transformToByteArray()
+}
+```
+
+```python !!
+import os
+import boto3
+
+RECEIPT_DOCUMENTS_BUCKET = os.getenv('RECEIPT_DOCUMENTS_BUCKET')
+
+if not RECEIPT_DOCUMENTS_BUCKET:
+    raise EnvironmentError('RECEIPT_DOCUMENTS_BUCKET environment variable not set')
+
+s3_client = boto3.client('s3')
+
+def get_receipt_doc(filename):
+    response = s3_client.get_object(Bucket=RECEIPT_DOCUMENTS_BUCKET, Key=filename)
+    return response['Body'].read()
+
+```
+
+```go !!
+package main
+
+import (
+	"context"
+	"os"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"io"
+)
+
+var receiptDocumentsBucket = os.Getenv("RECEIPT_DOCUMENTS_BUCKET")
+
+func init() {
+	if receiptDocumentsBucket == "" {
+		panic("RECEIPT_DOCUMENTS_BUCKET environment variable not set")
+	}
+}
+
+func getReceiptDoc(filename string) ([]byte, error) {
+	cfg, _ := config.LoadDefaultConfig(context.TODO())
+	s3Client := s3.NewFromConfig(cfg)
+
+	resp, _ := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(receiptDocumentsBucket),
+		Key:    aws.String(filename),
+	})
+
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
+}
+```
+
+```dart !!
+import 'dart:io';
+import 'package:aws_s3_api/s3-2006-03-01.dart';
+
+final receiptDocumentsBucket = Platform.environment['RECEIPT_DOCUMENTS_BUCKET'];
+
+void checkBucketEnv() {
+  if (receiptDocumentsBucket == null || receiptDocumentsBucket!.isEmpty) {
+    throw Exception('RECEIPT_DOCUMENTS_BUCKET environment variable not set');
+  }
+}
+
+Future<List<int>> getReceiptDoc(String filename) async {
+  checkBucketEnv();
+  final client = S3(region: 'us-west-2'); // Adjust region
+  final request = GetObjectRequest(
+    bucket: receiptDocumentsBucket!,
+    key: filename,
+  );
+
+  final response = await client.getObject(request);
+  return await response.body.toBytes();
+}
+```
+
+</CodeSwitcher>
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## Decoupled Applications and Infrastructure
+
+Nitric keeps application code independent of specific cloud services. Developers focus on designing the application architecture and building features, without first making long-term technology choices.
+
+For example this same code would work equally well backed by AWS SNS, AWS EventBridge, Google Cloud Pub/Sub, Azure EventGrid, Apache Kafka, or any other messaging service:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { topic } from '@nitric/sdk'
+
+const myTopic = topic('my-topic').allow('publish')
+
+export const publishMessage = async (message) => {
+  await myTopic.publish(message)
+}
+```
+
+```typescript !!
+import { topic } from '@nitric/sdk'
+
+const myTopic = topic('my-topic').allow('publish')
+
+export async function publishMessage(message: any) {
+  await myTopic.publish(message)
+}
+```
+
+```python !!
+from nitric.resources import topic
+
+my_topic = topic("my-topic").allow("publish")
+
+async def publish_message(message):
+    await my_topic.publish(message)
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/topics"
+)
+
+var myTopic topics.TopicClient
+
+func init() {
+  myTopic = *nitric.NewTopic("my-topic").Allow(topics.TopicPublish)
+}
+
+func publishMessage(ctx context.Context, message map[string]interface{}) error {
+  return myTopic.Publish(ctx, message)
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final myTopic = Nitric.topic("my-topic").allow([
+  TopicPermission.publish,
+]);
+
+Future<void> publishMessage(Map<String, dynamic> message) async {
+  await myTopic.publish(message);
+}
+```
+
+</CodeSwitcher>
+
+We can change the underlying messaging service through a simple configuration change—which plugin to use, without modifying the application code.
+
+<Tabs>
+
+<TabItem label="AWS">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/aws@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Azure">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/azure@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Google Cloud">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/gcp@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Anything Else">
+
+```yaml title:nitric.prod.yaml
+provider: your_namespace/custom@1.0.0
+```
+
+</TabItem>
+
+</Tabs>
+
+<Note>
+  The runtime code for cloud services like SNS still exists, it's just isolated
+  to an independent module. It could be from a [Nitric
+  provider](https://github.com/nitrictech/nitric/blob/main/cloud/aws/runtime/topic/sns.go)
+  or [something custom](/providers/custom/create) built by you or an independent
+  team, such as platform engineers or DevOps teams.
+</Note>
+
+---
+
+## Automate Application Infrastructure Requirements
+
+Using Infrastructure as Code (IaC) tools like Terraform, Pulumi, or AWS CDK, developers can define the infrastructure requirements for their application. You can even create reusable modules for common infrastructure patterns. For example, you could create a pattern for async messaging, which includes a topic, and a subscription bound to a serverless function.
+
+The problem is that these tools in isolation require manual processes to keep the infrastructure in sync with the application code. Processes that are error-prone and time-consuming.
+
+Infrastructure lingers in production that's no longer in use, permissions are too broad creating security risks, or too strict causing application failures. Environment variables used to determine resource names can be can be broken by a simple typo. It's a mess.
+
+Nitric solves this by automatically generating a requirements specification from the application code. This specification describes the resources used by the application, their hierarchy, and how the application intends to use them at runtime.
+
+If you want to see the spec for your application you can run `nitric spec`:
+
+```bash
+nitric spec
+```
+
+This spec can be automatically forwarded to plugins that generate the IaC configuration and implement a runtime API adapter for the chosen services. This way, the IaC configuration is always in sync with the application code and the code always works on the target platform.
+
+### No Rogue Resources or Permissions
+
+Resources and access requirements are defined as close as possible to where they are used, making it easy to see when they are no longer needed or when permissions are too broad.
+
+```javascript
+import { queue } from '@nitric/sdk'
+
+// Delete this line and the queue disappears from the IaC
+const myQueue = queue('my-queue').allow('enqueue')
+
+// It's easy to tell when `enqueue` is no longer needed
+export const enqueueMessage = async (message) => {
+  await myQueue.enqueue(message)
+}
+```
+
+### No Broken Environment Variables
+
+The name of a resource is defined **_once_** (in the code), instead of twice (in the code and the IaC). IaC configuration is generated, so it's never out of sync with the application code.
+
+```javascript
+sql('profiles')
+```
+
+Nitric maps the requirements specification to plugins written with existing IaC tools like Terraform, Pulumi or CloudFormation. These tools are still responsible for provisioning the resources, roles, and permissions, those things are never directly embedded in the application code.
+
+### Don't Change App Code for Infrastructure Changes
+
+At this point you haven't imported the AWS, Google Cloud, or Azure SDK. You haven't written any cloud-specific code in your application. You haven't written any mocks or tests for these cloud services, or anything that makes your code less portable.
+
+So when changes are needed for performance, cost, or compliance, you can make them instantly. Like we mentioned before, that part is just config.
+
+<Tabs>
+
+<TabItem label="AWS">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/aws@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Azure">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/azure@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Google Cloud">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/gcp@1.1.1
+```
+
+</TabItem>
+
+<TabItem label="Anything Else">
+
+```yaml title:nitric.prod.yaml
+provider: your_namespace/custom@1.0.0
+```
+
+</TabItem>
+
+</Tabs>
+
+```bash
+nitric up
+```

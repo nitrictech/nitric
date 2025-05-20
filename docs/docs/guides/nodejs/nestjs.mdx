@@ -1,0 +1,360 @@
+---
+description: 'Integrating Nitric with a Nest.js application'
+tags:
+  - API
+  - HTTP Proxy
+  - Key Value Store
+languages:
+  - typescript
+  - javascript
+published_at: 2023-07-05
+updated_at: 2025-01-15
+---
+
+# Nest.js integration with Nitric
+
+## What we'll be doing
+
+In this guide we will be creating a [Nest.js](https://nestjs.com/) application and deploying it to the cloud using the Nitric CLI.
+
+The Nest.js application will be able to perform CRUD operations on user profiles that will interact with a key value store using the Nitric SDK.
+
+## Prerequisites
+
+To complete this guide, here are things you'll need setup ahead of time:
+
+- [Node.js](https://nodejs.org/en/)
+- The [Nitric CLI](/get-started/installation)
+- An [AWS](https://aws.amazon.com), [GCP](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account (_your choice_)
+
+## Getting started
+
+To get started we will download the Nest CLI.
+
+```bash
+npm i -g @nestjs/cli
+```
+
+We can then use the CLI to scaffold our Nest project.
+
+```bash
+nest new nitric-nest
+```
+
+This will create a src directory with the Nest application code and a test file.
+
+## Add Nitric configuration
+
+Normally when creating a Nitric project a few files and dependencies are added for you. By using the `nest` CLI we will need to add a few extra things.
+
+- Nitric dependency
+- Command for running a service.
+- Nitric project file
+- Dockerfile
+- Docker ignore file
+
+We'll start by adding Nitric as a dependency and adding some development dependencies.
+
+```bash
+yarn add @nitric/sdk
+
+yarn add -D dotenv nodemon ts-node
+```
+
+Add a small script to our `package.json` that will run our Nitric services.
+
+```json title:package.json
+"scripts": {
+  ...
+  "dev:services": "nodemon -r dotenv/config"
+}
+```
+
+Then add a `nitric.yaml` file to point to your resources:
+
+```yaml title:nitric.yaml
+name: nitric-nest
+services:
+  - match: src/main.ts
+    runtime: node
+    start: npm run dev:services $SERVICE_PATH
+batch-services: []
+
+runtimes:
+  node:
+    dockerfile: ./node.dockerfile
+```
+
+The Nitric project normally scaffolds a dockerfile for you, but in this case we will need to create these. This will be used when running our services in docker containers.
+
+```dockerfile title:node.dockerfile
+# syntax=docker/dockerfile:1
+FROM node:22.4.1-alpine as build
+
+ARG HANDLER
+
+# Python and make are required by certain native package build processes in NPM packages.
+RUN --mount=type=cache,sharing=locked,target=/etc/apk/cache \
+    apk --update-cache add git g++ make py3-pip
+
+RUN yarn global add typescript @vercel/ncc
+
+WORKDIR /usr/app
+
+COPY package.json *.lock *-lock.json ./
+
+RUN yarn import || echo ""
+
+RUN --mount=type=cache,sharing=locked,target=/tmp/.yarn_cache \
+    set -ex && \
+    yarn install --production --prefer-offline --frozen-lockfile --cache-folder /tmp/.yarn_cache
+
+RUN test -f tsconfig.json || echo "{\"compilerOptions\":{\"esModuleInterop\":true,\"target\":\"es2015\",\"moduleResolution\":\"node\"}}" > tsconfig.json
+
+COPY . .
+
+RUN --mount=type=cache,target=/tmp/ncc-cache \
+  ncc build ${HANDLER} -o lib/ -t
+
+FROM node:22.4.1-alpine as final
+
+RUN apk update && \
+    apk add --no-cache ca-certificates && \
+    update-ca-certificates
+
+WORKDIR /usr/app
+
+COPY . .
+
+COPY --from=build /usr/app/node_modules/ ./node_modules/
+
+COPY --from=build /usr/app/lib/ ./lib/
+
+ENTRYPOINT ["node", "lib/index.js"]
+```
+
+And the dockerignore file for more optimized images:
+
+```txt title:node.dockerfile.dockerignore
+.nitric/
+.git/
+.idea/
+.vscode/
+.github/
+*.dockerfile
+*.dockerignore
+node_modules/
+README.md
+```
+
+## Creating the AppService
+
+With that done, we can create some routes for interacting with a key value store containing user profiles. We will be storing the profiles in a key value store which is handled by the Nitric SDK. Our profiles will require a unique ID when it's created. Let's add the `uuid` package for when we generate these.
+
+```bash
+yarn add uuid
+```
+
+We will define our profiles [key value store](/keyvalue) and a Profile type at the top of our `app.service.ts` file. The key value store will have permissions for getting, setting, and deleting as we will be using all those features for our Profile service.
+
+```typescript title:src/app.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { kv } from '@nitric/sdk'
+
+export interface Profile {
+  id: string
+  name: string
+  age: number
+}
+
+const profiles = kv<Profile>('profiles').allow('get', 'set', 'delete')
+
+@Injectable()
+export class AppService {}
+```
+
+We can then create some handlers for creating, getting, and deleting profiles. These will all exist in the `AppService` class.
+
+```typescript title:src/app.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { v4 as uuidv4 } from 'uuid'
+// !collapse(1:9) collapsed
+import { kv } from '@nitric/sdk'
+
+export interface Profile {
+  id: string
+  name: string
+  age: number
+}
+
+const profiles = kv<Profile>('profiles').allow('get', 'set', 'delete')
+
+@Injectable()
+export class AppService {
+  async createProfile(createProfileReq: Omit<Profile, 'id'>): Promise<Profile> {
+    const id: string = uuidv4()
+
+    const profile = { id, ...createProfileReq } as Profile
+
+    await profiles.set(id, profile)
+
+    return profile
+  }
+
+  async getProfile(id: string): Promise<Profile> {
+    const profile = await profiles.get(id)
+
+    if (!profile) {
+      throw new NotFoundException()
+    }
+
+    return profile
+  }
+
+  async deleteProfile(id: string): Promise<void> {
+    await profiles.delete(id)
+  }
+}
+```
+
+## Creating the AppController
+
+Now that the service is built, we can use the `AppService` with our `AppController` routing. This involves correctly extracting the parameters from the request object to then pass into the services.
+
+```typescript title:src/app.controller.ts
+import { Controller, Get, Post, Delete, Param, Req } from '@nestjs/common'
+import { Profile, AppService } from './app.service'
+import { Request } from 'express'
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get('/profile/:id')
+  async getProfile(@Param('id') id: string) {
+    return await this.appService.getProfile(id)
+  }
+
+  @Post('/profile')
+  async createProfile(@Req() req: Request<Omit<Profile, 'id'>>) {
+    return await this.appService.createProfile(req.body)
+  }
+
+  @Delete('/profile/:id')
+  async deleteProfile(@Param('id') id: string) {
+    return await this.appService.deleteProfile(id)
+  }
+}
+```
+
+## Defining an Entrypoint
+
+We then want to add the `http` type to our main function, and pass in the Nest.js application. The `http` wrapper will use the `bootstrap` function when starting the application and pass it the port.
+
+<Note>
+  The application port will be set by the NITRIC_HTTP_PROXY_PORT environment
+  variable, however it will find an open port if that environment variable isn't
+  set.
+</Note>
+
+```typescript title:src/main.ts
+import { http } from '@nitric/sdk'
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+
+async function bootstrap(port: number) {
+  const app = await NestFactory.create(AppModule)
+  return await app.listen(port)
+}
+
+http(bootstrap)
+```
+
+## Test locally
+
+We can test that this works by running `nitric start`.
+
+```bash
+nitric start
+```
+
+You can use any http client to test the application. The application will be running from a random port, but proxied on port 4001. It is important that http://localhost:4001 correctly wraps your application.
+
+We can test that a create request works by using the following cURL command.
+
+```bash
+curl  -X POST \
+  'http://localhost:4001/profile' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{ "name": "Peter Parker", "age": 17, "homeTown": "Queens, New York City" }'
+```
+
+It should return something similar to this:
+
+```json
+{
+  "id": "2cbaeaf5-9339-44c4-a396-606a0d3910d9",
+  "name": "Peter Parker",
+  "age": 17,
+  "homeTown": "Queens, New York City"
+}
+```
+
+Using that id we can then make a get request to get the profile (replace the `id` param with the `id` from above).
+
+```
+curl http://localhost:4001/profile/2cbaeaf5-9339-44c4-a396-606a0d3910d9
+```
+
+It should return:
+
+```json
+{
+  "id": "2cbaeaf5-9339-44c4-a396-606a0d3910d9",
+  "name": "Peter Parker",
+  "age": 17,
+  "homeTown": "Queens, New York City"
+}
+```
+
+## Deploy to the cloud
+
+This is where the true value of Nitric shines. You don't need to perform any manual cloud deployment activities or add solutions like Terraform to get this project into your cloud environment, Nitric takes care of that for you.
+
+To perform the deployment we'll create a `stack`, stacks give Nitric the configuration needed for a specific cloud instance of this project, such as the provider and region.
+
+The `stack new` command below will create a stack named `dev` that uses the `aws` provider.
+
+```bash
+nitric stack new dev aws
+```
+
+Edit the stack file `nitric.dev.yaml` and set your preferred AWS region, for example `us-east-1`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target AWS region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-2
+```
+
+<Note>
+  You are responsible for staying within the limits of the free tier or any
+  costs associated with deployment.
+</Note>
+
+Let's try deploying the stack with the `up` command:
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your application.
+
+To tear down your application from the cloud, use the `down` command:
+
+```bash
+nitric down
+```

@@ -1,0 +1,84 @@
+---
+description: "Reference for Nitric's Dart library - Creates a new route (path) within an API."
+---
+
+# Dart - api.route()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new route (path) within an API.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="String">
+    The path matcher to use for this route. Calling `route` on the same API more
+    than once with the same matcher will return the same route object. Matchers
+    accept path parameters in the form of a colon prefixed string. The string
+    provided will be used as that path parameter's name when calling middleware
+    and handlers.
+  </Property>
+  <Property name="security" type="List<OidcOptions>">
+    Security rules to apply with scopes to the entire API.
+  </Property>
+  <Property name="middlewares" type="List<HttpHandler>">
+    The list of middleware that will run before the handler is called. To call
+    the next middleware in the chain use `ctx.next()`, to finish early return
+    `ctx` by itself. The ordering of middleware goes: API -> Route -> Method.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a route
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+```
+
+### Create a route with path params
+
+Route paths can include dynamic parameters. These values will automatically be parsed and provided in the context object for your middleware and handlers as a `string`.
+
+For example, if you have a customers path and you want to include a `customerId` param you would define the route like this.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers/:customerId");
+```
+
+### Create a route with a middleware chain
+
+When creating your route you can supply a list of middleware that will run before any of the handlers. If the middleware succeeds it will move on to the next middleware in the chain. This allows middleware to be composed into more complex handlers. You can call the next middleware in the chain using `ctx.next()`. If a middleware in the chain does not call `.next` and instead returns the base context, the call chain will end.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+/// Validate that all requests include a `Content-Type` header
+Future<HttpContext> validate(HttpContext ctx) async {
+  if (!ctx.req.headers.containsKey("Content-Type")) {
+    ctx.res.status = 400;
+    ctx.res.body = "header Content-Type is required";
+
+    // End the middleware chain by not calling `ctx.next()`.
+    return ctx;
+  }
+
+  return ctx.next();
+}
+
+// The validate middleware will run before all handlers that are created using this route
+final customersRoute = Nitric.api("public").route("/customers", middlewares: [validate]);
+```

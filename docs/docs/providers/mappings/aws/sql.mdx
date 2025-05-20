@@ -1,0 +1,35 @@
+---
+description: 'How Nitric deploys SQL Databases to AWS'
+---
+
+# AWS Resources - SQL Database
+
+Nitric SQL Databases are deployed to AWS using [Amazon RDS](https://aws.amazon.com/rds).
+
+## AWS Resources
+
+The following resources are created when deploying SQL Databases to AWS:
+
+- Virtual Private Cloud (VPC)
+- Security Group
+- Aurora PostgreSQL Cluster
+- Cluster Instance
+- Subnet Group
+- CodeBuild Project for migrations
+
+## Deployment
+
+During deployment the Nitric CLI deploys your SQL Databases:
+
+- Virtual Private Cloud (VPC) and Subnets are created
+- Declared databases are deployed as Aurora PostgreSQL Clusters
+- Creates new Subnet Groups for the Aurora PostgreSQL Cluster
+- Appropriate IAM policies are setup enabling VPC access to the database
+- Migration images are built and pushed to the [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/) as private images
+- CodeBuild projects are created to run migrations on the database
+
+## Other Engine Support
+
+Currently, Nitric supports only PostgreSQL for AWS RDS databases. Support for other engines like MySQL is not available yet, but you can create a [custom provider](/providers/custom) to add support for your preferred database engine.
+
+If you'd like to see support for additional engines, please share your [feedback](https://github.com/nitrictech/nitric/issues/684) with the Nitric team!

@@ -1,0 +1,43 @@
+---
+description: "Reference for Nitric's Node.js library - Store a key value pair in a key value store."
+---
+
+# Node.js - kv.set()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Stores docs](/keyvalue).
+</Note>
+
+Store a key value pair in a key value store.
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('set')
+
+await profiles.set('profile-1a2b3c', { name: 'John Smith' })
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="string">
+    The key that references value.
+  </Property>
+  <Property name="value" required type="object">
+    A json serializable object that is stored as the value.
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a key value pair
+
+```javascript
+import { kv } from '@nitric/sdk'
+
+const profiles = kv('profiles').allow('set')
+
+await profiles.set('profile-1a2b3c', { name: 'John Smith' })
+```

@@ -1,0 +1,98 @@
+---
+description: "Reference for Nitric's Go library - Register a job handler to with the Nitric Go SDK"
+---
+
+# Go - Job.Handler()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Batch
+  Services in Nitric start with the [Batch Services docs](/batch).
+</Note>
+
+Job handlers are the code that is run when a job request is submitted. These handlers should be written in a separate file to your services.
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyze := nitric.NewJob("analyze")
+
+	analyse.Handler(func(ctx *batch.Ctx) {
+		// do long running work
+	}, batch.WithCpus(1), batch.WithMemory(2048), batch.WithGpus(1))
+
+	nitric.Run()
+}
+```
+
+## Defining Batches
+
+Batches are defined in different files to services and referenced in a project's `nitric.yaml` file. For example:
+
+```yaml
+batch-services:
+  - match: ./batches/*.go
+    start: go run $SERVICE_PATH
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="JobHandler">
+    The middleware service to use as the handler for Job requests.
+  </Property>
+  <Property name="options" type="...JobOption" nested>
+    <Property name="WithCpus" type="float32">
+      The number of CPUs to allocate to the handler
+    </Property>
+    <Property name="WithGpus" type="int64">
+      The number of GPUs to allocate to the handler
+    </Property>
+    <Property name="WithMemory" type="int64">
+      The amount of memory (MB) to allocate to the handler
+    </Property>
+  </Property>
+</Properties>
+
+## Examples
+
+### Define a job handler
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyze := nitric.NewJob("analyze")
+
+	analyse.Handler(func(ctx *batch.Ctx) {
+		// do long running work
+	})
+
+	nitric.Run()
+}
+```
+
+### Create a job handler with custom resource requirements
+
+```go
+import (
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyze := nitric.NewJob("analyze")
+
+	analyse.Handler(func(ctx *batch.Ctx) {
+		// do long running work
+	}, batch.WithCpus(1), batch.WithMemory(2048), batch.WithGpus(1))
+
+	nitric.Run()
+}
+```

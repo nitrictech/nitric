@@ -1,0 +1,45 @@
+---
+description: "Reference for Nitric's v0 Go library - Delete a document from a collection"
+---
+
+# Go - Collection.Doc.Delete()
+
+Delete a document from a collection.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionDeleting)
+  if err != nil {
+    return
+  }
+
+  drakeProfileRef := profiles.Doc("Drake Mallard")
+
+  err = drakeProfileRef.Delete(context.TODO())
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+### See also
+
+- [Doc().Set()](./collection-doc-set)
+- [Doc().Get()](./collection-doc-get)

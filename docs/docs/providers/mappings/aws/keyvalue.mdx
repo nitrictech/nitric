@@ -1,0 +1,19 @@
+---
+description: 'How Nitric deploys Key Value Stores to AWS'
+---
+
+# AWS Resources - Key Value Store
+
+Nitric KV Stores are deployed to AWS using [Amazon DynamoDB](https://aws.amazon.com/dynamodb).
+
+## AWS Resources
+
+Each Nitric Key Value Store will result in the creation of a DynamoDB Table.
+
+## Deployment
+
+During deployment the Nitric CLI deploys your key/value stores:
+
+- Declared stores are deployed as DynamoDB tables
+- Appropriate partition and sort keys are set on the table to enable setting and retrieval features
+- IAM policies are setup enabling declared access by your Lambda Functions

@@ -1,0 +1,157 @@
+---
+description: "Reference for Nitric's v0 JVM library - Creates a new Collection."
+---
+
+# JVM - collection()
+
+Creates a new Collection.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+// A user class to store in the profiles collection
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE
+      .collection("profiles", User.class)
+      .with(CollectionPermission.Read, CollectionPermission.Write, CollectionPermission.Delete);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+// A user class to store in the profiles collection
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric
+    .collection<User>("profiles")
+    .with(CollectionPermission.Read, CollectionPermission.Write, CollectionPermission.Delete)
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this Collection within the app. Subsequent calls to
+    `collection` with the same name will return the same object.
+  </Property>
+  <Property name="type" required type="Class<T>">
+    The type of documents that will be stored in the collection.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**CollectionPermission.Read**
+
+This permission allows your code to read and query documents from the collection.
+
+---
+
+**CollectionPermission.Write**
+
+This permission allows your code to write documents to the collection.
+
+---
+
+**CollectionPermission.Delete**
+
+This permission allows your code to delete documents from the collection.
+
+---
+
+## Examples
+
+### Create a collection
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+// A user class to store in the profiles collection
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE
+      .collection("profiles", User.class)
+      .with(CollectionPermission.Read, CollectionPermission.Write, CollectionPermission.Delete);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+// A user class to store in the profiles collection
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric
+    .collection<User>("profiles")
+    .with(CollectionPermission.Read, CollectionPermission.Write, CollectionPermission.Delete)
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

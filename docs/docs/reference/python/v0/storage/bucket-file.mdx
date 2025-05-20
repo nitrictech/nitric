@@ -1,0 +1,38 @@
+---
+description: "Reference for Nitric's v0 Python library - Create a reference to a file within a bucket."
+---
+
+# Python - bucket.file()
+
+Create a reference to a file within a bucket.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('reading')
+
+logo = assets.file('images/logo.png')
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" type="string" required>
+    The unique name/reference to the file.
+  </Property>
+</Properties>
+
+## Notes
+
+The file does not need to exist, only a reference to that file is being created.
+
+## Available Operations
+
+- [file.read()](./bucket-file-read)
+- [file.write()](./bucket-file-write)
+- [file.delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

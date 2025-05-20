@@ -1,0 +1,100 @@
+---
+description: "Reference for Nitric's Dart library - Create APIs with the Nitric Dart SDK"
+---
+
+# Dart - api()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new HTTP API.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final publicApi = Nitric.api("public");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this API within the app. Subsequent calls to `api` with
+    the same name will return the same object.
+  </Property>
+  <Property name="opts" type="ApiOptions">
+    Additional options when creating the API.
+    <Properties nested>
+      <Property name="basePath" type="String">
+        Base path for all routes in the API.
+      </Property>
+      <Property name="security" type="List<OidcOptions>">
+        Security rules to apply with scopes to the entire API.
+      </Property>
+      <Property name="middlewares" type="List<HttpHandler>">
+        The list of middleware that will run before the handler is called. To
+        call the next middleware in the chain use `ctx.next()`, to finish early
+        return `ctx` by itself. The ordering of middleware goes: API -> Route ->
+        Method.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### OidcRule Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    value must be <code>jwt</code>
+  </Property>
+  <Property name="issuer" required type="String">
+    the issuer for the JWT tokens e.g.{' '}
+    <code>https://account.region.auth0.com</code>
+  </Property>
+  <Property name="audiences" required type="List<String>">
+    the <code>aud</code> that will be applied to JWT tokens from the issuer.
+  </Property>
+</Properties>
+## Examples
+
+### Create an API
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final publicApi = Nitric.api("public");
+```
+
+### Create an API with a base path
+
+If you need to put all the routes in your api below a shared base path, you can do that with the `basePath` option. In this example we ensure all routes start with `/api/v1/` before the route specific path.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final publicApi = Nitric.api("public", opts: ApiOptions(basePath: "/api/v1"));
+```
+
+### Apply JWT authentication to an API
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// define your security definition
+final oidc = Nitric.oidcRule(
+    "user",
+    "https://example-issuer.com/.well-known/openid-configuration",
+    ["YOUR-AUDIENCES"]);
+
+final secureApi = Nitric.api(
+  "secure",
+  opts: ApiOptions(
+    security: [
+      // apply your security rules here, optionally specifying the required scopes.
+      oidc(["products:read"])
+    ]
+  )
+);
+```

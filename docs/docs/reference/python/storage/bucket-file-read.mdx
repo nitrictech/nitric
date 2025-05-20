@@ -1,0 +1,45 @@
+---
+description: "Reference for Nitric's Python library - Read the contents of a file from a bucket."
+---
+
+# Python - bucket.file.read()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Read a file from a bucket.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+# Create a reference to an 'assets' bucket with permissions to read
+assets = bucket('assets').allow('read')
+
+logo = assets.file('images/logo.png')
+
+logo_data = await logo.read()
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'reading'. The latest version uses 'read'.
+
+## Examples
+
+### Read a file
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('read')
+
+logo = assets.file('images/logo.png')
+
+logo_data = await logo.read()
+
+Nitric.run()
+```

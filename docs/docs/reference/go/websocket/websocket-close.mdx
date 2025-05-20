@@ -1,0 +1,68 @@
+---
+description: "Reference for Nitric's Go library - Close a connection to a websocket"
+---
+
+# Go - Websocket.Close()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Closes a connection to a websocket
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  ws.Close(context.TODO(), "D28BA458-BFF4-404A")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="connectionId" required type="string">
+    The ID of the connection which should be closed.
+  </Property>
+</Properties>
+
+## Examples
+
+### Close a connection to the websocket on message
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  // Broadcast message to all the registered websocket connections
+  ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) error {
+    if ctx.Request.Message() == "close" {
+      err := ws.Close(context.Background(), ctx.Request.ConnectionID())
+      return err
+    }
+
+    return nil
+  })
+
+  nitric.Run()
+}
+```

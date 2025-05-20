@@ -1,0 +1,121 @@
+---
+description: "Reference for Nitric's v0 .NET library - Send tasks to a queue."
+---
+
+# .NET - Queue.Send()
+
+Send tasks to a queue.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+
+class UserRequest
+{
+    public string UserId { get; set; }
+    public string Message { get; set; }
+}
+
+var batchQueue = Nitric.Queue<UserRequest>("batch").With(QueuePermission.Sending);
+
+batchQueue.Send(new UserRequest
+{
+    UserId = "1234",
+    Message = "Hello!"
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="tasks" required type="Task<T> | Task<T>[] | T | T[]">
+    The task or an array of tasks to send to the queue.
+    <Properties nested>
+      <Property name="Id" type="string">
+        unique id to apply to the task.
+      </Property>
+      <Property name="Payload" required type="T">
+        payload to send with the task.
+      </Property>
+      <Property name="PayloadType" type="string">
+        a hint to the type of payload supplied.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Send a task to a queue
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+using System.Collections.Generic;
+
+class UserRequest
+{
+    public string UserId { get; set; }
+    public string Message { get; set; }
+}
+
+var batchQueue = Nitric.Queue<UserRequest>("batch").With(QueuePermission.Sending);
+
+batchQueue.Send(
+    new Task<UserRequest>
+    {
+        Id = "1234",
+        PayloadType = "user_request",
+        Payload = new UserRequest
+        {
+            UserId = "user_1234",
+            Message = "Hello!"
+        }
+    }
+);
+
+Nitric.Run();
+```
+
+### Send multiple tasks to a queue
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Queue;
+using System.Collections.Generic;
+
+var batchQueue = Nitric.Queue("batch").With(QueuePermission.Sending);
+
+batchQueue.Send(
+    new Task[]
+    {
+        new UserRequest
+        {
+            UserId = "user_1",
+            Message = "Batch Task 1"
+        }, new UserRequest
+        {
+            UserId = "user_2",
+            Message = "Batch Task 2"
+        }
+    }
+);
+
+Nitric.Run();
+```
+
+### Dealing with failures
+
+In rare cases when sending tasks to a queue some tasks might fail to be sent. The response from `send()` will include an array of any tasks that failed to send. You can process this array to retry or log the error.
+
+```csharp
+var failed = await batchQueue.Send(tasks);
+
+failed.ForEach(failedTask => {
+    Console.WriteLine(failedTask.ID);
+});
+
+Nitric.Run();
+```

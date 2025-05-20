@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Python library - Send a message to a connection on a websocket."
+---
+
+# Python - websocket.send()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Send a message to a connected websocket client.
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+public_websocket = websocket("public")
+
+async def send_hello_message(connection_id: string):
+    await public_websocket.send(connection_id, b"Hello")
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connection_id" required type="string">
+    The ID of the connection to send the message to on this websocket.
+  </Property>
+  <Property name="data" required type="bytes">
+    The byte data to send to that connection
+  </Property>
+</Properties>
+
+<Note>
+  Do not send messages to a connection during it's `connect` callback, if you
+  need to acknowledge connection, do so by using a [topic](../topic/topic)
+</Note>

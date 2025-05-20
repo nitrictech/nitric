@@ -1,0 +1,75 @@
+---
+description: "Reference for Nitric's Python library - Register a job handler to with the Nitric Python SDK"
+---
+
+# Python - job.handler()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Batch Services in Nitric start with the [Batch docs](/batch).
+</Note>
+
+Job handlers are the code that is run when a job request is submitted. These handlers should be written in a separate file to your services.
+
+```python
+from nitric.resources import job
+
+analyze = job("analyze")
+
+@analyze(cpus=1, memory=2048, gpus=0)
+def do_analyze(data):
+  # Run batch job
+  pass
+```
+
+## Defining Batches
+
+Batches are defined in different files to services and referenced in a project's `nitric.yaml` file. For example:
+
+```yaml
+batch-services:
+  - match: ./batches/*.py
+    start: pipenv run dev $SERVICE_PATH
+```
+
+## Parameters
+
+<Properties>
+  <Property name="cpus" type="int">
+    The number of CPUs to allocate to the handler
+  </Property>
+  <Property name="gpus" type="int">
+    The number of GPUs to allocate to the handler
+  </Property>
+  <Property name="memory" type="int">
+    The amount of memory (MB) to allocate to the handler
+  </Property>
+</Properties>
+
+## Examples
+
+### Define a job handler
+
+```python
+from nitric.resources import job
+
+analyze = job("analyze")
+
+@analyze()
+def do_analyze(data):
+  # Run batch job
+  pass
+```
+
+### Create a job handler with custom resource requirements
+
+```python
+from nitric.resources import job
+
+analyze = job("analyze")
+
+@analyze(cpus=1, memory=2048, gpus=0)
+def do_analyze(data):
+  # Run batch job
+  pass
+```

@@ -1,0 +1,102 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route."
+---
+
+# Node.js - api.route.all()
+
+Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+
+customersRoute.all((ctx) => {
+  // construct a response for all incoming HTTP requests
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="middleware" required type="HttpMiddleware | HttpMiddleware[]">
+    One or more middleware services to use as the handler for HTTP requests.
+    Handlers can be sync or async
+  </Property>
+  <Property name="opts" type="object">
+    Additional options when creating method.
+    <Properties nested>
+      <Property name="security" type="map<string, string[]>">
+        Security rules to apply with scopes to the entire API. Keys must match a
+        `securityDefinition`.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### Notes
+
+When using the `all()` method to register a single function as the handler for all HTTP methods, none of the other methods should be defined on that route.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+
+customersRoute.all((ctx) => {
+  /* handle all requests */
+})
+
+// Don't call `get()`, `post()`, etc., they're already handled by `all()`
+customersRoute.get((ctx) => {
+  /* this handler won't work */
+})
+```
+
+## Examples
+
+### Register a method handler function
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+
+customersRoute.all((ctx) => {
+  // construct a response for all incoming HTTP requests
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+### Chain services as a single method handler
+
+When multiple services are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+```javascript
+import { api } from '@nitric/sdk'
+import { validate } from '../middleware'
+
+const customersRoute = api('public').route('/customers')
+
+const customersHandler = (ctx) => {}
+
+customersRoute.all([validate, customersHandler])
+```
+
+### Access the request body
+
+For methods that include a request body, such as `POST` and `PUT`, you can access the body from the `ctx.req` object.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+
+customersRoute.all((ctx) => {
+  const customerData = ctx.req.data
+  // parse, validate and store the request payload if it's available.
+})
+```

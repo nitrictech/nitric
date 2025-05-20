@@ -1,0 +1,59 @@
+---
+description: Get answers to your Nitric questions in our FAQ. Learn about features, usage, and more to make the most of Nitric Framework for your development needs.
+---
+
+# Nitric Frequently Asked Questions (FAQ)
+
+## Do I need to deploy to a cloud to test my applications?
+
+Nope, the Nitric CLI can run applications for development and testing directly on your machine.
+
+## What programming languages does Nitric support?
+
+Nitric's API is built on gRPC. There are SDKs already available for [several languages](/reference/languages), and gRPC also provides support and code generation for many other languages. If you'd like to work on a new language SDK, reach out in [Discord](https://nitric.io/chat).
+
+## Does Nitric help with data portability?
+
+Nitric helps with code and application portability across cloud providers and the managed services they offer. When considering moving or sharing data we recommend looking into traditional data migration strategies or new multi-cloud services, e.g. MongoDB multi-cloud clusters, Vendia Share, etc.
+
+## How do I use a Cloud/API/Service that Nitric doesn't support?
+
+Nitric is designed for extensibility so you're never restricted. For services/APIs/etc. that aren't supported, you'll continue to be able to directly target those services in your code. While this may result in coupling between applications and cloud providers, continuing to use the bulk of Nitric's APIs keeps that to a minimum.
+
+Additionally, being an Open Source project, you're welcome to [contribute](/misc/contributions) additional services and plugins to the Nitric project to permanently add support for these integrations.
+
+## How do I view my deployments on the Pulumi dashboard?
+
+To view your deployments on the Pulumi dashboard, you will need a Pulumi access token. You can get this token by logging into Pulumi on the browser and going to your profile settings. Under the 'Access Tokens' tab click 'Create token'.
+
+Add the environment variable to your `~/.zshrc` or `~/.bashrc` as:
+
+```
+PULUMI_ACCESS_TOKEN=access_token
+```
+
+## Does Nitric support monorepos?
+
+Yes, Nitric supports monorepos through the custom runtime feature, which allows you to change the build context of your Docker build. For more information, see [custom containers](/reference/custom-containers). Alternatively, you can move your `nitric.yaml` to the root of your repository.
+
+## Will I be locked-in to Nitric?
+
+Nitric is designed with flexibility to avoid lock-in, including to Nitric. If the framework no longer serves you, you'll simply need to choose a new IaC and migrate your provisioning code. The Nitric framework and CLI are written in Go, and use the Pulumi Go Providers, so you may be able to avoid rewriting all of the provisioning code by lifting the provisioning code which Nitric has already built for you. If relevant, you'll also need to rebuild your CI pipelines to leverage the new IaC tooling you've chosen. Nitric doesn't have access to your data, so no data migration is needed.
+
+## Differences From Other Solutions
+
+Learn how Nitric compares to:
+
+- [AWS CDK](./comparison/aws-cdk)
+- [AWS SAM](./comparison/aws-sam)
+- [Google Cloud Deployment Manager](./comparison/gcp-deployment-manager)
+- [Azure Resource Manager](./comparison/bicep)
+- [Pulumi](./comparison/pulumi)
+- [Terraform](./comparison/terraform)
+- [SST](./comparison/sst)
+- [Encore](./comparison/encore)
+- [Ampt](./comparison/ampt)
+
+## More questions?
+
+Start a discussion on [GitHub](https://github.com/nitrictech/nitric/discussions) or come and chat on our community [Discord](https://nitric.io/chat).

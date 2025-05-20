@@ -1,0 +1,446 @@
+---
+description: 'Build a serverless backend for your Next.js app using Nitric framework for AWS, Google Cloud or Azure'
+tags:
+  - Frontend
+  - API
+languages:
+  - typescript
+  - javascript
+published_at: 2023-08-28
+updated_at: 2024-10-11
+---
+
+# Next.js and Nitric example application
+
+This example application demonstrates a To-Do List built using [Next.js](https://nextjs.org) for the frontend and Nitric for the API.
+
+## Prerequisites
+
+Before getting started you'll want [Node.js](https://nodejs.org/en/download/) and the [Nitric CLI](/get-started/installation) installed. If you'd like to deploy the application to the cloud you'll also need an [AWS](https://aws.amazon.com), [Google Cloud](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account. The code for the application will be the same regardless of the cloud you choose. You can also use Vercel or Netlify to deploy the frontend if you choose.
+
+## Getting started
+
+Start by cloning the [Nitric to-do](https://github.com/nitrictech/nitric-todo) project from GitHub and installing dependencies. The rest of this guide will walk you through the example and how it's built.
+
+```
+git clone https://github.com/nitrictech/nitric-todo.git
+cd nitric-todo
+npm install
+```
+
+Now you can open the project in your editor of choice.
+
+## Project structure
+
+The project is split into two components:
+
+- **todo-api** - This is the API built with Nitric
+- **web** - This is the Next.js frontend
+
+## Define types
+
+Since we're using TypeScript we've defined types for tasks and the api request/response payloads.
+
+```typescript title:todo-api/types.ts
+/* Base Types */
+export interface Task {
+  id: string
+  createdAt: number
+  name: string
+  complete: boolean
+  description?: string
+  dueDate?: number
+}
+
+export interface TaskList {
+  id: string
+  createdAt: number
+  name: string
+  tasks: Task[]
+}
+
+/* Task List */
+export type Filters = Partial<Task>
+export type TaskListResponse = TaskList
+export type TaskListRequest = Omit<TaskList, 'id' | 'tasks'>
+export type TaskListPostRequest = Omit<TaskList, 'id' | 'complete'>
+
+/* Task Post */
+export type TaskPostRequest = Omit<Task, 'id'>
+/* Task Update */
+export type TaskPatchRequest = { completed: boolean }
+```
+
+## Add cloud resources
+
+Apps built with Nitric define resources in code, you can write this in the root of any `.js` or `.ts` file, but for organization we recommend putting them together. So let's start by defining the resources we'll need to support our API in a `resources` directory.
+
+```typescript title:todo-api/resources/apis.ts
+import { api } from '@nitric/sdk'
+
+export const taskListApi = api('taskList')
+```
+
+We also want a key/value store to store task lists.
+
+```typescript title:todo-api/resources/stores.ts"
+import { kv } from '@nitric/sdk'
+import { TaskList } from 'types'
+
+export const taskLists = kv<TaskList>('taskLists')
+```
+
+## Define API routes
+
+Next, we setup API routes, these can remain as empty functions until we're ready to fill them in.
+
+```typescript title:todo-api/functions/tasks.ts
+import { taskListApi } from '../resources/apis.ts';
+
+taskListApi.get("/:listid/:id", async (ctx) => {});      // Get task with [id]
+taskListApi.get("/:listid", async (ctx) => {);           // Get task list with [id]
+taskListApi.post("/:listid", async (ctx) => {});         // Post new task for task list
+taskListApi.post("/", async (ctx) => {});                // Post new task list
+taskListApi.patch("/:listid/:id", async (ctx) => {});    // Update task
+taskListApi.delete("/:listid", async (ctx) => {});       // Delete task list
+taskListApi.delete("/:listid/:id", async (ctx) => {});   // Delete task
+```
+
+Now we can import the task list key/value store and request permissions that allow this service to access it.
+
+```typescript title:todo-api/functions/tasks.ts
+import { taskListCol } from '../resources/stores.ts'
+
+const taskLists = taskListCol.allow('set', 'get', 'delete')
+```
+
+With access to the key/value store, we can start adding tasks and task lists.
+
+### Create a task list
+
+```typescript title:todo-api/functions/tasks.ts
+taskListApi.post('/', async (ctx) => {
+  const { name, tasks } = ctx.req.json() as TaskListPostRequest
+
+  try {
+    if (!name) {
+      ctx.res.body = 'A new task list requires a name'
+      ctx.res.status = 400
+      return
+    }
+
+    const id = uuid.generate()
+    const now = new Date().getTime()
+
+    await taskLists.set(id, {
+      id,
+      name,
+      createdAt: now,
+      tasks: tasks.map(task => ({
+        ...task,
+        complete: false,
+        createdAt: now,
+      })
+    })
+
+    ctx.res.body = 'Successfully added task list!'
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to add task list'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Create a new task
+
+We can now accept task list ids and use them to add new tasks under that list.
+
+```typescript title:todo-api/functions/tasks.ts
+taskListApi.post('/:listid', async (ctx) => {
+  const { listid } = ctx.req.params
+  const task = ctx.req.json() as TaskPostRequest
+
+  try {
+    if (!listid) {
+      ctx.res.body = 'A task list id is required'
+      ctx.res.status = 400
+      return
+    }
+
+    if (!task || !task.name) {
+      ctx.res.body = 'A task with a name is required'
+      ctx.res.status = 400
+      return
+    }
+
+    const taskId = uuid.generate()
+
+    const list = await taskLists.get(listid)
+
+    list = {
+      ...list,
+      tasks: [
+        ...list.tasks,
+        {
+          ...task,
+          id: taskId,
+          complete: false,
+          createdAt: new Date().getTime(),
+        },
+      ],
+    }
+
+    await taskLists.set(listid, list)
+
+    ctx.res.body = 'Successfully added task!'
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to add task list'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Retrieve a task with filters
+
+```typescript title:todo-api/functions/tasks.ts
+// Get all tasks from a task list, with filters
+taskListApi.get('/:listid', async (ctx) => {
+  const { listid } = ctx.req.params
+  const filters = ctx.req.query as Filters
+
+  try {
+    const { tasks } = await taskLists.get(listid)
+
+    const filteredTasks = tasks.filter((task) => {
+      return Object.entries(filters).every(([k, v]) => {
+        switch (k) {
+          case 'complete': {
+            return task[k] === v
+          }
+          case 'dueDate': {
+            return task[k] >= v
+          }
+          default: {
+            return task[k].startsWith(v)
+          }
+        }
+      })
+    })
+
+    ctx.res.json({
+      ...taskList,
+      tasks: filteredTasks,
+    })
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to retrieve tasks'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Retrieve a task from a task list
+
+```typescript title:todo-api/functions/tasks.ts
+taskListApi.get('/:listid/:id', async (ctx) => {
+  const { listid, id } = ctx.req.params
+
+  try {
+    const list = await taskLists.get(listid)
+    const task = list.tasks.find((task) => task.id === id)
+    ctx.res.json(task)
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to retrieve tasks'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Update a task
+
+```typescript title:todo-api/functions/tasks.ts
+taskListApi.patch('/:listid/:id', async (ctx) => {
+  const { listid: listId, id } = ctx.req.params
+  const { completed } = ctx.req.json() as ToggleRequest
+
+  try {
+    const list = await taskLists.get(listId)
+    const task = list.tasks.find((task) => task.id === id)
+    task.complete = completed
+    await taskLists.set(listId, list)
+
+    ctx.res.body = 'Successfully updated task'
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to retrieve tasks'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Delete a task
+
+```typescript title:todo-api/functions/tasks.ts
+taskListApi.delete('/:listid/:id', async (ctx) => {
+  const { listid: listId, id } = ctx.req.params
+
+  try {
+    const list = await taskLists.get(listId)
+    list.tasks = list.tasks.filter((task) => task.id !== id)
+    await taskLists.set(listId, list
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to delete task'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Delete a task list
+
+```typescript
+taskListApi.delete('/:id', async (ctx) => {
+  const { id } = ctx.req.params
+
+  try {
+    await taskLists.delete(id)
+    ctx.res.body = 'Successfully deleted task list'
+  } catch (err) {
+    console.log(err)
+    ctx.res.body = 'Failed to delete task list'
+    ctx.res.status = 400
+  }
+
+  return ctx
+})
+```
+
+### Set up API proxy
+
+To avoid any CORS issues we can use the Next.js backend as a proxy for the Nitric API. This is a quick way to ensure the API can be called from the same origin.
+
+Start by create your `.env` file by renaming the `.env.example` file:
+
+```
+mv web/.env.example web/.env
+```
+
+Within the `next.config.js` you should have rewrites defined to proxy between your universal Next.js API route and your Nitric APIs. It takes the `API_BASE_URL` variable which is defined in the `.env` file.
+
+```javascript title:web/next.config.js
+module.exports = {
+  reactStrictMode: true,
+  api: {
+    bodyParser: {
+      bodyParser: false, // Disallow body parsing, consume as stream
+    },
+  },
+  // To avoid any CORs issues use Next.js as a proxy for Nitric API
+  // We are working on it :)
+  async rewrites() {
+    return [
+      {
+        source: '/apis/:path*',
+        destination: `${process.env.API_BASE_URL}/:path*`, // Proxy to Backend
+      },
+    ]
+  },
+}
+```
+
+## Running the application
+
+Now that you have an API defined with handlers for each of the methods, we can test it out locally.
+
+You can test the application with the `npm run dev` command:
+
+```bash
+cd todo-api
+npm run dev
+```
+
+<Note>
+  the `dev` script in the template starts the Nitric Server using `nitric
+  start`, then runs your functions.
+</Note>
+
+We can then launch the Next.js frontend in a new terminal with:
+
+```bash
+cd ../web
+npm run dev
+```
+
+Navigate to `localhost:3000` to view the application. Alternatively, you can test the API directly at `localhost:4001` using the Local Dashboard or any other HTTP client.
+
+Pressing `ctrl + a + k` will end the application.
+
+## Deploy to the cloud
+
+At this point, you can deploy what you've built to any of the supported cloud providers. In this example we'll deploy to AWS. Start by setting up your credentials and configuration for the [nitric/aws provider](/providers/pulumi/aws).
+
+Next, we'll need to create a `stack file` (deployment target). A stack is a deployed instance of an application. You might want separate stacks for each environment, such as stacks for `dev`, `test`, and `prod`. For now, let's start by creating a file for the `dev` stack.
+
+The `stack new` command below will create a stack named `dev` that uses the `aws` provider.
+
+```bash
+nitric stack new dev aws
+```
+
+Edit the stack file `nitric.dev.yaml` and set your preferred AWS region, for example `us-east-1`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target AWS region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-2
+```
+
+<Note>
+  You are responsible for staying within the limits of the free tier or any
+  costs associated with deployment.
+</Note>
+
+Let's try deploying the stack with the `up` command:
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your application.
+
+To tear down your application from the cloud, use the `down` command:
+
+```bash
+nitric down
+```
+
+### Deploy the Next.js App
+
+Choose one of the following deploy buttons and make sure to update the `API_BASE_URL` variable during the setup process with the deployed API URL.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/nitrictech/nitric-todo&env=API_BASE_URL)
+
+<Note>
+  The `Netlify.toml` file in this repository includes the configuration for you
+  to customize the `API_BASE_URL` property on the initial deploy.
+</Note>
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/nitrictech/nitric-todo)

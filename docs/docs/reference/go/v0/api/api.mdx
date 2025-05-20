@@ -1,0 +1,212 @@
+---
+description: "Reference for Nitric's v0 Go library - Create APIs with the Nitric Go SDK"
+---
+
+# Go - NewApi()
+
+Creates a new HTTP API.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this API within the app. Subsequent calls to `NewApi`
+    with the same name will return the same object.
+  </Property>
+  <Property name="options" type="...ApiOption">
+    Additional options for the API. See below.
+  </Property>
+</Properties>
+
+### API options
+
+<Properties>
+  <Property name="WithPath()" type="ApiOption">
+    Sets a base path for all the routes in the API.
+    <Properties nested>
+      <Property name="path" required type="string">
+        Base path for all routes in the API.
+      </Property>
+    </Properties>
+  </Property>
+  <Property name="WithSecurityJwtRules()" type="ApiOption">
+    Sets a security JWT rules on the API.
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="rule" required type="JwtSecurityRule">
+        The properties of the JWT security rule.
+      </Property>
+    </Properties>
+  </Property>
+  <Property name="WithSecurity()" type="ApiOption">
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="scopes" required type="[]string">
+        The security rules scopes.
+      </Property>
+    </Properties>
+  </Property>
+  <Property name="WithMiddleware()" type="ApiOption">
+    <Properties nested>
+      <Property name="middleware" required type="HttpMiddleware">
+        The middleware (code) that should be run on all requests to the API.
+        Useful for applying universal middleware such as CORS headers or Auth,
+        across an entire API from a single place.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### SecurityDefinition Parameters
+
+<Properties>
+  <Property name="JwtSecurityRule">
+    <Properties nested>
+      <Property name="kind" required type="string">
+        value must be <code>jwt</code>
+      </Property>
+      <Property name="issuer" required type="string">
+        the issuer for the JWT tokens e.g.{' '}
+        <code>https://account.region.auth0.com</code>
+      </Property>
+      <Property name="audiences" required type="[]string">
+        the <code>aud</code> that will be applied to JWT tokens from the issuer.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Create an API
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Create an API with universal middleware
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func authMiddleware(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  // Perform auth validation
+  return next(ctx)
+}
+
+func main() {
+  api, err := nitric.NewApi("private", nitric.WithMiddleware(authMiddleware))
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Define middleware
+
+```go
+func authMiddleware(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  // Perform auth validation
+  return next(ctx)
+}
+```
+
+### Notes
+
+Middleware functions are supplied an `HttpContext` object and a `next()` function which calls the next middleware in the chain.
+
+### Create an API with a base path
+
+If you need to put all the routes in your api below a shared base path, you can do that with the `WithPath` option. In this example we ensure all routes start with `/api/v1/` before the route specific path.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  v1Api, err := nitric.NewApi("public", nitric.WithPath("/api/v1/"))
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Apply JWT authentication to an API
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  secureApi, err := nitric.NewApi(
+    "secure",
+    // define a security definition called 'user'
+    nitric.WithSecurityJwtRule("user", nitric.JwtSecurityRule{
+      Issuer: "https://example-issuer.com",
+      Audiences: []string{ "YOUR-AUDIENCES" },
+    }),
+    // You can optionally apply security rules to the entire API
+    nitric.WithSecurity(
+      // apply the user security definition to the whole API
+      "user",
+      // Optionally apply required scopes to this api
+      // in this case users will require the 'products:read' scope to access the API
+      []string{"products:read"},
+    ),
+  )
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```

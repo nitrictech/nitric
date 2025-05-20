@@ -1,0 +1,91 @@
+---
+description: "Reference for Nitric's v0 JVM library - Read the contents of a file from a bucket."
+---
+
+# JVM - bucket.file.read()
+
+Read the contents of a file from a bucket.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.IN`STANCE.bucket("images").with(BucketPermission.Read);
+
+    var contents = bucket.file("cat.png").read();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Read)
+
+  val contents = bucket.file("cat.png").read()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Examples
+
+### Read a file
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.BucketPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    var bucket = Nitric.IN`STANCE.bucket("images").with(BucketPermission.Read);
+
+    var contents = bucket.file("cat.png").read();
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.BucketPermission
+
+fun main() {
+  val bucket = Nitric.bucket("images").with(BucketPermission.Read)
+
+  val contents = bucket.file("cat.png").read()
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

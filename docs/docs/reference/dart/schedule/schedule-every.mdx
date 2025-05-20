@@ -1,0 +1,49 @@
+---
+description: "Reference for Nitric's Dart library - Sets the frequency and one or many handlers to be triggered."
+---
+
+# Dart - schedule.every()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Schedules in Nitric start with the [Schedule docs](/schedules).
+</Note>
+
+Sets the frequency and one or many handlers to be triggered.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create a schedule that runs every 3 hours
+Nitric.schedule("send-reminder").every("3 hours", (ctx) async {
+  // do some processing
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="rate" required type="String">
+    The rate to run the schedule, e.g., '7 days'. All rates accept a number and
+    a frequency. Valid frequencies are 'days', 'hours', or 'minutes'.
+  </Property>
+  <Property name="handler" required type="IntervalHandler">
+    Callback services to use as the handler which will run on the defined
+    frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule to run every 3 minutes
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+// Create a schedule that runs every 3 minutes
+Nitric.schedule("send-reminder").every("3 minutes", (ctx) async {
+  // code which sends a reminder
+  return ctx;
+});
+```

@@ -1,0 +1,81 @@
+---
+description: "Reference for Nitric's Python library - Dequeue messages."
+---
+
+# Python - queue.dequeue()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Queues in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Dequeue messages.
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('dequeue')
+
+messages = await batch_queue.dequeue(10)
+
+for t in messages:
+  # TODO work on the message
+  # complete the message
+  await t.complete()
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="limit" type="number">
+    The maximum number of messages to dequeue. Defaults to 1.
+  </Property>
+</Properties>
+
+## Notes
+
+### Completing messages
+
+Since the process is asynchronous the queue doesn't know when a message has been processed. This ensures failed services/containers don't result in lost message, since messages are not removed from a queue when they're dequeued.
+
+Instead, messages are hidden and requesters are granted a temporary lease for each message they request.
+
+When processing is complete, the requester must tell the queue the message was completed successfully, which will remove it from the queue and stop it being reprocessed.
+
+<Note>
+  Failing to complete a dequeued message before the lease expires will result in
+  it being re-queued.
+</Note>
+
+To notify the queue that a dequeued message was completed call the `complete()` method on the message reference.
+
+### Dequeue limit
+
+When calling `dequeue()` a limit parameter can be provided, e.g. `dequeue(5)`. This will _attempt_ to dequeue up to 5 messages.
+
+However, if the queue is empty or less than 5 messages are available on the queue, then the max available will be returned.
+
+This means calls to dequeue will return between 0 and _limit_ messages.
+
+## Examples
+
+### Dequeue and complete messages
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('dequeue')
+
+messages = await batchQueue.dequeue(10)
+
+for t in messages:
+  # TODO work on the message
+  # complete the message
+  await t.complete()
+
+Nitric.run()
+```

@@ -1,0 +1,22 @@
+---
+description: 'How Nitric deploys Topics to Google Cloud'
+---
+
+# Google Cloud Resources - Topics
+
+Nitric Topics are deployed to Google Cloud using [PubSub](https://cloud.google.com/pubsub).
+
+## Google Cloud Resources
+
+The following resources are created when deploying Topics to Google Cloud:
+
+- PubSub Topic
+- PubSub Subscription (push)
+- Cloud Run (subscribers)
+
+## Deployment
+
+During deployment, your topics will be provisioned as follows:
+
+- The topic definition and resource group are deployed as a PubSub topic
+- Cloud Run applications that subscribe will have a push subscription deployed for them

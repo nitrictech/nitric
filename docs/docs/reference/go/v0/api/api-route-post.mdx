@@ -1,0 +1,179 @@
+---
+description: "Reference for Nitric's v0 Go library - Register a handler for HTTP POST requests to the route."
+---
+
+# Go - Api.Route.Post()
+
+Register a handler for HTTP POST requests to the route.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  api.NewRoute("/hello").Post(func(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+    ctx.Response.Body = []byte("Hello World")
+    return next(ctx)
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="middleware" required type="HttpMiddleware">
+    The middleware function to use as the handler for HTTP requests. If you want
+    to compose more than one middleware use `faas.ComposeHttpMiddleware`.
+  </Property>
+  <Property name="options" type="...MethodOption">
+    Additional options for the route. See below.
+  </Property>
+</Properties>
+
+### Method options
+
+<Properties>
+  <Property name="WithNoMethodSecurity()" type="MethodOption">
+    Sets a base path for all the routes in the API.
+  </Property>
+  <Property name="WithMethodSecurity()" type="MethodOption">
+    Overrides a security rule from API defined JWT rules.
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="scopes" required type="[]string">
+        The scopes of the security rule.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for POST requests
+
+```go
+api.NewRoute("/hello").Post(func(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  ctx.Response.Body = []byte("Hello World")
+  return next(ctx)
+})
+```
+
+### Create a route with path params
+
+```go
+api.NewRoute("/hello/:name").Post(func(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  name := ctx.Request.PathParams()["name"]
+  ctx.Response.Body = []byte("Hello " + name)
+  return next(ctx)
+})
+```
+
+### Create a route with no method security
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  secureApi, err := nitric.NewApi(
+    "secure",
+    nitric.WithSecurityJwtRule("user", nitric.JwtSecurityRule{
+      Issuer: "https://example-issuer.com",
+      Audiences: []string{ "YOUR-AUDIENCES" },
+    }),
+    nitric.WithSecurity("user", []string{"products:read"}),
+  )
+  if err != nil {
+    return
+  }
+
+  // Override the APIs security requirements with `WithNoMethodSecurity()`
+  api.NewRoute("/public").Post(func(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+    // Handle request
+    return next(ctx)
+  }, nitric.WithNoMethodSecurity())
+
+  nitric.Run()
+}
+```
+
+### Chain functions as a single method handler
+
+When multiple functions are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func authMiddleware(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  // Perform auth validation
+  return next(ctx)
+}
+
+func handleRequest(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+  name := ctx.Request.PathParams()["name"]
+  ctx.Response.Body = []byte("Hello " + name)
+  return next(ctx)
+}
+
+func main() {
+  api, err := nitric.NewApi("private")
+  if err != nil {
+    return
+  }
+
+  api.NewRoute("/hello/:name").Post(faas.ComposeHttpMiddleware(authMiddleware, handleRequest))
+
+  nitric.Run()
+}
+```
+
+### Access the request body
+
+The POST request body is accessible using `ctx.Request.Data()`.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  api, err := nitric.NewApi("public")
+  if err != nil {
+    return
+  }
+
+  api.NewRoute("/hello").Post(func(ctx *faas.HttpContext, next faas.HttpHandler) (*faas.HttpContext, error) {
+    data := ctx.Request.Data()
+
+    ctx.Response.Body = data
+
+    return next(ctx)
+  })
+
+  nitric.Run()
+}
+```

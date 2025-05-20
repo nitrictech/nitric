@@ -1,0 +1,54 @@
+---
+description: "Reference for Nitric's v0 .NET library - Sets the cron expression and one or many handlers to be triggered."
+---
+
+# .NET - Schedule.Cron()
+
+Sets the cron expressions that determines when the schedule triggers and a callback to be triggered.
+
+```csharp
+using Nitric.Sdk;
+
+Nitric.Schedule("send-reminder").Cron("0 1 1 * *", ctx => {
+    // do some processing
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expression" required type="string">
+    The expression that sets when the schedule will be triggered. This value
+    should be a standard 5 value Unix cron expression, e.g., '0 1 1 * *'.
+  </Property>
+  <Property
+    name="middleware"
+    required
+    type="Func<EventContext, EventContext> or List<Middleware<EventContext>"
+  >
+    One or more callback functions to use as the handler which will run on the
+    defined frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule
+
+```csharp
+using Nitric.Sdk;
+
+// every 15 minutes
+Nitric.Schedule("check for updates").Cron("0/15 * * * *", ctx => {
+    Console.WriteLine("checking for updates");
+});
+
+// at 1:00 am on the 1st of every month
+Nitric.Schedules("delete stale data").Cron("0 1 1 * *", ctx => {
+    Console.WriteLine("clearing stale data");
+});
+
+Nitric.Run();
+```

@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's v0 JVM library - Limit the number of results returned by a query."
+---
+
+# JVM - collection.query.limit()
+
+Limit the number of results returned by a query.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read);
+
+    var profilesQuery = profiles.query().limit(10);
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read)
+
+  val profilesQuery = profiles.query().limit(10)
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="limit" required type="Int">
+    The limit to apply to the query. Must be a postive integer.
+  </Property>
+</Properties>
+
+### See also
+
+- [query().pagingFrom()](./collection-query-pagingfrom)
+- [query().where()](./collection-query-where)

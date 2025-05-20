@@ -1,0 +1,127 @@
+---
+description: 'How Nitric works with projects'
+---
+
+# Projects
+
+In Nitric, a project represents the collection of [services](./infrastructure/services), [resources](./infrastructure/resources), and [configurations](./projects/configuration) that make up your application. Projects are lightweight and flexible, allowing you to structure them according to your preferences and needs.
+
+The core requirement for a Nitric project is the presence of a `nitric.yaml` file, which defines essential details like the project name and the location of code entrypoints. These entrypoints are typically the services that act as the main components of your application, handling API routes, scheduled events, async message subscriptions, or large batch workloads.
+
+You can read more about the structure of a nitric project [below](#project-structure) and how to configure your project on the [configuration](./projects/configuration) page.
+
+## Supported Languages
+
+Typically frameworks are limited to a single programming language. However, due to how Nitric is built, it's able to support multiple programming languages. The supported languages include JavaScript/TypeScript, Python, Go, and Dart, among others. You can read about the supported languages or how to build your own custom SDK on the [Languages](/reference/languages) page.
+
+## Project structure
+
+Nitric doesn't enforce strict project structures. Typically, it only needs a `nitric.yaml` file to identify the project and eventually a `nitric.[stack ID].yaml` file to define the deployment target. Otherwise, projects can be organized in any way that makes sense for you or your team.
+
+We recommend starting with a template, using the `nitric new` CLI command. These templates often contain an opinionated project structure to get you started quickly, but you can then modify the project structure to suit your needs.
+
+### Basic structure
+
+Here are some examples of basic Nitric project structures:
+
+<CodeTabs>
+
+<TabItem label="JavaScript">
+
+```text
+my-project/
+├── nitric.yaml
+├── nitric.aws.yaml
+└── services/
+    ├── service1.js
+    └── service2.js
+```
+
+</TabItem>
+
+<TabItem label="TypeScript">
+
+```text
+my-project/
+├── nitric.yaml
+├── nitric.aws.yaml
+└── services/
+    ├── service1.ts
+    └── service2.ts
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```text
+my-project/
+├── nitric.yaml
+├── nitric.aws.yaml
+└── services/
+    ├── service1.py
+    └── service2.py
+```
+
+</TabItem>
+
+<TabItem label="Go">
+
+```text
+my-project/
+├── nitric.yaml
+├── nitric.aws.yaml
+└── services/
+    ├── service1/
+    │   └── main.go
+    └── service2/
+        └── main.go
+```
+
+</TabItem>
+
+<TabItem label="Dart">
+
+```text
+my-project/
+├── nitric.yaml
+├── nitric.aws.yaml
+└── services/
+    ├── service1.dart
+    └── service2.dart
+```
+
+</TabItem>
+
+</CodeTabs>
+
+This flexibility allows you to build apps as a single monolithic service, multiple microservices, or something else entirely.
+
+<Note>
+  The `services` directory is a common convention for Nitric projects, but you
+  can organize your project however you like.
+</Note>
+
+## Project file
+
+The `nitric.yaml` file indicates that the directory contains a project built with Nitric. The file defines the project's name and how to locate and run the entrypoints to your application (services). You can read about the `nitric.yaml` file on the [project configuration](./projects/configuration) page.
+
+## Stack files
+
+Nitric projects can be deployed to multiple environments and cloud providers; stack files identify these deployment targets. These files can be created by running the `nitric stack new` CLI command. You can read more about stack files in the [deployment](./deployment) section.
+
+## Project Infrastructure
+
+A core tenant of Nitric is that applications should explicitly define the application architecture they need to operate successfully. We also believe configuration should be declarative and versioned, without needless duplication, so that changes can be tracked, automated and rolled back if necessary.
+
+You can read about how and why Nitric uses this approach on the [why nitric](/get-started/foundations/why-nitric) page.
+
+To achieve this Nitric enables [services](./infrastructure/services) to declare their [resource](./infrastructure/resources) needs and how they intend to interact with those resources. These declarations can then be used to generate the cloud infrastructure automation needed to deploy and manage the services.
+
+This approach allows Nitric to cleanly separate the concerns of application code and infrastructure configuration, and make the entire process more robust. You can read more about how Nitric lets your application declare infrastructure requirements in the [infrastructure](./infrastructure) section and how this is used to deploy your application in the [deployment](./deployment) section.
+
+<Note>
+  Nitric doesn't replace infrastructure as code tools like Terraform or Pulumi,
+  instead it defines a protocol by which applications can communicate their
+  infrastructure needs to these tools.
+</Note>

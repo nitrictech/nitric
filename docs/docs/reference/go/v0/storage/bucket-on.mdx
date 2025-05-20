@@ -1,0 +1,90 @@
+---
+description: "Reference for Nitric's v0 Go library - Create a new bucket notification trigger"
+---
+
+# Go - Bucket.On()
+
+Create a new bucket notification trigger when certain files are created or deleted.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  assets := nitric.NewBucket("assets")
+
+  readableAssets, err := nitric.NewBucket("assets").With(nitric.BucketReading)
+  if err != nil {
+    return
+  }
+
+  assets.On(faas.DeleteNotification, "*", func(ctx *faas.BucketNotificationContext, _ faas.BucketNotificationHandler) (*faas.BucketNotificationContext, error) {
+    fmt.Printf("a file named %s was deleted\n", ctx.Request.Key())
+
+    return ctx, nil
+  })
+
+  assets.On(faas.WriteNotification, "/images/cat", func(ctx *faas.BucketNotificationContext, _ faas.BucketNotificationHandler) (*faas.BucketNotificationContext, error) {
+    fmt.Printf("a cat image was written")
+
+    return ctx, nil
+  })
+
+  assets.On(faas.WriteNotification, "/images/dog", func(ctx *faas.BucketNotificationContext, _ faas.BucketNotificationHandler) (*faas.BucketNotificationContext, error) {
+    dogImage, err := readableAssets.File(ctx.Request.Key()).Read(context.TODO())
+    if err != nil {
+      return ctx, err
+    }
+
+    fmt.Println(dogImage)
+
+    return ctx, nil
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property
+    name="notificationType"
+    required
+    type="WriteNotification or DeleteNotification"
+  >
+    The notification type for a triggered event, either on a file write or a
+    file delete.
+  </Property>
+  <Property name="notificationPrefixFilter" required type="string">
+    The file prefix filter that must match for a triggered event. If multiple
+    filters overlap across notifications, an error will be thrown when
+    registering the resource.
+  </Property>
+  <Property name="middleware" required type="BucketNotificationMiddleware">
+    The middleware (code) to be triggered by the bucket notification being
+    triggered.
+  </Property>
+</Properties>
+
+## Available trigger types
+
+**WriteNotification**
+
+Run when a file in the bucket is created using: `File.Write()`
+
+**DeleteNotification**
+
+Run when a file in the bucket is deleted using: `File.Delete()`
+
+### Trigger type cloud mapping
+
+| Permission | AWS                 | GCP             | Azure                         |
+| ---------- | ------------------- | --------------- | ----------------------------- |
+| write      | s3:ObjectCreated:\* | OBJECT_FINALIZE | Microsoft.Storage.BlobCreated |
+| delete     | s3:ObjectRemoved:\* | OBJECT_DELETE   | Microsoft.Storage.BlobDeleted |

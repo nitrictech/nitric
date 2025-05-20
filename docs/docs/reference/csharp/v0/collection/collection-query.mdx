@@ -1,0 +1,31 @@
+---
+description: "Reference for Nitric's v0 .NET library - Begins a new query on a Collection."
+---
+
+# .NET - Collection.Query()
+
+Begins a new query on a Collection.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resource;
+
+class Profile {
+  public string Name { get; set; }
+  public float Age { get; set; }
+}
+
+var profiles = Nitric.Collection<Profile>("profiles").With(
+  CollectionPermission.Reading, CollectionPermission.Writing, CollectionPermission.Deleting
+);
+
+var profilesQuery = profiles.Query();
+
+Nitric.Run();
+```
+
+### See also
+
+- Adding filters: [Query.Where()](./collection-query-where)
+- Limiting the results: [Query.Limit()](./collection-query-limit)
+- Fetching results: [Query.Fetch()](./collection-query-fetch)

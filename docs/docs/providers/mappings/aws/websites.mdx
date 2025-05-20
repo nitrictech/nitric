@@ -1,0 +1,24 @@
+---
+description: 'How Nitric deploys Websites to AWS'
+---
+
+# AWS Resources - Websites
+
+Nitric Websites are deployed to AWS using [Amazon S3](https://aws.amazon.com/s3/) and [Amazon CloudFront](https://aws.amazon.com/cloudfront/).
+
+## AWS Resources
+
+The following resources are created when deploying Websites to AWS:
+
+- S3 Bucket
+- IAM Policies and Permissions
+- CloudFront Distribution
+- CloudFront Functions
+
+## Deployment
+
+During deployment the Nitric CLI creates a bucket for your website assets and a CloudFront distribution to serve them:
+
+- The declared website is created in S3
+- A CloudFront distribution is created to serve your website and rewrite all APIs to `/api/{apiName}` and websocket routes to `/ws/{websocketName}` using CloudFront Functions
+- Cache invalidation is automatic based on changed files

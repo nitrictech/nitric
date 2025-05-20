@@ -1,0 +1,64 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Get a download url for a file from a bucket."
+---
+
+# Node.js - bucket.file.getDownloadUrl()
+
+Create a download url for a file within a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('reading', 'writing')
+
+const logo = assets.file('images/logo.png')
+
+// Create a read-only signed url reference for downloading
+const downloadUrl = await logo.getDownloadUrl()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="options" type="SignUrlOptions">
+    Additional options when creating a signed URL.
+    <Properties nested>
+      <Property name="expiry" optional type="number">
+        Seconds until link expiry. Defaults to `600`, Maximum of `604800` (7
+        days).
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a readable link that is valid for the next 5 minutes
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').for('reading')
+
+const logo = assets.file('images/logo.png')
+
+const logoUrl = await logo.getDownloadUrl({
+  expiry: 300,
+})
+```
+
+### Redirect response to an image URL
+
+```javascript
+import { api, bucket } from '@nitric/sdk'
+
+const mainApi = api('main')
+const images = bucket('images').for('reading')
+
+mainApi.get('/images/:id', async ({ req, res }) => {
+  const { id } = req.params
+  const signedUrl = await images.file(id).getDownloadUrl()
+  res.status = 303
+  res.headers['Location'] = [signedUrl]
+})
+```

@@ -1,0 +1,687 @@
+---
+description: 'Working with files and storage in Nitric'
+---
+
+# Storage
+
+Nitric provides storage support for securely storing and retrieving large files in the cloud.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/buckets).
+
+## Definitions
+
+### Files
+
+Files refer to binary files, such as documents (.doc, .pdf), images (.gif, .jpg), or videos (.mp4, .mkv). It is common for these files to be referred to as BLOBs, which stands for Binary Large Objects. Storing these types of files in buckets, as opposed to other data persistence systems like SQL or document databases, can improve performance.
+
+### Buckets
+
+Buckets serve as isolated repositories for files. To illustrate, think of a bucket as a partition on a traditional hard drive system. Creating separate buckets becomes necessary when storing files for distinct purposes or with varying access control requirements. For instance, you might establish an "uploads" bucket to handle user file uploads or a "profiles" bucket specifically designed for storing user profile images.
+
+### Folders
+
+Most cloud object/blob storage services function as key-value systems, where the keys represent filenames and the values contain the actual file data. By incorporating paths within filenames, you can organize files within a bucket, similar to how folders are utilized in local storage. For example, if you have a file named `profile.png`, you can store it in the folder `images/default` by specifying the complete file path when reading or writing the file, e.g., `images/default/profile.png`.
+
+## Create Buckets
+
+Nitric enables you to define named buckets with customizable permissions. When defining a bucket, you can specify permissions for reading, writing, and deleting files within the bucket. In the example below, we declare a bucket named `profiles` and indicate that our service requires access to read, write, and delete files within that bucket:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read', 'write', 'delete')
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read', 'write', 'delete')
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket('profiles').allow('read', 'write', 'delete')
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketRead, storage.BucketWrite, storage.BucketDelete)
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.read,
+  BucketPermission.write,
+  BucketPermission.delete,
+]);
+```
+
+</CodeSwitcher>
+
+## File references
+
+You can obtain a reference to a `File` within a bucket by either using its name or by listing all the files present in the bucket. Once you have a reference to a file, you can perform various operations on it, including retrieving its contents, writing new content to it, or deleting it.
+
+To get a reference to a specific file in a bucket, use the `file()` method on the bucket reference. This returns a `File` reference so other operations can be performed on the file.
+
+<Note>
+  No network calls are made when you get a file reference using `file()`
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const profilePicture = profiles.file('users/bruce-wayne/profile.png')
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const profilePicture = profiles.file('users/bruce-wayne/profile.png')
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles").allow("read")
+
+profile_picture = profiles.file("users/bruce-wayne/profile.png")
+
+Nitric.run()
+```
+
+```go !!
+// Go does not have File references use methods on the Bucket reference directly
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.read,
+]);
+
+final profilePicture = profiles.file("users/bruce-wayne/profile.png");
+```
+
+</CodeSwitcher>
+
+To list all files in a bucket, use the `files()` method on the bucket reference. The function must have `read` permissions to list the files within a bucket.
+
+<Note>A network call is made when you list files using `files()`</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const files = await profiles.files()
+
+files.forEach((file) => {
+  console.log(file.name)
+})
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const files = await profiles.files()
+
+files.forEach((file) => {
+  console.log(file.name)
+})
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles").allow("read")
+
+files = await profiles.files()
+
+for file in files:
+  print(file.name)
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketRead, storage.BucketWrite, storage.BucketDelete)
+
+  files, _ := profiles.ListFiles(context.TODO())
+
+  for _, file := range files {
+    fmt.Println(file)
+  }
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.read,
+]);
+
+final files = await profiles.files();
+
+await Future.wait(files.map((file) async {
+  print(file.key);
+}));
+```
+
+</CodeSwitcher>
+
+## Read files
+
+You can read the contents of a file directly from your application code using the `read()` method on a file reference. The contents of the file are returned as a byte array.
+
+<Note>
+  If a file with that name does not exist when `read()` is called a `NOT_FOUND`
+  error will be thrown.
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const image = await profiles.file('users/bruce-wayne/profile.png').read()
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read')
+
+const image = await profiles.file('users/bruce-wayne/profile.png').read()
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles").allow("read")
+
+image = await profile.file("users/bruce-wayne/profile.png").read()
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketRead, storage.BucketWrite, storage.BucketDelete)
+
+  image, err := profiles.Read(context.TODO(), "users/bruce-wayne/profile.png")
+  if err != nil {
+    // Handle error
+  }
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.read,
+]);
+
+final image = await profiles.file("users/bruce-wayne/profile.png").read();
+```
+
+</CodeSwitcher>
+
+## Write files
+
+You can write the contents of a file directly from your application code using the `write()` method on a file reference. If the file doesn't exist then it will create a new one, if it does exist then it will overwrite the previous data.
+
+<Note>
+  Written data cannot exceed 4MB. If you need to upload more than that, consider
+  using an [upload url](#signed-urls).
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('write')
+
+const profileImage = 'image data'
+
+await profiles.file('users/bruce-wayne/profile.png').write(profileImage)
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('write')
+
+const profileImage = 'image data'
+
+await profiles.file('users/bruce-wayne/profile.png').write(profileImage)
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles").allow("write")
+
+profileImage = b"image data"
+
+await profiles.file("users/bruce-wayne/profile.png").write(profileImage)
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketWrite)
+
+  profileImage := []byte("image data")
+
+  _ = profiles.Write(context.TODO(), "users/bruce-wayne/profile.png", profileImage)
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.write,
+]);
+
+final profileImage = "image data";
+
+await profiles.file("users/bruce-wayne/profile.png").write(profileImage);
+```
+
+</CodeSwitcher>
+
+## Delete files
+
+You can delete a file directly from your service code using the `delete()` method on a file reference.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('delete')
+
+await profiles.file('users/bruce-wayne/profile.png').delete()
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('delete')
+
+await profiles.file('users/bruce-wayne/profile.png').delete()
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles").allow("delete")
+
+await profile.file("users/bruce-wayne/profile.png").delete()
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketDelete)
+
+  _ = profiles.Delete(context.TODO(), "users/bruce-wayne/profile.png")
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.delete,
+]);
+
+await profiles.file("users/bruce-wayne/profile.png").delete();
+```
+
+</CodeSwitcher>
+
+## Signed URLs
+
+The signed URL feature enables you to generate temporary URLs for downloading or uploading files. These URLs include authentication information in the query string, allowing users without credentials to access the file. They are particularly useful when you need to share temporary links for file downloads or uploads.
+
+You have the option to customize the expiration time of the URL by specifying a duration in seconds, ranging from 0 to 604,800 (a week). To obtain a download URL, the service needs to have `read` permissions on the bucket. For an upload URL, the service needs to have `write` permissions on the bucket.
+
+<Note>
+  It's important to note that anyone with the signed URL can access or modify
+  the file. Hence, it's crucial to exercise caution and only share the URL with
+  trusted users.
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read', 'write')
+
+// Get pre-signed URLs for downloading or uploading
+const downloadUrl = await profiles.file('profile.png').getDownloadUrl({
+  expiry: 3600, // Expiry defaults to 600 (10 minutes)
+})
+
+const uploadUrl = await profiles.file('profile.png').getUploadUrl({
+  expiry: 3600, // Expiry defaults to 600 (10 minutes)
+})
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles').allow('read', 'write')
+
+// Get pre-signed URLs for downloading or uploading
+const downloadUrl = await profiles.file('profile.png').getDownloadUrl({
+  expiry: 3600, // Expiry defaults to 600 (10 minutes)
+})
+
+const uploadUrl = await profiles.file('profile.png').getUploadUrl({
+  expiry: 3600, // Expiry defaults to 600 (10 minutes)
+})
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket('profiles').allow('read', 'write')
+
+download_url = await profiles.file('profile.png').download_url(3600) # Expiry defaults to 600 (10 minutes)
+
+upload_url = await profiles.file('profile.png').upload_url(3600) # Expiry defaults to 600 (10 minutes)
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "context"
+  "time"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles").Allow(storage.BucketRead, storage.BucketWrite)
+
+  // Expiry defaults to 600 (10 minutes)
+  downloadUrl, _ := profiles.DownloadUrl(context.TODO(), "profile.png", storage.WithPresignUrlExpiry(time.Millisecond*3600))
+
+  // Expiry defaults to 600 (10 minutes)
+  uploadUrl, _ := profiles.UploadUrl(context.TODO(), "profile.png", storage.WithPresignUrlExpiry(time.Millisecond*3600))
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles").allow([
+  BucketPermission.read,
+  BucketPermission.write
+]);
+
+final downloadUrl = await profiles.file("profile.png").getDownloadUrl(
+  expiry: 3600 // Expiry defaults to 600 (10 minutes)
+);
+
+final uploadUrl = await profiles.file("profile.png").getUploadUrl(
+  expiry: 3600 // Expiry defaults to 600 (10 minutes)
+);
+```
+
+</CodeSwitcher>
+
+## Bucket Notifications
+
+Bucket notifications are services that subscribe to changes in your bucket's files. You can configure these notifications to trigger specifically when a file is written or deleted. Additionally, you can apply filters based on file prefixes to specify which files should trigger a notification. When the service is triggered, it receives event data that includes details about the changed file, such as whether it was written or deleted, and the file's name.
+
+To illustrate, suppose we want to trigger a service whenever a new profile image is uploaded to a bucket. In this case, we can use the following code snippet:
+
+<Note>
+  Writing/Delete to a bucket from within a bucket notification will trigger the
+  same notification to run again (if it meets the requirement). This will cause
+  an infinite loop, which is highly undesirable for your cloud bill.
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles')
+
+// Filter for 'write' events for files starting with '/users/images'
+profiles.on('write', '/users/images', (ctx) => {
+  console.log(`new profile image for ${ctx.req.key} was created`)
+})
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles')
+
+// Filter for 'write' events for files starting with '/users/images'
+profiles.on('write', '/users/images', (ctx) => {
+  console.log(`new profile image for ${ctx.req.key} was created`)
+})
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles")
+
+# Filter for 'write' events for files starting with '/users/images'
+@profiles.on("write", "/users/images")
+async def image_written(ctx):
+  print(f"new profile image for {ctx.req.key} was written")
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles")
+
+  // Filter for 'write' events for files starting with '/users/images'
+  profiles.On(storage.WriteNotification, "/users/images", func(ctx *storage.Ctx) {
+    fmt.Printf("new profile image for %s was written", ctx.Request.Key())
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles");
+
+// Filter for 'write' events for files starting with '/users/images'
+profiles.on(BlobEventType.write, "/users/images", (ctx) async {
+  print("new profile image for ${ctx.req.key} was written");
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+If we instead wanted to trigger the function whenever any file was deleted from the bucket, we would use the following snippet:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles')
+
+// Filter for 'delete' events for any file
+profiles.on('delete', '*', (ctx) => {
+  console.log(`${ctx.req.key} was deleted`)
+})
+```
+
+```typescript !!
+import { bucket } from '@nitric/sdk'
+
+const profiles = bucket('profiles')
+
+// Filter for 'delete' events for any file
+profiles.on('delete', '*', (ctx) => {
+  console.log(`${ctx.req.key} was deleted`)
+})
+```
+
+```python !!
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+profiles = bucket("profiles")
+
+# Filter for 'delete' events for any file
+@profiles.on("delete", "*")
+async def file_deleted(ctx):
+  print(f"{ctx.req.key} was deleted")
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/storage"
+)
+
+func main() {
+  profiles := nitric.NewBucket("profiles")
+
+  // Filter for 'delete' events for any file
+  profiles.On(storage.DeleteNotification, "*", func(ctx *storage.Ctx) {
+    fmt.Printf("%s was deleted", ctx.Request.Key())
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.bucket("profiles");
+
+// Filter for 'delete' events for any file
+profiles.on(BlobEventType.delete, "*", (ctx) async {
+  print("${ctx.req.key} was deleted");
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/storage)
+- [Azure](/providers/mappings/azure/storage)
+- [Google Cloud](/providers/mappings/gcp/storage)

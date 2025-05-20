@@ -1,0 +1,200 @@
+---
+description: 'Reference docs for the Nitric CLI'
+---
+
+# Nitric CLI
+
+The Nitric CLI allows you to build, develop, and deploy your serverless application.
+
+To verify your [installation](/get-started/installation) run `nitric version`. If a version is printed, the CLI is installed correctly.
+
+To get a list of the available commands, run the `nitric help` command and you will see the following:
+
+<ImportCode file="/src/assets/cli-usage.txt" />
+
+## Common Commands
+
+There are a few common commands that you will use frequently:
+
+- `nitric new` creates a new project
+- `nitric stack new` creates a new stack within a project
+- `nitric start` runs the Nitric server locally
+- `nitric up` deploys your stack to the cloud
+- `nitric down` destroys your stack from the cloud
+- `nitric add` adds new resources to your project
+
+## Adding Resources
+
+The `add` command helps you add new resources to your project:
+
+```bash
+nitric add
+```
+
+### Adding a Website
+
+To add a new website to your project:
+
+```bash
+nitric add website
+```
+
+This will walk you through an interactive process to:
+
+- Name your website
+- Select a tool/framework (currently supports [Astro](https://astro.build/), [Vite](https://vite.dev/), and [Hugo](https://gohugo.io/))
+- Configure the website's base URL path and dev server port
+
+You can also specify the website name and tool directly:
+
+```bash
+# For Astro
+nitric add website my-site astro
+
+# For Vite
+nitric add website my-site vite
+
+# For Hugo
+nitric add website my-site hugo
+```
+
+### Adding a Stack
+
+The `add stack` command is an alias for `stack new` and can be used to create a new stack:
+
+```bash
+nitric add stack
+```
+
+This will walk you through an interactive process to create a new stack configuration for a particular cloud provider. For more details about stack configuration and options, see the [Stacks section](#stacks) below.
+
+## Getting Started
+
+### Projects
+
+To start a new project with nitric, run the `nitric new` command.
+
+```
+nitric new
+```
+
+This will walk through creating the project, including the name and what template you want to start from.
+
+The command will also create a `nitric.yaml` file. This file contains the configuration for your project. The services key is list of globs for your services. The services should point to all services you want to run or deploy.
+
+```yaml
+name: my-project
+services:
+  - match: services/*.ts
+    start: ts-node $SERVICE_PATH
+```
+
+If you want to specify a specific type of service that matches your stack config, you can use this syntax instead:
+
+```yaml
+name: my-project
+services:
+  - match: services/*.ts
+    start: ts-node $SERVICE_PATH
+    type: default
+  - match: custom/*.ts
+    start: ts-node $SERVICE_PATH
+    type: memory-optimized
+```
+
+### Stacks
+
+Creating a new stack will create a configuration for a particular cloud. You can have multiple stacks for one project.
+
+```
+nitric stack new
+```
+
+This will create a `nitric.stackName.yaml` file that contains the configuration for deploying to the cloud. Some providers will have different config, here's an example of an aws stack:
+
+```yaml
+# nitric.my-aws-stack.yaml
+provider: nitric/aws@1.1.0
+region: us-east-1
+```
+
+<Note>The cloud configuration is separate to the cloud credentials.</Note>
+
+<Note>
+  You will still have to set your cloud credentials on your first deployment by
+  following the guide in the cloud's section in the reference documentation.
+</Note>
+
+If you want to specify different configuration for your services you can use the following syntax:
+
+```yaml
+# nitric.my-aws-stack.yaml
+provider: nitric/aws@1.1.0
+region: us-east-1
+telemetry: 10
+config:
+  default:
+    lambda:
+      memory: 1024
+  memory-optimized:
+    lambda:
+      memory: 4096
+```
+
+## Development
+
+When you are ready to test your application and you want to run it locally, you can use the `nitric start` command.
+
+```
+nitric start
+```
+
+This will run the Nitric server for local testing. This will output local endpoints for your apis and open the [local dashboard](/get-started/foundations/projects/local-development) for testing.
+
+For more information on local development, see the [local development](/get-started/foundations/projects/local-development) docs.
+
+## Deployment
+
+### Deploying the Stack
+
+Once you have tested your application locally and you're ready to deploy, you can do `nitric up`. This command can be optionally supplied with the name of a stack with the `-s` or `--stack` argument. However, the stack will be auto-detected if there is only one or options will be presented if there are multiple. This will set the cloud configuration for that particular deployment.
+
+If this is your first deployment, you will have to set up your cloud credentials before deploying to the cloud. You can find the guides for these in the cloud's section in the reference documentation. The AWS guide is [here](/providers/pulumi/aws).
+
+```bash
+nitric up
+```
+
+<Note>
+  Each of the cloud provider's deployments take different amounts of time.
+</Note>
+
+### Destroying the Deployment
+
+If you make changes and want to redeploy, you don't have to take the application down, you can just redeploy and it will find the difference. However, if you do want to destroy the application completely, you can use the `nitric down` command.
+
+```
+nitric down
+```
+
+<Note>This will prompt you again before destroying the stack.</Note>
+
+### Listing Stacks
+
+To get information about your stacks, use the `nitric stack list` command.
+
+This will provide give information about its name, its deployment status, when it was last updated, the resource count, and a url to view the deployment on the pulumi console (will require a pulumi account).
+
+## Info
+
+To get information about the CLI version you are using, you can use:
+
+```
+nitric version
+```
+
+For information regarding individual commands, use the `--help` argument on any of the CLI commands. Alternatively you can run:
+
+```
+nitric help
+```

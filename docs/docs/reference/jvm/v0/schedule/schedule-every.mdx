@@ -1,0 +1,188 @@
+---
+description: "Reference for Nitric's v0 JVM library - Sets the frequency and one or many handlers to be triggered."
+---
+
+# JVM - schedule.every()
+
+Sets the frequency and one or many handlers to be triggered.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.faas.v0.Frequency;
+
+public class Application {
+  public static void main(String[] args) {
+    // create a schedule that runs every 3 hours
+    Nitric.INSTANCE.schedule("send-reminders").every(3, Frequency.Hours, (ctx) -> {
+      // add code to run here
+      return ctx;
+    });
+
+    Nitric.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.faas.v0.Frequency
+
+fun main() {
+  // create a schedule that runs every 3 hours
+  Nitric.schedule("send-reminders").every(3, Frequency.Hours) { ctx ->
+    // add code to run here
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="rate" required type="Int">
+    The rate of which the frequency is run. Used in conjunction with the
+    frequency to describe the schedules complete rate, e.g. '7 Hours'.
+  </Property>
+  <Property name="frequency" required type="Frequency">
+    The frequency describes the unit of the frequency. Valid frequencies are
+    'Days', 'Hours', or 'Minutes'.
+  </Property>
+  <Property
+    name="middleware"
+    required
+    type="EventMiddleware or List<EventMiddleware>"
+  >
+    One or more middleware functions to use as the handler which will run on the
+    defined frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule to run every 3 minutes
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.faas.v0.Frequency;
+
+public class Application {
+  public static void main(String[] args) {
+    // create a schedule that runs every 3 minutes
+    Nitric.INSTANCE.schedule("send-reminders").every(3, Frequency.Minutes, (ctx) -> {
+      // add code to run here
+      return ctx;
+    });
+
+    Nitric.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.faas.v0.Frequency
+
+fun main() {
+  // create a schedule that runs every 3 minutes
+  Nitric.schedule("send-reminders").every(3, Frequency.Minutes) { ctx ->
+    // add code to run here
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Create a Schedule with multiple middleware/handlers
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.faas.v0.EventContext;
+import io.nitric.faas.v0.Frequency;
+import io.nitric.faas.v0.Handler;
+
+import java.util.List;
+
+public class Application {
+  // Create a middleware to handle report generation
+  static EventContext generateReport(EventContext ctx, Handler<EventContext> next) {
+    // code which generates a report
+    return next.invoke(ctx);
+  }
+
+  // Create a middleware to handle notifications
+  static EventContext sendNotification(EventContext ctx, Handler<EventContext> next) {
+    // code which sends a notification
+    return next.invoke(ctx);
+  }
+
+  public static void main(String[] args) {
+    Nitric.INSTANCE.schedule("send-reminders").every(7, Frequency.Days, List.of(Test::generateReport, Test::sendNotification));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.faas.v0.EventContext
+import io.nitric.faas.v0.Frequency
+import io.nitric.faas.v0.Middleware
+
+// create a middleware to handle report generation
+val generateReport = Middleware<EventContext>{ ctx, next ->
+  // code which generates a report
+  return@Middleware next(ctx)
+}
+
+// create a middleware to handle notifications
+val sendNotification = Middleware<EventContext>{ ctx, next ->
+  // code which sends a notification
+  return@Middleware next(ctx)
+}
+
+fun main() {
+  Nitric.schedule("send-reminders").every(7, Frequency.Days, listOf(generateReport, sendNotification))
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>

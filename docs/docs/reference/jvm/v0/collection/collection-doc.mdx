@@ -1,0 +1,74 @@
+---
+description: "Reference for Nitric's v0 JVM library - Get a reference to a document in the collection."
+---
+
+# JVM - collection.doc()
+
+Get a reference to a document in the collection.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+class User {
+  String name;
+  int age;
+
+  public User(String name, int age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+public class Application {
+  public static void main(String[] args) {
+    var profiles = Nitric.INSTANCE.collection("profiles", User.class).with(CollectionPermission.Read, CollectionPermission.Write);
+
+    var drakesProfile = profiles.doc("Drake Mallard");
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+data class User(val name: String, val age: Int)
+
+fun main() {
+  val profiles = Nitric.collection<User>("profiles").with(CollectionPermission.Read, CollectionPermission.Write)
+
+  val drakesProfile = profiles.doc("Drake Mallard")
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="String">
+    The key of the document to reference.
+  </Property>
+</Properties>
+
+### See also
+
+- [doc().get()](./collection-doc-get)
+- [doc().set()](./collection-doc-set)
+- [doc().delete()](./collection-doc-delete)
+- [doc().collection()](./collection-doc-collection)

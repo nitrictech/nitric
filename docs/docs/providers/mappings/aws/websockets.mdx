@@ -1,0 +1,28 @@
+---
+description: 'How Nitric deploys Websockets to AWS'
+---
+
+# AWS Resources - Websockets
+
+Nitric Websockets are deployed to AWS using [Amazon API Gateway](https://aws.amazon.com/api-gateway/).
+
+## AWS Resources
+
+The following resources are created when deploying Websockets to AWS:
+
+- API Gateway v2 Websocket APIs
+- API Gateway v2 Stages
+- API Gateway Integration
+- Lambda Functions
+- ECR Images
+- IAM Policies
+
+## Deployment
+
+During deployment the Nitric CLI builds your Websockets API's routes, methods and handlers:
+
+- Files referenced by the `services` key in the `nitric.yaml` file are built into container images
+- Built container images are pushed to the [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/) as private images
+- Functions in [AWS Lambda](https://aws.amazon.com/lambda/) are created to run the container images
+- IAM policies are created enabling Websocket API Gateway to execute the Lambdas
+- `$default`, `$connect`, and `$disconnect` routes are added to the Websocket API Gateway

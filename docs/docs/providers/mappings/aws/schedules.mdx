@@ -1,0 +1,28 @@
+---
+description: 'How Nitric deploys Schedules to AWS'
+---
+
+# AWS Resources - Schedules
+
+Nitric Schedules are deployed to AWS using [CloudWatch Events](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html).
+
+## AWS Resources
+
+The following resources are created when deploying to Schedules to AWS:
+
+- CloudWatch Event Rules
+- CloudWatch Event Targets
+- SNS Topics
+- SNS Subscriptions
+- Lambda Functions for Subscribers
+
+## Deployment
+
+To maximize consistency between cloud providers, Schedules are implemented by Nitric in AWS using SNS Topics. The Nitric CLI builds subscribers and deploys schedules:
+
+- SNS Topics are created for each schedule
+- CloudWatch Rules with cron expressions that match the schedule definitions are created
+- SNS topics are setup as targets for the events created by rules
+- AWS Lambda Functions are created which will run the scheduled code
+- The Lambda Functions are setup as subscribers to the SNS topics
+- IAM policies are setup enabling lambdas to be triggered by topics and CloudWatch to publish events

@@ -1,0 +1,97 @@
+---
+description: "Reference for Nitric's v0 Go library - Adds a new where clause to a query, which filters the data returned."
+---
+
+# Go - Collection.Query.Where()
+
+Adds a new where clause to a query, which filters the data returned.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/api/documents"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  query := profiles.Query().Where(
+    documents.Condition("name").StartsWith(documents.StringValue("T")),
+  )
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expressions" required type="...QueryExpression">
+    The query expressions.
+  </Property>
+</Properties>
+
+### Notes
+
+Multiple query expressions combined together are always considered `AND`
+
+## Examples
+
+### A simple query
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/api/documents"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  query := profiles.Query().Where(
+    documents.Condition("firstName").Eq(documents.StringValue("Drake")),
+  )
+
+  nitric.Run()
+}
+```
+
+### Combining where clauses
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/api/documents"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  query := profiles.Query().Where(
+    documents.Condition("name").Eq(documents.StringValue("Drake")),
+    documents.Condition("age").Gt(documents.DoubleValue(21)),
+  )
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Query().Fetch()](./collection-query-fetch)
+- [Query().Stream()](./collection-query-stream)

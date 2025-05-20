@@ -1,0 +1,67 @@
+---
+description: "Reference for Nitric's v0 .NET library - Get a download url for a file from a bucket."
+---
+
+# .NET - Bucket.File.GetDownloadUrl()
+
+Create a download url for a file within a bucket.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Storage;
+
+var assets = Nitric.Bucket('assets').With(BucketPermission.Reading);
+
+var logo = assets.File('images/logo.png');
+
+// Create a read-only signed url reference for downloading
+var downloadUrl = logo.GetDownloadUrl();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" type="int">
+    Seconds until link expiry. Defaults to `600`, Maximum of `604800` (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a readable link that is valid for the next 5 minutes
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Storage;
+
+var assets = Nitric.Bucket('assets').With(BucketPermission.Reading);
+
+var logo = assets.File('images/logo.png');
+
+// Create a read-only signed url reference for downloading
+var downloadUrl = logo.GetDownloadUrl(300);
+
+Nitric.Run();
+```
+
+### Redirect response to an image url
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Storage;
+
+var images = Nitric.Bucket('images').With(BucketPermission.Reading);
+var mainApi = Nitric.Api("main");
+
+mainApi.Get("/images/:id", context => {
+    var id = context.Req.PathParams["id"];
+    var signedUrl = images.File(id).GetDownloadUrl();
+
+    context.Res.Status = 303;
+    context.Res.Headers["Location"] = new string[] { signedUrl };
+
+    return context;
+});
+
+Nitric.Run();
+```

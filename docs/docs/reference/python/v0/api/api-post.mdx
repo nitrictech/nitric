@@ -1,0 +1,68 @@
+---
+description: "Reference for Nitric's v0 Python library - Register a handler for HTTP POST requests to the route."
+---
+
+# Python - api.route.post()
+
+Register an API route and set a specific HTTP GET handler on that route.
+
+```python
+from nitric.resources import api
+from nitric.application import Nitric
+
+publicApi = api("public")
+
+@publicApi.post("/customer")
+async def customer_create(ctx):
+    ctx.res.body = f"Creating new customer"
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="string">
+    The path matcher to use for the route. Matchers accept path parameters in
+    the form of a colon prefixed string. The string provided will be used as
+    that path parameter's name when calling middleware and handlers.
+  </Property>
+  <Property name="options" required type="MethodOptions">
+    Options to configure the route such as security options.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for POST requests
+
+```python
+from nitric.resources import api
+from nitric.application import Nitric
+
+publicApi = api("public")
+
+@publicApi.post("/customer")
+async def hello_world(ctx):
+    ctx.res.body = f"Creating new customer"
+
+Nitric.run()
+```
+
+### Get request body as JSON
+
+```python
+from nitric.resources import api
+from nitric.application import Nitric
+
+publicApi = api("public")
+
+@publicApi.post("/customer")
+async def hello_world(ctx):
+    # returns None if request body is not JSON
+    body = ctx.req.json
+
+    ctx.res.body = f"Creating new customer"
+
+Nitric.run()
+```

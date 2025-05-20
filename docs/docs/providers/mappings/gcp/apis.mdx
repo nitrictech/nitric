@@ -1,0 +1,26 @@
+---
+description: 'How Nitric deploys APIs to Google Cloud'
+---
+
+# Google Cloud Resources - APIs
+
+Nitric APIs are deployed to Google Cloud using [API Gateway](https://cloud.google.com/api-gateway).
+
+## Google Cloud Resources
+
+The following resources are created when deploying APIs to Google Cloud:
+
+- [API Gateway](https://cloud.google.com/api-gateway)
+- [Cloud Run](https://cloud.google.com/run)
+- [GCR](https://cloud.google.com/container-registry)
+
+## Deployment
+
+During deployment, the Nitric CLI builds your API's routes, methods, and handlers. They are built as follows:
+
+- Files referenced by the `services` key in the `nitric.yaml` file are built into container images
+- Built container images are pushed to the [Google Container Registry](https://cloud.google.com/container-registry) as private images
+- Container Images are deployed as Cloud Run services.
+- All route/handler mappings are built into an Open API v2 (Swagger) definition file (Google Cloud API Gateway does not support v3).
+- Your services will be routed to using Google Clouds Open API Extensions `x-google-backend`.
+- The API definition and Resource Group is deployed to API Gateway.

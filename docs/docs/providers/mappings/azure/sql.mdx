@@ -1,0 +1,31 @@
+---
+description: 'How Nitric deploys SQL Databases to Azure'
+---
+
+# Azure Resources - SQL Database
+
+Nitric SQL Databases are deployed to Azure using [Azure Database for PostgreSQL](https://azure.microsoft.com/en-us/products/postgresql).
+
+## Azure Resources
+
+The following resources are created when deploying SQL Databases to Azure:
+
+- Virtual Network
+- Subnet
+- PostgreSQL Databases
+- Container Instance Group for migrations
+
+## Deployment
+
+During deployment the Nitric CLI deploys your SQL Databases:
+
+- Virtual Network and Subnet are created
+- Declared databases are deployed as PostgreSQL databases
+- Container Group Instances are created to run migrations
+- Container Apps are setup to run the containers
+
+## Other Engine Support
+
+Currently, Nitric supports only PostgreSQL for Azure SQL databases. Support for other engines like MySQL is not available yet, but you can create a [custom provider](/providers/custom) to add support for your preferred database engine.
+
+If you'd like to see support for additional engines, please share your [feedback](https://github.com/nitrictech/nitric/issues/684) with the Nitric team!

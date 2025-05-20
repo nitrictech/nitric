@@ -1,0 +1,45 @@
+---
+description: "Reference for Nitric's Python library - Create Websockets with the Nitric Python SDK."
+---
+
+# Python - websocket()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Creates a new Websocket API.
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+public_websocket = websocket("public")
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Websocket within the app. Subsequent calls to
+    `websocket` with the same name will return the same object.
+  </Property>
+</Properties>
+
+---
+
+## Examples
+
+### Create a Websocket
+
+```python
+from nitric.resources import websocket
+from nitric.application import Nitric
+
+chat_websocket = websocket("chat")
+
+Nitric.run()
+```

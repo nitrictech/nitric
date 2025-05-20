@@ -1,0 +1,30 @@
+name: Deploy Docs and Trigger Main Website Build
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+      - name: Install dependencies
+        run: yarn install
+      - name: Apply all pending migrations to the database
+        run: npx prisma migrate deploy
+        env:
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL }}
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+      # Trigger the deployment of the main website for guide updates
+      - name: Trigger main website build
+        run: |
+          curl -X POST ${{ secrets.MAIN_WEBSITE_DEPLOY_URL }}

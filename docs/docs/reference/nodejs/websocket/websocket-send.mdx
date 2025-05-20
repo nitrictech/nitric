@@ -1,0 +1,94 @@
+---
+description: "Reference for Nitric's Node.js library - Send a message to a connected websocket client"
+---
+
+# Node.js - websocket.send()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Send a message to a connected websocket client.
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+/**
+ * Send a message to a connected client.
+ *
+ * @param connectionId the client received when connecting to the websocket
+ * @param message to send to the client
+ */
+const sendMessage = async (connectionId, message) => {
+  await socket.send(connectionId, message)
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connectionId" required type="string">
+    The ID of the connection which should receive the message.
+  </Property>
+  <Property
+    name="message"
+    required
+    type="string | Uint8Array | Record<string, any>"
+  >
+    The message that should be sent to the connection.
+  </Property>
+</Properties>
+
+## Examples
+
+### Broadcasting a message to all connections.
+
+<Note>
+  Do not send messages to a connection during it's `connect` callback, if you
+  need to acknowledge connection, do so by using a [topic](../topic/topic)
+</Note>
+
+```javascript
+import { websocket, kv } from '@nitric/sdk'
+
+const socket = websocket('socket')
+const connections = kv('connections').allow('get', 'set', 'delete')
+
+socket.on('connect', async (ctx) => {
+  let conns = {}
+  try {
+    conns = await connections.get('connections')
+  } catch (e) {
+    console.log('creating new connections store')
+  }
+  await connections.set('connections', {
+    ...conns,
+    [ctx.req.connectionId]: new Date(),
+  })
+})
+
+socket.on('disconnect', async (ctx) => {
+  const conns = await connections.get('connections')
+  delete conns[ctx.req.connectionId]
+  await connections.set('connections', conns)
+})
+
+const broadcast = async (data) => {
+  const conns = await connections.get('connections')
+
+  await Promise.all(
+    Object.keys(conns).map(async (connectionId) => {
+      // Send message to a connection
+      await socket.send(connectionId, data)
+    }),
+  )
+}
+
+socket.on('message', async (ctx) => {
+  // broadcast message to all clients (including the sender)
+  await broadcast(ctx.req.data)
+})
+```

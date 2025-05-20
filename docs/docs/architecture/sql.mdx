@@ -1,0 +1,127 @@
+---
+description: 'Explore how Nitric provisions and manages SQL Databases across AWS, GCP, and Azure using Terraform and Pulumi.'
+---
+
+# SQL
+
+## 1. System Context
+
+**Developers** use Nitric to define required databases within their application (e.g., referencing a Postgres or MySQL database).
+
+- App code uses the [SQL database resources](/sql) from the Nitric SDK.
+- Developers can use any language specific client or ORM to interact with the databases.
+
+**Operations** teams use default or customized Terraform modules to provision the required resources for the SQL database and for running database migrations:
+
+<details>
+  <summary>Example AWS Provider</summary>
+
+- **AWS RDS** (or another SQL provider) hosts the actual database.
+- **AWS ECR** (Elastic Container Registry) stores the database migration image.
+- **AWS CodeBuild** runs the migration image against the database on startup.
+- **AWS IAM** manages roles and policies granting CodeBuild access to pull images from ECR, access VPC resources, and more.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    NitricApp["nitric up"]
+    RDS["AWS RDS (SQL Database)"]
+    ECR["AWS ECR"]
+    CodeBuild["AWS CodeBuild (Executes Migrations)"]
+    IAM["AWS IAM"]
+    Lambda["AWS Lambda Functions"]
+
+    Developer -->|Write Code| NitricApp
+    Operations -->|Terraform| NitricApp
+    NitricApp -->|Provision & Configure| RDS
+    NitricApp -->|Push/Tag Image| ECR
+    NitricApp -->|Run Migrations| CodeBuild
+    NitricApp -->|Manage Permissions| IAM
+    Lambda -->|Access Database| RDS
+    IAM -->Lambda
+
+    CodeBuild -->|Executes SQL Migrations| RDS
+    IAM --> RDS
+    IAM --> ECR
+    IAM --> CodeBuild
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+
+## 2. Sequence
+
+### Build Sequence
+
+Below is the sequence of events that occur when a developer registers a SQL database with Nitric.
+
+```mermaid
+sequenceDiagram
+    participant Worker as App Worker(s)
+    participant SDK as Nitric SDK
+    participant Nitric as Nitric CLI
+    participant Provider as Nitric Provider <br> (plugin)
+    participant IAC as IaC <br> (e.g. Terraform)
+
+    Worker->>SDK: Register SQL Database
+    SDK->>Nitric: Register SQL Database
+
+    Nitric->>Provider: Forward Nitric Spec
+    Provider->>IAC: Provision Database Cluster
+    Provider->>IAC: Provision Database Instance
+    Provider->>IAC: Provision IAM
+```
+
+### Runtime Sequence
+
+Below is the runtime flow of a database operation in a Nitric application, using the Nitric SDK. The SDK provides access to the connection details for the SQL database. All database operations are performed as usual, without any additional Nitric-specific steps.
+
+```mermaid
+sequenceDiagram
+    participant Client as App Code
+    participant SDK as Nitric SDK
+    participant Nitric as Nitric Runtime <br> (plugin)
+    participant CloudAPI as Cloud DMBS <br> (e.g. AWS RDS)
+
+    Client->>SDK: connectionString()
+    SDK->>Nitric: Forward Request
+    Nitric->>Nitric: Convert Request
+    Nitric->>CloudAPI: Retrieve Connection String
+
+    Client->>CloudAPI: Execute SQL Query
+```
+
+## 3. Component
+
+### SQL Resource Module
+
+- Configures a container registry for storing database migration images, ensuring secure and efficient image management.
+- Dynamically tags and pushes migration images to the registry, streamlining deployment pipelines.
+- Automates the setup of a migration execution environment using containerized tools, enabling seamless database schema updates and initialization.
+- Provides an execution layer for running migrations against the SQL database, with monitoring to ensure successful completion.
+- Abstracts the underlying SQL infrastructure, enabling consistent interactions with relational databases regardless of the cloud provider or database engine (e.g., PostgreSQL, MySQL).
+- Optionally supports provisioning of the SQL database instance or cluster if not pre-existing, ensuring compatibility with the application.
+- Enforces least privilege access by configuring secure roles and policies for database and migration operations, maintaining robust security standards.
+
+## 4. Code
+
+**Developers** write application code that uses the [SQL database resources](/sql) from the SDK, and implements the application logic to connect and interact with database.
+
+SDK Reference by language -
+
+- [NodeJS SDK](/reference/nodejs/sql/sql)
+- [Python SDK](/reference/python/sql/sql)
+- [Go SDK](/reference/go/sql/sql)
+- [Dart SDK](/reference/dart/sql/sql)
+
+**Operations** will use or extend the Nitric infrastructure modules, including both Terraform and Pulumi:
+
+- Terraform Modules:
+  - [AWS SQL Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploytf/.nitric/modules/sql/main.tf)
+- Pulumi Modules:
+  - [AWS SQL Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/sql.go)
+  - [GCP SQL Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/gcp/deploy/sql.go)
+  - [Azure SQL Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/azure/deploy/sql.go)

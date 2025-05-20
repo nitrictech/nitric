@@ -1,0 +1,115 @@
+---
+description: "Reference for Nitric's Go library - Register a handler for connections, disconnections, or messages for the websocket."
+---
+
+# Go - Websocket.On()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Websockets in Nitric start with the [Websockets docs](/websockets).
+</Note>
+
+Register a handler for connections, disconnections, or messages for the websocket.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  ws.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    // handle connections
+  })
+
+  ws.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    // handle disconnections
+  })
+
+  ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+    // handle messages
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="eventType" required type="WebsocketEventType">
+    The type of websocket event to listen for. Can be `EventType_Connect`,
+    `EventType_Disconnect`, or `EventType_Message`.
+  </Property>
+  <Property name="handler" required type="interface{}">
+    The callback function to use as the handler for Websocket events.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for message events
+
+```go
+ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+  fmt.Printf("New Message from %s: %s\n", ctx.Request.ConnectionID(), ctx.Request.Message())
+})
+```
+
+### Manage Websocket connections
+
+To store Websocket connections you can use a Nitric collection.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  ws := nitric.NewWebsocket("public")
+
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Register a new connection on connect
+  ws.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) error {
+    return connections.Set(context.TODO(), ctx.Request.ConnectionID(), map[string]interface{}{
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+  })
+
+  // Remove a registered connection on disconnect
+  ws.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) error {
+    return connections.Delete(context.TODO(), ctx.Request.ConnectionID())
+  })
+
+  // Broadcast message to all the registered websocket connections
+  ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) error {
+    connectionStream, err := connections.Keys(context.TODO())
+    if err != nil {
+      return err
+    }
+
+    for {
+      connectionId, err := connectionStream.Recv()
+      if err != nil {
+        break // reached the end of the documents
+      }
+
+      err = ws.Send(context.TODO(), connectionId, []byte(ctx.Request.Message()))
+      if err != nil {
+        return err
+      }
+    }
+
+    return nil
+  })
+
+  nitric.Run()
+}
+```

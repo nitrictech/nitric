@@ -1,0 +1,37 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Retrieve the value of a document."
+---
+
+# Node.js - collection.doc.get()
+
+Retrieve the value of a document.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const drakesProfile = profiles.doc('Drake Mallard')
+
+const drakeMallard = await drakesProfile.get()
+```
+
+## Examples
+
+### Get a document's value
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const drakesProfile = profiles.doc('Drake Mallard')
+
+const drakeMallard = await drakesProfile.get()
+```
+
+### See also
+
+- [doc.set()](./collection-doc-set)
+- [doc.delete()](./collection-doc-delete)
+- [doc.collection()](./collection-doc-collection)

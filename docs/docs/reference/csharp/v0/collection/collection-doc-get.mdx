@@ -1,0 +1,43 @@
+---
+description: "Reference for Nitric's v0 .NET library - Retrieve the value of a document."
+---
+
+# .NET - Collection.Doc.Get()
+
+Retrieve the value of a document.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var drakesProfile = profiles.Doc("Drake Mallard");
+
+var drakesMallard = drakesProfile.Get();
+
+Nitric.Run();
+```
+
+## Examples
+
+### Get a document's value
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var drakesProfile = profiles.Doc("Drake Mallard");
+
+var drakesMallard = drakesProfile.Get();
+
+Nitric.Run();
+```
+
+### See also
+
+- [Doc.Set()](./collection-doc-set)
+- [Doc.Delete()](./collection-doc-delete)
+- [Doc.Collection()](./collection-doc-collection)

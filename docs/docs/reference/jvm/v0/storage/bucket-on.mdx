@@ -1,0 +1,124 @@
+---
+description: "Reference for Nitric's v0 JVM library - Create a new bucket notification trigger"
+---
+
+# JVM - bucket.on()
+
+Create a new bucket notification trigger when certain files are created or deleted.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.faas.v0.BucketNotificationType;
+import io.nitric.resources.*;
+
+public class Application {
+  public static void main(String[] args) {
+    var assets = Nitric.INSTANCE.bucket("assets");
+    var accessibleAssets = Nitric.INSTANCE.bucket("assets").with(BucketPermission.Read);
+
+    // The request will contain the name of the file `key` and the type of event `type`
+    assets.on(BucketNotificationType.Delete, "*", (ctx) -> {
+      System.out.println("A file named ${ctx.req.key} was deleted");
+      return ctx;
+    });
+
+    assets.on(BucketNotificationType.Write, "/images/cat", (ctx) -> {
+      System.out.println("A cat image was written");
+      return ctx;
+    });
+
+    // If `on` is called with a permissioned bucket, a file will also be provided with the request
+    accessibleAssets.on(BucketNotificationType.Write, "/images/dog", (ctx) -> {
+      var dogImage = ctx.getReq().getFile().read();
+      System.out.println(dogImage);
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.resources.*
+import io.nitric.faas.v0.BucketNotificationType
+
+fun main() {
+  val assets = Nitric.bucket("assets")
+  val accessibleAssets = Nitric.bucket("assets").with(BucketPermission.Read)
+
+  // The request will contain the name of the file `key` and the type of event `type`
+  assets.on(BucketNotificationType.Delete, "*") { ctx ->
+    println("A file named ${ctx.req.key} was deleted")
+    ctx
+  }
+
+  assets.on(BucketNotificationType.Write, "/images/cat") { ctx ->
+    println("A cat image was written")
+    ctx
+  }
+
+  // If `on` is called with a permissioned bucket, a file will also be provided with the request
+  accessibleAssets.on(BucketNotificationType.Write, "/images/dog") { ctx ->
+    val dogImage = ctx.req.file.read()
+    println(dogImage)
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property
+    name="notificationType"
+    required
+    type="BucketPermission.Write or BucketPermission.Delete"
+  >
+    The notification type for a triggered event, either on a file write or a
+    file delete.
+  </Property>
+  <Property name="notificationPrefixFilter" required type="string">
+    The file prefix filter that must match for a triggered event. If multiple
+    filters overlap across notifications, an error will be thrown when
+    registering the resource.
+  </Property>
+  <Property
+    name="middleware"
+    required
+    type="BucketNotificationMiddleware or List<BucketNotificationMiddleware>"
+  >
+    The middleware (code) to be triggered by the bucket notification being
+    triggered.
+  </Property>
+</Properties>
+
+## Available trigger types:
+
+**BucketPermission.Write**
+
+Run when a file in the bucket is created using: `file.write()`
+
+**BucketPermission.Delete**
+
+Run when a file in the bucket is deleted using: `file.delete()`
+
+### Trigger type cloud mapping
+
+| Permission | AWS                 | GCP             | Azure                         |
+| ---------- | ------------------- | --------------- | ----------------------------- |
+| write      | s3:ObjectCreated:\* | OBJECT_FINALIZE | Microsoft.Storage.BlobCreated |
+| delete     | s3:ObjectRemoved:\* | OBJECT_DELETE   | Microsoft.Storage.BlobDeleted |

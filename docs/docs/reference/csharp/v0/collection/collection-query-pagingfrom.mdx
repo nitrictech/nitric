@@ -1,0 +1,32 @@
+---
+description: "Reference for Nitric's v0 .NET library - Set a point to resume a query from."
+---
+
+# .NET - Collection.Query.PagingFrom()
+
+Set a point to resume a query from, this is required when continuing a paginated query response.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query().PagingFrom(pagingToken);
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="pagingToken" required type="Dictionary<string, object>">
+    The paging token to apply to the query. Tokens are returned from
+    `Query().Fetch()`, when results cannot be returned in a single page.
+  </Property>
+</Properties>
+
+### See also
+
+- [Query.Limit()](./collection-query-limit)
+- [Query.Fetch()](./collection-query-where)

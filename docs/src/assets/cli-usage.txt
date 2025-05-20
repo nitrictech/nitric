@@ -1,0 +1,30 @@
+Nitric - The fastest way to build serverless apps
+
+To start with nitric, run the 'nitric new' command:
+
+    $ nitric new
+
+This will guide you through project creation, including selecting from available templates.
+
+For further details visit our docs https://nitric.io/docs
+
+Usage:
+  nitric [command]
+
+Available Commands:
+  build       Build a Nitric project
+  completion  Generate the autocompletion script for the specified shell
+  down        Undeploy a previously deployed stack, deleting resources
+  help        Help about any command
+  new         Create a new project
+  run         Run your project locally for development and testing
+  stack       Manage stacks (the deployed app containing multiple resources e.g. services, buckets and topics)
+  start       Run nitric services locally for development and testing
+  up          Create or update a deployed stack
+  version     Print the version number of this CLI
+
+Flags:
+      --ci     CI mode, disable output styling and auto-confirm all operations
+  -h, --help   help for nitric
+
+Use "nitric [command] --help" for more information about a command.

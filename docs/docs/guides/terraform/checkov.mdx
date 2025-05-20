@@ -1,0 +1,143 @@
+---
+description: Use checkov for static analysis of a Nitric project deployed with Terraform
+tags:
+  - Terraform
+  - Testing
+published_at: 2025-04-15
+---
+
+# Static analysis of Terraform with Checkov
+
+This guide will walk you through generating a report with [Checkov](https://www.checkov.io/) from a Nitric project.
+
+## What is Checkov?
+
+Checkov is a static code analysis tool for scanning infrastructure as code (IaC) files for misconfigurations. Checkov provides several key benefits for your projects:
+
+- **Security Scanning**: Automatically detects misconfigurations and security vulnerabilities in your infrastructure code before deployment
+- **Compliance**: Helps ensure your infrastructure meets compliance requirements like HIPAA and PCI-DSS
+- **Best Practices**: Enforces infrastructure best practices and coding standards
+- **Early Detection**: Catches potential issues during development rather than after deployment
+- **Custom Rules**: Allows you to create custom rules specific to your organization's requirements
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- [AWS CLI](https://aws.amazon.com/cli/) installed and configured
+- [Terraform CLI](https://terraform.io/downloads.html) installed
+- [Node.js](https://nodejs.org/) and npm installed
+- [Nitric CLI](/get-started/installation) installed
+- [Checkov](https://checkov.io/2.Basics/Installing%20Checkov.html) installed
+
+## What we'll be doing
+
+1. Creating and setting up your application.
+2. Generating a Terraform plan with a Nitric Terraform provider.
+3. Running Checkov.
+
+## Create and set up your application
+
+Checkov can be used with any Nitric project that you intend to deploy with Terraform. We'll be using a basic starter template in this guide, however, you can use your own Nitric project or an [example project](https://github.com/nitrictech/examples).
+
+Let's start by creating a new project from a Nitric template, this will provide a base to start building the API.
+
+```bash
+nitric new my-profile-api ts-starter
+```
+
+Next, open the project in your editor of choice and make sure all dependencies are resolved:
+
+```bash
+npm install
+```
+
+You can test the project to verify everything is working as expected:
+
+```bash
+nitric start
+```
+
+## Deploying to AWS with a Terraform provider
+
+To deploy your application with Terraform you'll need to use Nitric's Terraform providers. You can learn more about using Nitric with Terraform [here](/providers/terraform).
+
+```bash
+nitric stack new dev aws-tf
+```
+
+Update this newly created stack file to include your target region:
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/awstf@1.11.6
+
+# The target aws region to deploy to
+region: us-east-2
+```
+
+Once you've created your stack file, you can generate the Terraform code by running the following command:
+
+```bash
+nitric up
+```
+
+This will generate Terraform code which can deploy your application. The output will be in a folder named `cdktf.out` by default.
+
+## Run checkov
+
+Use the Terraform CLI to generate a terraform plan expressed in a json file and then run Checkov on this file.
+
+```bash
+cd cdktf.out/stacks/my-profile-api-dev
+
+terraform init
+terraform plan --out tfplan.binary
+terraform show -json tfplan.binary | jq > tfplan.json
+
+checkov -f tfplan.json
+```
+
+This should produce the `checkov` scan results in the terminal, which should look something like this:
+
+```bash
+terraform_plan scan results:
+
+Passed checks: 22, Failed checks: 9, Skipped checks: 0
+
+Check: CKV_AWS_41: "Ensure no hard coded AWS access key and secret key exists in provider"
+  PASSED for resource: aws.default
+  File: /tfplan.json:0-1
+  Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-5
+Check: CKV_AWS_364: "Ensure that AWS Lambda function permissions delegated to AWS services are limited by SourceArn or SourceAccount"
+  PASSED for resource: module.api_main.aws_lambda_permission.apigw_lambda["checkov_services-api"]
+  File: /tfplan.json:0-0
+  Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-364
+Check: CKV_AWS_301: "Ensure that AWS Lambda function is not publicly accessible"
+  PASSED for resource: module.api_main.aws_lambda_permission.apigw_lambda["checkov_services-api"]
+  File: /tfplan.json:0-0
+  Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/bc-aws-301
+Check: CKV_AWS_136: "Ensure that ECR repositories are encrypted using KMS"
+  FAILED for resource: module.service_checkov_services-api.aws_ecr_repository.repo
+  File: /tfplan.json:0-0
+  Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-ecr-repositories-are-encrypted
+```
+
+## Analysing the results
+
+Checkov comes with some great default checks, however, they do need to be aligned with the requirements of your application.
+
+For example the Checkov policy `CKV_AWS_136` checks specifically for SSE-KMS using a customer-managed KMS key (or at least AWS-managed KMS key). This finding might not always be relevant because, by default, Amazon ECR encrypts container images at rest using Amazon S3 server-side encryption (SSE-S3). That means your images are always encrypted, even if you don't explicitly configure a KMS key.
+
+A way to handle these false positives is to use [suppress/skip comments](https://www.checkov.io/2.Basics/Suppressing%20and%20Skipping%20Policies.html) in the Terraform code.
+
+```terraform
+# checkov:skip=CKV_AWS_136
+resource "aws_ecr_repository" "repo" {
+  name = "my-ecr-repo"
+}
+```
+
+You could also use custom policies to handle these false positives or create custom rules to better match your infrastructure requirements.
+
+If you have any concerns, please don't hesitate to [reach out](https://nitric.io/chat).

@@ -1,0 +1,252 @@
+---
+description: Deploy to AWS, Google Cloud or Microsoft Azure using GitHub Actions and the Nitric CLI
+tags:
+  - CI/CD
+published_at: 2023-12-21
+updated_at: 2024-12-18
+---
+
+# Deployment Automation with GitHub Actions and Nitric
+
+This guide will demonstrate how Nitric can be used, along with [GitHub Actions](https://github.com/features/actions), to create a continuous deployment pipeline. We provide examples for deploying to AWS, Google Cloud, and Microsoft Azure, which you can adapt based on your preferred cloud provider.
+
+<Note>
+  This guide assumes basic knowledge about GitHub Actions. If you're new to the
+  feature you could start by reviewing [GitHub's
+  docs](https://github.com/features/actions)
+</Note>
+
+## Configuration
+
+1. **Prepare Your Nitric Project**<br />
+   Ensure you have a Nitric project ready to deploy. If you haven’t set up a project yet, refer to our [quickstart guide](/get-started/quickstart).
+
+2. **Add a GitHub Actions Workflow File**<br />
+   Create a YAML file in a `.github/workflows/` folder at the root of your project to configure the deployment automation steps. You can name the file according to your preference; for our examples, we use `deploy-aws.yaml`, `deploy-azure.yaml`, and `deploy-gcp.yaml`.
+
+Here’s example content for each cloud provider:
+
+<Tabs>
+
+<TabItem label="AWS">
+
+```yaml title:.github/workflows/deploy-aws.yaml
+name: Example Nitric AWS Deployment
+
+# Triggers for the workflow
+on:
+  # Allows manual triggering of the workflow from GitHub
+  workflow_dispatch:
+
+  # Triggers the workflow on push to the main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    # The workflow will run on the latest Ubuntu OS
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code from the repository
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      # Install Pulumi for infrastructure management
+      # Learn more about the Pulumi action configuration at https://github.com/pulumi/actions.
+      - name: Install and configure Pulumi 📦
+        uses: pulumi/actions@v4
+
+      # Apply infrastructure using Nitric
+      # Learn more about the Nitric action configuration at https://github.com/nitrictech/actions.
+      - name: Applying infrastructure 🚀
+        uses: nitrictech/actions@v1
+        with:
+          # The 'up' command deploys the project
+          command: up
+
+          # Replace with your stack name
+          stack-name: dev
+        env:
+          # Configure the environment variables required by Nitric's dependency Pulumi and AWS.
+          # In this example, we store the required values in GitHub secrets. Secrets can be found by navigating to:
+          # https://github.com/{user}/{project}/settings/secrets/actions
+
+          # Pulumi config passphrase
+          # For interaction-free experiences, Pulumi requires a passphrase. Your passphrase generates a unique key that encrypts configuration and state values.
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+          # Pulumi access token
+          # You can get a Pulumi access token by logging into Pulumi on the browser and going to your profile settings. Under the 'Access Tokens' tab, click 'Create token.'
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+          # AWS access key ID
+          # You can obtain a key ID from the AWS console: https://console.aws.amazon.com/
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+          # AWS secret access key
+          # You can obtain an access key from the AWS console: https://console.aws.amazon.com/
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+</TabItem>
+
+<TabItem label="Azure">
+
+```yaml title:.github/workflows/deploy-azure.yaml
+name: Example Nitric Azure Deployment
+
+# Triggers for the workflow
+on:
+  # Allows manual triggering of the workflow from GitHub
+  workflow_dispatch:
+
+  # Triggers the workflow on push to the main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    # The workflow will run on the latest Ubuntu OS
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code from the repository
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      # Install Pulumi for infrastructure management
+      # Learn more about the Pulumi action configuration at https://github.com/pulumi/actions.
+      - name: Install and configure Pulumi 📦
+        uses: pulumi/actions@v4
+
+      # Authenticate with Azure to allow deployment
+      - name: Authenticate with Azure 🔑
+        uses: azure/login@v1
+        with:
+          # Azure client ID from GitHub secrets
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+
+          # Azure tenant ID from GitHub secrets
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+          # Azure subscription ID from GitHub secrets
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Apply infrastructure using Nitric
+      # Learn more about the Nitric action configuration at https://github.com/nitrictech/actions.
+      - name: Applying infrastructure 🚀
+        uses: nitrictech/actions@v1
+        with:
+          # The 'up' command deploys the project
+          command: up
+
+          # Replace with your stack name
+          stack-name: dev
+        env:
+          # Configure the environment variables required by Nitric's dependency Pulumi and Azure.
+          # In this example, we store the required values in GitHub secrets. Secrets can be found by navigating to:
+          # https://github.com/{user}/{project}/settings/secrets/actions
+
+          # Pulumi config passphrase
+          # For interaction-free experiences, Pulumi requires a passphrase. Your passphrase generates a unique key that encrypts configuration and state values.
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+          # Pulumi access token
+          # You can get a Pulumi access token by logging into Pulumi on the browser and going to your profile settings. Under the 'Access Tokens' tab, click 'Create token.'
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+          # Azure client ID
+          # You can obtain the client ID from Azure by creating a service principal or by navigating to the Azure portal.
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+          # Azure tenant ID
+          # You can obtain the tenant ID from the Azure portal.
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+          # Azure subscription ID
+          # You can obtain the subscription ID from the Azure portal.
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+```
+
+</TabItem>
+
+<TabItem label="Google Cloud">
+
+```yaml title:.github/workflows/deploy-gcp.yaml
+name: Example Nitric GCP Deployment
+
+# Triggers for the workflow
+
+on:
+
+# Triggers the workflow on push to the main branch
+
+push:
+branches: - main
+
+jobs:
+update: # The workflow will run on the latest Ubuntu OS
+runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code from the repository
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      # Install Pulumi for infrastructure management
+      # Learn more about the Pulumi action configuration at https://github.com/pulumi/actions.
+      - name: Install and configure Pulumi 📦
+        uses: pulumi/actions@v4
+
+      # Authenticate with Google Cloud to allow deployment
+      - name: Authenticate with Google 🔑
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          # Google Cloud service account key from GitHub secrets
+          service_account_key: ${{ secrets.GCP_KEY }}
+
+          # Google Cloud project ID from environment variables
+          project_id: ${{ env.PROJECT_ID }}
+
+          # Export default credentials for Google Cloud
+          export_default_credentials: true
+
+      # Apply infrastructure using Nitric
+      # Learn more about the Nitric action configuration at https://github.com/nitrictech/actions.
+      - name: Applying infrastructure 🚀
+        uses: nitrictech/actions@v1
+        with:
+          # The 'up' command deploys the project
+          command: up
+
+          # Replace with your stack name
+          stack-name: dev
+        env:
+          # Configure the environment variables required by Nitric's dependency Pulumi and Google Cloud.
+          # In this example, we store the required values in GitHub secrets. Secrets can be found by navigating to:
+          # https://github.com/{user}/{project}/settings/secrets/actions
+
+          # Pulumi config passphrase
+          # For interaction-free experiences, Pulumi requires a passphrase. Your passphrase generates a unique key that encrypts configuration and state values.
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+          # Pulumi access token
+          # You can get a Pulumi access token by logging into Pulumi on the browser and going to your profile settings. Under the 'Access Tokens' tab, click 'Create token.'
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+          # Google Cloud service account key
+          # You can obtain a service account key from the Google Cloud Console.
+          GCP_KEY: ${{ secrets.GCP_KEY }}
+
+          # Google Cloud project ID
+          # You can obtain the project ID from the Google Cloud Console.
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+
+```
+
+</TabItem>
+
+</Tabs>

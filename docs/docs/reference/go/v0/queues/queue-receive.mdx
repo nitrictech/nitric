@@ -1,0 +1,111 @@
+---
+description: "Reference for Nitric's v0 Go library - Receive tasks from a queue."
+---
+
+# Go - Queue.Receive()
+
+Receive tasks from a queue.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueReceiving)
+  if err != nil {
+    return
+  }
+
+  ctx := context.TODO()
+
+  // Receive up to 10 tasks from the queue
+  tasks, err := queue.Receive(ctx, 10)
+  if err != nil {
+    return
+  }
+
+  for _, t := range tasks {
+    fmt.Println(t.Task().ID)
+
+    t.Complete(ctx)
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="depth" required type="int">
+    The maximum number of tasks to receive from the queue.
+  </Property>
+</Properties>
+
+## Notes
+
+### Completing tasks
+
+Since the process is async, the queue doesn't know when a task has been completed. So failed function/containers don't result in lost tasks, tasks are not removed from a queue when they're received.
+
+Instead, tasks are hidden and receivers are granted a temporary lease for each task they receive.
+
+When complete, the receiver must tell the queue the task was completed successfully, which will remove it from the queue and stop it being reprocessed.
+
+<Note>
+  Failing to complete a task before the lease expires will result in it being
+  re-queued.
+</Note>
+
+To notify the queue that a task was completed call the `Complete()` method on the task reference.
+
+### Receive depth
+
+When calling `Receive()` a depth parameter can be provided, e.g. `Receive(ctx, 5)`. This will _attempt_ to receive up to 5 tasks from the queue.
+
+However, if the queue is empty or less than 5 tasks are available on the queue, then the max available will be returned.
+
+This means calls to receive will return between 0 and _depth_ tasks.
+
+## Examples
+
+### Receive tasks from a queue
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueReceiving)
+  if err != nil {
+    return
+  }
+
+  ctx := context.TODO()
+
+  // Receive up to 10 tasks from the queue
+  tasks, err := queue.Receive(ctx, 10)
+  if err != nil {
+    return
+  }
+
+  for _, t := range tasks {
+    fmt.Println(t.Task().ID)
+
+    t.Complete(ctx)
+  }
+
+  nitric.Run()
+}
+```

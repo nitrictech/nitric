@@ -1,0 +1,34 @@
+---
+description: "Reference for Nitric's v0 Go library - Begins a new query on a Collection."
+---
+
+# Go - Collection.Query()
+
+Begins a new query on a Collection.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading, nitric.CollectionWriting, nitric.CollectionDeleting)
+  if err != nil {
+    return
+  }
+
+  profilesQuery := profiles.Query()
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- Adding filters: [Query().Where()](./collection-query-where)
+- Limiting the results: [Query().Limit()](./collection-query-limit)
+- Streaming results: [Query().Stream()](./collection-query-stream)
+- Fetching results: [Query().Fetch()](./collection-query-fetch)
+- Using paging tokens: [Query().FromPagingToken()](./collection-query-pagingfrom)

@@ -1,0 +1,14 @@
+---
+description: 'Build or extend a custom provider for Nitric'
+---
+
+# Custom Providers
+
+Custom providers allow you to target the services and host(s) you prefer with your own tools and configuration. You can also extend the existing providers to change which cloud services are used to fulfill the Nitric resource contracts, to add configuration options or to change the deployment process.
+
+The standard providers that ship with Nitric are great to get started and move quickly, but the intention of Nitric is to unlock portability and separate the deployment process from the application code. This is where custom providers come in.
+
+There are two main ways to create a custom provider:
+
+1. **Create a new provider**: This is the most flexible option, but also the most complex. You can [create a new provider from scratch](./custom/create)
+2. **Extend an existing provider**: This is a good option if you want to leverage the existing provider's deployment automation and only need to make specific changes, such as use your own Terraform modules or deploy Nitric resources to a different cloud service. You can [extend an existing provider](./custom/extend) to add your own configuration options or change the deployment process.

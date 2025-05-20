@@ -1,0 +1,64 @@
+---
+description: "Reference for Nitric's v0 Python library - Set the value of a document."
+---
+
+# Python - collection.doc.set()
+
+Set the value of a document.
+
+```python
+from nitric.resources import collection
+
+enemies = collection('profiles').allow('writing')
+drakes_profile = profiles.doc('Drake Mallard')
+
+await drakes_profile.set({
+  firstName: 'Drake',
+  lastName: 'Mallard',
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="document" required type="object">
+    The document to set on the key.
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a document
+
+```python
+from nitric.resources import collection
+
+enemies = collection('profiles').allow('writing')
+drakesProfile = profiles.doc('Drake Mallard')
+
+await drakesProfile.set({
+  firstName: 'Drake',
+  lastName: 'Mallard',
+})
+```
+
+### Update a document
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('reading','writing')
+
+drakesProfile = profiles.doc('Drake Mallard')
+await drakesProfile.get()
+
+await drakesProfile.set({
+  firstName: 'Drake',
+  lastName: 'Mallard',
+})
+```
+
+## See also
+
+- [doc().get()](./collection-doc-get)
+- [doc().delete()](./collection-doc-delete)

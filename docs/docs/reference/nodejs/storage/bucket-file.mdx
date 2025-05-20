@@ -1,0 +1,40 @@
+---
+description: "Reference for Nitric's Node.js library - Create a reference to a file within a bucket."
+---
+
+# Node.js - bucket.file()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a reference to a file within a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('read')
+
+const logo = assets.file('images/logo.png')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name/reference to the file.
+  </Property>
+</Properties>
+
+### Notes
+
+The file does not need to exist, only a reference to that file is being created.
+
+## Available Operations
+
+- [file.read()](./bucket-file-read)
+- [file.write()](./bucket-file-write)
+- [file.delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

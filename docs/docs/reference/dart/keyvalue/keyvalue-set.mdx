@@ -1,0 +1,47 @@
+---
+description: "Reference for Nitric's Dart library - Store a key value pair in a key value store."
+---
+
+# Dart - kv.set()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Store a key value pair in a key value store.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.set,
+]);
+
+await profiles.set('profile-1a2b3c', { "name": "John Smith" });
+```
+
+## Parameters
+
+<Properties>
+  <Property name="key" required type="String">
+    The key that references value.
+  </Property>
+  <Property name="value" required type="Map<String, dynamic>">
+    A json serializable object that is stored as the value.
+  </Property>
+</Properties>
+
+## Examples
+
+### Set a key value pair
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final profiles = Nitric.kv("profiles").allow([
+  KeyValueStorePermission.set,
+]);
+
+await profiles.set('profile-1a2b3c', { "name": "John Smith" });
+```

@@ -1,0 +1,30 @@
+---
+description: Details on the programming languages supported by Nitric
+---
+
+# Languages
+
+The Nitric SDKs communicate with the Nitric Server using gRPC. Since the Nitric Server provides an API using gRPC and Protocol Buffers it ensures the Nitric framework can support many languages without rewriting the framework from scratch.
+
+The Nitric team provides idiomatic language SDKs, designed to feel familiar to developers of each language and make the best use of unique language features.
+
+## Supported Languages
+
+The following runtimes are currently supported or are in development:
+
+| Language SDK                 | Support      | GitHub Repo                                                                          |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------------ |
+| [Node.js](/reference/nodejs) | Full Support | [https://github.com/nitrictech/node-sdk](https://github.com/nitrictech/node-sdk)     |
+| [Python](/reference/python)  | Full Support | [https://github.com/nitrictech/python-sdk](https://github.com/nitrictech/python-sdk) |
+| [Go](/reference/go)          | Full Support | [https://github.com/nitrictech/go-sdk](https://github.com/nitrictech/go-sdk)         |
+| [Dart](/reference/dart)      | Experimental | [https://github.com/nitrictech/dart-sdk](https://github.com/nitrictech/dart-sdk)     |
+| [C#](/reference/csharp/v0)   | v0 Support   | [https://github.com/nitrictech/dotnet-sdk](https://github.com/nitrictech/dotnet-sdk) |
+| [JVM](/reference/jvm/v0)     | v0 Support   | [https://github.com/nitrictech/jvm-sdk](https://github.com/nitrictech/jvm-sdk)       |
+
+If a language you want isn't listed, come chat with us on [Discord](https://nitric.io/chat).
+
+Alternatively, feel free to develop your own SDKs. Nitric is [open source](https://github.com/nitrictech) so you can use any of the other SDKs linked above as a reference.
+
+## Adding language support
+
+To start adding support for a language, check out the [protobuf contracts](https://github.com/nitrictech/nitric/tree/main/nitric/proto), and look at how to compile the base SDKs for your specific language on the [protobuf docs](https://developers.google.com/protocol-buffers). Compiling the protobuf definition to a base SDK will provide gRPC stubs for connecting with the Nitric Server, as well as language-specific types for constructing request and response objects.

@@ -1,0 +1,50 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Sets the cron expression and one or many handlers to be triggered."
+---
+
+# Node.js - schedule.cron()
+
+Sets the cron expressions that determines when the schedule triggers and a callback to be triggered.
+
+```javascript
+import { schedule } from '@nitric/sdk'
+
+schedule('send-reminder').cron('0 1 1 * *', async (ctx) => {
+  // do some processing
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expression" required type="string">
+    The expression that sets when the schedule will be triggered. This value
+    should be a standard 5 value Unix cron expression, e.g., '0 1 1 * *'.
+  </Property>
+  <Property
+    name="middleware"
+    required
+    type="EventMiddleware or EventMiddleware[]"
+  >
+    One or more callback functions to use as the handler which will run on the
+    defined frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule
+
+```javascript
+import { schedule } from '@nitric/sdk'
+
+// every 15 minutes
+schedule('check for updates').cron('0/15 * * * *', async (ctx) => {
+  console.log('checking for updates')
+})
+
+// at 1:00am on the 1st of every month
+schedule('delete stale data').cron('0 1 1 * *', async (ctx) => {
+  console.log('clearing data')
+})
+```

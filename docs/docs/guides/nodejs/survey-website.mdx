@@ -1,0 +1,261 @@
+---
+description: Create a React frontend that submits data to backend that generates, stores and retrieves receipts.
+title_seo: Build a Frontend for Your Nitric Survey App
+tags:
+  - React
+  - Websites
+  - API
+languages:
+  - typescript
+  - javascript
+published_at: 2025-05-08
+updated_at: 2025-05-08
+---
+
+# Build a Frontend for Your Nitric Survey App with React
+
+In this guide, you'll build a simple web application using React that connects to the survey backend we created with Nitric.
+
+## What You'll Build
+
+- A form to submit survey responses to the Nitric backend
+- A link to retrieve and view the submitted PDF receipt
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/en/download/)
+- The [Nitric survey backend project](./survey-application)
+
+## Project Setup
+
+This guide assumes you already have the [survey backend project](./survey-application).
+
+To add a website frontend, create a new Vite project:
+
+```bash
+npm create vite@latest main-website -- --template react-ts
+cd main-website
+npm install
+cd ..
+```
+
+Next, configure your `nitric.yaml` to enable and configure the website:
+
+<Note>
+  Along with the website configuration, you will need to add the `preview` key
+  to your `nitric.yaml`, as website support is currently a preview feature and
+  subject to change.
+</Note>
+
+```yaml title:nitric.yaml
+name: survey-app
+services:
+  - basedir: ''
+    match: services/*.ts
+    runtime: node
+    start: npm run dev:services $SERVICE_PATH
+batch-services: []
+websites:
+  - basedir: ./main-website
+    error: index.html
+    build:
+      command: npm run build
+      output: dist
+    dev:
+      command: npm run dev -- --port 3000
+      url: http://localhost:3000
+runtimes:
+  node:
+    dockerfile: ./node.dockerfile
+    context: ''
+    args: {}
+preview:
+  - websites
+```
+
+## Connect to the API
+
+Create a new folder `components` inside `main-website/src` and add the following file:
+
+This component collects the user's name, rating, and feedback, then submits the data to the Nitric API.
+
+```tsx title:main-website/src/components/SurveyForm.tsx
+import React, { useState } from 'react'
+
+const SurveyForm = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    rating: 1,
+    feedback: '',
+  })
+  const [submissionId, setSubmissionId] = useState<string | null>(null)
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/forms/forms/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          // ensure rating is a number
+          rating: Number(formData.rating),
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to submit')
+
+      const data: { id: string } = await response.json()
+      setSubmissionId(data.id)
+      alert('Survey submitted successfully!')
+    } catch (error) {
+      console.error('Submission error:', error)
+      alert('Failed to submit survey.')
+    }
+  }
+
+  const fetchReceipt = async () => {
+    try {
+      const response = await fetch(`/api/receipts/receipts/${submissionId}`)
+      if (!response.ok) throw new Error('Could not get receipt URL')
+      const url = await response.text()
+      window.location.href = url
+    } catch (err) {
+      console.error(err)
+      alert('Failed to load receipt')
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 500, margin: '0 auto', padding: 20 }}>
+      <h2>Feedback Survey</h2>
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+      >
+        <label>
+          Name:
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </label>
+
+        <label>
+          Rating (1-5):
+          <input
+            type="number"
+            name="rating"
+            value={formData.rating}
+            onChange={handleChange}
+            min="1"
+            max="5"
+            required
+          />
+        </label>
+
+        <label>
+          Feedback:
+          <textarea
+            name="feedback"
+            value={formData.feedback}
+            onChange={handleChange}
+          />
+        </label>
+
+        <button type="submit">Submit</button>
+      </form>
+
+      {submissionId && (
+        <div style={{ marginTop: 20 }}>
+          <p>
+            Thank you! Your submission ID is <code>{submissionId}</code>
+          </p>
+          <button onClick={fetchReceipt}>View Receipt</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default SurveyForm
+```
+
+### Add the component to your app
+
+Update the following file to use your new form component:
+
+```tsx title:main-website/src/App.tsx
+import React from 'react'
+import SurveyForm from './components/SurveyForm'
+
+function App() {
+  return (
+    <div>
+      <SurveyForm />
+    </div>
+  )
+}
+
+export default App
+```
+
+## Run the Frontend Locally
+
+With your `nitric.yaml` configured correctly and the site added as a Nitric website, you can start both the frontend and backend using:
+
+```bash
+nitric start
+```
+
+This will start the API and the website together, and serve your React frontend from [http://localhost:5000](http://localhost:5000) (confirm the port in the console output).
+
+To test it, visit [http://localhost:5000](http://localhost:5000) in your browser and submit a survey response. You should see a link to view the generated receipt hosted by the backend.
+
+## Deploying to AWS
+
+With the frontend tested, you can deploy it to the cloud knowing it will function as intended. Nitric will deploy your frontend and backend together, serving them under the same origin. This eliminates CORS issues and removes the need for headers, complex gateway config, or workarounds.
+
+Deployment to the cloud requires that you have created a stack file. If you had followed the backend guide, you should have this stack file already; otherwise, follow the steps below.
+
+### Create your stack
+
+Create an AWS stack called `aws-staging` for your staging environment.
+
+```bash
+nitric stack new aws-staging aws
+```
+
+Inside the stack file, set your `region`.
+
+```yaml title:nitric.dev.yaml
+provider: nitric/aws@latest
+region: us-east-2
+```
+
+## Deploy
+
+Deploy to AWS using the `nitric up` command. Ensure you have set up your [AWS credentials](/providers/pulumi/aws#usage) correctly.
+
+```bash
+nitric up
+```
+
+This should output a URL pointing to the CDN like `xxxx.cloudfront.net`. You can go to this URL in your browser, and it will take you to the website with your survey form. All API routes will be served under `xxxx.cloudfront.net/apis`.
+
+## Tear down
+
+To avoid unwanted costs of running your test app, you can tear down the stack using the `nitric down` command.
+
+```bash
+nitric down
+```

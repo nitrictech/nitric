@@ -1,0 +1,179 @@
+---
+description: 'Comparison to Pulumi'
+---
+
+# Pulumi vs. Nitric
+
+<Note>
+  Nitric is not designed to replace IaC tools like Pulumi, but instead
+  introduces a method of bringing developer self service for infrastructure
+  directly into the developer application (Nitric's default deployment engines
+  are built with Pulumi). Nitric can be augmented through use of tools like
+  Pulumi and even be fully customized using such tools see [Custom
+  Providers](/providers/custom/create) for more details
+</Note>
+
+Nitric is a framework designed to aid developers in building full cloud applications, including declaring their infrastructure and application code in one place. Pulumi is an Infrastructure as Code tool that enables developers to define infrastructure using traditional programming languages or YAML (Cuelang). The main differences between these are:
+
+1. Nitric is cloud-agnostic, code that is written using Nitric constructs can be deployed to any cloud. Pulumi supports many clouds, infrastructure declarations are explicitly defined for the provider that a resource is provided by.
+
+1. Nitric defines not only the infrastructure but how it is interacted with at runtime, so infrastructure can be automatically inferred from application code to ensure best practice deployments and least privilege security.
+
+1. Nitric uses Pulumi under the hood for the Out of the Box providers. Pulumi is a great option for extending infrastructure deployed by Nitric or for deploying Nitric applications to clouds not supported by Nitric by default.
+
+1. Nitric provides tools for locally simulating a cloud environment (using the Nitric CLI), to allow applications to be tested locally. Pulumi programs can be unit tested but applications written to be deployed will need a separate solution for local development such as LocalStack.
+
+# Side by Side
+
+To showcase the power of the abstraction provided by Nitric here is a showcase of a Nitric program with an equivalent Pulumi program with application code.
+
+<Row>
+
+<Col>
+
+**Nitric**
+
+```javascript title:handle.js
+import * as nitric from '@nitric/sdk'
+
+const bucket = nitric.bucket('my-bucket').allow('read', 'write')
+
+bucket.on('create', '*', async (ctx) => {
+  console.log(ctx.file.key, 'was created')
+})
+```
+
+</Col>
+
+<Col>
+
+**Pulumi**
+
+```javascript title:src/index.js
+const AWS = require('aws-sdk')
+
+exports.handler = async (event) => {
+  const {
+    s3: { object },
+  } = event
+  console.log(object.key, 'was created')
+}
+```
+
+```javascript title:lib/handle-stack.js
+import * as pulumi from '@pulumi/pulumi'
+import * as aws from '@pulumi/aws'
+import * as fs from 'fs'
+import * as mime from 'mime'
+import * as path from 'path'
+
+const config = new pulumi.Config()
+const region = config.require('aws:region')
+
+const bucket = new aws.s3.Bucket('s3-bucket')
+
+const role = new aws.iam.Role('lambdaRole', {
+  assumeRolePolicy: JSON.stringify({
+    Version: '2012-10-17',
+    Statement: [
+      {
+        Action: 'sts:AssumeRole',
+        Effect: 'Allow',
+        Principal: {
+          Service: 'lambda.amazonaws.com',
+        },
+      },
+    ],
+  }),
+})
+
+const policy = new aws.iam.RolePolicy('lambdaPolicy', {
+  role: role,
+  policy: JSON.stringify({
+    Version: '2012-10-17',
+    Statement: [
+      {
+        Action: [
+          'logs:CreateLogGroup',
+          'logs:CreateLogStream',
+          'logs:PutLogEvents',
+        ],
+        Effect: 'Allow',
+        Resource: 'arn:aws:logs:*:*:*',
+      },
+      {
+        Action: ['s3:PutObject'],
+        Effect: 'Allow',
+        Resource: `${bucket.arn}/*`,
+      },
+    ],
+  }),
+})
+
+const lambdaFunction = new aws.lambda.Function('s3UploaderLambda', {
+  runtime: 'nodejs14.x',
+  code: new pulumi.asset.AssetArchive({
+    '.': new pulumi.asset.FileArchive('./'),
+  }),
+  timeout: 10,
+  handler: 'index.handler',
+  role: role.arn,
+  environment: {
+    variables: {
+      BUCKET_NAME: bucket.bucket,
+    },
+  },
+})
+
+const allowBucket = new aws.lambda.Permission('allowBucket', {
+  action: 'lambda:InvokeFunction',
+  function: lambdaFunction.arn,
+  principal: 's3.amazonaws.com',
+  sourceArn: bucket.arn,
+})
+
+const bucketNotification = new aws.s3.BucketNotification(
+  'bucketNotification',
+  {
+    bucket: bucket.id,
+    lambdaFunctions: [
+      {
+        lambdaFunctionArn: func.arn,
+        events: ['s3:ObjectCreated:*'],
+      },
+    ],
+  },
+  {
+    dependsOn: [allowBucket],
+  },
+)
+
+export const bucketName = bucket.bucket
+export const lambdaFunctionName = lambdaFunction.name
+```
+
+</Col>
+
+</Row>
+
+<Note>
+  In the pulumi example we get control over absolutely every facet of our
+  infrastructure which is great, but for the majority of use cases a repeatable
+  pattern of deployment is enough and scales much better than applying fine
+  grained configuration every time we need to define a new deployment (with
+  Pulumi this would typically be done by sharing infrastructure as libraries
+  e.g. Pulumi Crosswalks).
+</Note>
+
+The below table contains the main differences that you can see in the code examples, and also some that cannot fit in such a small app, but we still would like you to know about :)
+
+| Feature              | Nitric                                                                     | Pulumi                                                 |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Language             | Your choice                                                                | YAML + your choice                                     |
+| Lines of code        | 7                                                                          | 69                                                     |
+| Cloud Infrastructure | Inferred                                                                   | Explicit                                               |
+| Extensibility        | Custom providers                                                           | Custom/dynamic providers                               |
+| Local Simulation     | Built-in to CLI                                                            | N/A                                                    |
+| Cross-cloud support  | Same code compiles to different clouds                                     | No (need to write different code for different clouds) |
+| Provisioning engine  | Custom providers can be written with any IaC tech (e.g. Terraform/AWS CDK) | Proprietary                                            |
+| Testing              | Same tests run on local simulator and cloud, without mocks                 | Need mocks for local testing                           |

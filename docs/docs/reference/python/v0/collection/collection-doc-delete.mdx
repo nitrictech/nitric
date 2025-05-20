@@ -1,0 +1,21 @@
+---
+description: "Reference for Nitric's v0 Python library - Delete a document from a collection."
+---
+
+# Python - collection.doc.delete()
+
+Delete a document from a collection.
+
+```python
+from nitric.resources import collection
+
+profiles = collection('profiles').allow('deleting')
+drakes_profile = profiles.doc('Drake Mallard')
+
+await drakes_profile.delete()
+```
+
+## See also
+
+- [doc().set()](./collection-doc-set)
+- [doc().get()](./collection-doc-get)

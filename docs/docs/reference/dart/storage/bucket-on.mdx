@@ -1,0 +1,82 @@
+---
+description: "Reference for Nitric's Dart library - Create a new bucket notification trigger"
+---
+
+# Dart - bucket.on()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a new bucket notification trigger when certain files are created or deleted.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+import 'package:nitric_sdk/resources.dart';
+
+// Create a readable, writable, and deletable reference to an 'assets' bucket
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.read,
+]);
+
+// The request will contain the name of the file `key` and the type of event `type`
+assets.on(BlobEventType.delete, '*', (ctx) async {
+  print("A file named ${ctx.req.file.key} was deleted");
+
+  return ctx;
+});
+
+assets.on(BlobEventType.write, '/images/cat', (ctx) async {
+  print("A cat image was created");
+
+  return ctx;
+});
+
+assets.on(BlobEventType.write, '/images/dog', (ctx) async {
+  final dogImage = await ctx.req.file.read();
+
+  print(dogImage)
+
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property
+    name="blobEventType"
+    required
+    type="BlobEventType.write or BlobEventType.delete"
+  >
+    The notification type for a triggered event, either on a file write or a
+    file delete.
+  </Property>
+  <Property name="keyPrefixFilter" required type="String">
+    The file prefix filter that must match for a triggered event. If multiple
+    filters overlap across notifications, an error will be thrown when
+    registering the resource.
+  </Property>
+  <Property name="middleware" required type="BlobEventHandler">
+    The middleware (code) to be triggered by the bucket notification being
+    triggered.
+  </Property>
+</Properties>
+
+## Available trigger types:
+
+**BlobEventType.write**
+
+Run when a file in the bucket is created using: `file.write()`
+
+**BlobEventType.delete**
+
+Run when a file in the bucket is deleted using: `file.delete()`
+
+### Trigger type cloud mapping
+
+| Permission           | AWS                 | GCP             | Azure                         |
+| -------------------- | ------------------- | --------------- | ----------------------------- |
+| BlobEventType.write  | s3:ObjectCreated:\* | OBJECT_FINALIZE | Microsoft.Storage.BlobCreated |
+| BlobEventType.delete | s3:ObjectRemoved:\* | OBJECT_DELETE   | Microsoft.Storage.BlobDeleted |

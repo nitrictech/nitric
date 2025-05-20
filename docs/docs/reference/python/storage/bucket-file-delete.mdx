@@ -1,0 +1,45 @@
+---
+description: "Reference for Nitric's Python library - Delete a file from a bucket."
+---
+
+# Python - bucket.file.delete()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Deletes a file within a bucket.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+# Create a reference to an 'assets' bucket with permissions to delete
+assets = bucket('assets').allow('delete')
+
+logo = assets.file('images/logo.png')
+
+await logo.delete()
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'deleting'. The latest version uses 'delete'.
+
+## Examples
+
+### Delete a file
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('delete')
+
+logo = assets.file('images/logo.png')
+
+await logo.delete()
+
+Nitric.run()
+```

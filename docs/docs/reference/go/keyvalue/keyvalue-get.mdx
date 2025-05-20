@@ -1,0 +1,71 @@
+---
+description: "Reference for Nitric's Go library - Get a value from a key value store."
+---
+
+# Go - Kv.Get()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Key/Value Stores in Nitric start with the [Key/Value Store docs](/keyvalue).
+</Note>
+
+Get a value from a key value store.
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  // Initialize the KV service
+  profiles := nitric.NewKv("profiles").Allow(keyvalue.KvStoreGet)
+
+  profile, err := profiles.Get(context.Background(), "profile-1a2b3c")
+  if err != nil {
+    // handle error
+  }
+  // do something with the profile
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="key" required type="string">
+    The key that references the key value pair that should be retrieved.
+  </Property>
+</Properties>
+
+## Examples
+
+### Get a key value pair
+
+```go
+import (
+  "context"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+func main() {
+  // Initialize the KV service
+  profiles := nitric.NewKv("profiles").Allow(keyvalue.KvStoreGet)
+
+  profile, err := profiles.Get(context.Background(), "profile-1a2b3c")
+  if err != nil {
+    // handle error
+  }
+  // do something with the profile
+
+  nitric.Run()
+}
+```

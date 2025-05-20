@@ -1,0 +1,136 @@
+---
+description: 'Terraform - Microsoft Azure provider for Nitric'
+---
+
+# Terraform Azure Provider Overview
+
+_The officially supported Nitric Terraform Azure Provider._
+
+```yaml
+provider: nitric/azuretf@latest
+```
+
+<Note>
+  The Nitric Terraform Azure Provider is currently in Preview. We recommend
+  reviewing the generated Terraform before deploying to Production environments,
+  or alternatively using the [Pulumi Azure Providers](/providers/pulumi/azure).
+</Note>
+
+## Prerequisites
+
+The **Terraform CLI** is required to deploy the resulting Terraform Stack that Nitric generates. You can find the installation instructions for Terraform in the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
+The provider is built with the [Cloud Development Kit for Terraform (CDKTF)](https://developer.hashicorp.com/terraform/cdktf). Since CDKTF relies on Node.js, you'll need to have Node.js installed, you can read about the full CDKTF prerequisites in the [CDKTF documentation](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-install#prerequisites).
+
+## Azure Credentials
+
+The Terraform CLI typically uses standard Azure credential settings to authenticate with Azure. If you've set credentials for the Azure CLI or an Azure SDK previously, these settings should work without modification.
+
+If you're setting up your credentials for the first time, simply run azure login command and finish the login via your browser.
+
+```bash
+az login
+```
+
+Verify the Azure CLI install -
+
+```bash
+az -v
+```
+
+<Note>
+  See [Azure
+  documentation](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
+  for full details on credentials and configuration.
+</Note>
+
+### Azure CLI Installation
+
+Installing the Azure CLI assists with credentials setup. You can install it using these summarized instructions, for more options see the [Microsoft docs](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+<OSTabs>
+
+<TabItem label="Windows">
+
+Download & install the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+```
+
+</TabItem>
+
+<TabItem label="macOS">
+
+```bash
+brew update && brew install azure-cli
+```
+
+</TabItem>
+
+</OSTabs>
+
+## Locating deployed resources
+
+This Nitric Azure provider deploys resources for a stack into a resource group dedicated to that stack. You can either use one that you already have by configuring it in the stack configuration or let Nitric create one for you.
+
+Once a stack has been deployed to Azure it's resource group should be present in the [Resource groups](https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroupBlade/resourceType/Microsoft.Resources%2Fsubscriptions%2FresourceGroups) page of the portal. Assuming it was deployed to a subscription you have access to.
+
+<Note>
+  Resource groups are conventionally named `<project-name>-<stack-name>-<randomId>`
+
+In this example the project name is `api-testing` and the stack name is `az`.
+
+</Note>
+
+![resource group page screen](/docs/images/docs/az-rg.png)
+
+## Stack Configuration
+
+```yaml title:nitric.[stack ID].yaml
+# The provider to use and its published version
+# See releases:
+# https://github.com/nitrictech/nitric/tags
+provider: nitric/azuretf@latest
+
+# The target Azure region to deploy to
+# See available regions:
+# https://azure.microsoft.com/en-us/explore/global-infrastructure/products-by-region/?products=container-apps
+region: my-azure-stack-region
+
+# Deploy into an existing resource group
+# Available since v1.25.1
+# ⚠️ Changing this property post-deployment is a destructive operation
+resource-group: my-azure-resource-group
+
+# Org to associate deployed API Management services with
+org: example-org
+
+# Admin email to associate deployed API Management services with
+adminemail: test@example.com
+
+# Subscription ID to associate deployed services with
+subscription-id: example-subscription-id
+
+# Add CDN configuration, required for custom domains for website deployments
+# Available since v1.23.0
+cdn:
+  # The name of the Azure DNS Zone to use when configuring the website DNS
+  zone-name: example.com
+  # The resource group name of the DNS Zone you configured in Azure DNS Zones
+  zone-resource-group: yourzone-rg
+  # A valid domain or subdomain for the DNS Zone to use for the deployed websites endpoint
+  domain-name: app.example.com
+  # Skip CDN cache invalidation during deployments (defaults to false)
+  skip-cache-invalidation: true
+```
+
+<Note>
+  Missing something? Let us know by raising an issue in
+  [GitHub](https://github.com/nitrictech/nitric) or by dropping us a line on
+  [Discord](https://nitric.io/chat)
+</Note>

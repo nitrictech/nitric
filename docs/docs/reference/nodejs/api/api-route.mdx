@@ -1,0 +1,76 @@
+---
+description: "Reference for Nitric's Node.js library - Creates a new route (path) within an API."
+---
+
+# Node.js - api.route()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  APIs in Nitric start with the [API docs](/apis).
+</Note>
+
+Creates a new route (path) within an API.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="match" required type="string">
+    The path matcher to use for this route. Calling `route` on the same API more
+    than once with the same matcher will return the same route object. Matchers
+    accept path parameters in the form of a colon prefixed string. The string
+    provided will be used as that path parameter's name when calling middleware
+    and handlers. See [create a route with path
+    params](#create-a-route-with-path-params)
+  </Property>
+  <Property name="options" type="object">
+    Additional options when creating method.
+    <Properties nested>
+      <Property name="security" type="OidcOptions[]">
+        Security rules to apply with scopes to the entire API.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+### Notes
+
+The `middleware` property on the `options` param is useful for applying universal middleware such as CORS headers or Auth, across an entire route. However, if methods aren't registered, the route won't be deployed. If you need to run the same handler for all methods on a route, you should use [route.all()](./api-route-all)
+
+## Examples
+
+### Create a route
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customersRoute = api('public').route('/customers')
+```
+
+### Create a route with path params
+
+Route paths can include dynamic parameters. These values will automatically be parsed and provided in the context object for your middleware and handlers as a `string`.
+
+For example, if you have a customers path and you want to include a `customerId` param you would define the route like this.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const customerRoute = api('public').route('/customers/:customerId')
+```
+
+### Create a route with middleware
+
+```javascript
+import { api } from '@nitric/sdk'
+import { authMiddleware } from '../middleware'
+
+const privateApi = api('private').route('/customers', {
+  middleware: authMiddleware,
+})
+```

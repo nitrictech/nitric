@@ -1,0 +1,659 @@
+---
+title_seo: Building a REST API with JVM and Nitric
+description: Use the Nitric framework to easily build and deploy JVM REST APIs for AWS, Azure or GCP
+tags:
+  - API
+  - Key Value Store
+published_at: 2023-10-12
+---
+
+<Note>
+  This guide is for v0, v1 is in development. Interested in contributing or
+  chatting with us? [Get in touch!](https://nitric.io/chat)
+</Note>
+
+# Building a REST API with Nitric
+
+This guide will show you how to build a serverless REST API with the Nitric framework using a JVM language like Java or Kotlin. The example API enables reading, writing and editing basic user profile information using a Nitric [collection](/reference/jvm/v0/collection/collection) to store user data. Once the API is created we'll test it locally, then optionally deploy it to a cloud of your choice.
+
+The API will provide the following routes:
+
+| **Method** | **Route**      | **Description**                  |
+| ---------- | -------------- | -------------------------------- |
+| `GET`      | /profiles/[id] | Get a specific profile by its Id |
+| `GET`      | /profiles      | List all profiles                |
+| `POST`     | /profiles      | Create a new profile             |
+| `DELETE`   | /profiles/[id] | Delete a profile                 |
+| `PUT`      | /profiles/[id] | Update a profile                 |
+
+There is also an extended section of the guide that adds file operations using a Nitric [bucket](/storage) to store and retrieve profile pictures. The extension adds these routes to the API:
+
+| **Method** | **Route**                     | **Description**                   |
+| ---------- | ----------------------------- | --------------------------------- |
+| `GET`      | /profiles/[id]/image/upload   | Get a profile image upload URL    |
+| `GET`      | /profiles/[id]/image/download | Get a profile image download URL  |
+| `GET`      | /profiles/[id]/image/view     | View the image that is downloaded |
+
+## Prerequisites
+
+- The [Nitric CLI](/get-started/installation)
+- An [AWS](https://aws.amazon.com), [Google Cloud](https://cloud.google.com) or [Azure](https://azure.microsoft.com) account (_your choice_)
+
+## Getting started
+
+Let's start by creating a new project from a Nitric template, this will provide a base to start building the API. In this case, you can choose the Java or Kotlin starter, examples for both are provided.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```bash
+nitric new my-profile-api "official/Java - Starter (experimental)"
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```bash
+nitric new my-profile-api "official/Kotlin - Starter (experimental)"
+```
+
+</TabItem>
+
+</Tabs>
+
+Next, open the project in your editor of choice.
+
+```bash
+cd my-profile-api
+```
+
+You can delete the `common`, `hello-service`, and `goodbye-service` modules and instead structure your project similar to below (it will differ depending on Java or Kotlin):
+
+```text
+gradle/
+common/
+src/
+├── main/
+├──── java/
+├────── org/
+├──────── example/
+├────────── Main.java
+.gitignore
+build.gradle.kts
+settings.gradle.kts
+gradle.properties
+gradlew
+gradlew.bat
+README.md
+```
+
+For JVM projects, the commands `nitric up` and `nitric run` expect that your project is compiled into a [fat JAR file](https://dzone.com/articles/the-skinny-on-fat-thin-hollow-and-uber).
+
+The `build.gradle.kts` in the template project shows how to use the [shadow jar plugin](https://github.com/johnrengelman/shadow) to create fat JARs. You can then run the `gradle` task with:
+
+```bash
+./gradlew build
+```
+
+You can then the point to the compiled JARs in your handlers.
+
+```yaml title:nitric.yaml
+name: my-profile-api
+handlers:
+  - 'build/libs/*.jar'
+```
+
+## Create a Profile class
+
+We will create a class to represent the profiles that we will store in the collection.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+class Profile {
+  String name;
+  int age;
+  String homeTown;
+
+  public Profile (String name, int age, String homeTown) {
+    this.name = name;
+    this.age = age;
+    this.homeTown = homeTown;
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+data class Profile(val name: String, val age: Int, val homeTown: String)
+```
+
+</TabItem>
+
+</Tabs>
+
+## Building the API
+
+Applications built with Nitric can contain many APIs, let's start by adding one to this project to serve as the public endpoint. Delete the template code from the `Application` code and add the following code to that file.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java title:src/main/java/Application.java
+import io.nitric.Nitric;
+import io.nitric.resources.CollectionPermission;
+
+public class Application {
+  public static void main(String[] args) {
+    // Create an API named 'public'
+    var api = Nitric.INSTANCE.api("public");
+
+    // Define a collection named 'profiles', then request reading and writing permissions.
+    var profiles = Nitric.INSTANCE.collection("profiles").with(CollectionPermission.Write, CollectionPermission.Read);
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin title:src/main/kotlin/Application.kt
+import io.nitric.Nitric
+import io.nitric.resources.CollectionPermission
+
+fun main() {
+  // Create an API named 'public'
+  val api = Nitric.api("public")
+
+  // Define a collection named 'profiles', then request reading and writing permissions.
+  val profiles = Nitric.collection("profiles").with(CollectionPermission.Write, CollectionPermission.Read)
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+Here we're creating an API named `public` and collection named `profiles`, then requesting read and write permissions which allows our function to access the collection.
+
+<Note>
+  Resources in Nitric like `api` and `collection` represent high-level cloud
+  resources. When your app is deployed Nitric automatically converts these
+  requests into appropriate resources for the specific [provider](/providers).
+  Nitric also takes care of adding the IAM roles, policies, etc. that grant the
+  requested access. For example the `collection` resource uses DynamoDB in AWS
+  or FireStore on Google Cloud.
+</Note>
+
+### Create profiles with POST
+
+Let's start adding features that allow our API consumers to work with profile data.
+
+<Note>
+  You could separate some or all of these handlers into their own files if you
+  prefer. For simplicity we'll group them together in this guide.
+</Note>
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+```java
+import java.util.UUID;
+
+...
+
+profileApi.post("/profiles", (ctx) -> {
+var id = UUID.randomUUID();
+
+// Get the request JSON as a Profile object
+var profileRequest = ctx.getReq().json(Profile.class);
+
+// Store the new profile in the profiles collection
+profiles.doc(id).set(profileRequest);
+
+// Return the ID
+ctx.getResp().text(id);
+
+return ctx;
+});
+
+````
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import java.util.UUID;
+
+data class Profile(val name: String, val age: Int, val homeTown: String)
+
+...
+
+profileApi.post("/profiles") { ctx ->
+  val uuid = UUID.randomUUID()
+
+  // Get the request JSON as a Profile object
+  val profileRequest = ctx.req.json<Profile>()
+
+  // Store the new profile in the profiles collection
+  profiles.doc(id).set(profileRequest)
+
+  // Return the ID
+  ctx.resp.text(id)
+
+  ctx
+}
+````
+
+</TabItem>
+
+</Tabs>
+
+### Retrieve a profile with GET
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+profileApi.get("/profiles/:id", (ctx) -> {
+  var id = ctx.getReq().getParams().get("id");
+
+  // Retrieve and return the profile data
+  var profile = profiles.doc(id).get();
+
+  if (profile == null) {
+    ctx.getResp().setStatus(404);
+    ctx.getResp().text(String.format("Profile with id '%s' not found", id));
+    return ctx;
+  }
+
+  ctx.getResp().json(profile);
+  return ctx;
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.get("/profiles/:id") { ctx ->
+  val id = ctx.req.params["id"]
+
+  // Retrieve and return the profile data
+  val profile = profiles.doc(id!!).get()
+
+  if (profile == null) {
+    ctx.resp.status = 404
+    ctx.resp.text("Profile with id '$id' not found")
+    return@get ctx
+  }
+
+  ctx.resp.json(profile)
+  return@get ctx
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### List all profiles with GET
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+profileApi.get("/profiles", (ctx) -> {
+  var allProfiles = profiles.query().fetch();
+
+  ctx.getResp().json(allProfiles);
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.get("/profiles") { ctx ->
+  val allProfiles = profiles.query().fetch()
+
+  ctx.resp.json(allProfiles)
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Remove a profile with DELETE
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+profileApi.delete("/profiles/:id", (ctx) -> {
+  var id = ctx.getReq().getParams().get("id");
+
+  // Delete the profile
+  try {
+    profiles.doc(id).delete();
+  } catch (Error err) {
+    ctx.getResp().setStatus(404);
+    ctx.getResp().text(String.format("Profile with id '%s' not found.", id));
+  }
+
+  return ctx;
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.delete("/profiles/:id") { ctx ->
+  val id = ctx.req.params["id"]
+
+  // Delete the profile
+  try {
+    profiles.doc(id!!).delete()
+  } catch (err: Error) {
+    ctx.resp.status = 404
+    ctx.resp.text("Profile with id '$id' not found.")
+  }
+
+  ctx
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Ok, let's run this thing!
+
+Now that you have an API defined with handlers for each of its methods, it's time to test it locally.
+
+First start by running the nitric server using `nitric start`, then use `./gradlew run` to run your project.
+
+Once it starts, the application will receive requests via the API port. You can use the Local Dashboard or any HTTP client to test the API. We'll keep it running for our tests. If you want to update your functions, just save them, they'll be reloaded automatically.
+
+## Test the API
+
+Below are some example requests you can use to test the API. You'll need to update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+### Create Profile
+
+```bash
+curl --location --request POST 'http://localhost:4001/profiles' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "name": "Peter Parker",
+    "age": "21",
+    "homeTown" : "Queens"
+}'
+```
+
+### Fetch Profile
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]'
+```
+
+### Fetch All Profiles
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles'
+```
+
+### Delete Profile
+
+```bash
+curl --location --request DELETE 'http://localhost:4001/profiles/[id]'
+```
+
+## Deploy to the cloud
+
+At this point, you can deploy the application to any supported cloud provider. Start by setting up your credentials and any configuration for the cloud you prefer:
+
+- [AWS](/providers/pulumi/aws)
+- [Azure](/providers/pulumi/azure)
+- [Google Cloud](/providers/pulumi/gcp)
+
+Next, we'll need to create a `stack`. Stacks represent deployed instances of an application, including the target provider and other details such as the deployment region. You'll usually define separate stacks for each environment such as development, testing and production. For now, let's start by creating a `dev` stack.
+
+```bash
+nitric stack new
+```
+
+```
+? What should we name this stack? dev
+? Which provider do you want to deploy with? aws
+? Which region should the stack deploy to? us-east-1
+```
+
+### AWS
+
+<Note>
+  Cloud deployments incur costs and while most of these resource are available
+  with free tier pricing you should consider the costs of the deployment.
+</Note>
+
+In the previous step we called our stack `dev`, let's try deploying it with the `up` command.
+
+```bash
+nitric up
+┌───────────────────────────────────────────────────────────────┐
+| API  | Endpoint                                               |
+| main | https://XXXXXXXX.execute-api.us-east-1.amazonaws.com   |
+└───────────────────────────────────────────────────────────────┘
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your API. If you'd like to make changes to the API you can apply those changes by rerunning the `up` command. Nitric will automatically detect what's changed and just update the relevant cloud resources.
+
+When you're done testing your application you can tear it down from the cloud, use the `down` command:
+
+```bash
+nitric down
+```
+
+## Optional - Add profile image upload/download support
+
+If you want to go a bit deeper and create some other resources with Nitric, why not add images to your profiles API.
+
+### Access profile buckets with permissions
+
+Define a bucket named `profilesImg` with reading/writing permissions.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+var profilesImg = Nitric.INSTANCE.bucket("profilesImg").with(BucketPermission.Read, BucketPermission.Write);
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+val profilesImg = Nitric.bucket("profilesImg").with(BucketPermission.Read, BucketPermission.Write)
+```
+
+</TabItem>
+
+</Tabs>
+
+### Get a URL to upload a profile image
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+profileApi.get("/profiles/:id/image/upload", (ctx) -> {
+  var id = ctx.getReq().getParams().get("id");
+
+  var photoName = String.format("images/%s/photo.png", id);
+
+  // Return a signed upload URL, which provides temporary access to upload a file.
+  var photoUrl = profilesImg.file(photoName).getUploadUrl();
+
+  ctx.getResp().text(photoUrl);
+
+  return ctx;
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.get("/profiles/:id/image/upload") { ctx ->
+  val id = ctx.req.params["id"]
+
+  // Return a signed upload URL, which provides temporary access to upload a file.
+  val photoUrl = profilesImg.file("images/$id/photo.png").getUploadUrl()
+
+  ctx.resp.text(photoUrl)
+
+  ctx
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Get a URL to download a profile image
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+profileApi.get("/profiles/:id/image/download", (ctx) -> {
+  var id = ctx.getReq().getParams().get("id");
+
+  var photoName = String.format("images/%s/photo.png", id);
+
+  // Return a signed upload URL, which provides temporary access to download a file.
+  var photoUrl = profilesImg.file(photoName).getDownloadUrl();
+
+  ctx.getResp().text(photoUrl);
+
+  return ctx;
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.get("/profiles/:id/image/download") { ctx ->
+  val id = ctx.req.params["id"]
+
+  // Return a signed upload URL, which provides temporary access to download a file.
+  val photoUrl = profilesImg.file("images/$id/photo.png").getDownloadUrl()
+
+  ctx.resp.text(photoUrl)
+
+  ctx
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+You can also return a redirect response that takes the HTTP client directly to the photo URL.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import java.util.Map;
+import java.util.List;
+
+...
+
+profileApi.get("/profiles/:id/image/download", (ctx) -> {
+  var id = ctx.getReq().getParams().get("id");
+
+  var photoName = String.format("images/%s/photo.png", id);
+
+  // Redirect to a signed read-only file URL.
+  var photoUrl = profilesImg.file(photoName).getDownloadUrl();
+
+  ctx.getResp().setStatus(303);
+  ctx.getResp().setHeaders(Map.of("Location", List.of(photoUrl)));
+
+  return ctx;
+});
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+profileApi.get("/profiles/:id/image/download") { ctx ->
+  val id = ctx.req.params["id"]
+
+  // Redirect to a signed read-only file URL.
+  val photoUrl = profilesImg.file("images/$id/photo.png").getDownloadUrl()
+
+  ctx.resp.status = 303
+  ctx.resp.headers["Location"] = listOf(photoUrl)
+
+  ctx
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+#### Test the extended API
+
+Update all values in brackets `[]` and change the URL to your deployed URL if you're testing on the cloud.
+
+#### Get an image upload URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/upload'
+```
+
+#### Using the upload URL with curl
+
+```bash
+curl --location --request PUT '[url]' \
+--header 'content-type: image/png' \
+--data-binary '@/home/user/Pictures/photo.png'
+
+```
+
+#### Get an image download URL
+
+```bash
+curl --location --request GET 'http://localhost:4001/profiles/[id]/image/download'
+```

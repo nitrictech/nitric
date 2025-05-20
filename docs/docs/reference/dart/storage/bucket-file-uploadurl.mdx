@@ -1,0 +1,50 @@
+---
+description: "Reference for Nitric's Dart library - Get an upload URL for a file from a bucket."
+---
+
+# Dart - bucket.file.getUploadUrl()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about
+  Storage and Buckets in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create an upload URL for a file within a bucket.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("assets").allow([
+  BucketPermission.write,
+]);
+
+final photo = assets.file("images/logo.png");
+
+// Create a write-only url reference for uploading
+final uploadUrl = await logo.getUploadUrl(expiry: 300);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" optional type="int">
+    Seconds until link expiry. Defaults to `600`, Maximum of `604800` (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a temporary file upload link for a user
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final assets = Nitric.bucket("uploads").allow([
+  BucketPermission.write,
+]);
+
+final photo = assets.file("images/logo.png");
+
+// Create a write-only url reference for uploading
+final uploadUrl = await logo.getUploadUrl(expiry: 300);
+```

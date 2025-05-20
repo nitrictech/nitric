@@ -1,0 +1,147 @@
+---
+description: "Reference for Nitric's v0 .NET library - Register a handler for connections, disconnections, or messages for the websocket."
+---
+
+# .NET - Websocket.On()
+
+Register a handler for connections, disconnections, or messages for the websocket.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Function;
+
+var websocket = Nitric.Websocket("public");
+
+websocket.On(WebsocketEventType.Connected, ctx => {
+  // handle connections
+  return ctx;
+});
+
+websocket.On(WebsocketEventType.Disconnected, ctx => {
+  // handle disconnections
+  return ctx;
+});
+
+websocket.On(WebsocketEventType.Message, ctx => {
+  // handle message
+  return ctx;
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="eventType" required type="WebsocketEventType">
+    The type of websocket event to listen for. Can be `Connected`,
+    `Disconnected`, or `Message`.
+  </Property>
+  <Property name="middleware" required type="WebsocketMiddleware">
+    The middleware function to use as the handler for Websocket events.
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for message events
+
+Messages can be read as literal strings using `ctx.Req.Message()`.
+
+```csharp
+websocket.On(WebsocketEventType.Message, ctx => {
+    var message = ctx.Req.Message();
+
+    Console.WriteLine($"New Message from {ctx.Req.ConnectionId}: {message}");
+
+    return ctx;
+});
+```
+
+Or they can be serialized to a class type using `ctx.Req.Message<ClassName>()`.
+
+```csharp
+class EventUpdate
+{
+    public float Status { get; set; }
+    public string Content { get; set; }
+}
+
+websocket.On(WebsocketEventType.Message, ctx => {
+    var message = ctx.Req.Message<EventUpdate>();
+
+    Console.WriteLine($"Status: {message.Status}, Message: {message.Content}")
+
+    return ctx;
+});
+```
+
+### Manage Websocket connections
+
+To store Websocket connections you can use a Nitric collection.
+
+```csharp
+using System;
+using Nitric.Sdk.Function;
+using Nitric.Sdk.Resource;
+
+class OpenConnection
+{
+    public string Id { get; set; }
+    public Dictionary<string, string> Metadata { get; set; }
+}
+
+var websocket = Nitric.Websocket("public");
+
+var collections = Nitric.Collection<OpenConnection>("connections").With(
+    CollectionPermission.Writing, CollectionPermission.Deleting
+);
+
+websocket.On(WebsocketEventType.Connected, ctx =>
+{
+    collections.Doc(ctx.Req.ConnectionId).Set(new OpenConnection
+    {
+        Id = ctx.Req.ConnectionId,
+        Metadata = new Dictionary<string, string> { } // store any metadata related to the connection here
+    });
+    return ctx;
+});
+
+websocket.On(WebsocketEventType.Disconnected, ctx =>
+{
+    collections.Doc(ctx.Req.ConnectionId).Delete();
+    return ctx;
+});
+
+Nitric.Run();
+```
+
+### Chain functions as a single method handler
+
+```csharp
+using System;
+using Nitric.Sdk.Function;
+
+class Application
+{
+    static WebsocketContext ValidateRequest(WebsocketContext ctx, Func<WebsocketContext, WebsocketContext> next)
+    {
+        // Validate Request
+        return next(ctx);
+    }
+
+    static WebsocketContext HandleRequest(WebsocketContext ctx, Func<WebsocketContext, WebsocketContext> next)
+    {
+        // Handle Request
+        return next(ctx);
+    }
+
+    public static void Main(string[] args) {
+        var websocket = Nitric.Websocket("public");
+
+        websocket.On(WebsocketNotificationType.Message, ValidateRequest, HandleRequest);
+
+        Nitric.Run();
+    }
+}
+```

@@ -1,0 +1,112 @@
+---
+description: "Reference for Nitric's v0 Go library - Fetch paged results from a query."
+---
+
+# Go - Collection.Query.Fetch()
+
+Retrieve a page of results for a query. This is an alternative to [Collection.Query.Stream()](./collection-query-stream)
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading, nitric.CollectionWriting, nitric.CollectionDeleting)
+  if err != nil {
+    return
+  }
+
+  result, err := profiles.Query().Fetch(context.TODO())
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+## Examples
+
+### Paging through results from a query
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading, nitric.CollectionWriting, nitric.CollectionDeleting)
+  if err != nil {
+    return
+  }
+
+  result, err := profiles.Query().Fetch(context.TODO())
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  query := profiles.Query()
+
+  ctx := context.TODO()
+
+  results, err := query.Fetch(ctx)
+  if err != nil {
+    return
+  }
+
+  for len(results.Documents) > 0 || results.PagingToken != nil {
+    for _, doc := range results.Documents {
+      fmt.Println(doc)
+    }
+
+    if results.PagingToken != nil {
+      results, err = query.FromPagingToken(results.PagingToken).Fetch(ctx)
+      if err != nil {
+        fmt.Println(err)
+        return
+      }
+    }
+  }
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Query().Where()](./collection-query-where)
+- [Query().Limit()](./collection-query-limit)
+- [Query().PagingFrom()](./collection-query-pagingfrom

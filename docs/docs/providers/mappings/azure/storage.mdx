@@ -1,0 +1,26 @@
+---
+description: 'How Nitric deploys Storage with Azure'
+---
+
+# Azure Resources - Storage
+
+Nitric Storage are deployed to Azure using [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/).
+
+## Azure Resources
+
+The following resources are created when deploying Storage to Azure:
+
+- Blob Container
+- Azure Resource Group
+
+## Deployment
+
+<Note>
+  Note: Azure Storage 'Containers' are synonymous with 'Buckets' in other cloud
+  platforms.
+</Note>
+
+During deployment the Nitric CLI creates your Storage Containers:
+
+- Each Bucket declaration in your services are deployed as a Blob Container in Azure
+- Container Apps are configured to enable access to Storage Containers

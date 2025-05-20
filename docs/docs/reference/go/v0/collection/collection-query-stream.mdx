@@ -1,0 +1,81 @@
+---
+description: "Reference for Nitric's v0 Go library - Process query results as a stream"
+---
+
+# Go - Collection.Query.Stream()
+
+Process query results as a stream.
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  stream, err := profiles.Query().Stream(context.TODO())
+  if err != nil {
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+</Properties>
+
+## Examples
+
+### Streaming results from a query
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  stream, err := profiles.Query().Stream(context.TODO())
+  if err != nil {
+    return
+  }
+
+  for {
+    res, err := stream.Next()
+    if err != nil {
+      fmt.Println("finished processing with: %w", err)
+      break
+    }
+
+    fmt.Println(res.Content())
+  }
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Query().Where()](./collection-query-where)
+- [Query().Limit()](./collection-query-limit)
+- [Query().PagingFrom()](./collection-query-pagingfrom)

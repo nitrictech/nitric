@@ -1,0 +1,38 @@
+---
+description: "Reference for Nitric's v0 Python library - Read the contents of a file from a bucket."
+---
+
+# Python - bucket.file.read()
+
+Read a file from a bucket.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+# Create a reference to an 'assets' bucket with permissions to read
+assets = bucket('assets').allow('reading')
+
+logo = assets.file('images/logo.png')
+
+logo_data = await logo.read()
+
+Nitric.run()
+```
+
+## Examples
+
+### Read a file
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('reading')
+
+logo = assets.file('images/logo.png')
+
+logo_data = await logo.read()
+
+Nitric.run()
+```

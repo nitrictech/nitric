@@ -1,0 +1,112 @@
+---
+description: 'Extend the Nitric AWS S3 Terraform provider to add server-side encryption'
+tags:
+  - AWS
+  - Terraform
+  - Customize Nitric
+published_at: 2024-07-26
+---
+
+# Add server-side encryption
+
+Server-side encryption (SSE) in Amazon S3 automatically encrypts data when it is written to the storage service and decrypts it when accessed, providing robust data protection, compliance with regulatory requirements, and ease of management.
+
+<Note>
+  Server-side encryption with Amazon S3 managed keys (SSE-S3) is free. Other
+  encryption options may incur costs. Amazon offers pricing details on their
+  [pricing page](https://aws.amazon.com/s3/pricing/).
+</Note>
+
+## What we'll be doing
+
+1. Review the existing module
+2. Configure server-side encryption (SSE)
+
+## Review the existing module
+
+Start by cloning the [Nitric repository](https://github.com/nitrictech/nitric), then examine how the Terrraform provider [provisions an S3 bucket](https://github.com/nitrictech/nitric/tree/main/cloud/aws/deploytf/.nitric/modules/bucket).
+
+```bash
+git clone https://github.com/nitrictech/nitric
+cd nitric
+```
+
+The AWS S3 module in the default Terraform provider performs the following tasks:
+
+1. Creates a unique ID for the S3 bucket to ensure unique naming.
+2. Provisions an S3 bucket with a unique name using the generated ID.
+3. Tags the bucket for identification.
+4. Grants S3 permission to invoke specified Lambda functions.
+5. Configures S3 bucket notifications to trigger Lambda functions based on specified events using dynamic blocks.
+
+To begin our customization, we will start adding configuration to this module.
+
+## Add server-side encryption (SSE)
+
+Add the following at the end of `aws/deploytf/.nitric/modules/bucket/main.tf`:
+
+```hcl title:aws/deploytf/.nitric/modules/bucket/main.tf
+# AWS S3 bucket server-side encryption configuration
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption" {
+  bucket = aws_s3_bucket.bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+```
+
+<Note>
+  Full documentation can be found on the [Terraform
+  registry](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration).
+</Note>
+
+## Build and use your modified provider
+
+The Nitric project includes a make file that will build and install your provider as `nitric/awstf@0.0.1` by default.
+
+Navigate to `nitric/cloud/aws` and run `make install` to build and install the modified provider binary.
+
+```bash
+cd nitric/cloud/aws
+
+make install
+```
+
+The provider can then be used directly in your project's stack file as follows.
+
+```yaml
+# The nitric provider to use
+provider: nitric/awstf@0.0.1
+
+# The target aws region to deploy to
+region: us-east-2
+```
+
+<Note>
+  If you don't have a stack file use `nitric stack new` to create one.
+</Note>
+
+You can generate the Terraform project as usual by running the `nitric up` command:
+
+```bash
+nitric up
+```
+
+To deploy the application using Terraform, you can navigate into your Terraform stack directory and use the standard Terraform commands:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+Finally, log into the [AWS console](https://us-east-1.console.aws.amazon.com/s3/buckets?region=us-east-2) to verify the encryption configuration was applied.
+
+<img
+  src="/docs/images/guides/s3-encryption/encrypt.png"
+  className="rounded"
+  alt="aws console s3 management for replication."
+/>

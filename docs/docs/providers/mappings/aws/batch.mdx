@@ -1,0 +1,29 @@
+---
+description: 'How Nitric deploys Batch Jobs to AWS'
+---
+
+# AWS Resources - Batch
+
+Nitric Batch Jobs are deployed to AWS using [AWS Batch](https://aws.amazon.com/batch/).
+
+## AWS Resources
+
+The following resources are created when deploying Batch Jobs to AWS:
+
+- AWS Batch Compute Environments
+- AWS Batch Job Queues
+- AWS Batch Job Definitions
+- EC2 Instances
+- EC2 Security Groups
+- ECR Images
+- IAM Policies
+
+## Deployment
+
+During deployment the Nitric CLI deploys your batch jobs:
+
+- Built container images are pushed to the [Amazon Elastic Container Registry](https://aws.amazon.com/ecr/) as private images
+- Files referenced by the `batch-services` key in the `nitric.yaml` file are built into Job Definitions
+- IAM roles and policies are created
+- AWS Batch Compute Environments are created
+- AWS Batch Job Queues are created

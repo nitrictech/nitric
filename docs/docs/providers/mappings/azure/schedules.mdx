@@ -1,0 +1,25 @@
+---
+description: 'How Nitric deploys Schedules to Azure'
+---
+
+# Azure Resources - Schedules
+
+Nitric schedules are deployed to Azure using a [Dapr schedule binding](https://docs.dapr.io/reference/components-reference/supported-bindings/cron/).
+
+## Azure Resources
+
+The following resources are created when deploying Schedules to Azure:
+
+- Schedule Dapr Binding
+- Container App
+
+## Deployment
+
+During deployment, your schedules will be provisioned as follows:
+
+- A dapr schedule binding will be configured for the container app.
+
+<Note>
+  A minimum replication of 1 is set to the container app as there must be an
+  active instance to receive events.
+</Note>

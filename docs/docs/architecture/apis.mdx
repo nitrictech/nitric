@@ -1,0 +1,177 @@
+---
+description: 'Learn how Nitric provisions and manages APIs across AWS, GCP, and Azure using Terraform and Pulumi.'
+---
+
+# APIs
+
+## 1. System Context
+
+**Developers** use Nitric to define required APIs and routes/methods within their application.
+
+- App code uses the [API resource](/apis) to define APIs and their routes/methods.
+- Developers define the API(s) their application requires, including the specifications and implement logic to handle HTTP requests.
+- Authentication, authorization, and middleware can be added to API routes to secure and enhance functionality.
+
+**Operations** use default or overridden IaC (e.g Terraform modules) to provision the necessary resources for their target cloud(s), such as API Gateways.
+
+<details>
+  <summary>Example AWS Provider</summary>
+
+- **AWS API Gateway v2** serves as the HTTP API management service.
+- **AWS Lambda** functions are deployed to handle API requests.
+- **AWS IAM** (automated using IaC) provides roles and policies for secure interaction between API Gateway and Lambda functions.
+- **AWS ACM** manages TLS certificates for custom domain names.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    App["nitric up"]
+    APIGateway["AWS API Gateway v2<br>(HTTP API)"]
+    Lambda["AWS Lambda Functions"]
+    IAM["AWS IAM"]
+    ACM["AWS ACM<br>(Certificates)"]
+
+    Developer -->|Define API| App
+    Operations -->|Terraform| App
+    App -->|Create API Gateway| APIGateway
+    App -->|Deploy Lambda Functions| Lambda
+    App -->|Configure Permissions| IAM
+    APIGateway -->|Invoke| Lambda
+    ACM -->|Provide Certificates| APIGateway
+    IAM -->|Manage Access| APIGateway
+    App -->ACM
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+<details>
+  <summary>Example GCP Provider</summary>
+
+- **Google API Gateway** serves as the HTTP API management service, routing requests to backend services.
+- **Google Cloud Run** services are deployed to handle API requests with serverless execution.
+- **Google IAM** provides roles and policies to secure interactions between API Gateway, Cloud Run, and other GCP services.
+- **Certificates** (Google-managed or custom) ensure secure HTTPS communication for custom domain names.
+- **Google Service Account** is created and configured to allow API Gateway to invoke the Cloud Run backend securely.
+
+```mermaid
+flowchart TD
+    Developer["Developer"]
+    Operations["Operations"]
+    App["nitric up"]
+    APIGateway["Google API Gateway"]
+    CloudRun["Google Cloud Run"]
+    IAM["Google IAM"]
+    Certificates["Certificates<br>(Google Managed or Custom)"]
+    ServiceAccount["Google Service Account"]
+
+    Developer -->|Define API| App
+    Operations -->|Terraform| App
+    App -->|Create API Gateway| APIGateway
+    App -->|Deploy Cloud Run Services| CloudRun
+    App -->|Configure Permissions| IAM
+    APIGateway -->|Invoke| CloudRun
+    Certificates -->|Provide Certificates| APIGateway
+    IAM -->|Manage Access| APIGateway
+    App -->ServiceAccount
+    App -->Certificates
+
+classDef default line-height:1;
+classDef edgeLabel line-height:2;
+```
+
+</details>
+
+## 2. Sequence
+
+### Build Sequence
+
+Here is the sequence of events that occur when a developer registers an API with Nitric, including the registration of routes, security, and middleware.
+
+```mermaid
+sequenceDiagram
+  participant Worker as App Worker(s)
+  participant SDK as Nitric SDK
+  participant Nitric as Nitric CLI
+  participant Provider as Nitric Provider <br> (plugin)
+  participant IAC as IaC <br> (e.g. Terraform)
+
+  Worker->>SDK: Register API(s)
+  SDK->>Nitric: Register API(s)
+
+  opt Authentication
+    Worker->>SDK: Register Security
+    SDK->>Nitric: Register Security
+  end
+
+  Worker->>SDK: Register Route Callback(s)
+  SDK->>Nitric: Register Route(s)
+  Worker->>SDK: Register Middleware(s)
+
+  Nitric->>Nitric: Generate OpenAPI Spec
+  Nitric->>Provider: Forward Nitric Spec
+  Provider->>IAC: Provision API Gateway
+  Provider->>IAC: Provision IAM
+```
+
+### Runtime Sequence
+
+Here is the sequence of events that occur at runtime when a client makes an HTTP request to an API registered and deployed using Nitric.
+
+```mermaid
+sequenceDiagram
+  participant Client as Client
+  participant APIGateway as API Gateway <br> (e.g. AWS API Gateway)
+  participant Auth as Auth Provider
+  participant Nitric as Nitric Runtime <br> (plugin)
+  participant SDK as Nitric SDK
+  participant Worker as App Worker
+
+  Client->>APIGateway: HTTP Request
+  opt Authentication
+    APIGateway->>Auth: Verify Token
+    APIGateway-->>Client: Unauthorized
+  end
+  APIGateway->>Nitric: Forward Request
+  Nitric->>Nitric: Convert Request Format
+  Nitric->>SDK: Route HTTP Event
+  SDK->>Worker: Execute Route Callback
+
+  Worker->>Worker: Process Request
+  Worker-->>Client: Response
+```
+
+## 3. Component
+
+### API Module
+
+- Dynamically creates and manages API gateways to expose application functionality through HTTP endpoints and routes.
+- Configures API properties, including protocol type, API specifications (e.g., OpenAPI), and metadata for identification and lifecycle management.
+- Provisions and associates backend integrations with API routes, supporting multiple targets such as serverless functions, containers, or application services.
+- Automates the setup of custom domain names with secure certificates, abstracting provider-specific configurations for HTTPS communication.
+- Grants least privilege permissions to enable secure communication between the API gateway and backend services, ensuring robust security practices.
+- Supports versioning and staging of APIs, enabling seamless updates and rollbacks without disrupting existing deployments.
+- Abstracts the complexities of cloud-native API gateway services, providing a unified interface for developing and deploying HTTP APIs across different providers.
+
+## 4. Code
+
+**Developers** write application code that uses the [API resource](/apis) from the SDK, defining the APIs routes, methods, middleware and auth.
+
+SDK Reference by language:
+
+- [NodeJS SDK](/reference/nodejs/api/api)
+- [Python SDK](/reference/python/api/api)
+- [Go SDK](/reference/go/api/api)
+- [Dart SDK](/reference/dart/api/api)
+
+**Operations** will use or extend the Nitric infrastructure modules, including both Terraform and Pulumi:
+
+- Terraform Modules:
+  - [AWS API Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploytf/.nitric/modules/api/main.tf)
+  - [GCP API Terraform Module](https://github.com/nitrictech/nitric/blob/main/cloud/gcp/deploytf/.nitric/modules/api/main.tf)
+- Pulumi Modules:
+  - [AWS API Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/api.go)
+  - [GCP API Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/gcp/deploy/api.go)
+  - [Azure API Pulumi Module](https://github.com/nitrictech/nitric/blob/main/cloud/azure/deploy/api.go)

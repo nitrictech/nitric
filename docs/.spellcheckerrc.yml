@@ -1,0 +1,15 @@
+files:
+  - 'docs/**/*.{md,mdx}'
+dictionaries:
+  - dictionary.txt
+quiet: true
+language: en-US
+frontmatter-keys:
+  - description
+  - title_seo
+plugins:
+  - spell
+  - syntax-urls
+  - syntax-mentions
+  - repeated-words
+  - frontmatter

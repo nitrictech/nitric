@@ -1,0 +1,31 @@
+---
+description: "Reference for Nitric's v0 .NET library - Limit the number of results returned by a query."
+---
+
+# .NET - Collection.Query.Limit()
+
+Limit the number of results returned by a query.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Resources;
+
+var profiles = Nitric.Collection<Profile>("profiles").With(CollectionPermission.Reading);
+
+var profileQuery = profiles.Query().Limit(10);
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="limit" required type="int">
+    The limit to apply to the query.
+  </Property>
+</Properties>
+
+### See also
+
+- [Query.PagingFrom()](./collection-query-pagingfrom)
+- [Query.Where()](./collection-query-where)

@@ -1,0 +1,206 @@
+---
+description: 'How to work with Nitric SQL Databases using PostgreSQL'
+tags:
+  - Databases & CMS
+languages:
+  - typescript
+  - javascript
+published_at: 2025-04-03
+---
+
+# Nitric SQL Databases with PostgreSQL
+
+This guide demonstrates how to use PostgreSQL with Nitric's [SQL database](/sql) feature. We will be creating a simple to-do app. The finished source can be found [here](https://github.com/nitrictech/examples/tree/main/v1/nitric-pgsql).
+
+<Note>SQL databases are currently in preview and only support PostgreSQL.</Note>
+
+## Create a new Nitric project
+
+The first step is to create a new Nitric TypeScript project using the [Nitric CLI](/reference/cli).
+
+```bash
+nitric new todo-app ts-starter
+```
+
+## Enabling SQL databases
+
+SQL databases are currently in Preview. To enable this feature in your project, add the following to your `nitric.yaml` file:
+
+```yaml title: nitric.yaml
+preview:
+  - sql-databases
+```
+
+## Add a PostgreSQL client
+
+In this guide, we'll use the [node-postgres](https://github.com/brianc/node-postgres) library, but feel free to use another client of your choice and adjust the steps accordingly.
+
+```bash
+npm install pg
+```
+
+## Create a Nitric SQL Database and Connect to it
+
+Use Nitric’s `sql` feature to create a new SQL database, then use `.connectionString()` and the `pg` library to connect to it.
+
+```ts title: resources/db.ts
+import { sql } from '@nitric/sdk'
+import { Client } from 'pg'
+
+const db = sql('todo-db', {
+  migrations: 'file://migrations/todos',
+})
+
+let client: Client
+
+const getClient = async () => {
+  if (!client) {
+    const connectionString = await db.connectionString()
+    client = new Client({ connectionString })
+    await client.connect()
+  }
+  return client
+}
+
+export default getClient
+```
+
+## Database Migrations
+
+Create a migration file to define the `todos` table.
+
+```sql title: migrations/todos/1_create_table.up.sql
+CREATE TABLE IF NOT EXISTS todos (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    done BOOLEAN DEFAULT FALSE
+);
+```
+
+## Developing the API
+
+### Building the API
+
+Delete the `services/hello.ts` file and create a new one called `todos.ts`, which will contain our API endpoints.
+
+```ts title: services/todos.ts
+import { api } from '@nitric/sdk'
+import getClient from '../resources/db'
+
+const mainApi = api('main')
+
+// Fetch all todos
+mainApi.get('/todos', async (ctx) => {
+  const client = await getClient()
+  const result = await client.query('SELECT * FROM todos ORDER BY id ASC')
+  return ctx.res.json(result.rows)
+})
+
+// Insert a new todo
+mainApi.post('/todos/', async (ctx) => {
+  const { content } = ctx.req.json()
+  const client = await getClient()
+  await client.query('INSERT INTO todos (content, done) VALUES ($1, $2)', [
+    content,
+    false,
+  ])
+})
+
+// Update content of a todo
+mainApi.patch('/todos/:id', async (ctx) => {
+  const { id } = ctx.req.params
+  const { content } = ctx.req.json()
+  const client = await getClient()
+  await client.query('UPDATE todos SET content = $1 WHERE id = $2', [
+    content,
+    parseInt(id),
+  ])
+})
+
+// Toggle todo completion status
+mainApi.patch('/todos/:id/toggle', async (ctx) => {
+  const { id } = ctx.req.params
+  const client = await getClient()
+
+  await client.query('UPDATE todos SET done = NOT done WHERE id = $1', [
+    parseInt(id),
+  ])
+})
+
+// Delete a todo
+mainApi.delete('/todos/:id', async (ctx) => {
+  const { id } = ctx.req.params
+  const client = await getClient()
+  await client.query('DELETE FROM todos WHERE id = $1', [parseInt(id)])
+})
+```
+
+### Start testing with `nitric start`
+
+Run `nitric start` to start your local database and APIs.
+
+```bash
+nitric start
+```
+
+Using the dashboard, apply your migrations from the databases tab to initialize your local db.
+
+![Apply migrations](/docs/images/guides/nitric-and-pgsql/step-1.png)
+
+### Add some todos using the Nitric dashboard
+
+Open the local dashboard at <a target="_blank" href="http://localhost:49152">localhost:49152</a>, then navigate to the `POST /todos` endpoint and add some content to the body of the request, stating the `content` key and value of the todo task and click send.
+
+![Add text content for the todo](/docs/images/guides/nitric-and-pgsql/step-2.png)
+
+Let's check our todo got created by calling the `GET /todos` endpoint, which will list all todos.
+
+![Check that our todo get created](/docs/images/guides/nitric-and-pgsql/step-3.png)
+
+Let's toggle our todo as done, navigate to the `PATCH /todos/{id}/toggle` and enter the correct `id` to toggle.
+
+![Toggle our todo as done](/docs/images/guides/nitric-and-pgsql/step-4.png)
+
+Finally, let's check our todo got toggled to done by calling the `GET /todos` endpoint.
+
+![View the todo change](/docs/images/guides/nitric-and-pgsql/step-5.png)
+
+Feel free to test the other endpoints to update or delete the todo items.
+
+## Deploying to AWS
+
+### Create your stack
+
+Create an AWS stack called `aws-staging` for your staging environment.
+
+```bash
+nitric stack new aws-staging aws
+```
+
+Inside the stack file, ensure you set your `region`.
+
+```yaml title:nitric.dev.yaml
+provider: nitric/aws@latest
+region: us-east-2
+```
+
+### Deploy
+
+Deploy to AWS using the `nitric up` command. Ensure you have set up your [AWS credentials](/providers/pulumi/aws#usage) correctly.
+
+```bash
+nitric up
+```
+
+### Tear down
+
+To avoid unwanted costs of running your test app, you can tear down the stack using the `nitric down` command.
+
+```bash
+nitric down
+```
+
+### Prefer to use an ORM? We also have these guides:
+
+- [Nitric SQL with Drizzle](./nitric-and-drizzle).
+- [Nitric SQL with Prisma](./nitric-and-prisma).

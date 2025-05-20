@@ -1,0 +1,1320 @@
+---
+description: 'Building HTTP APIs with Nitric'
+---
+
+# APIs
+
+Nitric has built-in support for web apps and HTTP API development. The `api` resource allows you to create APIs in your applications, including routing, middleware and request handlers.
+
+If you're interested in the architecture, provisioning, or deployment steps, they can be found [here](/architecture/apis).
+
+## Creating APIs
+
+Nitric allows you define named APIs, each with their own routes, middleware, handlers and security.
+
+Here's an example of how to create a new API with Nitric:
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api } from '@nitric/sdk'
+
+// each API needs a unique name
+const galaxyApi = api('far-away-galaxy-api')
+
+galaxyApi.get('/moon', async ({ req, res }) => {
+  res.body = "that's no moon, it's a space station."
+})
+```
+
+```typescript !!
+import { api } from '@nitric/sdk'
+
+// each API needs a unique name
+const galaxyApi = api('far-away-galaxy-api')
+
+galaxyApi.get('/moon', async ({ req, res }) => {
+  res.body = "that's no moon, it's a space station."
+})
+```
+
+```python !!
+from nitric.resources import api
+from nitric.application import Nitric
+
+# each API needs a unique name
+galaxy_api = api('far-away-galaxy-api')
+
+@galaxy_api.get("/moon")
+async def get_moon(ctx):
+  ctx.res.body = "that's no moon, it's a space station."
+
+Nitric.run()
+```
+
+```go !!
+package main
+
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  galaxyApi := nitric.NewApi("far-away-galaxy-api")
+  galaxyApi.Get("/moon", func(ctx *apis.Ctx) {
+    ctx.Response.Body = []byte("that's no moon, it's a space station.")
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+// each API needs a unique name
+final galaxyApi = Nitric.api("far-away-galaxy-api");
+
+galaxyApi.get("/moon", (ctx) async {
+  ctx.res.body = "that's no moon, it's a space station.";
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+## Routing
+
+You can define routes and handler services for incoming requests using methods on your API objects.
+
+For example, you can declare a route that handles `POST` requests using the `post()` method. When declaring routes you provide the path to match and a callback that will serve as the handler for matching requests.
+
+<Note>
+  Depending on the language SDK, callbacks are either passed as parameters or
+  defined using decorators.
+</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { getPlanetList, createPlanet } from 'planets'
+
+galaxyApi.get('/planets', async (ctx) => {
+  ctx.res.json(getPlanetList())
+})
+
+galaxyApi.post('/planets', async (ctx) => {
+  createPlanet(ctx.req.json())
+  ctx.res.status = 201
+})
+```
+
+```typescript !!
+import { getPlanetList, createPlanet } from 'planets'
+
+galaxyApi.get('/planets', async (ctx) => {
+  ctx.res.json(getPlanetList())
+})
+
+galaxyApi.post('/planets', async (ctx) => {
+  createPlanet(ctx.req.json())
+  ctx.res.status = 201
+})
+```
+
+```python !!
+from planets import get_planets_list, create_planet
+
+@galaxy_api.get("/planets")
+async def list_planets(ctx):
+  ctx.res.body = get_planets_list()
+
+@galaxy_api.post("/planets")
+async def create_planet(ctx):
+  create_planet(ctx.req.json)
+  ctx.res.status = 201
+```
+
+```go !!
+package main
+
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  galaxyApi := nitric.NewApi("far-away-galaxy-api")
+
+  galaxyApi.Get("/planets", func(ctx *apis.Ctx) {
+    ctx.Response.Headers = map[string][]string{"Content-Type": {"application/json"}}
+    ctx.Response.Body = []byte(GetPlanetList())
+  })
+
+  galaxyApi.Post("/planets", func(ctx *apis.Ctx) {
+    CreatePlanet(ctx.Request.Data())
+    ctx.Response.Status = 201
+  })
+
+  nitric.Run()
+}
+
+```
+
+```dart !!
+import 'package:planets'
+
+galaxyApi.get("/planets", (ctx) async {
+  ctx.res.json(getPlanetList());
+
+  return ctx;
+});
+
+galaxyApi.post("/planets", (ctx) async {
+  createPlanet(ctx.req.json());
+  ctx.res.status = 201;
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+### Request Context
+
+Nitric provides callbacks with a single context object that gives you everything you need to read requests and write responses. By convention this object is typically named `ctx`.
+
+The context object includes a request `req` and response `res`, which in turn provide convenient methods for reading and writing bodies, as well as auto-extracted parameters and HTTP headers.
+
+#### Parameters
+
+The path string used to declare routes can include named parameters. The values collected from those parameters are automatically included in the context object under `ctx.req.params`.
+
+<Note>Path parameters are denoted by a colon prefix `:`</Note>
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { getPlanet } from 'planets'
+
+// create a dynamic route and extract the parameter `name`
+galaxyApi.get('/planets/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.json(getPlanet(name))
+})
+```
+
+```typescript !!
+import { getPlanet } from 'planets'
+
+// create a dynamic route and extract the parameter `name`
+galaxyApi.get('/planets/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.json(getPlanet(name))
+})
+```
+
+```python !!
+from planets import get_planet
+
+# create a dynamic route and extract the parameter `name`
+@galaxy_api.get("/planets/:name")
+async def get_planet_route(ctx):
+  name = ctx.req.params['name']
+  ctx.res.body = get_planet(name)
+```
+
+```go !!
+package main
+
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  galaxyApi := nitric.NewApi("far-away-galaxy-api")
+
+  // create a dynamic route and extract the parameter `name`
+  galaxyApi.Get("/planets/:name", func(ctx *apis.Ctx) {
+    name := ctx.Request.PathParams()["name"]
+
+    ctx.Response.Body = []byte(GetPlanet(name))
+  })
+
+  nitric.Run()
+}
+
+```
+
+```dart !!
+import 'package:planets'
+
+// create a dynamic route and extract the parameter `name`
+galaxyApi.get("/planets/:name", (ctx) async {
+  final name = ctx.req.pathParams["name"]!;
+
+  ctx.res.json(getPlanet(name));
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+#### HTTP status and headers
+
+The response object provides `status` and `headers` properties you can use to return HTTP status codes and headers.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+// return a redirect response using status 301
+galaxyApi.get('/planets/alderaan', async (ctx) => {
+  ctx.res.status = 301
+  ctx.res.headers['Location'] = ['https://example.org/debris/alderaan']
+})
+```
+
+```typescript !!
+// return a redirect response using status 301
+galaxyApi.get('/planets/alderaan', async (ctx) => {
+  ctx.res.status = 301
+  ctx.res.headers['Location'] = ['https://example.org/debris/alderaan']
+})
+```
+
+```python !!
+# return a redirect response using status 301
+@galaxy_api.get("/planets/alderaan")
+async def find_alderaan(ctx):
+  ctx.res.status = 301
+  ctx.res.headers["Location"] = "https://example.org/debris/alderaan"
+```
+
+```go !!
+// return a redirect response using status 301
+galaxyApi.Get("/planets/alderaan", func(ctx *apis.Ctx) {
+  ctx.Response.Status = 301
+  ctx.Response.Location = "https://example.org/debris/alderaan"
+})
+```
+
+```dart !!
+// return a redirect response using status 301
+galaxyApi.get("/planets/alderaan", (ctx) async {
+  ctx.res.status = 301;
+  ctx.res.headers["Location"] = ["https://example.org/debris/alderaan"];
+
+  return ctx;
+});
+```
+
+</CodeSwitcher>
+
+## API Security
+
+APIs can include security definitions for OIDC-compatible providers such as [Auth0](https://auth0.com/), [FusionAuth](https://fusionauth.io/) and [AWS Cognito](https://aws.amazon.com/cognito/).
+
+<Note>
+  Applying security at the API allows AWS, Google Cloud and Azure to reject
+  unauthenticated or unauthorized requests at the API Gateway, before invoking
+  your application code. In serverless environments this reduces costs by
+  limiting application load from unwanted or malicious requests.
+</Note>
+
+<Note>
+  Security rules are currently **not enforced** when using nitric for **local**
+  development.
+</Note>
+
+### Authentication
+
+APIs can be configured to automatically authenticate and allow or reject incoming requests. A `securityDefinitions` object can be provided, which _defines_ the authentication requirements that can later be enforced by the API.
+
+The security definition describes the kind of authentication to perform and the configuration required to perform it. For a [JWT](https://jwt.io) this configuration includes the JWT issuer and audiences.
+
+<Note>
+  Security definitions only define **available** security requirements for an
+  API, they don't automatically **apply** those requirements.
+</Note>
+
+Once a security definition is available it can be applied to the entire API or selectively to individual routes.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'default',
+  audiences: ['https://test-security-definition/'],
+  issuer: 'https://dev-abc123.us.auth0.com',
+})
+
+const secureApi = api('main', {
+  // apply the security definition to all routes in this API.
+  security: [defaultSecurityRule()],
+})
+```
+
+```typescript !!
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'default',
+  audiences: ['https://test-security-definition/'],
+  issuer: 'https://dev-abc123.us.auth0.com',
+})
+
+const secureApi = api('main', {
+  // apply the security definition to all routes in this API.
+  security: [defaultSecurityRule()],
+})
+```
+
+```python !!
+from nitric.resources import api, ApiOptions, oidc_rule
+from nitric.application import Nitric
+
+default_security_rule = oidc_rule(
+    name="default",
+    audiences=["https://test-security-definition/"],
+    issuer="https://dev-abc123.us.auth0.com",
+)
+
+secure_api = api("main", opts=ApiOptions(
+        # apply the security definition to all routes in this API.
+        security=[default_security_rule()],
+    )
+)
+
+Nitric.run()
+```
+
+```go !!
+package main
+
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  defaultSecurityRule := apis.OidcRule(
+    "default",
+    "https://dev-abc123.us.auth0.com/.well-known/openid-configuration",
+    []string{"https://test-security-definition"},
+  )
+
+  secureApi := nitric.NewApi(
+    "main",
+    apis.WithSecurity(defaultSecurityRule([]string{})),
+  )
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+// define your security definition
+final defaultSecurityRule = Nitric.oidcRule(
+  "default",
+  "https://dev-abc123.us.auth0.com",
+  ["https://test-security-definition/"]
+);
+
+final secureApi = Nitric.api(
+  "main",
+  opts: ApiOptions(
+    security: [
+      // apply the security definition to all routes in this API.
+      defaultSecurityRule([])
+    ]
+  )
+);
+```
+
+</CodeSwitcher>
+
+### Authorization
+
+In addition to authentication, Nitric APIs can also be configured to perform authorization based on scopes. Again, this can be done at the top level of the API or on individual routes.
+
+Add the required scopes to the `security` object when applying a security definition.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'default',
+  audiences: ['https://test-security-definition/'],
+  issuer: 'https://dev-abc123.us.auth0.com',
+})
+
+const secureApi = api('main', {
+  // apply the security definition to all routes in this API.
+  // add scopes to the rule to authorize
+  security: [defaultSecurityRule('user.read')],
+})
+```
+
+```typescript !!
+import { api, oidcRule } from '@nitric/sdk'
+
+const defaultSecurityRule = oidcRule({
+  name: 'default',
+  audiences: ['https://test-security-definition/'],
+  issuer: 'https://dev-abc123.us.auth0.com',
+})
+
+const secureApi = api('main', {
+  // apply the security definition to all routes in this API.
+  // add scopes to the rule to authorize
+  security: [defaultSecurityRule('user.read')],
+})
+```
+
+```python !!
+from nitric.resources import api, ApiOptions, oidc_rule
+from nitric.application import Nitric
+
+default_security_rule = oidc_rule(
+    name="default",
+    audiences=["https://test-security-definition/"],
+    issuer="https://dev-abc123.us.auth0.com",
+)
+
+secure_api = api("main", opts=ApiOptions(
+        # apply the security definition to all routes in this API.
+        security=[default_security_rule("user.read")],
+    )
+)
+
+Nitric.run()
+```
+
+```go !!
+package main
+
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  defaultSecurityRule := apis.OidcRule(
+    "default",
+    "https://dev-abc123.us.auth0.com/.well-known/openid-configuration",
+    []string{"https://test-security-definition/"},
+  )
+
+  secureApi := nitric.NewApi(
+    "main",
+    apis.WithSecurity(defaultSecurityRule([]string{"user.read"})),
+  )
+
+  nitric.Run()
+}
+
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+// define your security definition
+final defaultSecurityRule = Nitric.oidcRule(
+  "default",
+  "https://dev-abc123.us.auth0.com",
+  ["https://test-security-definition/"]
+);
+
+final secureApi = Nitric.api(
+  "main",
+  opts: ApiOptions(
+    security: [
+      // apply the security definition to all routes in this API.
+      defaultSecurityRule(["user.read"])
+    ]
+  )
+);
+```
+
+</CodeSwitcher>
+
+For an in-depth tutorial look at the [Auth0 integration guide](/guides/nodejs/secure-api-auth0)
+
+### Override API-level security
+
+Individual routes can have their own security rules which apply any available `securityDefinition`. The requirement defined on routes override any requirements previously set at the top level of the API.
+
+This allows you to selectively increase or decrease the security requirements for specific routes.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+galaxyApi.get('planets/unsecured-planet', async (ctx) => {}, {
+  // override top level security to remove security from this route
+  security: [],
+})
+
+galaxyApi.post('planets/secured-planet', async (ctx) => {}, {
+  // override top level security to require user.write scope to access
+  security: [customSecurityRule('user.write')],
+})
+```
+
+```typescript !!
+galaxyApi.get('planets/unsecured-planet', async (ctx) => {}, {
+  // override top level security to remove security from this route
+  security: [],
+})
+
+galaxyApi.post('planets/secured-planet', async (ctx) => {}, {
+  // override top level security to require user.write scope to access
+  security: [customSecurityRule('user.write')],
+})
+```
+
+```python !!
+# override top level security to remove security from this route
+@galaxy_api.get("planets/unsecured-planet", opts=MethodOptions(security=[]))
+async def get_planet(ctx):
+    pass
+
+# override top level security to require user.write scope to access
+@galaxy_api.post("planets/secured-planet", opts=MethodOptions(security=[custom_rule("user.write")]))
+async def get_planet(ctx):
+    pass
+```
+
+```go !!
+// override top level security to remove security from this route
+secureApi.Get("/planets/unsecured-planet", func(ctx *apis.Ctx) {
+	// Handle request
+}, apis.WithNoMethodSecurity())
+
+// override top level security to require user.write scope to access
+secureApi.Get("/planets/unsecured-planet", func(ctx *apis.Ctx) {
+	// Handle request
+}, apis.WithSecurity(customRule([]string{"users:write"})))
+```
+
+```dart !!
+// override top level security to remove security from this route
+galaxyApi.get("/planets/unsecured-planet", (ctx) async {
+  return ctx;
+}, security: []);
+
+// override top level security to require user.write scope to access
+galaxyApi.post("/planets/unsecured-planet", (ctx) async {
+  return ctx;
+}, security: [customRule(["user.write"])]);
+```
+
+</CodeSwitcher>
+
+## Defining Middleware
+
+Behavior that's common to several APIs or routes can be applied using middleware. Multiple middleware can also be composed to create a cascading set of steps to perform on incoming requests or outgoing responses.
+
+In most of Nitric's supported languages middleware functions look nearly identical to handlers except for an additional parameter called `next`, which is the next middleware or handler to be called in the chain. By providing each middleware the next middleware in the chain it allows them to intercept requests, response and errors to perform operations like logging, decoration, exception handling and many other common tasks.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+async function validate(ctx, next) {
+  if (!ctx.req.headers['content-type']) {
+    ctx.res.status = 400
+    ctx.res.body = 'header Content-Type is required'
+    return ctx
+  }
+  return await next(ctx)
+}
+```
+
+```typescript !!
+async function validate(ctx, next) {
+  if (!ctx.req.headers['content-type']) {
+    ctx.res.status = 400
+    ctx.res.body = 'header Content-Type is required'
+    return ctx
+  }
+  return await next(ctx)
+}
+```
+
+```python !!
+async def validate(ctx, nxt: HttpMiddleware):
+  if ctx.req.headers['content-type'] is None:
+    ctx.res.status = 400
+    ctx.res.body = "header Content-Type is required"
+    return ctx
+  return await nxt(ctx)
+```
+
+```go !!
+// Using the Go SDK we recommend using higher-order functions to define middleware
+func validate(next apis.Handler) apis.Handler {
+  return func (ctx *apis.Ctx) error {
+    if ctx.Request.Headers()["content-type"] == nil {
+      ctx.Response.Status = 400
+      ctx.Response.Body = []byte("header Content-Type is required")
+
+      return nil
+    }
+
+    return next(ctx)
+  }
+}
+```
+
+```dart !!
+Future<HttpContext> validate(HttpContext ctx) async {
+  if (!ctx.req.headers.containsKey("Content-Type")) {
+    ctx.res.status = 400;
+    ctx.res.body = "header Content-Type is required";
+
+    return ctx;
+  }
+
+  return ctx.next();
+}
+```
+
+</CodeSwitcher>
+
+### API level middleware
+
+Middleware defined at the API level will be called on every request to every route.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api } from '@nitric/sdk'
+import { validate, logRequest } from '../middleware'
+
+const customersApi = api('customers', {
+  middleware: [logRequest, validate],
+})
+```
+
+```typescript !!
+import { api } from '@nitric/sdk'
+import { validate, logRequest } from '../middleware'
+
+const customersApi = api('customers', {
+  middleware: [logRequest, validate],
+})
+```
+
+```python !!
+from nitric.resources import api, ApiOptions
+from common.middleware import validate, log_request
+from nitric.application import Nitric
+
+customers_api = api("customers", opts=ApiOptions(middleware=[log_request, validate]))
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func validate(next apis.Handler) apis.Handler {
+  return func(ctx *apis.Ctx) error {
+    if ctx.Request.Headers()["content-type"] == nil {
+      ctx.Response.Status = 400
+      ctx.Response.Body = []byte("header Content-Type is required")
+
+      return nil
+    }
+
+    return next(ctx)
+  }
+}
+
+func main() {
+  customersApi := nitric.NewApi(
+    "customers",
+    apis.WithMiddleware(validate))
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+import '../middlewares';
+
+final customersApi = Nitric.api(
+  "customers",
+  opts: ApiOptions(
+    middlewares: [logRequest, validate],
+  )
+);
+```
+
+</CodeSwitcher>
+
+### Route level middleware
+
+Middleware defined at the route level will only be called for that route.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { api } from '@nitric/sdk'
+import { validate } from '../middleware'
+
+const customersApi = api('customers')
+
+const getAllCustomers = (ctx) => {}
+
+// Inline using .get()
+customersApi.get('/customers', [validate, getAllCustomers])
+
+// Using .route()
+customersApi.route('/customers').get([validate, getAllCustomers])
+```
+
+```typescript !!
+import { api } from '@nitric/sdk'
+import { validate } from '../middleware'
+
+const customersApi = api('customers')
+
+const getAllCustomers = (ctx) => {}
+
+// Inline using .get()
+customersApi.get('/customers', [validate, getAllCustomers])
+
+// Using .route()
+customersApi.route('/customers').get([validate, getAllCustomers])
+```
+
+```python !!
+# Route level middleware currently not supported in python
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func validate(next apis.Handler) apis.Handler {
+  return func(ctx *apis.Ctx) error {
+    if ctx.Request.Headers()["content-type"] == nil {
+      ctx.Response.Status = 400
+      ctx.Response.Body = []byte("header Content-Type is required")
+
+      return nil
+    }
+
+    return next(ctx)
+  }
+}
+
+func main() {
+  customersApi := nitric.NewApi("customers")
+
+  customersApi.Get("/customers", validate(func(ctx *apis.Ctx) error {
+    // handle request
+    return nil
+  }))
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+import '../middlewares';
+
+Future<HttpContext> getAllCustomers(HttpContext ctx) async {
+  // gets the customers
+  return ctx.next();
+}
+
+final customersApi = Nitric.api("customers");
+
+// Inline using .get()
+customersApi.get("/customers", getAllCustomers, middlewares: [logRequest, validate]);
+
+// Inline using .route()
+customersApi.route("/customers", middlewares: [logRequest, validate]).get(getAllCustomers);
+```
+
+</CodeSwitcher>
+
+## Custom Domains
+
+<Note>Custom domains are currently only supported for AWS deployments.</Note>
+
+By default APIs deployed by Nitric will be assigned a domain by the target cloud provider. If you would like to deploy APIs with predefined custom domains you can specify the custom domains for each API in your project's stack files. For these domains to be successfully configured you will need to meet the prerequisites defined for each cloud provider below.
+
+<Tabs syncKey="providers">
+
+<TabItem label="AWS">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/aws@1.1.0
+region: ap-southeast-2
+
+# Add a key for configuring apis
+apis:
+  # Target an API by its nitric name
+  my-api-name:
+    # provide domains to be used for the api
+    domains:
+      - test.example.com
+```
+
+</TabItem>
+
+<TabItem label="Azure">
+
+```yaml title:nitric.prod.yaml
+# currently unsupported - request support here: https://github.com/nitrictech/nitric/issues
+```
+
+</TabItem>
+
+<TabItem label="Google Cloud">
+
+```yaml title:nitric.prod.yaml
+# currently unsupported - request support here: https://github.com/nitrictech/nitric/issues
+```
+
+</TabItem>
+
+</Tabs>
+
+## Custom Descriptions
+
+By default, APIs will not be deployed with a description. You can add a description using the following configuration in your stack file.
+
+<Tabs syncKey="providers">
+
+<TabItem label="AWS">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/aws@1.12.4
+region: ap-southeast-2
+
+# Add a key for configuring apis
+apis:
+  # Target an API by its nitric name
+  my-api-name:
+    # provide domains to be used for the api
+    description: An AWS API
+```
+
+</TabItem>
+
+<TabItem label="Azure">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/azure@1.12.4
+region: Australia East
+org: example-org
+adminemail: test@example.com
+
+apis:
+  # Target an API by its nitric name
+  my-api-name:
+    # provide domains to be used for the api
+    description: An Azure API
+```
+
+</TabItem>
+
+<TabItem label="Google Cloud">
+
+```yaml title:nitric.prod.yaml
+provider: nitric/gcp@1.12.4
+region: australia-southeast1
+
+# Add a key for configuring apis
+apis:
+  # Target an API by its nitric name
+  my-api-name:
+    # provide domains to be used for the api
+    description: A GCP API
+```
+
+</TabItem>
+
+</Tabs>
+
+### AWS Custom Domain Prerequisites
+
+To support custom domains with APIs deployed to AWS your domain (or subdomain) will need to be setup as a [hosted zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-working-with.html) in Route 53.
+
+The general steps to setup a hosted zone in Route 53 are as follows:
+
+- Navigate to Route 53 in the AWS Console
+- Select 'hosted zones' from the left navigation
+- Click 'Create hosted zone'
+- Enter your domain name and choose the 'Public hosted zone' type.
+- Click 'Create hosted zone'
+- You will now be provided with a set of NS DNS records to configure in the DNS provider for your domain
+- Create the required DNS records, then wait for the DNS changes to propagate
+
+Once this is done you will be able to use the hosted zone domain or any direct subdomain with your Nitric APIs.
+
+You can read more about how AWS suggests configuring hosted zones in their documentation on [Making Route 53 the DNS service for a domain that's in use](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-in-use.html) or [Making Route 53 the DNS service for an inactive domain](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-inactive.html)
+
+<Note>
+  If the hosted zone was `nitric.io`, `nitric.io` or `api.nitric.io` would be
+  supported for APIs, but not `public.api.nitric.io` since that is a subdomain
+  of a subdomain.
+</Note>
+
+<Note>
+  DNS propagation of the NS records can take a few seconds to a few hours due to
+  the nature of DNS.
+</Note>
+
+If you're more of a visual learner, below is a video that walks through how to set up your custom domains.
+
+<div>
+  <div className="video-container">
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/p9DjYSgQblo"
+      title="Custom Domains with Cloud Deployed APIs"
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+    />
+  </div>
+</div>
+
+## Serving from multiple files
+
+Nitric APIs are scoped to the project and can be referenced from multiple `services`. This allows you to choose the granularity of services that suites your project. For small projects you might have a single service that serves all routes, while in larger projects multiple services might combine to serve paths and methods for your API.
+
+### Using the same resource name
+
+Since resource names are unique across each Nitric project, you can access a resource in multiple locations by simply reusing it's name. Here's an example of services in different files serving different paths on the same API.
+
+<CodeSwitcher tabs>
+
+```javascript !! title:services/one.js
+import { api } from '@nitric/sdk'
+
+const accountsApi = api('accounts')
+
+accountsApi.get('/users/:id', async () => {
+  // your logic here
+})
+```
+
+```typescript !! title:services/one.js
+import { api } from '@nitric/sdk'
+
+const accountsApi = api('accounts')
+
+accountsApi.get('/users/:id', async () => {
+  // your logic here
+})
+```
+
+```python !! title:services/one.py
+from nitric.application import Nitric
+from nitric.context import HttpContext
+from nitric.resources import api
+
+accounts_api = api('accounts')
+
+@accounts_api.get("/users/:id")
+async def get_user(ctx: HttpContext):
+    pass # your logic here
+
+Nitric.run()
+```
+
+```go !! title:services/one/main.go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  accountsApi := nitric.NewApi("accounts")
+
+  accountsApi.Get("/users/:id", func(ctx *apis.Ctx) {
+    // your logic here
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !! title:services/one.dart
+import 'package:nitric_sdk/nitric.dart';
+
+final accountsApi = Nitric.api("accounts");
+
+galaxyApi.get("/users/:id", (ctx) async {
+  // your logic here
+});
+```
+
+</CodeSwitcher>
+
+<CodeSwitcher tabs>
+
+```javascript !! title:services/two.js
+import { api } from '@nitric/sdk'
+
+const accountsApi = api('accounts')
+
+accountsApi.get('/orgs/:id', async () => {
+  // your logic here
+})
+```
+
+```typescript !! title:services/two.ts
+import { api } from '@nitric/sdk'
+
+const accountsApi = api('accounts')
+
+accountsApi.get('/orgs/:id', async () => {
+  // your logic here
+})
+```
+
+```python !! title:services/two.py
+from nitric.application import Nitric
+from nitric.context import HttpContext
+from nitric.resources import api
+
+accounts_api = api('accounts')
+
+@accounts_api.get("/orgs/:id")
+async def get_org(ctx: HttpContext):
+    pass # your logic here
+
+Nitric.run()
+```
+
+```go !! title:services/two/main.go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  accountsApi := nitric.NewApi("accounts")
+
+  accountsApi.Get("/orgs/:id", func(ctx *apis.Ctx) {
+    // your logic here
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !! title:services/two.dart
+import 'package:nitric_sdk/nitric.dart';
+
+final accountsApi = Nitric.api("accounts");
+
+galaxyApi.get("/users/:id", (ctx) async {
+  // your logic here
+});
+```
+
+</CodeSwitcher>
+
+<Note>
+  Calling `api()` multiple times with the same name returns the same API
+  resource each time, allowing it to be referenced in multiple services.
+</Note>
+
+### Importing an existing resource
+
+While reusing a name is useful, it can lead to errors due to typos or when the configuration of the resource is complex. For this reason it's often preferable to declare the resource in a shared location and import it into the services as needed.
+
+Here is the same example enhanced to import a common API resource.
+
+<CodeSwitcher tabs>
+
+```javascript !! title:resources/index.js
+import { api } from '@nitric/sdk'
+
+export const accountsApi = api('accounts')
+```
+
+```typescript !! title:resources/index.ts
+import { api } from '@nitric/sdk'
+
+export const accountsApi = api('accounts')
+```
+
+```python !! title:common/resources.py
+from nitric.resources import api
+
+accounts_api = api('accounts')
+```
+
+```go !! title:resources/main.go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+var AccountsApi apis.Api
+
+func init() {
+  accountsApi := nitric.NewApi("accounts")
+  AccountsApi = accountsApi
+}
+```
+
+```dart !! title:common/resources.dart
+import 'package:nitric_sdk/nitric.dart';
+
+final accountsApi = Nitric.api("accounts");
+```
+
+</CodeSwitcher>
+
+<CodeSwitcher tabs>
+
+```javascript !! title:services/one.js
+import { accountsApi } from '../resources'
+
+accountsApi.get('/users/:id', async () => {
+  // your logic here
+})
+```
+
+```typescript !! title:services/one.ts
+import { accountsApi } from '../resources'
+
+accountsApi.get('/users/:id', async () => {
+  // your logic here
+})
+```
+
+```python !! title:services/one.py
+from nitric.application import Nitric
+from nitric.context import HttpContext
+from common.resources import accounts_api
+
+
+@accounts_api.get("/users/:id")
+async def get_user(ctx: HttpContext):
+    pass # your logic here
+
+Nitric.run()
+```
+
+```go !! title:services/one/main.go
+package main
+
+import (
+  "your/resources"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  resources.AccountsApi.Get("/users/:id", func(ctx *apis.Ctx) {
+    // your logic here
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !! title:services/one.dart
+import '../resources';
+
+accountsApi.get("/users/:id", (ctx) async {
+  // your logic here
+});
+```
+
+</CodeSwitcher>
+
+<CodeSwitcher tabs>
+
+```javascript !! title:services/two.js
+import { accountsApi } from '../resources'
+
+accountsApi.get('/orgs/:id', async () => {
+  // your logic here
+})
+```
+
+```typescript !! title:services/two.ts
+import { accountsApi } from '../resources'
+
+accountsApi.get('/orgs/:id', async () => {
+  // your logic here
+})
+```
+
+```python !! title:services/two.py
+from nitric.application import Nitric
+from nitric.context import HttpContext
+from common.resources import accounts_api
+
+
+@accounts_api.get("/orgs/:id")
+async def get_org(ctx: HttpContext):
+    pass # your logic here
+
+Nitric.run()
+```
+
+```go !! title:services/two/main.go
+package main
+
+import (
+  "your/resources"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  resources.AccountsApi.Get("/orgs/:id", func(ctx *apis.Ctx) {
+    // your logic here
+  })
+
+  nitric.Run()
+}
+```
+
+```dart !! title:services/two.dart
+import '../resources';
+
+accountsApi.get("/orgs/:id", (ctx) async {
+  // your logic here
+});
+```
+
+</CodeSwitcher>
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/apis)
+- [Azure](/providers/mappings/azure/apis)
+- [Google Cloud](/providers/mappings/gcp/apis)

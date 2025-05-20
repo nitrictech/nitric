@@ -1,0 +1,22 @@
+# Ignore build artifacts
+dist/
+build/
+out/
+
+# Exclude third-party code
+node_modules/
+vendor/
+
+# Exclude configuration files
+.eslintrc
+.eslintignore
+
+# Skip binary files
+*.png
+*.jpg
+*.gif
+
+# Exclude version control directories
+.git/
+.svn/
+.hg/

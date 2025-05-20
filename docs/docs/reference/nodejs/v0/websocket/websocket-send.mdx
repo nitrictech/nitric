@@ -1,0 +1,89 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Send a message to a connected websocket client"
+---
+
+# Node.js - websocket.send()
+
+Send a message to a connected websocket client.
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+
+/**
+ * Send a message to a connected client.
+ *
+ * @param connectionId the client received when connecting to the websocket
+ * @param message to send to the client
+ */
+const sendMessage = async (connectionId, message) => {
+  await socket.send(connectionId, message)
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="connectionId" required type="string">
+    The ID of the connection which should receive the message.
+  </Property>
+  <Property
+    name="message"
+    required
+    type="string | Uint8Array | Record<string, any>"
+  >
+    The message that should be sent to the connection.
+  </Property>
+</Properties>
+
+## Examples
+
+### Broadcasting a message to all connections.
+
+<Note>
+  Do not send messages to a connection during it's `connect` callback, if you
+  need to acknowledge connection, do so by using a [topic](../topic/topic)
+</Note>
+
+```javascript
+import { websocket, collection } from '@nitric/sdk'
+
+const socket = websocket('socket')
+const connections = collection('connections').for(
+  'reading',
+  'writing',
+  'deleting',
+)
+
+socket.on('connect', async (ctx) => {
+  await connections.doc(ctx.req.connectionId).set({
+    // store any metadata related to the connection here
+    connectionId: ctx.req.connectionId,
+  })
+})
+
+socket.on('disconnect', async (ctx) => {
+  await connections.doc(ctx.req.connectionId).delete()
+})
+
+const broadcast = async (data) => {
+  const connectionStream = connections.query().stream()
+
+  const streamEnd = new Promise()((res) => {
+    connectionStream.on('end', res)
+  })
+
+  connectionStream.on('data', async ({ content }) => {
+    // Send message to a connection
+    await socket.send(content.connectionId, data)
+  })
+
+  await streamEnd
+}
+
+socket.on('message', async (ctx) => {
+  // broadcast message to all clients (including the sender)
+  await broadcast(ctx.req.data)
+})
+```

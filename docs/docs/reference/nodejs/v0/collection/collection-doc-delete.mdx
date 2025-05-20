@@ -1,0 +1,22 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Delete a document from a collection"
+---
+
+# Node.js - collection.doc.delete()
+
+Delete a document from a collection.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('deleting')
+
+const drakesProfile = profiles.doc('Drake Mallard')
+
+await drakesProfile.delete()
+```
+
+### See also
+
+- [doc.set()](./collection-doc-set)
+- [doc.get()](./collection-doc-get)

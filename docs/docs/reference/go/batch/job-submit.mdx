@@ -1,0 +1,62 @@
+---
+description: "Reference for Nitric's Go library - Submit a batch job request with the Nitric Go SDK"
+---
+
+# Go - Job.Submit()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Batch
+  Services in Nitric start with the [Batch Services docs](/batch).
+</Note>
+
+Jobs may be submitted from Nitric `services` or other `batches` using the `submit` method on the job reference. When submitting a job you can provide a payload that will be passed to the job handler function.
+
+```go
+import (
+	"context"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyse := nitric.NewJob("analyse").Allow(batch.JobSubmit)
+
+	analyze.Submit(context.TODO(), map[string]interface{}{
+		"message": "message contents",
+	})
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="message" required type="map[string]interface{}">
+    The data that will be sent to the submit
+  </Property>
+</Properties>
+
+## Examples
+
+### Submit a job request
+
+```go
+import (
+	"context"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	analyse := nitric.NewJob("analyse").Allow(batch.JobSubmit)
+
+	analyze.Submit(context.TODO(), map[string]interface{}{
+		"message": "message contents",
+	})
+
+	nitric.Run()
+}
+```

@@ -1,0 +1,66 @@
+---
+description: "Reference for Nitric's Go library - Creates a new Schedule to run a function on a defined frequency."
+---
+
+# Go - NewSchedule()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Schedules in Nitric start with the [Schedule docs](/schedules).
+</Note>
+
+Creates a new Schedule to run a function on a defined frequency.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  nitric.NewSchedule("aggregate-data").Every("3 days", func() {
+    fmt.Println("aggregating data")
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="description" required type="string">
+    The unique name of this Schedule within the app. Subsequent calls to
+    `schedule` with the same name will return the same object.
+  </Property>
+</Properties>
+
+### Notes
+
+- Schedules do not require access permissions to be specified.
+- During local development schedules can be triggered manually from the local development dashboard
+
+## Examples
+
+### Create a Schedule
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  nitric.NewSchedule("send-reminder").Every("1 day", func() {
+    fmt.Println("sending data")
+  })
+
+  nitric.NewSchedule("archive-data").Cron("0 1 1 * *", func() {
+    fmt.Println("archiving data")
+  })
+
+  nitric.Run()
+}
+```

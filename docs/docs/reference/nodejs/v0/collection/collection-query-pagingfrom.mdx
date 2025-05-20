@@ -1,0 +1,29 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Set a point to resume a query from."
+---
+
+# Node.js - collection.query.pagingFrom()
+
+Set a point to resume a query from, this is required when continuing a paginated query response.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query().pagingFrom(pagingToken)
+```
+
+## Parameters
+
+<Properties>
+  <Property name="pagingToken" required type="Map<string, string>">
+    The paging token to apply to the query. Tokens are returned from
+    `query().fetch()`, when results cannot be returned in a single page.
+  </Property>
+</Properties>
+
+### See also
+
+- [query().limit()](./collection-query-limit)
+- [query().fetch()](./collection-query-where)

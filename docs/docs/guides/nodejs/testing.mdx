@@ -1,0 +1,410 @@
+---
+description: 'How to test Nitric applications'
+tags:
+  - Testing
+languages:
+  - typescript
+  - javascript
+published_at: 2022-03-31
+updated_at: 2024-10-11
+---
+
+# Testing
+
+This guide discusses techniques for testing Nitric applications locally and in the cloud.
+
+We attempt to make the local environment for Nitric as similar as possible to the cloud, so that tests act the same locally as they do in the cloud. That said, there will always be differences between environments and we recommend final testing be performed in a non-production cloud environment.
+
+## Unit Testing
+
+In this example we'll write a small API, with some tricks that make unit testing easier.
+
+We'll start by defining the Nitric resources for our application in their own files, separate from handlers and other code. This separation helps with resource reuse and can provide isolation that makes unit testing easier.
+
+```javascript title:resources/apis.js
+import { api } from '@nitric/sdk'
+
+export const helloApi = api('main')
+```
+
+```javascript title:resources/buckets.js
+import { bucket } from '@nitric/sdk'
+
+export const imageBucket = bucket('images')
+```
+
+We want to be able to test individual API route handler callbacks without running the entire API or application. Since testing anonymous services in the route callback can be difficult, we'll separate the callbacks into their own files to help with isolation.
+
+```javascript title:handlers/hello.js
+import { imageBucket } from '../resources/buckets'
+
+const imageWriter = imageBucket.allow('write')
+
+export const handleHello = async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}`
+  return ctx
+}
+
+export const handleAddImage = async (ctx) => {
+  const { name } = ctx.req.params
+  await imageWriter.file(name).write(Buffer.from(name))
+  ctx.res.body = `Successfully added '${name}' image to bucket!`
+  return ctx
+}
+```
+
+```javascript title:services/hello.js
+import { helloApi } from '../resources/apis'
+import { handleHello, handleAddImage } from '../handlers/hello'
+
+helloApi.get('/:name', handleHello)
+helloApi.post('/:name', handleAddImage)
+```
+
+### Writing the tests
+
+#### Asserting
+
+Next create a `test` directory, then add the example test file as shown below. The logic being split into separate services makes it very easy to test our API.
+
+In this example we're testing that if the function is passed a context with a set name parameter, it should return the same context with a body added to the response. Since the `handleHello` function is async we use an async test and await the results.
+
+```javascript title:test/example.test.js
+import { handleHello } from '../handlers/hello'
+
+describe('Testing Hello Service', () => {
+  describe("Given the name 'Test'", () => {
+    const ctx = { req: { params: { name: 'Test' } }, res: { body: '' } }
+
+    test("It should respond 'Hello Test'", async () => {
+      await expect(handleHello(ctx)).resolves.toEqual({
+        ...ctx,
+        res: {
+          body: 'Hello Test',
+        },
+      })
+    })
+  })
+})
+```
+
+#### Mocking
+
+The next function `handleAddImage` is a bit more challenging to test since it relies on a bucket resource. Unit tests shouldn't perform side-effects, such as reading and writing files, so we'll mock the bucket to keep the tests fast, repeatable, and isolated.
+
+We'll go over it section by section, but here is the full example:
+
+```javascript title:test/example.test.js
+  ...
+
+  describe('Given name is valid', () => {
+
+    let writerSpy;
+    let bucketSpy;
+    let handleAddImage;
+    beforeAll(async () => {
+      writerSpy = jest.spyOn(File.prototype, 'write');
+      bucketSpy = jest.spyOn(BucketResource.prototype, 'for');
+
+      // Doing dynamic imports to mock the BucketResource.for
+      const helloModule = await import('../services/hello');
+      handleAddImage = helloModule.handleAddImage;
+    })
+
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    })
+
+    test('It should add a new image to the bucket', async () => {
+      writerSpy.mockResolvedValue();
+
+      await expect(handleAddImage(ctx))
+        .resolves.toEqual({
+          ...ctx,
+          res: {
+            body: "Successfully added 'Test'"
+          }
+        })
+
+      expect(writerSpy).toBeCalledTimes(1)
+    });
+  });
+```
+
+Let's start by looking at the mocks. These are done in the beforeAll function, which means it happens before all the tests are run.
+
+The services to create a bucket `for` and write to it `write` make gRPC calls on the backend. This means that they need to be mocked, since during unit testing the Nitric server is not available to call, and will result in an UNAVAILABLE error. We mock these using jest's `spyOn` functions on the object prototype.
+
+This works fine for mocking the `write` method as it's within the `handleAddImage` function, but the `for` method is called when the module is imported. For that reason, we add a dynamic import after `for` is mocked.
+
+```javascript
+import { File, BucketResouce } from '@nitric/sdk';
+
+...
+
+let writerSpy;
+let bucketSpy;
+let handleAddImage;
+beforeAll(async () => {
+writerSpy = jest.spyOn(File.prototype, 'write');
+bucketSpy = jest.spyOn(BucketResource.prototype, 'for');
+
+// Doing dynamic imports to include the BucketResource.for method mock
+const helloModule = await import('../services/hello');
+handleAddImage = helloModule.handleAddImage;
+})
+
+```
+
+We also add `afterAll` and `beforeEach` functions to reset the mocks.
+
+```javascript
+afterAll(() => {
+  jest.resetAllMocks()
+})
+
+beforeEach(() => {
+  jest.clearAllMocks()
+})
+```
+
+Now that we have the mocks, we can use them for the tests.
+
+```javascript
+test('It should add a new image to the bucket', async () => {
+  writerSpy.mockResolvedValue()
+
+  await expect(handleAddImage(ctx)).resolves.toEqual({
+    ...ctx,
+    res: {
+      body: "Successfully added 'Test'",
+    },
+  })
+
+  expect(writerSpy).toBeCalledTimes(1)
+})
+```
+
+### Running the tests
+
+The tests can now be run using Jest, which can be added to your `package.json` as a `test` script.
+
+```json
+"scripts": {
+  "test": "jest"
+}
+```
+
+You can then run the tests locally with:
+
+```bash
+npm run test
+```
+
+The output should be something like this:
+
+```
+Testing Hello Service
+  Given we want a greeting
+    ✓ responds with Hello Test (4 ms)
+  Given we want to add a new image to a bucket
+    ✓ adds a new image to the bucket (5 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        2.292 s, estimated 6 s
+Ran all test suites.
+✨  Done in 5.18s.
+```
+
+## Integration Testing
+
+There are many ways to perform integration tests in Nitric projects. In this example we'll use the testing framework [jest](https://jestjs.io/) and use the HTTP testing library [supertest](https://github.com/visionmedia/supertest) to test an HTTP APT.
+
+Let's start by installing the required dependencies.
+
+```bash
+npm install --save-dev jest supertest @types/jest @types/supertest
+```
+
+### Writing the API
+
+Next, we'll write a small API to do some testing on. Just like in the Unit Testing example, we'll start by creating some Nitric resources.
+
+```javascript title:resources/apis.js
+import { api } from '@nitric/sdk'
+
+export const helloApi = api('main')
+```
+
+```javascript title:resources/buckets.js
+import { bucket } from '@nitric/sdk'
+
+export const imageBucket = bucket('images')
+```
+
+Next, let's create an API by defining our routes and their callback functions:
+
+```javascript title:services/hello.js
+import { imageBucket } from '../resources/buckets'
+import { helloApi } from '../resources/apis'
+
+const imageWriter = imageBucket.allow('write')
+
+export const handleHello = async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}`
+  return ctx
+}
+
+export const handleAddImage = async (ctx) => {
+  const { name } = ctx.req.params
+  await imageWriter.file(name).write(Buffer.from(name))
+  ctx.res.body = `Successfully added '${name}' image to bucket!`
+  return ctx
+}
+
+helloApi.get('/:name', handleHello)
+helloApi.post('/:name', handleAddImage)
+```
+
+### Writing the Tests
+
+Now we can start writing the test. First create a `test` test directory, then add a test file to it named `integration.test.ts`. For the test, we want to create an agent using supertest, then point the agent at the URL of our API.
+
+```javascript title:tests/integration.test.js
+import supertest from 'supertest'
+
+describe('Testing Hello Api', () => {
+  const api = supertest('http://localhost:4001')
+})
+```
+
+We can then add tests that make requests to the API. We'll start with testing the `GET /:name` route.
+
+This request has the name parameter set to 'test'. This means we expect the response to be 'Hello test' and the status code to be 200. We're provided with a `done` function in the test callback, we call it when the test is resolved or encounters errors. This is to stop timeouts on the test, as we are testing an async operation.
+
+```javascript title:tests/integration.test.js
+import supertest from 'supertest'
+import assert from 'assert'
+
+describe('Testing Hello Api', () => {
+  const api = supertest('http://localhost:4001')
+
+  describe('Given a request to GET /:name', () => {
+    test('It should respond with Hello test', (done) => {
+      api
+        .get('/test')
+        .expect(200)
+        .then((res) => {
+          assert.equal(res.text, 'Hello test')
+          done()
+        })
+        .catch((err) => done(err))
+    })
+  })
+})
+```
+
+We can add another test case for hitting the `POST /:name` route. This will need to test whether the response from the API resolves correctly, as well as whether the image bucket was updated. It makes a post request to our route and then checks the response just like the last one. Additionally, this test reads from the bucket to verify that the correct content was written.
+
+<Note>
+  Make sure you remove the call to done from the assertion in the API route.
+  Otherwise, the bucket test will not be run.
+</Note>
+
+```javascript title:tests/integration.test.ts
+import supertest from 'supertest';
+import assert from 'assert';
+import { imageBucket } from '../resources/buckets';
+
+describe('Testing Hello Api', () => {
+  const api = supertest('http://localhost:4001')
+
+  ...
+
+  describe('Given a request to POST /:name', () => {
+    test('It should add an image to the bucket', (done) => {
+      api
+        .post('/test')
+        .expect(200)
+        .then(res => {
+          assert.equal(res.text, "Successfully added 'test' image to bucket!")
+        })
+        .catch(err => done(err))
+
+      imageBucket
+        .allow('read')
+        .file('name')
+        .read()
+        .then(val => {
+          assert.equal(val.toString(), 'test')
+          done();
+        })
+        .catch((err) => done(err));
+    })
+  });
+});
+```
+
+### Local vs Deployed Tests
+
+There are two options for running our tests:
+
+1. On your local machine
+2. Against a deployed API
+
+#### Local Tests
+
+For a local run, we first need to run the local API, then run the tests. Add this test script to your `package.json`.
+
+```json
+"scripts": {
+  "test": "jest"
+}
+```
+
+We can then start the API with `nitric start` and run the test.
+
+```bash
+nitric start
+
+npm run test
+```
+
+This will produce the output:
+
+```
+Testing Hello Service
+  Given a request to GET /:name
+    ✓ responds with Hello test (4 ms)
+  Given a request to POST /:name
+    ✓ adds a new image to the bucket (5 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        3.292 s, estimated 5 s
+Ran all test suites.
+✨  Done in 5.18s.
+```
+
+#### Deployed Tests
+
+When you have an API deployed to the cloud, most cloud providers have a feature in the console to do endpoint testing. However, the tests are often just checking if the API returns a 200 status. The process we are following here will lead to more robust testing and confidence in your application.
+
+The first step is to ensure the application is deployed before running our tests. The [quickstart](/get-started/quickstart#deploying-the-app) provides details on how to do this for the first time if you're unfamiliar.
+
+Now we can test against the deployed API. To do this we need to swap out our supertest agent host from the `localhost` endpoint to the deployed endpoint. This new endpoint will look something like this:
+
+```javascript title:tests/integration.test.js
+const api = request('https://xxxx.us-east-1.amazonaws.com')
+```
+
+Just like with the local test we can run the test script with `npm run test`. This will run the tests against the deployed instance and return your test results.

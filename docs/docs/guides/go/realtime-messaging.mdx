@@ -1,0 +1,318 @@
+---
+description: Use the Nitric framework to easily build and deploy Go WebSocket applications for AWS.
+tags:
+  - Realtime & Websockets
+  - Key Value Store
+languages:
+  - go
+start_steps: |
+  git clone --depth 1 https://github.com/nitrictech/examples
+  cd examples/v1/websocket-app
+  go mod tidy
+  nitric start
+featured:
+  image: /docs/images/guides/realtime-messaging/featured.png
+  image_alt: 'Building a chat app in Go with WebSockets and Nitric featured image'
+published_at: 2024-10-16
+---
+
+# Building a chat app in Go with WebSockets and Nitric
+
+## What we'll be doing
+
+1. Use Nitric to create a WebSocket API
+2. Manage WebSocket connections using a Key-Value store
+3. Handle WebSocket events:
+   - Register connections on connect
+   - Remove connections on disconnect
+   - Broadcast messages to all connected clients
+4. Run locally for testing
+5. Deploy to AWS
+
+## Prerequisites
+
+- [Go](https://go.dev/dl/)
+- The [Nitric CLI](/get-started/installation)
+- An [AWS](https://aws.amazon.com) account (optional)
+
+## Getting started
+
+We'll start by creating a new project for our WebSocket application. The finished source can be found [here](https://github.com/nitrictech/examples/tree/main/v1/websocket-app).
+
+```bash
+nitric new websocket-app go-starter
+```
+
+Next, open the project in your editor of choice.
+
+```bash
+cd websocket-app
+```
+
+Make sure all dependencies are resolved:
+
+```bash
+go mod tidy
+```
+
+The scaffolded project should have the following structure:
+
+```text
++--services/
+|  +-- hello/
+|      +-- main.go
++--nitric.yaml
++--go.mod
++--go.sum
++--golang.dockerfile
++--.gitignore
++--README.md
+```
+
+You can test the project to verify everything is working as expected:
+
+```bash
+nitric start
+```
+
+If everything is working as expected, you can now delete all files/folders in the `services/` folder. We'll create new services in this guide.
+
+## Building the WebSocket Application
+
+Let's begin by setting up the WebSocket application. Add a file named `main.go` to your 'services/websockets' folder, and include the following code:
+
+```go title:services/websockets/main.go
+package main
+
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  // Create a WebSocket API named "public".
+  ws := nitric.NewWebsocket("public")
+
+  // Initialize a KV store named "connections" with Get, Set, and Delete permissions.
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Add event handlers here
+
+  nitric.Run()
+}
+```
+
+Here we're creating:
+
+- A [WebSocket](/websockets) API named `public`
+- A [Key-Value store](/keyvalue) named `connections` to track client connections
+
+From here, let's add some features to that function that allow us to manage connections and broadcast messages.
+
+<Note>
+  You could separate some or all of these event handlers into their own services
+  if you prefer. For simplicity, we'll group them together in this guide.
+</Note>
+
+### Register connections on connect
+
+```go
+ws.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+  err := connections.Set(context.Background(), ctx.Request.ConnectionID(), map[string]interface{}{
+    "connectionId": ctx.Request.ConnectionID(),
+  })
+  if err != nil {
+    fmt.Println("Error storing connection ID in KV store:", err)
+    ctx.Response.Reject = true
+  }
+})
+```
+
+### Remove connections on disconnect
+
+```go
+ws.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+  err := connections.Delete(context.Background(), ctx.Request.ConnectionID())
+  if err != nil {
+    fmt.Println("Error deleting connection ID in KV store:", err)
+    return
+  }
+})
+```
+
+### Broadcast messages to all connected clients
+
+```go
+ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+  connectionStream, err := connections.Keys(context.Background())
+  if err != nil {
+    fmt.Println("Error retrieving connection keys from KV store:", err)
+    return
+  }
+
+  senderId := ctx.Request.ConnectionID()
+
+  for {
+    connectionId, err := connectionStream.Recv()
+    if err != nil {
+      break
+    }
+
+    if connectionId == senderId {
+      continue
+    }
+
+    message := fmt.Sprintf("%s: %s", senderId, ctx.Request.Message())
+    err = ws.Send(context.Background(), connectionId, []byte(message))
+    if err != nil {
+      fmt.Println("Error sending message to connection ID", connectionId, ":", err)
+      return
+    }
+  }
+})
+```
+
+### Bringing it all together
+
+<details>
+<summary>Your code should look like this:</summary>
+
+```go title:services/websockets/main.go
+package main
+
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  // Create a WebSocket endpoint named "public".
+  ws := nitric.NewWebsocket("public")
+
+  // Initialize a KV store named "connections" with Get, Set, and Delete permissions.
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Handle new WebSocket connections by storing the connection ID in the KV store.
+  ws.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    err := connections.Set(context.Background(), ctx.Request.ConnectionID(), map[string]interface{}{
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+    if err != nil {
+      fmt.Println("Error storing connection ID in KV store:", err)
+      ctx.Response.Reject = true
+    }
+  })
+
+  ws.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    err := connections.Delete(context.Background(), ctx.Request.ConnectionID())
+    if err != nil {
+      fmt.Println("Error deleting connection ID in KV store:", err)
+      return
+    }
+  })
+
+  ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+    connectionStream, err := connections.Keys(context.Background())
+    if err != nil {
+      fmt.Println("Error retrieving connection keys from KV store:", err)
+      return
+    }
+
+    senderId := ctx.Request.ConnectionID()
+
+    for {
+      connectionId, err := connectionStream.Recv()
+      if err != nil {
+        break
+      }
+
+      if connectionId == senderId {
+        continue
+      }
+
+      message := fmt.Sprintf("%s: %s", senderId, ctx.Request.Message())
+      err = ws.Send(context.Background(), connectionId, []byte(message))
+      if err != nil {
+        fmt.Println("Error sending message to connection ID", connectionId, ":", err)
+        return
+      }
+    }
+  })
+
+  nitric.Run()
+}
+```
+
+</details>
+
+Do a quick `go mod tidy` to make sure all new dependencies are resolved.
+
+## Ok, let's run this thing!
+
+Now that you have your WebSocket application defined with handlers for each event, it's time to test it locally.
+
+```bash
+nitric start
+```
+
+Once it starts, the application will be ready to accept WebSocket connections that you can easily test with the [Nitric Dashboard](/get-started/foundations/projects/local-development#local-dashboard). You can find the URL to the dashboard in the terminal running the Nitric CLI, by default, it is set to - http://localhost:49152.
+
+![websocket dashboard](/docs/images/guides/realtime-messaging/dashboard.png)
+
+The dashboard will show you the WebSocket URL and allow you to connect as a client to send, receive and monitor messages.
+
+## Deploy to the cloud
+
+At this point, you can deploy what you've built to any of the supported cloud providers. In this example we'll deploy to AWS. Start by setting up your credentials and configuration for the [nitric/aws provider](/providers/pulumi/aws).
+
+Next, we'll need to create a `stack file` (deployment target). A stack is a deployed instance of an application. You might want separate stacks for each environment, such as stacks for `dev`, `test`, and `prod`. For now, let's start by creating a file for the `dev` stack.
+
+The `stack new` command below will create a stack named `dev` that uses the `aws` provider.
+
+```bash
+nitric stack new dev aws
+```
+
+Edit the stack file `nitric.dev.yaml` and set your preferred AWS region, for example `us-east-1`.
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/aws@latest
+# The target AWS region to deploy to
+# See available regions:
+# https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+region: us-east-2
+```
+
+<Note>
+  You are responsible for staying within the limits of the free tier or any
+  costs associated with deployment.
+</Note>
+
+Let's try deploying the stack with the `up` command:
+
+```bash
+nitric up
+```
+
+When the deployment is complete, go to the relevant cloud console and you'll be able to see and interact with your WebSocket application.
+
+To tear down your application from the cloud, use the `down` command:
+
+```bash
+nitric down
+```
+
+## Summary
+
+In this guide, we've created a serverless WebSocket application using Go and Nitric. We've demonstrated how to set up WebSocket connections, track clients using a Key-Value store, and broadcast messages to all connected clients. This application can be easily deployed to the cloud, allowing you to build scalable, real-time communication systems.
+
+For more information and advanced usage, refer to the [Nitric documentation](https://nitric.io/docs).

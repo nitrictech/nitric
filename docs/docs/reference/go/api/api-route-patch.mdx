@@ -1,0 +1,60 @@
+---
+description: "Reference for Nitric's Go library - Register a handler for HTTP PATCH requests to the route."
+---
+
+# Go - Api.Route.Patch()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about APIs in
+  Nitric start with the [API docs](/apis).
+</Note>
+
+Register a handler for HTTP PATCH requests to the route.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/apis"
+)
+
+func main() {
+  api := nitric.NewApi("public")
+
+  api.NewRoute("/hello").Patch(func(ctx *apis.Ctx) {
+    ctx.Response.Body = []byte("Hello World")
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="interface{}">
+    The callback function to handle all HTTP request to the given route and
+    method.
+  </Property>
+  <Property name="options" type="...MethodOption">
+    Additional options for the route. See below.
+  </Property>
+</Properties>
+
+### Method options
+
+<Properties>
+  <Property name="WithNoMethodSecurity()" type="MethodOption">
+    Disables security on the method.
+  </Property>
+  <Property name="WithMethodSecurity()" type="MethodOption">
+    Overrides a security rule from API defined JWT rules.
+    <Properties nested>
+      <Property name="name" required type="string">
+        The name of the security rule.
+      </Property>
+      <Property name="scopes" required type="[]string">
+        The scopes of the security rule.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>

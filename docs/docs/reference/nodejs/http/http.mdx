@@ -1,0 +1,110 @@
+---
+description: "Reference for Nitric's Node.js library - Creates a HTTP proxy for wrapping web frameworks."
+---
+
+# Node.js - http()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  HTTP Proxies in Nitric start with the [HTTP Proxy docs](/http).
+</Note>
+
+Creates a new HTTP proxy, which can be used for wrapping other web frameworks. The example below shows wrapping an express application.
+
+```javascript
+import { http } from '@nitric/sdk'
+import express from 'express'
+
+const app = express()
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+http(app, () => {
+  console.log(`Application started`)
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property
+    name="app"
+    required
+    type="NodeApplication | ((port: number, callback?: () => void) => ServerType | Promise<ServerType>)"
+  >
+    Accepts an object that has a listen function on it, or pass the listener
+    function itself. A listener function is a function that accepts a port and
+    an optional callback, and is used to start the application.
+  </Property>
+  <Property name="callback" type="() => void">
+    A callback that is passed into the listen function when the application is
+    started.
+  </Property>
+</Properties>
+
+## Examples
+
+Before testing or deploying these services you'll need to make sure you have a `nitric.yaml` file in the base of the project.
+
+```yaml
+name: project-name
+services:
+  - match: services/*.ts
+    start: npm run dev:services $SERVICE_PATH
+```
+
+### Wrap a Nest.js application
+
+For a Nest application, point your handler at the `main.ts` file.
+
+```yaml
+name: project-name
+services:
+  - match: src/main.ts
+    start: nest start
+```
+
+```javascript
+import { http } from '@nitric/sdk'
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+
+async function bootstrap(port: number) {
+  const app = await NestFactory.create(AppModule)
+  return await app.listen(port)
+}
+
+http(bootstrap)
+```
+
+### Wrap an Express application
+
+```javascript
+import { http } from '@nitric/sdk'
+import express from 'express'
+
+const app = express()
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+http(app)
+```
+
+### Wrap a Koa application
+
+```javascript
+import { http } from '@nitric/sdk'
+import Koa from 'koa'
+
+const app = new Koa()
+
+app.use(async (ctx) => {
+  ctx.body = 'Hello World'
+})
+
+http(app)
+```

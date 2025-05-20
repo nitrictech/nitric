@@ -1,0 +1,252 @@
+---
+description: Use Terratest to validate the infrastructure of a Nitric Go project deployed with Terraform
+tags:
+  - Terraform
+  - Testing
+languages:
+  - go
+published_at: 2024-10-16
+---
+
+# Testing AWS resources with Terratest
+
+This guide will walk you through adding [Terratest](https://terratest.gruntwork.io/) to a Nitric project.
+
+## How Terratest works
+
+Terratest is designed to automate the entire process of testing your Terraform code with the following steps:
+
+- **Initialize**: Terratest will automatically run `terraform init` to initialize the Terraform working directory.
+- **Apply**: It will then run `terraform apply` to deploy the infrastructure as defined in your Terraform code.
+- **Assert**: The test script will then run assertions to check that the infrastructure was created as expected.
+- **Teardown**: Finally, it will run `terraform destroy` to tear down the infrastructure after the test completes.
+
+## What we'll be doing
+
+1. Create and set up your application.
+2. Deploying to AWS with a Terraform provider.
+3. Add and execute Terratest.
+
+## Create and set up your application.
+
+Our sample project creates a real-time communication service using [WebSockets](/websockets) and a [key-value store](/keyvalue) for connections.
+
+We intend to deploy to AWS and will use Terratest to ensure that the following:
+
+- **WebSocket API**: Confirm that the API Gateway WebSocket API is correctly configured for real-time communication.
+- **DynamoDB Table**: Verify that the key-value store for connections is created and operational.
+- **IAM Roles**: Ensure that permissions for interacting with AWS services are correctly set up.
+
+Let's begin by setting up the WebSocket application that we'll be testing.
+
+<Note>
+  You can find a more detailed set of instructions in this guide - [Building a
+  chat app in Go with WebSockets and Nitric ](/guides/go/realtime-messaging).
+  Once you've completed this guide, skip to [the next
+  step](#deploying-to-aws-with-a-terraform-provider)
+</Note>
+
+```bash
+nitric new websocket-app go-starter
+```
+
+Then you can delete all files/folders in the `services/` folder and add a file named `main.go` to your 'services/websockets' folder with the following code:
+
+```go title:services/websockets/main.go
+package main
+
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/keyvalue"
+  "github.com/nitrictech/go-sdk/nitric/websockets"
+)
+
+func main() {
+  // Create a WebSocket endpoint named "public".
+  ws := nitric.NewWebsocket("public")
+
+  // Initialize a KV store named "connections" with Get, Set, and Delete permissions.
+  connections := nitric.NewKv("connections").Allow(keyvalue.KvStoreGet, keyvalue.KvStoreSet, keyvalue.KvStoreDelete)
+
+  // Handle new WebSocket connections by storing the connection ID in the KV store.
+  ws.On(websockets.EventType_Connect, func(ctx *websockets.Ctx) {
+    err := connections.Set(context.Background(), ctx.Request.ConnectionID(), map[string]interface{}{
+      "connectionId": ctx.Request.ConnectionID(),
+    })
+    if err != nil {
+      fmt.Println("Error storing connection ID in KV store:", err)
+      return
+    }
+  })
+
+  ws.On(websockets.EventType_Disconnect, func(ctx *websockets.Ctx) {
+    err := connections.Delete(context.Background(), ctx.Request.ConnectionID())
+    if err != nil {
+      fmt.Println("Error deleting connection ID in KV store:", err)
+      return
+    }
+  })
+
+  ws.On(websockets.EventType_Message, func(ctx *websockets.Ctx) {
+    connectionStream, err := connections.Keys(context.Background())
+    if err != nil {
+      fmt.Println("Error retrieving connection keys from KV store:", err)
+      return
+    }
+
+    senderId := ctx.Request.ConnectionID()
+
+    for {
+      connectionId, err := connectionStream.Recv()
+      if err != nil {
+        break
+      }
+
+      if connectionId == senderId {
+        continue
+      }
+
+      message := fmt.Sprintf("%s: %s", senderId, ctx.Request.Message())
+      err = ws.Send(context.Background(), connectionId, []byte(message))
+      if err != nil {
+        fmt.Println("Error sending message to connection ID", connectionId, ":", err)
+        return
+      }
+    }
+  })
+
+  nitric.Run()
+}
+```
+
+## Deploying to AWS with a Terraform provider
+
+To deploy your application with Terraform you'll need to use Nitric's Terraform providers. You can learn more about using Nitric with Terraform [here](/providers/terraform).
+
+```
+nitric stack new dev aws-tf
+```
+
+Update this newly created stack file to include your target region:
+
+```yaml title:nitric.dev.yaml
+# The nitric provider to use
+provider: nitric/awstf@1.11.6
+
+# The target aws region to deploy to
+region: us-east-2
+```
+
+Once you've created your stack file, you can generate the Terraform code by running the following command:
+
+```
+nitric up
+```
+
+This will generate Terraform code which can deploy your application. The output will be in a folder named `cdktf.out` by default.
+
+## Add and execute Terratest
+
+Add the necessary dependencies for Terratest:
+
+```bash
+go get github.com/gruntwork-io/terratest/modules/terraform
+go get github.com/stretchr/testify/assert
+go get github.com/aws/aws-sdk-go/aws
+go get github.com/aws/aws-sdk-go/aws/session
+go get github.com/aws/aws-sdk-go/service/apigatewayv2
+go get github.com/aws/aws-sdk-go/service/dynamodb
+go get github.com/aws/aws-sdk-go/service/iam
+go get google.golang.org/genproto@latest
+```
+
+### Create the Test File
+
+Create a new file named `terraform_resources_test.go` in your project’s test directory:
+
+```bash
+mkdir -p test
+touch test/terraform_resources_test.go
+```
+
+Add the following code to `terraform_resources_test.go`:
+
+```go title:test/terraform_resources_test.go
+package test
+
+import (
+	"testing"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/apigatewayv2"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestTerraformResources(t *testing.T) {
+	// Set Terraform options, specifying the directory with your Terraform configuration
+	terraformOptions := &terraform.Options{
+		TerraformDir: "../cdktf.out/stacks/websocket-app-dev",
+	}
+
+	// Ensure resources are destroyed after test completion
+	defer terraform.Destroy(t, terraformOptions)
+
+	// Initialize and apply the Terraform configuration
+	terraform.InitAndApply(t, terraformOptions)
+
+	// Initialize AWS session for interacting with AWS services
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String("us-east-2")}))
+
+	// Test DynamoDB table creation (key-value store)
+	dynamoClient := dynamodb.New(sess)
+	tableName := "connections" // Name of the DynamoDB table to check
+	_, err := dynamoClient.DescribeTable(&dynamodb.DescribeTableInput{
+		TableName: aws.String(tableName),
+	})
+	assert.NoError(t, err, "Expected DynamoDB table 'connections' to be created")
+
+	// Test IAM role creation
+	iamClient := iam.New(sess)
+	roleName := "websocket-app_websockets-main" // Name of the IAM role to check
+	_, err = iamClient.GetRole(&iam.GetRoleInput{
+		RoleName: aws.String(roleName),
+	})
+	assert.NoError(t, err, "Expected IAM role 'websocket-app_websockets-main' to be created")
+
+	// Test API gateway webSocket creation
+	apiClient := apigatewayv2.New(sess)
+	apiName := "public" // Name of the API Gateway WebSocket to check
+	result, err := apiClient.GetApis(&apigatewayv2.GetApisInput{})
+	assert.NoError(t, err)
+	found := false
+	for _, api := range result.Items {
+		if *api.Name == apiName {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "Expected API Gateway WebSocket 'public' to be created")
+}
+```
+
+### Run the tests
+
+To run the tests, navigate to your project’s root directory and execute the Go test command:
+
+```bash
+go test -v ./test
+```
+
+This will:
+
+1. Deploy the infrastructure using Terraform.
+2. Validate the creation of the DynamoDB table, IAM role, and API Gateway WebSocket.
+3. Clean up the infrastructure after testing.
+
+The output should confirm the successful creation and validation of each resource.

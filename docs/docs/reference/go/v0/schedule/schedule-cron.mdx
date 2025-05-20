@@ -1,0 +1,99 @@
+---
+description: "Reference for Nitric's v0 Go library - Sets the cron expression and one or many handlers to be triggered."
+---
+
+# Go - Schedule.Cron()
+
+Sets the cron expressions that determines when the schedule triggers and a callback to be triggered.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  nitric.NewSchedule("archive-data").Cron("0 1 1 * *", func (ctx *faas.EventContext, _ faas.EventHandler) (*faas.EventContext, error) {
+    fmt.Println("archiving data")
+
+    return ctx, nil
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expression" required type="string">
+    The expression that sets when the schedule will be triggered. This value
+    should be a standard 5 value Unix cron expression, e.g., '0 1 1 * *'.
+  </Property>
+  <Property name="middleware" required type="EventMiddleware">
+    One or more callback functions to use as the handler which will run on the
+    defined frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  // every 15 minutes
+  nitric.NewSchedule("check for updates").Cron("0/15 * * * *", func (ctx *faas.EventContext, _ faas.EventHandler) (*faas.EventContext, error) {
+    fmt.Println("checking for updates")
+
+    return ctx, nil
+  })
+
+  // at 1:00am on the 1st of every month
+  nitric.NewSchedule("delete stale data").Cron("0 1 1 * *", func (ctx *faas.EventContext, _ faas.EventHandler) (*faas.EventContext, error) {
+    fmt.Println("deleting stale data")
+
+    return ctx, nil
+  })
+
+  nitric.Run()
+}
+```
+
+### Create a Schedule with multiple middleware/handlers
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/faas"
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func generateReport(ctx *faas.EventContext, next faas.EventHandler) (*faas.EventContext, error) {
+  // generate report
+
+  return next(ctx)
+}
+
+func sendNotification(ctx *faas.EventContext, next faas.EventHandler) (*faas.EventContext, error) {
+  // send notification with the report
+
+  return next(ctx)
+}
+
+func main() {
+  nitric.NewSchedule("check for updates").Cron("0 1 1 * *", faas.ComposeEventMiddleware(generateReport, sendNotification))
+
+  nitric.Run()
+}
+```

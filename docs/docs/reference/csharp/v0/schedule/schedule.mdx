@@ -1,0 +1,89 @@
+---
+description: "Reference for Nitric's v0 .NET library - Creates a new Schedule to run a function on a defined frequency."
+---
+
+# .NET - Schedule()
+
+Creates a new Schedule to run a function on a defined frequency.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Function;
+
+Nitric.Schedule("send-reminder").Every(3, Frequency.Hours, context =>
+{
+    // do some processing
+    return context;
+});
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="description" type="string" required>
+    The unique name of this Schedule within the app. Subsequent calls to
+    `Schedule` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Notes
+
+- Schedules do not require access permissions to be specified.
+
+- Currently, local execution and testing of schedules is not supported.
+
+- You can directly test the functions that respond to scheduled triggers by sending HTTP requests to those functions with the same payload as defined in your schedule.
+
+> Coming Soon
+
+- Local and manual testing of schedules is on our backlog to be completed soon.
+
+## Examples
+
+### Create a Schedule
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Function;
+
+// Create a schedule that runs every 3 minutes
+Nitric.Schedule("send-reminder").Every(3, Frequency.Minutes, context =>
+{
+    // do some processing
+    return context;
+});
+
+// Create a schedule that runs every 3 hours
+Nitric.Schedule("send-reminder").Every(3, Frequency.Hours, context =>
+{
+    // do some processing
+    return context;
+});
+
+// Create a schedule that runs every 3 days
+Nitric.Schedule("send-reminder").Every(3, Frequency.Days, context =>
+{
+    // do some processing
+    return context;
+});
+
+Nitric.Run();
+```
+
+### Create a Schedule using Cron expression
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Function;
+
+// Create a schedule that runs every 3 minutes
+Nitric.Schedule("send-reminder").Cron("3 * * * *", context =>
+{
+    // do some processing
+    return context;
+});
+
+Nitric.Run();
+```

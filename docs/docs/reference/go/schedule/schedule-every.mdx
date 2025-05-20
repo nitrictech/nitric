@@ -1,0 +1,59 @@
+---
+description: "Reference for Nitric's Go  library - Sets the frequency and one or many handlers to be triggered."
+---
+
+# Go - Schedule.Every()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about
+  Schedules in Nitric start with the [Schedule docs](/schedules).
+</Note>
+
+Sets the frequency and one or many handlers to be triggered.
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  // Create a schedule that runs every 3 minutes
+  nitric.NewSchedule("send reminder").Every("3 minutes", func() {
+    // code which sends a reminder
+  })
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="rate" required type="string">
+    The rate to run the schedule, e.g., '7 days'. All rates accept a number and
+    a frequency. Valid frequencies are 'days', 'hours', or 'minutes'.
+  </Property>
+  <Property name="handler" required type="interface{}">
+    The callback function to use as the handler which will run on the defined
+    frequency.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Schedule to run every 3 minutes
+
+```go
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  // Create a schedule that runs every 3 minutes
+  nitric.NewSchedule("send reminder").Every("3 minutes", func() {
+    // code which sends a reminder
+  })
+
+  nitric.Run()
+}
+```

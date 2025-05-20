@@ -1,0 +1,62 @@
+---
+description: "Reference for Nitric's v0 .NET library - Create a new bucket for storing and retrieving files."
+---
+
+# .NET - Bucket()
+
+Create a new bucket for storing and retrieving files.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Storage;
+
+var assets = Nitric.Bucket("assets").With(BucketPermission.Reading, BucketPermission.Writing, BucketPermission.Deleting);
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" type="string" required>
+    The unique name of this bucket within the app. Subsequent calls to `Bucket`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**BucketPermission.Reading**
+
+This permission allows your function to read files from the bucket
+
+---
+
+**BucketPermission.Writing**
+
+This permission allows your function to write files to the bucket
+
+---
+
+**BucketPermission.Deleting**
+
+This permission allows your function to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [file()](./bucket-file)
+- [file().read()](./bucket-file-read)
+- [file().write()](./bucket-file-write)
+- [file().delete()](./bucket-file-delete)
+- [file.getDownloadUrl()](./bucket-file-downloadurl)
+- [file.getUploadUrl()](./bucket-file-uploadurl)

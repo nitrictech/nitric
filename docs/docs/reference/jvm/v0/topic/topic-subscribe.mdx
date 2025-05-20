@@ -1,0 +1,168 @@
+---
+description: "Reference for Nitric's v0 JVM library - Subscribe a handler to a topic and receive new events for processing."
+---
+
+# JVM - topic.subscribe()
+
+Subscribe a handler to a topic and receive new events for processing.
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("new-user");
+
+    topic.subscribe(ctx -> {
+      // process event
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  var topic = Nitric.topic("new-user")
+
+  topic.subscribe { ctx ->
+    // process event
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Parameters
+
+<Properties>
+  <Property
+    name="middleware"
+    required
+    type="Middleware<EventContext> or List<Middleware<EventContext>>"
+  >
+    The middleware (code) to be triggered by the topic.
+  </Property>
+</Properties>
+
+## Examples
+
+### Subscribe to a topic
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("new-user");
+
+    topic.subscribe(ctx -> {
+      // process event
+      return ctx;
+    });
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  var topic = Nitric.topic("new-user")
+
+  topic.subscribe { ctx ->
+    // process event
+    ctx
+  }
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+### Subscibe to a topic with chained middleware
+
+<Tabs syncKey="jvm-lang">
+
+<TabItem label="Java">
+
+```java
+import io.nitric.Nitric;
+
+public class Application {
+  public static void main(String[] args) {
+    var topic = Nitric.INSTANCE.topic("topic");
+
+    topic.subscribe(List.of((ctx, next) -> {
+      // process event
+      return next.invoke(ctx);
+    }, (ctx, next) -> {
+      // process event
+      return next.invoke(ctx);
+    }));
+
+    Nitric.INSTANCE.run();
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="Kotlin">
+
+```kotlin
+import io.nitric.Nitric
+
+fun main() {
+  var topic = Nitric.topic("topic")
+
+  topic.subscribe(listOf((ctx, next) -> {
+    // process event
+    next(ctx);
+  }, (ctx, next) -> {
+    // process event
+    next(ctx);
+  }));
+
+  Nitric.run()
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## Notes
+
+- A function may only subscribe to a topic once, if multiple subscribers are required, create them in different functions.
+- A function may subscribe to OR publish to a topic but not both

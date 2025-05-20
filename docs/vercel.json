@@ -1,0 +1,5 @@
+{
+  "buildCommand": "yarn build",
+  "installCommand": "dnf install -y $(cat chrome-dependencies.txt) && yarn install && npx browsers install chrome@131.0.6778.204 --path /vercel/.cache/puppeteer",
+  "framework": "nextjs"
+}

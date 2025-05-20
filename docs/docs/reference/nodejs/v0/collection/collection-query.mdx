@@ -1,0 +1,22 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Begins a new query on a Collection."
+---
+
+# Node.js - collection.query()
+
+Begins a new query on a Collection.
+
+```javascript
+import { collection } from '@nitric/sdk'
+
+const profiles = collection('profiles').for('reading')
+
+const profileQuery = profiles.query()
+```
+
+### See also
+
+- Adding filters: [query().where()](./collection-query-where)
+- Limiting the results: [query().limit()](./collection-query-limit)
+- Streaming results: [query().stream()](./collection-query-stream)
+- Fetching results: [query().fetch()](./collection-query-fetch)

@@ -1,0 +1,9 @@
+svg[id^='mermaid-svg-'] .nodeLabel,
+svg[id^='mermaid-svg-'] .edgeLabel,
+svg[id^='mermaid-svg-'] tspan {
+  @apply text-base;
+}
+
+svg[id^='mermaid-svg-'] .edgeLabel {
+  @apply py-1;
+}

@@ -1,0 +1,45 @@
+---
+description: "Reference for Nitric's Dart library - Create Batch Jobs with the Nitric Dart SDK"
+---
+
+# Dart - job()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Batch
+  Services in Nitric start with the [Batch docs](/batch).
+</Note>
+
+Creates a new Batch Job.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze");
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="String">
+    The unique name of this Batch Job within the app. Subsequent calls to `job`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Job
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze");
+```
+
+### Create a Job with permissions to submit jobs
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final analyze = Nitric.job("analyze").allow([JobPermission.submit]);
+```

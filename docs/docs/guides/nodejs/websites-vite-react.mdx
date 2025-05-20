@@ -1,0 +1,209 @@
+---
+description: Learn how to set up a React Website that calls your Nitric API
+tags:
+  - Websites
+  - API
+languages:
+  - typescript
+  - javascript
+start_steps: |
+  git clone --depth 1 https://github.com/nitrictech/examples
+  cd examples/v1/nitric-vite-react
+  npm install
+  cd main-website
+  npm install
+  cd ..
+  nitric start
+published_at: 2025-03-26
+---
+
+# Setting up a React Website calling your Nitric API
+
+This guide demonstrates how to use Nitric to create an API and a frontend website that interacts with it. We will be using Vite to create a React project and connect it to our Nitric API. The finished source can be found [here](https://github.com/nitrictech/examples/tree/main/v1/nitric-vite-react).
+
+## Create a new Nitric project
+
+The first step is to create a new Nitric TypeScript project using the [Nitric CLI](/reference/cli).
+
+```bash
+nitric new api-project ts-starter
+cd api-project
+npm install
+```
+
+## Creating the frontend
+
+We will use Vite to set up a new React project for our frontend.
+
+```bash
+npm create vite@latest main-website -- --template react-ts
+```
+
+Navigate to the project directory and install dependencies.
+
+```bash
+cd main-website
+npm install
+```
+
+## Creating a Nitric API
+
+Review the API in your `services` directory, by default it echos hello `name`.
+
+```ts title: services/api.ts
+import { api } from '@nitric/sdk'
+
+const mainApi = api('main')
+
+mainApi.get('/hello/:name', async (ctx) => {
+  const { name } = ctx.req.params
+  ctx.res.body = `Hello ${name}`
+  return ctx
+})
+```
+
+## Configuring Nitric
+
+Add a website resource to your `nitric.yaml` file, you'll be configuring the base directory, and build/run commands. You can [learn more](https://nitric.io/docs/websites) about this configuration.
+
+<Note>
+  Nitric websites are currently in preview, so we'll also enable this feature.
+</Note>
+
+```yaml title: nitric.yaml
+name: nitric-vite-react
+services:
+  - basedir: ''
+    match: services/*.ts
+    runtime: node
+    start: npm run dev:services $SERVICE_PATH
+batch-services: []
+websites:
+  - basedir: ./main-website
+    # Since this is a Single Page Application (SPA), we need to redirect all requests to the index.html file.
+    error: index.html
+    build:
+      command: npm run build
+      output: dist
+    dev:
+      command: npm run dev -- --port 3000
+      url: http://localhost:3000
+runtimes:
+  node:
+    dockerfile: ./node.dockerfile
+    context: ''
+    args: {}
+preview:
+  - websites
+```
+
+## Updating the Website to call the API
+
+Modify the `App.tsx` file in the `main-website/src` directory to fetch data from the Nitric API.
+
+```tsx title: main-website/src/App.tsx
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  const handleApiCall = async () => {
+    try {
+      const response = await fetch('/api/main/hello/world')
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      const message = await response.text()
+      alert(message)
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error)
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <button onClick={handleApiCall}>Fetch Data</button>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )
+}
+
+export default App
+```
+
+## Running the project
+
+Run the following command in your project directory to start both the API and the website:
+
+```bash
+nitric start
+```
+
+This will launch both the backend API and the frontend website. The website will be available at [localhost:5000](http://localhost:5000).
+
+## Testing the API
+
+You can also preview your website from within the Nitric dashboard, open the local dashboard at <a target="_blank" href="http://localhost:49152">localhost:49152</a>, then navigate to the Websites tab.
+
+![preview your website](/docs/images/guides/websites-vite-react/preview.png)
+
+Click the **Fetch Data** button in the UI to call the API. If successful, you should see an alert displaying the message **"Hello world"**.
+
+## Deploying to AWS
+
+### Create your stack
+
+Create an AWS stack called `aws-staging` for your staging environment.
+
+```bash
+nitric stack new dev aws
+```
+
+Inside the stack file, ensure you set your `region`.
+
+```yaml title:nitric.dev.yaml
+provider: nitric/aws@latest
+region: us-east-2
+```
+
+### Deploy
+
+Deploy to AWS using the `nitric up` command. Ensure you have set up your [AWS credentials](/providers/pulumi/aws#usage) correctly.
+
+```bash
+nitric up
+```
+
+### Tear down
+
+To avoid unwanted costs of running your test app, you can tear down the stack using the `nitric down` command.
+
+```bash
+nitric down
+```
+
+### What's next?
+
+You now have a basic Website and API all wired up together, use this as a basis for your next app idea!

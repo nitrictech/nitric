@@ -1,0 +1,36 @@
+---
+description: "Reference for Nitric's Python library - Returns the connection string for a SQL database at runtime."
+---
+
+# Python - sql.connection_string()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about SQL
+  Databases in Nitric start with the [SQL docs](/sql).
+</Note>
+
+Returns the connection string for a SQL database at runtime.
+
+```python
+from nitric.resources import sql
+
+main = api("main")
+
+database = sql("database")
+
+await database.connection_string()
+```
+
+## Examples
+
+### Return a connection string
+
+```python
+from nitric.resources import sql
+
+main = api("main")
+
+database = sql("database")
+
+await database.connection_string()
+```

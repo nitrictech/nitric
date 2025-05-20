@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+      "baseUrl": "./",
+      "target": "es5",
+      "lib": ["esnext", "dom"],
+      "types": ["cypress", "cypress-axe"],
+      "resolveJsonModule": true
+    },
+    "include": ["."]
+  }

@@ -1,0 +1,72 @@
+---
+description: "Reference for Nitric's Dart library - Send messages to a queue."
+---
+
+# Dart - queue.enqueue()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Queues
+  in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Send messages to a queue.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final batchQueue = Nitric.queue("batch").allow([
+  QueuePermission.enqueue,
+]);
+
+final messages = [{ "example": "value" }];
+
+await batchQueue.enqueue(messages);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="messages" required type="List<Map<String, dynamic>>">
+    A message or an array of messages to send to the queue.
+  </Property>
+</Properties>
+
+## Examples
+
+### Send messages to a queue
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final batchQueue = Nitric.queue("batch").allow([
+  QueuePermission.enqueue,
+]);
+
+final messages = [
+  {
+    "type": "email",
+    "to": "hello@example.com",
+    "subject": "Notification",
+    "message": "A notification from Nitric"
+  },
+  {
+    "type": "SMS",
+    "to": "+17200000000",
+    "message": "A text message from Nitric"
+  },
+];
+
+await batchQueue.enqueue(messages);
+```
+
+### Dealing with failures
+
+In rare cases when enqueue messages some might fail to be sent. The response from `enqueue()` will include an array of any messages that failed to send. You can process this array to retry or log the error.
+
+```dart
+final failed = await batchQueue.enqueue(messages);
+
+messages.forEach((message) {
+  print(message);
+});
+```

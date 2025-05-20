@@ -1,0 +1,63 @@
+---
+description: "Reference for Nitric's v0 Go library - Get a query-only sub-collection reference, this can be used to query commonly named collections across documents."
+---
+
+# Go - Collection.Collection()
+
+Get a query-only sub-collection reference, this can be used to query commonly named collections across documents.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  enemies := profiles.Collection("enemies")
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The name of the sub-collection to reference
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a query for a sub collection
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  profiles, err := nitric.NewCollection("profiles").With(nitric.CollectionReading)
+  if err != nil {
+    return
+  }
+
+  enemies := profiles.Collection("enemies")
+
+  enemiesQuery := enemies.Query()
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Collection().Query()](./collection-query)

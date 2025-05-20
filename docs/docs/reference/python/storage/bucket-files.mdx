@@ -1,0 +1,48 @@
+---
+description: "Reference for Nitric's Python library - Get a list of file references for files that exist on the bucket."
+---
+
+# Python - bucket.files()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Get a list of file references for files that exist on the bucket.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('read')
+
+files = await assets.files()
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'reading'. The latest version uses 'read'.
+
+## Examples
+
+### Deleting all files in a bucket
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('read', 'delete')
+
+files = await assets.files()
+for f in files:
+  await f.delete()
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'reading' and 'deleting'. The latest version uses 'read' and 'delete'.
+
+## Notes
+
+This method returns a list of [File](./bucket-file) references that exist on the bucket.

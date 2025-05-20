@@ -1,0 +1,36 @@
+---
+description: "Reference for Nitric's Node.js library - Delete a file from a bucket."
+---
+
+# Node.js - bucket.file.delete()
+
+<Note>
+  This is reference documentation for the Nitric Node.js SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Delete a file from a bucket.
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('delete')
+
+const logo = assets.file('images/logo.png')
+
+await logo.delete()
+```
+
+## Examples
+
+### Delete a file
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+const assets = bucket('assets').allow('delete')
+
+const logo = assets.file('images/logo.png')
+
+await logo.delete()
+```

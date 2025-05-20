@@ -1,0 +1,251 @@
+---
+description: Running AI & Batch workloads with Nitric
+---
+
+# Batch
+
+Nitric provides functionality that allows you to run large-scale jobs in parallel across multiple virtual machines or compute resources. Unlike Nitric Services, which respond to real-time events (APIs, Schedules, etc.), Batch is intended to efficiently handle tasks that can be processed in batches, which means they don't need to run in real time but can be executed asynchronously. Batches can include tasks that require a lot of computing power, or access to GPU resources, such as machine learning model training, image processing, video transcoding, data processing, and data analysis.
+
+<Note>
+  Batches are currently in [Preview](/reference/preview-features) and are
+  currently only available in the following languages: JavaScript, Python, Go,
+  and Dart, using the nitric/aws@1.14.0, nitric/gcp@1.14.0 or later.
+</Note>
+
+Nitric Batch is designed to be used in conjunction with Nitric Services, allowing you to run long-running, computationally intensive tasks in parallel with your real-time services. This allows you to build complex applications that can handle both real-time and batch processing workloads.
+
+Batches are deployed to cloud services such as [AWS Batch](https://aws.amazon.com/batch/), [Azure Batch](https://azure.microsoft.com/en-au/products/batch), and [Google Cloud Batch](https://cloud.google.com/batch/docs). Nitric abstracts the underlying cloud provider, allowing you to run your batch jobs on any of the supported cloud providers without having to worry about the specifics of each provider.
+
+## Enabling Batches
+
+Batches are currently in [Preview](/reference/preview-features). To enable this feature in your project add the following to your `nitric.yaml` file
+
+```yaml
+preview:
+  - batch-services
+```
+
+## Definitions
+
+### Batch
+
+A Batch is similar to a Nitric Service, but it's intended for work with a definitive start and a finish. Where a service is designed to be reactive, a batch is designed to be proactive and run a series of jobs in parallel.
+
+### Job Definitions
+
+A Job Definition describes a type of work to be done by a Nitric `Batch`
+
+### Job
+
+A Job is an instance of a Job Definition that is running within a `Batch`, Jobs can be started from other Nitric Services or Batches.
+
+## Limitations of Batches
+
+Jobs are designed to be long running HPC workloads and can take some time to spin up. They are not designed with reactivity in mind and are not suitable for responding to events from cloud resources.
+
+Jobs are unable to run the following:
+
+- Topic Subscriptions
+- Bucket Notifications
+- API & HTTP resources
+- Websocket message handlers
+
+Jobs can be used to read and write to/from all nitric resources, for example they can publish new messages to a Topic, read and write to a Bucket, or read and write to a Database. They just can't respond to real-time events from these resources.
+
+## Defining Batches
+
+Batches are defined similarly to services in a project's `nitric.yaml` file. For example:
+
+```yaml
+batch-services:
+  - match: ./batches/*.ts
+    start: yarn dev:services $SERVICE_PATH
+```
+
+<Note>Batches can contain any number of Job Definitions.</Note>
+
+## Defining a Job
+
+Within a Batch we create Job Definitions, by creating a new Job with a unique name and defining a handler function that will be executed when the job is submitted.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import { job } from '@nitric/sdk'
+
+const analyze = job('analyze')
+
+// Use `handler` to register the callback function that will run when a job is submitted
+analyze.handler(
+  async (ctx) => {
+    // Do some work
+  },
+  { cpus: 1, memory: 1024, gpus: 0 },
+)
+```
+
+```typescript !!
+import { job, JobContext } from '@nitric/sdk'
+
+const analyze = job('analyze')
+
+// Use `handler` to register the callback function that will run when a job is submitted
+analyze.handler(
+  async (ctx: JobContext) => {
+    // Do some work
+  },
+  { cpus: 1, memory: 1024, gpus: 0 },
+)
+```
+
+```python !!
+from nitric.resources import job
+from nitric.application import Nitric
+from nitric.context import JobContext
+
+analyze = job("analyze")
+
+# Create the callback function that will run when a job is submitted
+@analyze(cpus=1, memory=1024, gpus=0)
+async def generate_image(ctx: None):
+    # Do some work
+
+
+Nitric.run()
+```
+
+```go !!
+import (
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+  analyze := nitric.NewJob("analyze")
+
+  // Use `Handler` to register the callback function that will run when a job is submitted
+  analyze.Handler(func(ctx *batch.Ctx) {
+    // Do some work
+  }, batch.WithCpus(1), batch.WithMemory(1024), batch.WithGpus(0))
+
+  nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final job = Nitric.job("analyze");
+
+  job.handler((ctx) async {
+    print("New job submitted for ${ctx.req.jobName}: ${ctx.req.message}");
+
+    return ctx;
+  }, opts: JobResourceRequirements(cpus: 1, memory: 1024, gpus: 0));
+}
+```
+
+</CodeSwitcher>
+
+## Submitting Jobs for Execution
+
+Jobs may be submitted from Nitric `services` or other `batches` using the `submit` method on the job reference. When submitting a job you can provide a payload that will be passed to the job handler function.
+
+<CodeSwitcher tabs>
+
+```javascript !!
+import * as nitric from '@nitric/sdk'
+
+const api = nitric.api('public')
+const analyze = nitric.job('analyze').allow('submit')
+
+api.post('/submit-job', async (ctx) => {
+  await analyze.submit({
+    someKey: 'someValue',
+  })
+})
+```
+
+```typescript !!
+import * as nitric from '@nitric/sdk'
+
+const api = nitric.api('public')
+const analyze = nitric.job('analyze').allow('submit')
+
+api.post('/submit-job', async (ctx) => {
+  await analyze.submit({
+    someKey: 'someValue',
+  })
+})
+```
+
+```python !!
+from nitric.resources import api, job
+from nitric.application import Nitric
+
+analyze = job("analyze").allow("submit")
+public_api = api("public")
+
+@public_api.post("/submit-job")
+async def submit_job(ctx):
+    await analyze.submit(
+      {
+        "someKey": "someValue"
+      }
+    )
+
+Nitric.run()
+```
+
+```go !!
+import (
+	"context"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+)
+
+func main() {
+	api := nitric.NewApi("public")
+	analyze := nitric.NewJob("analyze").Allow(batch.JobSubmit)
+
+	api.Post("/submit-job", func(ctx *apis.Ctx) {
+		analyze.Submit(context.Background(), map[string]interface{}{
+			"someKey": "someValue",
+		})
+	})
+
+	nitric.Run()
+}
+```
+
+```dart !!
+import 'package:nitric_sdk/nitric.dart';
+
+void main() {
+  final api = Nitric.api("public");
+  final analyze = Nitric.job("analyze").allow([JobPermission.submit]);
+
+  api.get("/submit-job", (ctx) async {
+    analyze.submit({
+      "someKey": "someValue"
+    });
+
+    return ctx;
+  });
+}
+```
+
+</CodeSwitcher>
+
+## Cloud Service Mapping
+
+Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.
+
+- [AWS](/providers/mappings/aws/batch)
+- Azure - Coming soon
+- [Google Cloud](/providers/mappings/gcp/batch)
+
+If you need support for additional clouds, let us know by [opening an issue](https://github.com/nitrictech/nitric/issues) or joining the conversation on [Discord](https://nitric.io/chat).

@@ -1,0 +1,32 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Create Websockets with the Nitric Node.js SDK"
+---
+
+# Node.js - websocket()
+
+Creates a new Websocket.
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Websocket within the app. Subsequent calls to
+    `websocket()` with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a Websocket
+
+```javascript
+import { websocket } from '@nitric/sdk'
+
+const socket = websocket('socket')
+```

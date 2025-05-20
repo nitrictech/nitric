@@ -1,0 +1,97 @@
+---
+description: "Reference for Nitric's v0 Node.js library - Register a handler for HTTP DELETE requests to the route."
+---
+
+# Node.js - api.route.delete()
+
+Register a handler for HTTP DELETE requests to the route.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const PARAM_ID = 'customerId'
+
+const customerRoute = api('public').route(`/customers/:${PARAM_ID}`)
+
+customerRoute.delete((ctx) => {
+  // construct response for the DELETE: /customers/:customerId request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+## Parameters
+
+<Properties>
+  <Property name="middleware" required type="HttpMiddleware | HttpMiddleware[]">
+    One or more middleware services to use as the handler for HTTP requests.
+    Handlers can be sync or async
+  </Property>
+  <Property name="opts" type="object">
+    Additional options when creating method.
+    <Properties nested>
+      <Property name="security" type="map<string, string[]>">
+        Security rules to apply with scopes to the entire API. Keys must match a
+        `securityDefinition`.
+      </Property>
+    </Properties>
+  </Property>
+</Properties>
+
+## Examples
+
+### Register a handler for DELETE requests
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const PARAM_ID = 'customerId'
+
+const customerRoute = api('public').route(`/customers/:${PARAM_ID}`)
+
+customerRoute.delete((ctx) => {
+  const id = ctx.req.params[PARAM_ID]
+  // handle the DELETE request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+})
+```
+
+### Chain services as a single method handler
+
+When multiple services are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers.
+
+```javascript
+import { api } from '@nitric/sdk'
+import { validate } from '../middleware'
+
+const PARAM_ID = 'customerId'
+
+const deleteCustomer = (ctx) => {
+  const id = ctx.req.params[PARAM_ID]
+  // handle the DELETE request...
+  const responseBody = {}
+  ctx.res.json(responseBody)
+}
+
+const customerRoute = api('public').route(`/customers/:${PARAM_ID}`)
+
+customerRoute.delete([validate, deleteCustomer])
+```
+
+### Access the request body
+
+The DELETE request body is accessible from the `ctx.req` object.
+
+```javascript
+import { api } from '@nitric/sdk'
+
+const PARAM_ID = 'customerId'
+
+const customerRoute = api('public').route(`/customers/:${PARAM_ID}`)
+
+customerRoute.delete((ctx) => {
+  const customerData = ctx.req.data
+  // parse, validate and store the request payload...
+})
+```

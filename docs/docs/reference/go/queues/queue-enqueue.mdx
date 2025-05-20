@@ -1,0 +1,108 @@
+---
+description: "Reference for Nitric's Go library - Send messages to a queue."
+---
+
+# Go - Queue.Enqueue()
+
+<Note>
+  This is reference documentation for the Nitric Go SDK. To learn about Queues
+  in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Send messages to a queue.
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+	queue := nitric.NewQueue("queue-name").Allow(queues.QueueEnqueue, queues.QueueDequeue)
+
+	messages := []map[string]interface{}{
+		{
+			"message": "hello world",
+		},
+	}
+
+	failedMessages, err := queue.Enqueue(context.TODO(), messages)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="ctx" required type="context">
+    The context of the call, used for tracing.
+  </Property>
+  <Property name="messages" required type="[]map[string]interface{}">
+    A message or an array of messages to send to the queue.
+  </Property>
+</Properties>
+
+## Examples
+
+### Send messages to a queue
+
+```go
+import (
+  "context"
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+  "github.com/nitrictech/go-sdk/nitric/queues"
+)
+
+func main() {
+  queue := nitric.NewQueue("queue-name").Allow(queues.QueueEnqueue)
+
+  messages := []map[string]interface{}{
+    {
+      "type":    "email",
+      "to":      "hello@example.com",
+      "subject": "Notification",
+      "message": "A notification from Nitric",
+    },
+    {
+      "type":    "SMS",
+      "to":      "+17200000000",
+      "message": "A text message from Nitric",
+    },
+  }
+
+  failedMessages, err := queue.Enqueue(context.TODO(), messages)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Dealing with failures
+
+In rare cases when enqueue messages some might fail to be sent. The response from `Enqueue()` will include an array of any messages that failed to send. You can process this array to retry or log the error.
+
+```go
+failedMessages, err := queue.Enqueue(context.TODO(), messages)
+if err != nil {
+	fmt.Println(err)
+	return
+}
+
+for _, message := range failedMessages {
+	fmt.Println(message.Message) // The message that failed to enqueue
+	fmt.Println(message.Reason)  // The reason the message failed to enqueue
+}
+```

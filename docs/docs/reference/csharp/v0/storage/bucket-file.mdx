@@ -1,0 +1,38 @@
+---
+description: "Reference for Nitric's v0 .NET library - Create a reference to a file within a bucket."
+---
+
+# .NET - Bucket.File()
+
+Create a reference to a file within a bucket.
+
+```csharp
+using Nitric.Sdk;
+using Nitric.Sdk.Storage;
+
+var assets = Nitric.Bucket("assets").With(BucketPermission.Reading);
+
+var logo = assets.File("images/logo.png");
+
+Nitric.Run();
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name/reference to the file.
+  </Property>
+</Properties>
+
+## Notes
+
+The file does not need to exist, only a reference to that file is being created.
+
+## Available Operations
+
+- [File.Read()](./bucket-file-read)
+- [File.Write()](./bucket-file-write)
+- [File.Delete()](./bucket-file-delete)
+- [File.GetDownloadUrl()](./bucket-file-downloadurl)
+- [File.GetUploadUrl()](./bucket-file-uploadurl)

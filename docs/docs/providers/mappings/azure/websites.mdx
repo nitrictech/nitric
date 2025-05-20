@@ -1,0 +1,24 @@
+---
+description: 'How Nitric deploys Websites to Azure'
+---
+
+# Azure Resources - Websites
+
+Nitric Websites are deployed to Azure using [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure Front Door](https://azure.microsoft.com/en-us/services/frontdoor/).
+
+## Azure Resources
+
+The following resources are created when deploying Websites to Azure:
+
+- Blob Storage Account for each Static Website
+- Front Door Endpoint (with Front Door Standard)
+- Delivery Rules for API and Subsite rewrites
+
+## Deployment
+
+During deployment the Nitric CLI creates a storage account for each website's assets and a Front Door distribution to serve them:
+
+- Each declared website is deployed to a separate Azure Storage account
+- Each website is deployed to a `$web` container within the storage account
+- A Front Door endpoint is created to serve your website and rewrite all APIs to `/api/{apiName}` using Delivery Rules
+- Cache invalidation is triggered when files have changed, this can also be skipped within your stack configuration

@@ -1,0 +1,107 @@
+---
+description: "Reference for Nitric's v0 Go library - Creates a new Queue to send and receive asynchronous tasks."
+---
+
+# Go - NewQueue()
+
+Creates a new Queue to send and receive asynchronous tasks.
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueSending, nitric.QueueReceiving)
+  if err != nil {
+    fmt.Prinln(err)
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+## Parameters
+
+<Properties>
+  <Property name="name" required type="string">
+    The unique name of this Queue within the app. Subsequent calls to `NewQueue`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your code needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**QueueSending**
+
+This permission allows your code to send new tasks to the queue.
+
+---
+
+**QueueReceiving**
+
+This permission allows your code to receive tasks from the queue.
+
+---
+
+### Notes
+
+In most instances, code should either send to or receive from a queue, usually not both.
+
+## Examples
+
+### Create a Queue
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueSending, nitric.QueueReceiving)
+  if err != nil {
+    fmt.Prinln(err)
+    return
+  }
+
+  nitric.Run()
+}
+```
+
+### Receive tasks from a queue
+
+```go
+import (
+  "fmt"
+
+  "github.com/nitrictech/go-sdk/nitric"
+)
+
+func main() {
+  queue, err := nitric.NewQueue("queue-name").With(nitric.QueueReceiving)
+  if err != nil {
+    fmt.Prinln(err)
+    return
+  }
+
+  tasks := queue.Receive(context.TODO(), 10)
+
+  nitric.Run()
+}
+```
+
+### See also
+
+- [Queue.Send()](./queue-send)
+- [Queue.Receive()](./queue-receive)

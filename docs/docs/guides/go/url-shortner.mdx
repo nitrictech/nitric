@@ -1,0 +1,277 @@
+---
+description: Use the Nitric framework to build and deploy a URL shortening service in Go.
+tags:
+  - Key Value Store
+  - API
+languages:
+  - go
+start_steps: |
+  git clone --depth 1 https://github.com/nitrictech/examples
+  cd examples/v1/url-shortener
+  go mod tidy
+  nitric start
+published_at: 2024-12-24
+---
+
+# Building a URL shortener in Go with Nitric
+
+## What we'll be doing
+
+1. Use Nitric to create a simple URL shortener service.
+2. Expose an HTTP endpoint for shortening URLs.
+3. Store shortened URLs in a Key-Value (KV) store.
+4. Redirect users to the original URL when accessing the short code.
+5. Run locally for testing.
+6. Deploy to AWS.
+
+## Prerequisites
+
+- [Go](https://go.dev/dl/)
+- The [Nitric CLI](/get-started/installation)
+- An [AWS](https://aws.amazon.com) account (optional)
+
+## Getting started
+
+We'll start by creating a new project for our WebSocket application. The finished source can be found [here](https://github.com/nitrictech/examples/tree/main/v1/url-shortener).
+
+```bash
+nitric new url-shortener go-starter
+```
+
+Next, open the project in your preferred editor:
+
+```bash
+cd url-shortener
+```
+
+Make sure all dependencies are resolved:
+
+```bash
+go mod tidy
+```
+
+The scaffolded project should have the following structure:
+
+```text
++--services/
+|  +-- hello/
+|      +-- main.go
++--nitric.yaml
++--go.mod
++--go.sum
++--golang.dockerfile
++--.gitignore
++--README.md
+```
+
+You can test the project to ensure everything is working as expected:
+
+```bash
+nitric start
+```
+
+If everything is working as expected, you can now delete all files/folders in the `services/` folder. We'll create new services in this guide.
+
+### Resource Initialization
+
+We'll start by creating a `resources` package that defines and initializes the API and KV store from the Nitric SDK. At this point, we won't request any permissions like `get` or `set` for the KV store. We'll do that in the individual services to ensure least privilege provisioning.
+
+```go title:resources/main.go
+package resources
+
+import (
+	"sync"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric/keyvalue"
+)
+
+type Resource struct {
+	MainApi    apis.Api
+	UrlKvStore keyvalue.KvStore
+}
+
+var (
+	resource     *Resource
+	resourceOnce sync.Once
+)
+
+func Get() *Resource {
+	resourceOnce.Do(func() {
+		mainApi := nitric.NewApi("main")
+
+		resource = &Resource{
+			MainApi:    mainApi,
+			UrlKvStore: nitric.NewKv("urls"),
+		}
+	})
+
+	return resource
+}
+```
+
+## Building the URL Shortener Application
+
+Create a new folder called `shortener` within the `services` directory. Inside this folder, add a file named `main.go`, and include the following code:
+
+```go title:services/shortener/main.go
+package main
+
+import (
+	"math/rand"
+
+	"github.com/nitrictech/go-sdk/nitric"
+	"github.com/nitrictech/go-sdk/nitric/apis"
+	"github.com/nitrictech/go-sdk/nitric/keyvalue"
+	"github.com/nitrictech/templates/go-starter/resources"
+)
+
+func main() {
+	// Initialize the resources defined in resources.go
+	urlKvStore := resources.Get().UrlKvStore.Allow(keyvalue.KvStoreSet, keyvalue.KvStoreGet)
+
+	// POST /shorten - Shorten a given URL
+	resources.Get().MainApi.Post("/shorten", func(ctx *apis.Ctx) {
+		// TODO: implement app logic
+	})
+
+	// GET /:code - Redirect to the original URL associated with the short code
+	resources.Get().MainApi.Get("/:code", func(ctx *apis.Ctx) {
+		// TODO: implement app logic
+	})
+
+	nitric.Run()
+}
+```
+
+Here we're creating placeholders for our API routes and initializing our KV store with permissions so we can `GET` and `SET` values.
+
+Next, let's add a helper function to handle URL shortening and an inline struct to hold our URL data.
+
+```go title:services/shortener/main.go
+func generateShortCode() string {
+  s := ""
+  for i := 0; i < 6; i++ {
+    s += string(rand.Intn(26) + 97) // Generate a lowercase letter
+  }
+
+  return s
+}
+
+var shortenData struct {
+  Url string `json:"url"`
+}
+```
+
+Let's implement our shorten route:
+
+```go title:services/shortener/main.go
+// POST /shorten - Shorten a given URL
+resources.Get().MainApi.Post("/shorten", func(ctx *apis.Ctx) {
+  err := json.Unmarshal(ctx.Request.Data(), &shortenData)
+  if err != nil || strings.TrimSpace(shortenData.Url) == "" {
+    ctx.Response.Status = http.StatusBadRequest
+    ctx.Response.Body = []byte("Invalid or missing URL")
+    return
+  }
+
+  shortCode := generateShortCode()
+  // Store the mapping of short code -> original URL
+  err = urlKvStore.Set(context.Background(), shortCode, map[string]interface{}{
+    "url": shortenData.Url,
+  })
+  if err != nil {
+    ctx.Response.Status = 500
+    ctx.Response.Body = []byte("Error shortening URL")
+    return
+  }
+
+  // Extract the origin from headers (for demonstration), then return the short URL
+  origin := ""
+  if val, ok := ctx.Request.Headers()["X-Forwarded-For"]; ok {
+    origin = val[0]
+  } else if val, ok := ctx.Request.Headers()["x-forwarded-for"]; ok {
+    origin = val[0]
+  }
+
+  ctx.Response.Body = []byte(fmt.Sprintf("%s/%s", origin, shortCode))
+})
+```
+
+Finally, we'll add a redirect handler to send users to the long URL when they use the short code:
+
+```go title:services/shortener/main.go
+// GET /:code - Redirect to the original URL associated with the short code
+resources.Get().MainApi.Get("/:code", func(ctx *apis.Ctx) {
+  code := ctx.Request.PathParams()["code"]
+
+  data, err := urlKvStore.Get(context.Background(), code)
+  if err == nil {
+    ctx.Response.Headers["Location"] = []string{data["url"].(string)}
+    ctx.Response.Status = 301
+  } else {
+    fmt.Println("Error getting URL: ", err)
+    ctx.Response.Status = 404
+  }
+})
+```
+
+## Running locally
+
+Ensure all dependencies are resolved and start the project:
+
+```bash
+go mod tidy
+nitric start
+```
+
+Nitric will run the service locally. You can test the endpoints using tools like `curl` or Postman. For example, to shorten a URL:
+
+```bash
+curl -X POST localhost:4001/shorten -d '{"url":"https://example.com"}' -H "Content-Type: application/json"
+```
+
+You should receive a response containing the short code which you can use in a browser to test the redirect:
+
+```
+http://localhost:4001/{shortcode}
+```
+
+## Deploy to the Cloud
+
+When you're ready to deploy this to the cloud, Nitric makes it straightforward. In this example, we’ll deploy to AWS. First, set up your credentials and configuration for the [nitric/aws provider](/providers/pulumi/aws).
+
+### Create a Stack
+
+Create a `dev` stack that uses the `aws` provider:
+
+```bash
+nitric stack new dev aws
+```
+
+This command creates a `nitric.dev.yaml` file defining your deployment target. Edit it to configure your preferred AWS region (e.g., `us-east-1`).
+
+### Deploying
+
+Deploy the stack to the cloud:
+
+```bash
+nitric up
+```
+
+Once deployment is complete, you’ll have live endpoints accessible via AWS infrastructure. Test the endpoints using the new domain provided after deployment.
+
+To remove deployed resources:
+
+```bash
+nitric down
+```
+
+## Summary
+
+In this guide, we’ve built a simple URL shortening service using Go and Nitric. We’ve shown how to:
+
+- Set up an API to shorten URLs and redirect users.
+- Use a Key-Value store to persist short code mappings.
+- Run and test the application locally before deploying it to AWS.

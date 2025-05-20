@@ -1,0 +1,17 @@
+mesa-libgbm
+nss
+nspr
+at-spi2-atk
+cups-libs
+libdrm
+libXcomposite
+libXdamage
+libXext
+libXrandr
+libgbm
+libxcb
+alsa-lib
+atk
+gtk3
+pango
+libxkbcommon

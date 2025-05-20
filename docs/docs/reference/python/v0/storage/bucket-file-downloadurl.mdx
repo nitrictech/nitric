@@ -1,0 +1,65 @@
+---
+description: "Reference for Nitric's v0 Python library - Create a signed URL for read access to a file."
+---
+
+# Python - bucket.file.download_url()
+
+Create a signed url for read access to a file.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('reading')
+
+logo = assets.file('images/logo.png')
+
+download_url = await logo.download_url()
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="expiry" type="number">
+    Seconds until link expiry. Maximum of 604800 (7 days).
+  </Property>
+</Properties>
+
+## Examples
+
+### Create a readable link that is valid for the next 5 minutes
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('reading')
+
+logo = assets.file('images/logo.png')
+
+logo_url = await logo.download_url(expiry=300)
+
+Nitric.run()
+```
+
+### Get an image url for rendering
+
+```python
+from nitric.resources import api, bucket
+from nitric.application import Nitric
+from nitric.context import HttpContext
+
+main_api = api('main')
+images = bucket('images').allow('reading')
+
+@main_api.get('/images/:id')
+async def get_image(ctx: HttpContext):
+  id = ctx.req.params['id']
+  url = await images.file(id).download_url()
+  ctx.res.status = 303
+  ctx.res.headers['Location'] = [url]
+
+Nitric.run()
+```

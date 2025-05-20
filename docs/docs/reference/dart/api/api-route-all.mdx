@@ -1,0 +1,119 @@
+---
+description: "Reference for Nitric's Dart library - Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route."
+---
+
+# Dart - api.route.all()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about APIs
+  in Nitric start with the [API docs](/apis).
+</Note>
+
+Register a single handler for all HTTP Methods (GET, POST, PUT, DELETE, PATCH) on the route.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+
+customersRoute.all((ctx) async {
+  // construct a response for all incoming HTTP requests
+  final responseBody = {};
+  ctx.res.json(responseBody);
+
+  return ctx;
+});
+```
+
+## Parameters
+
+<Properties>
+  <Property name="handler" required type="HttpHandler">
+    The middleware service to use as the handler for HTTP requests.
+  </Property>
+</Properties>
+
+### Notes
+
+When using the `all()` method to register a single function as the handler for all HTTP methods, none of the other methods should be defined on that route.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+
+customersRoute.all((ctx) async {
+  // handle all requests
+});
+
+// Don't call `get()`, `post()`, etc., they're already handled by `all()`
+customersRoute.get((ctx) => {
+  // this handler won't work
+});
+```
+
+## Examples
+
+### Register a method handler function
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+
+customersRoute.all((ctx) async {
+  // construct a response for all incoming HTTP requests
+  final responseBody = {};
+  ctx.res.json(responseBody);
+
+  return ctx;
+});
+```
+
+### Chain services as a single method handler
+
+When multiple services are provided they will be called as a chain. If one succeeds, it will move on to the next. This allows middleware to be composed into more complex handlers. You can call the next middleware in the chain using `ctx.next()`. If a middleware in the chain does not call `.next` and instead returns the base context, the call chain will end.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+Future<HttpContext> validate(HttpContext ctx) async {
+  if (!ctx.req.headers.containsKey("Content-Type")) {
+    ctx.res.status = 400;
+    ctx.res.body = "header Content-Type is required";
+
+    // End the middleware chain by not calling `ctx.next()`.
+    return ctx;
+  }
+
+  return ctx.next();
+}
+
+Future<HttpContext> handleCustomer(HttpContext ctx) async {
+  // handle the request...
+  return ctx.next();
+}
+
+// The validate middleware will run before all handlers that are created using this route
+final customersRoute = Nitric.api("public").route("/customers", middlewares: [validate]);
+
+// The validate middleware will run before the handleCustomer handler
+customersRoute.all(handleCustomer);
+```
+
+### Access the request body
+
+For methods that include a request body, such as `POST` and `PUT`, you can access the body from the `ctx.req` object.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final customersRoute = Nitric.api("public").route("/customers");
+
+customersRoute.all((ctx) async {
+  final customerData = ctx.req.json();
+  // parase, validate and store the request payload if it's available
+
+  return ctx;
+});
+```

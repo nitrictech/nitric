@@ -1,0 +1,71 @@
+---
+description: "Reference for Nitric's Dart library - Publish new events to the topic."
+---
+
+# Dart - topic.publish()
+
+<Note>
+  This is reference documentation for the Nitric Dart SDK. To learn about Topics
+  and Pub/Sub in Nitric start with the [Async Messaging
+  docs](/messaging#topics).
+</Note>
+
+Publish an event (push based message) to a topic.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final updates = Nitric.topic("updates").allow([
+  TopicPermission.publish,
+]);
+```
+
+## Parameters
+
+<Properties>
+  <Property name="payload" required type="Map<String, dynamic>">
+    The payload to publish to the topic.
+  </Property>
+  <Property name="delay" type="int">
+    A number of seconds to delay the delivery of this message.
+  </Property>
+</Properties>
+
+## Examples
+
+### Publish a message
+
+Publishing messages to a topic will push a copy of the message to each of the topic's subscribers. By default, delivery occurs without a delay.
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final updates = Nitric.topic("updates").allow([
+  TopicPermission.publish,
+]);
+
+await updates.publish({
+  "something": "amazing happened",
+});
+```
+
+### Delaying message delivery
+
+You can delay the delivery of messages sent to a topic. The current maximum delay is 7 days (604800 seconds).
+
+```dart
+import 'package:nitric_sdk/nitric.dart';
+
+final updates = Nitric.topic("updates").allow([
+  TopicPermission.publish,
+]);
+
+// 10 minute delay
+await updates.publish({
+  "something": "amazing happened",
+}, delay: 600);
+```
+
+### Notes
+
+- A service may subscribe to OR publish to a topic but not both.

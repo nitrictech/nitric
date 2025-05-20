@@ -1,0 +1,42 @@
+---
+description: "Nitric's Providers distributed via containers."
+---
+
+# Nitric Docker Providers
+
+Nitric Providers can be distributed as Docker containers. This allows providers to be built and distributed independently of the Nitric runtime in a highly portable format. It's also a convenient way to distribute custom providers.
+
+## Enabling Docker Providers
+
+Nitric Providers running as Docker containers are currently a [preview](/reference/preview-features) feature. To enable this feature, add/update the preview feature flag in your `nitric.yaml` file:
+
+```yaml title:nitric.yaml
+preview:
+  - docker-providers
+```
+
+## Using Docker Providers
+
+To use a Docker Provider, you need to specify the image to use in a stack file for your project, e.g. `nitric.test.yaml`. While a standard Nitric Provider is defined as string containing the provider namespace, then provider name and version e.g. `nitric/aws@1.2.0`, docker providers start with `docker://` followed by the image name you'd like to reference (repositories and tags are supported).
+
+For example, to use a custom provider in a container image named `my-provider`, update the stack file as follows:
+
+```yaml title:nitric.test.yaml
+provider: docker://my-provider
+```
+
+<Note>
+  The `docker://` prefix is required to indicate that the provider is a Docker
+  container image.
+</Note>
+
+<Note>
+  If the given image is found locally it will be used without pulling from a
+  registry. Otherwise, the image will be pulled from the default registry.
+</Note>
+
+Tags are also supported and recommended to ensure the correct version of the provider is used. For example, to use a custom provider in a container image named `my-provider` with the tag `latest`, update the stack file as follows :
+
+```yaml title:nitric.test.yaml
+provider: docker://my-provider:latest
+```

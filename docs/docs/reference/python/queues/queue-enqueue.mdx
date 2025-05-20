@@ -1,0 +1,86 @@
+---
+description: "Reference for Nitric's Python library - Send messages to a queue."
+---
+
+# Python - queue.enqueue()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Queues in Nitric start with the [Async Messaging docs](/messaging#queues).
+</Note>
+
+Sends messages to a queue.
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+payload = {}
+await batch_queue.enqueue(payload)
+
+Nitric.run()
+```
+
+## Parameters
+
+<Properties>
+  <Property name="messages" required type="dict | dict[]">
+    A message or an array of messages to enqueue.
+  </Property>
+</Properties>
+
+## Examples
+
+### Send a message to a queue
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+payload = {}
+await batch_queue.enqueue(payload)
+
+Nitric.run()
+```
+
+### Send multiple messages to a queue
+
+```python
+from nitric.resources import queue
+from nitric.application import Nitric
+
+batch_queue = queue('batch').allow('enqueue')
+
+messages = [
+  {
+      'type': 'Email',
+      'to': 'hello@example.com',
+      'subject': 'Notification',
+      'message': 'A notification from Nitric',
+  },
+  {
+      'type': 'SMS',
+      'to': '+17200000000',
+      'message': 'A text message from Nitric',
+  }
+]
+
+await batch_queue.enqueue(messages)
+
+Nitric.run()
+```
+
+### Dealing with failures
+
+In rare cases when enqueueing message some messages might fail to be sent. The response from `enqueue()` will include an array of any messages that failed to be placed on the queue. You can process this array to retry or log the error.
+
+```python
+failed = await batch_queue.enqueue(messages)
+
+for message in failed:
+  print(message)
+```

@@ -1,0 +1,70 @@
+---
+description: "Reference for Nitric's Python library - Create a new bucket for storing and retrieving files."
+---
+
+# Python - bucket()
+
+<Note>
+  This is reference documentation for the Nitric Python SDK. To learn about
+  Buckets and Storage in Nitric start with the [Storage docs](/storage).
+</Note>
+
+Create a new bucket for storing and retrieving files.
+
+```python
+from nitric.resources import bucket
+from nitric.application import Nitric
+
+assets = bucket('assets').allow('read', 'write', 'delete')
+
+Nitric.run()
+```
+
+> Earlier versions of the Nitric SDK used 'reading', 'writing' and 'deleting'. The latest version uses 'read', 'write' and 'delete'.
+
+## Parameters
+
+<Properties>
+  <Property name="name" type="string" required>
+    The unique name of this bucket within the app. Subsequent calls to `bucket`
+    with the same name will return the same object.
+  </Property>
+</Properties>
+
+## Access
+
+All Nitric resources provide access permissions you can use to specify the level of access your service needs to the resource. See here for details about infrastructure [security](/get-started/foundations/infrastructure/security).
+
+### Available permissions:
+
+---
+
+**reading**
+
+This permission allows your function to read files from the bucket
+
+---
+
+**writing**
+
+This permission allows your function to write files to the bucket
+
+---
+
+**deleting**
+
+This permission allows your function to delete files from the bucket
+
+---
+
+## Working with files
+
+See the following for examples on working with files in a bucket:
+
+- [on()](./bucket-on)
+- [file()](./bucket-file)
+- [file.read()](./bucket-file-read)
+- [file.write()](./bucket-file-write)
+- [file.delete()](./bucket-file-delete)
+- [file.download_url()](./bucket-file-downloadurl)
+- [file.upload_url()](./bucket-file-uploadurl)

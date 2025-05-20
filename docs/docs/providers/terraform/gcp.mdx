@@ -1,0 +1,130 @@
+---
+description: 'Terraform - Google Cloud Platform (GCP) provider for Nitric'
+---
+
+# Terraform GCP Provider Overview
+
+_The officially supported Nitric Terraform GCP Provider._
+
+```yaml
+provider: nitric/gcptf@latest
+```
+
+<Note>
+  The Nitric Terraform GCP Provider is currently in Preview. We recommend
+  reviewing the generated Terraform before deploying to Production environments,
+  or alternatively using the [Pulumi GCP Provider](/providers/pulumi/gcp).
+</Note>
+
+## Prerequisites
+
+The **Terraform CLI** is required to deploy the resulting Terraform Stack that Nitric generates. You can find the installation instructions for Terraform in the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
+The provider is built with the [Cloud Development Kit for Terraform (CDKTF)](https://developer.hashicorp.com/terraform/cdktf). Since CDKTF relies on Node.js, you'll need to have Node.js installed, you can read about the full CDKTF prerequisites in the [CDKTF documentation](https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-install#prerequisites).
+
+## Google Cloud Credentials
+
+The Terraform CLI typically uses standard GCP credential settings to authenticate with GCP. If you've used the GCP CLI to login or another standard method previously, these settings should work without modification.
+
+Authorize `gcloud` to access the Cloud Platform with Google user credentials:
+
+```bash
+gcloud auth application-default login
+```
+
+### Google CLI Installation
+
+Installing the Google Cloud CLI assists with credentials setup. You can install it using these summarized instructions, for more options see the [Google docs](https://cloud.google.com/sdk/install).
+
+<OSTabs>
+
+<TabItem label="Windows">
+
+Download & install the [latest CLI release](https://cloud.google.com/sdk/install#windows).
+
+</TabItem>
+
+<TabItem label="Linux">
+
+```bash
+curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-378.0.0-linux-x86_64.tar.gz
+```
+
+</TabItem>
+
+<TabItem label="macOS">
+
+Download & install the [latest CLI release](https://cloud.google.com/sdk/install#mac).
+
+</TabItem>
+
+</OSTabs>
+
+## Create Billing Account
+
+For Google Cloud to allow deployments, a billing account must be [created and attached](https://console.cloud.google.com/billing) to the project you deploy to.
+
+## Stack Configuration
+
+```yaml title:nitric.[stack ID].yaml
+# The provider to use and it's published version
+# See releases:
+# https://github.com/nitrictech/nitric/tags
+provider: nitric/gcptf@latest
+
+# The target GCP region to deploy to
+# See available regions:
+# https://cloud.google.com/run/docs/locations
+region: my-gcp-stack-region
+
+# ID of the google cloud project to deploy into
+gcp-project-id: my-gcp-project-id
+
+# All configuration below is optional
+
+# The timezone that deployed schedules will run with
+# Format is in tz identifiers:
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+schedule-timezone: Australia/Sydney
+
+# Add CDN configuration, required for websites deployments
+# Available since v1.22.0
+cdn:
+  # The name of the Google Cloud DNS Zone to use when configuring the website DNS
+  zone-name: yourzone
+  # A valid subdomain for the DNS Zone to use for the deployed websites endpoint
+  domain-name: app.example.com
+  # The following configuration values are optional
+  # Specify the TTL the CDN sends in the Cache-Control or Expires headers to clients
+  client-ttl: 3600
+  # Specify the TTL for content cached by the CDN when the origin server does not provide any caching directives
+  default-ttl: 604800
+  # Skip CDN cache invalidation during deployments (defaults to false)
+  skip-cache-invalidation: true
+
+# Configure your deployed services
+config:
+  # How services without a type will be deployed
+  default:
+    # configure services to deploy to Google Cloud Run
+    cloudrun:
+      # set 512MB of RAM
+      # See cloudrun configuration docs here:
+      # https://cloud.google.com/run/docs/configuring/memory-limits
+      memory: 512
+      # set a timeout of 15 seconds
+      # https://cloud.google.com/run/docs/configuring/request-timeout
+      timeout: 15
+  # Additional deployment types
+  # You can target these types by setting a `type` in your project configuration
+  big-service:
+    cloudrun:
+      memory: 1024
+      timeout: 60
+```
+
+<Note>
+  Missing something? Let us know by raising an issue in
+  [GitHub](https://github.com/nitrictech/nitric) or by dropping us a line on
+  [Discord](https://nitric.io/chat)
+</Note>

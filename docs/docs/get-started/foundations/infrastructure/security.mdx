@@ -1,0 +1,60 @@
+---
+description: 'How Nitric deals with security, IAM and access control'
+---
+
+# Security
+
+Cloud Identity and Access Management (IAM) can be challenging. Understanding, creating and applying policies with the right combination of Principals, Actions and Resources that allow 'just enough' access to desired resources without unintentional errors is time consuming.
+
+In addition to security concerns, IAM often impacts development velocity through unexpected and time consuming errors. For example, it's possible in many clouds to configure a topic, a serverless function and a subscription between the two, but omit the role/policy that allows the topic to trigger the function.
+
+These issues result in deployments that may look correct but don't behave as expected, such as new events not triggering subscribers. This is both common and tedious to debug, particularly when working with resources for the first time.
+
+## Nitric IAM
+
+Nitric assists with both implicit and explicit IAM, ensuring things "just work" wherever possible.
+
+### Implied Access
+
+Certain roles and policies are created by Nitric automatically, without any specific requests for the access. Two primary examples are API and Subscription handlers.
+
+If a function is defined as the handler for an API route/method or a topic subscriber, Nitric will always setup the role(s)/policy(ies) needed to allow the API or Topic to trigger the function once it's deployed.
+
+In AWS for example, topic subscriptions between SNS and AWS Lambda require a policy like this for each subscription:
+
+```yaml
+Condition:
+  ArnLike:
+    AWS:SourceArn: <topic arn>
+Action:
+  - lambda:InvokeFunction
+Resource: <function arn>
+Effect: Allow
+Principal:
+  Service: sns.amazonaws.com
+Sid: topic-trigger-func
+```
+
+Instead of hand-crafting each of these policies, Nitric knows that when you create a subscription with `topic.subscribe()` the ability for SNS to invoke the function is _**implied**_, so we set it up automatically.
+
+This same behavior occurs for schedules, APIs and subscriptions across all supported providers.
+
+### Requested Access
+
+When the access needed isn't obvious we assume no access to ensure safety. Instead, the access must be requested before it is granted. This applies to most resources your code interacts with (e.g. topics, buckets, queues, etc.).
+
+Nitric resource objects provide the `allow()` method to describe what the resource will be used for within the scope of the current source file. Nitric converts these definitions into the appropriate policies during deployment based on the targeted cloud provider.
+
+For example, read, write and delete access on a bucket can be requested like so:
+
+```javascript
+import { bucket } from '@nitric/sdk'
+
+// Create a readable/writable reference to an 'assets' bucket
+const assets = bucket('assets').allow('read', 'write', 'delete')
+```
+
+<Note>
+  Available permissions are unique to resources and documented in their
+  reference pages e.g. [buckets](/storage)
+</Note>
