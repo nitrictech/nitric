@@ -8,11 +8,11 @@ const (
 )
 
 type EntrypointResource struct {
-	EntrypointSchemaOnlyHackType string `json:"type" jsonschema:"type,enum=entrypoint"`
+	EntrypointSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=entrypoint"`
 	// TODO: As all resource names are unique, we could use the name as the value for the routes instead of the Route struct
-	Routes map[string]Route `json:"routes"`
+	Routes map[string]Route `json:"routes" yaml:"routes"`
 }
 
 type Route struct {
-	TargetName string `json:"name"`
+	TargetName string `json:"name" yaml:"name"`
 }

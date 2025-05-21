@@ -1,0 +1,12 @@
+name: nitric-aws-lambda
+version: 0.0.1
+type: service
+deployment:
+  # NOTE: // is required to reference a sub-path of repository for terraform modules
+  terraform: github.com/tjholm/nitric//engines/terraform/plugins/awslambda/module?depth=1&ref=feat/plugins
+runtime:
+  go_module: github.com/tjholm/nitric/plugins/service/awslambda
+
+inputs:
+
+outputs:

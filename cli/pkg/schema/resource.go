@@ -11,8 +11,8 @@ type Resource struct {
 	*BucketResource       `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 	*EntrypointResource   `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 	*SubscriptionResource `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*DatabaseResource `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*StateResource    `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*DatabaseResource     `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*StateResource        `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 }
 
 // schema types defined for the output schema
@@ -21,8 +21,8 @@ var schemaTypes = map[string]interface{}{
 	"BucketResource":       BucketResource{},
 	"EntrypointResource":   EntrypointResource{},
 	"SubscriptionResource": SubscriptionResource{},
-	"DatabaseResource": DatabaseResource{},
-	"StateResource":    StateResource{},
+	"DatabaseResource":     DatabaseResource{},
+	"StateResource":        StateResource{},
 }
 
 func (Resource) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -31,7 +31,7 @@ func (Resource) JSONSchemaExtend(schema *jsonschema.Schema) {
 	}
 
 	subSchemas := []*jsonschema.Schema{}
-	for _, res := range resourcesTypes {
+	for _, res := range schemaTypes {
 		s := jsonschema.Reflect(res)
 
 		s.AdditionalProperties = nil

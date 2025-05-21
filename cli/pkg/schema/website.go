@@ -1,12 +1,12 @@
 package schema
 
 type Website struct {
-	Name         string      `json:"name"`
-	BaseDir      string      `json:"baseDir"`
-	AssetDir     string      `json:"assetDir"`
-	ErrorPage    string      `json:"errorPage"`
-	BuildCommand *string     `json:"build,omitempty"`
-	Dev          *WebsiteDev `json:"dev,omitempty"`
+	Name         string      `json:"name" yaml:"name"`
+	BaseDir      string      `json:"baseDir" yaml:"baseDir"`
+	AssetDir     string      `json:"assetDir" yaml:"assetDir"`
+	ErrorPage    string      `json:"errorPage" yaml:"errorPage"`
+	BuildCommand *string     `json:"build,omitempty" yaml:"build,omitempty"`
+	Dev          *WebsiteDev `json:"dev,omitempty" yaml:"dev,omitempty"`
 }
 
 type WebsiteDev struct {
