@@ -1,4 +1,4 @@
-package ingress
+package service
 
 import (
 	"context"
@@ -19,4 +19,10 @@ func (p *HttpServerProxy) Forward(ctx context.Context, req *http.Request) (*http
 	req.URL.Scheme = "http"
 
 	return http.DefaultClient.Do(req)
+}
+
+func NewHttpServerProxy(target string) Proxy {
+	return &HttpServerProxy{
+		target: target,
+	}
 }

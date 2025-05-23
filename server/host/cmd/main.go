@@ -5,31 +5,43 @@
 package main
 
 import (
+	"flag"
+	"log"
+
 	"github.com/nitrictech/nitric/server/runtime/storage"
 	"github.com/nitrictech/nitric/server/runtime/pubsub"
+	"github.com/nitrictech/nitric/server/runtime/service"
 	"github.com/nitrictech/nitric/server/runtime"
-    "github.com/nitrictech/plugins-poc/host/server"
-	s3 "github.com/nitrictech/plugins-poc/plugins/storage/s3"
-	sns "github.com/nitrictech/plugins-poc/plugins/pubsub/sns"
+    "github.com/nitrictech/nitric/server/runtime/plugin"
+	awslambda "github.com/nitrictech/nitric/engines/terraform/plugins/awslambda"
 )
 
+var userCommand = flag.String("c", "", "The command to run")
+
 // storagePluginRegistry maps plugin names to their storage plugin constructors
-var storagePluginRegistry = map[string]plugins.Constructor[storage.Storage]{
-	"default": s3.Plugin,
+var storagePluginRegistry = map[string]plugin.Constructor[storage.Storage]{
 }
 
 // pubsubPluginRegistry maps plugin names to their pubsub plugin constructors
-var pubsubPluginRegistry = map[string]plugins.Constructor[pubsub.Pubsub]{
-	"default": sns.Plugin,
+var pubsubPluginRegistry = map[string]plugin.Constructor[pubsub.Pubsub]{
 }
 
 func main() {
+	flag.Parse()
+
+	if userCommand == nil || *userCommand == "" {
+		log.Fatalf("No command provided")
+	}
+
     // Register all storage plugins
 	runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
 
     // Register all pubsub plugins
 	runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
 
+	// Register service plugin
+	service.Register(awslambda.Plugin)
+
     // Start the host
-    runtime.Start()
+    runtime.Start(*userCommand)
 }

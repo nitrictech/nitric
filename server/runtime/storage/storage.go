@@ -3,8 +3,8 @@ package storage
 import (
 	"fmt"
 
-	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
-	"github.com/nitrictech/nitric/server/runtime"
+	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
+	"github.com/nitrictech/nitric/server/runtime/plugin"
 )
 
 // Define the interface for a storage plugin here
@@ -19,6 +19,6 @@ func GetPlugin(namespace string) Storage {
 }
 
 // Register a new instance of a storage plugin
-func Register(namespace string, constructor runtime.PluginConstructor[Storage]) {
+func Register(namespace string, constructor plugin.Constructor[Storage]) {
 	storagePlugins[namespace] = constructor()
 }

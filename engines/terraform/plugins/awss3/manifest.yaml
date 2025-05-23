@@ -1,0 +1,12 @@
+name: nitric-aws-s3-bucket
+version: 0.0.1
+type: storage
+deployment:
+  # NOTE: // is required to reference a sub-path of repository for terraform modules
+  terraform: github.com/tjholm/nitric//engines/terraform/plugins/awss3/module?depth=1&ref=feat/sdk-contracts
+runtime:
+  go_module: github.com/tjholm/nitric/engines/terraform/plugins/awss3
+
+inputs:
+
+outputs:

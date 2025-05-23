@@ -70,7 +70,7 @@ var buildCmd = &cobra.Command{
 		// Read the nitric.yaml file
 		fs := afero.NewOsFs()
 
-		writeExampleNitricYaml(fs)
+		// writeExampleNitricYaml(fs)
 
 		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml")
 		if err != nil {

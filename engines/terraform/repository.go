@@ -15,27 +15,22 @@ func (MockPlatformRepository) GetPlatform(name string) *PlatformSpec {
 			ResourceSpec: ResourceSpec{
 				PluginId: "nitric-aws-lambda",
 				Properties: map[string]interface{}{
-					"vpc_security_group_ids": "${infra.vpc.default_security_group_id}",
-					"vpc_subnet_ids":         "${infra.vpc.infra_subnets}",
 					"timeout":                "${var.lambda_timeout}",
+					"function_url_auth_type": "${var.function_url_auth_type}",
 				},
 			},
 		},
 		EntrypointsSpec: NitricResourceSpec{
 			ResourceSpec: ResourceSpec{
-				PluginId: "nitric-aws-cloudfront",
-				Properties: map[string]interface{}{
-					"region": "${var.region}",
-				},
+				PluginId:   "nitric-aws-cloudfront",
+				Properties: map[string]interface{}{},
 			},
 		},
 		Infra: map[string]InfraResourceSpec{
 			"vpc": {
 				ResourceSpec: ResourceSpec{
-					PluginId: "nitric-aws-vpc",
-					Properties: map[string]interface{}{
-						"region": "${var.region}",
-					},
+					PluginId:   "nitric-aws-vpc",
+					Properties: map[string]interface{}{},
 				},
 			},
 		},

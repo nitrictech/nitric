@@ -10,6 +10,7 @@ use (
 	./cloud/gcp
 	./core
 	./engines
+	./proto
 	./server
 	./test
 )

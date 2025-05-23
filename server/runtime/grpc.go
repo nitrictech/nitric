@@ -1,11 +1,11 @@
 package runtime
 
 import (
-	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
-	pubsubpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
+	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
+	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 )
 
 type GrpcServer struct {
-	pubsubpb.UnimplementedTopicsServer
+	pubsubpb.UnimplementedPubsubServer
 	storagepb.UnimplementedStorageServer
 }

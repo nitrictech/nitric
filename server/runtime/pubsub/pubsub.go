@@ -3,11 +3,11 @@ package pubsub
 import (
 	"fmt"
 
-	pubsubpb "github.com/nitrictech/nitric/core/pkg/proto/topics/v1"
-	"github.com/nitrictech/nitric/server/runtime"
+	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
+	"github.com/nitrictech/nitric/server/runtime/plugin"
 )
 
-type Pubsub = pubsubpb.TopicsServer
+type Pubsub = pubsubpb.PubsubServer
 
 // Available storage plugins for runtime
 var pubsubPlugins = make(map[string]Pubsub)
@@ -18,6 +18,6 @@ func GetPlugin(namespace string) Pubsub {
 }
 
 // Register a new instance of a storage plugin
-func Register(namespace string, constructor runtime.PluginConstructor[Pubsub]) {
+func Register(namespace string, constructor plugin.Constructor[Pubsub]) {
 	pubsubPlugins[namespace] = constructor()
 }

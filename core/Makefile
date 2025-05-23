@@ -73,7 +73,7 @@ clean-proto:
 generate-proto: install-tools check-gopath clean-proto
 	@echo Generating Proto Sources
 	@mkdir -p ./pkg/api/
-	@$(PROTOC) --go_out=. --go_opt=module=$(PROTO_PREFIX) --go-grpc_opt=require_unimplemented_servers=false,module=$(PROTO_PREFIX) --go-grpc_out=. ../nitric/proto/*/**/*.proto -I ../
+	@$(PROTOC) --go_out=. --go_opt=module=$(PROTO_PREFIX) --go-grpc_opt=require_unimplemented_servers=false,module=$(PROTO_PREFIX) --go-grpc_out=. ../nitric/proto/*/v1/*.proto -I ../
 
 clean-mocks:
 	@rm -rf ./mocks/

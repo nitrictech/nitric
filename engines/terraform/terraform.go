@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	app_spec_schema "github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/engines"
+	"github.com/nitrictech/nitric/server/plugin"
 )
 
 type TerraformEngine struct {
@@ -99,9 +100,26 @@ func NewTerraformDeployment(stackName string) *TerraformDeployment {
 	}
 }
 
+func (e *TerraformEngine) resolvePluginsForService(servicePlugin *PluginManifest) (*plugin.PluginDefintion, error) {
+	// TODO: Map platform resource plugins to the service plugin
+	return &plugin.PluginDefintion{
+		Service: plugin.GoPlugin{
+			Alias:  "svcPlugin",
+			Name:   "default",
+			Import: servicePlugin.Runtime.GoModule,
+		},
+	}, nil
+}
+
 // Apply the engine to the target environment
 func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	tfDeployment := NewTerraformDeployment(appSpec.Name)
+
+	// Create a terraform variable to establish the root context for application builds
+	// this will be prepended to the path of any internal docker builds
+	// tfDeployment.terraformVariables["build_root"] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String("build_root"), &cdktf.TerraformVariableConfig{
+	// 	Type: jsii.String("string"),
+	// })
 
 	// Resolve resource modules
 	for resourceName, resource := range appSpec.Resources {
@@ -110,14 +128,63 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return err
 		}
 
-		plugin, err := e.repository.GetPlugin(resourceSpec.PluginId)
+		plug, err := e.repository.GetPlugin(resourceSpec.PluginId)
 		if err != nil {
 			return err
 		}
 
+		// Map the nitric variable
+		var nitricVar interface{} = nil
+		if resource.Type == "service" {
+			var imageVars *map[string]interface{} = nil
+
+			fmt.Printf("%+v\n", plug)
+
+			pluginManifest, err := e.resolvePluginsForService(plug)
+			if err != nil {
+				return err
+			}
+
+			pluginManifestBytes, err := json.Marshal(pluginManifest)
+			if err != nil {
+				return err
+			}
+
+			if resource.ServiceResource.Container.Image != nil {
+				imageVars = &map[string]interface{}{
+					"image_id": jsii.String(resource.ServiceResource.Container.Image.ID),
+					"tag":      jsii.String(resourceName),
+					"args":     map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+				}
+			} else if resource.ServiceResource.Container.Docker != nil {
+				imageVars = &map[string]interface{}{
+					"build_context": jsii.String(resource.ServiceResource.Container.Docker.Context),
+					"dockerfile":    jsii.String(resource.ServiceResource.Container.Docker.Dockerfile),
+					"tag":           jsii.String(resourceName),
+					"args":          map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+				}
+			}
+
+			imageModule := cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.Sprintf("%s_image", resourceName), &cdktf.TerraformHclModuleConfig{
+				Source:    jsii.String("github.com/tjholm/nitric//engines/terraform/modules/image?depth=1&ref=feat/sdk-contracts"),
+				Variables: imageVars,
+			})
+
+			nitricVar = &NitricServiceVariables{
+				NitricVariables: NitricVariables{
+					Name: jsii.String(resourceName),
+				},
+				ImageId: imageModule.GetString(jsii.String("image_id")),
+				Env:     &resource.Env,
+			}
+		}
+
 		tfDeployment.terraformResources[resourceName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(resourceName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
-			Source: jsii.String(plugin.Deployment.Terraform),
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
 		})
 	}
 
