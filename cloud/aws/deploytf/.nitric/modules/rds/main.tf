@@ -68,7 +68,7 @@ resource "aws_rds_cluster" "rds_cluster" {
   cluster_identifier     = "nitric-rds-cluster"
   engine                 = "aurora-postgresql"
   engine_mode            = "provisioned"
-  engine_version         = "13.14"
+  engine_version         = "13"
   database_name          = "nitric"
   master_username        = "nitric"
   master_password        = random_password.rds_password.result

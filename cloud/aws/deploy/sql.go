@@ -98,7 +98,7 @@ func (a *NitricAwsPulumiProvider) rds(ctx *pulumi.Context) error {
 	a.DatabaseCluster, err = rds.NewCluster(ctx, "postgresql", &rds.ClusterArgs{
 		ApplyImmediately: pulumi.Bool(true),
 		Engine:           pulumi.String(rds.EngineTypeAuroraPostgresql),
-		EngineVersion:    pulumi.String("13.16"),
+		EngineVersion:    pulumi.String("13"),
 		// TODO: limit number of availability zones
 		AvailabilityZones:                pulumi.ToStringArray(a.VpcAzs),
 		DatabaseName:                     pulumi.String("nitric"),
