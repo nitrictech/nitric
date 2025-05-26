@@ -250,7 +250,11 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 }
 
 func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name string, domainName string, stage *apigatewayv2.Stage, api *apigatewayv2.Api) error {
-	domain, err := a.newPulumiDomainName(ctx, domainName)
+	domain, err := a.newPulumiDomainName(ctx, domainArgs{
+		DomainName: domainName,
+		// Required for backwards compatibility with provider versions < 1.26.1
+		AliasName: name,
+	})
 	if err != nil {
 		return err
 	}
