@@ -298,7 +298,7 @@ func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name 
 				EvaluateTargetHealth: pulumi.Bool(false),
 			},
 		},
-	}, pulumi.DependsOn([]pulumi.Resource{domain}), pulumi.Parent(domain))
+	}, pulumi.Parent(domain))
 	if err != nil {
 		return err
 	}
