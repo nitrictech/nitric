@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"slices"
 
 	awsprovider "github.com/pulumi/pulumi-aws/sdk/v5/go/aws"
 
@@ -35,16 +36,24 @@ type Domain struct {
 	CertificateValidation *acm.CertificateValidation
 }
 
-func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domainName string) (*Domain, error) {
-	var err error
-	res := &Domain{Name: domainName}
+type domainArgs struct {
+	DomainName string
+	// Required for backwards compatibility with provider versions < 1.26.1
+	AliasName string
+	// If the domain is used for a CDN, it will be deployed in the us-east-1 region
+	IsCDNDomain bool
+}
 
-	res.ZoneLookup, err = resources.GetZoneID(domainName)
+func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, args domainArgs) (*Domain, error) {
+	var err error
+	res := &Domain{Name: args.DomainName}
+
+	res.ZoneLookup, err = resources.GetZoneID(args.DomainName)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ctx.RegisterComponentResource("nitric:api:DomainName", fmt.Sprintf("%s-%s", domainName, a.StackId), res)
+	err = ctx.RegisterComponentResource("nitric:api:DomainName", fmt.Sprintf("%s-%s", args.DomainName, a.StackId), res)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +61,7 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 	defaultOptions := []pulumi.ResourceOption{pulumi.Parent(res)}
 
 	// Create an AWS provider for the us-east-1 region as the acm certificates require being deployed in us-east-1 region
-	if a.Region != "us-east-1" {
+	if args.IsCDNDomain && a.Region != "us-east-1" {
 		useast1, err := awsprovider.NewProvider(ctx, "us-east-1", &awsprovider.ProviderArgs{
 			Region: pulumi.String("us-east-1"),
 		})
@@ -64,9 +73,14 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 	}
 
 	cert, err := acm.NewCertificate(ctx, fmt.Sprintf("cert-%s", a.StackId), &acm.CertificateArgs{
-		DomainName:       pulumi.String(domainName),
+		DomainName:       pulumi.String(args.DomainName),
 		ValidationMethod: pulumi.String("DNS"),
-	}, defaultOptions...)
+	},
+		slices.Concat(defaultOptions, []pulumi.ResourceOption{pulumi.Aliases([]pulumi.Alias{
+			// Required for backwards compatibility with provider versions < 1.26.1
+			{Name: pulumi.String(fmt.Sprintf("%s-%s-cert", args.AliasName, args.DomainName))},
+		})})...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +103,13 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 		},
 		Ttl:    pulumi.Int(10 * 60),
 		ZoneId: pulumi.String(res.ZoneLookup.ZoneID),
-	}, []pulumi.ResourceOption{pulumi.Parent(res)}...)
+	}, []pulumi.ResourceOption{
+		pulumi.Parent(res),
+		pulumi.Aliases([]pulumi.Alias{
+			// Required for backwards compatibility with provider versions < 1.26.1
+			{Name: pulumi.String(fmt.Sprintf("%s-%s-certvalidationdns", args.AliasName, args.DomainName))},
+		}),
+	}...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +119,14 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, domai
 		ValidationRecordFqdns: pulumi.StringArray{
 			cdnRecord.Fqdn,
 		},
-	}, defaultOptions...)
+	},
+		slices.Concat(defaultOptions, []pulumi.ResourceOption{
+			pulumi.Aliases([]pulumi.Alias{
+				// Required for backwards compatibility with provider versions < 1.26.1
+				{Name: pulumi.String(fmt.Sprintf("%s-%s-certvalidation", args.AliasName, args.DomainName))},
+			}),
+		})...,
+	)
 	if err != nil {
 		return nil, err
 	}

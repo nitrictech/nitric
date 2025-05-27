@@ -250,7 +250,11 @@ func (a *NitricAwsPulumiProvider) Api(ctx *pulumi.Context, parent pulumi.Resourc
 }
 
 func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name string, domainName string, stage *apigatewayv2.Stage, api *apigatewayv2.Api) error {
-	domain, err := a.newPulumiDomainName(ctx, domainName)
+	domain, err := a.newPulumiDomainName(ctx, domainArgs{
+		DomainName: domainName,
+		// Required for backwards compatibility with provider versions < 1.26.1
+		AliasName: name,
+	})
 	if err != nil {
 		return err
 	}
@@ -263,7 +267,7 @@ func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name 
 			SecurityPolicy: pulumi.String("TLS_1_2"),
 			CertificateArn: domain.CertificateValidation.CertificateArn,
 		},
-	})
+	}, pulumi.Parent(domain))
 	if err != nil {
 		return err
 	}
@@ -273,7 +277,7 @@ func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name 
 		ApiId:      api.ID(),
 		DomainName: apiDomainName.DomainName,
 		Stage:      stage.Name,
-	}, pulumi.DependsOn([]pulumi.Resource{stage}))
+	}, pulumi.DependsOn([]pulumi.Resource{stage}), pulumi.Parent(domain))
 	if err != nil {
 		return err
 	}
@@ -294,7 +298,7 @@ func (a *NitricAwsPulumiProvider) createApiDomainName(ctx *pulumi.Context, name 
 				EvaluateTargetHealth: pulumi.Bool(false),
 			},
 		},
-	}, pulumi.DependsOn([]pulumi.Resource{domain}))
+	}, pulumi.Parent(domain))
 	if err != nil {
 		return err
 	}

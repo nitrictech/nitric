@@ -335,7 +335,10 @@ func (a *NitricAwsPulumiProvider) deployCloudfrontDistribution(ctx *pulumi.Conte
 	if domainName != "" {
 		aliases = []string{domainName}
 
-		domain, err := a.newPulumiDomainName(ctx, domainName)
+		domain, err := a.newPulumiDomainName(ctx, domainArgs{
+			DomainName:  domainName,
+			IsCDNDomain: true,
+		})
 		if err != nil {
 			return err
 		}
