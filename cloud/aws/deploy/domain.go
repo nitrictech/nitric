@@ -40,6 +40,8 @@ type domainArgs struct {
 	DomainName string
 	// Required for backwards compatibility with provider versions < 1.26.1
 	AliasName string
+	// If the domain is used for a CDN, it will be deployed in the us-east-1 region
+	IsCDNDomain bool
 }
 
 func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, args domainArgs) (*Domain, error) {
@@ -59,7 +61,7 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, args 
 	defaultOptions := []pulumi.ResourceOption{pulumi.Parent(res)}
 
 	// Create an AWS provider for the us-east-1 region as the acm certificates require being deployed in us-east-1 region
-	if a.Region != "us-east-1" {
+	if args.IsCDNDomain && a.Region != "us-east-1" {
 		useast1, err := awsprovider.NewProvider(ctx, "us-east-1", &awsprovider.ProviderArgs{
 			Region: pulumi.String("us-east-1"),
 		})
@@ -86,8 +88,6 @@ func (a *NitricAwsPulumiProvider) newPulumiDomainName(ctx *pulumi.Context, args 
 	domainValidationOption := cert.DomainValidationOptions.ApplyT(func(options []acm.CertificateDomainValidationOption) interface{} {
 		return options[0]
 	})
-
-	//	certValidationDns, err := route53.NewRecord(ctx, fmt.Sprintf("%s-%s-certvalidationdns", name, args.domainName), &route53.RecordArgs{
 
 	cdnRecord, err := route53.NewRecord(ctx, fmt.Sprintf("cdn-record-%s", a.StackId), &route53.RecordArgs{
 		Name: domainValidationOption.ApplyT(func(option interface{}) string {
