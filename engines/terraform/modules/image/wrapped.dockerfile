@@ -10,7 +10,7 @@ ENV PLUGIN_DEFINITION=${PLUGIN_DEFINITION}
 RUN apt-get update && apt-get install -y make
 
 # Checkout the nitric github repo
-RUN git clone -b feat/sdk-contracts https://github.com/tjholm/nitric /nitric
+RUN git clone -b next https://github.com/nitrictech/nitric /nitric
 WORKDIR /nitric
 
 RUN go work sync
