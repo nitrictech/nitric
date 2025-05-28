@@ -166,7 +166,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			}
 
 			imageModule := cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.Sprintf("%s_image", resourceName), &cdktf.TerraformHclModuleConfig{
-				Source:    jsii.String("github.com/tjholm/nitric//engines/terraform/modules/image?depth=1&ref=feat/sdk-contracts"),
+				Source:    jsii.String("github.com/nitrictech/nitric//engines/terraform/modules/image?depth=1&ref=next"),
 				Variables: imageVars,
 			})
 
