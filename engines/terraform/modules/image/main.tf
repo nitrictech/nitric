@@ -6,7 +6,7 @@ resource "docker_image" "base_service" {
     content {
       # TODO: 
       context = "${path.root}/../../${var.build_context != "." ? var.build_context : ""}"
-      dockerfile = var.dockerfile
+      dockerfile = "${path.root}/../../${var.dockerfile}"
       tag     = ["${var.tag}:base"]
     }
   }
