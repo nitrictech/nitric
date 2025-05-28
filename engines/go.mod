@@ -3,6 +3,7 @@ module github.com/nitrictech/nitric/engines
 go 1.24.3
 
 require (
+	github.com/aws/aws-lambda-go v1.34.1
 	github.com/aws/jsii-runtime-go v1.106.0
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
 	gopkg.in/yaml.v3 v3.0.1
