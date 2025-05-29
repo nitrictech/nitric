@@ -4,8 +4,10 @@ resource "docker_image" "base_service" {
   dynamic "build" {
     for_each = var.image_id == null ? [1] : []
     content {
-      context = var.build_context
-      dockerfile = var.dockerfile
+      builder = "default"
+      # NOTE: This assumes the terraform output is three dirs down from the root of the project
+      context = "${path.root}/../../../${var.build_context != "." ? var.build_context : ""}"
+      dockerfile = "${path.root}/../../../${var.dockerfile}"
       tag     = ["${var.tag}:base"]
     }
   }
