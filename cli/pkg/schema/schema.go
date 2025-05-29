@@ -10,9 +10,11 @@ import (
 )
 
 type Application struct {
-	Platform    string `json:"platform" yaml:"platform" jsonschema:"required"`
-	Name        string `json:"name" yaml:"name" jsonschema:"required"`
-	Description string `json:"description" yaml:"description"`
+	// Targets sets platforms this application should be expected to work on
+	// This gives us room to move away from LCD expectations around how platforms are built
+	Targets     []string `json:"targets" yaml:"targets" jsonschema:"required"`
+	Name        string   `json:"name" yaml:"name" jsonschema:"required"`
+	Description string   `json:"description" yaml:"description"`
 
 	Resources map[string]Resource `json:"resources,omitempty" yaml:"resources,omitempty"`
 }

@@ -83,6 +83,7 @@ package {{.Package}}
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nitrictech/nitric/proto/storage/v2"
 	"google.golang.org/grpc"

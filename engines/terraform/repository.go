@@ -1,15 +1,17 @@
 package terraform
 
+import "fmt"
+
 type PlatformRepository interface {
 	// terraform/nitric-aws
-	GetPlatform(string) PlatformSpec
+	GetPlatform(string) (*PlatformSpec, error)
 }
 
 type MockPlatformRepository struct {
 }
 
-func (MockPlatformRepository) GetPlatform(name string) *PlatformSpec {
-	return &PlatformSpec{
+var platformSpecs = map[string]*PlatformSpec{
+	"aws": {
 		Name: "aws",
 		ServicesSpec: NitricResourceSpec{
 			ResourceSpec: ResourceSpec{
@@ -34,7 +36,16 @@ func (MockPlatformRepository) GetPlatform(name string) *PlatformSpec {
 				},
 			},
 		},
+	},
+}
+
+func (MockPlatformRepository) GetPlatform(name string) (*PlatformSpec, error) {
+	platform, ok := platformSpecs[name]
+	if !ok {
+		return nil, fmt.Errorf("no platform %s available in repository")
 	}
+
+	return platform, nil
 }
 
 func NewMockPlatformRepository() *MockPlatformRepository {

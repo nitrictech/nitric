@@ -18,6 +18,7 @@ func (r *MockTerraformPluginRepository) GetPlugin(name string) (*terraform.Plugi
 	return r.plugins[name], nil
 }
 
+// TODO: remove me
 func writeExampleNitricYaml(fs afero.Fs) {
 	example := &schema.Application{
 		Name: "test",
@@ -73,23 +74,26 @@ var buildCmd = &cobra.Command{
 		// writeExampleNitricYaml(fs)
 
 		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		cobra.CheckErr(err)
 
 		// TODO: 912 repository
 		embeddedRepository := terraform.NewNitricTerraformPluginRepository()
 
 		mockPlatformRepository := terraform.NewMockPlatformRepository()
 
-		platform := terraform.New(mockPlatformRepository.GetPlatform(appSpec.Platform), terraform.WithRepository(embeddedRepository))
+		// TODO:prompt for platform selection if multiple targets are specified
+		targetPlatform := appSpec.Targets[0]
+
+		platform, err := terraform.PlatformFromId(fs, targetPlatform, mockPlatformRepository)
+		cobra.CheckErr(err)
+
+		engine := terraform.New(platform, terraform.WithRepository(embeddedRepository))
 		// Parse the application spec
 		// Validate the application spec
 		// Build the application using the specified platform
 		// Handle any errors that occur during the build process
 
-		err = platform.Apply(appSpec)
+		err = engine.Apply(appSpec)
 		if err != nil {
 			fmt.Print("Error applying platform: ", err)
 			return
