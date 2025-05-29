@@ -20,7 +20,7 @@ resource "docker_tag" "tag" {
 resource "docker_registry_image" "push" {
   name = aws_ecr_repository.repo.repository_url
   auth_config {
-    address = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
+    address  = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
     username = data.aws_ecr_authorization_token.ecr_auth.user_name
     password = data.aws_ecr_authorization_token.ecr_auth.password
   }
@@ -65,7 +65,7 @@ resource "aws_lambda_function" "function" {
     variables = merge(var.environment, var.nitric.env)
   }
 
-
+  architectures = [var.architecture]
   dynamic "vpc_config" {
     for_each = length(var.subnet_ids) > 0 ? ["1"] : []
     content {
@@ -78,7 +78,7 @@ resource "aws_lambda_function" "function" {
 }
 
 resource "aws_lambda_function_url" "endpoint" {
-  function_name      = aws_lambda_function.function.function_name
+  function_name = aws_lambda_function.function.function_name
   # qualifier          = "my_alias"
   authorization_type = var.function_url_auth_type
 
