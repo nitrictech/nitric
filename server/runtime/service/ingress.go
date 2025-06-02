@@ -14,11 +14,15 @@ var servicePlugin Service = nil
 
 // Register a new instance of a storage plugin
 func Register(constructor plugin.Constructor[Service]) error {
+	var err error
 	if servicePlugin != nil {
 		return fmt.Errorf("ingress plugin already registered")
 	}
 
-	servicePlugin = constructor()
+	servicePlugin, err = constructor()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
