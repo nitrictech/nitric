@@ -13,18 +13,32 @@ import (
 
 type PlatformSpec struct {
 	Name            string                       `json:"name" yaml:"name"`
-	ServicesSpec    NitricResourceSpec           `json:"services" yaml:"services"`
+	ServicesSpec    NitricServiceSpec            `json:"services" yaml:"services"`
 	BucketsSpec     NitricResourceSpec           `json:"buckets,omitempty" yaml:"buckets,omitempty"`
 	TopicsSpec      NitricResourceSpec           `json:"topics,omitempty" yaml:"topics,omitempty"`
 	EntrypointsSpec NitricResourceSpec           `json:"entrypoints" yaml:"entrypoints"`
 	Infra           map[string]InfraResourceSpec `json:"infra" yaml:"infra"`
 }
 
+func (p PlatformSpec) GetServiceSpec(subtype string) (ServiceSpec, error) {
+	spec := &p.ServicesSpec
+
+	if subtype != "" {
+		subspec, ok := spec.Subtypes[subtype]
+		if !ok {
+			return ServiceSpec{}, fmt.Errorf("platform %s does not define subtype %s for %s, available subtypes: %v", p.Name, subtype, typ, maps.Keys(spec.Subtypes))
+		}
+
+		return subspec, nil
+	}
+
+	return spec.ServiceSpec, nil
+}
+
 func (p PlatformSpec) GetResourceSpecForTypes(typ string, subtype string) (ResourceSpec, error) {
 	var spec *NitricResourceSpec
 	switch typ {
-	case "service":
-		spec = &p.ServicesSpec
+
 	case "entrypoint":
 		spec = &p.EntrypointsSpec
 	case "bucket":
@@ -102,6 +116,15 @@ type ResourceSpec struct {
 	Properties map[string]interface{} `json:"properties" yaml:"properties"`
 }
 
+type ServiceSpec struct {
+	ResourceSpec `json:",inline" yaml:",inline"`
+	Identities   map[string]InfraResourceSpec `json:"identities" yaml:"identities"`
+}
+
+type NitricServiceSpec struct {
+	ServiceSpec `json:",inline" yaml:",inline"`
+	Subtypes    map[string]ServiceSpec `json:"subtypes" yaml:"subtypes"`
+}
 type NitricResourceSpec struct {
 	ResourceSpec `json:",inline" yaml:",inline"`
 	Subtypes     map[string]ResourceSpec `json:"subtypes" yaml:"subtypes"`

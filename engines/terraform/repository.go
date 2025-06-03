@@ -13,12 +13,22 @@ type MockPlatformRepository struct {
 var platformSpecs = map[string]*PlatformSpec{
 	"aws": {
 		Name: "aws",
-		ServicesSpec: NitricResourceSpec{
-			ResourceSpec: ResourceSpec{
-				PluginId: "nitric-aws-lambda",
-				Properties: map[string]interface{}{
-					"timeout":                "${var.lambda_timeout}",
-					"function_url_auth_type": "${var.function_url_auth_type}",
+		ServicesSpec: NitricServiceSpec{
+			ServiceSpec: ServiceSpec{
+				ResourceSpec: ResourceSpec{
+					PluginId: "nitric-aws-lambda",
+					Properties: map[string]interface{}{
+						"timeout":                "${var.lambda_timeout}",
+						"function_url_auth_type": "${var.function_url_auth_type}",
+					},
+				},
+				Identities: map[string]InfraResourceSpec{
+					"aws:iam:role": InfraResourceSpec{
+						ResourceSpec: ResourceSpec{
+							PluginId:   "nitric-aws-iam-role",
+							Properties: map[string]interface{}{},
+						},
+					},
 				},
 			},
 		},

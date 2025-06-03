@@ -1,8 +1,9 @@
 variable "nitric" {
   type = object({
-    name     = string
-    image_id = string
-    env      = map(string)
+    name       = string
+    image_id   = string
+    env        = map(string)
+    identities = map(dynamic)
   })
 }
 
