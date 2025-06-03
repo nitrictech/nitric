@@ -29,31 +29,19 @@ resource "docker_registry_image" "push" {
   }
 }
 
-# resource "aws_iam_role" "role" {
-#   name = var.nitric.name
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Principal = {
-#           Service = "lambda.amazonaws.com"
-#         }
-#         Action = "sts:AssumeRole"
-#       }
-#     ]
-#   })
-# }
+locals {
+  role_name = "${var.nitric.identities["aws:iam"].name}"
+}
 
 resource "aws_iam_role_policy_attachment" "basic-execution" {
-  role       = aws_iam_role.role.name
+  role       = local.role_name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
   function_name = var.nitric.name
-  role          = aws_iam_role.role.arn
+  role          = local.role_name
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
   timeout       = var.timeout
