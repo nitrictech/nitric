@@ -274,12 +274,18 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		nitricVar := map[string]interface{}{
-			"name": intentName,
-			"services": map[string]interface{}{
-				"access":     jsii.Strings("read", "write", "delete"),
-				"identities": tfDeployment.serviceIdentities,
-			},
+		servicesInput := map[string]any{}
+		for serviceName, idMap := range tfDeployment.serviceIdentities {
+			servicesInput[serviceName] = map[string]interface{}{
+				"actions":    jsii.Strings("read", "write", "delete"),
+				"identities": idMap,
+			}
+		}
+
+		nitricVar := map[string]any{
+			"name":     intentName,
+			"stack_id": tfDeployment.stackId.Result(),
+			"services": servicesInput,
 		}
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{

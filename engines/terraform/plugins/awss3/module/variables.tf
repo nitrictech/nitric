@@ -2,8 +2,7 @@ variable "nitric" {
   type = object({
     name     = string
     stack_id = string
-    services = list(object({
-      name    = string
+    services = map(object({
       actions = list(string)
       identities = map(object({
         id   = string
