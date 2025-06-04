@@ -213,5 +213,6 @@ func Plugin() (storage.Storage, error) {
 	return &s3Storage{
 		s3Client:      s3Client,
 		preSignClient: preSignClient,
+		nitricStackId: nitricStackId,
 	}, nil
 }
