@@ -123,23 +123,14 @@ type ResourceBlueprint struct {
 }
 
 type IdentitiesBlueprint struct {
-	Identities map[string]ResourceBlueprint `json:"identities" yaml:"identities"`
+	Identities []ResourceBlueprint `json:"identities" yaml:"identities"`
 }
 
-func (i IdentitiesBlueprint) GetIdentities() map[string]ResourceBlueprint {
+func (i IdentitiesBlueprint) GetIdentities() []ResourceBlueprint {
 	if i.Identities == nil {
-		return map[string]ResourceBlueprint{}
+		return []ResourceBlueprint{}
 	}
 	return i.Identities
-}
-
-func (i IdentitiesBlueprint) GetIdentity(identityType string) (*ResourceBlueprint, error) {
-	identity, ok := i.Identities[identityType]
-	if !ok {
-		return nil, fmt.Errorf("no identity %s defined in identities spec, available identities: %v", identityType, maps.Keys(i.Identities))
-	}
-
-	return &identity, nil
 }
 
 type Identifiable interface {

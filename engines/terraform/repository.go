@@ -23,8 +23,8 @@ var platformSpecs = map[string]*PlatformSpec{
 					},
 				},
 				IdentitiesBlueprint: &IdentitiesBlueprint{
-					Identities: map[string]ResourceBlueprint{
-						"aws:iam:role": ResourceBlueprint{
+					Identities: []ResourceBlueprint{
+						ResourceBlueprint{
 							PluginId:   "nitric-aws-iam-role",
 							Properties: map[string]interface{}{},
 						},

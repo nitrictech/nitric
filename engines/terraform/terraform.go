@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/aws/jsii-runtime-go"
+	random "github.com/cdktf/cdktf-provider-random-go/random/v11/provider"
+	"github.com/cdktf/cdktf-provider-random-go/random/v11/stringresource"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	app_spec_schema "github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/engines"
@@ -19,9 +23,10 @@ type TerraformEngine struct {
 }
 
 type TerraformDeployment struct {
-	app    cdktf.App
-	stack  cdktf.TerraformStack
-	engine *TerraformEngine
+	app     cdktf.App
+	stack   cdktf.TerraformStack
+	stackId stringresource.StringResource
+	engine  *TerraformEngine
 
 	terraformResources      map[string]cdktf.TerraformHclModule
 	terraformInfraResources map[string]cdktf.TerraformHclModule
@@ -91,10 +96,22 @@ func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprin
 
 func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
 	app := cdktf.NewApp(&cdktf.AppConfig{})
+	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
+
+	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
+
+	stackId := stringresource.NewStringResource(stack, jsii.String("stack_id"), &stringresource.StringResourceConfig{
+		Length:  jsii.Number(8),
+		Upper:   jsii.Bool(false),
+		Lower:   jsii.Bool(true),
+		Number:  jsii.Bool(false),
+		Special: jsii.Bool(false),
+	})
 
 	return &TerraformDeployment{
 		app:                     app,
-		stack:                   cdktf.NewTerraformStack(app, jsii.String(stackName)),
+		stack:                   stack,
+		stackId:                 stackId,
 		engine:                  engine,
 		terraformResources:      map[string]cdktf.TerraformHclModule{},
 		terraformInfraResources: map[string]cdktf.TerraformHclModule{},
@@ -102,7 +119,7 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	}
 }
 
-func (e *TerraformEngine) resolvePluginsForService(servicePlugin *PluginManifest) (*plugin.PluginDefintion, error) {
+func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefintion, error) {
 	// TODO: Map platform resource plugins to the service plugin
 	return &plugin.PluginDefintion{
 		Service: plugin.GoPlugin{
@@ -113,7 +130,7 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *PluginManifest
 	}, nil
 }
 
-func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *PluginManifest) (interface{}, error) {
+func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (interface{}, error) {
 	// Map the nitric variable
 	var nitricVar interface{} = nil
 	var imageVars *map[string]interface{} = nil
@@ -148,20 +165,32 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		Variables: imageVars,
 	})
 
-	identityModules := map[string]cdktf.TerraformHclModule{}
 	identityModuleOutputs := map[string]interface{}{}
-	for identityName, id := range resourceSpec.Identities {
-		identityPlugin, err := e.engine.repository.GetPlugin(id.PluginId)
+	for _, id := range resourceSpec.Identities {
+		identityPlugin, err := e.engine.repository.GetIdentityPlugin(id.PluginId)
 		if err != nil {
 			return nil, err
 		}
 
-		identityModules[identityName] = cdktf.NewTerraformHclModule(e.stack, jsii.Sprintf("%s_%s_role", name, identityName), &cdktf.TerraformHclModuleConfig{
-			Source:    jsii.String(identityPlugin.Deployment.Terraform),
+		idModule := cdktf.NewTerraformHclModule(e.stack, jsii.Sprintf("%s_%s_role", name, identityPlugin.Name), &cdktf.TerraformHclModuleConfig{
+			Source: jsii.String(identityPlugin.Deployment.Terraform),
+			// TODO: Properly resolve tokens here
 			Variables: &id.Properties,
 		})
 
-		identityModuleOutputs[identityName] = identityModules[identityName].Get(jsii.String("nitric"))
+		idModule.Set(jsii.String("nitric"), map[string]interface{}{
+			"name":     jsii.String(name),
+			"stack_id": e.stackId.Result(),
+		})
+
+		identityModuleOutputs[identityPlugin.IdentityType] = idModule.Get(jsii.String("nitric"))
+	}
+
+	for _, requiredIdentity := range plug.RequiredIdentities {
+		providedIdentities := slices.Collect(maps.Keys(identityModuleOutputs))
+		if ok := slices.Contains(providedIdentities, requiredIdentity); !ok {
+			return nil, fmt.Errorf("service %s is missing identity %s, required by plugin %s, provided identities were %s", name, requiredIdentity, plug.Name, providedIdentities)
+		}
 	}
 
 	// Create this services identities
@@ -192,13 +221,13 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// Resolve resource modules
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
 		var nitricVar interface{} = nil
-		var plug *PluginManifest = nil
+		var plug *ResourcePluginManifest = nil
 		if resourceIntent.Type == "service" {
 			spec, err := e.platform.GetServiceBlueprint(resourceIntent.SubType)
 			if err != nil {
 				return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
 			}
-			plug, err = e.repository.GetPlugin(spec.PluginId)
+			plug, err = e.repository.GetResourcePlugin(spec.PluginId)
 			if err != nil {
 				return fmt.Errorf("could not find plugin %s", spec.PluginId)
 			}
@@ -212,7 +241,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			if err != nil {
 				return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
 			}
-			plug, err = e.repository.GetPlugin(spec.PluginId)
+			plug, err = e.repository.GetResourcePlugin(spec.PluginId)
 			if err != nil {
 				return fmt.Errorf("could not find plugin %s", spec.PluginId)
 			}
@@ -230,7 +259,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 	// Resolve infra modules
 	for infraName, infra := range e.platform.InfraSpecs {
-		plugin, err := e.repository.GetPlugin(infra.PluginId)
+		plugin, err := e.repository.GetResourcePlugin(infra.PluginId)
 		if err != nil {
 			return err
 		}

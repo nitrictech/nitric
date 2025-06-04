@@ -1,6 +1,8 @@
 name: nitric-aws-lambda
 version: 0.0.1
 type: service
+required_identities:
+  - aws:iam:role
 deployment:
   # NOTE: // is required to reference a sub-path of repository for terraform modules
   terraform: github.com/nitrictech/nitric//engines/terraform/plugins/awslambda/module?depth=1&ref=next
