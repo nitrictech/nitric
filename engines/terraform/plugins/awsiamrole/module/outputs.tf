@@ -1,5 +1,6 @@
 output "nitric" {
   value = {
-    id = aws_iam_role.role.name
+    role = aws_iam_role.role
+    id   = aws_iam_role.role.name
   }
 }
