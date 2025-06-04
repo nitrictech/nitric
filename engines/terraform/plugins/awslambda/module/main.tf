@@ -30,7 +30,7 @@ resource "docker_registry_image" "push" {
 }
 
 locals {
-  role_name = var.nitric.identities["aws:iam:role"].role.name
+  role_name = var.nitric.identities["aws:iam:role"].role.arn
 }
 
 resource "aws_iam_role_policy_attachment" "basic-execution" {
