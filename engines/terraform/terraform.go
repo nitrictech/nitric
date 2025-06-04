@@ -190,7 +190,6 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 			"image_id": jsii.String(spec.Container.Image.ID),
 			"tag":      jsii.String(name),
 			"args":     map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
-			"stack_id": e.stackId.Result(),
 		}
 	} else if spec.Container.Docker != nil {
 		imageVars = &map[string]interface{}{
@@ -198,7 +197,6 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 			"dockerfile":    jsii.String(spec.Container.Docker.Dockerfile),
 			"tag":           jsii.String(name),
 			"args":          map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
-			"stack_id":      e.stackId.Result(),
 		}
 	}
 
@@ -242,6 +240,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		},
 		ImageId:    imageModule.GetString(jsii.String("image_id")),
 		Identities: &identityModuleOutputs,
+		StackId:    e.stackId.Result(),
 		Env:        &spec.Env,
 	}
 
