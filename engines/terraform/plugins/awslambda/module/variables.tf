@@ -3,7 +3,7 @@ variable "nitric" {
     name       = string
     image_id   = string
     env        = map(string)
-    identities = map(dynamic)
+    identities = map(any)
   })
 }
 
