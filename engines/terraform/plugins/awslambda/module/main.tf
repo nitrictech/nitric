@@ -46,7 +46,9 @@ resource "aws_lambda_function" "function" {
     size = var.ephemeral_storage
   }
   environment {
-    variables = merge(var.environment, var.nitric.env)
+    variables = merge(var.environment, var.nitric.env, {
+      NITRIC_STACK_ID = var.nitric.stack_id
+    })
   }
 
   architectures = [var.architecture]

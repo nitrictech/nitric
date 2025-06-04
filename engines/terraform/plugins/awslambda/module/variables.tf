@@ -1,6 +1,7 @@
 variable "nitric" {
   type = object({
     name       = string
+    stack_id   = string
     image_id   = string
     env        = map(string)
     identities = map(any)
