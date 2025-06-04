@@ -52,11 +52,11 @@ func main() {
 	// json.Unmarshal(testJson, &s)
 	fmt.Printf("%+v\n", appConfig)
 
-	for _, res := range appConfig.Resources {
+	for _, res := range appConfig.ResourceIntents {
 		if res.Type == "service" {
-			fmt.Printf("%+v\n", res.ServiceResource)
+			fmt.Printf("%+v\n", res.ServiceIntent)
 		} else if res.Type == "bucket" {
-			fmt.Printf("%+v\n", res.BucketResource)
+			fmt.Printf("%+v\n", res.BucketIntent)
 		}
 
 	}

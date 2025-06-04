@@ -1,40 +1,59 @@
 package terraform
 
+import "fmt"
+
 type PlatformRepository interface {
 	// terraform/nitric-aws
-	GetPlatform(string) PlatformSpec
+	GetPlatform(string) (*PlatformSpec, error)
 }
 
 type MockPlatformRepository struct {
 }
 
-func (MockPlatformRepository) GetPlatform(name string) *PlatformSpec {
-	return &PlatformSpec{
+var platformSpecs = map[string]*PlatformSpec{
+	"aws": {
 		Name: "aws",
-		ServicesSpec: NitricResourceSpec{
-			ResourceSpec: ResourceSpec{
-				PluginId: "nitric-aws-lambda",
-				Properties: map[string]interface{}{
-					"timeout":                "${var.lambda_timeout}",
-					"function_url_auth_type": "${var.function_url_auth_type}",
+		ServiceBlueprints: map[string]*ServiceBlueprint{
+			"default": {
+				ResourceBlueprint: &ResourceBlueprint{
+					PluginId: "nitric-aws-lambda",
+					Properties: map[string]interface{}{
+						"timeout":                "${var.lambda_timeout}",
+						"function_url_auth_type": "${var.function_url_auth_type}",
+					},
+				},
+				IdentitiesBlueprint: &IdentitiesBlueprint{
+					Identities: []ResourceBlueprint{
+						ResourceBlueprint{
+							PluginId:   "nitric-aws-iam-role",
+							Properties: map[string]interface{}{},
+						},
+					},
 				},
 			},
 		},
-		EntrypointsSpec: NitricResourceSpec{
-			ResourceSpec: ResourceSpec{
+		EntrypointBlueprints: map[string]*ResourceBlueprint{
+			"default": {
 				PluginId:   "nitric-aws-cloudfront",
 				Properties: map[string]interface{}{},
 			},
 		},
-		Infra: map[string]InfraResourceSpec{
+		InfraSpecs: map[string]*ResourceBlueprint{
 			"vpc": {
-				ResourceSpec: ResourceSpec{
-					PluginId:   "nitric-aws-vpc",
-					Properties: map[string]interface{}{},
-				},
+				PluginId:   "nitric-aws-vpc",
+				Properties: map[string]interface{}{},
 			},
 		},
+	},
+}
+
+func (MockPlatformRepository) GetPlatform(name string) (*PlatformSpec, error) {
+	platform, ok := platformSpecs[name]
+	if !ok {
+		return nil, fmt.Errorf("no platform %s available in repository", name)
 	}
+
+	return platform, nil
 }
 
 func NewMockPlatformRepository() *MockPlatformRepository {

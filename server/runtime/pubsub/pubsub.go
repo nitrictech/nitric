@@ -18,6 +18,12 @@ func GetPlugin(namespace string) Pubsub {
 }
 
 // Register a new instance of a storage plugin
-func Register(namespace string, constructor plugin.Constructor[Pubsub]) {
-	pubsubPlugins[namespace] = constructor()
+func Register(namespace string, constructor plugin.Constructor[Pubsub]) error {
+	pubsubPlugin, err := constructor()
+	if err != nil {
+		return err
+	}
+
+	pubsubPlugins[namespace] = pubsubPlugin
+	return nil
 }

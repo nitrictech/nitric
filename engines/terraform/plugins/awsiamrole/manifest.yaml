@@ -1,0 +1,11 @@
+name: nitric-aws-iam-role
+version: 0.0.1
+type: identity
+identity_type: aws:iam:role
+deployment:
+  # NOTE: // is required to reference a sub-path of repository for terraform modules
+  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/awsiamrole/module?depth=1&ref=next
+
+inputs:
+
+outputs:

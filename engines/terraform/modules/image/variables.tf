@@ -1,30 +1,35 @@
 variable "tag" {
-  type = string
+  type        = string
   description = "The tag to use for the build"
 }
 
 variable "dockerfile" {
-  type = string
+  type        = string
   description = "The dockerfile to use for the build"
-  default = "Dockerfile"
+  default     = "Dockerfile"
 }
 
 variable "image_id" {
-  type = string
+  type        = string
   description = "An existing image id to use for the build"
-  default = null
-  nullable = true
+  default     = null
+  nullable    = true
 }
 
 variable "build_context" {
-  type = string
+  type        = string
   description = "The context for the build"
-  default = null
-  nullable = true
+  default     = null
+  nullable    = true
+}
+
+variable "platform" {
+  type    = string
+  default = "linux/amd64"
 }
 
 variable "args" {
-  type = map(string)
+  type        = map(string)
   description = "The arguments to pass to the build"
-  default = {}
+  default     = {}
 }

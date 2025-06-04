@@ -3,11 +3,16 @@ variable "nitric" {
     name     = string
     stack_id = string
     services = map(object({
-      http_endpoint = string
-      identity = map(object({
+      actions = list(string)
+      identities = map(object({
         id   = string
         role = any
       }))
     }))
   })
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
 }

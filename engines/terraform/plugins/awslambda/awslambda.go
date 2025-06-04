@@ -76,6 +76,6 @@ func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.APIG
 	}, nil
 }
 
-func Plugin() service.Service {
-	return &awslambdaService{}
+func Plugin() (service.Service, error) {
+	return &awslambdaService{}, nil
 }

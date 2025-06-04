@@ -4,11 +4,12 @@ resource "docker_image" "base_service" {
   dynamic "build" {
     for_each = var.image_id == null ? [1] : []
     content {
-      builder = "default"
+      builder  = "default"
+      platform = var.platform
       # NOTE: This assumes the terraform output is three dirs down from the root of the project
-      context = "${path.root}/../../../${var.build_context != "." ? var.build_context : ""}"
+      context    = "${path.root}/../../../${var.build_context != "." ? var.build_context : ""}"
       dockerfile = "${path.root}/../../../${var.dockerfile}"
-      tag     = ["${var.tag}:base"]
+      tag        = ["${var.tag}:base"]
     }
   }
 }
@@ -16,12 +17,12 @@ resource "docker_image" "base_service" {
 # Extract entrypoint and command using Docker CLI via external data source
 data "external" "inspect_base_image" {
   depends_on = [docker_image.base_service]
-  program = ["docker", "inspect", docker_image.base_service.image_id, "--format", "{\"entrypoint\":\"{{join .Config.Entrypoint \" \"}}\",\"cmd\":\"{{join .Config.Cmd \" \"}}\"}" ]
+  program    = ["docker", "inspect", docker_image.base_service.image_id, "--format", "{\"entrypoint\":\"{{join .Config.Entrypoint \" \"}}\",\"cmd\":\"{{join .Config.Cmd \" \"}}\"}"]
 }
 
 locals {
   original_command = "${data.external.inspect_base_image.result.entrypoint} ${data.external.inspect_base_image.result.cmd}"
-  image_id = var.image_id == null ? docker_image.base_service.name : var.image_id
+  image_id         = var.image_id == null ? docker_image.base_service.name : var.image_id
 }
 
 # Next we want to wrap this image withing a nitric service
@@ -29,13 +30,15 @@ resource "docker_image" "service" {
   name = "service"
   build {
     # This doesn't actually matter as we aren't copying in anything relative
-    context = "."
+    builder  = "default"
+    context  = "."
+    platform = var.platform
     # Use the wrapped dockerfile here
     dockerfile = "${path.module}/wrapped.dockerfile"
     build_args = merge({
-      BASE_IMAGE = local.image_id
+      BASE_IMAGE       = local.image_id
       ORIGINAL_COMMAND = local.original_command
     }, var.args)
-    tag     = ["${var.tag}:latest"]
+    tag = ["${var.tag}:latest"]
   }
 }

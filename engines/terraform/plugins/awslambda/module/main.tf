@@ -20,7 +20,7 @@ resource "docker_tag" "tag" {
 resource "docker_registry_image" "push" {
   name = aws_ecr_repository.repo.repository_url
   auth_config {
-    address = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
+    address  = data.aws_ecr_authorization_token.ecr_auth.proxy_endpoint
     username = data.aws_ecr_authorization_token.ecr_auth.user_name
     password = data.aws_ecr_authorization_token.ecr_auth.password
   }
@@ -29,31 +29,15 @@ resource "docker_registry_image" "push" {
   }
 }
 
-resource "aws_iam_role" "role" {
-  name = var.nitric.name
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role_policy_attachment" "basic-execution" {
-  role       = aws_iam_role.role.name
+  role       = var.nitric.identities["aws:iam:role"].role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
   function_name = var.nitric.name
-  role          = aws_iam_role.role.arn
+  role          = var.nitric.identities["aws:iam:role"].role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
   timeout       = var.timeout
@@ -65,7 +49,7 @@ resource "aws_lambda_function" "function" {
     variables = merge(var.environment, var.nitric.env)
   }
 
-
+  architectures = [var.architecture]
   dynamic "vpc_config" {
     for_each = length(var.subnet_ids) > 0 ? ["1"] : []
     content {
@@ -78,7 +62,7 @@ resource "aws_lambda_function" "function" {
 }
 
 resource "aws_lambda_function_url" "endpoint" {
-  function_name      = aws_lambda_function.function.function_name
+  function_name = aws_lambda_function.function.function_name
   # qualifier          = "my_alias"
   authorization_type = var.function_url_auth_type
 

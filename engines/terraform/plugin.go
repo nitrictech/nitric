@@ -4,9 +4,20 @@ type PluginManifest struct {
 	Name       string           `json:"name" yaml:"name"`
 	Version    string           `json:"version" yaml:"version"`
 	Deployment DeploymentModule `json:"deployment" yaml:"deployment"`
+	Type       string           `json:"type" yaml:"type"`
 	Runtime    RuntimeModule    `json:"runtime" yaml:"runtime"`
 	Inputs     []PluginInput    `json:"inputs" yaml:"inputs"`
 	Outputs    []PluginOutput   `json:"outputs" yaml:"outputs"`
+}
+
+type ResourcePluginManifest struct {
+	PluginManifest     `json:",inline" yaml:",inline"`
+	RequiredIdentities []string `json:"required_identities" yaml:"required_identities"`
+}
+
+type IdentityPluginManifest struct {
+	PluginManifest `json:",inline" yaml:",inline"`
+	IdentityType   string `json:"identity_type" yaml:"identity_type"`
 }
 
 type DeploymentModule struct {
@@ -30,5 +41,6 @@ type PluginOutput struct {
 }
 
 type PluginRepository interface {
-	GetPlugin(name string) (*PluginManifest, error)
+	GetResourcePlugin(name string) (*ResourcePluginManifest, error)
+	GetIdentityPlugin(name string) (*IdentityPluginManifest, error)
 }

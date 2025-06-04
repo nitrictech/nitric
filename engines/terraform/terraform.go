@@ -1,12 +1,17 @@
 package terraform
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/aws/jsii-runtime-go"
+	random "github.com/cdktf/cdktf-provider-random-go/random/v11/provider"
+	"github.com/cdktf/cdktf-provider-random-go/random/v11/stringresource"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	app_spec_schema "github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/engines"
@@ -19,8 +24,12 @@ type TerraformEngine struct {
 }
 
 type TerraformDeployment struct {
-	app   cdktf.App
-	stack cdktf.TerraformStack
+	app     cdktf.App
+	stack   cdktf.TerraformStack
+	stackId stringresource.StringResource
+	engine  *TerraformEngine
+
+	serviceIdentities map[string]map[string]interface{}
 
 	terraformResources      map[string]cdktf.TerraformHclModule
 	terraformInfraResources map[string]cdktf.TerraformHclModule
@@ -32,6 +41,25 @@ type SpecReference struct {
 	Source string
 	// simple key for var or path for infra e.g. vpc.arn
 	Path []string
+}
+
+func (e *TerraformEngine) GetPluginManifestsForType(typ string) (map[string]*ResourcePluginManifest, error) {
+	manifests := map[string]*ResourcePluginManifest{}
+
+	blueprints, err := e.platform.GetResourceBlueprintsForType(typ)
+	if err != nil {
+		return nil, err
+	}
+
+	for blueprintIntent, blueprint := range blueprints {
+		plug, err := e.repository.GetResourcePlugin(blueprint.PluginId)
+		if err != nil {
+			return nil, err
+		}
+		manifests[blueprintIntent] = plug
+	}
+
+	return manifests, nil
 }
 
 func SpecReferenceFromToken(token string) (*SpecReference, error) {
@@ -51,7 +79,7 @@ func SpecReferenceFromToken(token string) (*SpecReference, error) {
 	}, nil
 }
 
-func (tf *TerraformDeployment) resolveTokensForModule(resource ResourceSpec, module cdktf.TerraformHclModule) error {
+func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
 	for property, value := range resource.Properties {
 		module.Set(jsii.String(property), value)
 
@@ -88,32 +116,141 @@ func (tf *TerraformDeployment) resolveTokensForModule(resource ResourceSpec, mod
 	return nil
 }
 
-func NewTerraformDeployment(stackName string) *TerraformDeployment {
+func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
 	app := cdktf.NewApp(&cdktf.AppConfig{})
+	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
+
+	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
+
+	stackId := stringresource.NewStringResource(stack, jsii.String("stack_id"), &stringresource.StringResourceConfig{
+		Length:  jsii.Number(8),
+		Upper:   jsii.Bool(false),
+		Lower:   jsii.Bool(true),
+		Numeric: jsii.Bool(false),
+		Special: jsii.Bool(false),
+	})
 
 	return &TerraformDeployment{
 		app:                     app,
-		stack:                   cdktf.NewTerraformStack(app, jsii.String(stackName)),
+		stack:                   stack,
+		stackId:                 stackId,
+		engine:                  engine,
 		terraformResources:      map[string]cdktf.TerraformHclModule{},
 		terraformInfraResources: map[string]cdktf.TerraformHclModule{},
 		terraformVariables:      map[string]cdktf.TerraformVariable{},
+		serviceIdentities:       map[string]map[string]interface{}{},
 	}
 }
 
-func (e *TerraformEngine) resolvePluginsForService(servicePlugin *PluginManifest) (*plugin.PluginDefintion, error) {
+func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefintion, error) {
 	// TODO: Map platform resource plugins to the service plugin
-	return &plugin.PluginDefintion{
+	pluginDef := &plugin.PluginDefintion{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",
 			Name:   "default",
 			Import: servicePlugin.Runtime.GoModule,
 		},
-	}, nil
+	}
+
+	// FIXME: This add all storage plugins without regard to actually requiring access
+	storagePlugins, err := e.GetPluginManifestsForType("bucket")
+	if err != nil {
+		return nil, err
+	}
+
+	// Add storage plugins to the runtime
+	for name, plug := range storagePlugins {
+		pluginDef.Storage = append(pluginDef.Storage, plugin.GoPlugin{
+			Alias:  fmt.Sprintf("storage_%s", name),
+			Name:   name,
+			Import: plug.Runtime.GoModule,
+		})
+	}
+
+	return pluginDef, nil
+}
+
+func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (interface{}, error) {
+	// Map the nitric variable
+	var nitricVar interface{} = nil
+	var imageVars *map[string]interface{} = nil
+
+	pluginManifest, err := e.engine.resolvePluginsForService(plug)
+	if err != nil {
+		return nil, err
+	}
+
+	pluginManifestBytes, err := json.Marshal(pluginManifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if spec.Container.Image != nil {
+		imageVars = &map[string]interface{}{
+			"image_id": jsii.String(spec.Container.Image.ID),
+			"tag":      jsii.String(name),
+			"args":     map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+		}
+	} else if spec.Container.Docker != nil {
+		imageVars = &map[string]interface{}{
+			"build_context": jsii.String(spec.Container.Docker.Context),
+			"dockerfile":    jsii.String(spec.Container.Docker.Dockerfile),
+			"tag":           jsii.String(name),
+			"args":          map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+		}
+	}
+
+	imageModule := cdktf.NewTerraformHclModule(e.stack, jsii.Sprintf("%s_image", name), &cdktf.TerraformHclModuleConfig{
+		Source:    jsii.String(imageModuleRef),
+		Variables: imageVars,
+	})
+
+	identityModuleOutputs := map[string]interface{}{}
+	for _, id := range resourceSpec.Identities {
+		identityPlugin, err := e.engine.repository.GetIdentityPlugin(id.PluginId)
+		if err != nil {
+			return nil, err
+		}
+
+		idModule := cdktf.NewTerraformHclModule(e.stack, jsii.Sprintf("%s_%s_role", name, identityPlugin.Name), &cdktf.TerraformHclModuleConfig{
+			Source: jsii.String(identityPlugin.Deployment.Terraform),
+			// TODO: Properly resolve tokens here
+			Variables: &id.Properties,
+		})
+
+		idModule.Set(jsii.String("nitric"), map[string]interface{}{
+			"name":     jsii.String(name),
+			"stack_id": e.stackId.Result(),
+		})
+
+		identityModuleOutputs[identityPlugin.IdentityType] = idModule.Get(jsii.String("nitric"))
+	}
+
+	for _, requiredIdentity := range plug.RequiredIdentities {
+		providedIdentities := slices.Collect(maps.Keys(identityModuleOutputs))
+		if ok := slices.Contains(providedIdentities, requiredIdentity); !ok {
+			return nil, fmt.Errorf("service %s is missing identity %s, required by plugin %s, provided identities were %s", name, requiredIdentity, plug.Name, providedIdentities)
+		}
+	}
+
+	// Create this services identities
+	nitricVar = &NitricServiceVariables{
+		NitricVariables: NitricVariables{
+			Name: jsii.String(name),
+		},
+		ImageId:    imageModule.GetString(jsii.String("image_id")),
+		Identities: &identityModuleOutputs,
+		Env:        &spec.Env,
+	}
+
+	e.serviceIdentities[name] = identityModuleOutputs
+
+	return nitricVar, nil
 }
 
 // Apply the engine to the target environment
 func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
-	tfDeployment := NewTerraformDeployment(appSpec.Name)
+	tfDeployment := NewTerraformDeployment(e, appSpec.Name)
 
 	// Create a terraform variable to establish the root context for application builds
 	// this will be prepended to the path of any internal docker builds
@@ -121,76 +258,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// 	Type: jsii.String("string"),
 	// })
 
-	// Resolve resource modules
-	for resourceName, resource := range appSpec.Resources {
-		resourceSpec, err := e.platform.GetResourceSpecForTypes(resource.Type, resource.SubType)
-		if err != nil {
-			return err
-		}
-
-		plug, err := e.repository.GetPlugin(resourceSpec.PluginId)
-		if err != nil {
-			return err
-		}
-
-		// Map the nitric variable
-		var nitricVar interface{} = nil
-		if resource.Type == "service" {
-			var imageVars *map[string]interface{} = nil
-
-			fmt.Printf("%+v\n", plug)
-
-			pluginManifest, err := e.resolvePluginsForService(plug)
-			if err != nil {
-				return err
-			}
-
-			pluginManifestBytes, err := json.Marshal(pluginManifest)
-			if err != nil {
-				return err
-			}
-
-			if resource.ServiceResource.Container.Image != nil {
-				imageVars = &map[string]interface{}{
-					"image_id": jsii.String(resource.ServiceResource.Container.Image.ID),
-					"tag":      jsii.String(resourceName),
-					"args":     map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
-				}
-			} else if resource.ServiceResource.Container.Docker != nil {
-				imageVars = &map[string]interface{}{
-					"build_context": jsii.String(resource.ServiceResource.Container.Docker.Context),
-					"dockerfile":    jsii.String(resource.ServiceResource.Container.Docker.Dockerfile),
-					"tag":           jsii.String(resourceName),
-					"args":          map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
-				}
-			}
-
-			imageModule := cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.Sprintf("%s_image", resourceName), &cdktf.TerraformHclModuleConfig{
-				Source:    jsii.String("github.com/nitrictech/nitric//engines/terraform/modules/image?depth=1&ref=next"),
-				Variables: imageVars,
-			})
-
-			nitricVar = &NitricServiceVariables{
-				NitricVariables: NitricVariables{
-					Name: jsii.String(resourceName),
-				},
-				ImageId: imageModule.GetString(jsii.String("image_id")),
-				Env:     &resource.Env,
-			}
-		}
-
-		tfDeployment.terraformResources[resourceName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(resourceName), &cdktf.TerraformHclModuleConfig{
-			// TODO: This assumes that the plugin is resolvable as a URI
-			Source: jsii.String(plug.Deployment.Terraform),
-			Variables: &map[string]interface{}{
-				"nitric": nitricVar,
-			},
-		})
-	}
-
 	// Resolve infra modules
-	for infraName, infra := range e.platform.Infra {
-		plugin, err := e.repository.GetPlugin(infra.PluginId)
+	for infraName, infra := range e.platform.InfraSpecs {
+		plugin, err := e.repository.GetResourcePlugin(infra.PluginId)
 		if err != nil {
 			return err
 		}
@@ -201,9 +271,96 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		})
 	}
 
+	// Prepare service inputs and identities
+	serviceInputs := map[string]interface{}{}
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
+		if resourceIntent.Type != "service" {
+			continue
+		}
+
+		spec, err := e.platform.GetServiceBlueprint(resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		nitricVar, err := tfDeployment.resolveService(intentName, resourceIntent.ServiceIntent, spec, plug)
+		if err != nil {
+			return err
+		}
+
+		serviceInputs[intentName] = nitricVar
+	}
+
+	// Prepare non-service modules
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
+		if resourceIntent.Type == "service" {
+			continue
+		}
+
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		servicesInput := map[string]any{}
+		for serviceName, idMap := range tfDeployment.serviceIdentities {
+			servicesInput[serviceName] = map[string]interface{}{
+				"actions":    jsii.Strings("read", "write", "delete"),
+				"identities": idMap,
+			}
+		}
+
+		nitricVar := map[string]any{
+			"name":     intentName,
+			"stack_id": tfDeployment.stackId.Result(),
+			"services": servicesInput,
+		}
+
+		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
+			// TODO: This assumes that the plugin is resolvable as a URI
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
+		})
+	}
+
+	// Resolve resource modules
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
+		if resourceIntent.Type != "service" {
+			continue
+		}
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		var nitricVar interface{} = serviceInputs[intentName]
+
+		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
+			// TODO: This assumes that the plugin is resolvable as a URI
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
+		})
+	}
+
 	// Resolve resource tokens
-	for resourceName, resource := range appSpec.Resources {
-		resourceSpec, err := e.platform.GetResourceSpecForTypes(resource.Type, resource.SubType)
+	for resourceName, resource := range appSpec.ResourceIntents {
+		resourceSpec, err := e.platform.GetResourceBlueprint(resource.Type, resource.SubType)
 		if err != nil {
 			return err
 		}
@@ -212,8 +369,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve infra tokens
-	for infraName, infra := range e.platform.Infra {
-		tfDeployment.resolveTokensForModule(infra.ResourceSpec, tfDeployment.terraformInfraResources[infraName])
+	for infraName, infra := range e.platform.InfraSpecs {
+		tfDeployment.resolveTokensForModule(infra, tfDeployment.terraformInfraResources[infraName])
 	}
 
 	tfDeployment.app.Synth()

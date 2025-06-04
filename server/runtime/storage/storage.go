@@ -19,6 +19,12 @@ func GetPlugin(namespace string) Storage {
 }
 
 // Register a new instance of a storage plugin
-func Register(namespace string, constructor plugin.Constructor[Storage]) {
-	storagePlugins[namespace] = constructor()
+func Register(namespace string, constructor plugin.Constructor[Storage]) error {
+	storagePlugin, err := constructor()
+	if err != nil {
+		return err
+	}
+
+	storagePlugins[namespace] = storagePlugin
+	return nil
 }

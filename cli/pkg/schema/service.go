@@ -1,6 +1,6 @@
 package schema
 
-type ServiceResource struct {
+type ServiceIntent struct {
 	Port      int               `json:"port" yaml:"port" jsonschema:"required"`
 	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Container Container         `json:"container" yaml:"container" jsonschema:"oneof_required=container"`

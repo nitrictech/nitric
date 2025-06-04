@@ -17,11 +17,16 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-func RegisterPlugins[T any](register plugin.Register[T], plugins map[string]plugin.Constructor[T]) {
+func RegisterPlugins[T any](register plugin.Register[T], plugins map[string]plugin.Constructor[T]) error {
 	// Register the plugins
 	for name, constructor := range plugins {
-		register(name, constructor)
+		err := register(name, constructor)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // waitForPort attempts to connect to the given port until it succeeds or times out

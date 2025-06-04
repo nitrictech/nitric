@@ -34,10 +34,16 @@ func main() {
 	}
 
     // Register all storage plugins
-	runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	err := runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	if err != nil {
+		log.Println(err)
+	}
 
     // Register all pubsub plugins
-	runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	err = runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	if err != nil {
+		log.Println(err)
+	}
 
 	// Register service plugin
 	service.Register(awslambda.Plugin)
