@@ -13,18 +13,18 @@ type MockPlatformRepository struct {
 var platformSpecs = map[string]*PlatformSpec{
 	"aws": {
 		Name: "aws",
-		ServicesSpec: NitricServiceSpec{
-			ServiceSpec: ServiceSpec{
-				ResourceSpec: ResourceSpec{
+		ServiceBlueprints: map[string]*ServiceBlueprint{
+			"default": {
+				ResourceBlueprint: &ResourceBlueprint{
 					PluginId: "nitric-aws-lambda",
 					Properties: map[string]interface{}{
 						"timeout":                "${var.lambda_timeout}",
 						"function_url_auth_type": "${var.function_url_auth_type}",
 					},
 				},
-				Identities: map[string]InfraResourceSpec{
-					"aws:iam:role": InfraResourceSpec{
-						ResourceSpec: ResourceSpec{
+				IdentitiesBlueprint: &IdentitiesBlueprint{
+					Identities: map[string]ResourceBlueprint{
+						"aws:iam:role": ResourceBlueprint{
 							PluginId:   "nitric-aws-iam-role",
 							Properties: map[string]interface{}{},
 						},
@@ -32,18 +32,16 @@ var platformSpecs = map[string]*PlatformSpec{
 				},
 			},
 		},
-		EntrypointsSpec: NitricResourceSpec{
-			ResourceSpec: ResourceSpec{
+		EntrypointBlueprints: map[string]*ResourceBlueprint{
+			"default": {
 				PluginId:   "nitric-aws-cloudfront",
 				Properties: map[string]interface{}{},
 			},
 		},
-		Infra: map[string]InfraResourceSpec{
+		InfraSpecs: map[string]*ResourceBlueprint{
 			"vpc": {
-				ResourceSpec: ResourceSpec{
-					PluginId:   "nitric-aws-vpc",
-					Properties: map[string]interface{}{},
-				},
+				PluginId:   "nitric-aws-vpc",
+				Properties: map[string]interface{}{},
 			},
 		},
 	},

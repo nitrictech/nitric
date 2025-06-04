@@ -24,7 +24,7 @@ type BucketTemplateData struct {
 
 func AppSpecToTemplateData(appSpec schema.Application) SDKTemplateData {
 	buckets := []BucketTemplateData{}
-	for name, resource := range appSpec.Resources {
+	for name, resource := range appSpec.ResourceIntents {
 
 		if resource.Type != "bucket" {
 			continue

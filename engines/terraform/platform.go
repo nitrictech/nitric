@@ -5,6 +5,7 @@ import (
 	"io"
 	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -12,53 +13,58 @@ import (
 )
 
 type PlatformSpec struct {
-	Name            string                       `json:"name" yaml:"name"`
-	ServicesSpec    NitricServiceSpec            `json:"services" yaml:"services"`
-	BucketsSpec     NitricResourceSpec           `json:"buckets,omitempty" yaml:"buckets,omitempty"`
-	TopicsSpec      NitricResourceSpec           `json:"topics,omitempty" yaml:"topics,omitempty"`
-	EntrypointsSpec NitricResourceSpec           `json:"entrypoints" yaml:"entrypoints"`
-	Infra           map[string]InfraResourceSpec `json:"infra" yaml:"infra"`
+	Name string `json:"name" yaml:"name"`
+
+	ServiceBlueprints    map[string]*ServiceBlueprint  `json:"services" yaml:"services"`
+	BucketBlueprints     map[string]*ResourceBlueprint `json:"buckets,omitempty" yaml:"buckets,omitempty"`
+	TopicBlueprints      map[string]*ResourceBlueprint `json:"topics,omitempty" yaml:"topics,omitempty"`
+	EntrypointBlueprints map[string]*ResourceBlueprint `json:"entrypoints" yaml:"entrypoints"`
+	InfraSpecs           map[string]*ResourceBlueprint `json:"infra" yaml:"infra"`
 }
 
-func (p PlatformSpec) GetServiceSpec(subtype string) (ServiceSpec, error) {
-	spec := &p.ServicesSpec
+func (p PlatformSpec) GetServiceBlueprint(intentSubType string) (*ServiceBlueprint, error) {
+	spec := p.ServiceBlueprints
 
-	if subtype != "" {
-		subspec, ok := spec.Subtypes[subtype]
-		if !ok {
-			return ServiceSpec{}, fmt.Errorf("platform %s does not define subtype %s for %s, available subtypes: %v", p.Name, subtype, typ, maps.Keys(spec.Subtypes))
-		}
-
-		return subspec, nil
+	if intentSubType == "" {
+		intentSubType = "default"
 	}
 
-	return spec.ServiceSpec, nil
+	maps.Keys(spec)
+
+	concreteSpec, ok := spec[intentSubType]
+	if !ok {
+		return nil, fmt.Errorf("platform %s does not define a %s type for services, available types: %v", p.Name, intentSubType, slices.Collect(maps.Keys(spec)))
+	}
+
+	return concreteSpec, nil
 }
 
-func (p PlatformSpec) GetResourceSpecForTypes(typ string, subtype string) (ResourceSpec, error) {
-	var spec *NitricResourceSpec
-	switch typ {
+func (p PlatformSpec) GetResourceBlueprint(intentType string, intentSubType string) (*ResourceBlueprint, error) {
+	if intentSubType == "" {
+		intentSubType = "default"
+	}
 
+	var spec *ResourceBlueprint
+	switch intentType {
+	case "service":
+		if serviceBlueprint, ok := p.ServiceBlueprints[intentSubType]; ok {
+			spec = serviceBlueprint.ResourceBlueprint
+		}
 	case "entrypoint":
-		spec = &p.EntrypointsSpec
+		spec, _ = p.EntrypointBlueprints[intentSubType]
 	case "bucket":
-		spec = &p.BucketsSpec
+		spec, _ = p.BucketBlueprints[intentSubType]
 	case "topic":
-		spec = &p.TopicsSpec
+		spec, _ = p.TopicBlueprints[intentSubType]
 	default:
-		return ResourceSpec{}, fmt.Errorf("no type %s known in platform spec", typ)
+		return nil, fmt.Errorf("failed to resolve resource blueprint, no type %s known in platform spec", intentType)
 	}
 
-	if subtype != "" {
-		subspec, ok := spec.Subtypes[subtype]
-		if !ok {
-			return ResourceSpec{}, fmt.Errorf("platform %s does not define subtype %s for %s, available subtypes: %v", p.Name, subtype, typ, maps.Keys(spec.Subtypes))
-		}
-
-		return subspec, nil
+	if spec == nil {
+		return nil, fmt.Errorf("platform %s does not define a '%s' %s type", p.Name, intentSubType, intentType)
 	}
 
-	return spec.ResourceSpec, nil
+	return spec, nil
 }
 
 func PlatformSpecFromReader(reader io.Reader) (*PlatformSpec, error) {
@@ -111,43 +117,37 @@ func PlatformFromId(fs afero.Fs, platformId string, repositories ...PlatformRepo
 	return nil, fmt.Errorf("platform %s not found in any repository", platformId)
 }
 
-type ResourceSpec struct {
+type ResourceBlueprint struct {
 	PluginId   string                 `json:"plugin" yaml:"plugin"`
 	Properties map[string]interface{} `json:"properties" yaml:"properties"`
 }
 
-type ServiceSpec struct {
-	ResourceSpec `json:",inline" yaml:",inline"`
-	Identities   map[string]InfraResourceSpec `json:"identities" yaml:"identities"`
+type IdentitiesBlueprint struct {
+	Identities map[string]ResourceBlueprint `json:"identities" yaml:"identities"`
 }
 
-type NitricServiceSpec struct {
-	ServiceSpec `json:",inline" yaml:",inline"`
-	Subtypes    map[string]ServiceSpec `json:"subtypes" yaml:"subtypes"`
-}
-type NitricResourceSpec struct {
-	ResourceSpec `json:",inline" yaml:",inline"`
-	Subtypes     map[string]ResourceSpec `json:"subtypes" yaml:"subtypes"`
+func (i IdentitiesBlueprint) GetIdentities() map[string]ResourceBlueprint {
+	if i.Identities == nil {
+		return map[string]ResourceBlueprint{}
+	}
+	return i.Identities
 }
 
-func (r NitricResourceSpec) GetResourceProperties(subtype string) map[string]interface{} {
-	if subtype != "" {
-		return r.Subtypes[subtype].Properties
+func (i IdentitiesBlueprint) GetIdentity(identityType string) (*ResourceBlueprint, error) {
+	identity, ok := i.Identities[identityType]
+	if !ok {
+		return nil, fmt.Errorf("no identity %s defined in identities spec, available identities: %v", identityType, maps.Keys(i.Identities))
 	}
 
-	return r.Properties
+	return &identity, nil
 }
 
-func (r NitricResourceSpec) GetPlugin(subtype string) (string, error) {
-	if subtype != "" {
-		if _, ok := r.Subtypes[subtype]; !ok {
-			return "", fmt.Errorf("subtype %s not found", subtype)
-		}
-		return r.Subtypes[subtype].PluginId, nil
-	}
-	return r.PluginId, nil
+type Identifiable interface {
+	GetIdentity(string) (*ResourceBlueprint, error)
+	GetIdentities() map[string]ResourceBlueprint
 }
 
-type InfraResourceSpec struct {
-	ResourceSpec `json:",inline" yaml:",inline"`
+type ServiceBlueprint struct {
+	*ResourceBlueprint   `json:",inline" yaml:",inline"`
+	*IdentitiesBlueprint `json:",inline" yaml:",inline"`
 }

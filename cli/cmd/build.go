@@ -22,10 +22,10 @@ func (r *MockTerraformPluginRepository) GetPlugin(name string) (*terraform.Plugi
 func writeExampleNitricYaml(fs afero.Fs) {
 	example := &schema.Application{
 		Name: "test",
-		Resources: map[string]schema.Resource{
+		ResourceIntents: map[string]schema.Resource{
 			"service": {
 				Type: "service",
-				ServiceResource: &schema.ServiceResource{
+				ServiceIntent: &schema.ServiceIntent{
 					Port: 8080,
 					Env: map[string]string{
 						"TEST": "test",
@@ -39,7 +39,7 @@ func writeExampleNitricYaml(fs afero.Fs) {
 			},
 			"ingress": {
 				Type: "entrypoint",
-				EntrypointResource: &schema.EntrypointResource{
+				EntrypointIntent: &schema.EntrypointIntent{
 					Routes: map[string]schema.Route{
 						"/": {
 							TargetName: "service",
@@ -48,8 +48,8 @@ func writeExampleNitricYaml(fs afero.Fs) {
 				},
 			},
 			"images": {
-				Type:           "bucket",
-				BucketResource: &schema.BucketResource{},
+				Type:         "bucket",
+				BucketIntent: &schema.BucketIntent{},
 			},
 		},
 	}

@@ -7,7 +7,7 @@ const (
 	TargetType_Website TargetType = "website"
 )
 
-type EntrypointResource struct {
+type EntrypointIntent struct {
 	EntrypointSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=entrypoint"`
 	// TODO: As all resource names are unique, we could use the name as the value for the routes instead of the Route struct
 	Routes map[string]Route `json:"routes" yaml:"routes"`

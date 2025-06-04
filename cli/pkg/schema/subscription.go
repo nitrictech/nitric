@@ -1,6 +1,6 @@
 package schema
 
-type SubscriptionResource struct {
+type SubscriptionIntent struct {
 	SubscriptionSchemaOnlyHackType string `json:"type" jsonschema:"type,enum=subscription"`
 
 	Source string `json:"source" yaml:"source"`

@@ -16,7 +16,7 @@ type Application struct {
 	Name        string   `json:"name" yaml:"name" jsonschema:"required"`
 	Description string   `json:"description" yaml:"description"`
 
-	Resources map[string]Resource `json:"resources,omitempty" yaml:"resources,omitempty"`
+	ResourceIntents map[string]Resource `json:"resources,omitempty" yaml:"resources,omitempty"`
 }
 
 func ApplicationJsonSchema() *jsonschema.Schema {
