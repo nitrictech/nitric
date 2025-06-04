@@ -27,7 +27,7 @@ func main() {
 
 	var pluginDef plugin.PluginDefintion
 	if err := json.Unmarshal([]byte(pluginDefEnv), &pluginDef); err != nil {
-		log.Fatalf("error unmarshalling plugin definition: %v", err)
+		log.Fatalf("error unmarshaling plugin definition: %v", err)
 	}
 
 	// NOTE: The plugin definitions will come from an externally provided config file
