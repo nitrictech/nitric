@@ -20,8 +20,8 @@ locals {
 
 resource "aws_iam_role_policy" "access_policy" {
   for_each = var.nitric.services
-  name     = "${var.nitric.name}-${each.value.name}"
-  role     = each.value.identities["aws:iam"].id
+  name     = "${var.nitric.name}-${each.key}"
+  role     = each.value.identities["aws:iam:role"].role.name
 
 
   # Terraform's "jsonencode" function converts a

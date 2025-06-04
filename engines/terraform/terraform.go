@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,6 +28,8 @@ type TerraformDeployment struct {
 	stack   cdktf.TerraformStack
 	stackId stringresource.StringResource
 	engine  *TerraformEngine
+
+	serviceIdentities map[string]map[string]interface{}
 
 	terraformResources      map[string]cdktf.TerraformHclModule
 	terraformInfraResources map[string]cdktf.TerraformHclModule
@@ -116,6 +119,7 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 		terraformResources:      map[string]cdktf.TerraformHclModule{},
 		terraformInfraResources: map[string]cdktf.TerraformHclModule{},
 		terraformVariables:      map[string]cdktf.TerraformVariable{},
+		serviceIdentities:       map[string]map[string]interface{}{},
 	}
 }
 
@@ -161,7 +165,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	}
 
 	imageModule := cdktf.NewTerraformHclModule(e.stack, jsii.Sprintf("%s_image", name), &cdktf.TerraformHclModuleConfig{
-		Source:    jsii.String("github.com/nitrictech/nitric//engines/terraform/modules/image?depth=1&ref=next"),
+		Source:    jsii.String(imageModuleRef),
 		Variables: imageVars,
 	})
 
@@ -194,7 +198,6 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	}
 
 	// Create this services identities
-
 	nitricVar = &NitricServiceVariables{
 		NitricVariables: NitricVariables{
 			Name: jsii.String(name),
@@ -204,8 +207,9 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		Env:        &spec.Env,
 	}
 
-	return nitricVar, nil
+	e.serviceIdentities[name] = identityModuleOutputs
 
+	return nitricVar, nil
 }
 
 // Apply the engine to the target environment
@@ -218,34 +222,64 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// 	Type: jsii.String("string"),
 	// })
 
-	// Resolve resource modules
+	// Resolve infra modules
+	for infraName, infra := range e.platform.InfraSpecs {
+		plugin, err := e.repository.GetResourcePlugin(infra.PluginId)
+		if err != nil {
+			return err
+		}
+
+		tfDeployment.terraformInfraResources[infraName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(infraName), &cdktf.TerraformHclModuleConfig{
+			// TODO: This assumes that the plugin is resolvable as a URI
+			Source: jsii.String(plugin.Deployment.Terraform),
+		})
+	}
+
+	// Prepare service inputs and identities
+	serviceInputs := map[string]interface{}{}
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		var nitricVar interface{} = nil
-		var plug *ResourcePluginManifest = nil
+		if resourceIntent.Type != "service" {
+			continue
+		}
+
+		spec, err := e.platform.GetServiceBlueprint(resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		nitricVar, err := tfDeployment.resolveService(intentName, resourceIntent.ServiceIntent, spec, plug)
+		if err != nil {
+			return err
+		}
+
+		serviceInputs[intentName] = nitricVar
+	}
+
+	// Prepare non-service modules
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
 		if resourceIntent.Type == "service" {
-			spec, err := e.platform.GetServiceBlueprint(resourceIntent.SubType)
-			if err != nil {
-				return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
-			}
-			plug, err = e.repository.GetResourcePlugin(spec.PluginId)
-			if err != nil {
-				return fmt.Errorf("could not find plugin %s", spec.PluginId)
-			}
+			continue
+		}
 
-			nitricVar, err = tfDeployment.resolveService(intentName, resourceIntent.ServiceIntent, spec, plug)
-			if err != nil {
-				return err
-			}
-		} else {
-			spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
-			if err != nil {
-				return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
-			}
-			plug, err = e.repository.GetResourcePlugin(spec.PluginId)
-			if err != nil {
-				return fmt.Errorf("could not find plugin %s", spec.PluginId)
-			}
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
 
+		nitricVar := map[string]interface{}{
+			"name": intentName,
+			"services": map[string]interface{}{
+				"access":     jsii.Strings("read", "write", "delete"),
+				"identities": tfDeployment.serviceIdentities,
+			},
 		}
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
@@ -257,16 +291,28 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		})
 	}
 
-	// Resolve infra modules
-	for infraName, infra := range e.platform.InfraSpecs {
-		plugin, err := e.repository.GetResourcePlugin(infra.PluginId)
+	// Resolve resource modules
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
+		if resourceIntent.Type != "service" {
+			continue
+		}
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		tfDeployment.terraformInfraResources[infraName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(infraName), &cdktf.TerraformHclModuleConfig{
+		var nitricVar interface{} = serviceInputs[intentName]
+
+		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
-			Source: jsii.String(plugin.Deployment.Terraform),
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
 		})
 	}
 

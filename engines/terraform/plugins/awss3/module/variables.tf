@@ -6,7 +6,8 @@ variable "nitric" {
       name    = string
       actions = list(string)
       identities = map(object({
-        id = string
+        id   = string
+        role = any
       }))
     }))
   })
