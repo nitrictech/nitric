@@ -50,7 +50,7 @@ var platformSpecs = map[string]*PlatformSpec{
 func (MockPlatformRepository) GetPlatform(name string) (*PlatformSpec, error) {
 	platform, ok := platformSpecs[name]
 	if !ok {
-		return nil, fmt.Errorf("no platform %s available in repository")
+		return nil, fmt.Errorf("no platform %s available in repository", name)
 	}
 
 	return platform, nil

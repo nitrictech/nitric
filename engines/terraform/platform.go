@@ -39,6 +39,28 @@ func (p PlatformSpec) GetServiceBlueprint(intentSubType string) (*ServiceBluepri
 	return concreteSpec, nil
 }
 
+func (p PlatformSpec) GetResourceBlueprintsForType(typ string) (map[string]*ResourceBlueprint, error) {
+	var specs map[string]*ResourceBlueprint
+
+	switch typ {
+	case "service":
+		specs = map[string]*ResourceBlueprint{}
+		for name, blueprint := range p.ServiceBlueprints {
+			specs[name] = blueprint.ResourceBlueprint
+		}
+	case "entrypoint":
+		specs = p.EntrypointBlueprints
+	case "bucket":
+		specs = p.BucketBlueprints
+	case "topic":
+		specs = p.TopicBlueprints
+	default:
+		return nil, fmt.Errorf("failed to resolve resource blueprint, no type %s in platform spec", typ)
+	}
+
+	return specs, nil
+}
+
 func (p PlatformSpec) GetResourceBlueprint(intentType string, intentSubType string) (*ResourceBlueprint, error) {
 	if intentSubType == "" {
 		intentSubType = "default"

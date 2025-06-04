@@ -43,6 +43,25 @@ type SpecReference struct {
 	Path []string
 }
 
+func (e *TerraformEngine) GetPluginManifestsForType(typ string) (map[string]*ResourcePluginManifest, error) {
+	manifests := map[string]*ResourcePluginManifest{}
+
+	blueprints, err := e.platform.GetResourceBlueprintsForType(typ)
+	if err != nil {
+		return nil, err
+	}
+
+	for blueprintIntent, blueprint := range blueprints {
+		plug, err := e.repository.GetResourcePlugin(blueprint.PluginId)
+		if err != nil {
+			return nil, err
+		}
+		manifests[blueprintIntent] = plug
+	}
+
+	return manifests, nil
+}
+
 func SpecReferenceFromToken(token string) (*SpecReference, error) {
 	contents, ok := extractTokenContents(token)
 	if !ok {
@@ -125,13 +144,30 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 
 func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefintion, error) {
 	// TODO: Map platform resource plugins to the service plugin
-	return &plugin.PluginDefintion{
+	pluginDef := &plugin.PluginDefintion{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",
 			Name:   "default",
 			Import: servicePlugin.Runtime.GoModule,
 		},
-	}, nil
+	}
+
+	// FIXME: This add all storage plugins without regard to actually requiring access
+	storagePlugins, err := e.GetPluginManifestsForType("bucket")
+	if err != nil {
+		return nil, err
+	}
+
+	// Add storage plugins to the runtime
+	for name, plug := range storagePlugins {
+		pluginDef.Storage = append(pluginDef.Storage, plugin.GoPlugin{
+			Alias:  fmt.Sprintf("storage_%s", name),
+			Name:   name,
+			Import: plug.Runtime.GoModule,
+		})
+	}
+
+	return pluginDef, nil
 }
 
 func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (interface{}, error) {
