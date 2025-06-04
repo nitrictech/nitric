@@ -17,7 +17,3 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
-
-variable "read_role" {
-
-}
