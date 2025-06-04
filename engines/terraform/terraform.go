@@ -104,7 +104,7 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 		Length:  jsii.Number(8),
 		Upper:   jsii.Bool(false),
 		Lower:   jsii.Bool(true),
-		Number:  jsii.Bool(false),
+		Numeric: jsii.Bool(false),
 		Special: jsii.Bool(false),
 	})
 

@@ -29,19 +29,15 @@ resource "docker_registry_image" "push" {
   }
 }
 
-locals {
-  role_name = var.nitric.identities["aws:iam:role"].role.arn
-}
-
 resource "aws_iam_role_policy_attachment" "basic-execution" {
-  role       = local.role_name
+  role       = var.nitric.identities["aws:iam:role"].role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
   function_name = var.nitric.name
-  role          = local.role_name
+  role          = var.nitric.identities["aws:iam:role"].role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
   timeout       = var.timeout
