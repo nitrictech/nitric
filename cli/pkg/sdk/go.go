@@ -5,105 +5,52 @@ import (
 	"fmt"
 	"go/format"
 	"path/filepath"
-	"regexp"
-	"strings"
 	"text/template"
 
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/spf13/afero"
 )
 
-type SDKTemplateData struct {
+type GoSDKTemplateData struct {
 	Package    string
 	ImportPath string
-	Buckets    []NormalizedResourceName
+	Buckets    []ResourceNameNormalizer
 }
 
-type NormalizedResourceName struct {
-	OriginalName string
-	PublicName   string
-	PrivateName  string
-}
-
-func capitalizeFirstLetter(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-func toCamelCase(parts []string, capitalizeFirst bool) string {
-	var result strings.Builder
-	for _, part := range parts {
-		if part == "" {
-			continue
-		}
-
-		if capitalizeFirst {
-			result.WriteString(capitalizeFirstLetter(part))
-		} else {
-			result.WriteString(part)
-		}
-	}
-	return result.String()
-}
-
-func normalizeResourceName(name string) (NormalizedResourceName, error) {
-	if len(name) == 0 {
-		return NormalizedResourceName{}, fmt.Errorf("resource name cannot be empty")
-	}
-
-	// Ensure it starts with a letter
-	if len(name) > 0 && (name[0] < 'a' || name[0] > 'z') && (name[0] < 'A' || name[0] > 'Z') {
-		return NormalizedResourceName{}, fmt.Errorf("resource name must start with a letter")
-	}
-
-	// Replace any non-alphanumeric characters with underscores, using a simple regex
-	nonAlpha := regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	normalized := nonAlpha.ReplaceAllString(name, "_")
-
-	parts := strings.Split(normalized, "_")
-
-	return NormalizedResourceName{
-		OriginalName: name,
-		// CamelCase, first letter is uppercase
-		PublicName:  toCamelCase(parts, true),
-		PrivateName: toCamelCase(parts, false),
-	}, nil
-}
-
-func AppSpecToTemplateData(appSpec schema.Application) (SDKTemplateData, error) {
-	buckets := []NormalizedResourceName{}
+func AppSpecToGoTemplateData(appSpec schema.Application, goPackageName string) (GoSDKTemplateData, error) {
+	buckets := []ResourceNameNormalizer{}
 	for name, resource := range appSpec.ResourceIntents {
 
 		if resource.Type != "bucket" {
 			continue
 		}
 
-		normalized, err := normalizeResourceName(name)
+		normalized, err := NewResourceNameNormalizer(name)
 		if err != nil {
-			return SDKTemplateData{}, fmt.Errorf("failed to normalize resource name: %w", err)
+			return GoSDKTemplateData{}, fmt.Errorf("failed to normalize resource name: %w", err)
 		}
 
 		buckets = append(buckets, normalized)
 	}
 
-	return SDKTemplateData{
-		// TODO: use something better
-		Package: appSpec.Name,
-		// ImportPath: ,
+	return GoSDKTemplateData{
+		Package: goPackageName,
 		Buckets: buckets,
 	}, nil
 }
 
 // GenerateGoSDK generates Go SDK
-func GenerateGoSDK(fs afero.Fs, appSpec schema.Application, outPath string) error {
-	if outPath == "" {
-		outPath = "nitric/go/client"
+func GenerateGoSDK(fs afero.Fs, appSpec schema.Application, outputDir string, goPackageName string) error {
+	if outputDir == "" {
+		outputDir = "nitric/go/client"
+	}
+
+	if goPackageName == "" {
+		goPackageName = filepath.Base(outputDir)
 	}
 
 	tmpl := template.Must(template.New("client").Parse(clientTemplate))
-	data, err := AppSpecToTemplateData(appSpec)
+	data, err := AppSpecToGoTemplateData(appSpec, goPackageName)
 	if err != nil {
 		return fmt.Errorf("failed to convert nitric application spec into Go SDK template data: %w", err)
 	}
@@ -119,12 +66,12 @@ func GenerateGoSDK(fs afero.Fs, appSpec schema.Application, outPath string) erro
 		return fmt.Errorf("failed to format generated code: %w", err)
 	}
 
-	err = fs.MkdirAll(outPath, 0755)
+	err = fs.MkdirAll(outputDir, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	filePath := filepath.Join(outPath, "client.go")
+	filePath := filepath.Join(outputDir, "client.go")
 	err = afero.WriteFile(fs, filePath, formatted, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write generated file: %w", err)
@@ -143,6 +90,7 @@ import (
 	"fmt"
 
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
+
 	"github.com/nitrictech/nitric/sdk/go/nitric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -150,7 +98,7 @@ import (
 
 // Client provides access to nitric application resources
 type Client struct {
-	{{range .Buckets}}{{.PublicName}} *nitric.Bucket
+	{{range .Buckets}}{{.PascalCase}} *nitric.Bucket
 	{{end}}
 }
 
@@ -163,7 +111,7 @@ func NewClient() (*Client, error) {
 	storageClient := storagepb.NewStorageClient(cc)
 
 	return &Client{
-		{{range .Buckets}}{{.PublicName}}: nitric.NewBucket(storageClient, "{{.OriginalName}}"),
+		{{range .Buckets}}{{.PascalCase}}: nitric.NewBucket(storageClient, "{{.Unmodified}}"),
 		{{end}}
 	}, nil
 }

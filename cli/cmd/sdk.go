@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/cli/pkg/sdk"
@@ -37,36 +36,30 @@ var sdkCmd = &cobra.Command{
 			return
 		}
 
-		langs := []sdk.Language{}
+		// check if the go language flag is provided
 		if goFlag {
-			langs = append(langs, sdk.Go)
+			fmt.Println("Generating Go SDK...")
+			// TODO: add flags for output directory and package name
+			err = sdk.GenerateGoSDK(fs, *appSpec, "", "")
+			cobra.CheckErr(err)
 		}
+
 		if pythonFlag {
-			langs = append(langs, sdk.Python)
+			fmt.Println("Generating Python SDK...")
+			err = sdk.GeneratePythonSDK(fs, *appSpec, "", "")
+			cobra.CheckErr(err)
 		}
+
 		if javascriptFlag {
-			langs = append(langs, sdk.Javascript)
+			fmt.Println("Generating JavaScript SDK...")
+			err = sdk.GenerateJavaScriptSDK(fs, *appSpec, "", "")
+			cobra.CheckErr(err)
 		}
+
 		if typescriptFlag {
-			langs = append(langs, sdk.Typescript)
-		}
-
-		langStrings := make([]string, len(langs))
-		for i, lang := range langs {
-			langStr, err := sdk.LanguageToString(lang)
-			if err != nil {
-				fmt.Println("Error converting language to string:", err)
-				return
-			}
-			langStrings[i] = langStr
-		}
-
-		fmt.Println("Generating SDKs for languages:", strings.Join(langStrings, ", "))
-
-		err = sdk.GenerateSDKs(fs, *appSpec, "", langs)
-		if err != nil {
-			fmt.Println("Error generating SDKs:", err)
-			return
+			fmt.Println("Generating TypeScript SDK...")
+			err = sdk.GenerateTypeScriptSDK(fs, *appSpec, "", "")
+			cobra.CheckErr(err)
 		}
 
 		fmt.Println("SDKs generated successfully.")
