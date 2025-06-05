@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/smithy-go"
+	"github.com/iancoleman/strcase"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 	"github.com/nitrictech/nitric/server/runtime/storage"
 	"google.golang.org/grpc/codes"
@@ -30,8 +31,10 @@ type s3Storage struct {
 }
 
 func (s *s3Storage) getS3BucketName(bucket string) string {
+	normalizedBucketName := strcase.ToKebab(bucket)
+
 	// We want to build the bucket name from convention
-	return fmt.Sprintf("%s-%s", s.nitricStackId, bucket)
+	return fmt.Sprintf("%s-%s", s.nitricStackId, normalizedBucketName)
 }
 
 func isS3AccessDeniedErr(err error) bool {

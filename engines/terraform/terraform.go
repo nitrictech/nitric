@@ -189,14 +189,20 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		imageVars = &map[string]interface{}{
 			"image_id": jsii.String(spec.Container.Image.ID),
 			"tag":      jsii.String(name),
-			"args":     map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+			"args":     map[string]*string{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
 		}
 	} else if spec.Container.Docker != nil {
+		// merge args
+		args := map[string]*string{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))}
+		for k, v := range spec.Container.Docker.Args {
+			args[k] = jsii.String(v)
+		}
+
 		imageVars = &map[string]interface{}{
 			"build_context": jsii.String(spec.Container.Docker.Context),
 			"dockerfile":    jsii.String(spec.Container.Docker.Dockerfile),
 			"tag":           jsii.String(name),
-			"args":          map[string]interface{}{"PLUGIN_DEFINITION": jsii.String(string(pluginManifestBytes))},
+			"args":          args,
 		}
 	}
 

@@ -16,8 +16,9 @@ type Container struct {
 
 // DockerFileRuntime represents a runtime that uses a Dockerfile
 type Docker struct {
-	Dockerfile string `json:"dockerfile,omitempty" yaml:"dockerfile,omitempty"`
-	Context    string `json:"context,omitempty" yaml:"context,omitempty"`
+	Dockerfile string            `json:"dockerfile,omitempty" yaml:"dockerfile,omitempty"`
+	Context    string            `json:"context,omitempty" yaml:"context,omitempty"`
+	Args       map[string]string `json:"args,omitempty" yaml:"args,omitempty"`
 }
 
 type DockerImage struct {

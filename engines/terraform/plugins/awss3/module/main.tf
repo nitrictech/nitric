@@ -1,6 +1,10 @@
 # AWS S3 bucket
+
+locals {
+  normalized_nitric_name = provider::corefunc::str_kebab(var.nitric.name)
+}
 resource "aws_s3_bucket" "bucket" {
-  bucket = "${var.nitric.stack_id}-${var.nitric.name}"
+  bucket = "${var.nitric.stack_id}-${local.normalized_nitric_name}"
   tags   = var.tags
 }
 
@@ -17,9 +21,10 @@ locals {
   ]
 }
 
+
 resource "aws_iam_role_policy" "access_policy" {
   for_each = var.nitric.services
-  name     = "${var.nitric.name}-${each.key}"
+  name     = "${local.normalized_nitric_name}-${provider::corefunc::str_kebab(each.key)}"
   role     = each.value.identities["aws:iam:role"].role.name
 
 
