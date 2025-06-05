@@ -4,7 +4,7 @@ locals {
   normalized_nitric_name = provider::corefunc::str_kebab(var.nitric.name)
 }
 resource "aws_s3_bucket" "bucket" {
-  bucket = "${local.normalized_nitric_name}-${var.nitric.name}"
+  bucket = "${var.nitric.stack_id}-${local.normalized_nitric_name}"
   tags   = var.tags
 }
 
