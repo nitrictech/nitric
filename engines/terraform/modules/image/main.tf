@@ -10,6 +10,7 @@ resource "docker_image" "base_service" {
       context    = "${path.root}/../../../${var.build_context != "." ? var.build_context : ""}"
       dockerfile = "${path.root}/../../../${var.dockerfile}"
       tag        = ["${var.tag}:base"]
+      build_args = var.args
     }
   }
 }
