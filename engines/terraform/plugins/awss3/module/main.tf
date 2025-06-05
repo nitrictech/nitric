@@ -1,4 +1,3 @@
-
 # AWS S3 bucket
 resource "aws_s3_bucket" "bucket" {
   bucket = "${var.nitric.stack_id}-${var.nitric.name}"
@@ -37,7 +36,10 @@ resource "aws_iam_role_policy" "access_policy" {
           )
         )
         Effect   = "Allow"
-        Resource = aws_s3_bucket.bucket.arn
+        Resource = [
+          aws_s3_bucket.bucket.arn,
+          "${aws_s3_bucket.bucket.arn}/*"
+        ]
       },
     ]
   })
