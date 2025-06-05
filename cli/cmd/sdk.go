@@ -63,7 +63,7 @@ var sdkCmd = &cobra.Command{
 
 		fmt.Println("Generating SDKs for languages:", strings.Join(langStrings, ", "))
 
-		err = sdk.GenerateSDKs(fs, *appSpec, "output/path", langs)
+		err = sdk.GenerateSDKs(fs, *appSpec, "", langs)
 		if err != nil {
 			fmt.Println("Error generating SDKs:", err)
 			return
