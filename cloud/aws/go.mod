@@ -24,7 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.2
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.6
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
-	github.com/aws/jsii-runtime-go v1.106.0
+	github.com/aws/jsii-runtime-go v1.111.0
 	github.com/aws/smithy-go v1.22.2
 	github.com/cdktf/cdktf-provider-aws-go/aws/v19 v19.54.0
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
@@ -33,7 +33,7 @@ require (
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.12
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-20250416075450-959094cfd18a

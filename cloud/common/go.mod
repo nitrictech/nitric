@@ -6,11 +6,11 @@ toolchain go1.24.0
 
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
-	github.com/aws/jsii-runtime-go v1.106.0
+	github.com/aws/jsii-runtime-go v1.111.0
 	github.com/docker/docker v25.0.6+incompatible
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/google/addlicense v1.1.1
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.12
 	github.com/iancoleman/strcase v0.3.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/core v0.0.0-20250107045554-1b4369fca6ce

@@ -11,6 +11,7 @@ use (
 	./core
 	./engines
 	./proto
+	./sdk
 	./server
 	./test
 )

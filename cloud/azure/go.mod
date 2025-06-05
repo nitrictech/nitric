@@ -16,7 +16,7 @@ require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/Azure/go-autorest/autorest/date v0.3.0
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
-	github.com/aws/jsii-runtime-go v1.106.0
+	github.com/aws/jsii-runtime-go v1.111.0
 	github.com/cdktf/cdktf-provider-azuread-go/azuread/v13 v13.0.0
 	github.com/cdktf/cdktf-provider-azurerm-go/azurerm/v13 v13.14.0
 	github.com/cdktf/cdktf-provider-docker-go/docker/v11 v11.0.0
@@ -26,7 +26,7 @@ require (
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.11
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.12
 	github.com/imdario/mergo v0.3.15
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nitrictech/nitric/cloud/common v0.0.0-00010101000000-000000000000
