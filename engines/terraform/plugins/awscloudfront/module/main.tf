@@ -4,18 +4,28 @@ locals {
     for k, v in var.nitric.origins : k => v
     if v.path == "/"
   }
-  bucket_origins = {
-    for k, v in var.nitric.origins : k => v
-    if v.type == "bucket"
-  }
   s3_bucket_origins = {
-    for k, v in local.bucket_origins : k => v
+    for k, v in var.nitric.origins : k => v
     if v.raw["aws_s3_bucket"] != null
+  }
+  lambda_origins = {
+    for k, v in var.nitric.origins : k => v
+    if v.raw["aws_lambda_function"] != null
   }
 }
 
 resource "aws_cloudfront_origin_access_identity" "oai" {
   comment = "OAI for accessing S3 bucket"
+}
+
+# Allow cloudfront to execute the function urls of any provided AWS lambda functions
+resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
+  for_each = local.lambda_origins
+
+  function_name = each.value.raw["aws_lambda_function"]
+  principal = "cloudfront.amazonaws.com"
+  action = "lambda:InvokeFunction"
+  source_arn = aws_cloudfront_distribution.distribution.arn
 }
 
 resource "aws_s3_bucket_policy" "allow_bucket_access" {
@@ -60,7 +70,15 @@ resource "aws_cloudfront_distribution" "distribution" {
       origin_id = "${origin.key}"
 
       dynamic "s3_origin_config" {
-        for_each = startswith(origin.value.id, "arn:aws:s3:::") == true ? [1] : []
+        for_each = origin.value.raw["aws_s3_bucket"] != nil == true ? [1] : []
+
+        content {
+          origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
+        }
+      }
+
+      dynamic "lambda_origin_config" {
+        for_each = origin.value.raw["aws_lambda_function"] != nil ? [1] : []
 
         content {
           origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
