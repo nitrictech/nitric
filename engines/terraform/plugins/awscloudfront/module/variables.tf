@@ -2,12 +2,12 @@ variable "nitric" {
   type = object({
     name     = string
     stack_id = string
-    services = map(object({
+    # A map of path to origin
+    origins = map(object({
+      path = string
+      type = string
       http_endpoint = string
-      identity = map(object({
-        id   = string
-        role = any
-      }))
+      # TODO: Possibly add an identity to use to authenticate the service
     }))
   })
 }
