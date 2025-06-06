@@ -10,7 +10,7 @@ locals {
   }
   s3_bucket_origins = {
     for k, v in local.bucket_origins : k => v
-    if startswith(v.id, "arn:aws:s3:::") == true
+    if v.raw["aws_s3_bucket"] != null
   }
 }
 
