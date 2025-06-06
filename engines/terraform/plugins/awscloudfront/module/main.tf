@@ -31,7 +31,7 @@ resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
 resource "aws_s3_bucket_policy" "allow_bucket_access" {
   for_each = local.s3_bucket_origins
 
-  bucket = each.value.id
+  bucket = replace(each.value.id, "arn:aws:s3:::", "")
 
   policy = jsonencode({
     Version = "2012-10-17"
