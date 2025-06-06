@@ -42,7 +42,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
 
     content {
-      path_pattern = "${each.value.path}*"
+      path_pattern = "${ordered_cache_behavior.value.path}*"
 
       function_association {
         event_type = "viewer-request"

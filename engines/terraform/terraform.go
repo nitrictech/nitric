@@ -179,13 +179,13 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, spec *app_
 			return nil, fmt.Errorf("target %s not found", route.TargetName)
 		}
 
-		outputNitricVar := target.Get(jsii.String("nitric"))
+		outputNitricVar := target.Get(jsii.String("nitric.http_endpoint"))
 
 		origins[path] = map[string]interface{}{
 			"path": jsii.String(path),
 			"type": jsii.String("service"),
 			// Assume the output var has a http_endpoint property
-			"http_endpoint": jsii.Sprintf("%s.http_endpoint", outputNitricVar),
+			"http_endpoint": outputNitricVar,
 		}
 	}
 
@@ -310,7 +310,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// Prepare service inputs and identities
 	serviceInputs := map[string]interface{}{}
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type != "service" && resourceIntent.Type != "entrypoint" {
+		if resourceIntent.Type != "service" {
 			continue
 		}
 
