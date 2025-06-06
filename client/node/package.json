@@ -1,10 +1,11 @@
 {
   "name": "@nitric/client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "nitric runtime client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "bump": "standard-version",
     "build": "tsc",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
@@ -17,6 +18,7 @@
     "@types/google-protobuf": "^3.15.12",
     "@types/node": "^20.17.58",
     "grpc-tools": "^1.13.0",
+    "standard-version": "^9.5.0",
     "ts-protoc-gen": "^0.15.0",
     "typescript": "^5.3.3"
   },
