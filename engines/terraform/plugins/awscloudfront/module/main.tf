@@ -4,10 +4,6 @@ locals {
     for k, v in var.nitric.origins : k => v
     if v.path == "/"
   }
-  service_origins = {
-    for k, v in var.nitric.origins : k => v
-    if v.type == "service"
-  }
   bucket_origins = {
     for k, v in var.nitric.origins : k => v
     if v.type == "bucket"
@@ -56,7 +52,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled = true
 
   dynamic "origin" {
-    for_each = var.nitric.service_origins
+    for_each = var.nitric.origins
 
     content {
       # TODO: Only have services return their domain name instead? 
