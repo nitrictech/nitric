@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
-	"github.com/nitrictech/nitric/cli/pkg/sdk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -40,25 +40,25 @@ var sdkCmd = &cobra.Command{
 		if goFlag {
 			fmt.Println("Generating Go SDK...")
 			// TODO: add flags for output directory and package name
-			err = sdk.GenerateGoSDK(fs, *appSpec, "", "")
+			err = client.GenerateGoSDK(fs, *appSpec, "", "")
 			cobra.CheckErr(err)
 		}
 
 		if pythonFlag {
 			fmt.Println("Generating Python SDK...")
-			err = sdk.GeneratePythonSDK(fs, *appSpec, "", "")
+			err = client.GeneratePythonSDK(fs, *appSpec, "", "")
 			cobra.CheckErr(err)
 		}
 
 		if javascriptFlag {
 			fmt.Println("Generating JavaScript SDK...")
-			err = sdk.GenerateJavaScriptSDK(fs, *appSpec, "", "")
+			err = client.GenerateJavaScriptSDK(fs, *appSpec, "", "")
 			cobra.CheckErr(err)
 		}
 
 		if typescriptFlag {
 			fmt.Println("Generating TypeScript SDK...")
-			err = sdk.GenerateTypeScriptSDK(fs, *appSpec, "", "")
+			err = client.GenerateTSSDK(fs, *appSpec, "")
 			cobra.CheckErr(err)
 		}
 
