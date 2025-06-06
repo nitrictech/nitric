@@ -6,11 +6,11 @@ locals {
   }
   s3_bucket_origins = {
     for k, v in var.nitric.origins : k => v
-    if v.raw["aws_s3_bucket"] != null
+    if lookup(v, "raw.aws_s3_bucket", null) != null
   }
   lambda_origins = {
     for k, v in var.nitric.origins : k => v
-    if v.raw["aws_lambda_function"] != null
+    if lookup(v, "raw.aws_lambda_function", null) != null
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       origin_id = "${origin.key}"
 
       dynamic "s3_origin_config" {
-        for_each = origin.value.raw["aws_s3_bucket"] != null ? [1] : []
+        for_each = lookup(origin.value, "raw.aws_s3_bucket", null) != null ? [1] : []
 
         content {
           origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
