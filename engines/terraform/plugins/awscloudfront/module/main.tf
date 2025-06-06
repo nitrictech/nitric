@@ -11,7 +11,9 @@ resource "aws_cloudfront_function" "api-url-rewrite-function" {
   runtime = "cloudfront-js-1.0"
   comment = "Rewrite API URLs routed to Nitric services"
   publish = true
-  code    = file("${path.module}/scripts/api-url-rewrite.js")
+  code    = templatefile("${path.module}/scripts/url-rewrite.js", {
+    base_paths = join(",", [for k, v in var.nitric.origins : v.path])
+  })
 }
 
 resource "aws_cloudfront_distribution" "distribution" {
