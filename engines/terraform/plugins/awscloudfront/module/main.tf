@@ -6,11 +6,11 @@ locals {
   }
   s3_bucket_origins = {
     for k, v in var.nitric.origins : k => v
-    if lookup(v, "raw.aws_s3_bucket", null) != null
+    if contains(keys(v.raw), "aws_s3_bucket")
   }
   lambda_origins = {
     for k, v in var.nitric.origins : k => v
-    if lookup(v, "raw.aws_lambda_function", null) != null
+    if contains(keys(v.raw), "aws_lambda_function")
   }
 }
 
@@ -70,19 +70,23 @@ resource "aws_cloudfront_distribution" "distribution" {
       origin_id = "${origin.key}"
 
       dynamic "s3_origin_config" {
-        for_each = lookup(origin.value, "raw.aws_s3_bucket", null) != null ? [1] : []
+        for_each = contains(keys(origin.value.raw), "aws_s3_bucket") ? [1] : []
 
         content {
           origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
         }
       }
 
-      custom_origin_config {
-        origin_read_timeout = 30
-        origin_protocol_policy = "https-only"
-        origin_ssl_protocols = ["TLSv1.2", "SSLv3"]
-        http_port = 80
-        https_port = 443
+      dynamic "custom_origin_config" {
+        for_each = !contains(keys(origin.value.raw), "aws_s3_bucket") ? [1] : []
+
+        content {
+          origin_read_timeout = 30
+          origin_protocol_policy = "https-only"
+          origin_ssl_protocols = ["TLSv1.2", "SSLv3"]
+          http_port = 80
+          https_port = 443
+        }
       }
     }
   }
