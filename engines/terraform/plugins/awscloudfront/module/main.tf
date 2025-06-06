@@ -73,11 +73,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     default_ttl            = 3600
     max_ttl                = 86400
 
-    function_association {
-      event_type = "viewer-request"
-      function_arn = aws_cloudfront_function.api-url-rewrite-function.arn
-    }
-
     forwarded_values {
       query_string = true
       cookies {
