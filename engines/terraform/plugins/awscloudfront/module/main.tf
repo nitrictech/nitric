@@ -77,14 +77,6 @@ resource "aws_cloudfront_distribution" "distribution" {
         }
       }
 
-      dynamic "lambda_origin_config" {
-        for_each = origin.value.raw["aws_lambda_function"] != nil ? [1] : []
-
-        content {
-          origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
-        }
-      }
-
       custom_origin_config {
         origin_read_timeout = 30
         origin_protocol_policy = "https-only"
