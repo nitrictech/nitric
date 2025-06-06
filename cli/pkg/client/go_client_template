@@ -7,7 +7,7 @@ import (
 
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 
-	"github.com/nitrictech/nitric/sdk/go/nitric"
+	"github.com/nitrictech/nitric/client/go/nitric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

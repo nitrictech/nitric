@@ -1,4 +1,4 @@
-module github.com/nitrictech/nitric/sdk
+module github.com/nitrictech/nitric/client
 
 go 1.24.3
 
