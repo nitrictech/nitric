@@ -179,7 +179,7 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, spec *app_
 			return nil, fmt.Errorf("target %s not found", route.TargetName)
 		}
 
-		outputNitricVar := target.Get(jsii.String("nitric.http_endpoint"))
+		outputNitricVar := target.Get(jsii.String("nitric.domain_name"))
 
 		origins[route.TargetName] = map[string]interface{}{
 			"path": jsii.String(path),
