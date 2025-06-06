@@ -170,6 +170,8 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePlugin
 	return pluginDef, nil
 }
 
+var entrypointOriginTypes = []string{"service", "bucket"}
+
 func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *app_spec_schema.Application, spec *app_spec_schema.EntrypointIntent) (interface{}, error) {
 	origins := map[string]interface{}{}
 	for path, route := range spec.Routes {
@@ -185,6 +187,8 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *a
 
 		domainNameNitricVar := hclTarget.Get(jsii.String("nitric.domain_name"))
 		idNitricVar := hclTarget.Get(jsii.String("nitric.id"))
+		rawNitricVar := hclTarget.Get(jsii.String("nitric.raw"))
+		rawTypeNitricVar := hclTarget.Get(jsii.String("nitric.raw_type"))
 
 		origins[route.TargetName] = map[string]interface{}{
 			"path": jsii.String(path),
@@ -192,6 +196,8 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *a
 			"id":   idNitricVar,
 			// Assume the output var has a http_endpoint property
 			"domain_name": domainNameNitricVar,
+			"raw_type":    rawTypeNitricVar,
+			"raw":         rawNitricVar,
 		}
 	}
 

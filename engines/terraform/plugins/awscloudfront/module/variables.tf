@@ -8,7 +8,8 @@ variable "nitric" {
       type = string
       domain_name = string
       id = string
-      # TODO: Possibly add an identity to use to authenticate the service
+      raw_type = string
+      raw = any
     }))
   })
 }
