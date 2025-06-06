@@ -70,7 +70,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       origin_id = "${origin.key}"
 
       dynamic "s3_origin_config" {
-        for_each = origin.value.raw["aws_s3_bucket"] != nil == true ? [1] : []
+        for_each = origin.value.raw["aws_s3_bucket"] != null ? [1] : []
 
         content {
           origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
