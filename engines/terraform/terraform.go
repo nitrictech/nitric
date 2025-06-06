@@ -181,7 +181,7 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, spec *app_
 
 		outputNitricVar := target.Get(jsii.String("nitric.http_endpoint"))
 
-		origins[path] = map[string]interface{}{
+		origins[route.TargetName] = map[string]interface{}{
 			"path": jsii.String(path),
 			"type": jsii.String("service"),
 			// Assume the output var has a http_endpoint property
