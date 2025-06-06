@@ -415,7 +415,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, resourceIntent.EntrypointIntent)
+		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent.EntrypointIntent)
 		if err != nil {
 			return err
 		}
