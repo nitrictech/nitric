@@ -6,7 +6,8 @@ variable "nitric" {
     origins = map(object({
       path = string
       type = string
-      http_endpoint = string
+      domain_name = string
+      id = string
       # TODO: Possibly add an identity to use to authenticate the service
     }))
   })

@@ -170,22 +170,28 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePlugin
 	return pluginDef, nil
 }
 
-func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, spec *app_spec_schema.EntrypointIntent) (interface{}, error) {
+func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *app_spec_schema.Application, spec *app_spec_schema.EntrypointIntent) (interface{}, error) {
 	origins := map[string]interface{}{}
 	for path, route := range spec.Routes {
-
-		target, ok := e.terraformResources[route.TargetName]
+		intentTarget, ok := appSpec.ResourceIntents[route.TargetName]
 		if !ok {
 			return nil, fmt.Errorf("target %s not found", route.TargetName)
 		}
 
-		outputNitricVar := target.Get(jsii.String("nitric.domain_name"))
+		hclTarget, ok := e.terraformResources[route.TargetName]
+		if !ok {
+			return nil, fmt.Errorf("target %s not found", route.TargetName)
+		}
+
+		domainNameNitricVar := hclTarget.Get(jsii.String("nitric.domain_name"))
+		idNitricVar := hclTarget.Get(jsii.String("nitric.id"))
 
 		origins[route.TargetName] = map[string]interface{}{
 			"path": jsii.String(path),
-			"type": jsii.String("service"),
+			"type": jsii.String(intentTarget.Type),
+			"id":   idNitricVar,
 			// Assume the output var has a http_endpoint property
-			"http_endpoint": outputNitricVar,
+			"domain_name": domainNameNitricVar,
 		}
 	}
 

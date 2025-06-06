@@ -4,6 +4,42 @@ locals {
     for k, v in var.nitric.origins : k => v
     if v.path == "/"
   }
+  service_origins = {
+    for k, v in var.nitric.origins : k => v
+    if v.type == "service"
+  }
+  bucket_origins = {
+    for k, v in var.nitric.origins : k => v
+    if v.type == "bucket"
+  }
+  s3_bucket_origins = {
+    for k, v in local.bucket_origins : k => v
+    if startswith(v.id, "arn:aws:s3:::") == true
+  }
+}
+
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "OAI for accessing S3 bucket"
+}
+
+resource "aws_s3_bucket_policy" "allow_bucket_access" {
+  for_each = local.s3_bucket_origins
+
+  bucket = each.value.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.oai.iam_arn
+        }
+        Action = "s3:GetObject"
+        Resource = "${each.value.id}/*"
+      }
+    ]
+  })
 }
 
 resource "aws_cloudfront_function" "api-url-rewrite-function" {
@@ -20,12 +56,20 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled = true
 
   dynamic "origin" {
-    for_each = var.nitric.origins
+    for_each = var.nitric.service_origins
 
     content {
       # TODO: Only have services return their domain name instead? 
-      domain_name = replace(origin.value.http_endpoint, "https://", "")
+      domain_name = origin.value.domain_name
       origin_id = "${origin.key}"
+
+      dynamic "s3_origin_config" {
+        for_each = startswith(origin.value.id, "arn:aws:s3:::") == true ? [1] : []
+
+        content {
+          origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
+        }
+      }
 
       custom_origin_config {
         origin_read_timeout = 30
