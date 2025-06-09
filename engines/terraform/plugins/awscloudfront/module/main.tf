@@ -14,8 +14,22 @@ locals {
   }
 }
 
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for accessing S3 bucket"
+resource "aws_cloudfront_origin_access_control" "lambda_oac" {
+  count = length(local.lambda_origins) > 0 ? 1 : 0
+
+  name                              = "lambda-oac"
+  origin_access_control_origin_type = "lambda"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+resource "aws_cloudfront_origin_access_control" "s3_oac" {
+  count = length(local.s3_bucket_origins) > 0 ? 1 : 0
+
+  name                              = "s3-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 # Allow cloudfront to execute the function urls of any provided AWS lambda functions
@@ -24,7 +38,7 @@ resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
 
   function_name = each.value.raw["aws_lambda_function"]
   principal = "cloudfront.amazonaws.com"
-  action = "lambda:InvokeFunction"
+  action = "lambda:InvokeFunctionUrl"
   source_arn = aws_cloudfront_distribution.distribution.arn
 }
 
@@ -39,10 +53,15 @@ resource "aws_s3_bucket_policy" "allow_bucket_access" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = aws_cloudfront_origin_access_identity.oai.iam_arn
+          Service = "cloudfront.amazonaws.com"
         }
         Action = "s3:GetObject"
         Resource = "${each.value.id}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.distribution.arn
+          }
+        }
       }
     ]
   })
@@ -68,14 +87,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       # TODO: Only have services return their domain name instead? 
       domain_name = origin.value.domain_name
       origin_id = "${origin.key}"
-
-      dynamic "s3_origin_config" {
-        for_each = contains(keys(origin.value.raw), "aws_s3_bucket") ? [1] : []
-
-        content {
-          origin_access_identity = aws_cloudfront_origin_access_identity.oai.iam_arn
-        }
-      }
+      origin_access_control_id = contains(keys(origin.value.raw), "aws_lambda_function") ? aws_cloudfront_origin_access_control.lambda_oac[0].id : contains(keys(origin.value.raw), "aws_s3_bucket") ? aws_cloudfront_origin_access_control.s3_oac[0].id : null
 
       dynamic "custom_origin_config" {
         for_each = !contains(keys(origin.value.raw), "aws_s3_bucket") ? [1] : []
