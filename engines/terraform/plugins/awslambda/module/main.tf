@@ -68,6 +68,8 @@ resource "aws_lambda_function_url" "endpoint" {
   # qualifier          = "my_alias"
   authorization_type = var.function_url_auth_type
 
+  invoke_mode = "RESPONSE_STREAM"
+
   # cors {
   #   allow_credentials = true
   #   allow_origins     = ["*"]
