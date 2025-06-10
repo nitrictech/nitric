@@ -477,12 +477,13 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return err
 		}
 
-		tfDeployment.resolveTokensForModule(resourceSpec, tfDeployment.terraformResources[resourceName])
+		tfDeployment.resolveTokensForModule(resourceName, resourceSpec, tfDeployment.terraformResources[resourceName])
 	}
 
 	// Resolve infra tokens
 	for infraName, infra := range e.platform.InfraSpecs {
-		tfDeployment.resolveTokensForModule(infra, tfDeployment.terraformInfraResources[infraName])
+		// TODO: This is overloading this method as infra-name is not usable in this context as infra cannot resolve `self` tokens
+		tfDeployment.resolveTokensForModule(infraName, infra, tfDeployment.terraformInfraResources[infraName])
 	}
 
 	tfDeployment.app.Synth()
