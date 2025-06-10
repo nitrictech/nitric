@@ -109,11 +109,9 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 
 			module.Set(jsii.String(property), tfVariable.Value())
 		} else if specRef.Source == "var" {
-			// TODO: Remove dynamic variable creation, instead reference from spec (add a variables definition to the platform spec)
 			tfVariable, ok := tf.terraformVariables[specRef.Path[0]]
 			if !ok {
-				tf.terraformVariables[specRef.Path[0]] = cdktf.NewTerraformVariable(tf.stack, jsii.String(specRef.Path[0]), &cdktf.TerraformVariableConfig{})
-				tfVariable = tf.terraformVariables[specRef.Path[0]]
+				return fmt.Errorf("Variable %s does not exist for this platform")
 			}
 
 			// Create a new terraform variable
@@ -326,6 +324,15 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// tfDeployment.terraformVariables["build_root"] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String("build_root"), &cdktf.TerraformVariableConfig{
 	// 	Type: jsii.String("string"),
 	// })
+
+	// Create platform variables ahead of time
+	for varName, variableSpec := range e.platform.Variables {
+		tfDeployment.terraformVariables[varName] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String(varName), &cdktf.TerraformVariableConfig{
+			Description: jsii.String(variableSpec.Description),
+			Default:     variableSpec.Default,
+			Type:        jsii.String(variableSpec.Type),
+		})
+	}
 
 	// Resolve infra modules
 	for infraName, infra := range e.platform.InfraSpecs {
