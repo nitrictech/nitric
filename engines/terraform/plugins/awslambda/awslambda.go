@@ -3,7 +3,6 @@ package awslambda
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 
@@ -21,7 +20,7 @@ func (a *awslambdaService) Start(proxy service.Proxy) error {
 
 	lambda.Start(func(ctx context.Context, evt json.RawMessage) (interface{}, error) {
 		// Try to parse as API Gateway v2 HTTP event first
-		var httpEvent events.APIGatewayV2HTTPRequest
+		var httpEvent events.LambdaFunctionURLRequest
 		if err := json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
 			return a.handleHTTPEvent(ctx, &httpEvent)
 		}
@@ -33,7 +32,7 @@ func (a *awslambdaService) Start(proxy service.Proxy) error {
 	return nil
 }
 
-func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
+func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.LambdaFunctionURLRequest) (*events.LambdaFunctionURLStreamingResponse, error) {
 	// Convert the event to an HTTP request and process it through the proxy
 	// TODO: Implement full HTTP request handling logic with proxy
 
@@ -48,17 +47,9 @@ func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.APIG
 		req.Header.Add(k, v)
 	}
 
-	for k, v := range evt.QueryStringParameters {
-		req.URL.Query().Add(k, v)
-	}
+	req.URL.RawQuery = evt.RawQueryString
 
 	resp, err := a.proxy.Forward(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	// translate the response to an API Gateway v2 HTTP response
-	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +60,9 @@ func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.APIG
 		headers[k] = v[0]
 	}
 
-	return &events.APIGatewayV2HTTPResponse{
+	return &events.LambdaFunctionURLStreamingResponse{
 		StatusCode: resp.StatusCode,
-		Body:       string(body),
+		Body:       resp.Body,
 		Headers:    headers,
 	}, nil
 }
