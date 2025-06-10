@@ -1,7 +1,10 @@
 output "nitric" {
   value = {
     id            = aws_lambda_function.function.arn
-    http_endpoint = aws_lambda_function_url.endpoint.function_url
+    domain_name = split("/", aws_lambda_function_url.endpoint.function_url)[2]
+    raw = {
+      "aws_lambda_function" = aws_lambda_function.function.arn
+    }
   }
 }
 

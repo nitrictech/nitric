@@ -170,6 +170,45 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePlugin
 	return pluginDef, nil
 }
 
+var entrypointOriginTypes = []string{"service", "bucket"}
+
+func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *app_spec_schema.Application, spec *app_spec_schema.EntrypointIntent) (interface{}, error) {
+	origins := map[string]interface{}{}
+	for path, route := range spec.Routes {
+		intentTarget, ok := appSpec.ResourceIntents[route.TargetName]
+		if !ok {
+			return nil, fmt.Errorf("target %s not found", route.TargetName)
+		}
+
+		hclTarget, ok := e.terraformResources[route.TargetName]
+		if !ok {
+			return nil, fmt.Errorf("target %s not found", route.TargetName)
+		}
+
+		domainNameNitricVar := hclTarget.Get(jsii.String("nitric.domain_name"))
+		idNitricVar := hclTarget.Get(jsii.String("nitric.id"))
+		rawNitricVar := hclTarget.Get(jsii.String("nitric.raw"))
+
+		origins[route.TargetName] = map[string]interface{}{
+			"path": jsii.String(path),
+			"type": jsii.String(intentTarget.Type),
+			"id":   idNitricVar,
+			// Assume the output var has a http_endpoint property
+			"domain_name": domainNameNitricVar,
+			"raw":         rawNitricVar,
+		}
+	}
+
+	// Build the origins map
+	nitricVar := map[string]interface{}{
+		"name":     jsii.String(name),
+		"stack_id": e.stackId.Result(),
+		"origins":  origins,
+	}
+
+	return nitricVar, nil
+}
+
 func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (interface{}, error) {
 	// Map the nitric variable
 	var nitricVar interface{} = nil
@@ -302,9 +341,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		serviceInputs[intentName] = nitricVar
 	}
 
-	// Prepare non-service modules
+	// Prepare non-service/non-entrypoint modules
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type == "service" {
+		if resourceIntent.Type == "service" || resourceIntent.Type == "entrypoint" {
 			continue
 		}
 
@@ -340,7 +379,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		})
 	}
 
-	// Resolve resource modules
+	// Resolve service modules
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
 		if resourceIntent.Type != "service" {
 			continue
@@ -355,6 +394,35 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		var nitricVar interface{} = serviceInputs[intentName]
+
+		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
+			// TODO: This assumes that the plugin is resolvable as a URI
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
+		})
+	}
+
+	// Resolve entrypoint modules
+	for intentName, resourceIntent := range appSpec.ResourceIntents {
+		if resourceIntent.Type != "entrypoint" {
+			continue
+		}
+
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent.EntrypointIntent)
+		if err != nil {
+			return err
+		}
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
