@@ -15,11 +15,19 @@ import (
 type PlatformSpec struct {
 	Name string `json:"name" yaml:"name"`
 
+	Variables map[string]Variable `json:"variables" yaml:"variables,omitempty"`
+
 	ServiceBlueprints    map[string]*ServiceBlueprint  `json:"services" yaml:"services"`
 	BucketBlueprints     map[string]*ResourceBlueprint `json:"buckets,omitempty" yaml:"buckets,omitempty"`
 	TopicBlueprints      map[string]*ResourceBlueprint `json:"topics,omitempty" yaml:"topics,omitempty"`
 	EntrypointBlueprints map[string]*ResourceBlueprint `json:"entrypoints" yaml:"entrypoints"`
 	InfraSpecs           map[string]*ResourceBlueprint `json:"infra" yaml:"infra"`
+}
+
+type Variable struct {
+	Type        string
+	Description string
+	Default     interface{}
 }
 
 func (p PlatformSpec) GetServiceBlueprint(intentSubType string) (*ServiceBlueprint, error) {
@@ -28,8 +36,6 @@ func (p PlatformSpec) GetServiceBlueprint(intentSubType string) (*ServiceBluepri
 	if intentSubType == "" {
 		intentSubType = "default"
 	}
-
-	maps.Keys(spec)
 
 	concreteSpec, ok := spec[intentSubType]
 	if !ok {
@@ -142,6 +148,7 @@ func PlatformFromId(fs afero.Fs, platformId string, repositories ...PlatformRepo
 type ResourceBlueprint struct {
 	PluginId   string                 `json:"plugin" yaml:"plugin"`
 	Properties map[string]interface{} `json:"properties" yaml:"properties"`
+	Variables  map[string]Variable    `json:"variables" yaml:"variables,omitempty"`
 }
 
 type IdentitiesBlueprint struct {

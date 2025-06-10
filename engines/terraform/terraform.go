@@ -31,9 +31,10 @@ type TerraformDeployment struct {
 
 	serviceIdentities map[string]map[string]interface{}
 
-	terraformResources      map[string]cdktf.TerraformHclModule
-	terraformInfraResources map[string]cdktf.TerraformHclModule
-	terraformVariables      map[string]cdktf.TerraformVariable
+	terraformResources          map[string]cdktf.TerraformHclModule
+	terraformInfraResources     map[string]cdktf.TerraformHclModule
+	terraformVariables          map[string]cdktf.TerraformVariable
+	instancedTerraformVariables map[string]map[string]cdktf.TerraformVariable
 }
 
 type SpecReference struct {
@@ -79,7 +80,7 @@ func SpecReferenceFromToken(token string) (*SpecReference, error) {
 	}, nil
 }
 
-func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
+func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
 	for property, value := range resource.Properties {
 		module.Set(jsii.String(property), value)
 
@@ -100,12 +101,17 @@ func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprin
 			refProperty := tf.terraformInfraResources[refName].Get(jsii.String(propertyName))
 
 			module.Set(jsii.String(property), refProperty)
+		} else if specRef.Source == "self" {
+			tfVariable, ok := tf.instancedTerraformVariables[intentName][specRef.Path[0]]
+			if !ok {
+				return fmt.Errorf("Variable %s does not exist for provided blueprint", specRef.Path[0])
+			}
+
+			module.Set(jsii.String(property), tfVariable.Value())
 		} else if specRef.Source == "var" {
-			// TODO: Remove dynamic variable creation, instead reference from spec (add a variables definition to the platform spec)
 			tfVariable, ok := tf.terraformVariables[specRef.Path[0]]
 			if !ok {
-				tf.terraformVariables[specRef.Path[0]] = cdktf.NewTerraformVariable(tf.stack, jsii.String(specRef.Path[0]), &cdktf.TerraformVariableConfig{})
-				tfVariable = tf.terraformVariables[specRef.Path[0]]
+				return fmt.Errorf("Variable %s does not exist for this platform", specRef.Path[0])
 			}
 
 			// Create a new terraform variable
@@ -131,14 +137,15 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	})
 
 	return &TerraformDeployment{
-		app:                     app,
-		stack:                   stack,
-		stackId:                 stackId,
-		engine:                  engine,
-		terraformResources:      map[string]cdktf.TerraformHclModule{},
-		terraformInfraResources: map[string]cdktf.TerraformHclModule{},
-		terraformVariables:      map[string]cdktf.TerraformVariable{},
-		serviceIdentities:       map[string]map[string]interface{}{},
+		app:                         app,
+		stack:                       stack,
+		stackId:                     stackId,
+		engine:                      engine,
+		terraformResources:          map[string]cdktf.TerraformHclModule{},
+		terraformInfraResources:     map[string]cdktf.TerraformHclModule{},
+		terraformVariables:          map[string]cdktf.TerraformVariable{},
+		instancedTerraformVariables: map[string]map[string]cdktf.TerraformVariable{},
+		serviceIdentities:           map[string]map[string]interface{}{},
 	}
 }
 
@@ -294,6 +301,21 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	return nitricVar, nil
 }
 
+func (e *TerraformDeployment) createVariablesForIntent(intentName string, intent app_spec_schema.Resource, spec *ResourceBlueprint) {
+	for varName, variable := range spec.Variables {
+		if e.instancedTerraformVariables[intentName] == nil {
+			e.instancedTerraformVariables[intentName] = make(map[string]cdktf.TerraformVariable)
+		}
+
+		e.instancedTerraformVariables[intentName][varName] = cdktf.NewTerraformVariable(e.stack, jsii.Sprintf("%s_%s", intentName, varName), &cdktf.TerraformVariableConfig{
+			Description: jsii.String(variable.Description),
+			Type:        jsii.String(variable.Type),
+			// TODO: Possibly resolve a token?
+			Default: variable.Default,
+		})
+	}
+}
+
 // Apply the engine to the target environment
 func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	tfDeployment := NewTerraformDeployment(e, appSpec.Name)
@@ -303,6 +325,15 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	// tfDeployment.terraformVariables["build_root"] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String("build_root"), &cdktf.TerraformVariableConfig{
 	// 	Type: jsii.String("string"),
 	// })
+
+	// Create platform variables ahead of time
+	for varName, variableSpec := range e.platform.Variables {
+		tfDeployment.terraformVariables[varName] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String(varName), &cdktf.TerraformVariableConfig{
+			Description: jsii.String(variableSpec.Description),
+			Default:     variableSpec.Default,
+			Type:        jsii.String(variableSpec.Type),
+		})
+	}
 
 	// Resolve infra modules
 	for infraName, infra := range e.platform.InfraSpecs {
@@ -370,6 +401,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			"services": servicesInput,
 		}
 
+		// Create terraform variables for intent for a spec
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
 			Source: jsii.String(plug.Deployment.Terraform),
@@ -394,6 +428,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		var nitricVar interface{} = serviceInputs[intentName]
+
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -424,6 +460,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return err
 		}
 
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
 			Source: jsii.String(plug.Deployment.Terraform),
@@ -440,12 +478,19 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return err
 		}
 
-		tfDeployment.resolveTokensForModule(resourceSpec, tfDeployment.terraformResources[resourceName])
+		err = tfDeployment.resolveTokensForModule(resourceName, resourceSpec, tfDeployment.terraformResources[resourceName])
+		if err != nil {
+			return err
+		}
 	}
 
 	// Resolve infra tokens
 	for infraName, infra := range e.platform.InfraSpecs {
-		tfDeployment.resolveTokensForModule(infra, tfDeployment.terraformInfraResources[infraName])
+		// TODO: This is overloading this method as infra-name is not usable in this context as infra cannot resolve `self` tokens
+		err := tfDeployment.resolveTokensForModule(infraName, infra, tfDeployment.terraformInfraResources[infraName])
+		if err != nil {
+			return err
+		}
 	}
 
 	tfDeployment.app.Synth()
