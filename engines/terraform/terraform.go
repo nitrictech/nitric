@@ -31,9 +31,10 @@ type TerraformDeployment struct {
 
 	serviceIdentities map[string]map[string]interface{}
 
-	terraformResources      map[string]cdktf.TerraformHclModule
-	terraformInfraResources map[string]cdktf.TerraformHclModule
-	terraformVariables      map[string]cdktf.TerraformVariable
+	terraformResources          map[string]cdktf.TerraformHclModule
+	terraformInfraResources     map[string]cdktf.TerraformHclModule
+	terraformVariables          map[string]cdktf.TerraformVariable
+	instancedTerraformVariables map[string]map[string]cdktf.TerraformVariable
 }
 
 type SpecReference struct {
@@ -79,7 +80,7 @@ func SpecReferenceFromToken(token string) (*SpecReference, error) {
 	}, nil
 }
 
-func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
+func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
 	for property, value := range resource.Properties {
 		module.Set(jsii.String(property), value)
 
@@ -100,6 +101,13 @@ func (tf *TerraformDeployment) resolveTokensForModule(resource *ResourceBlueprin
 			refProperty := tf.terraformInfraResources[refName].Get(jsii.String(propertyName))
 
 			module.Set(jsii.String(property), refProperty)
+		} else if specRef.Source == "self" {
+			tfVariable, ok := tf.instancedTerraformVariables[intentName][specRef.Path[0]]
+			if !ok {
+				return fmt.Errorf("Variable %s does not exist for provided blueprint")
+			}
+
+			module.Set(jsii.String(property), tfVariable.Value())
 		} else if specRef.Source == "var" {
 			// TODO: Remove dynamic variable creation, instead reference from spec (add a variables definition to the platform spec)
 			tfVariable, ok := tf.terraformVariables[specRef.Path[0]]
@@ -294,6 +302,21 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	return nitricVar, nil
 }
 
+func (e *TerraformDeployment) createVariablesForIntent(intentName string, intent app_spec_schema.Resource, spec *ResourceBlueprint) {
+	for varName, variable := range spec.Variables {
+		if e.instancedTerraformVariables[intentName] == nil {
+			e.instancedTerraformVariables[intentName] = make(map[string]cdktf.TerraformVariable)
+		}
+
+		e.instancedTerraformVariables[intentName][varName] = cdktf.NewTerraformVariable(e.stack, jsii.Sprintf("%s_%s", intentName, varName), &cdktf.TerraformVariableConfig{
+			Description: jsii.String(variable.Description),
+			Type:        jsii.String(variable.Type),
+			// TODO: Possibly resolve a token?
+			Default: variable.Default,
+		})
+	}
+}
+
 // Apply the engine to the target environment
 func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	tfDeployment := NewTerraformDeployment(e, appSpec.Name)
@@ -370,6 +393,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			"services": servicesInput,
 		}
 
+		// Create terraform variables for intent for a spec
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
 			Source: jsii.String(plug.Deployment.Terraform),
@@ -394,6 +420,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		var nitricVar interface{} = serviceInputs[intentName]
+
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -423,6 +451,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return err
 		}
+
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
