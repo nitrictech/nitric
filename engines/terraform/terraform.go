@@ -104,14 +104,14 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 		} else if specRef.Source == "self" {
 			tfVariable, ok := tf.instancedTerraformVariables[intentName][specRef.Path[0]]
 			if !ok {
-				return fmt.Errorf("Variable %s does not exist for provided blueprint")
+				return fmt.Errorf("Variable %s does not exist for provided blueprint", specRef.Path[0])
 			}
 
 			module.Set(jsii.String(property), tfVariable.Value())
 		} else if specRef.Source == "var" {
 			tfVariable, ok := tf.terraformVariables[specRef.Path[0]]
 			if !ok {
-				return fmt.Errorf("Variable %s does not exist for this platform")
+				return fmt.Errorf("Variable %s does not exist for this platform", specRef.Path[0])
 			}
 
 			// Create a new terraform variable
@@ -137,14 +137,15 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	})
 
 	return &TerraformDeployment{
-		app:                     app,
-		stack:                   stack,
-		stackId:                 stackId,
-		engine:                  engine,
-		terraformResources:      map[string]cdktf.TerraformHclModule{},
-		terraformInfraResources: map[string]cdktf.TerraformHclModule{},
-		terraformVariables:      map[string]cdktf.TerraformVariable{},
-		serviceIdentities:       map[string]map[string]interface{}{},
+		app:                         app,
+		stack:                       stack,
+		stackId:                     stackId,
+		engine:                      engine,
+		terraformResources:          map[string]cdktf.TerraformHclModule{},
+		terraformInfraResources:     map[string]cdktf.TerraformHclModule{},
+		terraformVariables:          map[string]cdktf.TerraformVariable{},
+		instancedTerraformVariables: map[string]map[string]cdktf.TerraformVariable{},
+		serviceIdentities:           map[string]map[string]interface{}{},
 	}
 }
 
@@ -477,13 +478,19 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return err
 		}
 
-		tfDeployment.resolveTokensForModule(resourceName, resourceSpec, tfDeployment.terraformResources[resourceName])
+		err = tfDeployment.resolveTokensForModule(resourceName, resourceSpec, tfDeployment.terraformResources[resourceName])
+		if err != nil {
+			return err
+		}
 	}
 
 	// Resolve infra tokens
 	for infraName, infra := range e.platform.InfraSpecs {
 		// TODO: This is overloading this method as infra-name is not usable in this context as infra cannot resolve `self` tokens
-		tfDeployment.resolveTokensForModule(infraName, infra, tfDeployment.terraformInfraResources[infraName])
+		err := tfDeployment.resolveTokensForModule(infraName, infra, tfDeployment.terraformInfraResources[infraName])
+		if err != nil {
+			return err
+		}
 	}
 
 	tfDeployment.app.Synth()
