@@ -391,8 +391,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		servicesInput := map[string]any{}
-		if access, ok := app_spec_schema.IsAccessible(resourceIntent); ok {
-			for serviceName, actions := range access.GetAccess() {
+		if access, ok := resourceIntent.IsAccessible(); ok {
+			for serviceName, actions := range access {
 				idMap, ok := tfDeployment.serviceIdentities[serviceName]
 				if !ok {
 					return fmt.Errorf("service %s not found", serviceName)
