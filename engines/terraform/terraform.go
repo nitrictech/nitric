@@ -218,9 +218,8 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *a
 	return nitricVar, nil
 }
 
-func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (interface{}, error) {
+func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.ServiceIntent, resourceSpec *ServiceBlueprint, plug *ResourcePluginManifest) (*NitricServiceVariables, error) {
 	// Map the nitric variable
-	var nitricVar interface{} = nil
 	var imageVars *map[string]interface{} = nil
 
 	pluginManifest, err := e.engine.resolvePluginsForService(plug)
@@ -288,7 +287,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	}
 
 	// Create this services identities
-	nitricVar = &NitricServiceVariables{
+	nitricVar := &NitricServiceVariables{
 		NitricVariables: NitricVariables{
 			Name: jsii.String(name),
 		},
@@ -351,7 +350,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Prepare service inputs and identities
-	serviceInputs := map[string]interface{}{}
+	serviceInputs := map[string]*NitricServiceVariables{}
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
 		if resourceIntent.Type != "service" {
 			continue
@@ -373,6 +372,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 		serviceInputs[intentName] = nitricVar
 	}
+
+	serviceEnvs := map[string][]interface{}{}
 
 	// Prepare non-service/non-entrypoint modules
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
@@ -413,6 +414,11 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 				"nitric": nitricVar,
 			},
 		})
+
+		for serviceName, _ := range serviceInputs {
+			env := cdktf.Fn_Try(&[]interface{}{tfDeployment.terraformResources[intentName].Get(jsii.Sprintf("nitric.exports.%s.env", serviceName)), map[string]interface{}{}})
+			serviceEnvs[serviceName] = append(serviceEnvs[serviceName], env)
+		}
 	}
 
 	// Resolve service modules
@@ -429,7 +435,14 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		var nitricVar interface{} = serviceInputs[intentName]
+		var nitricVar *NitricServiceVariables = serviceInputs[intentName]
+
+		origEnv := nitricVar.Env
+
+		mergedEnv := serviceEnvs[intentName]
+		allEnv := append(mergedEnv, origEnv)
+
+		nitricVar.Env = cdktf.Fn_Merge(&allEnv)
 
 		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
 

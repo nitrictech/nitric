@@ -2,9 +2,8 @@ output "nitric" {
     value = {
         id          = local.neon_endpoint_id
         exports = {
-            env = {
-                "DB_URL" = local.neon_connection_string
-            }
+            # Export known service outputs
+            services = local.service_outputs
             resources = {}
         }
     } 

@@ -4,9 +4,18 @@ locals {
     neon_role_name = one(neon_role.role) != null ? one(neon_role.role).name : var.existing.role_name
     neon_role_password = data.neon_branch_role_password.password.password
     neon_endpoint_id = one(neon_endpoint.endpoint) != null ? one(neon_endpoint.endpoint).id : var.existing.endpoint_id
-    neon_host_name = [for e in data.neon_branch_endpoints.endpoints.endpoints : e.host_name if e.id == neon_endpoint_id][0]
+    neon_host_name = [for e in data.neon_branch_endpoints.endpoints.endpoints : e.host_name if e.id == local.neon_endpoint_id][0]
     neon_database_name = var.existing.database_name == null ? "${var.nitric.stack_id}-${var.nitric.name}" : var.existing.database_name
     neon_connection_string = "postgresql://${local.neon_role_name}:${local.neon_role_password}@${local.neon_host_name}/${local.neon_database_name}?sslmode=require"
+
+    # Output service export map
+    service_outputs = {
+        for name, service in var.nitric.services : name => {
+            env = {
+                DB_URL = local.neon_connection_string
+            }
+        }
+    }
 }
 
 resource "neon_project" "project" {
