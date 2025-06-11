@@ -5,7 +5,8 @@ locals {
     # neon_role_password = data.neon_branch_role_password.password.password
     neon_endpoint_id = one(neon_endpoint.endpoint) != null ? one(neon_endpoint.endpoint).id : null
     # neon_host_name =  [for e in data.neon_branch_endpoints.endpoints.endpoints : e.host_name if e.id == local.neon_endpoint_id][0]
-    neon_database_name = var.existing.database_name == null ? "${var.nitric.stack_id}-${var.nitric.name}" : var.existing.database_name
+    # neon_database_name = var.existing.database_name == null ? "${var.nitric.stack_id}-${var.nitric.name}" : var.existing.database_name
+    neon_database_name = "${var.nitric.stack_id}-${var.nitric.name}"
     neon_connection_string = "postgresql://${neon_role.role.name}:${neon_role.role.password}@${neon_endpoint.endpoint.host_name}/${local.neon_database_name}?sslmode=require"
 
     # Output service export map
