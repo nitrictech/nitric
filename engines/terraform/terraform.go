@@ -84,9 +84,11 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 	for property, value := range resource.Properties {
 		module.Set(jsii.String(property), value)
 
+		// TODO: Recursive logic for mapping tokens
 		token, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("invalid token format")
+			// Skip as its already been set
+			continue
 		}
 
 		specRef, err := SpecReferenceFromToken(token)
