@@ -5,13 +5,12 @@ data "aws_availability_zones" "availability_zones" {}
 locals {
   # Automatically get AZs if not provided
   azs = var.azs != null ? var.azs : data.aws_availability_zones.availability_zones.names
-  vpc_name = "${var.nitric.stack_id}-${var.nitric.name}"
 }
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = local.vpc_name
+  name = var.name
   cidr = var.networking.cidr_block
 
   azs             = local.azs
