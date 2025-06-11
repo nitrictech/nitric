@@ -37,4 +37,5 @@ variable "single_nat_gateway" {
 
 variable "tags" {
     type = map(string)
+    default = {}
 }
