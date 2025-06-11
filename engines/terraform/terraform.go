@@ -391,10 +391,17 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		servicesInput := map[string]any{}
-		for serviceName, idMap := range tfDeployment.serviceIdentities {
-			servicesInput[serviceName] = map[string]interface{}{
-				"actions":    jsii.Strings("read", "write", "delete"),
-				"identities": idMap,
+		if access, ok := app_spec_schema.IsAccessible(resourceIntent); ok {
+			for serviceName, actions := range access.GetAccess() {
+				idMap, ok := tfDeployment.serviceIdentities[serviceName]
+				if !ok {
+					return fmt.Errorf("service %s not found", serviceName)
+				}
+
+				servicesInput[serviceName] = map[string]interface{}{
+					"actions":    jsii.Strings(actions...),
+					"identities": idMap,
+				}
 			}
 		}
 
