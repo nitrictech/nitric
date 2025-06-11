@@ -3,7 +3,7 @@ locals {
     neon_branch_id = one(neon_branch.branch) != null ? one(neon_branch.branch).id : var.existing.branch_id
     # neon_role_name = one(neon_role.role) != null ? one(neon_role.role).name : var.existing.role_name
     # neon_role_password = data.neon_branch_role_password.password.password
-    # neon_endpoint_id = one(neon_endpoint.endpoint) != null ? one(neon_endpoint.endpoint).id : var.existing.endpoint_id
+    neon_endpoint_id = one(neon_endpoint.endpoint) != null ? one(neon_endpoint.endpoint).id : null
     # neon_host_name =  [for e in data.neon_branch_endpoints.endpoints.endpoints : e.host_name if e.id == local.neon_endpoint_id][0]
     neon_database_name = var.existing.database_name == null ? "${var.nitric.stack_id}-${var.nitric.name}" : var.existing.database_name
     neon_connection_string = "postgresql://${neon_role.role.name}:${neon_role.role.password}@${neon_endpoint.endpoint.host_name}/${local.neon_database_name}?sslmode=require"
@@ -30,7 +30,7 @@ resource "neon_branch" "branch" {
 }
 
 resource "neon_role" "role" {
-  count = var.existing.role_name == null ? 1 : 0
+  # count = var.existing.role_name == null ? 1 : 0
 
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
@@ -38,7 +38,7 @@ resource "neon_role" "role" {
 }
 
 resource "neon_database" "database" {
-  count = var.existing.database_name == null ? 1 : 0
+  # count = var.existing.database_name == null ? 1 : 0
 
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
@@ -47,7 +47,7 @@ resource "neon_database" "database" {
 }
 
 resource "neon_endpoint" "endpoint" {
-  count = var.existing.endpoint_id == null ? 1 : 0
+  # count = var.existing.endpoint_id == null ? 1 : 0
 
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
