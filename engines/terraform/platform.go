@@ -20,6 +20,7 @@ type PlatformSpec struct {
 	ServiceBlueprints    map[string]*ServiceBlueprint  `json:"services" yaml:"services"`
 	BucketBlueprints     map[string]*ResourceBlueprint `json:"buckets,omitempty" yaml:"buckets,omitempty"`
 	TopicBlueprints      map[string]*ResourceBlueprint `json:"topics,omitempty" yaml:"topics,omitempty"`
+	DatabaseBlueprints   map[string]*ResourceBlueprint `json:"databases,omitempty" yaml:"databases,omitempty"`
 	EntrypointBlueprints map[string]*ResourceBlueprint `json:"entrypoints" yaml:"entrypoints"`
 	InfraSpecs           map[string]*ResourceBlueprint `json:"infra" yaml:"infra"`
 }
@@ -84,6 +85,8 @@ func (p PlatformSpec) GetResourceBlueprint(intentType string, intentSubType stri
 		spec, _ = p.BucketBlueprints[intentSubType]
 	case "topic":
 		spec, _ = p.TopicBlueprints[intentSubType]
+	case "database":
+		spec, _ = p.DatabaseBlueprints[intentSubType]
 	default:
 		return nil, fmt.Errorf("failed to resolve resource blueprint, no type %s known in platform spec", intentType)
 	}
