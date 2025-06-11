@@ -44,7 +44,7 @@ resource "neon_database" "database" {
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
   name       = local.neon_database_name
-  owner_name = local.neon_role_name
+  owner_name = neon_role.role.name
 }
 
 resource "neon_endpoint" "endpoint" {
