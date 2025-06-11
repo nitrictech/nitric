@@ -1,0 +1,11 @@
+name: nitric-neon-db
+version: 0.0.1
+type: database
+required_identities: []
+deployment:
+  # NOTE: // is required to reference a sub-path of repository for terraform modules
+  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/neondb/module?depth=1&ref=next
+
+inputs:
+
+outputs:
