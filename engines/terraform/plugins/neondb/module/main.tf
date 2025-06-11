@@ -33,8 +33,8 @@ resource "neon_database" "database" {
 
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
-  name       = "${var.nitric.stack_id}-${var.nitric.name}"
-  owner_name = neon_role.role.name
+  name       = local.database_name
+  owner_name = local.neon_role_name
 }
 
 resource "neon_endpoint" "endpoint" {
