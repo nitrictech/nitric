@@ -416,7 +416,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		})
 
 		for serviceName, _ := range serviceInputs {
-			env := cdktf.Fn_Try(&[]interface{}{tfDeployment.terraformResources[intentName].Get(jsii.Sprintf("nitric.exports.%s.env", serviceName)), map[string]interface{}{}})
+			env := cdktf.Fn_Try(&[]interface{}{tfDeployment.terraformResources[intentName].Get(jsii.Sprintf("nitric.exports.services.%s.env", serviceName)), map[string]interface{}{}})
 			serviceEnvs[serviceName] = append(serviceEnvs[serviceName], env)
 		}
 	}
