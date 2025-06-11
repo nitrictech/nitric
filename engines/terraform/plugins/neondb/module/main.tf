@@ -30,12 +30,21 @@ resource "neon_branch" "branch" {
   name       = "${var.nitric.stack_id}-${var.nitric.name}"
 }
 
-resource "neon_role" "role" {
-  # count = var.existing.role_name == null ? 1 : 0
+
+resource "neon_endpoint" "endpoint" {
+  # count = var.existing.endpoint_id == null ? 1 : 0
 
   project_id = local.neon_project_id
   branch_id  = local.neon_branch_id
+  type       = "read_write"
+}
+resource "neon_role" "role" {
+  # count = var.existing.role_name == null ? 1 : 0
+  project_id = local.neon_project_id
+  branch_id  = local.neon_branch_id
   name       = "${var.nitric.stack_id}-${var.nitric.name}"
+
+  depends_on = [ neon_endpoint.endpoint ]
 }
 
 resource "neon_database" "database" {
@@ -47,13 +56,7 @@ resource "neon_database" "database" {
   owner_name = neon_role.role.name
 }
 
-resource "neon_endpoint" "endpoint" {
-  # count = var.existing.endpoint_id == null ? 1 : 0
 
-  project_id = local.neon_project_id
-  branch_id  = local.neon_branch_id
-  type       = "read_write"
-}
 
 # data "neon_branch_endpoints" "endpoints" {
 #   project_id = local.neon_project_id
