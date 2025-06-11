@@ -6,11 +6,11 @@ locals {
   }
   s3_bucket_origins = {
     for k, v in var.nitric.origins : k => v
-    if contains(keys(v.raw), "aws_s3_bucket")
+    if contains(keys(v.resources), "aws_s3_bucket")
   }
   lambda_origins = {
     for k, v in var.nitric.origins : k => v
-    if contains(keys(v.raw), "aws_lambda_function")
+    if contains(keys(v.resources), "aws_lambda_function")
   }
 }
 
@@ -36,7 +36,7 @@ resource "aws_cloudfront_origin_access_control" "s3_oac" {
 resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
   for_each = local.lambda_origins
 
-  function_name = each.value.raw["aws_lambda_function"]
+  function_name = each.value.resources["aws_lambda_function"]
   principal = "cloudfront.amazonaws.com"
   action = "lambda:InvokeFunctionUrl"
   source_arn = aws_cloudfront_distribution.distribution.arn
@@ -87,10 +87,10 @@ resource "aws_cloudfront_distribution" "distribution" {
       # TODO: Only have services return their domain name instead? 
       domain_name = origin.value.domain_name
       origin_id = "${origin.key}"
-      origin_access_control_id = contains(keys(origin.value.raw), "aws_lambda_function") ? aws_cloudfront_origin_access_control.lambda_oac[0].id : contains(keys(origin.value.raw), "aws_s3_bucket") ? aws_cloudfront_origin_access_control.s3_oac[0].id : null
+      origin_access_control_id = contains(keys(origin.value.resources), "aws_lambda_function") ? aws_cloudfront_origin_access_control.lambda_oac[0].id : contains(keys(origin.value.resources), "aws_s3_bucket") ? aws_cloudfront_origin_access_control.s3_oac[0].id : null
 
       dynamic "custom_origin_config" {
-        for_each = !contains(keys(origin.value.raw), "aws_s3_bucket") ? [1] : []
+        for_each = !contains(keys(origin.value.resources), "aws_s3_bucket") ? [1] : []
 
         content {
           origin_read_timeout = 30

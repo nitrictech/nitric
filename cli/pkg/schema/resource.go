@@ -1,10 +1,14 @@
 package schema
 
-import "github.com/invopop/jsonschema"
+import (
+	"github.com/invopop/jsonschema"
+)
 
 type Resource struct {
 	Type    string `json:"type" yaml:"type" jsonschema:"-"`
 	SubType string `json:"sub-type,omitempty" yaml:"sub-type,omitempty"`
+
+	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty" jsonschema:"-"`
 
 	// A resource can contain oneof the following sets of keys (see JSONSchemaExtended)
 	*ServiceIntent      `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
@@ -13,6 +17,16 @@ type Resource struct {
 	*SubscriptionIntent `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 	*DatabaseIntent     `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 	*StateIntent        `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+}
+
+func (r Resource) IsAccessible() (map[string][]string, bool) {
+	if r.Type == "database" {
+		return r.Access, true
+	}
+	if r.Type == "bucket" {
+		return r.Access, true
+	}
+	return nil, false
 }
 
 // schema types defined for the output schema

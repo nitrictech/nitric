@@ -7,7 +7,7 @@ type NitricVariables struct {
 type NitricServiceVariables struct {
 	NitricVariables `json:",inline"`
 	ImageId         *string                 `json:"image_id"`
-	Env             *map[string]string      `json:"env"`
+	Env             interface{}             `json:"env"`
 	Identities      *map[string]interface{} `json:"identities"`
 	StackId         *string                 `json:"stack_id"`
 }
