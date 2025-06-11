@@ -1,10 +1,7 @@
-variable "nitric" {
-    type = object({
-        name = string
-        stack_id = string
-    })
+variable "name" {
+    type = string
+    description = "The name of the VPC"
 }
-
 variable "networking" {
     type = object({
         cidr_block = string
