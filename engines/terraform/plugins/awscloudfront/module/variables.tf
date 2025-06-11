@@ -8,7 +8,7 @@ variable "nitric" {
       type = string
       domain_name = string
       id = string
-      raw = map(string)
+      resources = map(string)
     }))
   })
 }
