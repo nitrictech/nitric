@@ -13,7 +13,7 @@ locals {
     service_outputs = {
         for name, service in var.nitric.services : name => {
             env = {
-                DB_URL = local.neon_connection_string
+                DATABASE_URL = local.neon_connection_string
             }
         }
     }
