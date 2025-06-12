@@ -99,7 +99,7 @@ resource "aws_ecs_task_definition" "service" {
       environment = concat([
         {
           name = "CONTAINER_PORT"
-          value = var.container_port
+          value = "${var.container_port}"
         }
       ],
       [
