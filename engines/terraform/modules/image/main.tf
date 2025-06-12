@@ -28,7 +28,7 @@ locals {
 
 # Next we want to wrap this image withing a nitric service
 resource "docker_image" "service" {
-  name = "service"
+  name = var.tag
   build {
     # This doesn't actually matter as we aren't copying in anything relative
     builder  = "default"
