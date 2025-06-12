@@ -140,10 +140,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
-  dynamic "vpc_origin_config" {
-    for_each = local.vpc_origins
-  }
-
   dynamic "ordered_cache_behavior" {
     for_each = {
       for k, v in var.nitric.origins : k => v
