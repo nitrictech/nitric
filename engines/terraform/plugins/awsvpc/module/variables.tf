@@ -35,6 +35,20 @@ variable "single_nat_gateway" {
     default = false
 }
 
+variable "default_security_group_ingress" {
+    type = list(map(string))
+}
+
+variable "default_security_group_egress" {
+    type = list(map(string))
+    default = [{
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }]
+}
+
 variable "tags" {
     type = map(string)
     default = {}
