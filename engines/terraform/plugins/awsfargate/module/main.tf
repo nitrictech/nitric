@@ -75,6 +75,10 @@ resource "aws_iam_role_policy" "task_execution_ecr_policy" {
   })
 }
 
+data "aws_lb" "alb" {
+  arn = var.alb_arn
+}
+
 # Create the task definition
 resource "aws_ecs_task_definition" "service" {
   family                   = "${var.nitric.stack_id}-${var.nitric.name}"

@@ -12,6 +12,31 @@ locals {
     for k, v in var.nitric.origins : k => v
     if contains(keys(v.resources), "aws_lambda_function")
   }
+  non_vpc_origins = {
+    for k, v in var.nitric.origins : k => v
+    if !contains(keys(v.resources), "aws_lb")
+  }
+  vpc_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "aws_lb")
+  }
+}
+
+resource "aws_cloudfront_vpc_origin" "vpc_origin" {
+  for_each = local.vpc_origins
+
+  vpc_origin_endpoint_config {
+    name = each.key
+    arn = each.value.resources["aws_lb"]
+    http_port = each.value.resources["aws_lb:target_port"]
+    https_port = each.value.resources["aws_lb:target_port"]
+    origin_protocol_policy = "https-only"
+
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
 }
 
 resource "aws_cloudfront_origin_access_control" "lambda_oac" {
@@ -81,7 +106,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled = true
 
   dynamic "origin" {
-    for_each = var.nitric.origins
+    for_each = local.non_vpc_origins
 
     content {
       # TODO: Only have services return their domain name instead? 
@@ -101,6 +126,22 @@ resource "aws_cloudfront_distribution" "distribution" {
         }
       }
     }
+  }
+
+  dynamic "origin" {
+    for_each = local.vpc_origins
+
+    content {
+      domain_name = origin.value.domain_name
+      origin_id = "${origin.key}"
+      vpc_origin_config {
+        vpc_origin_id = aws_cloudfront_vpc_origin.vpc_origin[origin.key].id
+      }
+    }
+  }
+
+  dynamic "vpc_origin_config" {
+    for_each = local.vpc_origins
   }
 
   dynamic "ordered_cache_behavior" {
