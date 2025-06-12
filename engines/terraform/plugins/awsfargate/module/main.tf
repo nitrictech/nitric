@@ -180,7 +180,7 @@ resource "aws_lb_listener" "service" {
 }
 
 # Create listener
-resource "aws_lb_listener" "service" {
+resource "aws_lb_listener" "service_https" {
   load_balancer_arn = var.alb_arn
   port              = var.container_port + 1
   protocol          = "HTTPS"
