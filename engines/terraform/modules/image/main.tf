@@ -1,5 +1,5 @@
 resource "docker_image" "base_service" {
-  name = var.image_id == null ? "base_service" : var.image_id
+  name = var.image_id == null ? "${var.tag}_base_service" : var.image_id
 
   dynamic "build" {
     for_each = var.image_id == null ? [1] : []
