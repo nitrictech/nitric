@@ -1,0 +1,35 @@
+package awslambda
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"os"
+
+	"github.com/nitrictech/nitric/server/runtime/service"
+)
+
+type awsfargateService struct{}
+
+func (a *awsfargateService) Start(proxy service.Proxy) error {
+	// get the container port from the environment
+	containerPort := os.Getenv("CONTAINER_PORT")
+	if containerPort == "" {
+		return fmt.Errorf("CONTAINER_PORT is not set")
+	}
+
+	p := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			// TODO: Do additional analysis of the request in order to perform event subscription routing
+
+			req.URL.Host = proxy.Host()
+			req.URL.Scheme = "http"
+		},
+	}
+
+	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), p)
+}
+
+func Plugin() (service.Service, error) {
+	return &awsfargateService{}, nil
+}
