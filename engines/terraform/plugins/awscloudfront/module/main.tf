@@ -29,7 +29,9 @@ resource "aws_cloudfront_vpc_origin" "vpc_origin" {
     name = each.key
     arn = each.value.resources["aws_lb"]
     http_port = each.value.resources["aws_lb:http_port"]
-    https_port = 0
+    # Doesn't matter what we set this to, it's not used
+    # But 0 is not a legal value
+    https_port = 443
     origin_protocol_policy = "http-only"
 
     origin_ssl_protocols {
