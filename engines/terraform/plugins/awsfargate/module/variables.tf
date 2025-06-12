@@ -18,12 +18,12 @@ variable "alb_arn" {
 
 variable "cpu" {
   type    = number
-  default = 1024
+  default = 256
 }
 
 variable "memory" {
   type    = number
-  default = 2048
+  default = 512
 }
 
 variable "environment" {
