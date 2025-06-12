@@ -12,6 +12,7 @@ import (
 type awsfargateService struct{}
 
 func (a *awsfargateService) Start(proxy service.Proxy) error {
+	fmt.Println("Starting Fargate service proxy")
 	// get the container port from the environment
 	containerPort := os.Getenv("CONTAINER_PORT")
 	if containerPort == "" {
@@ -34,6 +35,7 @@ func (a *awsfargateService) Start(proxy service.Proxy) error {
 		w.Write([]byte(`{"status":"healthy"}`))
 	})
 
+	fmt.Println("Starting Fargate service proxy on port", containerPort)
 	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), mux)
 }
 
