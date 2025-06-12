@@ -178,3 +178,16 @@ resource "aws_lb_listener" "service" {
     target_group_arn = aws_lb_target_group.service.arn
   }
 }
+
+# Create listener
+resource "aws_lb_listener" "service" {
+  load_balancer_arn = var.alb_arn
+  port              = var.container_port + 1
+  protocol          = "HTTPS"
+  
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service.arn
+  }
+}
+
