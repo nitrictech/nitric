@@ -37,6 +37,7 @@ variable "single_nat_gateway" {
 
 variable "default_security_group_ingress" {
     type = list(map(string))
+    default = []
 }
 
 variable "default_security_group_egress" {
