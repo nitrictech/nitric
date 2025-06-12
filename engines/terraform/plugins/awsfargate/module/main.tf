@@ -105,13 +105,13 @@ resource "aws_ecs_task_definition" "service" {
       [
         for k, v in var.environment : {
           name  = k
-          value = v
+          value = "${v}"
         }
       ],
       [
         for k, v in var.nitric.env : {
           name  = k
-          value = v
+          value = "${v}"
         }
       ])
 
