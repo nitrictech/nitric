@@ -1,6 +1,6 @@
 output "nitric" {
   value = {
-    id          = aws_lambda_function.function.arn
+    id          = aws_ecs_service.service.id
     domain_name = data.aws_lb.alb.dns_name
     exports = {
       resources = {
