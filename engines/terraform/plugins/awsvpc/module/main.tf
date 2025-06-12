@@ -21,5 +21,8 @@ module "vpc" {
   enable_nat_gateway = var.enable_nat_gateway
   enable_vpn_gateway = var.enable_vpn_gateway
 
+  default_security_group_ingress = var.default_security_group_ingress
+  default_security_group_egress = var.default_security_group_egress
+
   tags = var.tags
 }
