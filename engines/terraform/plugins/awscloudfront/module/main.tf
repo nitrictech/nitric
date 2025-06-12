@@ -29,13 +29,8 @@ resource "aws_cloudfront_vpc_origin" "vpc_origin" {
     name = each.key
     arn = each.value.resources["aws_lb"]
     http_port = each.value.resources["aws_lb:http_port"]
-    https_port = each.value.resources["aws_lb:https_port"]
-    origin_protocol_policy = "https-only"
-
-    origin_ssl_protocols {
-      items    = ["TLSv1.2"]
-      quantity = 1
-    }
+    https_port = 0
+    origin_protocol_policy = "http-only"
   }
 }
 

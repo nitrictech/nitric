@@ -179,15 +179,14 @@ resource "aws_lb_listener" "service" {
   }
 }
 
-# Create listener
-resource "aws_lb_listener" "service_https" {
-  load_balancer_arn = var.alb_arn
-  port              = var.container_port + 1
-  protocol          = "HTTPS"
-  
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.service.arn
-  }
-}
+# Setup ingress on the container port for the security groups
+resource "aws_security_group_rule" "ingress" {
+  # TODO: This only needs to be applied to the same security group as the ALB
+  for_each = var.security_groups
 
+  security_group_id = each.value
+  type = "ingress"
+  from_port = var.container_port
+  to_port = var.container_port
+  protocol = "tcp"
+}
