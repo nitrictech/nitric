@@ -79,6 +79,14 @@ data "aws_lb" "alb" {
   arn = var.alb_arn
 }
 
+data "aws_region" "current" {
+}
+
+# Create a CloudWatch log group
+resource "aws_cloudwatch_log_group" "default" {
+  name = "${var.nitric.stack_id}-${var.nitric.name}"
+}
+
 # Create the task definition
 resource "aws_ecs_task_definition" "service" {
   family                   = "${var.nitric.stack_id}-${var.nitric.name}"
@@ -115,6 +123,15 @@ resource "aws_ecs_task_definition" "service" {
         }
       ])
 
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.default.name
+          awslogs-region        = data.aws_region.current.name
+          awslogs-stream-prefix = var.nitric.name
+        }
+      }
+
       portMappings = [
         {
           containerPort = var.container_port
@@ -142,7 +159,6 @@ resource "aws_ecs_service" "service" {
     subnets = var.subnets
     security_groups = var.security_groups
   }
-
   load_balancer {
     target_group_arn = aws_lb_target_group.service.arn
     container_name   = "main"
