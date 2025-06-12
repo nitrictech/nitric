@@ -109,7 +109,7 @@ resource "aws_ecs_task_definition" "service" {
         }
       ],
       [
-        for k, v in var.nitric.services[each.key].env : {
+        for k, v in var.nitric.env : {
           name  = k
           value = v
         }
