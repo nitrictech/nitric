@@ -23,7 +23,7 @@ variable "cpu" {
 
 variable "memory" {
   type    = number
-  default = 1024
+  default = 2048
 }
 
 variable "environment" {
