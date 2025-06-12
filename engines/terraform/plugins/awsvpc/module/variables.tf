@@ -42,10 +42,10 @@ variable "default_security_group_ingress" {
 variable "default_security_group_egress" {
     type = list(map(string))
     default = [{
-        from_port = 0
-        to_port = 0
+        from_port = "0"
+        to_port = "0"
         protocol = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
+        cidr_blocks = "0.0.0.0/0"
     }]
 }
 
