@@ -21,13 +21,20 @@ func (a *awsfargateService) Start(proxy service.Proxy) error {
 	p := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			// TODO: Do additional analysis of the request in order to perform event subscription routing
-
 			req.URL.Host = proxy.Host()
 			req.URL.Scheme = "http"
 		},
 	}
 
-	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), p)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", p.ServeHTTP)
+	mux.HandleFunc("/x-nitric-health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy"}`))
+	})
+
+	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), mux)
 }
 
 func Plugin() (service.Service, error) {
