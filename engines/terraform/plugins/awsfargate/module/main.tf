@@ -99,19 +99,19 @@ resource "aws_ecs_task_definition" "service" {
       environment = concat([
         {
           name = "CONTAINER_PORT"
-          value = "${var.container_port}"
+          value = "${tostring(var.container_port)}"
         }
       ],
       [
         for k, v in var.environment : {
           name  = k
-          value = "${v}"
+          value = "${tostring(v)}"
         }
       ],
       [
         for k, v in var.nitric.env : {
           name  = k
-          value = "${v}"
+          value = "${tostring(v)}"
         }
       ])
 
