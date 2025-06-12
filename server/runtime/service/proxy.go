@@ -7,6 +7,7 @@ import (
 
 type Proxy interface {
 	Forward(ctx context.Context, req *http.Request) (*http.Response, error)
+	Host() string
 }
 
 type HttpServerProxy struct {
@@ -19,6 +20,10 @@ func (p *HttpServerProxy) Forward(ctx context.Context, req *http.Request) (*http
 	req.URL.Scheme = "http"
 
 	return http.DefaultClient.Do(req)
+}
+
+func (p *HttpServerProxy) Host() string {
+	return p.target
 }
 
 func NewHttpServerProxy(target string) Proxy {
