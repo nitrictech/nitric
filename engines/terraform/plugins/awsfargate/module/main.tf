@@ -181,12 +181,9 @@ resource "aws_lb_listener" "service" {
 
 # Setup ingress on the container port for the security groups
 resource "aws_security_group_rule" "ingress" {
-  # TODO: This only needs to be applied to the same security group as the ALB
-  for_each = toset(var.security_groups)
-
+  # FIXME: Only apply to a mutual security that is shared with the ALB
+  security_group_id = var.security_groups[0]
   self = true
-
-  security_group_id = each.value
   type = "ingress"
   from_port = var.container_port
   to_port = var.container_port
