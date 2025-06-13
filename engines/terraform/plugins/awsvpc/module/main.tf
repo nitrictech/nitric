@@ -34,16 +34,16 @@ resource "aws_security_group_rule" "ingress" {
   count = length(var.default_security_group_ingress)
 
   security_group_id = module.vpc.default_security_group_id
-  type = "egress"
+  type = "ingress"
 
-  self             =  lookup(each.value, "self", null)
-  cidr_blocks      = compact(split(",", lookup(each.value, "cidr_blocks", "")))
-  ipv6_cidr_blocks = compact(split(",", lookup(each.value, "ipv6_cidr_blocks", "")))
-  prefix_list_ids  = compact(split(",", lookup(each.value, "prefix_list_ids", "")))
-  description      = lookup(each.value, "description", null)
-  from_port        = lookup(each.value, "from_port", 0)
-  to_port          = lookup(each.value, "to_port", 0)
-  protocol         = lookup(each.value, "protocol", "-1")
+  self             = lookup(element(var.default_security_group_ingress, count.index), "self", null)
+  cidr_blocks      = compact(split(",", lookup(element(var.default_security_group_ingress, count.index), "cidr_blocks", "")))
+  ipv6_cidr_blocks = compact(split(",", lookup(element(var.default_security_group_ingress, count.index), "ipv6_cidr_blocks", "")))
+  prefix_list_ids  = compact(split(",", lookup(element(var.default_security_group_ingress, count.index), "prefix_list_ids", "")))
+  description      = lookup(element(var.default_security_group_ingress, count.index), "description", null)
+  from_port        = lookup(element(var.default_security_group_ingress, count.index), "from_port", 0)
+  to_port          = lookup(element(var.default_security_group_ingress, count.index), "to_port", 0)
+  protocol         = lookup(element(var.default_security_group_ingress, count.index), "protocol", "-1")
 }
 
 # Setup ingress on the container port for the security groups
@@ -53,12 +53,12 @@ resource "aws_security_group_rule" "egress" {
   security_group_id = module.vpc.default_security_group_id
   type = "egress"
 
-  self             =  lookup(each.value, "self", null)
-  cidr_blocks      = compact(split(",", lookup(each.value, "cidr_blocks", "")))
-  ipv6_cidr_blocks = compact(split(",", lookup(each.value, "ipv6_cidr_blocks", "")))
-  prefix_list_ids  = compact(split(",", lookup(each.value, "prefix_list_ids", "")))
-  description      = lookup(each.value, "description", null)
-  from_port        = lookup(each.value, "from_port", 0)
-  to_port          = lookup(each.value, "to_port", 0)
-  protocol         = lookup(each.value, "protocol", "-1")
+  self             = lookup(element(var.default_security_group_egress, count.index), "self", null)
+  cidr_blocks      = compact(split(",", lookup(element(var.default_security_group_egress, count.index), "cidr_blocks", "")))
+  ipv6_cidr_blocks = compact(split(",", lookup(element(var.default_security_group_egress, count.index), "ipv6_cidr_blocks", "")))
+  prefix_list_ids  = compact(split(",", lookup(element(var.default_security_group_egress, count.index), "prefix_list_ids", "")))
+  description      = lookup(element(var.default_security_group_egress, count.index), "description", null)
+  from_port        = lookup(element(var.default_security_group_egress, count.index), "from_port", 0)
+  to_port          = lookup(element(var.default_security_group_egress, count.index), "to_port", 0)
+  protocol         = lookup(element(var.default_security_group_egress, count.index), "protocol", "-1")
 }
