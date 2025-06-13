@@ -10,7 +10,7 @@ ENV PLUGIN_DEFINITION=${PLUGIN_DEFINITION}
 RUN apt-get update && apt-get install -y make
 
 # Checkout the nitric github repo
-RUN git clone --depth=1 -b next https://github.com/nitrictech/nitric /nitric
+RUN git clone --depth=1 -b gcp-cloud-run https://github.com/HomelessDinosaur/nitric /nitric
 WORKDIR /nitric
 
 RUN go work sync
