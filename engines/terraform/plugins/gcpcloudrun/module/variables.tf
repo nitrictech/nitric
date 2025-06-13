@@ -64,3 +64,9 @@ variable "region" {
     description = "The region to deploy the CloudRun service to"
     type        = string
 }
+
+variable "ingress_port" {
+    description = "The port to expose the CloudRun service to"
+    type        = number
+    default     = 9001
+}

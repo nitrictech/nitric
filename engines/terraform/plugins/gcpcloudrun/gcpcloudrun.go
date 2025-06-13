@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/nitrictech/nitric/server/runtime/service"
 )
@@ -18,7 +19,7 @@ func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	a.proxy = proxy
 	mux.HandleFunc("/", a.handler)
 
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":"+os.Getenv("INGRESS_PORT"), mux)
 	if err != nil {
 		log.Fatal(err)
 	}

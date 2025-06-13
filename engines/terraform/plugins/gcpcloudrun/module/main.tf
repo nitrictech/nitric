@@ -121,7 +121,11 @@ resource "google_cloud_run_v2_service" "service" {
       }
 
       ports {
-        container_port = 9001
+        container_port = var.ingress_port
+      }
+      env {
+        name  = "INGRESS_PORT"
+        value = var.ingress_port
       }
       env {
         name  = "EVENT_TOKEN"
