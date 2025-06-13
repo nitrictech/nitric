@@ -46,13 +46,22 @@ func main() {
 	}
 
     // Register all storage plugins
-	runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	err := runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	if err != nil {
+		log.Fatalf("Error registering storage plugins: %v", err)
+	}
 
     // Register all pubsub plugins
-	runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	err = runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	if err != nil {
+		log.Fatalf("Error registering pubsub plugins: %v", err)
+	}
 
 	// Register service plugin
-	service.Register({{ .Service.Alias }}.Plugin)
+	err = service.Register({{ .Service.Alias }}.Plugin)
+	if err != nil {
+		log.Fatalf("Error registering service plugin: %v", err)
+	}
 
     // Start the host
     runtime.Start(*userCommand)
