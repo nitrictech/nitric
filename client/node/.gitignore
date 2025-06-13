@@ -1,0 +1,9 @@
+src/gen/
+node_modules/
+dist/
+.vscode/
+.DS_Store
+.env
+# Logs
+logs
+npm-debug.log*

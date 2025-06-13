@@ -1,0 +1,28 @@
+{
+  "name": "@nitric/client",
+  "version": "1.0.0",
+  "description": "nitric runtime client",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "bump": "standard-version",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "gen:sources": "mkdir -p ./src/gen && grpc_tools_node_protoc --ts_out=service=grpc-node,mode=grpc-js:./src/gen --js_out=import_style=commonjs,binary:./src/gen --grpc_out=grpc_js:./src/gen -I ../.. ../../proto/*/*/*.proto"
+  },
+  "author": "maintainers@nitric.io",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/google-protobuf": "^3.15.12",
+    "@types/node": "^20.17.58",
+    "grpc-tools": "^1.13.0",
+    "ts-protoc-gen": "^0.15.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.4",
+    "google-protobuf": "^3.21.4"
+  }
+}

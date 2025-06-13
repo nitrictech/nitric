@@ -1,0 +1,15 @@
+import { grpc, {{if .Buckets}} StorageClient, Bucket {{end}}} from "@nitric/client";
+
+export class NitricClient {
+  private storageClient: StorageClient;
+  {{range .Buckets}}
+  public {{.CamelCase}}: Bucket;
+  {{end}}
+
+  constructor(address: string = "localhost:50051", credentials: grpc.ChannelCredentials = grpc.credentials.createInsecure()) {
+    this.storageClient = new StorageClient(address, credentials);
+    {{range .Buckets}}
+    this.{{.CamelCase}} = new Bucket(this.storageClient, "{{.Unmodified}}");
+    {{end}}
+  }
+} 
