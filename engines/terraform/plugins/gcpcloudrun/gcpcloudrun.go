@@ -1,9 +1,9 @@
 package gcpcloudrun
 
 import (
-	"io"
-	"log"
+	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"os"
 
 	"github.com/nitrictech/nitric/server/runtime/service"
@@ -14,45 +14,26 @@ type gcpcloudappService struct {
 }
 
 func (a *gcpcloudappService) Start(proxy service.Proxy) error {
+	fmt.Println("Starting Cloud Run service proxy")
+	// get the container port from the environment
+	containerPort := os.Getenv("CONTAINER_PORT")
+	if containerPort == "" {
+		return fmt.Errorf("CONTAINER_PORT is not set")
+	}
+
+	p := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			fmt.Println("Directing request:", req.URL.Path)
+			req.URL.Host = proxy.Host()
+			req.URL.Scheme = "http"
+		},
+	}
+
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", p.ServeHTTP)
 
-	a.proxy = proxy
-	mux.HandleFunc("/", a.handler)
-
-	err := http.ListenAndServe(":"+os.Getenv("INGRESS_PORT"), mux)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return nil
-}
-
-func (a *gcpcloudappService) handler(w http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-
-	resp, err := a.proxy.Forward(ctx, request)
-	if err != nil {
-		http.Error(w, "failed to forward request", http.StatusBadGateway)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, "failed to forward request", http.StatusInternalServerError)
-		return
-	}
-
-	// Translate response headers to a map
-	for k, vv := range resp.Header {
-		for _, v := range vv {
-			w.Header().Add(k, v)
-		}
-	}
-
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	fmt.Println("Starting Cloud Run service proxy on port", containerPort)
+	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), mux)
 }
 
 func Plugin() (service.Service, error) {
