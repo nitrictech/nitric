@@ -151,6 +151,7 @@ func PlatformFromId(fs afero.Fs, platformId string, repositories ...PlatformRepo
 type ResourceBlueprint struct {
 	PluginId   string                 `json:"plugin" yaml:"plugin"`
 	Properties map[string]interface{} `json:"properties" yaml:"properties"`
+	DependsOn  []string               `json:"depends_on" yaml:"depends_on,omitempty"`
 	Variables  map[string]Variable    `json:"variables" yaml:"variables,omitempty"`
 }
 
