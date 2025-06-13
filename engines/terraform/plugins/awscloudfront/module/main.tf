@@ -50,7 +50,7 @@ resource "aws_security_group_rule" "ingress" {
   for_each = local.vpc_origins
   # FIXME: Only apply to a mutual security that is shared with the ALB
   security_group_id = each.value.resources["aws_lb:security_group"]
-  self = true
+  # self = true
   from_port = each.value.resources["aws_lb:http_port"]
   to_port = each.value.resources["aws_lb:http_port"]
   protocol = "tcp"
