@@ -21,6 +21,7 @@ func (a *awsfargateService) Start(proxy service.Proxy) error {
 
 	p := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
+			fmt.Println("Directing request:", req.URL.Path)
 			// TODO: Do additional analysis of the request in order to perform event subscription routing
 			req.URL.Host = proxy.Host()
 			req.URL.Scheme = "http"
