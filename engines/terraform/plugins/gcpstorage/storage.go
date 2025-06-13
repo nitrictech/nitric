@@ -99,7 +99,7 @@ func detectContentType(filename string, content []byte) string {
 func (s *cloudStorage) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	reader, err := bucketHandle.Object(req.Key).NewReader(ctx)
@@ -108,7 +108,7 @@ func (s *cloudStorage) Read(ctx context.Context, req *storagepb.StorageReadReque
 			return nil, status.Errorf(codes.PermissionDenied, "unable to read file, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error reading file: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error reading file: %v", err)
 	}
 
 	defer reader.Close()
@@ -119,7 +119,7 @@ func (s *cloudStorage) Read(ctx context.Context, req *storagepb.StorageReadReque
 			return nil, status.Errorf(codes.PermissionDenied, "unable to read file, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error reading file: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error reading file: %v", err)
 	}
 
 	return &storagepb.StorageReadResponse{
@@ -133,7 +133,7 @@ func (s *cloudStorage) Read(ctx context.Context, req *storagepb.StorageReadReque
 func (s *cloudStorage) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	writer := bucketHandle.Object(req.Key).NewWriter(ctx)
@@ -144,7 +144,7 @@ func (s *cloudStorage) Write(ctx context.Context, req *storagepb.StorageWriteReq
 			return nil, status.Errorf(codes.PermissionDenied, "unable to write file, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error writing file: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error writing file: %v", err)
 	}
 
 	if err := writer.Close(); err != nil {
@@ -152,7 +152,7 @@ func (s *cloudStorage) Write(ctx context.Context, req *storagepb.StorageWriteReq
 			return nil, status.Errorf(codes.PermissionDenied, "unable to write file, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error closing file: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error closing file: %v", err)
 	}
 
 	return &storagepb.StorageWriteResponse{}, nil
@@ -164,7 +164,7 @@ func (s *cloudStorage) Write(ctx context.Context, req *storagepb.StorageWriteReq
 func (s *cloudStorage) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	if err := bucketHandle.Object(req.Key).Delete(ctx); err != nil {
@@ -175,7 +175,7 @@ func (s *cloudStorage) Delete(ctx context.Context, req *storagepb.StorageDeleteR
 		// ignore errors caused by the Object not existing.
 		// This is to unify delete behavior between providers.
 		if !errors.Is(err, storage.ErrObjectNotExist) {
-			return nil, status.Errorf(codes.Unknown, "error deleting file: %w", err)
+			return nil, status.Errorf(codes.Unknown, "error deleting file: %v", err)
 		}
 	}
 
@@ -185,7 +185,7 @@ func (s *cloudStorage) Delete(ctx context.Context, req *storagepb.StorageDeleteR
 func (s *cloudStorage) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	method := "GET"
@@ -205,7 +205,7 @@ func (s *cloudStorage) PreSignUrl(ctx context.Context, req *storagepb.StoragePre
 			return nil, status.Errorf(codes.PermissionDenied, "unable to create signed url, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error creating signed url: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error creating signed url: %v", err)
 	}
 
 	return &storagepb.StoragePreSignUrlResponse{
@@ -216,7 +216,7 @@ func (s *cloudStorage) PreSignUrl(ctx context.Context, req *storagepb.StoragePre
 func (s *cloudStorage) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	iter := bucketHandle.Objects(ctx, &storage.Query{
@@ -236,7 +236,7 @@ func (s *cloudStorage) ListBlobs(ctx context.Context, req *storagepb.StorageList
 				return nil, status.Errorf(codes.PermissionDenied, "unable to list blobs, this may be due to a missing permissions request in your code.")
 			}
 
-			return nil, status.Errorf(codes.Unknown, "error listing blobs: %w", err)
+			return nil, status.Errorf(codes.Unknown, "error listing blobs: %v", err)
 		}
 
 		fis = append(fis, &storagepb.Blob{
@@ -252,7 +252,7 @@ func (s *cloudStorage) ListBlobs(ctx context.Context, req *storagepb.StorageList
 func (s *cloudStorage) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {
 	bucketHandle, err := s.getBucketByName(req.BucketName)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %w", err)
+		return nil, status.Errorf(codes.NotFound, "unable to locate bucket: %v", err)
 	}
 
 	_, err = bucketHandle.Object(req.Key).Attrs(ctx)
@@ -266,7 +266,7 @@ func (s *cloudStorage) Exists(ctx context.Context, req *storagepb.StorageExistsR
 			return nil, status.Errorf(codes.PermissionDenied, "unable to check if file exists, this may be due to a missing permissions request in your code.")
 		}
 
-		return nil, status.Errorf(codes.Unknown, "error checking if file exists: %w", err)
+		return nil, status.Errorf(codes.Unknown, "error checking if file exists: %v", err)
 	}
 
 	return &storagepb.StorageExistsResponse{
