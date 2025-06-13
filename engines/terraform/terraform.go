@@ -121,6 +121,25 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 		}
 	}
 
+	if len(resource.DependsOn) > 0 {
+		dependsOnResources := []*string{}
+		for _, dependsOn := range resource.DependsOn {
+			specRef, err := SpecReferenceFromToken(dependsOn)
+			if err != nil {
+				return err
+			}
+
+			if specRef.Source != "infra" {
+				return fmt.Errorf("depends_on can only reference infra resources")
+			}
+
+			moduleId := fmt.Sprintf("module.%s", *tf.terraformInfraResources[specRef.Path[0]].Node().Id())
+
+			dependsOnResources = append(dependsOnResources, jsii.String(moduleId))
+		}
+		module.SetDependsOn(&dependsOnResources)
+	}
+
 	return nil
 }
 

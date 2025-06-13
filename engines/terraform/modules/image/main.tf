@@ -1,5 +1,5 @@
 resource "docker_image" "base_service" {
-  name = var.image_id == null ? "base_service" : var.image_id
+  name = var.image_id == null ? "${var.tag}_base_service" : var.image_id
 
   dynamic "build" {
     for_each = var.image_id == null ? [1] : []
@@ -28,7 +28,7 @@ locals {
 
 # Next we want to wrap this image withing a nitric service
 resource "docker_image" "service" {
-  name = "service"
+  name = var.tag
   build {
     # This doesn't actually matter as we aren't copying in anything relative
     builder  = "default"

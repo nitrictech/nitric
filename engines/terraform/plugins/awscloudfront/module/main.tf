@@ -12,6 +12,51 @@ locals {
     for k, v in var.nitric.origins : k => v
     if contains(keys(v.resources), "aws_lambda_function")
   }
+  non_vpc_origins = {
+    for k, v in var.nitric.origins : k => v
+    if !contains(keys(v.resources), "aws_lb")
+  }
+  vpc_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "aws_lb")
+  }
+}
+
+resource "aws_cloudfront_vpc_origin" "vpc_origin" {
+  for_each = local.vpc_origins
+
+  vpc_origin_endpoint_config {
+    name = each.key
+    arn = each.value.resources["aws_lb"]
+    http_port = each.value.resources["aws_lb:http_port"]
+    # Doesn't matter what we set this to, it's not used
+    # But 0 is not a legal value
+    https_port = 443
+    origin_protocol_policy = "http-only"
+
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
+}
+
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+ name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# Allow the cloudfront instance the ability to access the load balancer
+resource "aws_security_group_rule" "ingress" {
+  for_each = local.vpc_origins
+  # FIXME: Only apply to a mutual security that is shared with the ALB
+  security_group_id = each.value.resources["aws_lb:security_group"]
+  # self = true
+  from_port = each.value.resources["aws_lb:http_port"]
+  to_port = each.value.resources["aws_lb:http_port"]
+  protocol = "tcp"
+  type = "ingress"
+
+  prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
 }
 
 resource "aws_cloudfront_origin_access_control" "lambda_oac" {
@@ -81,7 +126,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled = true
 
   dynamic "origin" {
-    for_each = var.nitric.origins
+    for_each = local.non_vpc_origins
 
     content {
       # TODO: Only have services return their domain name instead? 
@@ -99,6 +144,18 @@ resource "aws_cloudfront_distribution" "distribution" {
           http_port = 80
           https_port = 443
         }
+      }
+    }
+  }
+
+  dynamic "origin" {
+    for_each = local.vpc_origins
+
+    content {
+      domain_name = origin.value.domain_name
+      origin_id = "${origin.key}"
+      vpc_origin_config {
+        vpc_origin_id = aws_cloudfront_vpc_origin.vpc_origin[origin.key].id
       }
     }
   }
