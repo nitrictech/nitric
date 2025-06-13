@@ -108,6 +108,10 @@ resource "aws_ecs_task_definition" "service" {
         {
           name = "CONTAINER_PORT"
           value = "${tostring(var.container_port)}"
+        },
+        {
+          name = "NITRIC_STACK_ID"
+          value = var.nitric.stack_id
         }
       ],
       [
