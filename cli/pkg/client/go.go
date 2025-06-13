@@ -44,8 +44,8 @@ func AppSpecToGoTemplateData(appSpec schema.Application, goPackageName string) (
 	}, nil
 }
 
-// GenerateGoSDK generates Go SDK
-func GenerateGoSDK(fs afero.Fs, appSpec schema.Application, outputDir string, goPackageName string) error {
+// GenerateGo generates Go SDK
+func GenerateGo(fs afero.Fs, appSpec schema.Application, outputDir string, goPackageName string) error {
 	if outputDir == "" {
 		outputDir = "nitric/go/client"
 	}
