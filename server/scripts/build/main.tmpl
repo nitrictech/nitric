@@ -12,7 +12,7 @@ import (
 	"github.com/nitrictech/nitric/server/runtime/pubsub"
 	"github.com/nitrictech/nitric/server/runtime/service"
 	"github.com/nitrictech/nitric/server/runtime"
-    "github.com/nitrictech/nitric/server/runtime/plugin"
+	"github.com/nitrictech/nitric/server/runtime/plugin"
 	{{- range .Storage }}
 	{{ .Alias }} "{{ .Import }}"
 	{{- end }}
@@ -63,6 +63,6 @@ func main() {
 		log.Fatalf("Error registering service plugin: %v", err)
 	}
 
-    // Start the host
-    runtime.Start(*userCommand)
+	// Start the host
+	runtime.Start(*userCommand)
 }
