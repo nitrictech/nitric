@@ -61,8 +61,8 @@ func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, er
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			if name, ok := b.Labels["x-nitric-name"]; ok && name == bucket {
-				s.cache[name] = s.client.Bucket(b.Name)
+			if b.Name == fmt.Sprintf("%s-%s", bucket, s.nitricStackId) {
+				s.cache[b.Name] = s.client.Bucket(b.Name)
 			}
 		}
 	}
@@ -278,12 +278,12 @@ func (s *cloudStorage) Exists(ctx context.Context, req *storagepb.StorageExistsR
  * Creates a new Storage Plugin for use in GCP
  */
 func Plugin() (nitricStorage.Storage, error) {
+	ctx := context.Background()
+
 	nitricStackId := os.Getenv("NITRIC_STACK_ID")
 	if nitricStackId == "" {
 		return nil, fmt.Errorf("NITRIC_STACK_ID is not set")
 	}
-
-	ctx := context.Background()
 
 	credentials, credentialsError := google.FindDefaultCredentials(ctx,
 		storage.ScopeReadWrite,
@@ -301,7 +301,8 @@ func Plugin() (nitricStorage.Storage, error) {
 	}
 
 	return &cloudStorage{
-		client:    client,
-		projectID: credentials.ProjectID,
+		client:        client,
+		projectID:     credentials.ProjectID,
+		nitricStackId: nitricStackId,
 	}, nil
 }

@@ -30,13 +30,10 @@ resource "random_id" "bucket_id" {
 
 # Google Storage bucket
 resource "google_storage_bucket" "bucket" {
-  name          = "${var.nitric.name}-${random_id.bucket_id.hex}"
+  name          = "${var.nitric.name}-${var.nitric.stack_id}"
   location      = var.region
   project       = var.project_id
   storage_class = var.storage_class
-  labels = {
-    "x-nitric-name" = var.nitric.name
-  }
 
   depends_on = [ google_project_service.required_services ]
 }

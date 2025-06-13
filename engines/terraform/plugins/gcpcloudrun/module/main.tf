@@ -123,6 +123,11 @@ resource "google_cloud_run_v2_service" "service" {
       ports {
         container_port = var.ingress_port
       }
+
+      env {
+        name  = "NITRIC_STACK_ID"
+        value = var.nitric.stack_id
+      }
       env {
         name  = "INGRESS_PORT"
         value = var.ingress_port
