@@ -199,21 +199,13 @@ resource "aws_lb_listener" "service" {
   }
 }
 
-# FIXME: Probably move this to the awscloudfront plugin
-# data "aws_ec2_managed_prefix_list" "cloudfront" {
-#  name = "com.amazonaws.global.cloudfront.origin-facing"
-# }
-
 # # Setup ingress on the container port for the security groups
-# resource "aws_security_group_rule" "ingress" {
-#   # FIXME: Only apply to a mutual security that is shared with the ALB
-#   security_group_id = var.security_groups[0]
-#   self = true
-#   from_port = var.container_port
-#   to_port = var.container_port
-#   protocol = "tcp"
-#   type = "ingress"
-
-#   prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
-# }
+resource "aws_security_group_rule" "ingress" {
+  security_group_id = var.alb_security_group
+  self = true
+  from_port = var.container_port
+  to_port = var.container_port
+  protocol = "tcp"
+  type = "ingress"
+}
 
