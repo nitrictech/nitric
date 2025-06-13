@@ -41,6 +41,24 @@ resource "aws_cloudfront_vpc_origin" "vpc_origin" {
   }
 }
 
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+ name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# Allow the cloudfront instance the ability to access the load balancer
+resource "aws_security_group_rule" "ingress" {
+  for_each = local.vpc_origins
+  # FIXME: Only apply to a mutual security that is shared with the ALB
+  security_group_id = each.value.resources["aws_lb:security_group"]
+  self = true
+  from_port = each.value.resources["aws_lb:http_port"]
+  to_port = each.value.resources["aws_lb:http_port"]
+  protocol = "tcp"
+  type = "ingress"
+
+  prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
+}
+
 resource "aws_cloudfront_origin_access_control" "lambda_oac" {
   count = length(local.lambda_origins) > 0 ? 1 : 0
 

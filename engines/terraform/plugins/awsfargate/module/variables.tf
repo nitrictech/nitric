@@ -16,6 +16,11 @@ variable "alb_arn" {
   type    = string
 }
 
+variable "alb_security_group" {
+  type    = string
+  default = null
+}
+
 variable "cpu" {
   type    = number
   default = 256

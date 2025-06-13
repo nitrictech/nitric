@@ -161,7 +161,7 @@ resource "aws_ecs_service" "service" {
 
   network_configuration {
     subnets = var.subnets
-    security_groups = var.security_groups
+    security_groups = concat([var.alb_security_group], var.security_groups)
   }
   load_balancer {
     target_group_arn = aws_lb_target_group.service.arn
@@ -199,20 +199,21 @@ resource "aws_lb_listener" "service" {
   }
 }
 
-data "aws_ec2_managed_prefix_list" "cloudfront" {
- name = "com.amazonaws.global.cloudfront.origin-facing"
-}
+# FIXME: Probably move this to the awscloudfront plugin
+# data "aws_ec2_managed_prefix_list" "cloudfront" {
+#  name = "com.amazonaws.global.cloudfront.origin-facing"
+# }
 
-# Setup ingress on the container port for the security groups
-resource "aws_security_group_rule" "ingress" {
-  # FIXME: Only apply to a mutual security that is shared with the ALB
-  security_group_id = var.security_groups[0]
-  self = true
-  from_port = var.container_port
-  to_port = var.container_port
-  protocol = "tcp"
-  type = "ingress"
+# # Setup ingress on the container port for the security groups
+# resource "aws_security_group_rule" "ingress" {
+#   # FIXME: Only apply to a mutual security that is shared with the ALB
+#   security_group_id = var.security_groups[0]
+#   self = true
+#   from_port = var.container_port
+#   to_port = var.container_port
+#   protocol = "tcp"
+#   type = "ingress"
 
-  prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
-}
+#   prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
+# }
 
