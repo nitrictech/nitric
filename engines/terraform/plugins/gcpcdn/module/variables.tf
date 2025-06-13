@@ -5,8 +5,9 @@ variable "nitric" {
     origins = map(object({
       path = string
       type = string
-      http_endpoint = string
+      domain_name = string
       id = string
+      resources = map(string)
     }))
   })
 }
