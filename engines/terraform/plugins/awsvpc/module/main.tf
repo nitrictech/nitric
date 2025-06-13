@@ -31,6 +31,8 @@ module "vpc" {
 
 # Setup ingress on the container port for the security groups
 resource "aws_security_group_rule" "ingress" {
+  depends_on = [ module.vpc ]
+
   count = length(var.default_security_group_ingress)
 
   security_group_id = module.vpc.default_security_group_id
@@ -48,6 +50,8 @@ resource "aws_security_group_rule" "ingress" {
 
 # Setup ingress on the container port for the security groups
 resource "aws_security_group_rule" "egress" {
+  depends_on = [ module.vpc ]
+
   count = length(var.default_security_group_egress)
 
   security_group_id = module.vpc.default_security_group_id
