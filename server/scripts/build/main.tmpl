@@ -12,7 +12,7 @@ import (
 	"github.com/nitrictech/nitric/server/runtime/pubsub"
 	"github.com/nitrictech/nitric/server/runtime/service"
 	"github.com/nitrictech/nitric/server/runtime"
-    "github.com/nitrictech/nitric/server/runtime/plugin"
+	"github.com/nitrictech/nitric/server/runtime/plugin"
 	{{- range .Storage }}
 	{{ .Alias }} "{{ .Import }}"
 	{{- end }}
@@ -45,15 +45,24 @@ func main() {
 		log.Fatalf("No command provided")
 	}
 
-    // Register all storage plugins
-	runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	// Register all storage plugins
+	err := runtime.RegisterPlugins(storage.Register, storagePluginRegistry)
+	if err != nil {
+		log.Fatalf("Error registering storage plugins: %v", err)
+	}
 
-    // Register all pubsub plugins
-	runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	// Register all pubsub plugins
+	err = runtime.RegisterPlugins(pubsub.Register, pubsubPluginRegistry)
+	if err != nil {
+		log.Fatalf("Error registering pubsub plugins: %v", err)
+	}
 
 	// Register service plugin
-	service.Register({{ .Service.Alias }}.Plugin)
+	err = service.Register({{ .Service.Alias }}.Plugin)
+	if err != nil {
+		log.Fatalf("Error registering service plugin: %v", err)
+	}
 
-    // Start the host
-    runtime.Start(*userCommand)
+	// Start the host
+	runtime.Start(*userCommand)
 }
