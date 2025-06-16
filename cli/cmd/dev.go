@@ -13,9 +13,10 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/netx"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
+	"github.com/nitrictech/nitric/cli/internal/style"
+	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -42,16 +43,6 @@ func NewPrefixWriter(prefix string, writer io.Writer) *PrefixWriter {
 		writer: writer,
 	}
 }
-
-var someChars = "❍ ⚬ ♽ ♼ ☃ ⚙  ⚞ ⚟ ⚠"
-
-var (
-	rightArrow   = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(14)).Render("➜")
-	recycle      = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(14)).Render("♻")
-	warning      = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(14)).Render("⚠")
-	svcStyle     = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(10))
-	styledNitric = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(13)).Render("nitric")
-)
 
 var dev = &cobra.Command{
 	Use:   "dev",
@@ -85,7 +76,7 @@ var dev = &cobra.Command{
 		runningProcesses := map[string]*exec.Cmd{}
 		services := appSpec.GetServiceIntents()
 		for serviceName, intent := range services {
-			styledSvcName := svcStyle.Render(serviceName)
+			styledSvcName := style.Teal(fmt.Sprintf("[%s]", serviceName))
 
 			logwriter := NewPrefixWriter(styledSvcName, os.Stdout)
 
@@ -108,7 +99,8 @@ var dev = &cobra.Command{
 					port, err := netx.GetNextPort()
 					cobra.CheckErr(err)
 
-					fmt.Printf("%s Starting service %s on port %d\n", rightArrow, styledSvcName, port)
+					fmt.Printf("%s Starting %s %s\n", style.Green(icons.Check), styledSvcName, fmt.Sprintf("http://localhost:%d/", port))
+					fmt.Printf("%s\n\n", style.Gray(intent.Dev.Script))
 
 					srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", port))
 
@@ -133,7 +125,7 @@ var dev = &cobra.Command{
 					delete(runningProcesses, serviceName)
 					runningProcessesLock.Unlock()
 					// try to restart the process
-					fmt.Printf("Service %s: %v\n", styledSvcName, err)
+					fmt.Printf("%s: %v\n", styledSvcName, err)
 				}
 
 				return nil

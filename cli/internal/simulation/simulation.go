@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/nitrictech/nitric/cli/internal/style"
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 	"github.com/spf13/afero"
@@ -21,9 +21,7 @@ type SimulationServer struct {
 
 const DEFAULT_SERVER_PORT = "50051"
 
-var (
-	styledNitric = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(13)).Render("nitric")
-)
+var nitric = style.Purple("nitric")
 
 func (s *SimulationServer) Start() error {
 	srv := grpc.NewServer()
@@ -44,7 +42,7 @@ func (s *SimulationServer) Start() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	fmt.Printf("\n%s starting on: %s\n\n", styledNitric, addr)
+	fmt.Printf("\n%s starting on %s\n\n", nitric, addr)
 	return srv.Serve(lis)
 }
 
