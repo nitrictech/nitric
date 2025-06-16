@@ -1,12 +1,20 @@
 package schema
 
 type ServiceIntent struct {
-	Port      int               `json:"port" yaml:"port" jsonschema:"required"`
 	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Container Container         `json:"container" yaml:"container" jsonschema:"oneof_required=container"`
+
+	Dev *Dev `json:"dev,omitempty" yaml:"dev,omitempty"`
+
 	// Only used for schema generation, will always be nil. Do not use or remove.
 	ServiceSchemaOnlyHackType    string `json:"type" yaml:"-" jsonschema:"type,enum=service"`
 	ServiceSchemaOnlyHackSubType string `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
+}
+
+type Dev struct {
+	// The script the start the service (because running it locally is orders of magnitude faster than building the containers)
+	Script string `json:"script" yaml:"script"`
+	// Watch  []string
 }
 
 // Runtime represents a union of all possible runtime types
