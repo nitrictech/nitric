@@ -8,7 +8,8 @@ const (
 )
 
 type EntrypointIntent struct {
-	EntrypointSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=entrypoint"`
+	EntrypointSchemaOnlyHackType    string `json:"type" yaml:"-" jsonschema:"type,enum=entrypoint"`
+	EntrypointSchemaOnlyHackSubType string `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
 	// TODO: As all resource names are unique, we could use the name as the value for the routes instead of the Route struct
 	Routes map[string]Route `json:"routes" yaml:"routes"`
 }

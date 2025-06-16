@@ -6,7 +6,7 @@ variable "nitric" {
 
 variable "trusted_services" {
   type    = list(string)
-  default = ["lambda.amazonaws.com", "ec2.amazonaws.com"]
+  default = ["lambda.amazonaws.com", "ec2.amazonaws.com", "ecs-tasks.amazonaws.com"]
 }
 
 variable "trusted_actions" {

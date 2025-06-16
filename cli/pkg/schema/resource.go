@@ -6,7 +6,7 @@ import (
 
 type Resource struct {
 	Type    string `json:"type" yaml:"type" jsonschema:"-"`
-	SubType string `json:"sub-type,omitempty" yaml:"sub-type,omitempty"`
+	SubType string `json:"sub-type,omitempty" yaml:"sub-type,omitempty" jsonschema:"-"`
 
 	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty" jsonschema:"-"`
 
