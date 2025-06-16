@@ -29,7 +29,12 @@ type PrefixWriter struct {
 }
 
 func (p *PrefixWriter) Write(content []byte) (int, error) {
-	_, err := fmt.Fprintf(p.writer, "%s: %s", p.prefix, string(content))
+	value := strings.TrimSuffix(string(content), "\n")
+
+	split := strings.Split(value, "\n")
+	value = strings.Join(split, "\n"+p.prefix) + "\n"
+
+	_, err := fmt.Fprintf(p.writer, "%s%s", p.prefix, value)
 	if err != nil {
 		return 0, err
 	}
@@ -78,7 +83,7 @@ var dev = &cobra.Command{
 		for serviceName, intent := range services {
 			styledSvcName := style.Teal(fmt.Sprintf("[%s]", serviceName))
 
-			logwriter := NewPrefixWriter(styledSvcName, os.Stdout)
+			logWriter := NewPrefixWriter(styledSvcName+" ", os.Stdout)
 
 			waitGroup.Go(func() error {
 				// Start the service command, restarting if it closes/crashes
@@ -105,7 +110,8 @@ var dev = &cobra.Command{
 					srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", port))
 
 					srvCommand.Dir = intent.Container.Docker.Context
-					srvCommand.Stdout = logwriter
+					srvCommand.Stdout = logWriter
+					srvCommand.Stderr = logWriter
 
 					err = srvCommand.Start()
 					if err != nil {
