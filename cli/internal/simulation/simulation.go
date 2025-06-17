@@ -42,9 +42,9 @@ var nitric = style.Purple(icons.Lightning + " Nitric")
 func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
 	version := version.GetShortVersion()
 
-	intro := fmt.Sprintf("%s %s\n- App: %s\n- Addr: %s\n- Dashboard: %s\n", nitric, style.Gray(version), appSpec.Name, addr, dashUrl)
+	intro := fmt.Sprintf("\n%s %s\n- App: %s\n- Addr: %s\n- Dashboard: %s\n", nitric, style.Gray(version), appSpec.Name, addr, dashUrl)
 
-	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder()).Render(intro)
+	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
 }
 
 func (s *SimulationServer) startNitricApis() error {

@@ -5,6 +5,7 @@ type BucketIntent struct {
 	BucketSchemaOnlyHackType       string              `json:"type" yaml:"-" jsonschema:"type,enum=bucket"`
 	BucketAccessSchemaOnlyHackType map[string][]string `json:"access,omitempty" yaml:"access,omitempty"`
 	BucketSchemaOnlyHackSubType    string              `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
+	ContentPath                    string              `json:"content_path,omitempty" yaml:"content_path,omitempty"`
 }
 
 type StateIntent struct {
