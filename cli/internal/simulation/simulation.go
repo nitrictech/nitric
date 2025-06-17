@@ -3,7 +3,6 @@ package simulation
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -140,8 +139,8 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 }
 
 // CopyDir copies the content of src to dst. src should be a full path.
-func CopyDir(dst, src string) error {
-	return filepath.Walk(src, func(path string, info fs.FileInfo, err error) error {
+func (s *SimulationServer) CopyDir(dst, src string) error {
+	return afero.Walk(s.fs, src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -150,41 +149,49 @@ func CopyDir(dst, src string) error {
 		outpath := filepath.Join(dst, strings.TrimPrefix(path, src))
 
 		if info.IsDir() {
-			os.MkdirAll(outpath, info.Mode())
-			return nil // means recursive
+			return s.fs.MkdirAll(outpath, info.Mode())
 		}
 
 		// handle irregular files
 		if !info.Mode().IsRegular() {
 			switch info.Mode().Type() & os.ModeType {
 			case os.ModeSymlink:
-				link, err := os.Readlink(path)
+				// For symlinks, we'll just copy the file contents instead
+				// since not all Afero filesystems support symlinks
+				in, err := s.fs.Open(path)
 				if err != nil {
 					return err
 				}
-				return os.Symlink(link, outpath)
+				defer in.Close()
+
+				fh, err := s.fs.Create(outpath)
+				if err != nil {
+					return err
+				}
+				defer fh.Close()
+
+				_, err = io.Copy(fh, in)
+				return err
 			}
 			return nil
 		}
 
 		// copy contents of regular file efficiently
-
-		// open input
-		in, err := os.Open(path)
+		in, err := s.fs.Open(path)
 		if err != nil {
 			return err
 		}
 		defer in.Close()
 
 		// create output
-		fh, err := os.Create(outpath)
+		fh, err := s.fs.Create(outpath)
 		if err != nil {
 			return err
 		}
 		defer fh.Close()
 
 		// make it the same
-		fh.Chmod(info.Mode())
+		s.fs.Chmod(outpath, info.Mode())
 
 		// copy content
 		_, err = io.Copy(fh, in)
@@ -192,17 +199,33 @@ func CopyDir(dst, src string) error {
 	})
 }
 
+func (s *SimulationServer) ensureBucketDir(bucketName string) (string, error) {
+	bucketDir := filepath.Join(localNitricBucketDir, bucketName)
+
+	err := s.fs.MkdirAll(bucketDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	return bucketDir, nil
+}
+
+const (
+	BUCKET_MIN_PORT = 5000
+	BUCKET_MAX_PORT = 5999
+)
+
 func (s *SimulationServer) startBuckets() error {
 	bucketIntents := s.appSpec.GetBucketIntents()
 
 	for bucketName, bucketIntent := range bucketIntents {
 		if bucketIntent.ContentPath != "" {
-			err := os.MkdirAll(fmt.Sprintf("./.nitric/buckets/%s", bucketName), os.ModePerm)
+			bucketDir, err := s.ensureBucketDir(bucketName)
 			if err != nil {
 				return err
 			}
 
-			err = CopyDir(fmt.Sprintf("./.nitric/buckets/%s", bucketName), filepath.Join(s.appDir, bucketIntent.ContentPath))
+			err = s.CopyDir(bucketDir, filepath.Join(s.appDir, bucketIntent.ContentPath))
 			if err != nil {
 				return err
 			}
@@ -214,14 +237,15 @@ func (s *SimulationServer) startBuckets() error {
 	// Allow files to be served (for presigned URLS)
 	// TODO: Add an auth middleware for validating tokens
 	// TODO: Add origin check for an entrypoint
-	router.Handle("GET /", http.FileServer(http.Dir("./.nitric/buckets")))
+	httpFs := afero.NewHttpFs(s.fs)
+	router.Handle("GET /", http.FileServer(httpFs.Dir(localNitricBucketDir)))
 
 	// TODO: Handle PUT methods for writing files as well
 	router.HandleFunc("PUT /{bucketName}/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "File uploads currently unimplemented", 500)
 	})
 
-	reservedPort, err := netx.GetNextPort(netx.MinPort(ENTRYPOINT_MIN_PORT), netx.MaxPort(ENTRYPOINT_MAX_PORT))
+	reservedPort, err := netx.GetNextPort(netx.MinPort(BUCKET_MIN_PORT), netx.MaxPort(BUCKET_MAX_PORT))
 	if err != nil {
 		return err
 	}
