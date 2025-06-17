@@ -36,7 +36,7 @@ type ServiceEvent struct {
 	SimulatedService
 	PreviousStatus Status
 	Output         *OutputType
-	Content        *[]byte
+	Content        []byte
 }
 
 type OutputType bool

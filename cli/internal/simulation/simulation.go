@@ -11,10 +11,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/netx"
 	"github.com/nitrictech/nitric/cli/internal/simulation/service"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
@@ -35,7 +37,15 @@ type SimulationServer struct {
 
 const DEFAULT_SERVER_PORT = "50051"
 
-var nitric = style.Purple("nitric")
+var nitric = style.Purple(icons.Lightning + " Nitric")
+
+func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
+	version := version.GetShortVersion()
+
+	intro := fmt.Sprintf("%s %s\n- App: %s\n- Addr: %s\n- Dashboard: %s\n", nitric, style.Gray(version), appSpec.Name, addr, dashUrl)
+
+	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder()).Render(intro)
+}
 
 func (s *SimulationServer) startNitricApis() error {
 	srv := grpc.NewServer()
@@ -56,7 +66,7 @@ func (s *SimulationServer) startNitricApis() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	fmt.Printf("\n%s starting on %s\n\n", nitric, addr)
+	fmt.Println(nitricIntro(addr, "https://app.nitric.io/dashboard", s.appSpec))
 	go srv.Serve(lis)
 
 	return nil
@@ -155,7 +165,7 @@ func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan 
 		if event.Output != nil {
 			// write some kind of output for that service
 			if writer, ok := serviceWriters[event.GetName()]; ok {
-				writer.Write(*event.Content)
+				writer.Write(event.Content)
 			} else {
 				log.Fatalf("failed to retrieve output writer for service %s", event.GetName())
 			}
@@ -181,7 +191,6 @@ func styledName(name string, styleFunc func(...string) string) string {
 }
 
 func (s *SimulationServer) Start(output io.Writer) error {
-	fmt.Fprintf(output, "starting %s APIs\n", nitric)
 	err := s.startNitricApis()
 	if err != nil {
 		return err
