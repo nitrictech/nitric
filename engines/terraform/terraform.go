@@ -394,9 +394,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 	serviceEnvs := map[string][]interface{}{}
 
-	// Prepare non-service/non-entrypoint modules
+	// Resolve non-service/non-entrypoint/non-bucket modules
 	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type == "service" || resourceIntent.Type == "entrypoint" {
+		if resourceIntent.Type == "service" || resourceIntent.Type == "entrypoint" || resourceIntent.Type == "bucket" {
 			continue
 		}
 
@@ -428,6 +428,63 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			"name":     intentName,
 			"stack_id": tfDeployment.stackId.Result(),
 			"services": servicesInput,
+		}
+
+		// Create terraform variables for intent for a spec
+		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+
+		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
+			// TODO: This assumes that the plugin is resolvable as a URI
+			Source: jsii.String(plug.Deployment.Terraform),
+			Variables: &map[string]interface{}{
+				"nitric": nitricVar,
+			},
+		})
+
+		for serviceName, _ := range serviceInputs {
+			env := cdktf.Fn_Try(&[]interface{}{tfDeployment.terraformResources[intentName].Get(jsii.Sprintf("nitric.exports.services.%s.env", serviceName)), map[string]interface{}{}})
+			serviceEnvs[serviceName] = append(serviceEnvs[serviceName], env)
+		}
+	}
+
+	// Resolve bucket modules
+	for intentName, resourceIntent := range appSpec.GetResourceIntentsForType("bucket") {
+
+		bucketIntent := resourceIntent.BucketIntent
+		contentPath := ""
+		if bucketIntent != nil {
+			contentPath = bucketIntent.ContentPath
+		}
+
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		if err != nil {
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+		}
+		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		if err != nil {
+			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+		}
+
+		servicesInput := map[string]any{}
+		if access, ok := resourceIntent.IsAccessible(); ok {
+			for serviceName, actions := range access {
+				idMap, ok := tfDeployment.serviceIdentities[serviceName]
+				if !ok {
+					return fmt.Errorf("service %s not found", serviceName)
+				}
+
+				servicesInput[serviceName] = map[string]interface{}{
+					"actions":    jsii.Strings(actions...),
+					"identities": idMap,
+				}
+			}
+		}
+
+		nitricVar := map[string]any{
+			"name":         intentName,
+			"stack_id":     tfDeployment.stackId.Result(),
+			"content_path": contentPath,
+			"services":     servicesInput,
 		}
 
 		// Create terraform variables for intent for a spec

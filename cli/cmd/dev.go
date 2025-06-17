@@ -41,7 +41,7 @@ func NewPrefixWriter(prefix string, writer io.Writer) *PrefixWriter {
 var dev = &cobra.Command{
 	Use:   "dev",
 	Short: "Run the Nitric application in development mode",
-	Long:  `Run the Nitric application in development mode, allowing for live reloading and local testing of resources.`,
+	Long:  `Run the Nitric application in development mode, allowing local testing of resources.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Extract common loading logic into a separate function
 		// (see build.go for common loading logic)

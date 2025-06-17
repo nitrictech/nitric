@@ -7,7 +7,6 @@ import (
 	"github.com/nitrictech/nitric/engines/terraform"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 type MockTerraformPluginRepository struct {
@@ -18,49 +17,6 @@ func (r *MockTerraformPluginRepository) GetPlugin(name string) (*terraform.Plugi
 	return r.plugins[name], nil
 }
 
-// TODO: remove me
-func writeExampleNitricYaml(fs afero.Fs) {
-	example := &schema.Application{
-		Name: "test",
-		ResourceIntents: map[string]schema.Resource{
-			"service": {
-				Type: "service",
-				ServiceIntent: &schema.ServiceIntent{
-					Env: map[string]string{
-						"TEST": "test",
-					},
-					Container: schema.Container{
-						Image: &schema.DockerImage{
-							ID: "test",
-						},
-					},
-				},
-			},
-			"ingress": {
-				Type: "entrypoint",
-				EntrypointIntent: &schema.EntrypointIntent{
-					Routes: map[string]schema.Route{
-						"/": {
-							TargetName: "service",
-						},
-					},
-				},
-			},
-			"images": {
-				Type:         "bucket",
-				BucketIntent: &schema.BucketIntent{},
-			},
-		},
-	}
-
-	yamlBytes, err := yaml.Marshal(example)
-	if err != nil {
-		fmt.Println("Error marshalling example to YAML:", err)
-	}
-
-	afero.WriteFile(fs, "nitric.yaml", yamlBytes, 0644)
-}
-
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Builds the nitric application",
@@ -69,8 +25,6 @@ var buildCmd = &cobra.Command{
 
 		// Read the nitric.yaml file
 		fs := afero.NewOsFs()
-
-		// writeExampleNitricYaml(fs)
 
 		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml")
 		cobra.CheckErr(err)
