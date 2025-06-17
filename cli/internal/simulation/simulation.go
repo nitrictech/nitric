@@ -83,8 +83,6 @@ const (
 var greenCheck = style.Green(icons.Check)
 
 func (s *SimulationServer) startEntrypoints(services map[string]*service.ServiceSimulation) error {
-
-	// TODO: Possibly handle on multiple ports
 	serviceProxies := map[string]*httputil.ReverseProxy{}
 	for serviceName, service := range services {
 		url := &url.URL{
@@ -234,12 +232,12 @@ func (s *SimulationServer) startBuckets() error {
 
 	router := http.NewServeMux()
 
-	// Allow files to be served (for presigned URLS)
-	// TODO: Add an auth middleware for validating tokens
+	// Serve files (for presigned URLS)
 	// TODO: Add origin check for an entrypoint
 	httpFs := afero.NewHttpFs(s.fs)
 	router.Handle("GET /", http.FileServer(httpFs.Dir(localNitricBucketDir)))
 
+	// TODO: Add an auth middleware for validating tokens
 	// TODO: Handle PUT methods for writing files as well
 	router.HandleFunc("PUT /{bucketName}/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "File uploads currently unimplemented", 500)
