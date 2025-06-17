@@ -122,7 +122,7 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 				url := &url.URL{
 					Scheme: "http",
 					Host:   fmt.Sprintf("localhost:%d", s.fileServerPort),
-					Path:   fmt.Sprintf("/%s", target),
+					Path:   fmt.Sprintf("/%s", target.TargetName),
 				}
 				proxyHandler = httputil.NewSingleHostReverseProxy(url)
 			}
