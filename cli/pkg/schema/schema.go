@@ -19,6 +19,42 @@ type Application struct {
 	ResourceIntents map[string]Resource `json:"resources,omitempty" yaml:"resources,omitempty"`
 }
 
+func (a *Application) GetResourceIntentsForType(typ string) map[string]Resource {
+	filteredResources := map[string]Resource{}
+
+	for name, res := range a.ResourceIntents {
+		if res.Type == typ {
+			filteredResources[name] = res
+		}
+	}
+
+	return filteredResources
+}
+
+func (a *Application) GetServiceIntents() map[string]*ServiceIntent {
+	concreteServices := map[string]*ServiceIntent{}
+
+	services := a.GetResourceIntentsForType("service")
+
+	for name, svc := range services {
+		concreteServices[name] = svc.ServiceIntent
+	}
+
+	return concreteServices
+}
+
+func (a *Application) GetEntrypointIntents() map[string]*EntrypointIntent {
+	concreteEntrypoints := map[string]*EntrypointIntent{}
+
+	services := a.GetResourceIntentsForType("entrypoint")
+
+	for name, svc := range services {
+		concreteEntrypoints[name] = svc.EntrypointIntent
+	}
+
+	return concreteEntrypoints
+}
+
 func ApplicationJsonSchema() *jsonschema.Schema {
 	return jsonschema.Reflect(&Application{})
 }

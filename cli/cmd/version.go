@@ -15,7 +15,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print the CLI version",
 	Long:  `Display the version number of the Nitric CLI.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("nitric cli version %s\n", highlight.Render(version.GetVersion()))
+		fmt.Printf("nitric cli version %s\n", highlight.Render(version.Version))
 
 	},
 }

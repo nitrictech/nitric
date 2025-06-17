@@ -26,7 +26,6 @@ func writeExampleNitricYaml(fs afero.Fs) {
 			"service": {
 				Type: "service",
 				ServiceIntent: &schema.ServiceIntent{
-					Port: 8080,
 					Env: map[string]string{
 						"TEST": "test",
 					},
