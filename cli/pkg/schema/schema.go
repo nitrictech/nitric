@@ -43,6 +43,18 @@ func (a *Application) GetServiceIntents() map[string]*ServiceIntent {
 	return concreteServices
 }
 
+func (a *Application) GetEntrypointIntents() map[string]*EntrypointIntent {
+	concreteEntrypoints := map[string]*EntrypointIntent{}
+
+	services := a.GetResourceIntentsForType("entrypoint")
+
+	for name, svc := range services {
+		concreteEntrypoints[name] = svc.EntrypointIntent
+	}
+
+	return concreteEntrypoints
+}
+
 func ApplicationJsonSchema() *jsonschema.Schema {
 	return jsonschema.Reflect(&Application{})
 }

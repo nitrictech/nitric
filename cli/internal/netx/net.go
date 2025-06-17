@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"time"
 )
 
 type getNextListenerOptions struct {
@@ -50,7 +49,21 @@ func MinPort(minPort int) getNextListenerOption {
 	}
 }
 
-func GetNextPort(opts ...getNextListenerOption) (int, error) {
+type ReservedPort int
+
+var portReservationsLock = &sync.Mutex{}
+var portReservations map[ReservedPort]struct{}
+
+func (r ReservedPort) Release() {
+	portReservationsLock.Lock()
+	defer portReservationsLock.Unlock()
+
+	if _, ok := portReservations[r]; ok {
+		delete(portReservations, r)
+	}
+}
+
+func GetNextPort(opts ...getNextListenerOption) (ReservedPort, error) {
 	// reserve the port
 	lis, err := GetNextListener(opts...)
 	if err != nil {
@@ -69,25 +82,18 @@ func GetNextPort(opts ...getNextListenerOption) (int, error) {
 	if !ok {
 		return 0, fmt.Errorf("failed to get port from listener address")
 	}
-	return port.Port, nil
-}
 
-var portReservations map[int]time.Time
-var portReservationsLock = &sync.Mutex{}
-var portReservationsTimeout = 100 * time.Millisecond
+	return ReservedPort(port.Port), nil
+}
 
 func isPortReserved(port int) bool {
 	if portReservations == nil {
-		portReservations = make(map[int]time.Time)
+		portReservations = make(map[ReservedPort]struct{})
 	}
 
 	// Check if the port is reserved and not expired
-	if reservedTime, exists := portReservations[port]; exists {
-		if time.Since(reservedTime) < portReservationsTimeout {
-			return true
-		}
-		// Remove expired reservation
-		delete(portReservations, port)
+	if _, exists := portReservations[ReservedPort(port)]; exists {
+		return true
 	}
 
 	return false
@@ -95,11 +101,11 @@ func isPortReserved(port int) bool {
 
 func reservePort(port int) {
 	if portReservations == nil {
-		portReservations = make(map[int]time.Time)
+		portReservations = make(map[ReservedPort]struct{})
 	}
 
 	// Reserve the port with the current time
-	portReservations[port] = time.Now()
+	portReservations[ReservedPort(port)] = struct{}{}
 }
 
 // GetNextListener - Gets the next available free port starting from a predefined minimum port
