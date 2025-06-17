@@ -13,6 +13,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/netx"
+	"github.com/nitrictech/nitric/cli/internal/simulation/middleware"
 	"github.com/nitrictech/nitric/cli/internal/simulation/service"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
@@ -103,7 +104,10 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 		for route, target := range entrypoint.Routes {
 			// TODO: Handle other target types
 			targetProxy := serviceProxies[target.TargetName]
-			router.Handle(route, http.StripPrefix(strings.TrimSuffix(route, "/"), targetProxy))
+
+			proxyLogMiddleware := middleware.ProxyLogging(styledName(entrypointName, style.Orange), styledName(target.TargetName, style.Teal), false)
+
+			router.Handle(route, http.StripPrefix(strings.TrimSuffix(route, "/"), proxyLogMiddleware(targetProxy)))
 		}
 
 		go http.ListenAndServe(fmt.Sprintf(":%d", reservedPort), router)
