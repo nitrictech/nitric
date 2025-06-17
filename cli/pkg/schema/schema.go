@@ -31,6 +31,18 @@ func (a *Application) GetResourceIntentsForType(typ string) map[string]Resource 
 	return filteredResources
 }
 
+func (a *Application) GetBucketIntents() map[string]*BucketIntent {
+	concreteBuckets := map[string]*BucketIntent{}
+
+	services := a.GetResourceIntentsForType("bucket")
+
+	for name, svc := range services {
+		concreteBuckets[name] = svc.BucketIntent
+	}
+
+	return concreteBuckets
+}
+
 func (a *Application) GetServiceIntents() map[string]*ServiceIntent {
 	concreteServices := map[string]*ServiceIntent{}
 
