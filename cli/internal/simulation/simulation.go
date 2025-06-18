@@ -113,6 +113,7 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 			}
 
 			var proxyHandler http.Handler
+			styleColor := style.Teal
 			if spec.Type == "service" {
 				proxyHandler = serviceProxies[target.TargetName]
 			} else if spec.Type == "bucket" {
@@ -122,9 +123,10 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 					Path:   fmt.Sprintf("/%s", target.TargetName),
 				}
 				proxyHandler = httputil.NewSingleHostReverseProxy(url)
+				styleColor = style.Green
 			}
 
-			proxyLogMiddleware := middleware.ProxyLogging(styledName(entrypointName, style.Orange), styledName(target.TargetName, style.Teal), false)
+			proxyLogMiddleware := middleware.ProxyLogging(styledName(entrypointName, style.Orange), styledName(target.TargetName, styleColor), false)
 			router.Handle(route, http.StripPrefix(strings.TrimSuffix(route, "/"), proxyLogMiddleware(proxyHandler)))
 		}
 
