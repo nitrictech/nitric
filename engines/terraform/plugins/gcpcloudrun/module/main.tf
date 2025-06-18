@@ -125,6 +125,11 @@ resource "google_cloud_run_v2_service" "service" {
       }
 
       env {
+        name = "NITRIC_GUEST_PORT"
+        value = 8080
+      }
+
+      env {
         name  = "NITRIC_STACK_ID"
         value = var.nitric.stack_id
       }

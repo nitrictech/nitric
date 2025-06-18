@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"os"
 
 	"github.com/nitrictech/nitric/server/runtime/service"
 )
@@ -26,8 +27,13 @@ func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", p.ServeHTTP)
 
-	fmt.Println("Starting Cloud Run service proxy on port")
-	return http.ListenAndServe(fmt.Sprintf(":8080"), mux)
+	port := os.Getenv("NITRIC_GUEST_PORT")
+	if port == "" {
+		return fmt.Errorf("NITRIC_GUEST_PORT environment variable not set")
+	}
+
+	fmt.Printf("Starting Cloud Run service proxy on port %s\n", port)
+	return http.ListenAndServe(fmt.Sprintf(":%s", port), mux)
 }
 
 func Plugin() (service.Service, error) {
