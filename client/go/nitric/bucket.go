@@ -166,7 +166,7 @@ func (c *Bucket) preSignUrl(key string, opts *presignUrlOptions) (string, error)
 
 // GetDownloadURL returns a presigned URL for downloading a file from the bucket, with a limited expiry time
 func (c *Bucket) GetDownloadURL(key string, opts ...PresignUrlOption) (string, error) {
-	optsWithDefaults := getPresignUrlOpts(ModeWrite, opts...)
+	optsWithDefaults := getPresignUrlOpts(ModeRead, opts...)
 
 	return c.preSignUrl(key, optsWithDefaults)
 }
