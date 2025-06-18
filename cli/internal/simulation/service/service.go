@@ -77,11 +77,13 @@ var stopSignals = []os.Signal{
 func (s *ServiceSimulation) Signal(sig os.Signal) {
 	if slices.Contains(stopSignals, sig) {
 		s.autoRestart = false
+		s.updateStatus(Status_Stopping)
 	}
 	// If windows, it will always Kill 🔪... (signals are not supported on windows)
 	err := s.cmd.Process.Signal(sig)
 	if err != nil {
 		s.autoRestart = false
+		s.updateStatus(Status_Stopping)
 		err = s.cmd.Process.Kill()
 	}
 }
@@ -124,9 +126,9 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		srvCommand.Env = append([]string{}, os.Environ()...)
 
 		if s.currentStatus == Status_Init {
-			s.updateStatus(Status_Start)
+			s.updateStatus(Status_Starting)
 		} else {
-			s.updateStatus(Status_Restart)
+			s.updateStatus(Status_Restarting)
 		}
 
 		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", s.port))
@@ -140,13 +142,14 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 			s.updateStatus(Status_Fatal)
 			return err
 		}
+		s.updateStatus(Status_Running)
 
 		err = srvCommand.Wait()
 		if err == nil {
 			break
 		}
 
-		s.updateStatus(Status_Stop)
+		s.updateStatus(Status_Stopped)
 	}
 
 	return nil

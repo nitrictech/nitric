@@ -254,8 +254,6 @@ func (s *SimulationServer) startBuckets() error {
 
 	s.fileServerPort = int(reservedPort)
 
-	fmt.Printf("%s Starting file server at http://localhost:%d\n", greenCheck, reservedPort)
-
 	return nil
 }
 
@@ -317,10 +315,10 @@ func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan 
 		}
 
 		if event.PreviousStatus != event.GetStatus() {
-			// If the status has changed write about it
+			if event.GetStatus() == service.Status_Restarting {
+				fmt.Fprintf(output, "\n%s Restarting %s\n\n", style.Red(icons.CircleEmpty), styledName(event.GetName(), style.Teal))
+			}
 		}
-
-		// Handle output logging on the channels
 	}
 }
 

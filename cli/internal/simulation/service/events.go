@@ -15,6 +15,7 @@ func (s *ServiceLogWriter) Write(content []byte) (int, error) {
 		SimulatedService: s.service,
 		Output:           &s.output,
 		Content:          data,
+		PreviousStatus:   s.service.currentStatus,
 	}
 
 	return len(content), nil
