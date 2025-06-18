@@ -122,7 +122,7 @@ resource "google_cloud_run_v2_service" "service" {
       }
       env {
         name  = "SERVICE_ACCOUNT_EMAIL"
-        value = google_service_account.service_account.email
+        value = var.nitric.identities["gcp:iam:role"].role.email
       }
       env {
         name  = "GCP_REGION"
