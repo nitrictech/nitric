@@ -9,6 +9,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -33,7 +34,8 @@ type SimulationServer struct {
 	storagepb.UnimplementedStorageServer
 	pubsubpb.UnimplementedPubsubServer
 
-	services map[string]*service.ServiceSimulation
+	fileServerPort int
+	services       map[string]*service.ServiceSimulation
 }
 
 const DEFAULT_SERVER_PORT = "50051"
@@ -81,7 +83,6 @@ const (
 var greenCheck = style.Green(icons.Check)
 
 func (s *SimulationServer) startEntrypoints(services map[string]*service.ServiceSimulation) error {
-	// TODO: Possibly handle on multiple ports
 	serviceProxies := map[string]*httputil.ReverseProxy{}
 	for serviceName, service := range services {
 		url := &url.URL{
@@ -102,18 +103,158 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 		router := http.NewServeMux()
 
 		for route, target := range entrypoint.Routes {
-			// TODO: Handle other target types
-			targetProxy := serviceProxies[target.TargetName]
+			spec, ok := s.appSpec.ResourceIntents[target.TargetName]
+			if !ok {
+				return fmt.Errorf("resource %s does not exist", target.TargetName)
+			}
 
-			proxyLogMiddleware := middleware.ProxyLogging(styledName(entrypointName, style.Orange), styledName(target.TargetName, style.Teal), false)
+			if spec.Type != "service" && spec.Type != "bucket" {
+				return fmt.Errorf("only buckets and services can be routed to entrypoints got type :%s", spec.Type)
+			}
 
-			router.Handle(route, http.StripPrefix(strings.TrimSuffix(route, "/"), proxyLogMiddleware(targetProxy)))
+			var proxyHandler http.Handler
+			styleColor := style.Teal
+			if spec.Type == "service" {
+				proxyHandler = serviceProxies[target.TargetName]
+			} else if spec.Type == "bucket" {
+				url := &url.URL{
+					Scheme: "http",
+					Host:   fmt.Sprintf("localhost:%d", s.fileServerPort),
+					Path:   fmt.Sprintf("/%s", target.TargetName),
+				}
+				proxyHandler = httputil.NewSingleHostReverseProxy(url)
+				styleColor = style.Green
+			}
+
+			proxyLogMiddleware := middleware.ProxyLogging(styledName(entrypointName, style.Orange), styledName(target.TargetName, styleColor), false)
+			router.Handle(route, http.StripPrefix(strings.TrimSuffix(route, "/"), proxyLogMiddleware(proxyHandler)))
 		}
 
 		go http.ListenAndServe(fmt.Sprintf(":%d", reservedPort), router)
 
 		fmt.Printf("%s Starting %s http://localhost:%d\n", greenCheck, styledName(entrypointName, style.Orange), reservedPort)
 	}
+
+	return nil
+}
+
+// CopyDir copies the content of src to dst. src should be a full path.
+func (s *SimulationServer) CopyDir(dst, src string) error {
+	return afero.Walk(s.fs, src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// copy to this path
+		outpath := filepath.Join(dst, strings.TrimPrefix(path, src))
+
+		if info.IsDir() {
+			return s.fs.MkdirAll(outpath, info.Mode())
+		}
+
+		// handle irregular files
+		if !info.Mode().IsRegular() {
+			switch info.Mode().Type() & os.ModeType {
+			case os.ModeSymlink:
+				// For symlinks, we'll just copy the file contents instead
+				// since not all Afero filesystems support symlinks
+				in, err := s.fs.Open(path)
+				if err != nil {
+					return err
+				}
+				defer in.Close()
+
+				fh, err := s.fs.Create(outpath)
+				if err != nil {
+					return err
+				}
+				defer fh.Close()
+
+				_, err = io.Copy(fh, in)
+				return err
+			}
+			return nil
+		}
+
+		// copy contents of regular file efficiently
+		in, err := s.fs.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		// create output
+		fh, err := s.fs.Create(outpath)
+		if err != nil {
+			return err
+		}
+		defer fh.Close()
+
+		// make it the same
+		s.fs.Chmod(outpath, info.Mode())
+
+		// copy content
+		_, err = io.Copy(fh, in)
+		return err
+	})
+}
+
+func (s *SimulationServer) ensureBucketDir(bucketName string) (string, error) {
+	bucketDir := filepath.Join(localNitricBucketDir, bucketName)
+
+	err := s.fs.MkdirAll(bucketDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	return bucketDir, nil
+}
+
+const (
+	BUCKET_MIN_PORT = 5000
+	BUCKET_MAX_PORT = 5999
+)
+
+func (s *SimulationServer) startBuckets() error {
+	bucketIntents := s.appSpec.GetBucketIntents()
+
+	for bucketName, bucketIntent := range bucketIntents {
+		if bucketIntent.ContentPath != "" {
+			bucketDir, err := s.ensureBucketDir(bucketName)
+			if err != nil {
+				return err
+			}
+
+			err = s.CopyDir(bucketDir, filepath.Join(s.appDir, bucketIntent.ContentPath))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	router := http.NewServeMux()
+
+	// Serve files (for presigned URLS)
+	// TODO: Add origin check for an entrypoint
+	httpFs := afero.NewHttpFs(s.fs)
+	router.Handle("GET /", http.FileServer(httpFs.Dir(localNitricBucketDir)))
+
+	// TODO: Add an auth middleware for validating tokens
+	// TODO: Handle PUT methods for writing files as well
+	router.HandleFunc("PUT /{bucketName}/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "File uploads currently unimplemented", 500)
+	})
+
+	reservedPort, err := netx.GetNextPort(netx.MinPort(BUCKET_MIN_PORT), netx.MaxPort(BUCKET_MAX_PORT))
+	if err != nil {
+		return err
+	}
+
+	go http.ListenAndServe(fmt.Sprintf(":%d", reservedPort), router)
+
+	s.fileServerPort = int(reservedPort)
+
+	fmt.Printf("%s Starting file server at http://localhost:%d\n", greenCheck, reservedPort)
 
 	return nil
 }
@@ -209,6 +350,13 @@ func (s *SimulationServer) Start(output io.Writer) error {
 			return err
 		}
 		fmt.Fprint(output, "\n")
+	}
+
+	if len(s.appSpec.GetBucketIntents()) > 0 {
+		err := s.startBuckets()
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(s.appSpec.GetEntrypointIntents()) > 0 {
