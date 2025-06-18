@@ -16,16 +16,13 @@ resource "google_project_service" "required_services" {
   disable_dependent_services = false
 }
 
-# Create a random ID for the service name, so that it confirms to regex restrictions
-resource "random_string" "service_account_id" {
-  length  = 30 - length(var.nitric.stack_id)
-  special = false
-  upper   = false
+locals {
+  service_account_name = "${substr("nitric-${provider::corefunc::str_kebab(var.nitric.name)}", 0, 20)}-${var.nitric.stack_id}"
 }
 
 # Create a service account for the google cloud run instance
 resource "google_service_account" "service_account" {
-  account_id   = "${random_string.service_account_id.id}${var.nitric.stack_id}"
+  account_id   = local.service_account_name
   project      = var.project_id
   display_name = "${var.nitric.name} service account"
   description  = "Service account which runs the ${var.nitric.name}"
