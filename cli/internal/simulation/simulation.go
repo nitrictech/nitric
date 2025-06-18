@@ -210,53 +210,6 @@ func (s *SimulationServer) ensureBucketDir(bucketName string) (string, error) {
 	return bucketDir, nil
 }
 
-const (
-	BUCKET_MIN_PORT = 5000
-	BUCKET_MAX_PORT = 5999
-)
-
-func (s *SimulationServer) startBuckets() error {
-	bucketIntents := s.appSpec.GetBucketIntents()
-
-	for bucketName, bucketIntent := range bucketIntents {
-		if bucketIntent.ContentPath != "" {
-			bucketDir, err := s.ensureBucketDir(bucketName)
-			if err != nil {
-				return err
-			}
-
-			err = s.CopyDir(bucketDir, filepath.Join(s.appDir, bucketIntent.ContentPath))
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	router := http.NewServeMux()
-
-	// Serve files (for presigned URLS)
-	// TODO: Add origin check for an entrypoint
-	httpFs := afero.NewHttpFs(s.fs)
-	router.Handle("GET /", http.FileServer(httpFs.Dir(localNitricBucketDir)))
-
-	// TODO: Add an auth middleware for validating tokens
-	// TODO: Handle PUT methods for writing files as well
-	router.HandleFunc("PUT /{bucketName}/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "File uploads currently unimplemented", 500)
-	})
-
-	reservedPort, err := netx.GetNextPort(netx.MinPort(BUCKET_MIN_PORT), netx.MaxPort(BUCKET_MAX_PORT))
-	if err != nil {
-		return err
-	}
-
-	go http.ListenAndServe(fmt.Sprintf(":%d", reservedPort), router)
-
-	s.fileServerPort = int(reservedPort)
-
-	return nil
-}
-
 func (s *SimulationServer) startServices(output io.Writer) (<-chan service.ServiceEvent, error) {
 	serviceIntents := s.appSpec.GetServiceIntents()
 
