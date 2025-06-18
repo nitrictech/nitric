@@ -65,5 +65,5 @@ resource "google_storage_bucket_iam_member" "iam_access" {
 
   bucket   = google_storage_bucket.bucket.name
   role     = google_project_iam_custom_role.bucket_access_role[each.key].id
-  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].role.id}"
+  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].id}"
 }
