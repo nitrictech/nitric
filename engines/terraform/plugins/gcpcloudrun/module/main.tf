@@ -129,10 +129,6 @@ resource "google_cloud_run_v2_service" "service" {
         value = var.nitric.stack_id
       }
       env {
-        name  = "CONTAINER_PORT"
-        value = var.container_port
-      }
-      env {
         name  = "EVENT_TOKEN"
         value = random_password.event_token.result
       }

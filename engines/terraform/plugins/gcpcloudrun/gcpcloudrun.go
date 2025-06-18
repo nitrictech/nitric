@@ -16,9 +16,9 @@ type gcpcloudappService struct {
 func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	fmt.Println("Starting Cloud Run service proxy")
 	// get the container port from the environment
-	containerPort := os.Getenv("CONTAINER_PORT")
+	containerPort := os.Getenv("PORT")
 	if containerPort == "" {
-		return fmt.Errorf("CONTAINER_PORT is not set")
+		return fmt.Errorf("PORT is not set")
 	}
 
 	p := &httputil.ReverseProxy{
