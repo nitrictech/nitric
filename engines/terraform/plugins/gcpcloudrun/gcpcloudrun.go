@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
-	"os"
 
 	"github.com/nitrictech/nitric/server/runtime/service"
 )
@@ -15,11 +14,6 @@ type gcpcloudappService struct {
 
 func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	fmt.Println("Starting Cloud Run service proxy")
-	// get the container port from the environment
-	containerPort := os.Getenv("PORT")
-	if containerPort == "" {
-		return fmt.Errorf("PORT is not set")
-	}
 
 	p := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
@@ -32,8 +26,8 @@ func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", p.ServeHTTP)
 
-	fmt.Println("Starting Cloud Run service proxy on port", containerPort)
-	return http.ListenAndServe(fmt.Sprintf(":%s", containerPort), mux)
+	fmt.Println("Starting Cloud Run service proxy on port")
+	return http.ListenAndServe(fmt.Sprintf(":8080"), mux)
 }
 
 func Plugin() (service.Service, error) {
