@@ -80,67 +80,98 @@ func SpecReferenceFromToken(token string) (*SpecReference, error) {
 	}, nil
 }
 
-func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
-	for property, value := range resource.Properties {
-		module.Set(jsii.String(property), value)
+func (tf *TerraformDeployment) resolveDependencies(resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
+	if len(resource.DependsOn) == 0 {
+		return nil
+	}
 
-		// TODO: Recursive logic for mapping tokens
-		token, ok := value.(string)
-		if !ok {
-			// Skip as its already been set
-			continue
+	dependsOnResources := []*string{}
+	for _, dependsOn := range resource.DependsOn {
+		specRef, err := SpecReferenceFromToken(dependsOn)
+		if err != nil {
+			return err
 		}
 
-		specRef, err := SpecReferenceFromToken(token)
+		if specRef.Source != "infra" {
+			return fmt.Errorf("depends_on can only reference infra resources")
+		}
+
+		moduleId := fmt.Sprintf("module.%s", *tf.terraformInfraResources[specRef.Path[0]].Node().Id())
+		dependsOnResources = append(dependsOnResources, jsii.String(moduleId))
+	}
+	module.SetDependsOn(&dependsOnResources)
+	return nil
+}
+
+func (tf *TerraformDeployment) resolveValue(intentName string, value interface{}) (interface{}, error) {
+	switch v := value.(type) {
+	case string:
+		// Handle token resolution for strings
+		specRef, err := SpecReferenceFromToken(v)
 		if err != nil {
-			continue
+			return v, nil // Return original value if not a token
 		}
 
 		if specRef.Source == "infra" {
 			refName := specRef.Path[0]
 			propertyName := specRef.Path[1]
 			// map the variable output to the infra resource
-			refProperty := tf.terraformInfraResources[refName].Get(jsii.String(propertyName))
-
-			module.Set(jsii.String(property), refProperty)
+			return tf.terraformInfraResources[refName].Get(jsii.String(propertyName)), nil
 		} else if specRef.Source == "self" {
 			tfVariable, ok := tf.instancedTerraformVariables[intentName][specRef.Path[0]]
 			if !ok {
-				return fmt.Errorf("Variable %s does not exist for provided blueprint", specRef.Path[0])
+				return nil, fmt.Errorf("Variable %s does not exist for provided blueprint", specRef.Path[0])
 			}
-
-			module.Set(jsii.String(property), tfVariable.Value())
+			return tfVariable.Value(), nil
 		} else if specRef.Source == "var" {
 			tfVariable, ok := tf.terraformVariables[specRef.Path[0]]
 			if !ok {
-				return fmt.Errorf("Variable %s does not exist for this platform", specRef.Path[0])
+				return nil, fmt.Errorf("Variable %s does not exist for this platform", specRef.Path[0])
 			}
-
-			// Create a new terraform variable
-			module.Set(jsii.String(property), tfVariable.Value())
+			return tfVariable.Value(), nil
 		}
-	}
+		return v, nil
 
-	if len(resource.DependsOn) > 0 {
-		dependsOnResources := []*string{}
-		for _, dependsOn := range resource.DependsOn {
-			specRef, err := SpecReferenceFromToken(dependsOn)
+	case map[string]interface{}:
+		// Recursively process map values
+		result := make(map[string]interface{})
+		for key, val := range v {
+			resolvedVal, err := tf.resolveValue(intentName, val)
 			if err != nil {
-				return err
+				return nil, err
 			}
-
-			if specRef.Source != "infra" {
-				return fmt.Errorf("depends_on can only reference infra resources")
-			}
-
-			moduleId := fmt.Sprintf("module.%s", *tf.terraformInfraResources[specRef.Path[0]].Node().Id())
-
-			dependsOnResources = append(dependsOnResources, jsii.String(moduleId))
+			result[key] = resolvedVal
 		}
-		module.SetDependsOn(&dependsOnResources)
+		return result, nil
+
+	case []interface{}:
+		// Recursively process slice values
+		result := make([]interface{}, len(v))
+		for i, val := range v {
+			resolvedVal, err := tf.resolveValue(intentName, val)
+			if err != nil {
+				return nil, err
+			}
+			result[i] = resolvedVal
+		}
+		return result, nil
+
+	default:
+		// Return primitive values as is
+		return v, nil
+	}
+}
+
+func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resource *ResourceBlueprint, module cdktf.TerraformHclModule) error {
+	for property, value := range resource.Properties {
+		resolvedValue, err := tf.resolveValue(intentName, value)
+		if err != nil {
+			return err
+		}
+		module.Set(jsii.String(property), resolvedValue)
 	}
 
-	return nil
+	return tf.resolveDependencies(resource, module)
 }
 
 func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
