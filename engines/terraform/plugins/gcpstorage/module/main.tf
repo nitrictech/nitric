@@ -38,30 +38,32 @@ resource "google_storage_bucket" "bucket" {
   depends_on = [ google_project_service.required_services ]
 }
 
-# locals {
-#   read_actions = ["storage.objects.get", "storage.objects.list"]
-#   write_actions = ["storage.objects.create", "storage.objects.delete"]
-#   delete_actions = ["storage.objects.delete"]
-# }
+locals {
+  read_actions = ["storage.objects.get", "storage.objects.list"]
+  write_actions = ["storage.objects.create", "storage.objects.delete"]
+  delete_actions = ["storage.objects.delete"]
+}
 
-# resource "google_project_iam_custom_role" "bucket_access_role" {
-#   role_id     = "NitricBucketAccess_${random_id.bucket_id.hex}"
-#   title       = "Nitric Bucket Access"
-#   description = "Custom role that allows access to a bucket"
-#   permissions = distinct(concat(
-#       contains(each.value.actions, "read") ? local.read_actions : [],
-#       contains(each.value.actions, "write") ? local.write_actions : [],
-#       contains(each.value.actions, "delete") ? local.delete_actions : []
-#     )
-#   )
-#
-#   depends_on = [ google_project_service.required_services ]
-# }
+resource "google_project_iam_custom_role" "bucket_access_role" {
+  for_each = var.nitric.services
 
-# resource "google_storage_bucket_iam_member" "iam_access" {
-#   for_each = var.nitric.origins
+  role_id     = "NitricBucketAccess_${random_id.bucket_id.hex}"
+  title       = "Nitric Bucket Access"
+  description = "Custom role that allows access to a bucket"
+  permissions = distinct(concat(
+      contains(each.value.actions, "read") ? local.read_actions : [],
+      contains(each.value.actions, "write") ? local.write_actions : [],
+      contains(each.value.actions, "delete") ? local.delete_actions : []
+    )
+  )
 
-#   bucket   = google_storage_bucket.bucket.name
-#   role     = google_project_iam_custom_role.bucket_access_role.id
-#   member   = "serviceAccount:${each.value.service_account}"
-# }
+  depends_on = [ google_project_service.required_services ]
+}
+
+resource "google_storage_bucket_iam_member" "iam_access" {
+  for_each = var.nitric.services
+
+  bucket   = google_storage_bucket.bucket.name
+  role     = google_project_iam_custom_role.bucket_access_role[each.key].id
+  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].role.id}"
+}

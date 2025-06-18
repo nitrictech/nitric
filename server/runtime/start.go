@@ -43,22 +43,8 @@ func waitForPort(host string, port string, timeout time.Duration) error {
 	return fmt.Errorf("timeout waiting for port %s to be available", port)
 }
 
-func getServicePort() (string, error) {
-	// in the case where the cloud provider has set the port as PORT (e.g. Cloud Run), we need to use the NITRIC_GUEST_PORT environment variable
-	servicePort := os.Getenv("NITRIC_GUEST_PORT")
-	if servicePort != "" {
-		return servicePort, nil
-	}
-
-	servicePort = os.Getenv("PORT")
-	if servicePort == "" {
-		return "", fmt.Errorf("PORT environment variable not set")
-	}
-
-	return servicePort, nil
-}
-
 func Start(cmd string) {
+	fmt.Println("Starting server with command:", cmd)
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -80,18 +66,23 @@ func Start(cmd string) {
 		srv.Serve(lis)
 	}()
 
-	// Get the PORT of the local service
-	servicePort, err := getServicePort()
-	if err != nil {
-		log.Fatalf("failed to get service port: %v", err)
-	}
-
 	// Start the actual nitric service
 	cmdParts := strings.Split(cmd, " ")
 	runCmd := exec.Command(cmdParts[0], cmdParts[1:]...)
 	runCmd.Env = os.Environ()
 	runCmd.Stdout = os.Stdout
 	runCmd.Stderr = os.Stderr
+
+	// Get the PORT of the local service
+	servicePort := os.Getenv("PORT")
+	if servicePort == "" {
+		log.Fatal("PORT environment variable not set")
+	}
+
+	guestPort := os.Getenv("NITRIC_GUEST_PORT")
+	if guestPort != "" {
+		runCmd.Env = append(runCmd.Env, fmt.Sprintf("PORT=%s", guestPort))
+	}
 
 	if err := runCmd.Start(); err != nil {
 		log.Fatalf("failed to start service: %v", err)

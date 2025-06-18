@@ -1,12 +1,8 @@
 variable "nitric" {
   type = object({
     name = string
+    stack_id = string
   })
-}
-
-variable "trusted_services" {
-  type    = list(string)
-  default = ["cloudrun.googleapis.com"]
 }
 
 variable "trusted_actions" {

@@ -1,6 +1,6 @@
 output "nitric" {
   value = {
-    role = google_project_iam_custom_role.role
-    id   = google_project_iam_custom_role.role.name
+    role = google_service_account.service_account.name
+    id   = google_service_account.service_account.id
   }
 }

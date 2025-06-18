@@ -68,23 +68,6 @@ locals {
   ids_prefix = "nitric-"
 }
 
-# Create a random ID for the service name, so that it confirms to regex restrictions
-resource "random_string" "service_account_id" {
-  length  = 30 - length(local.ids_prefix)
-  special = false
-  upper   = false
-}
-
-# Create a service account for the google cloud run instance
-resource "google_service_account" "service_account" {
-  account_id   = "${local.ids_prefix}${random_string.service_account_id.id}"
-  project      = var.project_id
-  display_name = "${var.nitric.name} service account"
-  description  = "Service account which runs the ${var.nitric.name} service"
-
-  depends_on = [ google_project_service.required_services ]
-}
-
 # Create a random password for events that will target this service
 resource "random_password" "event_token" {
   length  = 32
@@ -155,7 +138,7 @@ resource "google_cloud_run_v2_service" "service" {
       }
     }
 
-    service_account = google_service_account.service_account.email
+    service_account = var.nitric.identities["gcp:iam:role"].role.id
     timeout         = "${var.timeout_seconds}s"
   }
 

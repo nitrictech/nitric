@@ -16,12 +16,19 @@ resource "google_project_service" "required_services" {
   disable_dependent_services = false
 }
 
-resource "google_project_iam_custom_role" "role" {
-  project = var.project_id
-  role_id     = var.nitric.name
-  title       = "IAM Role"
-  description = "Custom role for IAM role permissions"
-  permissions = var.trusted_actions
+# Create a random ID for the service name, so that it confirms to regex restrictions
+resource "random_string" "service_account_id" {
+  length  = 30 - length(var.nitric.stack_id)
+  special = false
+  upper   = false
+}
+
+# Create a service account for the google cloud run instance
+resource "google_service_account" "service_account" {
+  account_id   = "${random_string.service_account_id.id}${var.nitric.stack_id}"
+  project      = var.project_id
+  display_name = "${var.nitric.name} service account"
+  description  = "Service account which runs the ${var.nitric.name}"
 
   depends_on = [ google_project_service.required_services ]
 }

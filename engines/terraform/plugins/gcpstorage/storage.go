@@ -61,6 +61,9 @@ func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, er
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
+			fmt.Println("bucket", b.Name)
+			fmt.Println("stack id", s.nitricStackId)
+
 			if b.Name == fmt.Sprintf("%s-%s", bucket, s.nitricStackId) {
 				s.cache[b.Name] = s.client.Bucket(b.Name)
 			}
