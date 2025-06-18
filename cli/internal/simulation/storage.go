@@ -22,21 +22,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const localNitricBucketDir = "./.nitric/buckets"
-
-func bucketDirFromAppDir(appDir string) string {
-	return filepath.Join(appDir, localNitricBucketDir)
-}
-
-func ensureBucketDir(appDir, bucketName string) (string, error) {
-	bucketPath := filepath.Join(bucketDirFromAppDir(appDir), bucketName)
-	err := os.MkdirAll(bucketPath, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-	return bucketPath, nil
-}
-
 var (
 	signingSecret     *string = nil
 	signingSecretLock sync.Mutex
@@ -97,21 +82,10 @@ func requestFromToken(token string) (*storagepb.StoragePreSignUrlRequest, error)
 	}, nil
 }
 
-func (s *SimulationServer) bucketFilepath(bucketName, blobName string) (string, error) {
-	blobPath := filepath.Join(s.appDir, localNitricBucketDir, bucketName, blobName)
-
-	err := os.MkdirAll(filepath.Dir(blobPath), os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	return blobPath, nil
-}
-
 func (s *SimulationServer) Delete(ctx context.Context, req *storagepb.StorageDeleteRequest) (*storagepb.StorageDeleteResponse, error) {
-	path, err := s.bucketFilepath(req.BucketName, req.Key)
+	path, err := GetBlobPath(s.appDir, req.BucketName, req.Key)
 	if err != nil {
-
+		return nil, err
 	}
 
 	err = s.fs.Remove(path)
@@ -123,7 +97,7 @@ func (s *SimulationServer) Delete(ctx context.Context, req *storagepb.StorageDel
 }
 
 func (s *SimulationServer) Exists(ctx context.Context, req *storagepb.StorageExistsRequest) (*storagepb.StorageExistsResponse, error) {
-	path, err := s.bucketFilepath(req.BucketName, req.Key)
+	path, err := GetBlobPath(s.appDir, req.BucketName, req.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +113,11 @@ func (s *SimulationServer) Exists(ctx context.Context, req *storagepb.StorageExi
 }
 
 func (s *SimulationServer) ListBlobs(ctx context.Context, req *storagepb.StorageListBlobsRequest) (*storagepb.StorageListBlobsResponse, error) {
-	path := filepath.Join(s.appDir, localNitricBucketDir, req.BucketName)
+	path, err := GetBucketPath(s.appDir, req.BucketName)
+	if err != nil {
+		return nil, err
+	}
+
 	files, err := afero.ReadDir(s.fs, path)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
@@ -163,7 +141,7 @@ func (s *SimulationServer) ListBlobs(ctx context.Context, req *storagepb.Storage
 
 func (s *SimulationServer) PreSignUrl(ctx context.Context, req *storagepb.StoragePreSignUrlRequest) (*storagepb.StoragePreSignUrlResponse, error) {
 	// Call to ensure the bucket exists
-	_, err := s.bucketFilepath(req.BucketName, req.Key)
+	_, err := GetBlobPath(s.appDir, req.BucketName, req.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +179,7 @@ func (s *SimulationServer) PreSignUrl(ctx context.Context, req *storagepb.Storag
 }
 
 func (s *SimulationServer) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {
-	path, err := s.bucketFilepath(req.BucketName, req.Key)
+	path, err := GetBlobPath(s.appDir, req.BucketName, req.Key)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
@@ -219,7 +197,7 @@ func (s *SimulationServer) Read(ctx context.Context, req *storagepb.StorageReadR
 }
 
 func (s *SimulationServer) Write(ctx context.Context, req *storagepb.StorageWriteRequest) (*storagepb.StorageWriteResponse, error) {
-	path, err := s.bucketFilepath(req.BucketName, req.Key)
+	path, err := GetBlobPath(s.appDir, req.BucketName, req.Key)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
@@ -268,7 +246,7 @@ func (s *SimulationServer) startBuckets() error {
 	// Serve files (for presigned URLS)
 	// TODO: Add origin check for an entrypoint
 	httpFs := afero.NewHttpFs(s.fs)
-	router.Handle("GET /", http.FileServer(httpFs.Dir(localNitricBucketDir)))
+	router.Handle("GET /", http.FileServer(httpFs.Dir(BucketsDir)))
 
 	router.HandleFunc("GET /read/{token}", func(w http.ResponseWriter, r *http.Request) {
 		token := r.PathValue("token")
@@ -350,8 +328,6 @@ func (s *SimulationServer) startBuckets() error {
 	go http.ListenAndServe(fmt.Sprintf(":%d", reservedPort), handler)
 
 	s.fileServerPort = int(reservedPort)
-
-	fmt.Printf("%s Starting file server at http://localhost:%d\n", greenCheck, reservedPort)
 
 	return nil
 }
