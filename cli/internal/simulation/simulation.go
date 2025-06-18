@@ -40,6 +40,8 @@ type SimulationServer struct {
 
 const DEFAULT_SERVER_PORT = "50051"
 
+const localNitricServiceDir = "./.nitric/services"
+
 var nitric = style.Purple(icons.Lightning + " Nitric")
 
 func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
@@ -248,12 +250,30 @@ func (s *SimulationServer) startServices(output io.Writer) (<-chan service.Servi
 	return combinedEventsChan, nil
 }
 
-func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan service.ServiceEvent) {
+func (s *SimulationServer) handleServiceOutputs(output io.Writer, fs afero.Fs, logPath string, events <-chan service.ServiceEvent) {
+
+	fs.MkdirAll(logPath, os.ModePerm)
 
 	serviceWriters := make(map[string]io.Writer, len(s.appSpec.GetServiceIntents()))
+	serviceLogs := make(map[string]io.WriteCloser, len(s.appSpec.GetServiceIntents()))
 	for serviceName := range s.appSpec.GetServiceIntents() {
 		serviceWriters[serviceName] = NewPrefixWriter(styledName(serviceName, style.Teal)+" ", output)
+		// Create/clear the log file
+		serviceLogPath := filepath.Join(logPath, serviceName+".log")
+		fs.Remove(serviceLogPath)
+		fs.Create(serviceLogPath)
+		file, err := fs.OpenFile(serviceLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("failed to open log file for service %s: %v", serviceName, err)
+		}
+		serviceLogs[serviceName] = file
 	}
+
+	defer func() {
+		for _, log := range serviceLogs {
+			log.Close()
+		}
+	}()
 
 	for {
 		event := <-events
@@ -265,6 +285,10 @@ func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan 
 			} else {
 				log.Fatalf("failed to retrieve output writer for service %s", event.GetName())
 			}
+		}
+
+		if log, ok := serviceLogs[event.GetName()]; ok {
+			log.Write(event.Content)
 		}
 
 		if event.PreviousStatus != event.GetStatus() {
@@ -320,7 +344,7 @@ func (s *SimulationServer) Start(output io.Writer) error {
 	}
 
 	// block on handling service outputs for now
-	s.handleServiceOutputs(output, svcEvents)
+	s.handleServiceOutputs(output, s.fs, filepath.Join(localNitricServiceDir, "logs"), svcEvents)
 
 	return nil
 }
