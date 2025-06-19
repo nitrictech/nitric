@@ -27,9 +27,9 @@ func (a *gcpcloudappService) Start(proxy service.Proxy) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", p.ServeHTTP)
 
-	port := os.Getenv("NITRIC_GUEST_PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
-		return fmt.Errorf("NITRIC_GUEST_PORT environment variable not set")
+		return fmt.Errorf("PORT environment variable not set")
 	}
 
 	fmt.Printf("Starting Cloud Run service proxy on port %s\n", port)
