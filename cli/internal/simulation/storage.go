@@ -229,7 +229,7 @@ func (s *SimulationServer) startBuckets() error {
 
 	for bucketName, bucketIntent := range bucketIntents {
 		if bucketIntent.ContentPath != "" {
-			bucketDir, err := s.ensureBucketDir(bucketName)
+			bucketDir, err := GetBucketPath(s.appDir, bucketName)
 			if err != nil {
 				return err
 			}
