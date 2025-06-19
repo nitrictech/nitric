@@ -138,7 +138,7 @@ resource "google_cloud_run_v2_service" "service" {
       }
     }
 
-    service_account = var.nitric.identities["gcp:iam:role"].id
+    service_account = var.nitric.identities["gcp:iam:role"].role
     timeout         = "${var.timeout_seconds}s"
   }
 
