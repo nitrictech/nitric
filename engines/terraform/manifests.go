@@ -55,8 +55,6 @@ func init() {
 				return err
 			}
 
-			fmt.Println(identityManifest.Name)
-
 			identityManifests[identityManifest.Name] = &identityManifest
 		} else {
 			var resourceManifest ResourcePluginManifest
