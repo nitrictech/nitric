@@ -42,7 +42,7 @@ locals {
 resource "google_project_iam_custom_role" "bucket_access_role" {
   for_each = var.nitric.services
 
-  role_id     = "BucketAccess_${substr("${var.nitric.name}_${each.key}", 0, 50)}-${var.nitric.stack_id}"
+  role_id     = "BucketAccess_${substr("${var.nitric.name}_${each.key}", 0, 40)}_${var.nitric.stack_id}"
 
   project     = var.project_id
   title       = "${each.key} Bucket Access For ${var.nitric.name}"
@@ -58,12 +58,10 @@ resource "google_project_iam_custom_role" "bucket_access_role" {
   depends_on = [ google_project_service.required_services ]
 }
 
-resource "google_storage_bucket_iam_member" "iam_access" {
+resource "google_project_iam_member" "iam_access" {
   for_each = var.nitric.services
 
-  bucket   = google_storage_bucket.bucket.name
+  project = var.project_id
   role     = google_project_iam_custom_role.bucket_access_role[each.key].name
   member   = "serviceAccount:${each.value.identities["gcp:iam:role"].role}"
-
-  depends_on = [google_project_iam_custom_role.bucket_access_role]
 }

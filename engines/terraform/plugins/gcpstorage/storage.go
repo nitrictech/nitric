@@ -52,7 +52,6 @@ func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, er
 	bucketName := fmt.Sprintf("%s-%s", bucket, s.nitricStackId)
 	if s.cache == nil {
 		buckets := s.client.Buckets(context.Background(), s.projectID)
-		fmt.Println("buckets", buckets)
 		s.cache = make(map[string]*storage.BucketHandle)
 		for {
 			b, err := buckets.Next()
