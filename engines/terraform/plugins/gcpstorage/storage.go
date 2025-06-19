@@ -51,6 +51,7 @@ var _ storagepb.StorageServer = &cloudStorage{}
 func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, error) {
 	if s.cache == nil {
 		buckets := s.client.Buckets(context.Background(), s.projectID)
+		fmt.Println("buckets", buckets)
 		s.cache = make(map[string]*storage.BucketHandle)
 		for {
 			b, err := buckets.Next()
@@ -61,8 +62,8 @@ func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, er
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			fmt.Println("bucket", b.Name)
-			fmt.Println("stack id", s.nitricStackId)
+			fmt.Println("bucket searched: ", b.Name)
+			fmt.Println("bucket expected: ", fmt.Sprintf("%s-%s", bucket, s.nitricStackId))
 
 			if b.Name == fmt.Sprintf("%s-%s", bucket, s.nitricStackId) {
 				s.cache[b.Name] = s.client.Bucket(b.Name)
