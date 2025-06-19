@@ -15,11 +15,11 @@ type ServiceIntent struct {
 }
 
 type ServiceTrigger struct {
-	Schedule *Schedule      `json:"schedule" yaml:"schedule" jsonschema:"oneof_required=schedule"`
-	Topic    *TopicTrigger  `json:"topic" yaml:"topic" jsonschema:"oneof_required=topic"`
-	Bucket   *BucketTrigger `json:"bucket" yaml:"bucket" jsonschema:"oneof_required=bucket"`
+	Schedule *Schedule      `json:"schedule,omitempty" yaml:"schedule,omitempty" jsonschema:"oneof_required=schedule"`
+	Topic    *TopicTrigger  `json:"topic,omitempty" yaml:"topic,omitempty" jsonschema:"oneof_required=topic"`
+	Bucket   *BucketTrigger `json:"bucket,omitempty" yaml:"bucket,omitempty" jsonschema:"oneof_required=bucket"`
 
-	Path string `json:"path" yaml:"path" jsonschema:"oneof_required=path"`
+	Path string `json:"path" yaml:"path" jsonschema:"required"`
 }
 
 type TopicTrigger struct {
@@ -32,9 +32,7 @@ type BucketTrigger struct {
 }
 
 type Schedule struct {
-	CronExpression string `json:"cron_expression" yaml:"cron_expression" jsonschema:"oneof_required=cron_expression"`
-	Interval       string `json:"interval" yaml:"interval" jsonschema:"oneof_required=interval"`
-	Timezone       string `json:"timezone" yaml:"timezone"`
+	CronExpression string `json:"cron_expression,omitempty" yaml:"cron_expression,omitempty" jsonschema:"oneof_required=cron_expression"`
 }
 
 type Dev struct {

@@ -3,6 +3,10 @@ variable "nitric" {
     name       = string
     stack_id   = string
     image_id   = string
+    schedules  = optional(map(object({
+      cron_expression = string
+      path            = string
+    })), {})
     env        = map(string)
     identities = map(any)
   })
