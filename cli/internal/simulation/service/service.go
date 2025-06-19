@@ -156,6 +156,10 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 }
 
 func NewServiceSimulation(name string, intent schema.ServiceIntent, port netx.ReservedPort) (*ServiceSimulation, <-chan ServiceEvent, error) {
+	if intent.Dev == nil {
+		return nil, nil, fmt.Errorf("service does not have a dev configuration and cannot be started")
+	}
+
 	if intent.Dev.Script == "" {
 		return nil, nil, fmt.Errorf("service does not have a dev script and cannot be started")
 	}
