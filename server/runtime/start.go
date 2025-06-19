@@ -73,15 +73,13 @@ func Start(cmd string) {
 	runCmd.Stdout = os.Stdout
 	runCmd.Stderr = os.Stderr
 
-	// Get the PORT of the local service
-	servicePort := os.Getenv("PORT")
-	if servicePort == "" {
-		log.Fatal("PORT environment variable not set")
+	servicePort := os.Getenv("NITRIC_GUEST_PORT")
+	if servicePort != "" {
+		servicePort = os.Getenv("PORT")
 	}
 
-	guestPort := os.Getenv("NITRIC_GUEST_PORT")
-	if guestPort != "" {
-		runCmd.Env = append(runCmd.Env, fmt.Sprintf("PORT=%s", guestPort))
+	if servicePort == "" {
+		log.Fatal("PORT environment variable not set")
 	}
 
 	if err := runCmd.Start(); err != nil {
