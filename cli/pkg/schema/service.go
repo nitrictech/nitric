@@ -6,7 +6,7 @@ type ServiceIntent struct {
 
 	Dev *Dev `json:"dev,omitempty" yaml:"dev,omitempty"`
 
-	Triggers *ServiceTrigger
+	Triggers *ServiceTrigger `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 
 	// Only used for schema generation, will always be nil. Do not use or remove.
 	ServiceSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=service"`
