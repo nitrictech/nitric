@@ -40,7 +40,7 @@ resource "google_storage_bucket" "bucket" {
 
 locals {
   read_actions = ["storage.objects.get", "storage.objects.list"]
-  write_actions = ["storage.objects.create", "storage.objects.delete"]
+  write_actions = ["storage.objects.create", "storage.objects.delete", "storage.objects.update"]
   delete_actions = ["storage.objects.delete"]
 }
 
@@ -51,6 +51,7 @@ resource "google_project_iam_custom_role" "bucket_access_role" {
   title       = "Nitric Bucket Access"
   description = "Custom role that allows access to a bucket"
   permissions = distinct(concat(
+      "storage.buckets.list",
       contains(each.value.actions, "read") ? local.read_actions : [],
       contains(each.value.actions, "write") ? local.write_actions : [],
       contains(each.value.actions, "delete") ? local.delete_actions : []
