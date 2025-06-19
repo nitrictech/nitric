@@ -49,6 +49,7 @@ type cloudStorage struct {
 var _ storagepb.StorageServer = &cloudStorage{}
 
 func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, error) {
+	bucketName := fmt.Sprintf("%s-%s", bucket, s.nitricStackId)
 	if s.cache == nil {
 		buckets := s.client.Buckets(context.Background(), s.projectID)
 		fmt.Println("buckets", buckets)
@@ -62,16 +63,13 @@ func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, er
 				return nil, fmt.Errorf("an error occurred finding bucket: %s; %w", bucket, err)
 			}
 
-			fmt.Println("bucket searched: ", b.Name)
-			fmt.Println("bucket expected: ", fmt.Sprintf("%s-%s", bucket, s.nitricStackId))
-
-			if b.Name == fmt.Sprintf("%s-%s", bucket, s.nitricStackId) {
+			if b.Name == bucketName {
 				s.cache[b.Name] = s.client.Bucket(b.Name)
 			}
 		}
 	}
 
-	if b, ok := s.cache[bucket]; ok {
+	if b, ok := s.cache[bucketName]; ok {
 		return b, nil
 	}
 

@@ -48,10 +48,11 @@ resource "google_project_iam_custom_role" "bucket_access_role" {
   for_each = var.nitric.services
 
   role_id     = "NitricBucketAccess_${random_id.bucket_id.hex}"
+  project     = var.project_id
   title       = "Nitric Bucket Access"
   description = "Custom role that allows access to a bucket"
   permissions = distinct(concat(
-      "storage.buckets.list",
+      ["storage.buckets.list"],
       contains(each.value.actions, "read") ? local.read_actions : [],
       contains(each.value.actions, "write") ? local.write_actions : [],
       contains(each.value.actions, "delete") ? local.delete_actions : []
@@ -66,5 +67,5 @@ resource "google_storage_bucket_iam_member" "iam_access" {
 
   bucket   = google_storage_bucket.bucket.name
   role     = google_project_iam_custom_role.bucket_access_role[each.key].id
-  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].id}"
+  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].role}"
 }
