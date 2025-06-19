@@ -4,7 +4,7 @@ type: identity
 identity_type: gcp:iam:role
 deployment:
   # NOTE: // is required to reference a sub-path of repository for terraform modules
-  terraform: github.com/HomelessDinosaur/nitric//engines/terraform/plugins/gcpiamserviceaccount/module?depth=1&ref=gcp-cloud-run
+  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/gcpiamserviceaccount/module?depth=1&ref=next
 
 inputs:
 
