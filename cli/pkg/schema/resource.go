@@ -11,12 +11,12 @@ type Resource struct {
 	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty" jsonschema:"-"`
 
 	// A resource can contain oneof the following sets of keys (see JSONSchemaExtended)
-	*ServiceIntent      `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*BucketIntent       `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*EntrypointIntent   `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*SubscriptionIntent `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*DatabaseIntent     `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
-	*StateIntent        `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*ServiceIntent    `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*BucketIntent     `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*EntrypointIntent `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*TopicIntent      `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*DatabaseIntent   `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
+	*StateIntent      `json:",inline,omitempty" yaml:",inline,omitempty" jsonschema:"-"`
 }
 
 func (r Resource) IsAccessible() (map[string][]string, bool) {
@@ -31,12 +31,12 @@ func (r Resource) IsAccessible() (map[string][]string, bool) {
 
 // schema types defined for the output schema
 var schemaTypes = map[string]interface{}{
-	"ServiceResource":      ServiceIntent{},
-	"BucketResource":       BucketIntent{},
-	"EntrypointResource":   EntrypointIntent{},
-	"SubscriptionResource": SubscriptionIntent{},
-	"DatabaseResource":     DatabaseIntent{},
-	"StateResource":        StateIntent{},
+	"ServiceResource":    ServiceIntent{},
+	"BucketResource":     BucketIntent{},
+	"EntrypointResource": EntrypointIntent{},
+	"DatabaseResource":   DatabaseIntent{},
+	"StateResource":      StateIntent{},
+	"TopicResource":      TopicIntent{},
 }
 
 func (Resource) JSONSchemaExtend(schema *jsonschema.Schema) {
