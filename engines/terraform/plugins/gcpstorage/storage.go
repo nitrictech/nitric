@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/ettle/strcase"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 	nitricStorage "github.com/nitrictech/nitric/server/runtime/storage"
 )
@@ -49,7 +50,7 @@ type cloudStorage struct {
 var _ storagepb.StorageServer = &cloudStorage{}
 
 func (s *cloudStorage) getBucketByName(bucket string) (*storage.BucketHandle, error) {
-	bucketName := fmt.Sprintf("%s-%s", bucket, s.nitricStackId)
+	bucketName := fmt.Sprintf("%s-%s", strcase.ToKebab(bucket), s.nitricStackId)
 	if s.cache == nil {
 		buckets := s.client.Buckets(context.Background(), s.projectID)
 		s.cache = make(map[string]*storage.BucketHandle)
