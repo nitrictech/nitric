@@ -63,7 +63,7 @@ resource "google_project_iam_member" "iam_access" {
 
   project = var.project_id
   role     = google_project_iam_custom_role.bucket_access_role[each.key].name
-  member   = "serviceAccount:${each.value.identities["gcp:iam:service_account"].role}"
+  member   = "serviceAccount:${each.value.identities["gcp:iam:role"].role}"
 }
 
 locals {

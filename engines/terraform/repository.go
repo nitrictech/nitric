@@ -56,7 +56,7 @@ var platformSpecs = map[string]*PlatformSpec{
 				IdentitiesBlueprint: &IdentitiesBlueprint{
 					Identities: []ResourceBlueprint{
 						{
-							PluginId:   "nitric-gcp-iam-role",
+							PluginId:   "nitric-gcp-iam-service-account",
 							Properties: map[string]interface{}{},
 						},
 					},
