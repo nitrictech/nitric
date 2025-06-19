@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/nitrictech/nitric/cli/internal/auth/token"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/workos"
@@ -46,6 +47,14 @@ func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Re
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 
+			p.done <- err
+			return
+		}
+
+		err = token.StoreWorkosToken(res)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 			p.done <- err
 			return
 		}
