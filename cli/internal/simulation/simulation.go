@@ -40,8 +40,6 @@ type SimulationServer struct {
 
 const DEFAULT_SERVER_PORT = "50051"
 
-const localNitricServiceDir = "./.nitric/services"
-
 var nitric = style.Purple(icons.Lightning + " Nitric")
 
 func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
@@ -201,17 +199,6 @@ func (s *SimulationServer) CopyDir(dst, src string) error {
 	})
 }
 
-func (s *SimulationServer) ensureBucketDir(bucketName string) (string, error) {
-	bucketDir := filepath.Join(localNitricBucketDir, bucketName)
-
-	err := s.fs.MkdirAll(bucketDir, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	return bucketDir, nil
-}
-
 func (s *SimulationServer) startServices(output io.Writer) (<-chan service.ServiceEvent, error) {
 	serviceIntents := s.appSpec.GetServiceIntents()
 
@@ -250,19 +237,24 @@ func (s *SimulationServer) startServices(output io.Writer) (<-chan service.Servi
 	return combinedEventsChan, nil
 }
 
-func (s *SimulationServer) handleServiceOutputs(output io.Writer, fs afero.Fs, logPath string, events <-chan service.ServiceEvent) {
+func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan service.ServiceEvent) {
 
-	fs.MkdirAll(logPath, os.ModePerm)
+	s.fs.MkdirAll(ServicesLogsDir, os.ModePerm)
 
 	serviceWriters := make(map[string]io.Writer, len(s.appSpec.GetServiceIntents()))
 	serviceLogs := make(map[string]io.WriteCloser, len(s.appSpec.GetServiceIntents()))
 	for serviceName := range s.appSpec.GetServiceIntents() {
 		serviceWriters[serviceName] = NewPrefixWriter(styledName(serviceName, style.Teal)+" ", output)
-		// Create/clear the log file
-		serviceLogPath := filepath.Join(logPath, serviceName+".log")
-		fs.Remove(serviceLogPath)
-		fs.Create(serviceLogPath)
-		file, err := fs.OpenFile(serviceLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+		serviceLogPath, err := GetServiceLogPath(s.appDir, serviceName)
+		if err != nil {
+			log.Fatalf("failed to get service log path for service %s: %v", serviceName, err)
+		}
+
+		s.fs.Remove(serviceLogPath)
+		s.fs.Create(serviceLogPath)
+
+		file, err := s.fs.OpenFile(serviceLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("failed to open log file for service %s: %v", serviceName, err)
 		}
@@ -344,7 +336,7 @@ func (s *SimulationServer) Start(output io.Writer) error {
 	}
 
 	// block on handling service outputs for now
-	s.handleServiceOutputs(output, s.fs, filepath.Join(localNitricServiceDir, "logs"), svcEvents)
+	s.handleServiceOutputs(output, svcEvents)
 
 	return nil
 }
