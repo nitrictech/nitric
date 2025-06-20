@@ -5,9 +5,12 @@ required_identities:
   - aws:iam:role
 deployment:
   # NOTE: // is required to reference a sub-path of repository for terraform modules
-  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/awss3/module?depth=1&ref=next
+  terraform:
+    resource: github.com/nitrictech/nitric//engines/terraform/plugins/awss3/module?depth=1&ref=next
+    subscription: github.com/nitrictech/nitric//engines/terraform/plugins/awss3/subscription?depth=1&ref=next
 runtime:
   go_module: github.com/nitrictech/nitric/engines/terraform/plugins/awss3
+
 
 inputs:
 

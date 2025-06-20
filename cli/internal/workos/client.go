@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 const DEFAULT_HOSTNAME = "api.workos.com"
@@ -52,6 +53,21 @@ type AuthenticationResponse struct {
 	AccessToken  string
 	RefreshToken string
 	User         User
+}
+
+type JWKsResponse struct {
+	Keys []JWK `json:"keys"`
+}
+
+type JWK struct {
+	Kty     string   `json:"kty"`
+	Kid     string   `json:"kid"`
+	Use     string   `json:"use"`
+	Alg     string   `json:"alg"`
+	N       string   `json:"n"`
+	E       string   `json:"e"`
+	X5c     []string `json:"x5c"`
+	X5tS256 string   `json:"x5t#S256"`
 }
 
 // Authorization URL options
@@ -131,6 +147,42 @@ func WithScheme(scheme string) ClientOption {
 	}
 }
 
+func (h *HttpClient) GetJWK(kid string) (JWK, error) {
+	jwks, err := h.GetJWKs()
+	if err != nil {
+		return JWK{}, err
+	}
+
+	for _, jwk := range jwks {
+		if jwk.Kid == kid {
+			return jwk, nil
+		}
+	}
+
+	return JWK{}, fmt.Errorf("JWK not found")
+}
+
+func (h *HttpClient) GetJWKs() ([]JWK, error) {
+	jwkPath := path.Join("sso/jwks", h.clientID)
+
+	response, err := h.get(jwkPath)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var jwksResponse JWKsResponse
+	if err := json.Unmarshal(body, &jwksResponse); err != nil {
+		return nil, err
+	}
+
+	return jwksResponse.Keys, nil
+}
+
 // AuthenticateWithCode authenticates using an authorization code
 func (h *HttpClient) AuthenticateWithCode(code, codeVerifier string) (*AuthenticationResponse, error) {
 	body := map[string]interface{}{
@@ -186,6 +238,57 @@ func (h *HttpClient) post(path string, body map[string]interface{}) (*http.Respo
 	req.Header.Set("Content-Type", "application/json")
 
 	return h.client.Do(req)
+}
+
+func (h *HttpClient) get(path string) (*http.Response, error) {
+	baseURL, err := url.Parse(h.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	fullURL := baseURL.JoinPath(path)
+
+	req, err := http.NewRequest("GET", fullURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+
+	return h.client.Do(req)
+}
+
+// AuthenticateWithRefreshToken authenticates using a refresh token
+func (h *HttpClient) AuthenticateWithRefreshToken(refreshToken string, organizationId *string) (*AuthenticationResponse, error) {
+	body := map[string]interface{}{
+		"client_id":     h.clientID,
+		"grant_type":    "refresh_token",
+		"refresh_token": refreshToken,
+	}
+
+	if organizationId != nil {
+		body["organization_id"] = *organizationId
+	}
+
+	response, err := h.post("/user_management/authenticate", body)
+	if err != nil {
+		return nil, err
+	}
+
+	resBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode == http.StatusOK {
+		var data AuthenticationResponseRaw
+		if err := json.Unmarshal(resBody, &data); err != nil {
+			return nil, err
+		}
+		return deserializeAuthenticationResponse(data), nil
+	}
+
+	return nil, &RefreshError{Message: fmt.Sprintf("Error authenticating with API, status: %d, body: %s", response.StatusCode, string(resBody))}
 }
 
 // GetAuthorizationUrl generates an authorization URL

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nitrictech/nitric/cli/internal/auth/token"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/workos"
@@ -21,7 +20,8 @@ type Auth interface {
 
 // TODO: These values are not secret, but we may want to pull them remotely incase of a change.
 var AUTH_SERVER_PORT = 54321
-var workosClient = workos.NewHttpClient("client_01JXRX76QGQMDJ621V6B16RVED")
+var WORKOS_CLIENT_ID = "client_01JXRX76QGQMDJ621V6B16RVED"
+var workosClient = workos.NewHttpClient(WORKOS_CLIENT_ID)
 
 type WorkOsPKCE struct {
 	pkceChallenge  *workos.CodeVerifier
@@ -51,7 +51,7 @@ func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		err = token.StoreWorkosToken(res)
+		err = StoreWorkosToken(res)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))

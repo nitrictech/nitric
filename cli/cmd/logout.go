@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nitrictech/nitric/cli/internal/auth/token"
+	"github.com/nitrictech/nitric/cli/internal/auth"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/spf13/cobra"
@@ -16,8 +16,8 @@ var logoutCmd = &cobra.Command{
 	Long:  `Logout from the Nitric CLI.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := token.DeleteWorkosToken()
-		if err != nil && !errors.Is(err, token.ErrNotFound) {
+		err := auth.DeleteWorkosToken()
+		if err != nil && !errors.Is(err, auth.ErrNotFound) {
 			fmt.Printf("\n%s Error logging out: %s\n", style.Red(icons.Cross), err)
 			return
 		}
