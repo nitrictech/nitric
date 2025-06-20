@@ -103,6 +103,26 @@ func (tf *TerraformDeployment) resolveDependencies(resource *ResourceBlueprint, 
 	return nil
 }
 
+func (tf *TerraformDeployment) resolveInfraResource(infraName string) (cdktf.TerraformHclModule, error) {
+	resource, ok := tf.engine.platform.InfraSpecs[infraName]
+	if !ok {
+		return nil, fmt.Errorf("infra resource %s not found", infraName)
+	}
+
+	if _, ok := tf.terraformInfraResources[infraName]; !ok {
+		plugin, err := tf.engine.repository.GetResourcePlugin(resource.PluginId)
+		if err != nil {
+			return nil, err
+		}
+
+		tf.terraformInfraResources[infraName] = cdktf.NewTerraformHclModule(tf.stack, jsii.String(infraName), &cdktf.TerraformHclModuleConfig{
+			Source: jsii.String(plugin.Deployment.Terraform),
+		})
+	}
+
+	return tf.terraformInfraResources[infraName], nil
+}
+
 func (tf *TerraformDeployment) resolveValue(intentName string, value interface{}) (interface{}, error) {
 	switch v := value.(type) {
 	case string:
@@ -115,8 +135,13 @@ func (tf *TerraformDeployment) resolveValue(intentName string, value interface{}
 		if specRef.Source == "infra" {
 			refName := specRef.Path[0]
 			propertyName := specRef.Path[1]
+
+			infraResource, err := tf.resolveInfraResource(refName)
+			if err != nil {
+				return nil, err
+			}
 			// map the variable output to the infra resource
-			return tf.terraformInfraResources[refName].Get(jsii.String(propertyName)), nil
+			return infraResource.Get(jsii.String(propertyName)), nil
 		} else if specRef.Source == "self" {
 			tfVariable, ok := tf.instancedTerraformVariables[intentName][specRef.Path[0]]
 			if !ok {
@@ -371,31 +396,12 @@ func (e *TerraformDeployment) createVariablesForIntent(intentName string, intent
 func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	tfDeployment := NewTerraformDeployment(e, appSpec.Name)
 
-	// Create a terraform variable to establish the root context for application builds
-	// this will be prepended to the path of any internal docker builds
-	// tfDeployment.terraformVariables["build_root"] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String("build_root"), &cdktf.TerraformVariableConfig{
-	// 	Type: jsii.String("string"),
-	// })
-
 	// Create platform variables ahead of time
 	for varName, variableSpec := range e.platform.Variables {
 		tfDeployment.terraformVariables[varName] = cdktf.NewTerraformVariable(tfDeployment.stack, jsii.String(varName), &cdktf.TerraformVariableConfig{
 			Description: jsii.String(variableSpec.Description),
 			Default:     variableSpec.Default,
 			Type:        jsii.String(variableSpec.Type),
-		})
-	}
-
-	// Resolve infra modules
-	for infraName, infra := range e.platform.InfraSpecs {
-		plugin, err := e.repository.GetResourcePlugin(infra.PluginId)
-		if err != nil {
-			return err
-		}
-
-		tfDeployment.terraformInfraResources[infraName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(infraName), &cdktf.TerraformHclModuleConfig{
-			// TODO: This assumes that the plugin is resolvable as a URI
-			Source: jsii.String(plugin.Deployment.Terraform),
 		})
 	}
 
@@ -614,9 +620,13 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve infra tokens
-	for infraName, infra := range e.platform.InfraSpecs {
+	for infraName, infra := range tfDeployment.terraformInfraResources {
+		infraSpec, ok := e.platform.InfraSpecs[infraName]
+		if !ok {
+			return fmt.Errorf("infra resource %s not found", infraName)
+		}
 		// TODO: This is overloading this method as infra-name is not usable in this context as infra cannot resolve `self` tokens
-		err := tfDeployment.resolveTokensForModule(infraName, infra, tfDeployment.terraformInfraResources[infraName])
+		err := tfDeployment.resolveTokensForModule(infraName, infraSpec, infra)
 		if err != nil {
 			return err
 		}
