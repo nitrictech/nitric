@@ -96,6 +96,11 @@ func (tf *TerraformDeployment) resolveDependencies(resource *ResourceBlueprint, 
 			return fmt.Errorf("depends_on can only reference infra resources")
 		}
 
+		if _, ok := tf.terraformInfraResources[specRef.Path[0]]; !ok {
+			// Infra resource has not already been resolved so this dependency won't exist at all
+			continue
+		}
+
 		moduleId := fmt.Sprintf("module.%s", *tf.terraformInfraResources[specRef.Path[0]].Node().Id())
 		dependsOnResources = append(dependsOnResources, jsii.String(moduleId))
 	}
@@ -196,7 +201,7 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 		module.Set(jsii.String(property), resolvedValue)
 	}
 
-	return tf.resolveDependencies(resource, module)
+	return nil
 }
 
 func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
@@ -627,6 +632,32 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 		// TODO: This is overloading this method as infra-name is not usable in this context as infra cannot resolve `self` tokens
 		err := tfDeployment.resolveTokensForModule(infraName, infraSpec, infra)
+		if err != nil {
+			return err
+		}
+	}
+
+	// resolve dependencies for all created modules
+	for resourceName, resource := range appSpec.ResourceIntents {
+		resourceSpec, err := e.platform.GetResourceBlueprint(resource.Type, resource.SubType)
+		if err != nil {
+			return err
+		}
+
+		err = tfDeployment.resolveDependencies(resourceSpec, tfDeployment.terraformResources[resourceName])
+		if err != nil {
+			return err
+		}
+	}
+
+	// resolve dependencies for all created infrastructure
+	for infraName, infra := range tfDeployment.terraformInfraResources {
+		infraSpec, ok := e.platform.InfraSpecs[infraName]
+		if !ok {
+			return fmt.Errorf("infra resource %s not found", infraName)
+		}
+
+		err := tfDeployment.resolveDependencies(infraSpec, infra)
 		if err != nil {
 			return err
 		}
