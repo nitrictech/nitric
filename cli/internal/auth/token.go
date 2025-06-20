@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/workos"
 	"github.com/zalando/go-keyring"
 )
@@ -17,7 +18,9 @@ import (
 var ErrNotFound = errors.New("no token found")
 
 const KEYRING_SERVICE = "nitric.v2.cli"
-const WORKOS_TOKEN_KEY = "workos"
+
+// Store 1 token per API
+var WORKOS_TOKEN_KEY = config.GetApiUrl() + ".workos"
 
 // StoreToken saves the authentication token to the keyring
 func StoreWorkosToken(token *workos.AuthenticationResponse) error {

@@ -47,7 +47,7 @@ var configCmd = &cobra.Command{
 				fmt.Printf("%s: %s\n", style.Teal(key), value)
 			}
 		} else {
-			fmt.Println("Config file: none (using defaults)")
+			fmt.Println("config file: none (using defaults)")
 		}
 	},
 }
