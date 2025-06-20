@@ -1,6 +1,7 @@
 variable "nitric" {
   type = object({
     name = string
+    stack_id = string
   })
 }
 
