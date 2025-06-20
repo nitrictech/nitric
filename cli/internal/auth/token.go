@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/nitrictech/nitric/cli/internal/workos"
@@ -65,6 +66,7 @@ func GetWorkosToken() (*workos.AuthenticationResponse, error) {
 	return &workosToken, nil
 }
 
+// GetOrRefreshWorkosToken retrieves the authentication token from the keyring, and refreshes it if it's expired
 func GetOrRefreshWorkosToken() (*workos.AuthenticationResponse, error) {
 	workosToken, err := GetWorkosToken()
 	if err != nil {
@@ -72,7 +74,8 @@ func GetOrRefreshWorkosToken() (*workos.AuthenticationResponse, error) {
 	}
 
 	// Decode the JWT to check if it's expired
-	parsedToken, err := jwt.Parse(workosToken.AccessToken, func(token *jwt.Token) (interface{}, error) {
+	claims := jwt.RegisteredClaims{}
+	parsedToken, err := jwt.ParseWithClaims(workosToken.AccessToken, &claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -90,7 +93,9 @@ func GetOrRefreshWorkosToken() (*workos.AuthenticationResponse, error) {
 		return jwkToRSAPublicKey(jwk)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}))
 
-	if err != nil || !parsedToken.Valid {
+	// Add a 1 second buffer to the expiry time to account for a slight delay in the token being sent to the server
+	// i.e. the token must remain valid for at least another second, or we'll refresh it early for good measure
+	if err != nil || !parsedToken.Valid || claims.ExpiresAt.Before(time.Now().Add(1+time.Second)) {
 		return RefreshWorkosToken(workosToken)
 	}
 
