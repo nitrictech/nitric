@@ -45,6 +45,31 @@ var platformSpecs = map[string]*PlatformSpec{
 			},
 		},
 	},
+	"gcp": {
+		Name: "gcp",
+		ServiceBlueprints: map[string]*ServiceBlueprint{
+			"default": {
+				ResourceBlueprint: &ResourceBlueprint{
+					PluginId:   "nitric-gcp-cloud-run",
+					Properties: map[string]interface{}{},
+				},
+				IdentitiesBlueprint: &IdentitiesBlueprint{
+					Identities: []ResourceBlueprint{
+						{
+							PluginId:   "nitric-gcp-iam-service-account",
+							Properties: map[string]interface{}{},
+						},
+					},
+				},
+			},
+		},
+		EntrypointBlueprints: map[string]*ResourceBlueprint{
+			"default": {
+				PluginId:   "nitric-gcp-cdn",
+				Properties: map[string]interface{}{},
+			},
+		},
+	},
 }
 
 func (MockPlatformRepository) GetPlatform(name string) (*PlatformSpec, error) {

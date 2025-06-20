@@ -44,6 +44,7 @@ func waitForPort(host string, port string, timeout time.Duration) error {
 }
 
 func Start(cmd string) {
+	fmt.Println("Starting server with command:", cmd)
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -65,12 +66,6 @@ func Start(cmd string) {
 		srv.Serve(lis)
 	}()
 
-	// Get the PORT of the local service
-	servicePort := os.Getenv("PORT")
-	if servicePort == "" {
-		log.Fatal("PORT environment variable not set")
-	}
-
 	// Start the actual nitric service
 	cmdParts := strings.Split(cmd, " ")
 	runCmd := exec.Command(cmdParts[0], cmdParts[1:]...)
@@ -78,8 +73,21 @@ func Start(cmd string) {
 	runCmd.Stdout = os.Stdout
 	runCmd.Stderr = os.Stderr
 
+	servicePort := os.Getenv("NITRIC_GUEST_PORT")
+	if servicePort == "" {
+		servicePort = os.Getenv("PORT")
+	} else {
+		runCmd.Env = append(runCmd.Env, fmt.Sprintf("PORT=%s", servicePort))
+	}
+
 	if err := runCmd.Start(); err != nil {
 		log.Fatalf("failed to start service: %v", err)
+	}
+
+	// Start the service gateway and proxy
+	err = service.Start(service.NewHttpServerProxy(fmt.Sprintf("localhost:%s", servicePort)))
+	if err != nil {
+		log.Fatalf("failed to start ingress: %v", err)
 	}
 
 	// Wait for the service to be ready (up to 30 seconds)
@@ -88,10 +96,4 @@ func Start(cmd string) {
 		log.Fatalf("service failed to start: %v", err)
 	}
 	log.Printf("Service is ready on port %s", servicePort)
-
-	// Start the service gateway and proxy
-	err = service.Start(service.NewHttpServerProxy(fmt.Sprintf("localhost:%s", servicePort)))
-	if err != nil {
-		log.Fatalf("failed to start ingress: %v", err)
-	}
 }

@@ -1,0 +1,11 @@
+name: nitric-gcp-iam-service-account
+version: 0.0.1
+type: identity
+identity_type: gcp:iam:role
+deployment:
+  # NOTE: // is required to reference a sub-path of repository for terraform modules
+  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/gcpiamserviceaccount/module?depth=1&ref=next
+
+inputs:
+
+outputs:
