@@ -10,7 +10,7 @@ function handler(event) {
     if (basePath !== "/") {
         for (var i = 0; i < allBasePaths.length; i++) {
             if (allBasePaths[i] === "/") {
-                return request.uri;
+                continue;
             }
 
             var basePath = allBasePaths[i];
