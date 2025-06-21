@@ -5,13 +5,17 @@ import (
 	"io"
 )
 
-type WorkOSPublicDetails struct {
+type AuthDetails struct {
+	WorkOS WorkOSDetails `json:"workos"`
+}
+
+type WorkOSDetails struct {
 	ClientID    string `json:"client_id"`
 	ApiHostname string `json:"api_hostname"`
 }
 
-func (c *NitricApiClient) GetWorkOSPublicDetails() (*WorkOSPublicDetails, error) {
-	response, err := c.get("/auth/public/workos")
+func (c *NitricApiClient) GetWorkOSPublicDetails() (*WorkOSDetails, error) {
+	response, err := c.get("/auth/details")
 	if err != nil {
 		return nil, err
 	}
@@ -21,11 +25,11 @@ func (c *NitricApiClient) GetWorkOSPublicDetails() (*WorkOSPublicDetails, error)
 		return nil, err
 	}
 
-	var workOSPublicDetails WorkOSPublicDetails
-	err = json.Unmarshal(body, &workOSPublicDetails)
+	var authDetails AuthDetails
+	err = json.Unmarshal(body, &authDetails)
 	if err != nil {
 		return nil, err
 	}
 
-	return &workOSPublicDetails, nil
+	return &authDetails.WorkOS, nil
 }
