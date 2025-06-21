@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Successful</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1d1d1d 0%, #000000 100%);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      }
+
+      .success-icon {
+        width: 64px;
+        height: 64px;
+        background: #000000;
+        border-radius: 50%;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      p {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .close-button {
+        background: #000000;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .close-button:hover {
+        background: #161616;
+      }
+
+      .auto-close-message {
+        font-size: 0.875rem;
+        color: #888;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="success-icon">✓</div>
+      <h1>Login Successful!</h1>
+      <p>
+        You have been successfully authenticated. This window should close
+        automatically.
+      </p>
+      <p>
+        If it doesn't close automatically, you can safely close this tab or
+        window.
+      </p>
+
+      <button class="close-button" onclick="closeWindow()">Close Window</button>
+
+      <div class="auto-close-message">
+        <span id="countdown">Attempting to close automatically...</span>
+      </div>
+    </div>
+
+    <script>
+      function closeWindow() {
+        // Try to close the window
+        try {
+          window.close();
+        } catch (e) {
+          // If closing fails, show alternative message
+          document.getElementById("countdown").textContent =
+            "Please close this tab manually.";
+        }
+
+        // Check if window is still open after attempting to close
+        setTimeout(() => {
+          if (!window.closed) {
+            document.getElementById("countdown").textContent =
+              "Please close this tab manually.";
+          }
+        }, 1000);
+      }
+
+      // Attempt to close automatically when page loads
+      window.addEventListener("load", function () {
+        // Small delay to ensure the page is fully rendered
+        setTimeout(() => {
+          closeWindow();
+        }, 2000);
+      });
+
+      // Also try to close if the user came from another window
+      // (common in OAuth flows)
+      if (window.opener) {
+        window.addEventListener("load", function () {
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (e) {
+              // Silently fail if we can't close
+            }
+          }, 1000);
+        });
+      }
+    </script>
+  </body>
+</html>
