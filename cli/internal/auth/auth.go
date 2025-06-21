@@ -5,7 +5,10 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/nitrictech/nitric/cli/internal/api"
+	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/workos"
@@ -20,10 +23,9 @@ type Auth interface {
 
 // TODO: These values are not secret, but we may want to pull them remotely incase of a change.
 var AUTH_SERVER_PORT = 54321
-var WORKOS_CLIENT_ID = "client_01JXRX76QGQMDJ621V6B16RVED"
-var workosClient = workos.NewHttpClient(WORKOS_CLIENT_ID)
 
 type WorkOsPKCE struct {
+	client         *workos.HttpClient
 	pkceChallenge  *workos.CodeVerifier
 	err            error
 	callbackServer *http.Server
@@ -41,7 +43,7 @@ func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		res, err := workosClient.AuthenticateWithCode(code, p.pkceChallenge.Verifier)
+		res, err := p.client.AuthenticateWithCode(code, p.pkceChallenge.Verifier)
 		if err != nil {
 			// TODO: make this pretty
 			w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +99,7 @@ func (p *WorkOsPKCE) PerformPKCEFlow() error {
 		return err
 	}
 
-	authUrl, err := workosClient.GetAuthorizationUrl(workos.GetAuthorizationUrlOptions{
+	authUrl, err := p.client.GetAuthorizationUrl(workos.GetAuthorizationUrlOptions{
 		Provider:            "authkit",
 		RedirectURI:         "http://127.0.0.1:54321/callback",
 		CodeChallenge:       p.pkceChallenge.Challenge,
@@ -123,4 +125,40 @@ func (p *WorkOsPKCE) PerformPKCEFlow() error {
 	p.callbackServer.Shutdown(context.Background())
 
 	return nil
+}
+
+func NewWorkOsPKCE() (*WorkOsPKCE, error) {
+	client, err := getWorkOSClient()
+	if err != nil {
+		return nil, err
+	}
+
+	return &WorkOsPKCE{
+		client:         client,
+		pkceChallenge:  nil,
+		err:            nil,
+		callbackServer: nil,
+		done:           make(chan error),
+	}, nil
+}
+
+var workosClient *workos.HttpClient
+
+func getWorkOSClient() (*workos.HttpClient, error) {
+	if workosClient != nil {
+		return workosClient, nil
+	}
+
+	nitricApiClient := api.NewNitricApiClient(config.GetApiUrl())
+	workosDetails, err := nitricApiClient.GetWorkOSPublicDetails()
+	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "connection reset by peer") {
+			return nil, fmt.Errorf("unable to connect to the Nitric API. Please check your connection and try again. If the problem persists, please contact support.")
+		}
+
+		return nil, err
+	}
+
+	workosClient = workos.NewHttpClient(workosDetails.ClientID, workos.WithHostname(workosDetails.ApiHostname))
+	return workosClient, nil
 }

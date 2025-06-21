@@ -42,8 +42,14 @@ var loginCmd = &cobra.Command{
 			fmt.Printf("Error getting workos token: %v\n", err)
 		}
 
-		pkce := auth.WorkOsPKCE{}
-		pkce.PerformPKCEFlow()
+		pkce, err := auth.NewWorkOsPKCE()
+		cobra.CheckErr(err)
+
+		err = pkce.PerformPKCEFlow()
+		if err != nil {
+			fmt.Printf("\n%s Error logging in: %s\n", style.Red(icons.Cross), err)
+			return
+		}
 	},
 }
 

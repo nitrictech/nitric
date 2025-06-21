@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -20,7 +21,13 @@ var ErrNotFound = errors.New("no token found")
 const KEYRING_SERVICE = "nitric.v2.cli"
 
 // Store 1 token per API
-var WORKOS_TOKEN_KEY = config.GetApiUrl() + ".workos"
+var WORKOS_TOKEN_KEY = getWorkosTokenKey(config.GetApiUrl())
+
+func getWorkosTokenKey(apiUrl string) string {
+	// Hash the API URL for a consistent length.
+	hash := sha256.Sum256([]byte(apiUrl + ".workos"))
+	return fmt.Sprintf("%x", hash)
+}
 
 // StoreToken saves the authentication token to the keyring
 func StoreWorkosToken(token *workos.AuthenticationResponse) error {
@@ -37,7 +44,12 @@ func StoreWorkosToken(token *workos.AuthenticationResponse) error {
 }
 
 func RefreshWorkosToken(workosToken *workos.AuthenticationResponse) (*workos.AuthenticationResponse, error) {
-	workosToken, err := workosClient.AuthenticateWithRefreshToken(workosToken.RefreshToken, nil)
+	client, err := getWorkOSClient()
+	if err != nil {
+		return nil, err
+	}
+
+	workosToken, err = client.AuthenticateWithRefreshToken(workosToken.RefreshToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,12 @@ func GetOrRefreshWorkosToken() (*workos.AuthenticationResponse, error) {
 			return nil, fmt.Errorf("kid not found in token header")
 		}
 
-		jwk, err := workosClient.GetJWK(kid)
+		client, err := getWorkOSClient()
+		if err != nil {
+			return nil, err
+		}
+
+		jwk, err := client.GetJWK(kid)
 		if err != nil {
 			return nil, err
 		}
