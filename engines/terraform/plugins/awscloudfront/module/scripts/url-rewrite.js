@@ -7,18 +7,17 @@ function handler(event) {
     var request = event.request;
     var uri = request.uri;
 
-    if (basePath !== "/") {
-        for (var i = 0; i < allBasePaths.length; i++) {
-            if (allBasePaths[i] === "/") {
-                return request.uri;
-            }
+    for (var i = 0; i < allBasePaths.length; i++) {
+        if (allBasePaths[i] === "/") {
+            continue;
+        }
 
-            var basePath = allBasePaths[i];
-            if (uri === basePath || uri.startsWith(basePath + "/")) {
-                request.headers["x-nitric-cache-key"] = { value: basePath };
-                request.uri = uri.replace(new RegExp("^" + basePath + "[/]*"), "/");
-                return request;
-            }
+        var basePath = allBasePaths[i];
+        basePath = basePath.endsWith("/") ? basePath : basePath + "/";
+        if (uri === basePath || uri.startsWith(basePath)) {
+            request.headers["x-nitric-cache-key"] = { value: basePath };
+            request.uri = uri.replace(new RegExp("^" + basePath + "[/]*"), "/");
+            return request;
         }
     }
 
