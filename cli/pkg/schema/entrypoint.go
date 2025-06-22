@@ -28,5 +28,5 @@ func (e EntrypointIntent) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 type Route struct {
 	TargetName string `json:"name" yaml:"name"`
-	BasePath   string `json:"base-path" yaml:"base-path"`
+	BasePath   string `json:"base-path,omitempty" yaml:"base-path,omitempty"`
 }
