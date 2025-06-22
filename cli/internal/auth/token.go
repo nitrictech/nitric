@@ -107,7 +107,7 @@ func GetOrRefreshWorkosToken() (*workos.AuthenticationResponse, error) {
 
 		jwk, err := client.GetJWK(kid)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get token validation key: %v", err)
 		}
 
 		return jwkToRSAPublicKey(jwk)

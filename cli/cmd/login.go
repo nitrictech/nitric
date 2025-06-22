@@ -19,10 +19,8 @@ var loginCmd = &cobra.Command{
 	Short: "Login to Nitric",
 	Long:  `Login to the Nitric CLI.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		token, err := auth.GetOrRefreshWorkosToken()
 		if err == nil {
-
 			if debugFlag {
 				tokenJson, err := json.MarshalIndent(token, "", "  ")
 				if err != nil {
@@ -36,10 +34,6 @@ var loginCmd = &cobra.Command{
 
 			fmt.Printf("\n%s Already logged in as %s\n", style.Green(icons.Check), style.Teal(user))
 			return
-		}
-
-		if debugFlag {
-			fmt.Printf("Error getting workos token: %v\n", err)
 		}
 
 		pkce, err := auth.NewWorkOsPKCE()
