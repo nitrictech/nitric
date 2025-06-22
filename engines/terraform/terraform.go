@@ -279,9 +279,10 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *a
 		resourcesNitricVar := hclTarget.Get(jsii.String("nitric.exports.resources"))
 
 		origins[route.TargetName] = map[string]interface{}{
-			"path": jsii.String(path),
-			"type": jsii.String(intentTarget.Type),
-			"id":   idNitricVar,
+			"path":      jsii.String(path),
+			"base_path": jsii.String(route.BasePath),
+			"type":      jsii.String(intentTarget.Type),
+			"id":        idNitricVar,
 			// Assume the output var has a http_endpoint property
 			"domain_name": domainNameNitricVar,
 			"resources":   resourcesNitricVar,
