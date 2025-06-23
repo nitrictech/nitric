@@ -84,16 +84,20 @@ func Start(cmd string) {
 		log.Fatalf("failed to start service: %v", err)
 	}
 
-	// Start the service gateway and proxy
-	err = service.Start(service.NewHttpServerProxy(fmt.Sprintf("localhost:%s", servicePort)))
-	if err != nil {
-		log.Fatalf("failed to start ingress: %v", err)
-	}
-
 	// Wait for the service to be ready (up to 30 seconds)
+	// DO NOT CHANGE THE ORDER OF THIS
+	// The Guest application port MUST be ready before the service gateway is started
+	// Otherwise CPU may be throttled in serverless environments like AWS Lambda if the service gateway is started too early
+	// Meaning the guest application may never get a chance to start
 	log.Printf("Waiting for service to be ready on port %s...", servicePort)
 	if err := waitForPort("localhost", servicePort, 10*time.Second); err != nil {
 		log.Fatalf("service failed to start: %v", err)
 	}
 	log.Printf("Service is ready on port %s", servicePort)
+
+	// Start the service gateway and proxy
+	err = service.Start(service.NewHttpServerProxy(fmt.Sprintf("localhost:%s", servicePort)))
+	if err != nil {
+		log.Fatalf("failed to start ingress: %v", err)
+	}
 }
