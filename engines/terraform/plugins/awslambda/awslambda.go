@@ -66,11 +66,17 @@ func (a *awslambdaService) handleScheduleEvent(ctx context.Context, evt *events.
 
 	resp, err := a.proxy.Forward(ctx, req)
 
-	if err != nil || resp.StatusCode != http.StatusOK {
+	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to invoke schedule path %s", path)
+	}
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
 }
 
 func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.LambdaFunctionURLRequest) (*events.LambdaFunctionURLStreamingResponse, error) {
