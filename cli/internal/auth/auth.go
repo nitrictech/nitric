@@ -101,7 +101,7 @@ func (p *WorkOsPKCE) PerformPKCEFlow() error {
 
 	authUrl, err := p.client.GetAuthorizationUrl(workos.GetAuthorizationUrlOptions{
 		Provider:            "authkit",
-		RedirectURI:         "http://127.0.0.1:54321/callback",
+		RedirectURI:         fmt.Sprintf("http://127.0.0.1:%d/callback", AUTH_SERVER_PORT),
 		CodeChallenge:       p.pkceChallenge.Challenge,
 		CodeChallengeMethod: "S256",
 	})
