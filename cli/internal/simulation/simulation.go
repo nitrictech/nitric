@@ -115,12 +115,21 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 			var proxyHandler http.Handler
 			styleColor := style.Teal
 			if spec.Type == "service" {
-				proxyHandler = serviceProxies[target.TargetName]
+				service := services[target.TargetName]
+
+				url := &url.URL{
+					Scheme: "http",
+					Host:   fmt.Sprintf("localhost:%d", service.GetPort()),
+					Path:   target.BasePath,
+				}
+
+				proxyHandler = httputil.NewSingleHostReverseProxy(url)
+
 			} else if spec.Type == "bucket" {
 				url := &url.URL{
 					Scheme: "http",
 					Host:   fmt.Sprintf("localhost:%d", s.fileServerPort),
-					Path:   fmt.Sprintf("/%s", target.TargetName),
+					Path:   strings.TrimSuffix(fmt.Sprintf("/%s/%s", target.TargetName, target.BasePath), "/"),
 				}
 				proxyHandler = httputil.NewSingleHostReverseProxy(url)
 				styleColor = style.Green

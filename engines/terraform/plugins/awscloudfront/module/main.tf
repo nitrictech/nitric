@@ -133,6 +133,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       domain_name = origin.value.domain_name
       origin_id = "${origin.key}"
       origin_access_control_id = contains(keys(origin.value.resources), "aws_lambda_function") ? aws_cloudfront_origin_access_control.lambda_oac[0].id : contains(keys(origin.value.resources), "aws_s3_bucket") ? aws_cloudfront_origin_access_control.s3_oac[0].id : null
+      origin_path = origin.value.base_path
 
       dynamic "custom_origin_config" {
         for_each = !contains(keys(origin.value.resources), "aws_s3_bucket") ? [1] : []
