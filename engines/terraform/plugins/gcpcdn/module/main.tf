@@ -40,8 +40,8 @@ resource "random_string" "cdn_prefix" {
 
 # Create Network Endpoint Groups for services
 resource "google_compute_region_network_endpoint_group" "service_negs" {
+  for_each = local.service_origins
   provider = google-beta
-  for_each = var.nitric.origins
 
   name                  = "${each.key}-service-neg"
   region                = var.region
@@ -56,7 +56,7 @@ resource "google_compute_region_network_endpoint_group" "service_negs" {
 
 # Create Backend Services for services
 resource "google_compute_backend_service" "service_backends" {
-  for_each = var.nitric.origins
+  for_each = local.service_origins
 
   project = var.project_id
 
@@ -118,7 +118,7 @@ resource "google_compute_url_map" "https_url_map" {
     default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
 
     dynamic "path_rule" {
-      for_each = var.nitric.origins
+      for_each = local.service_origins
 
       content {
         service = google_compute_backend_service.service_backends[path_rule.key].self_link
@@ -132,6 +132,22 @@ resource "google_compute_url_map" "https_url_map" {
           }
         }
 
+      }
+    }
+
+    dynamic "path_rule" {
+      for_each = local.bucket_origins
+
+      content {
+        service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
+        paths   = [
+          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}/*" : "/${path_rule.value.path}/*", // Ensure /${path}/*
+          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}" : "/${path_rule.value.path}"] // Ensure /${path}
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
+        }
       }
     }
   }
