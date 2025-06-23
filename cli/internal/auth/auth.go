@@ -22,7 +22,7 @@ type Auth interface {
 }
 
 // TODO: These values are not secret, but we may want to pull them remotely incase of a change.
-var AUTH_SERVER_PORT = 54321
+var AUTH_SERVER_PORT = 48321
 
 type WorkOsPKCE struct {
 	client         *workos.HttpClient
