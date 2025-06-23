@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -18,38 +19,31 @@ import (
 //go:embed login_success.html
 var loginSuccessPage []byte
 
-type Auth interface {
-}
+// The port that the local auth callback server will listen on.
+// This is used to handle the callback from the WorkOS auth provider.
+var LOCAL_AUTH_CALLBACK_PORT = 48321
 
-// TODO: These values are not secret, but we may want to pull them remotely incase of a change.
-var AUTH_SERVER_PORT = 48321
+// ErrPortNotAvailable is returned when the local auth callback port is not available.
+var ErrPortNotAvailable = fmt.Errorf("port %d is not available, unable to start local auth callback server", LOCAL_AUTH_CALLBACK_PORT)
 
-type WorkOsPKCE struct {
-	client         *workos.HttpClient
-	pkceChallenge  *workos.CodeVerifier
-	err            error
-	callbackServer *http.Server
-	done           chan error
-}
-
-func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Request) {
+func newCallbackHandler(callbackResult chan error, client *workos.HttpClient, pkceChallenge *workos.CodeVerifier) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
 
 		if code == "" {
 			w.WriteHeader(http.StatusBadRequest)
 
-			p.done <- fmt.Errorf("login code was not provided with login callback")
+			callbackResult <- fmt.Errorf("login code was not provided with login callback")
 			return
 		}
 
-		res, err := p.client.AuthenticateWithCode(code, p.pkceChallenge.Verifier)
+		res, err := client.AuthenticateWithCode(code, pkceChallenge.Verifier)
 		if err != nil {
 			// TODO: make this pretty
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 
-			p.done <- err
+			callbackResult <- err
 			return
 		}
 
@@ -57,7 +51,7 @@ func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Re
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
-			p.done <- err
+			callbackResult <- err
 			return
 		}
 
@@ -67,42 +61,43 @@ func (p *WorkOsPKCE) getCallbackHandler() func(w http.ResponseWriter, r *http.Re
 
 		fmt.Printf("\n%s Login successful, welcome %s\n", style.Green(icons.Check), style.Teal(res.User.FirstName))
 
-		p.done <- nil
+		callbackResult <- nil
 	}
 }
 
-var nitric = style.Purple(icons.Lightning + " Nitric")
-
-func (p *WorkOsPKCE) PerformPKCEFlow() error {
-	fmt.Printf("\n%s Logging in...\n", nitric)
-
-	router := http.NewServeMux()
-
-	router.HandleFunc("/callback", p.getCallbackHandler())
-
-	p.callbackServer = &http.Server{
-		// We only bind to loopback for security
-		// The users own browser is the only client that should connect to this server, during a redirect
-		Addr:    fmt.Sprintf("127.0.0.1:%d", AUTH_SERVER_PORT),
-		Handler: router,
+func PerformPKCEFlow() error {
+	// Check if the callback port is available and create a listener
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", LOCAL_AUTH_CALLBACK_PORT))
+	if err != nil {
+		return ErrPortNotAvailable
 	}
+	defer listener.Close()
 
-	p.done = make(chan error)
-	go func() {
-		p.callbackServer.ListenAndServe()
-	}()
-
-	// Start the Flow
-	var err error
-	p.pkceChallenge, err = workos.CreatePkceChallenge()
+	client, err := getWorkOSClient()
 	if err != nil {
 		return err
 	}
 
-	authUrl, err := p.client.GetAuthorizationUrl(workos.GetAuthorizationUrlOptions{
+	pkceChallenge, err := workos.CreatePkceChallenge()
+	if err != nil {
+		return err
+	}
+
+	callbackResult := make(chan error)
+
+	callbackServer := &http.Server{
+		// We only bind to loopback for security
+		// The users own browser is the only client that should connect to this server, during a redirect
+		Handler: http.HandlerFunc(newCallbackHandler(callbackResult, client, pkceChallenge)),
+	}
+
+	go callbackServer.Serve(listener)
+	defer callbackServer.Shutdown(context.Background())
+
+	authUrl, err := client.GetAuthorizationUrl(workos.GetAuthorizationUrlOptions{
 		Provider:            "authkit",
-		RedirectURI:         fmt.Sprintf("http://127.0.0.1:%d/callback", AUTH_SERVER_PORT),
-		CodeChallenge:       p.pkceChallenge.Challenge,
+		RedirectURI:         fmt.Sprintf("http://127.0.0.1:%d/callback", LOCAL_AUTH_CALLBACK_PORT),
+		CodeChallenge:       pkceChallenge.Challenge,
 		CodeChallengeMethod: "S256",
 	})
 	if err != nil {
@@ -117,29 +112,13 @@ func (p *WorkOsPKCE) PerformPKCEFlow() error {
 		return err
 	}
 
-	err = <-p.done
+	// Wait for the callback to be received or the server to shutdown
+	err = <-callbackResult
 	if err != nil {
 		fmt.Printf("\n%s Login failed due to an error: %s\n", style.Red(icons.Cross), err)
 	}
 
-	p.callbackServer.Shutdown(context.Background())
-
 	return nil
-}
-
-func NewWorkOsPKCE() (*WorkOsPKCE, error) {
-	client, err := getWorkOSClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return &WorkOsPKCE{
-		client:         client,
-		pkceChallenge:  nil,
-		err:            nil,
-		callbackServer: nil,
-		done:           make(chan error),
-	}, nil
 }
 
 var workosClient *workos.HttpClient

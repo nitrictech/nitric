@@ -36,10 +36,9 @@ var loginCmd = &cobra.Command{
 			return
 		}
 
-		pkce, err := auth.NewWorkOsPKCE()
-		cobra.CheckErr(err)
+		fmt.Printf("\n%s Logging in...\n", style.Purple(icons.Lightning+" Nitric"))
 
-		err = pkce.PerformPKCEFlow()
+		err = auth.PerformPKCEFlow()
 		if err != nil {
 			fmt.Printf("\n%s Error logging in: %s\n", style.Red(icons.Cross), err)
 			return
