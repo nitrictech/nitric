@@ -14,6 +14,9 @@ locals {
   }
 
   default_origin = length(local.root_origins) > 0 ? keys(local.root_origins)[0] : keys(var.nitric.origins)[0]
+
+  service_origins = {for key, val in var.nitric.origins: key => val if val.type == "service"}
+  bucket_origins = {for key, val in var.nitric.origins: key => val if val.type == "bucket"}
 }
 
 
@@ -55,9 +58,10 @@ resource "google_compute_region_network_endpoint_group" "service_negs" {
 resource "google_compute_backend_service" "service_backends" {
   for_each = var.nitric.origins
 
-  name     = "${each.key}-service-bs"
-  protocol = "HTTPS"
   project = var.project_id
+
+  name     = "${provider::corefunc::str_kebab(each.key)}-service-bs"
+  protocol = "HTTPS"
   enable_cdn  = false
 
   backend {
@@ -69,6 +73,33 @@ resource "google_compute_backend_service" "service_backends" {
 resource "google_compute_global_address" "cdn_ip" {
   name = "cdn-ip-${random_string.cdn_prefix.result}"
   project = var.project_id
+}
+
+data "google_storage_bucket" "bucket" {
+  for_each = local.bucket_origins
+
+  name = each.value.id
+}
+
+resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
+  for_each = local.bucket_origins
+
+  bucket = data.google_storage_bucket.bucket[each.key].name
+  role   = "roles/storage.objectViewer"
+
+  members = [
+    "allUsers"
+  ]
+}
+
+resource "google_compute_backend_bucket" "website_backends" {
+  for_each = local.bucket_origins
+
+  project = var.project_id
+
+  name        = "${provider::corefunc::str_kebab(each.key)}-site-bucket"
+  bucket_name = data.google_storage_bucket.bucket[each.key].name
+  enable_cdn  = true
 }
 
 # Create a URL Map for routing requests
