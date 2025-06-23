@@ -10,6 +10,10 @@ data "docker_image" "latest" {
   name = var.nitric.image_id
 }
 
+locals {
+  lambda_name = "${var.nitric.stack_id}-${var.nitric.name}"
+}
+
 # Tag the provided docker image with the ECR repository url
 resource "docker_tag" "tag" {
   source_image = length(data.docker_image.latest.repo_digest) > 0 ? data.docker_image.latest.repo_digest : data.docker_image.latest.id
@@ -36,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "basic-execution" {
 
 # Create a lambda function using the pushed image
 resource "aws_lambda_function" "function" {
-  function_name = var.nitric.name
+  function_name = local.lambda_name
   role          = var.nitric.identities["aws:iam:role"].role.arn
   image_uri     = "${aws_ecr_repository.repo.repository_url}@${docker_registry_image.push.sha256_digest}"
   package_type  = "Image"
