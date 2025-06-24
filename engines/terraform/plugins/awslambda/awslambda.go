@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/nitrictech/nitric/server/runtime/service"
+	"github.com/nitrictech/nitric/runtime/service"
 )
 
 type awslambdaService struct {

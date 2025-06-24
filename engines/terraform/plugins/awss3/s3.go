@@ -18,7 +18,7 @@ import (
 	"github.com/aws/smithy-go"
 	"github.com/iancoleman/strcase"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
-	"github.com/nitrictech/nitric/server/runtime/storage"
+	"github.com/nitrictech/nitric/runtime/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

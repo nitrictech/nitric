@@ -6,14 +6,14 @@ import (
 	"net/http/httputil"
 	"os"
 
-	"github.com/nitrictech/nitric/server/runtime/service"
+	"github.com/nitrictech/nitric/runtime/service"
 )
 
 type awsfargateService struct{}
 
 func (a *awsfargateService) Start(proxy service.Proxy) error {
 	fmt.Println("Starting Fargate service proxy")
-	// get the container port from the environment
+	// get the container port from the environmentW
 	containerPort := os.Getenv("CONTAINER_PORT")
 	if containerPort == "" {
 		return fmt.Errorf("CONTAINER_PORT is not set")

@@ -36,7 +36,7 @@ import (
 
 	"github.com/ettle/strcase"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
-	nitricStorage "github.com/nitrictech/nitric/server/runtime/storage"
+	nitricStorage "github.com/nitrictech/nitric/runtime/storage"
 )
 
 type cloudStorage struct {

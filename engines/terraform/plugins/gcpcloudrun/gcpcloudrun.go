@@ -6,7 +6,7 @@ import (
 	"net/http/httputil"
 	"os"
 
-	"github.com/nitrictech/nitric/server/runtime/service"
+	"github.com/nitrictech/nitric/runtime/service"
 )
 
 type gcpcloudappService struct {
