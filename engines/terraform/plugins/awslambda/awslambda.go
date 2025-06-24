@@ -31,12 +31,12 @@ func (a *awslambdaService) Start(proxy service.Proxy) error {
 		fmt.Println("handling event", string(evt))
 
 		var httpEvent events.LambdaFunctionURLRequest
-		var scheduleEvent events.EventBridgeEvent
+		var scheduleEvent ScheduleEventDetail
 		var err error
 		if err = json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
 			return a.handleHTTPEvent(ctx, &httpEvent)
-		} else if err = json.Unmarshal(evt, &scheduleEvent); err == nil {
-			return a.handleScheduleEvent(ctx, &scheduleEvent)
+		} else if err = json.Unmarshal(evt, &scheduleEvent); err == nil && scheduleEvent.Path != "" {
+			return a.handleScheduleEvent(ctx, scheduleEvent)
 		}
 
 		fmt.Println("unable to handle event", err)
@@ -52,17 +52,8 @@ type ScheduleEventDetail struct {
 	Path string `json:"path"`
 }
 
-func (a *awslambdaService) handleScheduleEvent(ctx context.Context, evt *events.EventBridgeEvent) (interface{}, error) {
-	// Get the path from the event
-	var detail ScheduleEventDetail
-	err := json.Unmarshal(evt.Detail, &detail)
-	if err != nil {
-		return nil, err
-	}
-
-	path := detail.Path
-
-	req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(""))
+func (a *awslambdaService) handleScheduleEvent(ctx context.Context, evt ScheduleEventDetail) (interface{}, error) {
+	req, err := http.NewRequest(http.MethodPost, evt.Path, strings.NewReader(""))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +65,7 @@ func (a *awslambdaService) handleScheduleEvent(ctx context.Context, evt *events.
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to invoke schedule path %s", path)
+		return nil, fmt.Errorf("failed to invoke schedule path %s", evt.Path)
 	}
 
 	return map[string]interface{}{
