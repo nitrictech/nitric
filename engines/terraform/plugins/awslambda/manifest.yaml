@@ -7,7 +7,7 @@ capabilities:
   - schedules
 deployment:
   # NOTE: // is required to reference a sub-path of repository for terraform modules
-  terraform: github.com/tjholm/nitric//engines/terraform/plugins/awslambda/module?depth=1&ref=aws-schedules
+  terraform: github.com/nitrictech/nitric//engines/terraform/plugins/awslambda/module?depth=1&ref=next
 runtime:
   go_module: github.com/nitrictech/nitric/engines/terraform/plugins/awslambda
 
