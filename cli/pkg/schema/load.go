@@ -43,5 +43,10 @@ func LoadFromFile(fs afero.Fs, path string) (*Application, error) {
 		return nil, fmt.Errorf("invalid nitric application file %s:\n%s", path, errs)
 	}
 
+	// Perform additional validation checks on the application
+	if err := appSpec.IsValid(); err != nil {
+		return nil, fmt.Errorf("invalid nitric application file %s:\n%s", path, err)
+	}
+
 	return appSpec, nil
 }

@@ -83,6 +83,7 @@ const (
 var greenCheck = style.Green(icons.Check)
 
 func (s *SimulationServer) startEntrypoints(services map[string]*service.ServiceSimulation) error {
+	resourceIntents := s.appSpec.GetResourceIntents()
 	serviceProxies := map[string]*httputil.ReverseProxy{}
 	for serviceName, service := range services {
 		url := &url.URL{
@@ -93,7 +94,7 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 		serviceProxies[serviceName] = httputil.NewSingleHostReverseProxy(url)
 	}
 
-	for entrypointName, entrypoint := range s.appSpec.GetEntrypointIntents() {
+	for entrypointName, entrypoint := range s.appSpec.EntrypointIntents {
 		// Reserve a port
 		reservedPort, err := netx.GetNextPort(netx.MinPort(ENTRYPOINT_MIN_PORT), netx.MaxPort(ENTRYPOINT_MAX_PORT))
 		if err != nil {
@@ -103,18 +104,18 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 		router := http.NewServeMux()
 
 		for route, target := range entrypoint.Routes {
-			spec, ok := s.appSpec.ResourceIntents[target.TargetName]
+			spec, ok := resourceIntents[target.TargetName]
 			if !ok {
 				return fmt.Errorf("resource %s does not exist", target.TargetName)
 			}
 
-			if spec.Type != "service" && spec.Type != "bucket" {
-				return fmt.Errorf("only buckets and services can be routed to entrypoints got type :%s", spec.Type)
+			if spec.GetType() != "service" && spec.GetType() != "bucket" {
+				return fmt.Errorf("only buckets and services can be routed to entrypoints got type :%s", spec.GetType())
 			}
 
 			var proxyHandler http.Handler
 			styleColor := style.Teal
-			if spec.Type == "service" {
+			if spec.GetType() == "service" {
 				service := services[target.TargetName]
 
 				url := &url.URL{
@@ -125,7 +126,7 @@ func (s *SimulationServer) startEntrypoints(services map[string]*service.Service
 
 				proxyHandler = httputil.NewSingleHostReverseProxy(url)
 
-			} else if spec.Type == "bucket" {
+			} else if spec.GetType() == "bucket" {
 				url := &url.URL{
 					Scheme: "http",
 					Host:   fmt.Sprintf("localhost:%d", s.fileServerPort),
@@ -209,7 +210,7 @@ func (s *SimulationServer) CopyDir(dst, src string) error {
 }
 
 func (s *SimulationServer) startServices(output io.Writer) (<-chan service.ServiceEvent, error) {
-	serviceIntents := s.appSpec.GetServiceIntents()
+	serviceIntents := s.appSpec.ServiceIntents
 
 	eventChans := []<-chan service.ServiceEvent{}
 
@@ -250,9 +251,9 @@ func (s *SimulationServer) handleServiceOutputs(output io.Writer, events <-chan 
 
 	s.fs.MkdirAll(ServicesLogsDir, os.ModePerm)
 
-	serviceWriters := make(map[string]io.Writer, len(s.appSpec.GetServiceIntents()))
-	serviceLogs := make(map[string]io.WriteCloser, len(s.appSpec.GetServiceIntents()))
-	for serviceName := range s.appSpec.GetServiceIntents() {
+	serviceWriters := make(map[string]io.Writer, len(s.appSpec.ServiceIntents))
+	serviceLogs := make(map[string]io.WriteCloser, len(s.appSpec.ServiceIntents))
+	for serviceName := range s.appSpec.ServiceIntents {
 		serviceWriters[serviceName] = NewPrefixWriter(styledName(serviceName, style.Teal)+" ", output)
 
 		serviceLogPath, err := GetServiceLogPath(s.appDir, serviceName)
@@ -319,7 +320,7 @@ func (s *SimulationServer) Start(output io.Writer) error {
 
 	var svcEvents <-chan service.ServiceEvent
 
-	if len(s.appSpec.GetServiceIntents()) > 0 {
+	if len(s.appSpec.ServiceIntents) > 0 {
 		fmt.Fprintf(output, "%s\n\n", style.Teal("Services"))
 		svcEvents, err = s.startServices(output)
 		if err != nil {
@@ -328,14 +329,14 @@ func (s *SimulationServer) Start(output io.Writer) error {
 		fmt.Fprint(output, "\n")
 	}
 
-	if len(s.appSpec.GetBucketIntents()) > 0 {
+	if len(s.appSpec.BucketIntents) > 0 {
 		err := s.startBuckets()
 		if err != nil {
 			return err
 		}
 	}
 
-	if len(s.appSpec.GetEntrypointIntents()) > 0 {
+	if len(s.appSpec.EntrypointIntents) > 0 {
 		fmt.Fprintf(output, "%s\n\n", style.Orange("Entrypoints"))
 		err = s.startEntrypoints(s.services)
 		if err != nil {

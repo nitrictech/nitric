@@ -15,6 +15,10 @@ type ServiceIntent struct {
 	ServiceSchemaOnlyHackSubType string `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
 }
 
+func (s *ServiceIntent) GetType() string {
+	return "service"
+}
+
 type ServiceTrigger struct {
 	Schedule *Schedule `json:"schedule,omitempty" yaml:"schedule,omitempty" jsonschema:"oneof_required=schedule"`
 	// TODO: Add additional trigger types
@@ -22,15 +26,6 @@ type ServiceTrigger struct {
 	// Bucket   *BucketTrigger `json:"bucket,omitempty" yaml:"bucket,omitempty" jsonschema:"oneof_required=bucket"`
 
 	Path string `json:"path" yaml:"path" jsonschema:"required"`
-}
-
-type TopicTrigger struct {
-	Name string `json:"name" yaml:"name" jsonschema:"required"`
-}
-
-type BucketTrigger struct {
-	Name   string `json:"name" yaml:"name" jsonschema:"required"`
-	Prefix string `json:"prefix" yaml:"prefix"`
 }
 
 type Schedule struct {

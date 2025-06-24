@@ -7,3 +7,11 @@ type BucketIntent struct {
 
 	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty"`
 }
+
+func (b *BucketIntent) GetAccess() (map[string][]string, bool) {
+	return b.Access, true
+}
+
+func (b *BucketIntent) GetType() string {
+	return "bucket"
+}

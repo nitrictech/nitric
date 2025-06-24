@@ -16,6 +16,10 @@ type EntrypointIntent struct {
 	Routes map[string]Route `json:"routes" yaml:"routes"`
 }
 
+func (e *EntrypointIntent) GetType() string {
+	return "entrypoint"
+}
+
 func (e EntrypointIntent) JSONSchemaExtend(schema *jsonschema.Schema) {
 	if routesSchema, ok := schema.Properties.Get("routes"); ok {
 		routesSchema.PropertyNames = &jsonschema.Schema{

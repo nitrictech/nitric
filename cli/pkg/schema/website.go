@@ -1,11 +1,16 @@
 package schema
 
 type WebsiteIntent struct {
+	Resource
 	BaseDir      string      `json:"baseDir" yaml:"baseDir"`
 	AssetDir     string      `json:"assetDir" yaml:"assetDir"`
 	ErrorPage    string      `json:"errorPage" yaml:"errorPage"`
 	BuildCommand *string     `json:"build,omitempty" yaml:"build,omitempty"`
 	Dev          *WebsiteDev `json:"dev,omitempty" yaml:"dev,omitempty"`
+}
+
+func (w *WebsiteIntent) GetType() string {
+	return "website"
 }
 
 type WebsiteDev struct {
