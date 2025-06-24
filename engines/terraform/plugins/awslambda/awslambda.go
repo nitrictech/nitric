@@ -3,6 +3,7 @@ package awslambda
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -20,16 +21,49 @@ func (a *awslambdaService) Start(proxy service.Proxy) error {
 
 	lambda.Start(func(ctx context.Context, evt json.RawMessage) (interface{}, error) {
 		// Try to parse as API Gateway v2 HTTP event first
+		fmt.Println("handling event", string(evt))
+
 		var httpEvent events.LambdaFunctionURLRequest
-		if err := json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
+		var scheduleEvent ScheduleEventDetail
+		var err error
+		if err = json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
 			return a.handleHTTPEvent(ctx, &httpEvent)
+		} else if err = json.Unmarshal(evt, &scheduleEvent); err == nil && scheduleEvent.Path != "" {
+			return a.handleScheduleEvent(ctx, scheduleEvent)
 		}
 
+		fmt.Println("unable to handle event", err)
+
 		// Handle other event types here if needed
-		return nil, nil
+		return nil, err
 	})
 
 	return nil
+}
+
+type ScheduleEventDetail struct {
+	Path string `json:"path"`
+}
+
+func (a *awslambdaService) handleScheduleEvent(ctx context.Context, evt ScheduleEventDetail) (interface{}, error) {
+	req, err := http.NewRequest(http.MethodPost, evt.Path, strings.NewReader(""))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := a.proxy.Forward(ctx, req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to invoke schedule path %s", evt.Path)
+	}
+
+	return map[string]interface{}{
+		"status": "success",
+	}, nil
 }
 
 func (a *awslambdaService) handleHTTPEvent(ctx context.Context, evt *events.LambdaFunctionURLRequest) (*events.LambdaFunctionURLStreamingResponse, error) {

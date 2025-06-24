@@ -313,6 +313,24 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		return nil, err
 	}
 
+	var schedules map[string]NitricServiceSchedule = nil
+	if len(schedules) > 0 && !slices.Contains(plug.Capabilities, "schedules") {
+		return nil, fmt.Errorf("service %s has schedules but the plugin %s does not support schedules", name, plug.Name)
+	} else {
+		schedules = map[string]NitricServiceSchedule{}
+	}
+
+	for triggerName, trigger := range spec.Triggers {
+		if trigger.Schedule == nil {
+			continue
+		}
+
+		schedules[triggerName] = NitricServiceSchedule{
+			CronExpression: jsii.String(trigger.Schedule.CronExpression),
+			Path:           jsii.String(trigger.Path),
+		}
+	}
+
 	if spec.Container.Image != nil {
 		imageVars = &map[string]interface{}{
 			"image_id": jsii.String(spec.Container.Image.ID),
@@ -372,6 +390,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 		NitricVariables: NitricVariables{
 			Name: jsii.String(name),
 		},
+		Schedules:  &schedules,
 		ImageId:    imageModule.GetString(jsii.String("image_id")),
 		Identities: &identityModuleOutputs,
 		StackId:    e.stackId.Result(),

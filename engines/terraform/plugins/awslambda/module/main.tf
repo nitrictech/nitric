@@ -1,3 +1,32 @@
+# Convert standard cron expressions to AWS CloudWatch format
+locals {
+  split_cron_expression = {
+    for key, schedule in var.nitric.schedules : key => split(" ", schedule.cron_expression)
+  }
+
+  # Apply the either-or operator rule: if DOM is *, set DOW to ?
+  transformed_cron_expression = {
+    for key, fields in local.split_cron_expression : key => [
+      for i, field in fields : 
+        (i == 4 && fields[2] == "*" && field == "*") ? "?" : field
+    ]
+  }
+
+  # Convert standard cron to AWS CloudWatch cron format
+  # AWS requires 6 fields: Minutes Hours Day-of-month Month Day-of-week Year
+  # Either Day-of-month or Day-of-week must be ? (either-or operator)
+  # Day-of-week is 1-7 (Sunday-Saturday) instead of 0-6
+  convert_cron_to_aws = {
+    for key, schedule in var.nitric.schedules : key => {
+      cron_expression = schedule.cron_expression
+      path           = schedule.path
+      # Convert the standard cron expression to an AWS CloudWatch cron expression
+      # Apply the either-or operator rule and add year field
+      aws_cron       = "cron(${join(" ", local.transformed_cron_expression[key])} *)"
+    }
+  }
+}
+
 # Create an ECR repository
 resource "aws_ecr_repository" "repo" {
   name = var.nitric.name
@@ -82,4 +111,53 @@ resource "aws_lambda_function_url" "endpoint" {
   #   expose_headers    = ["keep-alive", "date"]
   #   max_age           = 86400
   # }
+}
+
+# Create role and policy to allow schedule to invoke lambda
+resource "aws_iam_role" "role" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "scheduler.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "role_policy" {
+  role = aws_iam_role.role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "lambda:InvokeFunction",
+        Resource = aws_lambda_function.function.arn
+      }
+    ]
+  })
+}
+
+# Create an AWS eventbridge schedule
+resource "aws_scheduler_schedule" "schedule" {
+  for_each = var.nitric.schedules
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  schedule_expression = local.convert_cron_to_aws[each.key].aws_cron
+
+  target {
+    arn      = aws_lambda_function.function.arn
+    role_arn = aws_iam_role.role.arn
+
+    input = jsonencode({
+        "path" = each.value.path
+    })
+  }
 }

@@ -13,6 +13,7 @@ type PluginManifest struct {
 type ResourcePluginManifest struct {
 	PluginManifest     `json:",inline" yaml:",inline"`
 	RequiredIdentities []string `json:"required_identities" yaml:"required_identities"`
+	Capabilities       []string `json:"capabilities" yaml:"capabilities"`
 }
 
 type IdentityPluginManifest struct {
