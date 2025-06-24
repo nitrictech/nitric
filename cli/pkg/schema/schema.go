@@ -16,55 +16,11 @@ type Application struct {
 	Name        string   `json:"name" yaml:"name" jsonschema:"required"`
 	Description string   `json:"description" yaml:"description"`
 
-	ResourceIntents map[string]Resource `json:"resources,omitempty" yaml:"resources,omitempty"`
-}
-
-func (a *Application) GetResourceIntentsForType(typ string) map[string]Resource {
-	filteredResources := map[string]Resource{}
-
-	for name, res := range a.ResourceIntents {
-		if res.Type == typ {
-			filteredResources[name] = res
-		}
-	}
-
-	return filteredResources
-}
-
-func (a *Application) GetBucketIntents() map[string]*BucketIntent {
-	concreteBuckets := map[string]*BucketIntent{}
-
-	services := a.GetResourceIntentsForType("bucket")
-
-	for name, svc := range services {
-		concreteBuckets[name] = svc.BucketIntent
-	}
-
-	return concreteBuckets
-}
-
-func (a *Application) GetServiceIntents() map[string]*ServiceIntent {
-	concreteServices := map[string]*ServiceIntent{}
-
-	services := a.GetResourceIntentsForType("service")
-
-	for name, svc := range services {
-		concreteServices[name] = svc.ServiceIntent
-	}
-
-	return concreteServices
-}
-
-func (a *Application) GetEntrypointIntents() map[string]*EntrypointIntent {
-	concreteEntrypoints := map[string]*EntrypointIntent{}
-
-	services := a.GetResourceIntentsForType("entrypoint")
-
-	for name, svc := range services {
-		concreteEntrypoints[name] = svc.EntrypointIntent
-	}
-
-	return concreteEntrypoints
+	ServiceIntents    map[string]*ServiceIntent    `json:"services,omitempty" yaml:"services,omitempty"`
+	BucketIntents     map[string]*BucketIntent     `json:"buckets,omitempty" yaml:"buckets,omitempty"`
+	EntrypointIntents map[string]*EntrypointIntent `json:"entrypoints,omitempty" yaml:"entrypoints,omitempty"`
+	DatabaseIntents   map[string]*DatabaseIntent   `json:"databases,omitempty" yaml:"databases,omitempty"`
+	WebsiteIntents    map[string]*WebsiteIntent    `json:"websites,omitempty" yaml:"websites,omitempty"`
 }
 
 func ApplicationJsonSchema() *jsonschema.Schema {

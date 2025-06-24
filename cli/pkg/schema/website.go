@@ -1,7 +1,6 @@
 package schema
 
-type Website struct {
-	Name         string      `json:"name" yaml:"name"`
+type WebsiteIntent struct {
 	BaseDir      string      `json:"baseDir" yaml:"baseDir"`
 	AssetDir     string      `json:"assetDir" yaml:"assetDir"`
 	ErrorPage    string      `json:"errorPage" yaml:"errorPage"`
