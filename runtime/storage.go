@@ -4,7 +4,7 @@ import (
 	"context"
 
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
-	"github.com/nitrictech/nitric/server/runtime/storage"
+	"github.com/nitrictech/nitric/runtime/storage"
 )
 
 func (s *GrpcServer) Read(ctx context.Context, req *storagepb.StorageReadRequest) (*storagepb.StorageReadResponse, error) {

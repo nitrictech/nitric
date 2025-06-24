@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/nitrictech/nitric/server/runtime/plugin"
+	"github.com/nitrictech/nitric/runtime/plugin"
 )
 
 type Service interface {

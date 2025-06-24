@@ -4,7 +4,7 @@ import (
 	"context"
 
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
-	"github.com/nitrictech/nitric/server/runtime/pubsub"
+	"github.com/nitrictech/nitric/runtime/pubsub"
 )
 
 func (s *GrpcServer) Publish(ctx context.Context, req *pubsubpb.PubsubPublishRequest) (*pubsubpb.PubsubPublishResponse, error) {

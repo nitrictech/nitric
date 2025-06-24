@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
-	"github.com/nitrictech/nitric/server/runtime/plugin"
+	"github.com/nitrictech/nitric/runtime/plugin"
 )
 
 // Define the interface for a storage plugin here

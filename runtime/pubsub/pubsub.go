@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
-	"github.com/nitrictech/nitric/server/runtime/plugin"
+	"github.com/nitrictech/nitric/runtime/plugin"
 )
 
 type Pubsub = pubsubpb.PubsubServer

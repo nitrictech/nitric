@@ -11,8 +11,8 @@ import (
 
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
-	"github.com/nitrictech/nitric/server/runtime/plugin"
-	"github.com/nitrictech/nitric/server/runtime/service"
+	"github.com/nitrictech/nitric/runtime/plugin"
+	"github.com/nitrictech/nitric/runtime/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
