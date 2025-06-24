@@ -8,11 +8,6 @@ type ServiceIntent struct {
 	Dev *Dev `json:"dev,omitempty" yaml:"dev,omitempty"`
 
 	Triggers map[string]*ServiceTrigger `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-
-	// Only used for schema generation, will always be nil. Do not use or remove.
-	ServiceSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=service"`
-	// TODO: should sub-type be sub_type?
-	ServiceSchemaOnlyHackSubType string `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
 }
 
 func (s *ServiceIntent) GetType() string {
