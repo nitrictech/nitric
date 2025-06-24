@@ -16,13 +16,6 @@ type awslambdaService struct {
 	proxy service.Proxy
 }
 
-func (a *awslambdaService) httpNotFound() *events.LambdaFunctionURLStreamingResponse {
-	return &events.LambdaFunctionURLStreamingResponse{
-		StatusCode: http.StatusNotFound,
-		Body:       strings.NewReader("Not Found"),
-	}
-}
-
 func (a *awslambdaService) Start(proxy service.Proxy) error {
 	a.proxy = proxy
 
