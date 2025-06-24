@@ -3,6 +3,8 @@ package service
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"slices"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/nitrictech/nitric/cli/internal/netx"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
+	"github.com/robfig/cron/v3"
 )
 
 type ServiceSimulation struct {
@@ -106,6 +109,53 @@ func (s *ServiceSimulation) updateStatus(newStatus Status) {
 	})
 }
 
+func (s *ServiceSimulation) startSchedules(stdoutWriter, stderrorWriter io.Writer) (*cron.Cron, error) {
+	triggers := s.intent.Triggers
+	cron := cron.New()
+
+	for triggerName, trigger := range triggers {
+		if trigger.Schedule != nil {
+			url := url.URL{
+				Scheme: "http",
+				Host:   fmt.Sprintf("localhost:%d", s.port),
+				Path:   trigger.Path,
+			}
+
+			_, err := cron.AddFunc(trigger.Schedule.CronExpression, func() {
+				req, err := http.NewRequest(http.MethodPost, url.String(), nil)
+				if err != nil {
+					// log the error
+					fmt.Fprint(stderrorWriter, "error creating request for schedule", err)
+					return
+				}
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					fmt.Fprint(stderrorWriter, "error sending request for schedule", err)
+					return
+				}
+
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					fmt.Fprint(stderrorWriter, "error sending request for schedule", resp.StatusCode)
+					return
+				}
+
+				fmt.Fprintf(stdoutWriter, "schedule [%s] triggered on %s", triggerName, trigger.Path)
+			})
+
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	cron.Start()
+
+	return cron, nil
+}
+
 func (s *ServiceSimulation) Start(autoRestart bool) error {
 	s.autoRestart = autoRestart
 
@@ -144,11 +194,18 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		}
 		s.updateStatus(Status_Running)
 
+		cron, err := s.startSchedules(stdoutWriter, stderrWriter)
+		if err != nil {
+			s.updateStatus(Status_Fatal)
+			return err
+		}
+
 		err = srvCommand.Wait()
 		if err == nil {
 			break
 		}
-
+		// Stop running cron jobs
+		cron.Stop()
 		s.updateStatus(Status_Stopped)
 	}
 
