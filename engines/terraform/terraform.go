@@ -494,7 +494,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			for serviceName, actions := range access {
 				idMap, ok := tfDeployment.serviceIdentities[serviceName]
 				if !ok {
-					return fmt.Errorf("service %s not found", serviceName)
+					return fmt.Errorf("could not give access to %s %s: service %s not found", resourceIntent.GetType(), intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
@@ -549,7 +549,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 			for serviceName, actions := range access {
 				idMap, ok := tfDeployment.serviceIdentities[serviceName]
 				if !ok {
-					return fmt.Errorf("service %s not found", serviceName)
+					return fmt.Errorf("could not give access to bucket %s: service %s not found", intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
