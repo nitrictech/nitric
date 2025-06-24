@@ -32,14 +32,17 @@ func (a *awslambdaService) Start(proxy service.Proxy) error {
 
 		var httpEvent events.LambdaFunctionURLRequest
 		var scheduleEvent events.EventBridgeEvent
-		if err := json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
+		var err error
+		if err = json.Unmarshal(evt, &httpEvent); err == nil && httpEvent.RequestContext.HTTP.Method != "" {
 			return a.handleHTTPEvent(ctx, &httpEvent)
-		} else if err := json.Unmarshal(evt, &scheduleEvent); err == nil {
+		} else if err = json.Unmarshal(evt, &scheduleEvent); err == nil {
 			return a.handleScheduleEvent(ctx, &scheduleEvent)
 		}
 
+		fmt.Println("unable to handle event", err)
+
 		// Handle other event types here if needed
-		return nil, nil
+		return nil, err
 	})
 
 	return nil
