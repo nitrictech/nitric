@@ -15,8 +15,20 @@ locals {
 
   default_origin = length(local.root_origins) > 0 ? keys(local.root_origins)[0] : keys(var.nitric.origins)[0]
 
-  service_origins = {for key, val in var.nitric.origins: key => val if val.type == "service"}
-  bucket_origins = {for key, val in var.nitric.origins: key => val if val.type == "bucket"}
+  cloud_storage_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "google_storage_bucket")
+  }
+
+  cloud_run_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "google_cloud_run_v2_service")
+  }
+
+  other_origins = {
+    for k, v in var.nitric.origins : k => v
+    if !contains(keys(v.resources), "google_storage_bucket") && !contains(keys(v.resources), "google_cloud_run_v2_service")
+  }
 }
 
 
@@ -40,7 +52,7 @@ resource "random_string" "cdn_prefix" {
 
 # Create Network Endpoint Groups for services
 resource "google_compute_region_network_endpoint_group" "service_negs" {
-  for_each = local.service_origins
+  for_each = local.cloud_run_origins
   provider = google-beta
 
   name                  = "${each.key}-service-neg"
@@ -56,7 +68,7 @@ resource "google_compute_region_network_endpoint_group" "service_negs" {
 
 # Create Backend Services for services
 resource "google_compute_backend_service" "service_backends" {
-  for_each = local.service_origins
+  for_each = local.cloud_run_origins
 
   project = var.project_id
 
@@ -76,13 +88,13 @@ resource "google_compute_global_address" "cdn_ip" {
 }
 
 data "google_storage_bucket" "bucket" {
-  for_each = local.bucket_origins
+  for_each = local.cloud_storage_origins
 
   name = each.value.id
 }
 
 resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
-  for_each = local.bucket_origins
+  for_each = local.cloud_storage_origins
 
   bucket = data.google_storage_bucket.bucket[each.key].name
   role   = "roles/storage.objectViewer"
@@ -93,13 +105,43 @@ resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
 }
 
 resource "google_compute_backend_bucket" "website_backends" {
-  for_each = local.bucket_origins
+  for_each = local.cloud_storage_origins
 
   project = var.project_id
 
   name        = "${provider::corefunc::str_kebab(each.key)}-site-bucket"
   bucket_name = data.google_storage_bucket.bucket[each.key].name
   enable_cdn  = true
+}
+
+resource "google_compute_region_network_endpoint_group" "external_negs" {
+  for_each = local.other_origins
+  provider = google-beta
+
+  name                  = "${each.key}-external-neg"
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+  region = var.region
+
+  connection {
+    host = each.value.domain_name
+    port = 443
+  }
+
+  depends_on = [ google_project_service.required_services ]
+}
+
+resource "google_compute_backend_service" "external_backends" {
+  for_each = local.other_origins
+
+  project = var.project_id
+
+  name     = "${provider::corefunc::str_kebab(each.key)}-external-bs"
+  protocol = "HTTPS"
+  enable_cdn  = false
+
+  backend {
+    group = google_compute_region_network_endpoint_group.external_negs[each.key].self_link
+  }
 }
 
 # Create a URL Map for routing requests
@@ -118,14 +160,14 @@ resource "google_compute_url_map" "https_url_map" {
     default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
 
     dynamic "path_rule" {
-      for_each = local.service_origins
+      for_each = local.cloud_run_origins
 
       content {
         service = google_compute_backend_service.service_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}/*" : "/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}" : "/${path_rule.value.path}" // Ensure /${path}
-        ]
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
+        
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -136,13 +178,29 @@ resource "google_compute_url_map" "https_url_map" {
     }
 
     dynamic "path_rule" {
-      for_each = local.bucket_origins
+      for_each = local.cloud_storage_origins
 
       content {
         service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}/*" : "/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}" : "/${path_rule.value.path}"] // Ensure /${path}
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
+        }
+      }
+    }
+
+    dynamic "path_rule" {
+      for_each = local.other_origins
+
+      content {
+        service = google_compute_backend_service.external_backends[path_rule.key].self_link
+        paths   = [
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
+          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
