@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -155,10 +156,13 @@ var editCmd = &cobra.Command{
 		// Set up HTTP server for WebSocket connections
 		http.Handle("/ws", httpServer)
 
+		listener, err := net.Listen("tcp", "localhost:0")
+		cobra.CheckErr(err)
 		// Start HTTP server in a goroutine
 		go func() {
-			log.Println("Starting WebSocket server on :8080")
-			if err := http.ListenAndServe("localhost:8080", nil); err != nil {
+			log.Println("Starting WebSocket server on", listener.Addr().String())
+
+			if err := http.Serve(listener, nil); err != nil {
 				log.Fatal("WebSocket server error:", err)
 			}
 		}()
