@@ -225,7 +225,7 @@ func DetectContentType(filename string, content []byte) string {
 }
 
 func (s *SimulationServer) startBuckets() error {
-	for bucketName, bucketIntent := range s.appSpec.GetBucketIntents() {
+	for bucketName, bucketIntent := range s.appSpec.BucketIntents {
 		if bucketIntent == nil {
 			continue
 		}

@@ -1,8 +1,15 @@
 package schema
 
 type DatabaseIntent struct {
-	// Only used for schema generation, will always be nil. Do not use or remove.
-	DatabaseSchemaOnlyHackType       string              `json:"type" yaml:"-" jsonschema:"type,enum=database"`
-	DatabaseSchemaOnlyHackSubType    string              `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
-	DatabaseAccessSchemaOnlyHackType map[string][]string `json:"access" yaml:"-"`
+	Resource
+
+	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty"`
+}
+
+func (d *DatabaseIntent) GetAccess() (map[string][]string, bool) {
+	return d.Access, true
+}
+
+func (d *DatabaseIntent) GetType() string {
+	return "database"
 }

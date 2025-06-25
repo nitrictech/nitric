@@ -22,8 +22,8 @@ type TSSDKTemplateData struct {
 
 func AppSpecToTSTemplateData(appSpec schema.Application) (TSSDKTemplateData, error) {
 	buckets := []ResourceNameNormalizer{}
-	for name, resource := range appSpec.ResourceIntents {
-		if resource.Type != "bucket" {
+	for name, resource := range appSpec.GetResourceIntents() {
+		if resource.GetType() != "bucket" {
 			continue
 		}
 

@@ -24,9 +24,9 @@ type GoSDKTemplateData struct {
 
 func AppSpecToGoTemplateData(appSpec schema.Application, goPackageName string) (GoSDKTemplateData, error) {
 	buckets := []ResourceNameNormalizer{}
-	for name, resource := range appSpec.ResourceIntents {
+	for name, resource := range appSpec.GetResourceIntents() {
 
-		if resource.Type != "bucket" {
+		if resource.GetType() != "bucket" {
 			continue
 		}
 

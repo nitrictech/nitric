@@ -264,9 +264,19 @@ var entrypointOriginTypes = []string{"service", "bucket"}
 func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *app_spec_schema.Application, spec *app_spec_schema.EntrypointIntent) (interface{}, error) {
 	origins := map[string]interface{}{}
 	for path, route := range spec.Routes {
-		intentTarget, ok := appSpec.ResourceIntents[route.TargetName]
+		intentTarget, ok := appSpec.GetResourceIntent(route.TargetName)
 		if !ok {
 			return nil, fmt.Errorf("target %s not found", route.TargetName)
+		}
+
+		var intentTargetType string
+		switch intentTarget.(type) {
+		case *app_spec_schema.ServiceIntent:
+			intentTargetType = "service"
+		case *app_spec_schema.BucketIntent:
+			intentTargetType = "bucket"
+		default:
+			return nil, fmt.Errorf("target %s is not a service or bucket", route.TargetName)
 		}
 
 		hclTarget, ok := e.terraformResources[route.TargetName]
@@ -281,7 +291,7 @@ func (e *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *a
 		origins[route.TargetName] = map[string]interface{}{
 			"path":      jsii.String(path),
 			"base_path": jsii.String(route.BasePath),
-			"type":      jsii.String(intentTarget.Type),
+			"type":      jsii.String(intentTargetType),
 			"id":        idNitricVar,
 			// Assume the output var has a http_endpoint property
 			"domain_name": domainNameNitricVar,
@@ -402,7 +412,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 	return nitricVar, nil
 }
 
-func (e *TerraformDeployment) createVariablesForIntent(intentName string, intent app_spec_schema.Resource, spec *ResourceBlueprint) {
+func (e *TerraformDeployment) createVariablesForIntent(intentName string, spec *ResourceBlueprint) {
 	for varName, variable := range spec.Variables {
 		if e.instancedTerraformVariables[intentName] == nil {
 			e.instancedTerraformVariables[intentName] = make(map[string]cdktf.TerraformVariable)
@@ -431,22 +441,28 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Prepare service inputs and identities
+	resourceIntents := appSpec.GetResourceIntents()
+
 	serviceInputs := map[string]*NitricServiceVariables{}
-	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type != "service" {
+	for intentName, resourceIntent := range resourceIntents {
+		var serviceIntent *app_spec_schema.ServiceIntent
+		switch resourceIntent.(type) {
+		case *app_spec_schema.ServiceIntent:
+			serviceIntent = resourceIntent.(*app_spec_schema.ServiceIntent)
+		default:
 			continue
 		}
 
-		spec, err := e.platform.GetServiceBlueprint(resourceIntent.SubType)
+		spec, err := e.platform.GetServiceBlueprint(serviceIntent.GetSubType())
 		if err != nil {
-			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+			return fmt.Errorf("could not find platform type for %s.%s: %w", serviceIntent.GetType(), serviceIntent.GetSubType(), err)
 		}
 		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
 		if err != nil {
 			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		nitricVar, err := tfDeployment.resolveService(intentName, resourceIntent.ServiceIntent, spec, plug)
+		nitricVar, err := tfDeployment.resolveService(intentName, serviceIntent, spec, plug)
 		if err != nil {
 			return err
 		}
@@ -457,14 +473,16 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	serviceEnvs := map[string][]interface{}{}
 
 	// Resolve non-service/non-entrypoint/non-bucket modules
-	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type == "service" || resourceIntent.Type == "entrypoint" || resourceIntent.Type == "bucket" {
+	for intentName, resourceIntent := range resourceIntents {
+		resourceType := resourceIntent.GetType()
+
+		if resourceType == "service" || resourceType == "entrypoint" || resourceType == "bucket" {
 			continue
 		}
 
-		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.GetType(), resourceIntent.GetSubType())
 		if err != nil {
-			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
 		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
 		if err != nil {
@@ -472,11 +490,11 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		servicesInput := map[string]any{}
-		if access, ok := resourceIntent.IsAccessible(); ok {
+		if access, ok := resourceIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
 				idMap, ok := tfDeployment.serviceIdentities[serviceName]
 				if !ok {
-					return fmt.Errorf("service %s not found", serviceName)
+					return fmt.Errorf("could not give access to %s %s: service %s not found", resourceIntent.GetType(), intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
@@ -493,7 +511,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		// Create terraform variables for intent for a spec
-		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+		tfDeployment.createVariablesForIntent(intentName, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -510,17 +528,16 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve bucket modules
-	for intentName, resourceIntent := range appSpec.GetResourceIntentsForType("bucket") {
+	for intentName, bucketIntent := range appSpec.BucketIntents {
 
-		bucketIntent := resourceIntent.BucketIntent
 		contentPath := ""
 		if bucketIntent != nil {
 			contentPath = bucketIntent.ContentPath
 		}
 
-		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+		spec, err := e.platform.GetResourceBlueprint(bucketIntent.GetType(), bucketIntent.GetSubType())
 		if err != nil {
-			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+			return fmt.Errorf("could not find platform type for %s.%s: %w", bucketIntent.GetType(), bucketIntent.GetSubType(), err)
 		}
 		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
 		if err != nil {
@@ -528,11 +545,11 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		servicesInput := map[string]any{}
-		if access, ok := resourceIntent.IsAccessible(); ok {
+		if access, ok := bucketIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
 				idMap, ok := tfDeployment.serviceIdentities[serviceName]
 				if !ok {
-					return fmt.Errorf("service %s not found", serviceName)
+					return fmt.Errorf("could not give access to bucket %s: service %s not found", intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
@@ -550,7 +567,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		}
 
 		// Create terraform variables for intent for a spec
-		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+		tfDeployment.createVariablesForIntent(intentName, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -567,13 +584,10 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve service modules
-	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type != "service" {
-			continue
-		}
-		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+	for intentName, resourceIntent := range appSpec.ServiceIntents {
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.GetType(), resourceIntent.GetSubType())
 		if err != nil {
-			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
 		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
 		if err != nil {
@@ -589,7 +603,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 		nitricVar.Env = cdktf.Fn_Merge(&allEnv)
 
-		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+		tfDeployment.createVariablesForIntent(intentName, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -601,26 +615,22 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve entrypoint modules
-	for intentName, resourceIntent := range appSpec.ResourceIntents {
-		if resourceIntent.Type != "entrypoint" {
-			continue
-		}
-
-		spec, err := e.platform.GetResourceBlueprint(resourceIntent.Type, resourceIntent.SubType)
+	for intentName, resourceIntent := range appSpec.EntrypointIntents {
+		spec, err := e.platform.GetResourceBlueprint(resourceIntent.GetType(), resourceIntent.GetSubType())
 		if err != nil {
-			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.Type, resourceIntent.SubType, err)
+			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
 		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
 		if err != nil {
 			return fmt.Errorf("could not find plugin %s", spec.PluginId)
 		}
 
-		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent.EntrypointIntent)
+		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent)
 		if err != nil {
 			return err
 		}
 
-		tfDeployment.createVariablesForIntent(intentName, resourceIntent, spec)
+		tfDeployment.createVariablesForIntent(intentName, spec)
 
 		tfDeployment.terraformResources[intentName] = cdktf.NewTerraformHclModule(tfDeployment.stack, jsii.String(intentName), &cdktf.TerraformHclModuleConfig{
 			// TODO: This assumes that the plugin is resolvable as a URI
@@ -632,8 +642,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// Resolve resource tokens
-	for resourceName, resource := range appSpec.ResourceIntents {
-		resourceSpec, err := e.platform.GetResourceBlueprint(resource.Type, resource.SubType)
+	for resourceName, resourceIntent := range resourceIntents {
+		resourceSpec, err := e.platform.GetResourceBlueprint(resourceIntent.GetType(), resourceIntent.GetSubType())
 		if err != nil {
 			return err
 		}
@@ -658,8 +668,8 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 	}
 
 	// resolve dependencies for all created modules
-	for resourceName, resource := range appSpec.ResourceIntents {
-		resourceSpec, err := e.platform.GetResourceBlueprint(resource.Type, resource.SubType)
+	for resourceName, resource := range resourceIntents {
+		resourceSpec, err := e.platform.GetResourceBlueprint(resource.GetType(), resource.GetSubType())
 		if err != nil {
 			return err
 		}

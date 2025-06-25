@@ -1,34 +1,26 @@
 package schema
 
 type ServiceIntent struct {
+	Resource
 	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Container Container         `json:"container" yaml:"container" jsonschema:"oneof_required=container"`
 
 	Dev *Dev `json:"dev,omitempty" yaml:"dev,omitempty"`
 
 	Triggers map[string]*ServiceTrigger `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+}
 
-	// Only used for schema generation, will always be nil. Do not use or remove.
-	ServiceSchemaOnlyHackType string `json:"type" yaml:"-" jsonschema:"type,enum=service"`
-	// TODO: should sub-type be sub_type?
-	ServiceSchemaOnlyHackSubType string `json:"sub-type,omitempty" yaml:"-,omitempty" jsonschema:"sub-type"`
+func (s *ServiceIntent) GetType() string {
+	return "service"
 }
 
 type ServiceTrigger struct {
-	Schedule *Schedule      `json:"schedule,omitempty" yaml:"schedule,omitempty" jsonschema:"oneof_required=schedule"`
-	Topic    *TopicTrigger  `json:"topic,omitempty" yaml:"topic,omitempty" jsonschema:"oneof_required=topic"`
-	Bucket   *BucketTrigger `json:"bucket,omitempty" yaml:"bucket,omitempty" jsonschema:"oneof_required=bucket"`
+	Schedule *Schedule `json:"schedule,omitempty" yaml:"schedule,omitempty" jsonschema:"oneof_required=schedule"`
+	// TODO: Add additional trigger types
+	// Topic    *TopicTrigger  `json:"topic,omitempty" yaml:"topic,omitempty" jsonschema:"oneof_required=topic"`
+	// Bucket   *BucketTrigger `json:"bucket,omitempty" yaml:"bucket,omitempty" jsonschema:"oneof_required=bucket"`
 
 	Path string `json:"path" yaml:"path" jsonschema:"required"`
-}
-
-type TopicTrigger struct {
-	Name string `json:"name" yaml:"name" jsonschema:"required"`
-}
-
-type BucketTrigger struct {
-	Name   string `json:"name" yaml:"name" jsonschema:"required"`
-	Prefix string `json:"prefix" yaml:"prefix"`
 }
 
 type Schedule struct {
