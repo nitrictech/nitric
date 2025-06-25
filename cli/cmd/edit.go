@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/browser"
+	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
@@ -18,7 +19,6 @@ import (
 const fileName = "nitric.yaml"
 
 var nitricSimple = style.Purple("Nitric")
-
 var nitricLightning = style.Purple(icons.Lightning + " Nitric")
 
 func nitricIntro() string {
@@ -74,7 +74,9 @@ var editCmd = &cobra.Command{
 		fmt.Printf("Opening browser tab to the %s editor\n", nitricSimple)
 
 		// Open browser tab to the dashboard
-		err = browser.Open(fmt.Sprintf("http://localhost:8080/dev?port=%d", port))
+		devUrl := config.GetNitricServerUrl().JoinPath("dev")
+
+		err = browser.Open(fmt.Sprintf("%s?port=%d", devUrl, port))
 		if err != nil {
 			log.Printf("Error opening browser: %v", err)
 		}
