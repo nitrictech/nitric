@@ -1,6 +1,7 @@
 package devserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,10 +15,11 @@ import (
 )
 
 type NitricFileSync struct {
-	filePath string
-	file     *os.File
-	debounce time.Duration
-	publish  PublishFunc
+	filePath         string
+	file             *os.File
+	debounce         time.Duration
+	publish          PublishFunc
+	lastSyncContents []byte
 }
 
 type FileSyncMessage Message[schema.Application]
@@ -38,7 +40,7 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 	}
 
 	// Not the right message type continue
-	if fileSyncMessage.Type != "nitricSyncDown" {
+	if fileSyncMessage.Type != "nitricSync" {
 		return
 	}
 
@@ -57,6 +59,9 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		fmt.Println("Error truncating file:", err)
 		return
 	}
+
+	fs.lastSyncContents = yamlContents
+
 	_, err = fs.file.Write(yamlContents)
 	if err != nil {
 		fmt.Println("Error writing file:", err)
@@ -131,8 +136,13 @@ func (fw *NitricFileSync) watchFile() error {
 					return
 				}
 
+				// Don't publish if the contents are the same as the last sync down
+				if bytes.Equal(fw.lastSyncContents, contents) {
+					return
+				}
+
 				fw.publish(Message[any]{
-					Type:    "nitricSyncUp",
+					Type:    "nitricSync",
 					Payload: *application,
 				})
 			})
