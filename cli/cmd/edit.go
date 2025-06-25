@@ -17,12 +17,14 @@ import (
 
 const fileName = "nitric.yaml"
 
-var nitric = style.Purple(icons.Lightning + " Nitric")
+var nitricSimple = style.Purple("Nitric")
+
+var nitricLightning = style.Purple(icons.Lightning + " Nitric")
 
 func nitricIntro() string {
 	version := version.GetShortVersion()
 
-	intro := fmt.Sprintf("\n%s %s\n", nitric, style.Gray(version))
+	intro := fmt.Sprintf("\n%s %s\n", nitricLightning, style.Gray(version))
 
 	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
 }
@@ -48,8 +50,7 @@ var editCmd = &cobra.Command{
 
 		fmt.Println(nitricIntro())
 
-		fmt.Printf("Watching file: %s\n", fileName)
-		fmt.Println("Press Ctrl+C to stop")
+		fmt.Println("Starting nitric.yaml synchronizer on port", listener.Addr().(*net.TCPAddr).Port)
 
 		// Start the WebSocket server
 		errChan := make(chan error)
@@ -69,6 +70,8 @@ var editCmd = &cobra.Command{
 
 		// Get the port for the listener
 		port := listener.Addr().(*net.TCPAddr).Port
+
+		fmt.Printf("Opening browser tab to the %s editor\n", nitricSimple)
 
 		// Open browser tab to the dashboard
 		err = browser.Open(fmt.Sprintf("http://localhost:8080/dev?port=%d", port))
