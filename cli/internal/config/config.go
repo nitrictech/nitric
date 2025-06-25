@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,12 +11,12 @@ import (
 )
 
 const (
-	ConfigFile = ".cli_config"
-	ApiUrlKey  = "api.url"
-	EnvPrefix  = "NITRIC"
+	ConfigFile         = "config"
+	NitricServerUrlKey = "nitric.url"
+	EnvPrefix          = "NITRIC"
 )
 
-var allConfigKeys = []string{ApiUrlKey}
+var allConfigKeys = []string{NitricServerUrlKey}
 
 func GetAllConfigItems() map[string]string {
 	items := make(map[string]string)
@@ -42,12 +43,27 @@ func SetValue(key string, value string) error {
 	return fmt.Errorf("invalid config option %s", key)
 }
 
-func GetApiUrl() string {
-	return viper.GetString(ApiUrlKey)
+func GetNitricServerUrl() *url.URL {
+	nitricUrl, err := url.Parse(viper.GetString(NitricServerUrlKey))
+	if err != nil {
+		fmt.Printf("Error parsing nitric server url from config, using default: %v\n", err)
+		return &url.URL{
+			Scheme: "https",
+			Host:   "app.nitric.io",
+		}
+	}
+
+	return nitricUrl
 }
 
-func SetApiUrl(url string) {
-	viper.Set(ApiUrlKey, url)
+func SetNitricServerUrl(newUrl string) error {
+	nitricUrl, err := url.Parse(newUrl)
+	if err != nil {
+		return err
+	}
+
+	viper.Set(NitricServerUrlKey, nitricUrl.String())
+	return nil
 }
 
 func Save() error {
@@ -66,7 +82,7 @@ func Save() error {
 }
 
 func setDefaults() {
-	viper.SetDefault(ApiUrlKey, "https://app.nitric.io/api/")
+	viper.SetDefault(NitricServerUrlKey, "https://app.nitric.io/api/")
 }
 
 // Load loads the config from the file or the home directory
