@@ -2,6 +2,7 @@ package filex
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -12,26 +13,42 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/invopop/yaml"
+	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/samber/lo"
 	"golang.org/x/net/websocket"
 )
 
+type MessageType string
+
+const (
+	MessageTypeNitricSync MessageType = "nitricSync"
+)
+
 // Message represents a file change notification with contents
 type Message struct {
-	Contents string `json:"contents"`
+	Type string `json:"type"`
+}
+
+// TODO: Possibly handle multiple event types to sync with the dashboard
+type NitricSyncMessage struct {
+	Message
+	Payload schema.Application `json:"payload"`
 }
 
 // WebsocketServerSync manages WebSocket connections and file watching
 type WebsocketServerSync struct {
-	clients    map[*websocket.Conn]bool
-	broadcast  chan Message
+	clients map[*websocket.Conn]bool
+	// TODO: Update to interface
+	broadcast  chan NitricSyncMessage
 	register   chan *websocket.Conn
 	unregister chan *websocket.Conn
-	incoming   chan Message
-	filePath   string
-	file       *os.File
-	mutex      sync.RWMutex
-	debounce   time.Duration
+	// TODO: Update to interface
+	incoming chan NitricSyncMessage
+	filePath string
+	file     *os.File
+	mutex    sync.RWMutex
+	debounce time.Duration
 }
 
 // Implement additional constructor options
@@ -60,10 +77,10 @@ func NewWebsocketServerSync(filePath string, options ...WebsocketServerSyncOptio
 
 	ws := &WebsocketServerSync{
 		clients:    make(map[*websocket.Conn]bool),
-		broadcast:  make(chan Message),
+		broadcast:  make(chan NitricSyncMessage),
 		register:   make(chan *websocket.Conn),
 		unregister: make(chan *websocket.Conn),
-		incoming:   make(chan Message),
+		incoming:   make(chan NitricSyncMessage),
 		filePath:   filePath,
 		file:       file,
 		debounce:   defaultDebounce,
@@ -123,7 +140,8 @@ func (fw *WebsocketServerSync) run() {
 			// Write the incoming content to the file
 			fw.file.Seek(0, 0)  // Seek to beginning
 			fw.file.Truncate(0) // Clear the file
-			_, err := fw.file.Write([]byte(message.Contents))
+			yamlContents, err := yaml.Marshal(message.Payload)
+			_, err = fw.file.Write(yamlContents)
 			if err != nil {
 				log.Printf("Error writing to file %s: %v", fw.filePath, err)
 			} else {
@@ -144,7 +162,7 @@ func (fw *WebsocketServerSync) handleWebSocket(ws *websocket.Conn) {
 
 	// Handle incoming messages
 	for {
-		var message Message
+		var message NitricSyncMessage
 		err := websocket.JSON.Receive(ws, &message)
 		if err != nil {
 			log.Printf("Error receiving message: %v", err)
@@ -218,9 +236,21 @@ func (fw *WebsocketServerSync) watchFile() error {
 					return
 				}
 
+				application, schemaResult, err := schema.ApplicationFromYaml(string(contents))
+				if err != nil {
+					fmt.Println("Error parsing application from yaml:", err)
+					return
+				} else if schemaResult != nil && len(schemaResult.Errors()) > 0 {
+					fmt.Println("Errors parsing application from yaml:", schemaResult.Errors())
+					return
+				}
+
 				// Broadcast file change with contents to WebSocket clients
-				message := Message{
-					Contents: string(contents),
+				message := NitricSyncMessage{
+					Message: Message{
+						Type: string(MessageTypeNitricSync),
+					},
+					Payload: *application,
 				}
 				fw.broadcast <- message
 			})
