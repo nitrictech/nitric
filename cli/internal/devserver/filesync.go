@@ -30,12 +30,6 @@ func WithDebounce(debounce time.Duration) FileSyncOption {
 	}
 }
 
-func WithPublish(publish PublishFunc) FileSyncOption {
-	return func(fs *NitricFileSync) {
-		fs.publish = publish
-	}
-}
-
 func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 	var fileSyncMessage FileSyncMessage
 	err := json.Unmarshal(message, &fileSyncMessage)
