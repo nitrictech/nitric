@@ -38,7 +38,7 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 	}
 
 	// Not the right message type continue
-	if fileSyncMessage.Type != "nitricSync" {
+	if fileSyncMessage.Type != "nitricSyncDown" {
 		return
 	}
 
@@ -132,7 +132,7 @@ func (fw *NitricFileSync) watchFile() error {
 				}
 
 				fw.publish(Message[any]{
-					Type:    "nitricSync",
+					Type:    "nitricSyncUp",
 					Payload: *application,
 				})
 			})
